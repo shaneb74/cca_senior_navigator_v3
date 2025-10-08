@@ -16,54 +16,92 @@ def _page(title: str, desc: str, ctas: Optional[List[Tuple[str, str]]] = None):
 
 def render_welcome():
     st.markdown(
-        """
-<section class="container stack">
-  <div class="grid">
-    <div class="card grid-span-7 stack-sm">
-      <div class="card-head">Welcome to Senior Navigator</div>
-      <div class="card-meta">Clarity for seniors, caregivers, and professionals.</div>
-      <p>Start a guided plan or explore resources. You can switch at any time.</p>
-      <div class="card-actions mt-space-4">
-        <a class="btn btn--primary" href="?page=welcome_contextual">Get Started</a>
-        <a class="btn btn--secondary" href="?page=professionals">I’m a Professional</a>
-      </div>
-    </div>
-    <div class="card grid-span-5 text-center">
-      <img class="img-responsive img-rounded" src="/static/images/Hero.png" alt="Senior Navigator" />
+        """<section class="container section-hero">
+<div class="hero-grid">
+  <div>
+    <div class="hero-eyebrow">Concierge Care Advisors</div>
+    <h1 class="hero-title">Senior Navigator</h1>
+    <p class="hero-sub">Expert advisors - no cost. Helping families navigate the most important senior living decisions with clarity and compassion.</p>
+    <div class="cta-row">
+      <a class="btn btn--primary" href="?page=welcome_contextual">Start Now</a>
+      <a class="btn btn--secondary" href="?page=login">Log in or sign up</a>
     </div>
   </div>
-  <div class="banner banner--info">
-    National guidance with local context. You control how much you share.
+  <div>
+    <img class="card-photo" src="static/images/Hero.png" alt="Senior and caregiver"/>
   </div>
+</div>
 </section>
-        """,
+
+<section class="container stack">
+<h2>How We Can Help You</h2>
+<div class="cards-2">
+  <article class="card card--hover">
+    <img class="card-photo" src="static/images/Someone-Else.png" alt="Supporting others"/>
+    <div class="card-head">Supporting Others</div>
+    <div class="card-meta">For a loved one</div>
+    <p>Helping you make confident care decisions for someone you love.</p>
+    <div class="card-actions">
+      <a class="btn btn--primary" href="?page=welcome_contextual&who=someone">For someone</a>
+    </div>
+  </article>
+
+  <article class="card card--hover">
+    <img class="card-photo" src="static/images/Self.png" alt="Getting ready for myself"/>
+    <div class="card-head">Getting Ready for Myself</div>
+    <div class="card-meta">For myself</div>
+    <p>Plan for your own future care with trusted guidance and peace of mind.</p>
+    <div class="card-actions">
+      <a class="btn btn--primary" href="?page=welcome_contextual&who=me">For me</a>
+    </div>
+  </article>
+</div>
+</section>""",
         unsafe_allow_html=True,
     )
 
 
 def render_welcome_contextual():
+    mode = st.query_params.get("who", "someone")
+    is_me = mode == "me"
+    photo_back = "static/images/contextual_welcome_self.png" if is_me else "static/images/contextual_welcome_someone_else.png"
+    photo_front = "static/images/tell_us_about_you.png" if is_me else "static/images/tell_us_about_them.png"
+    title_copy = "Getting Ready for Myself" if is_me else "Supporting Others"
+    body_copy = (
+        "Plan for your own future care with trusted guidance and peace of mind."
+        if is_me
+        else "Helping you make confident care decisions for someone you love."
+    )
+    name_label = "What's your name?" if is_me else "What's their name?"
+
     st.markdown(
-        """
-<section class="container stack">
-  <div class="grid">
-    <article class="card grid-span-6 stack-sm">
-      <div class="card-head">Who are you planning for?</div>
-      <div class="choice-pills mt-space-4">
-        <span class="pill is-selected">Myself</span>
-        <span class="pill">A loved one</span>
-        <span class="pill">A patient (professional)</span>
+        f"""<section class="canvas-soft">
+<div class="container center-wrap">
+  <div>
+    <div class="modal-card stack-sm">
+      <div class="toggle">
+        <a class="pill{' is-selected' if not is_me else ''}" href="?page=welcome_contextual&who=someone">For someone</a>
+        <a class="pill{' is-selected' if is_me else ''}" href="?page=welcome_contextual&who=me">For me</a>
+      </div>
+      <h3 class="mt-space-4">{title_copy}</h3>
+      <p>{body_copy}</p>
+      <div class="field mt-space-3">
+        <label>{name_label}</label>
+        <input class="input" placeholder="Type a name"/>
       </div>
       <div class="card-actions mt-space-4">
         <a class="btn btn--primary" href="?page=waiting_room">Continue</a>
-        <a class="btn btn--ghost" href="?page=welcome">Back</a>
+        <a class="btn btn--ghost" href="?page=welcome">Close</a>
       </div>
-    </article>
-    <article class="card grid-span-6 text-center">
-      <img class="img-responsive img-rounded" src="/static/images/contextual_welcome_self.png" alt="Contextual Welcome" />
-    </article>
+      <p class="helper-note mt-space-4">If you want to assess several people, you can move on to the next step later.</p>
+    </div>
   </div>
-</section>
-        """,
+  <div class="photo-stack" aria-hidden="true">
+    <img class="photo-back" src="{photo_back}" alt=""/>
+    <img class="photo-front" src="{photo_front}" alt=""/>
+  </div>
+</div>
+</section>""",
         unsafe_allow_html=True,
     )
 
