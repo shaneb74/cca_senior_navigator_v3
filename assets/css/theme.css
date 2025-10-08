@@ -119,6 +119,37 @@ a:hover { text-decoration:underline; }
   * { animation:none !important; transition:none !important; }
 }
 
+/* Utilities */
+.grid-span-4 { grid-column: span 4; }
+.grid-span-5 { grid-column: span 5; }
+.grid-span-6 { grid-column: span 6; }
+.grid-span-7 { grid-column: span 7; }
+.grid-span-8 { grid-column: span 8; }
+.text-center { text-align:center; }
+.mt-space-4 { margin-top: var(--space-4); }
+.mt-space-6 { margin-top: var(--space-6); }
+.list-unstyled { list-style:none; margin:0; padding:0; }
+.img-responsive { max-width:100%; height:auto; display:inline-block; }
+.img-rounded { border-radius:var(--radius); }
+.stack-sm > * + * { margin-top: var(--space-4); }
+.stack-xs > * + * { margin-top: var(--space-3); }
+
+@media (max-width: 1024px){
+  .grid-span-4,
+  .grid-span-5,
+  .grid-span-6,
+  .grid-span-7,
+  .grid-span-8 { grid-column: span 8; }
+}
+
+@media (max-width: 640px){
+  .grid-span-4,
+  .grid-span-5,
+  .grid-span-6,
+  .grid-span-7,
+  .grid-span-8 { grid-column: span 4; }
+}
+
 /* Dark theme */
 .theme-dark {
   --bg:#0b1220; --card:#0f172a; --muted:#111827;
