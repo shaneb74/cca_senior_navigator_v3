@@ -1,0 +1,9 @@
+/* v2025.10 — tokens & basics; full theme comes later */
+:root{
+  --brand:#0B5CD8; --brand-400:#6BA8FF; --brand-50:#E6EEFF;
+  --ink:#0F172A; --ink-600:#475569; --ink-500:#64748B;
+  --bg:#F7F9FC; --card:#FFFFFF; --muted:#F1F5F9;
+  --radius-sm:10px; --radius:14px; --radius-lg:20px;
+  --fs-root:18px;
+}
+html, body { font-size: var(--fs-root); background: var(--bg); }

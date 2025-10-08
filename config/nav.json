@@ -1,0 +1,37 @@
+{
+  "version": "v2025.10",
+  "groups": [
+    {
+      "id": "app_utilities",
+      "label": "App Utilities",
+      "items": [
+        {"key": "welcome", "label": "Welcome", "module": "pages._stubs:render_welcome"},
+        {"key": "welcome_contextual", "label": "Contextual Welcome", "module": "pages._stubs:render_welcome_contextual"},
+        {"key": "pro_welcome", "label": "Pro Welcome", "module": "pages._stubs:render_pro_welcome"},
+        {"key": "pro_welcome_contextual", "label": "Pro Contextual Welcome", "module": "pages._stubs:render_pro_welcome_contextual"},
+        {"key": "professionals", "label": "Professionals", "module": "pages._stubs:render_professionals"},
+        {"key": "login", "label": "Login", "module": "pages._stubs:render_login", "hide_when_auth": true},
+        {"key": "ai_advisor", "label": "AI Advisor (Navi)", "module": "pages._stubs:render_ai_advisor"},
+        {"key": "documents", "label": "Documents", "module": "pages._stubs:render_documents", "requires_auth": true},
+        {"key": "exports", "label": "Exports", "module": "pages._stubs:render_exports", "requires_auth": true},
+        {"key": "waiting_room", "label": "Waiting Room", "module": "pages._stubs:render_waiting_room"},
+        {"key": "trusted_partners", "label": "Trusted Partners", "module": "pages._stubs:render_trusted_partners"},
+        {"key": "my_account", "label": "My Account", "module": "pages._stubs:render_my_account", "requires_auth": true},
+        {"key": "terms", "label": "Terms of Use", "module": "pages._stubs:render_terms"},
+        {"key": "privacy", "label": "Privacy Policy", "module": "pages._stubs:render_privacy"},
+        {"key": "about", "label": "About Us", "module": "pages._stubs:render_about"}
+      ]
+    },
+    {
+      "id": "hubs",
+      "label": "Hubs",
+      "items": [
+        {"key": "hub_concierge", "label": "Concierge Care Hub", "module": "hubs.concierge:render"},
+        {"key": "hub_waiting", "label": "Waiting Room Hub", "module": "hubs.waiting_room:render"},
+        {"key": "hub_learning", "label": "Learning & Resources Hub", "module": "hubs.learning:render"},
+        {"key": "hub_trusted", "label": "Trusted Partners Hub", "module": "hubs.trusted_partners:render"},
+        {"key": "hub_professional", "label": "Professional Hub", "module": "hubs.professional:render", "roles": ["pro", "admin"]}
+      ]
+    }
+  ]
+}
