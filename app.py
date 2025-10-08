@@ -1,7 +1,7 @@
 import streamlit as st
 
 from core.events import log_event
-from core.nav import current_route, load_nav, route_to
+from core.nav import current_route, load_nav
 from core.state import ensure_session, get_user_ctx
 from core.ui import footer, header, page_container_close, page_container_open
 
@@ -35,5 +35,16 @@ page_container_open()
 log_event("nav.page_change", {"to": route})
 PAGES[route]["render"]()
 page_container_close()
+
+st.markdown(
+    """<nav class="mnav">
+  <div class="bar">
+    <a class="is-active" href="?page=welcome">Dashboard</a>
+    <a href="?page=hub_learning">Learning Center</a>
+    <a href="?page=waiting_room">Get Connected</a>
+  </div>
+</nav>""",
+    unsafe_allow_html=True,
+)
 
 footer()

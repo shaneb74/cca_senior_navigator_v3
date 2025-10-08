@@ -1,3 +1,5 @@
+from typing import Optional
+
 import streamlit as st
 
 
@@ -39,3 +41,33 @@ def page_container_open():
 
 def page_container_close():
     st.markdown("</main>", unsafe_allow_html=True)
+
+
+def hub_section(title: str, right_meta: Optional[str] = None):
+    right = f'<div class="tile-meta">{right_meta}</div>' if right_meta else ""
+    st.markdown(
+        f"""<section class="container section">
+<div class="tile-head">
+  <h2 class="section-title">{title}</h2>
+  {right}
+</div>
+</section>""",
+        unsafe_allow_html=True,
+    )
+
+
+def tiles_open():
+    st.markdown('<div class="container"><div class="tiles">', unsafe_allow_html=True)
+
+
+def tiles_close():
+    st.markdown("</div></div>", unsafe_allow_html=True)
+
+
+def tile_open(size: str = "md"):
+    size_class = "tile--md" if size == "md" else "tile--lg"
+    st.markdown(f'<article class="tile {size_class}">', unsafe_allow_html=True)
+
+
+def tile_close():
+    st.markdown("</article>", unsafe_allow_html=True)
