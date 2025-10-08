@@ -59,12 +59,64 @@ a:hover { text-decoration:underline; }
 .footer { margin-top: var(--space-12); background:var(--muted); color:var(--ink-500); }
 
 /* Buttons */
-.btn { display:inline-flex; align-items:center; justify-content:center; min-height:44px; padding:0 var(--space-5); border-radius:var(--radius-sm); border:1px solid transparent; cursor:pointer; user-select:none; }
+.btn {
+  display:inline-block;
+  font-weight:600;
+  border-radius:var(--radius);
+  padding:12px 20px;
+  min-height:44px;
+  text-align:center;
+  cursor:pointer;
+  text-decoration:none;
+  transition:background .2s, color .2s, border-color .2s, box-shadow .2s;
+}
 .btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
-.btn--primary { background:var(--brand); color:#fff; }
-.btn--primary:hover { filter:brightness(1.05); }
-.btn--secondary { background:#fff; color:var(--brand); border-color:var(--brand-400); }
-.btn--ghost { background:transparent; color:var(--brand); border-color:var(--brand-400); }
+
+.btn--primary,
+.btn--primary:link,
+.btn--primary:visited {
+  background: var(--brand);
+  color: #fff;
+  border: 1px solid var(--brand);
+  text-decoration: none;
+}
+.btn--primary:hover,
+.btn--primary:focus {
+  background: var(--brand-700, #0043b8);
+  color: #fff;
+  border-color: var(--brand-700, #0043b8);
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 25%, transparent);
+}
+.btn--primary:active {
+  background: var(--brand-800, #00389a);
+  color: #fff;
+  border-color: var(--brand-800, #00389a);
+}
+.btn--primary * { color: inherit; }
+
+.btn--secondary {
+  background:#fff;
+  color:var(--brand);
+  border:1px solid var(--brand);
+}
+.btn--secondary:hover,
+.btn--secondary:focus {
+  background: var(--brand-50, #e6eeff);
+  color: var(--brand-700, #0043b8);
+  border-color: var(--brand-700, #0043b8);
+}
+
+.btn--ghost {
+  background:transparent;
+  color:var(--brand);
+  border:1px solid transparent;
+}
+.btn--ghost:hover,
+.btn--ghost:focus {
+  color: var(--brand-700, #0043b8);
+}
+
 .btn--success { background:var(--success); color:#fff; }
 
 /* Cards */
