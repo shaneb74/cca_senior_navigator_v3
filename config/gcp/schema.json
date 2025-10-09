@@ -289,49 +289,18 @@
         },
         {
           "id": "Q8",
-          "label": "Have there been any of these behaviors or concerns?",
-          "type": "matrix",
-          "items": [
-            {
-              "id": "wandering",
-              "label": "Wandering"
-            },
-            {
-              "id": "aggression",
-              "label": "Aggression"
-            },
-            {
-              "id": "elopement",
-              "label": "Elopement / Exit-seeking"
-            },
-            {
-              "id": "confusion",
-              "label": "Confusion or disorientation"
-            },
-            {
-              "id": "sundowning",
-              "label": "Sundowning"
-            },
-            {
-              "id": "repetitive",
-              "label": "Repetitive questioning"
-            },
-            {
-              "id": "judgment",
-              "label": "Poor judgment"
-            },
-            {
-              "id": "hoarding",
-              "label": "Hoarding"
-            },
-            {
-              "id": "sleep",
-              "label": "Sleep disturbances"
-            }
-          ],
+          "label": "Have there been any of these behaviors? (Select all that apply)",
+          "type": "multi_select",
           "options": [
-            "Not present",
-            "Present"
+            "Wandering",
+            "Aggression",
+            "Elopement / Exit-seeking",
+            "Confusion or disorientation",
+            "Sundowning",
+            "Repetitive questioning",
+            "Poor judgment",
+            "Hoarding",
+            "Sleep disturbances"
           ]
         },
         {

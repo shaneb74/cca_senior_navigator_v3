@@ -1,4 +1,6 @@
 import streamlit as st
+import json
+from pathlib import Path
 
 from core.state import get_module_state, get_user_ctx
 from core.ui import hub_section, render_module_tile, tiles_close, tiles_open
@@ -18,6 +20,55 @@ def replace_name_placeholder(text):
     """Replace {name} placeholder with the person's name."""
     name = get_person_name()
     return text.replace("{name}", name)
+
+
+def generate_conversational_blurb(result, answers):
+    """Generate a conversational blurb based on GCP results and cost config."""
+    try:
+        # Load cost config
+        cost_config_path = Path(__file__).parent.parent / "config" / "cost_config.v3.json"
+        with open(cost_config_path, "r", encoding="utf-8") as f:
+            cost_config = json.load(f)
+        
+        tier_name = result["tier"]
+        behaviors = answers.get("Q8", [])
+        
+        # Base messages by care type
+        base_messages = {
+            "In-Home Care": "Based on your needs, we recommend In-Home Care for personalized support in your own home.",
+            "Assisted Living": "Based on your moderate assistance needs, we recommend Assisted Living for a supportive community environment.",
+            "Memory Care": "Based on your cognitive and behavioral needs, we recommend Memory Care for specialized dementia support.",
+            "Memory Care High Acuity": "Based on your complex cognitive and behavioral needs, we recommend Memory Care with high-acuity support."
+        }
+        
+        blurb_parts = [base_messages.get(tier_name, f"Based on your assessment, we recommend {tier_name}.")]
+        
+        # Add behavior-specific messaging
+        behavior_messages = []
+        if "Wandering" in behaviors:
+            behavior_messages.append("we've factored in extra support for wandering behaviors")
+        if "Aggression" in behaviors:
+            behavior_messages.append("we've included provisions for behavioral support")
+        if "Elopement / Exit-seeking" in behaviors:
+            behavior_messages.append("we've accounted for exit-seeking behaviors with secure environment features")
+        
+        if behavior_messages:
+            blurb_parts.append(f"Since you've mentioned certain behaviors, {', and '.join(behavior_messages)}.")
+        
+        # Add mobility considerations
+        mobility = answers.get("Q10")
+        if mobility in ["Uses wheelchair or scooter", "Bed-bound or limited mobility"]:
+            blurb_parts.append("Your mobility needs also suggest assistance with daily activities, which this option covers well.")
+        
+        # Combine into 2-4 sentences
+        full_blurb = " ".join(blurb_parts[:3])  # Limit to 3 parts max
+        
+        return full_blurb
+        
+    except Exception as e:
+        # Fallback template
+        tier_name = result["tier"]
+        return f"Based on your needs, we recommend {tier_name} for the level of support that best fits your situation. This option provides the right balance of care and independence while considering your specific requirements."
 
 
 def render():
@@ -246,11 +297,9 @@ def render_results():
         </div>
         """, unsafe_allow_html=True)
         
-        # Add conversational blurb from blurbs.json
-        blurbs = load_blurbs()
-        blurb_key = f"recommendation_{tier_name.lower().replace(' ', '_')}"
-        if blurb_key in blurbs:
-            blurb_text = blurbs[blurb_key]
+        # Add conversational blurb from cost_config.json
+        blurb_text = generate_conversational_blurb(result, answers)
+        if blurb_text:
             st.markdown(f"""
             <div style="margin: 1rem 0; padding: 1rem; background: #F5F5F5; border: 1px solid #E0E0E0; border-radius: 8px; font-style: italic;">
                 {blurb_text}
@@ -280,9 +329,16 @@ def render_results():
                 st.rerun()
         
         with col2:
-            if st.button("🏠 Return to Hub", use_container_width=True):
-                st.query_params["page"] = "welcome"
-                st.rerun()
+            if st.button("💰 Try Cost Planner", use_container_width=True):
+                from core.nav import route_to
+                route_to("cost_planner")
+        
+        # Return to Hub button (centered below)
+        st.markdown("<div style='text-align: center; margin-top: 1rem;'>", unsafe_allow_html=True)
+        if st.button("🏠 Return to Hub", use_container_width=False):
+            from core.nav import route_to
+            route_to("hub_concierge")
+        st.markdown("</div>", unsafe_allow_html=True)
                 
     except Exception as e:
         st.error(f"Error evaluating assessment: {str(e)}")
