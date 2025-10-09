@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Read the first ref being pushed from stdin
+read local_ref local_sha remote_ref remote_sha || exit 0
+branch="${local_ref##refs/heads/}"
+
+# Hard blocks unless explicitly allowed
+if [[ "$branch" == "main" ]] && [[ "${ALLOW_MAIN_PUSH:-0}" != "1" ]]; then
+  echo "[pre-push] Push to 'main' blocked. Set ALLOW_MAIN_PUSH=1 to proceed." >&2
+  exit 1
+fi
+if [[ "$branch" == "apzumi" ]] && [[ "${ALLOW_APZUMI_PUSH:-0}" != "1" ]]; then
+  echo "[pre-push] Push to 'apzumi' blocked. Set ALLOW_APZUMI_PUSH=1 to proceed." >&2
+  exit 1
+fi
+
+exit 0
