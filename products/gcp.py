@@ -1,123 +1,290 @@
-import json
-from pathlib import Path
-from typing import Any, Dict
-
 import streamlit as st
 
-from core.forms import render_question
-from core.state import set_module_status
-
-_SCHEMA_PATH = Path("config/gcp_schema.json")
-
-
-def _load_schema() -> Dict[str, Any]:
-    with _SCHEMA_PATH.open("r", encoding="utf-8") as f:
-        return json.load(f)
+from core.state import get_module_state, get_user_ctx
+from core.ui import hub_section, render_module_tile, tiles_close, tiles_open
+from core.gcp_data import load_schema, load_blurbs, evaluate
 
 
-def _get(key: str):
-    return st.session_state.get(key)
+def get_person_name():
+    """Get the person's name from session state, with fallback."""
+    if "person_name" in st.session_state:
+        name = st.session_state["person_name"].strip()
+        return name if name else "this person"
+    else:
+        return "this person"  # Fallback if key doesn't exist
 
 
-def _eval_when(rule: Dict[str, Any]) -> bool:
-    if not rule:
-        return True
-    if "eq" in rule:
-        k, v = rule["eq"]
-        return _get(k) == v
-    if "ne" in rule:
-        k, v = rule["ne"]
-        return _get(k) != v
-    if "in" in rule:
-        k, arr = rule["in"]
-        val = _get(k)
-        return val in arr
-    if "count_gte" in rule:
-        k, n = rule["count_gte"]
-        val = _get(k) or []
-        return isinstance(val, list) and len(val) >= n
-    return False
-
-
-def _handle_effect(effect: Dict[str, Any]):
-    if not _eval_when(effect.get("when", {})):
-        return
-    action = effect.get("action")
-    if action == "exit":
-        st.warning(effect.get("message", ""))
-        st.markdown('<a class="btn btn--primary" href="?page=hub_concierge">Return to Care Hub</a>', unsafe_allow_html=True)
-        st.stop()
-    if action == "flag":
-        flags = st.session_state.setdefault("_gcp_flags", set())
-        flag = effect.get("flag")
-        if flag:
-            flags.add(flag)
-        if effect.get("message"):
-            st.info(effect["message"])
+def replace_name_placeholder(text):
+    """Replace {name} placeholder with the person's name."""
+    name = get_person_name()
+    return text.replace("{name}", name)
 
 
 def render():
-    if "current_section" not in st.session_state:
-        st.session_state.current_section = 0
-    schema = _load_schema()
-    intro = schema.get("intro", {})
-    st.header(intro.get("title", "Guided Care Plan"))
-    if intro.get("body"):
-        st.write(intro["body"])
-    if intro.get("cta"):
-        st.markdown('<div class="card-actions"><a class="btn btn--primary" href="#gcp-form">{}</a></div>'.format(intro["cta"]), unsafe_allow_html=True)
-
-    st.markdown('<div id="gcp-form"></div>', unsafe_allow_html=True)
-
-    sections = schema.get("sections", [])
-    total_sections = len(sections)
-    current_section = st.session_state.get("current_section", 0)
-
-    # Progress indicator
-    progress = (current_section + 1) / total_sections
+    ctx = get_user_ctx()
+    user_id = ctx["auth"].get("user_id", "guest")
+    product_key = "gcp"
+    
+    hub_section("Guided Care Plan")
+    
+    # Initialize session state for GCP wizard
+    if "gcp_section" not in st.session_state:
+        st.session_state["gcp_section"] = 0
+    if "gcp_answers" not in st.session_state:
+        st.session_state["gcp_answers"] = {}
+    
+    sections = [
+        {"id": "about", "title": "About", "icon": "👤"},
+        {"id": "care_needs", "title": "Care Needs", "icon": "�"},
+        {"id": "daily_living", "title": "Daily Living", "icon": "🏠"},
+        {"id": "cognition_mental_health", "title": "Cognition & Mental Health", "icon": "🧠"},
+        {"id": "results", "title": "Results", "icon": "📊"}
+    ]
+    
+    current_section_idx = st.session_state["gcp_section"]
+    current_section = sections[current_section_idx]
+    
+    # Progress indicator at the top
+    progress = (current_section_idx + 1) / len(sections)
     st.progress(progress)
-    st.write(f"Section {current_section + 1} of {total_sections}")
-
-    section = sections[current_section]
-    title = section.get("title")
-    if title:
-        st.subheader(title)
-    if "summary" in section:
-        summary = section["summary"]
-        for bullet in summary.get("bullets", []):
-            st.write(f"- {bullet}")
-        for cta in summary.get("ctas", []):
-            st.markdown(f'<a class="btn btn--primary" href="?page=hub_concierge">{cta}</a>', unsafe_allow_html=True)
-        return
-
-    for q in section.get("questions", []):
-        if "showIf" in q and not _eval_when(q["showIf"]):
-            continue
-        render_question(q)
-        qid = q["key"]
-        answer = st.session_state.get(qid)
-        if qid == "Q1" and answer in ["Yes", "Unsure"]:
-            st.info("We are unable to help with Medicaid-only situations. If you have additional private pay or long-term care insurance, please contact us directly.")
-            st.markdown('<p><strong>Medicaid Acknowledgment</strong></p><p>By checking this box, I acknowledge that I understand Concierge Care Advisors cannot assist with Medicaid-only care planning.</p>', unsafe_allow_html=True)
-            st.checkbox("I understand and want to continue the assessment.", key="medicaid_ack")
-            # if not st.session_state.get("medicaid_ack", False):
-            #     st.stop()
-        for eff in q.get("effects", []):
-            _handle_effect(eff)
-        st.markdown('<div class="helper"></div>', unsafe_allow_html=True)    # Navigation buttons
-    col1, col2 = st.columns(2)
+    
+    # Section header with improved styling
+    header_title = f"About {get_person_name()}" if current_section["id"] == "about" else current_section["title"]
+    
+    st.markdown(f"""
+    <div style="text-align: center; margin: 1rem 0; padding: 1rem; background: #F5F5F5; border: 1px solid #E0E0E0; border-radius: 8px;">
+        <div style="font-size: 2rem; margin-bottom: 0.5rem;">{current_section['icon']}</div>
+        <h1 style="color: #2c3e50; margin-bottom: 0.5rem; font-size: 1.5rem; font-weight: bold;">{header_title}</h1>
+        <p style="color: #7f8c8d; font-size: 0.9rem; margin: 0;">Section {current_section_idx + 1} of {len(sections)}</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    if current_section["id"] == "results":
+        render_results()
+    else:
+        render_section_questions(current_section["id"])
+    
+    # Navigation buttons with improved styling
+    col1, col2, col3 = st.columns([1, 2, 1])
+    
     with col1:
-        if current_section > 0 and st.button("Back"):
-            st.session_state["current_section"] = current_section - 1
-            st.rerun()
-    with col2:
-        if current_section < total_sections - 1:
-            if st.button("Next"):
-                st.session_state["current_section"] = current_section + 1
+        if current_section_idx > 0:
+            if st.button("← Back", use_container_width=True, key="back_btn"):
+                st.session_state["gcp_section"] = current_section_idx - 1
+                st.rerun()
+    
+    with col3:
+        if current_section_idx < len(sections) - 1:
+            if st.button("Next →", use_container_width=True, key="next_btn"):
+                st.session_state["gcp_section"] = current_section_idx + 1
                 st.rerun()
         else:
-            if st.button("Complete"):
-                set_module_status("gcp", "done")
-                st.success("Guided Care Plan responses saved.")
+            # On results page, show different navigation
+            pass
+
+
+def render_section_questions(section_id):
+    """Render questions for a specific section."""
+    schema = load_schema()
+    section_data = next((s for s in schema["sections"] if s["id"] == section_id), None)
+    
+    if not section_data:
+        st.error(f"Section {section_id} not found in schema")
+        return
+    
+    answers = st.session_state["gcp_answers"]
+    
+    for question in section_data["questions"]:
+        qid = question["id"]
+        label = replace_name_placeholder(question["label"])  # Replace [name] with actual name
+        qtype = question["type"]
+        options = question["options"]
+        
+        # Check showIf conditions
+        should_show = True
+        if "showIf" in question:
+            should_show = evaluate_show_conditions(question["showIf"], answers)
+        
+        if not should_show:
+            continue
+            
+        st.markdown(f"""
+        <div style="margin: 5px 0; padding: 1rem; background: #F5F5F5; border: 1px solid #E0E0E0; border-radius: 8px;">
+            <h4 style="color: #2c3e50; margin-bottom: 0.5rem; font-weight: 600; font-size: 14px; text-align: left;">{label}</h4>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        if qtype == "single":
+            # Use segmented control for single choice
+            current_value = answers.get(qid)
+            selected_idx = None
+            if current_value:
+                try:
+                    selected_idx = options.index(current_value)
+                except ValueError:
+                    selected_idx = None
+            
+            selected_option = st.segmented_control(
+                label=f"Select answer for {label}",
+                options=options,
+                default=current_value,
+                key=f"gcp_{qid}",
+                label_visibility="collapsed"
+            )
+            
+            if selected_option:
+                answers[qid] = selected_option
+                
+        elif qtype == "multi_select":
+            # Use multiselect for multi-select questions with custom styling
+            current_selections = answers.get(qid, [])
+            
+            selected = st.multiselect(
+                f"Select all that apply for {label}",
+                options=options,
+                default=current_selections,
+                key=f"gcp_{qid}",
+                label_visibility="collapsed"
+            )
+            
+            answers[qid] = selected
+                
+        elif qtype == "matrix":
+            # Use multiselect for matrix questions
+            items = question.get("items", [])
+            matrix_options = question.get("options", ["Not present", "Present"])
+            
+            st.markdown("<div style='margin-top: 0.5rem;'>", unsafe_allow_html=True)
+            
+            # Initialize answers[qid] as a list if it doesn't exist
+            if qid not in answers:
+                answers[qid] = []
+            
+            for item in items:
+                item_id = item["id"]
+                item_label = item["label"]
+                
+                # Create unique key for this matrix item
+                matrix_key = f"{qid}_{item_id}"
+                current_selections = answers.get(matrix_key, [])
+                
+                selected = st.multiselect(
+                    f"{item_label}",
+                    options=matrix_options,
+                    default=current_selections,
+                    key=f"gcp_{matrix_key}",
+                    label_visibility="visible"
+                )
+                
+                answers[matrix_key] = selected
+                
+                # Convert matrix selections to the expected format for scoring
+                # Remove old entries for this item
+                answers[qid] = [entry for entry in answers[qid] if not entry.startswith(f"{item_label} — ")]
+                
+                # Add new selections
+                for option in selected:
+                    answer_key = f"{item_label} — {option}"
+                    if answer_key not in answers[qid]:
+                        answers[qid].append(answer_key)
+            
+            st.markdown("</div>", unsafe_allow_html=True)
+
+
+def evaluate_show_conditions(conditions, answers):
+    """Evaluate showIf conditions for questions."""
+    for condition in conditions:
+        if "anyOf" in condition:
+            any_match = False
+            for sub_condition in condition["anyOf"]:
+                if "count" in sub_condition:
+                    # Handle count conditions (e.g., chronic conditions >= 2)
+                    count_spec = sub_condition["count"]
+                    question_id = count_spec["of"]
+                    threshold = count_spec["gte"]
+                    question_answers = answers.get(question_id, [])
+                    if isinstance(question_answers, list) and len(question_answers) >= threshold:
+                        any_match = True
+                        break
+                elif "not" in sub_condition:
+                    # Handle "not" conditions
+                    key = list(sub_condition.keys())[0]
+                    value = sub_condition[key]
+                    if answers.get(key) != value:
+                        any_match = True
+                        break
+                else:
+                    # Handle direct equality conditions
+                    key = list(sub_condition.keys())[0]
+                    value = sub_condition[key]
+                    if answers.get(key) == value:
+                        any_match = True
+                        break
+            if not any_match:
+                return False
+    return True
+
+
+def render_results():
+    """Render the results page with evaluation and recommendations."""
+    answers = st.session_state["gcp_answers"]
+    
+    if not answers:
+        st.warning("No answers provided yet. Please complete the assessment.")
+        return
+    
+    # Evaluate using GCP engine
+    try:
+        result = evaluate(answers)
+        
+        # Display recommendation
+        tier_name = result["tier"]
+        st.markdown(f"""
+        <div style="text-align: center; margin: 2rem 0; padding: 2rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 12px;">
+            <h3 style="margin-bottom: 1rem; font-size: 2rem;">Recommended Care Setting</h3>
+            <div style="font-size: 3rem; margin: 1rem 0;">{tier_name}</div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Add conversational blurb from blurbs.json
+        blurbs = load_blurbs()
+        blurb_key = f"recommendation_{tier_name.lower().replace(' ', '_')}"
+        if blurb_key in blurbs:
+            blurb_text = blurbs[blurb_key]
+            st.markdown(f"""
+            <div style="margin: 1rem 0; padding: 1rem; background: #F5F5F5; border: 1px solid #E0E0E0; border-radius: 8px; font-style: italic;">
+                {blurb_text}
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # Show key drivers
+        if result.get("drivers"):
+            st.markdown("### Key Factors in This Recommendation")
+            for qid, answer, points in result["drivers"]:
+                st.markdown(f"- **{answer}** ({points:+.1f} points)")
+        
+        # Show advisories
+        if result.get("advisories"):
+            st.markdown("### Important Considerations")
+            for advisory in result["advisories"]:
+                st.info(advisory)
+        
+        # Navigation options
+        st.markdown("---")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            if st.button("🔄 Start Over", use_container_width=True):
+                st.session_state["gcp_answers"] = {}
+                st.session_state["gcp_section"] = 0
                 st.rerun()
+        
+        with col2:
+            if st.button("🏠 Return to Hub", use_container_width=True):
+                st.query_params["page"] = "welcome"
+                st.rerun()
+                
+    except Exception as e:
+        st.error(f"Error evaluating assessment: {str(e)}")
+        st.json(answers)  # Debug info
 

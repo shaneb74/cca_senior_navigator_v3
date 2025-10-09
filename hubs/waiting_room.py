@@ -1,6 +1,52 @@
 import streamlit as st
+from core.ui import render_hub_tile
 
 
 def render():
-    st.header("Waiting Room Hub")
-    st.write("Hub placeholder. No styling or product logic yet.")
+    # Import the hub grid CSS
+    st.markdown(
+        "<link rel='stylesheet' href='/assets/css/theme.css'>"
+        "<link rel='stylesheet' href='/assets/css/hub_grid.css'>",
+        unsafe_allow_html=True
+    )
+
+    # Wrap the entire hub content
+    st.markdown('<section class="hub-page">', unsafe_allow_html=True)
+    st.markdown('<h2 class="text-center" style="margin: 8px 0 24px;">Waiting Room Hub</h2>', unsafe_allow_html=True)
+
+    # Start the hub grid
+    st.markdown('<div class="hub-grid">', unsafe_allow_html=True)
+
+    # Render waiting room tiles
+    render_hub_tile(
+        title="Appointment Status",
+        badge="Status",
+        label="Next Appointment",
+        value="Dr. Smith - Oct 15",
+        status="new",
+        primary_label="View details",
+        secondary_label="Reschedule"
+    )
+
+    render_hub_tile(
+        title="Preparation Guide",
+        badge="Prep",
+        label="What to Bring",
+        value="Documents ready",
+        status="new",
+        primary_label="Check list",
+        secondary_label="Questions"
+    )
+
+    render_hub_tile(
+        title="Virtual Waiting",
+        badge="Virtual",
+        label="Current Status",
+        value="Room 204",
+        status="doing",
+        primary_label="Join call",
+        secondary_label="Estimated wait"
+    )
+
+    # Close the hub grid and page wrapper
+    st.markdown('</div></section>', unsafe_allow_html=True)
