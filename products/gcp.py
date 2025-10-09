@@ -57,6 +57,8 @@ def _handle_effect(effect: Dict[str, Any]):
 
 
 def render():
+    if "current_section" not in st.session_state:
+        st.session_state.current_section = 0
     schema = _load_schema()
     intro = schema.get("intro", {})
     st.header(intro.get("title", "Guided Care Plan"))
@@ -67,26 +69,55 @@ def render():
 
     st.markdown('<div id="gcp-form"></div>', unsafe_allow_html=True)
 
-    for section in schema.get("sections", []):
-        title = section.get("title")
-        if title:
-            st.subheader(title)
-        if "summary" in section:
-            summary = section["summary"]
-            for bullet in summary.get("bullets", []):
-                st.write(f"- {bullet}")
-            for cta in summary.get("ctas", []):
-                st.markdown(f'<a class="btn btn--primary" href="?page=hub_concierge">{cta}</a>', unsafe_allow_html=True)
+    sections = schema.get("sections", [])
+    total_sections = len(sections)
+    current_section = st.session_state.get("current_section", 0)
+
+    # Progress indicator
+    progress = (current_section + 1) / total_sections
+    st.progress(progress)
+    st.write(f"Section {current_section + 1} of {total_sections}")
+
+    section = sections[current_section]
+    title = section.get("title")
+    if title:
+        st.subheader(title)
+    if "summary" in section:
+        summary = section["summary"]
+        for bullet in summary.get("bullets", []):
+            st.write(f"- {bullet}")
+        for cta in summary.get("ctas", []):
+            st.markdown(f'<a class="btn btn--primary" href="?page=hub_concierge">{cta}</a>', unsafe_allow_html=True)
+        return
+
+    for q in section.get("questions", []):
+        if "showIf" in q and not _eval_when(q["showIf"]):
             continue
-
-        for q in section.get("questions", []):
-            if "when" in q and not _eval_when(q["when"]):
-                continue
-            render_question(q)
-            for eff in q.get("effects", []):
-                _handle_effect(eff)
-            st.markdown('<div class="helper"></div>', unsafe_allow_html=True)
-
-    set_module_status("gcp", "done")
-    st.success("Guided Care Plan responses saved.")
+        render_question(q)
+        qid = q["key"]
+        answer = st.session_state.get(qid)
+        if qid == "Q1" and answer in ["Yes", "Unsure"]:
+            st.info("We are unable to help with Medicaid-only situations. If you have additional private pay or long-term care insurance, please contact us directly.")
+            st.markdown('<p><strong>Medicaid Acknowledgment</strong></p><p>By checking this box, I acknowledge that I understand Concierge Care Advisors cannot assist with Medicaid-only care planning.</p>', unsafe_allow_html=True)
+            st.checkbox("I understand and want to continue the assessment.", key="medicaid_ack")
+            # if not st.session_state.get("medicaid_ack", False):
+            #     st.stop()
+        for eff in q.get("effects", []):
+            _handle_effect(eff)
+        st.markdown('<div class="helper"></div>', unsafe_allow_html=True)    # Navigation buttons
+    col1, col2 = st.columns(2)
+    with col1:
+        if current_section > 0 and st.button("Back"):
+            st.session_state["current_section"] = current_section - 1
+            st.rerun()
+    with col2:
+        if current_section < total_sections - 1:
+            if st.button("Next"):
+                st.session_state["current_section"] = current_section + 1
+                st.rerun()
+        else:
+            if st.button("Complete"):
+                set_module_status("gcp", "done")
+                st.success("Guided Care Plan responses saved.")
+                st.rerun()
 

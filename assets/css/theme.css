@@ -1,4 +1,19 @@
-/* Senior Navigator Global Theme v2025.10 */
+/* Streamlit overrides for better selection visibility */
+.stRadio label[data-baseweb="radio"] input:checked + div {
+    background-color: var(--brand-50) !important;
+    border-color: var(--brand) !important;
+    color: var(--ink) !important;
+    font-weight: bold !important;
+}
+
+.stMultiSelect .stMultiSelectBox {
+    border-color: var(--brand) !important;
+}
+
+.stMultiSelect .stMultiSelectBox[data-baseweb="select"] div[aria-selected="true"] {
+    background-color: var(--brand-50) !important;
+    color: var(--ink) !important;
+}
 
 /* Tokens */
 :root{
