@@ -14,93 +14,231 @@ SETTINGS_ORDER = [
     "Memory Care High Acuity",
 ]
 
+PILL_CSS = """
+<style>
+div[data-testid="stRadio"] label {display:none;}
+div[data-testid="stRadio"] div[role="radiogroup"] {
+  display:flex;
+  gap:var(--space-3);
+  flex-wrap:wrap;
+}
+div[data-testid="stRadio"] div[role="radio"] {
+  border:1px solid var(--ink-300);
+  border-radius:999px;
+  padding:8px 14px;
+  background:var(--muted);
+  color:var(--ink-600);
+  cursor:pointer;
+}
+div[data-testid="stRadio"] div[role="radio"][aria-checked="true"] {
+  background:var(--ink);
+  color:#fff;
+  border-color:var(--ink);
+}
+</style>
+"""
 
-def _ensure_state():
-    st.session_state.setdefault("gcp", {"answers": {}, "scores": {}, "summary": None})
+
+def _ensure_state() -> None:
+    st.session_state.setdefault("gcp", {"answers": {}})
+    st.session_state.setdefault("flags", {})
     st.session_state.setdefault("care_profile", {})
 
 
-def _render_question(q: Dict[str, Any]):
-    qid = q["id"]
-    qlabel = q.get("label", qid)
-    qhelp = q.get("help")
-    qtype = q.get("type", "single")
-    opts: List[Dict[str, Any]] = q.get("options", [])
+def _answers() -> Dict[str, Any]:
+    return st.session_state["gcp"]["answers"]
 
-    st.markdown(f"### {qlabel}")
+
+def _normalise_options(options: List[Any]) -> List[Dict[str, str]]:
+    normalised: List[Dict[str, str]] = []
+    for opt in options:
+        if isinstance(opt, dict):
+            label = opt.get("label") or opt.get("title") or opt.get("value")
+            value = opt.get("value") or label
+        else:
+            label = str(opt)
+            value = label
+        normalised.append({"label": str(label), "value": str(value)})
+    return normalised
+
+
+def _eval_condition(rule: Dict[str, Any]) -> bool:
+    answers = _answers()
+    if not rule:
+        return True
+    if "eq" in rule:
+        key, expected = rule["eq"]
+        return answers.get(key) == expected
+    if "ne" in rule:
+        key, expected = rule["ne"]
+        return answers.get(key) != expected
+    if "in" in rule:
+        key, values = rule["in"]
+        ans = answers.get(key)
+        if isinstance(ans, list):
+            return any(str(a) in [str(v) for v in values] for a in ans)
+        return ans in values
+    if "count_gte" in rule:
+        key, minimum = rule["count_gte"]
+        selected = answers.get(key) or []
+        if isinstance(selected, list):
+            return len(selected) >= minimum
+        if isinstance(selected, dict):
+            return sum(1 for picked in selected.values() if picked) >= minimum
+        return False
+    return True
+
+
+def _depends_on_met(condition: Dict[str, Any]) -> bool:
+    if not condition:
+        return True
+    target = condition.get("id")
+    allowed = condition.get("any_of")
+    if not target:
+        return True
+    value = _answers().get(target)
+    if allowed is None:
+        return value is not None
+    if isinstance(value, list):
+        return any(v in value for v in allowed)
+    return value in allowed
+
+
+def _should_render(question: Dict[str, Any]) -> bool:
+    if not _depends_on_met(question.get("depends_on")):
+        _answers().pop(question.get("id") or question.get("key"), None)
+        return False
+    when = question.get("when")
+    if when and not _eval_condition(when):
+        _answers().pop(question.get("id") or question.get("key"), None)
+        return False
+    return True
+
+
+def _render_single(qid: str, question: Dict[str, Any], options: List[Dict[str, str]]):
+    values = [opt["value"] for opt in options]
+    labels = [opt["label"] for opt in options]
+    current = _answers().get(qid)
+    if current not in values:
+        current = values[0]
+    index = values.index(current)
+    style = question.get("style", "pill")
+    if style == "pill":
+        selected_label = st.radio(
+            " ",
+            labels,
+            index=index,
+            horizontal=True,
+            key=f"pill_{qid}",
+            label_visibility="collapsed",
+        )
+        value = values[labels.index(selected_label)]
+    else:
+        selected_label = st.selectbox(
+            " ",
+            labels,
+            index=index,
+            key=f"select_{qid}",
+            label_visibility="collapsed",
+        )
+        value = values[labels.index(selected_label)]
+    _answers()[qid] = value
+
+
+def _render_multiselect(qid: str, options: List[Dict[str, str]]):
+    labels = [opt["label"] for opt in options]
+    label_to_value = {opt["label"]: opt["value"] for opt in options}
+    stored = _answers().get(qid, [])
+    if isinstance(stored, dict):
+        stored = [val for val, picked in stored.items() if picked]
+    default_labels = [lbl for lbl, val in label_to_value.items() if val in stored]
+    selected_labels = st.multiselect(
+        " ",
+        labels,
+        default=default_labels,
+        label_visibility="collapsed",
+        key=f"multi_{qid}",
+    )
+    _answers()[qid] = [label_to_value[lbl] for lbl in selected_labels]
+
+
+def _render_ack(qid: str, question: Dict[str, Any]):
+    depends = question.get("depends_on")
+    if not _depends_on_met(depends):
+        _answers().pop(qid, None)
+        return
+    text = question.get("text", "")
+    link = question.get("link")
+    link_html = (
+        f"  <a class='btn btn--secondary' href='{link['href']}' target='_blank'>{link['label']}</a>"
+        if link
+        else ""
+    )
+    st.info(f"{text}{'' if not link_html else '<br>' + link_html}")
+    checkbox_key = f"ack_{qid}"
+    if checkbox_key not in st.session_state:
+        st.session_state[checkbox_key] = bool(_answers().get(qid, False))
+    checked = st.checkbox("I understand", key=checkbox_key)
+    _answers()[qid] = bool(checked)
+
+
+def _render_question(question: Dict[str, Any]):
+    qid = question.get("id") or question.get("key")
+    if not qid:
+        raise KeyError("Question missing 'id' or 'key'")
+    if not _should_render(question):
+        return
+
+    qlabel = question.get("label", str(qid))
+    qhelp = question.get("help")
+    qtype = question.get("type", "single").lower()
+    options = _normalise_options(question.get("options", []))
+
+    st.markdown(f"**{qlabel}**")
     if qhelp:
         st.caption(qhelp)
 
-    key = f"gcp_ans_{qid}"
-    ans_store = st.session_state["gcp"]["answers"]
-
-    if qtype == "single":
-        labels = [o["label"] for o in opts]
-        values = [o["value"] for o in opts]
-        default_idx = 0
-        if qid in ans_store and ans_store[qid] in values:
-            default_idx = values.index(ans_store[qid])
-        choice_label = st.radio(
-            " ",
-            labels,
-            index=default_idx,
-            label_visibility="collapsed",
-            key=key,
-        )
-        ans_store[qid] = values[labels.index(choice_label)]
-    elif qtype == "multi":
-        current = ans_store.get(qid, {})
-        picks = {}
-        for option in opts:
-            opt_val = option["value"]
-            opt_key = f"{key}_{opt_val}"
-            picks[opt_val] = st.checkbox(
-                option["label"],
-                key=opt_key,
-                value=current.get(opt_val, False),
-            )
-        ans_store[qid] = picks
+    if qtype in {"single", "pill", "pills"}:
+        _render_single(qid, question, options)
+    elif qtype in {"multiselect", "multi"}:
+        _render_multiselect(qid, options)
+    elif qtype == "ack":
+        _render_ack(qid, question)
     else:
-        text_val = st.text_input("Answer", value=ans_store.get(qid, ""), key=key)
-        ans_store[qid] = text_val
+        default = _answers().get(qid, "")
+        value = st.text_input("Answer", value=str(default), key=f"text_{qid}")
+        _answers()[qid] = value
 
 
 def _score(answers: Dict[str, Any]) -> Dict[str, float]:
     df = load_scoring()
     totals = defaultdict(float)
-
     for _, row in df.iterrows():
         qid = row["question_id"]
         aval = str(row["answer_value"])
         setting = row["setting"]
         pts = float(row["points"])
-
-        if qid not in answers:
-            continue
-
-        answer_val = answers[qid]
-        if isinstance(answer_val, dict):
-            if answer_val.get(aval, False):
+        ans = answers.get(qid)
+        if isinstance(ans, list):
+            if aval in [str(v) for v in ans]:
+                totals[setting] += pts
+        elif isinstance(ans, dict):
+            if ans.get(aval, False):
                 totals[setting] += pts
         else:
-            if str(answer_val) == aval:
+            if str(ans) == aval:
                 totals[setting] += pts
-
     return {setting: totals.get(setting, 0.0) for setting in SETTINGS_ORDER}
 
 
 def _pick_recommendation(scores: Dict[str, float]) -> str:
-    return max(scores.items(), key=lambda kv: kv[1])[0] if scores else "In-Home Care"
+    return max(scores.items(), key=lambda kv: kv[1])[0] if scores else SETTINGS_ORDER[0]
 
 
 def render():
     _ensure_state()
-    if st.query_params.get("reset") == "1":
-        st.session_state.pop("gcp", None)
-        st.session_state.pop("gcp_completed", None)
-        st.session_state.pop("gcp_recommendation", None)
-        st.session_state.pop("care_profile", None)
-        _ensure_state()
+    st.markdown(PILL_CSS, unsafe_allow_html=True)
+
     st.header("Guided Care Plan")
 
     schema = load_schema()
@@ -108,14 +246,29 @@ def render():
 
     intro = blurbs.get("gcp_intro")
     if intro:
-        st.info(intro)
+        st.markdown(f'<div class="banner banner--info">{intro}</div>', unsafe_allow_html=True)
 
     for section in schema.get("sections", []):
-        if section.get("title"):
-            st.subheader(section["title"])
+        st.subheader(section.get("title", ""))
         for question in section.get("questions", []):
             _render_question(question)
         st.divider()
+
+    answers = _answers()
+    medicaid_val = answers.get("medicaid_status")
+    ack_ok = bool(answers.get("medicaid_ack"))
+    medicaid_flag = medicaid_val in ("yes", "unsure")
+    st.session_state["flags"]["medicaid"] = medicaid_flag
+
+    if medicaid_flag:
+        st.markdown(
+            """<div class=\"banner banner--warning\">
+            We can’t schedule advisor appointments for Medicaid cases. You can still finish your plan and estimate costs.
+            </div>""",
+            unsafe_allow_html=True,
+        )
+
+    disabled_complete = medicaid_flag and not ack_ok
 
     col1, col2 = st.columns(2)
     with col1:
@@ -123,26 +276,28 @@ def render():
             st.success("Progress saved.")
 
     with col2:
-        if st.button("Complete"):
-            answers = st.session_state["gcp"]["answers"]
+        if st.button("Complete", disabled=disabled_complete):
             scores = _score(answers)
-            rec = _pick_recommendation(scores)
-
-            st.session_state["gcp"]["scores"] = scores
-            st.session_state["gcp_completed"] = True
-            st.session_state["gcp_recommendation"] = rec
-            st.session_state["care_profile"] = {
-                "care_setting": rec,
-                "scores": scores,
-                "answers": answers,
-            }
-
-            log_event("gcp.completed", {"recommendation": rec})
-            st.success(f"Recommendation: **{rec}**")
+            recommendation = _pick_recommendation(scores)
+            st.session_state.update(
+                {
+                    "gcp_completed": True,
+                    "gcp_recommendation": recommendation,
+                    "care_profile": {
+                        "care_setting": recommendation,
+                        "scores": scores,
+                        "answers": answers.copy(),
+                    },
+                }
+            )
+            log_event("gcp.completed", {"recommendation": recommendation})
+            st.success(f"Recommendation: **{recommendation}**")
             st.markdown(
-                '<div class="kit-row">'
-                '<a class="btn btn--secondary" href="?page=hub_concierge">Back to Hub</a>'
-                '<a class="btn btn--primary" href="?page=cost_planner">Continue to Cost Planner</a>'
-                '</div>',
+                """
+                <div class="card-actions">
+                  <a class="btn btn--secondary" href="?page=hub_concierge">Back to Hub</a>
+                  <a class="btn btn--primary" href="?page=cost_planner">Continue to Cost Planner</a>
+                </div>
+                """,
                 unsafe_allow_html=True,
             )

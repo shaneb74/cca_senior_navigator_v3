@@ -7,143 +7,212 @@
   },
   "sections": [
     {
-      "id": "eligibility",
-      "title": "Eligibility",
+      "id": "ability_to_help",
+      "title": "Ability for Us to Help",
       "questions": [
         {
-          "key": "medicaid_status",
-          "type": "pills",
-          "label": "Are you currently on Medicaid (state long-term care assistance, not Medicare)?",
-          "options": ["Yes", "No"],
-          "required": true,
-          "domain": "eligibility",
-          "effects": [
-            {
-              "when": {"eq": ["medicaid_status", "Yes"]},
-              "action": "exit",
-              "message": "Medicaid covers long-term care, unlike Medicare which covers medical services. Unfortunately, our service cannot assist with Medicaid-based care. Contact your state Medicaid office for options."
-            }
+          "id": "medicaid_status",
+          "type": "single",
+          "label": "Is the person currently on Medicaid?",
+          "help": "Medicaid is different from Medicare. We can absolutely work with people on Medicare. If someone is on Medicaid or you're not sure, our advisors can't arrange placement because Medicaid has its own programs.",
+          "style": "pill",
+          "options": [
+            {"label": "Yes", "value": "yes"},
+            {"label": "No", "value": "no"},
+            {"label": "Unsure", "value": "unsure"}
+          ]
+        },
+        {
+          "id": "medicaid_ack",
+          "type": "ack",
+          "label": "Please confirm:",
+          "text": "Concierge Care Advisors can’t arrange placement for people on Medicaid. You can still complete the Guided Care Plan and use the Cost Planner. For Medicaid programs and support, visit Medicaid.gov.",
+          "link": {"label": "Open Medicaid.gov", "href": "https://www.medicaid.gov/"},
+          "depends_on": {"id": "medicaid_status", "any_of": ["yes", "unsure"]}
+        }
+      ]
+    },
+    {
+      "id": "daily_life_support",
+      "title": "Daily life & support",
+      "questions": [
+        {
+          "id": "help_overall",
+          "type": "single",
+          "style": "pill",
+          "label": "How much help does {{name}} need with daily activities overall?",
+          "options": [
+            "None – fully independent",
+            "Occasional – some help with a few tasks",
+            "Regular – needs daily assistance",
+            "Extensive – needs full-time support"
+          ],
+          "domain": "adl_iadl"
+        },
+        {
+          "id": "badls",
+          "type": "multiselect",
+          "label": "Which basic daily activities require help? (BADLs)",
+          "options": [
+            "Bathing/Showering",
+            "Dressing",
+            "Eating",
+            "Toileting",
+            "Transferring (e.g., bed to chair)",
+            "Personal Hygiene",
+            "Mobility"
+          ],
+          "when": {"ne": ["help_overall", "None – fully independent"]}
+        },
+        {
+          "id": "iadls",
+          "type": "multiselect",
+          "label": "Which household or community tasks require help? (IADLs)",
+          "options": [
+            "Meal preparation",
+            "Housekeeping",
+            "Managing finances",
+            "Medication management",
+            "Transportation",
+            "Shopping",
+            "Communication"
+          ],
+          "when": {"ne": ["help_overall", "None – fully independent"]}
+        },
+        {
+          "id": "hours_per_day",
+          "type": "single",
+          "style": "pill",
+          "label": "How many hours per day of assistance does {{name}} typically receive?",
+          "options": [
+            "Less than 1 hour",
+            "1–3 hours",
+            "4–8 hours",
+            "24-hour support"
+          ]
+        },
+        {
+          "id": "primary_support",
+          "type": "single",
+          "style": "pill",
+          "label": "Who provides most of the support right now?",
+          "options": [
+            "Family/friends",
+            "Paid caregiver",
+            "Community or agency",
+            "No regular support"
           ]
         }
       ]
     },
     {
-      "id": "daily_support",
-      "title": "Daily Life & Support",
-      "questions": [
-        {
-          "key": "help_overall",
-          "type": "pills",
-          "label": "How much help does {{name}} need with daily activities overall?",
-          "options": ["None – fully independent", "Occasional – some help with a few tasks", "Regular – needs daily assistance", "Extensive – needs full-time support"],
-          "required": true,
-          "domain": "adl_iadl"
-        },
-        {
-          "key": "badls",
-          "type": "multiselect",
-          "label": "Which basic daily activities require help? (BADLs)",
-          "options": ["Bathing/Showering", "Dressing", "Eating", "Toileting", "Transferring (e.g., bed to chair)", "Personal Hygiene", "Mobility"],
-          "required": false,
-          "domain": "adl_iadl",
-          "when": {"ne": ["help_overall", "None – fully independent"]}
-        },
-        {
-          "key": "iadls",
-          "type": "multiselect",
-          "label": "Which household or community tasks require help? (IADLs)",
-          "options": ["Meal preparation", "Housekeeping", "Managing finances", "Medication management", "Transportation", "Shopping", "Communication"],
-          "required": false,
-          "domain": "adl_iadl",
-          "when": {"ne": ["help_overall", "None – fully independent"]}
-        },
-        {
-          "key": "hours_per_day",
-          "type": "pills",
-          "label": "How many hours per day of assistance does {{name}} typically receive?",
-          "options": ["Less than 1 hour", "1–3 hours", "4–8 hours", "24-hour support"],
-          "required": true,
-          "domain": "support_network"
-        },
-        {
-          "key": "primary_support",
-          "type": "pills",
-          "label": "Who provides most of the support right now?",
-          "options": ["Family/friends", "Paid caregiver", "Community or agency", "No regular support"],
-          "required": true,
-          "domain": "support_network"
-        }
-      ]
-    },
-    {
       "id": "health_safety",
-      "title": "Health & Safety",
+      "title": "Health & safety",
       "questions": [
         {
-          "key": "memory_changes",
-          "type": "pills",
+          "id": "memory_changes",
+          "type": "single",
+          "style": "pill",
           "label": "Cognitive health or memory changes:",
-          "options": ["No concerns", "Occasional forgetfulness", "Moderate memory or thinking issues", "Severe memory issues or diagnosis (like dementia or Alzheimer’s)"],
-          "required": true,
-          "domain": "cognitive"
+          "options": [
+            "No concerns",
+            "Occasional forgetfulness",
+            "Moderate memory or thinking issues",
+            "Severe memory issues or diagnosis (like dementia or Alzheimer’s)"
+          ]
         },
         {
-          "key": "behaviors",
+          "id": "behaviors",
           "type": "multiselect",
           "label": "Have there been any of these behaviors or concerns?",
-          "options": ["Wandering", "Aggression", "Elopement / Exit-seeking", "Confusion or disorientation", "Sundowning", "Repetitive questioning", "Poor judgment", "Hoarding", "Sleep disturbances"],
-          "required": false,
-          "domain": "cognitive",
+          "options": [
+            "Wandering",
+            "Aggression",
+            "Elopement / Exit-seeking",
+            "Confusion or disorientation",
+            "Sundowning",
+            "Repetitive questioning",
+            "Poor judgment",
+            "Hoarding",
+            "Sleep disturbances"
+          ],
           "when": {"in": ["memory_changes", ["Moderate memory or thinking issues", "Severe memory issues or diagnosis (like dementia or Alzheimer’s)"]]}
         },
         {
-          "key": "meds_complexity",
-          "type": "pills",
+          "id": "meds_complexity",
+          "type": "single",
+          "style": "pill",
           "label": "Medication profile:",
-          "options": ["None", "Simple – a few meds, easy to manage", "Moderate – daily meds, some complexity", "Complex – many meds or caregiver-managed"],
-          "required": true,
-          "domain": "medication"
+          "options": [
+            "None",
+            "Simple – a few meds, easy to manage",
+            "Moderate – daily meds, some complexity",
+            "Complex – many meds or caregiver-managed"
+          ]
         },
         {
-          "key": "mobility",
-          "type": "pills",
+          "id": "mobility",
+          "type": "single",
+          "style": "pill",
           "label": "Mobility level:",
-          "options": ["Walks independently", "Uses cane or walker", "Uses wheelchair or scooter", "Bed-bound or limited mobility"],
-          "required": true,
-          "domain": "mobility_falls"
+          "options": [
+            "Walks independently",
+            "Uses cane or walker",
+            "Uses wheelchair or scooter",
+            "Bed-bound or limited mobility"
+          ]
         },
         {
-          "key": "falls",
-          "type": "pills",
+          "id": "falls",
+          "type": "single",
+          "style": "pill",
           "label": "Fall history:",
-          "options": ["No falls in past 6 months", "One fall", "Multiple falls"],
-          "required": true,
-          "domain": "mobility_falls"
+          "options": [
+            "No falls in past 6 months",
+            "One fall",
+            "Multiple falls"
+          ]
         },
         {
-          "key": "chronic_conditions",
+          "id": "chronic_conditions",
           "type": "multiselect",
           "label": "Chronic conditions (select all that apply):",
-          "options": ["Diabetes", "Congestive heart failure (CHF)", "COPD / Respiratory disease", "Hypertension", "Arthritis", "Stroke or neurological condition", "Parkinson’s disease", "Cancer", "Other"],
-          "required": false,
-          "domain": "chronic"
+          "options": [
+            "Diabetes",
+            "Congestive heart failure (CHF)",
+            "COPD / Respiratory disease",
+            "Hypertension",
+            "Arthritis",
+            "Stroke or neurological condition",
+            "Parkinson’s disease",
+            "Cancer",
+            "Other"
+          ]
         },
         {
-          "key": "chronic_management",
-          "type": "pills",
+          "id": "chronic_management",
+          "type": "single",
+          "style": "pill",
           "label": "How well are these conditions being managed overall?",
-          "options": ["Very well", "Mostly managed", "Somewhat unstable", "Poorly managed"],
-          "required": false,
-          "domain": "chronic",
+          "options": [
+            "Very well",
+            "Mostly managed",
+            "Somewhat unstable",
+            "Poorly managed"
+          ],
           "when": {"count_gte": ["chronic_conditions", 2]}
         },
         {
-          "key": "mood",
-          "type": "pills",
+          "id": "mood",
+          "type": "single",
+          "style": "pill",
           "label": "Overall, how would you describe {{name}}’s mood these days?",
-          "options": ["Great – always positive", "Mostly good", "Okay – ups and downs", "Low – feeling down a lot"],
-          "required": true,
-          "domain": "emotional",
+          "options": [
+            "Great – always positive",
+            "Mostly good",
+            "Okay – ups and downs",
+            "Low – feeling down a lot"
+          ],
           "effects": [
             {
               "when": {"eq": ["mood", "Low – feeling down a lot"]},
@@ -154,22 +223,17 @@
           ]
         },
         {
-          "key": "isolation",
-          "type": "pills",
+          "id": "isolation",
+          "type": "single",
+          "style": "pill",
           "label": "Is {{name}}’s home located far from family, care providers, or essential services?",
-          "options": ["No – easily accessible", "Somewhat isolated", "Very isolated"],
-          "required": true,
-          "domain": "isolation"
+          "options": [
+            "No – easily accessible",
+            "Somewhat isolated",
+            "Very isolated"
+          ]
         }
       ]
-    },
-    {
-      "id": "results",
-      "title": "Your Guided Care Plan Summary",
-      "summary": {
-        "bullets": ["Independence snapshot", "Safety or cognitive notes", "Medication complexity or chronic conditions", "Emotional well-being (if flagged)", "Caregiver load (hours/day)", "Location-based service availability"],
-        "ctas": ["Continue to Cost Planner", "Return to Care Hub", "Talk to an Advisor"]
-      }
     }
   ]
 }

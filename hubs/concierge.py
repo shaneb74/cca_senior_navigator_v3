@@ -1,13 +1,24 @@
 import streamlit as st
-from core.ui import hub_section, tiles_open, tiles_close, tile_open, tile_close
+from core.ui import hub_section, tile_close, tile_open, tiles_close, tiles_open
 
 
 def render():
     gcp_done = bool(st.session_state.get("gcp_completed"))
     cp_done = bool(st.session_state.get("cost_planner_completed"))
+    medicaid_flag = st.session_state.get("flags", {}).get("medicaid", False)
 
-    gcp_cta = "See responses" if gcp_done else "Start"
-    cp_cta = "Open" if cp_done else "Start"
+    gcp_cta = (
+        "<a class='btn btn--secondary' href='?page=gcp'>See responses</a>"
+        if gcp_done
+        else "<a class='btn btn--primary' href='?page=gcp'>Start</a>"
+    )
+    cp_cta = (
+        "<a class='btn btn--primary' href='?page=cost_planner'>Open</a>"
+        if cp_done
+        else "<a class='btn btn--primary' href='?page=cost_planner'>Start</a>"
+    )
+    gcp_badge = "<span class='badge success'>Completed ✓</span>" if gcp_done else ""
+    cp_badge = "<span class='badge success'>Completed ✓</span>" if cp_done else ""
 
     hub_section("Concierge Care Hub")
     tiles_open()
@@ -21,9 +32,9 @@ def render():
       </div>
       <p class="tile-meta">Answer a few questions to get a personalized next-step recommendation.</p>
       <div class="kit-row">
-        <a class="btn btn--secondary" href="?page=gcp">{gcp_cta}</a>
+        {gcp_cta}
         <a class="btn btn--ghost" href="?page=gcp&reset=1">Start over</a>
-        {('<span class=\"badge success\">Completed ✓</span>') if gcp_done else ''}
+        {gcp_badge}
       </div>
     """,
         unsafe_allow_html=True,
@@ -39,8 +50,8 @@ def render():
       </div>
       <p class="tile-meta">See an estimated monthly cost for the recommended care and adjust inputs.</p>
       <div class="kit-row">
-        <a class="btn btn--primary" href="?page=cost_planner">{cp_cta}</a>
-        {('<span class=\"badge success\">Completed ✓</span>') if cp_done else ''}
+        {cp_cta}
+        {cp_badge}
       </div>
     """,
         unsafe_allow_html=True,
@@ -48,15 +59,20 @@ def render():
     tile_close()
 
     tile_open("md")
+    advisor_cta = (
+        "<span class='badge'>Unavailable for Medicaid</span>"
+        if medicaid_flag
+        else "<a class='btn btn--primary' href='?page=waiting_room'>Get connected</a>"
+    )
     st.markdown(
-        """
+        f"""
       <div class="tile-head">
         <div class="tile-title">Plan with my advisor</div>
         <span class="badge info">Get connected</span>
       </div>
-      <p class="tile-meta">Meet with a Concierge Care Advisor to finalize the plan.</p>
+      <p class="tile-meta">Meet with an advisor to map next steps.</p>
       <div class="kit-row">
-        <a class="btn btn--primary" href="?page=waiting_room">Get connected</a>
+        {advisor_cta}
       </div>
     """,
         unsafe_allow_html=True,
