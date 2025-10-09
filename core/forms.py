@@ -14,7 +14,6 @@ def pill_row(key: str, options: list[str], value: str | None = None):
         if st.button(opt, key=f"{key}::{opt}"):
             st.session_state[key] = opt
             current = opt
-        st.markdown(f'<span class="choice{selected}">{opt}</span>', unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
     return st.session_state.get(key, value or "")
 
