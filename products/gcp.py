@@ -1,12 +1,12 @@
 from __future__ import annotations
 from collections import defaultdict
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import streamlit as st
 
 from core.data import load_blurbs, load_schema, load_scoring
 from core.events import log_event
-from core.forms import choice_pills, section_header, subject_name
+from core.forms import section_header, subject_name
 
 SETTINGS_ORDER = [
     "In-Home Care",
@@ -18,6 +18,20 @@ SETTINGS_ORDER = [
 ELIG_QID = "elig_medicaid"
 STEP_KEY = "gcp_step"
 ACK_KEY = "gcp_ack_ok"
+
+
+def _opt_pair(opt: Any) -> Tuple[str, str]:
+    """Normalize option definitions to (label, value)."""
+    if isinstance(opt, dict):
+        label = opt.get("label") or opt.get("title") or opt.get("value")
+        value = opt.get("value") or label
+        return str(label), str(value)
+    if isinstance(opt, (list, tuple)) and opt:
+        label = opt[0]
+        value = opt[1] if len(opt) > 1 else opt[0]
+        return str(label), str(value)
+    s = str(opt)
+    return s, s
 
 
 def _ensure_state() -> None:
@@ -32,78 +46,66 @@ def _answers() -> Dict[str, Any]:
 
 
 def _render_question(q: Dict[str, Any]) -> None:
-    qid = q.get("id") or q.get("key")
-    if not qid:
-        st.warning("Question missing id/key")
-        return
+    qid = q["id"]
+    qlabel = q.get("label", qid)
+    qhelp = q.get("help")
+    qtype = (q.get("type") or "single").lower()
+    options_raw: List[Any] = q.get("options", [])
+    opts: List[Tuple[str, str]] = [_opt_pair(o) for o in options_raw]
 
-    q_type = (q.get("type") or q.get("ui") or "single").lower()
-    label = q.get("label", qid).replace("{{name}}", subject_name())
-    help_text = q.get("help")
+    st.markdown(f"### {qlabel}")
+    if qhelp:
+        st.caption(qhelp)
 
-    st.markdown(f"<div class='h3'>{label}</div>", unsafe_allow_html=True)
-    if help_text:
-        st.caption(help_text)
+    key = f"gcp_ans_{qid}"
+    answers = st.session_state["gcp"]["answers"]
 
-    answers = _answers()
-    current = answers.get(qid)
-    options = q.get("options") or q.get("choices") or []
+    if qtype in ("single", "radio"):
+        labels = [o[0] for o in opts]
+        values = [o[1] for o in opts]
 
-    if q_type in {"single", "select"}:
-        opts = [(opt["label"].replace("{{name}}", subject_name()), str(opt["value"])) for opt in options]
-        allow_none = (qid == ELIG_QID) or not bool(q.get("required"))
-        val = choice_pills(f"gcp_{qid}", opts, value=current, allow_none=allow_none)
-        answers[qid] = val
+        if not labels:
+            st.warning(f"Missing options for {qid}")
+            return
 
-    elif q_type in {"multiselect"}:
-        opts = [(opt["label"].replace("{{name}}", subject_name()), str(opt["value"])) for opt in options]
-        current_vals = current if isinstance(current, list) else []
-        labels = [lbl for lbl, _ in opts]
-        values = [val for _, val in opts]
-        defaults = [labels[values.index(v)] for v in current_vals if v in values]
-        chosen = st.multiselect(
-            " ",
+        if answers.get(qid) in values:
+            idx_default = values.index(answers[qid])
+        elif qid == ELIG_QID and "no" in values:
+            idx_default = values.index("no")
+        else:
+            idx_default = 0
+
+        chosen_label = st.radio(" ", labels, index=idx_default, label_visibility="collapsed", key=key)
+        answers[qid] = values[labels.index(chosen_label)]
+
+    elif qtype in ("multi", "multiselect"):
+        labels = [o[0] for o in opts]
+        values = [o[1] for o in opts]
+
+        if not labels:
+            st.warning(f"Missing options for {qid}")
+            return
+
+        saved = answers.get(qid)
+        if isinstance(saved, dict):
+            default_vals = [v for v, on in saved.items() if on]
+        elif isinstance(saved, list):
+            default_vals = [str(v) for v in saved]
+        else:
+            default_vals = []
+
+        chosen_labels = st.multiselect(
+            qlabel,
             labels,
-            default=defaults,
-            label_visibility="collapsed",
-            key=f"gcp_{qid}__multiselect",
+            default=[labels[values.index(v)] for v in default_vals if v in values]
         )
-        answers[qid] = [values[labels.index(lbl)] for lbl in chosen]
-
-    elif q_type in {"multi", "checkboxes"}:
-        current_map = current if isinstance(current, dict) else {}
-        out: Dict[str, bool] = {}
-        for opt in options:
-            opt_label = opt["label"].replace("{{name}}", subject_name())
-            opt_value = str(opt["value"])
-            out[opt_value] = st.checkbox(
-                opt_label,
-                value=bool(current_map.get(opt_value)),
-                key=f"gcp_{qid}__{opt_value}",
-            )
-        answers[qid] = out
-
-    elif q_type == "integer":
-        min_v = int(q.get("min", 0))
-        max_v = int(q.get("max", 100))
-        step = int(q.get("step", 1))
-        default = int(current if isinstance(current, int) else q.get("default", min_v))
-        answers[qid] = st.number_input(
-            " ",
-            min_value=min_v,
-            max_value=max_v,
-            value=default,
-            step=step,
-            key=f"gcp_{qid}__int",
-            label_visibility="collapsed",
-        )
+        selected_values = [values[labels.index(lbl)] for lbl in chosen_labels]
+        answers[qid] = {v: (v in selected_values) for v in values}
 
     else:
-        st.warning(f"Unsupported question type '{q_type}' for {qid}")
-        return
+        st.text_input("Answer", key=key)
+        answers[qid] = st.session_state[key]
 
-    if qid == ELIG_QID:
-        _medicaid_acknowledgement()
 
 
 def _medicaid_acknowledgement() -> None:
@@ -127,6 +129,8 @@ def _section_requires_ack(section: Dict[str, Any]) -> bool:
     for q in section.get("questions", []):
         if (q.get("id") or q.get("key")) == ELIG_QID:
             val = _answers().get(ELIG_QID)
+            if not val:
+                return True
             if val in {"yes", "unsure"} and not st.session_state.get(ACK_KEY, False):
                 return True
     return False
@@ -136,16 +140,20 @@ def _section_required_missing(section: Dict[str, Any]) -> bool:
     answers = _answers()
     for q in section.get("questions", []):
         qid = q.get("id") or q.get("key")
-        required = bool(q.get("required"))
-        if not qid or not required:
+        if not qid:
+            continue
+        qtype = (q.get("type") or q.get("ui") or "single").lower()
+        required = bool(q.get("required")) or (qid == ELIG_QID)
+        if not required:
             continue
         val = answers.get(qid)
-        qtype = (q.get("type") or q.get("ui") or "single").lower()
         if qtype in {"single", "select"} and not val:
             return True
-        if qtype in {"multiselect"} and isinstance(val, list) and not val:
+        if qtype in {"multiselect"} and isinstance(val, dict) and not any(val.values()):
             return True
         if qtype in {"multi", "checkboxes"} and isinstance(val, dict) and not any(val.values()):
+            return True
+        if qtype == "integer" and val is None:
             return True
     return False
 
@@ -227,6 +235,8 @@ def render() -> None:
 
     for q in current_section.get("questions", []):
         _render_question(q)
+        if (q.get("id") or q.get("key")) == ELIG_QID:
+            _medicaid_acknowledgement()
 
     st.divider()
 
@@ -234,18 +244,17 @@ def render() -> None:
     with cols[0]:
         if st.button("Back", disabled=step == 0):
             st.session_state[STEP_KEY] = max(0, step - 1)
-            st.experimental_rerun()
+            st.rerun()
 
     with cols[1]:
         disable_next = _section_required_missing(current_section) or _section_requires_ack(current_section)
         show_next = step < len(sections) - 1
         if show_next and st.button("Next", disabled=disable_next):
             st.session_state[STEP_KEY] = min(len(sections) - 1, step + 1)
-            st.experimental_rerun()
+            st.rerun()
 
     with cols[2]:
         if step == len(sections) - 1:
             disable_complete = _section_required_missing(current_section) or _section_requires_ack(current_section)
             if st.button("Complete", disabled=disable_complete):
                 _finish()
-*** End Patch
