@@ -7,12 +7,39 @@ from core.ui import img_src
 
 
 def _page(title: str, desc: str, ctas: Optional[List[Tuple[str, str]]] = None):
-    st.header(title)
-    st.write(desc)
+    # Apply consistent styling like other pages
+    st.markdown(
+        """<style>
+        .main .block-container {
+            background: var(--bg);
+            min-height: 80vh;
+        }
+        </style>""",
+        unsafe_allow_html=True,
+    )
+    
+    st.markdown(
+        f"""
+<section class="container section">
+  <div class="text-center" style="margin-bottom: var(--space-8);">
+    <h1 style="font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; line-height: 1.15; color: var(--ink); margin-bottom: var(--space-4);">
+      {title}
+    </h1>
+    <p style="color: var(--ink-600); max-width: 48ch; margin: 0 auto; font-size: 1.1rem;">
+      {desc}
+    </p>
+  </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    
     if ctas:
+        st.markdown('<div class="card-actions" style="justify-content: center; margin-top: var(--space-6);">', unsafe_allow_html=True)
         for label, target in ctas:
-            if st.button(label, key=f"cta-{title}-{target}"):
-                route_to(target)
+            st.markdown(f'<a class="btn btn--primary" href="?page={target}" style="margin: 0 var(--space-2);">{label}</a>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    st.markdown('</section>', unsafe_allow_html=True)
 
 
 def render_welcome():
@@ -142,22 +169,81 @@ def render_welcome_contextual():
 
 
 def render_pro_welcome():
-    _page(
-        "Professional Welcome",
-        "Entry for discharge planners and partners.",
-        [("Pro Contextual", "pro_welcome_contextual")],
+    # Apply consistent styling like other pages
+    st.markdown(
+        """<style>
+        .main .block-container {
+            background: var(--bg);
+            min-height: 80vh;
+        }
+        </style>""",
+        unsafe_allow_html=True,
+    )
+    
+    st.markdown(
+        """
+<section class="container section">
+  <div class="text-center" style="margin-bottom: var(--space-8);">
+    <h1 style="font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; line-height: 1.15; color: var(--ink); margin-bottom: var(--space-4);">
+      Professional Welcome
+    </h1>
+    <p style="color: var(--ink-600); max-width: 48ch; margin: 0 auto; font-size: 1.1rem;">
+      Entry for discharge planners and partners.
+    </p>
+  </div>
+  <div class="card-actions" style="justify-content: center; margin-top: var(--space-6);">
+    <a class="btn btn--primary" href="?page=pro_welcome_contextual" style="margin: 0 var(--space-2);">Pro Contextual</a>
+  </div>
+</section>
+        """,
+        unsafe_allow_html=True,
     )
 
 
 def render_pro_welcome_contextual():
-    _page(
-        "Pro Contextual Welcome",
-        "Contextualized pro entry.",
-        [("Professionals", "professionals")],
+    # Apply consistent styling like other pages
+    st.markdown(
+        """<style>
+        .main .block-container {
+            background: var(--bg);
+            min-height: 80vh;
+        }
+        </style>""",
+        unsafe_allow_html=True,
+    )
+    
+    st.markdown(
+        """
+<section class="container section">
+  <div class="text-center" style="margin-bottom: var(--space-8);">
+    <h1 style="font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; line-height: 1.15; color: var(--ink); margin-bottom: var(--space-4);">
+      Pro Contextual Welcome
+    </h1>
+    <p style="color: var(--ink-600); max-width: 48ch; margin: 0 auto; font-size: 1.1rem;">
+      Contextualized pro entry.
+    </p>
+  </div>
+  <div class="card-actions" style="justify-content: center; margin-top: var(--space-6);">
+    <a class="btn btn--primary" href="?page=professionals" style="margin: 0 var(--space-2);">Professionals</a>
+  </div>
+</section>
+        """,
+        unsafe_allow_html=True,
     )
 
 
 def render_professionals():
+    # Apply consistent styling like other pages
+    st.markdown(
+        """<style>
+        .main .block-container {
+            background: var(--bg);
+            min-height: 80vh;
+        }
+        </style>""",
+        unsafe_allow_html=True,
+    )
+    
     st.markdown(
         """
 <section class="container stack">
@@ -190,26 +276,136 @@ def render_professionals():
 
 
 def render_login():
-    _page(
-        "Login",
-        "Auth form placeholder.",
-        [("My Account", "my_account")],
+    # Apply consistent styling like other pages
+    st.markdown(
+        """<style>
+        .main .block-container {
+            background: var(--bg);
+            min-height: 80vh;
+        }
+        </style>""",
+        unsafe_allow_html=True,
+    )
+    
+    st.markdown(
+        """
+<section class="container section">
+  <div class="text-center" style="margin-bottom: var(--space-8);">
+    <h1 style="font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; line-height: 1.15; color: var(--ink); margin-bottom: var(--space-4);">
+      Login
+    </h1>
+    <p style="color: var(--ink-600); max-width: 48ch; margin: 0 auto; font-size: 1.1rem;">
+      Auth form placeholder.
+    </p>
+  </div>
+  <div class="card-actions" style="justify-content: center; margin-top: var(--space-6);">
+    <a class="btn btn--primary" href="?page=my_account" style="margin: 0 var(--space-2);">My Account</a>
+  </div>
+</section>
+        """,
+        unsafe_allow_html=True,
     )
 
 
 def render_ai_advisor():
-    _page("AI Advisor (Navi)", "Conversation surface placeholder.")
+    # Apply consistent styling like other pages
+    st.markdown(
+        """<style>
+        .main .block-container {
+            background: var(--bg);
+            min-height: 80vh;
+        }
+        </style>""",
+        unsafe_allow_html=True,
+    )
+    
+    st.markdown(
+        """
+<section class="container section">
+  <div class="text-center" style="margin-bottom: var(--space-8);">
+    <h1 style="font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; line-height: 1.15; color: var(--ink); margin-bottom: var(--space-4);">
+      AI Advisor (Navi)
+    </h1>
+    <p style="color: var(--ink-600); max-width: 48ch; margin: 0 auto; font-size: 1.1rem;">
+      Conversation surface placeholder.
+    </p>
+  </div>
+</section>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def render_documents():
-    _page("Documents", "Uploads and document listing. Auth required.")
+    # Apply consistent styling like other pages
+    st.markdown(
+        """<style>
+        .main .block-container {
+            background: var(--bg);
+            min-height: 80vh;
+        }
+        </style>""",
+        unsafe_allow_html=True,
+    )
+    
+    st.markdown(
+        """
+<section class="container section">
+  <div class="text-center" style="margin-bottom: var(--space-8);">
+    <h1 style="font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; line-height: 1.15; color: var(--ink); margin-bottom: var(--space-4);">
+      Documents
+    </h1>
+    <p style="color: var(--ink-600); max-width: 48ch; margin: 0 auto; font-size: 1.1rem;">
+      Uploads and document listing. Auth required.
+    </p>
+  </div>
+</section>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def render_exports():
-    _page("Exports", "PDF/CSV bundle generator. Auth required.")
+    # Apply consistent styling like other pages
+    st.markdown(
+        """<style>
+        .main .block-container {
+            background: var(--bg);
+            min-height: 80vh;
+        }
+        </style>""",
+        unsafe_allow_html=True,
+    )
+    
+    st.markdown(
+        """
+<section class="container section">
+  <div class="text-center" style="margin-bottom: var(--space-8);">
+    <h1 style="font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; line-height: 1.15; color: var(--ink); margin-bottom: var(--space-4);">
+      Exports
+    </h1>
+    <p style="color: var(--ink-600); max-width: 48ch; margin: 0 auto; font-size: 1.1rem;">
+      PDF/CSV bundle generator. Auth required.
+    </p>
+  </div>
+</section>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def render_waiting_room():
+    # Apply consistent styling like other pages
+    st.markdown(
+        """<style>
+        .main .block-container {
+            background: var(--bg);
+            min-height: 80vh;
+        }
+        </style>""",
+        unsafe_allow_html=True,
+    )
+    
     status_img = img_src("static/images/login.png")
     st.markdown(
         f"""
@@ -240,24 +436,149 @@ def render_waiting_room():
 
 
 def render_trusted_partners():
-    _page("Trusted Partners", "Partner directory and disclosures.")
+    # Apply consistent styling like other pages
+    st.markdown(
+        """<style>
+        .main .block-container {
+            background: var(--bg);
+            min-height: 80vh;
+        }
+        </style>""",
+        unsafe_allow_html=True,
+    )
+    
+    st.markdown(
+        """
+<section class="container section">
+  <div class="text-center" style="margin-bottom: var(--space-8);">
+    <h1 style="font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; line-height: 1.15; color: var(--ink); margin-bottom: var(--space-4);">
+      Trusted Partners
+    </h1>
+    <p style="color: var(--ink-600); max-width: 48ch; margin: 0 auto; font-size: 1.1rem;">
+      Partner directory and disclosures.
+    </p>
+  </div>
+</section>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def render_my_account():
-    _page(
-        "My Account",
-        "Profile, preferences, and consent history.",
-        [("Privacy Policy", "privacy"), ("Terms of Use", "terms")],
+    # Apply consistent styling like other pages
+    st.markdown(
+        """<style>
+        .main .block-container {
+            background: var(--bg);
+            min-height: 80vh;
+        }
+        </style>""",
+        unsafe_allow_html=True,
+    )
+    
+    st.markdown(
+        """
+<section class="container section">
+  <div class="text-center" style="margin-bottom: var(--space-8);">
+    <h1 style="font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; line-height: 1.15; color: var(--ink); margin-bottom: var(--space-4);">
+      My Account
+    </h1>
+    <p style="color: var(--ink-600); max-width: 48ch; margin: 0 auto; font-size: 1.1rem;">
+      Profile, preferences, and consent history.
+    </p>
+  </div>
+  <div class="card-actions" style="justify-content: center; margin-top: var(--space-6);">
+    <a class="btn btn--primary" href="?page=privacy" style="margin: 0 var(--space-2);">Privacy Policy</a>
+    <a class="btn btn--primary" href="?page=terms" style="margin: 0 var(--space-2);">Terms of Use</a>
+  </div>
+</section>
+        """,
+        unsafe_allow_html=True,
     )
 
 
 def render_terms():
-    _page("Terms of Use", "Versioned legal surface.")
+    # Apply consistent styling like other pages
+    st.markdown(
+        """<style>
+        .main .block-container {
+            background: var(--bg);
+            min-height: 80vh;
+        }
+        </style>""",
+        unsafe_allow_html=True,
+    )
+    
+    st.markdown(
+        """
+<section class="container section">
+  <div class="text-center" style="margin-bottom: var(--space-8);">
+    <h1 style="font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; line-height: 1.15; color: var(--ink); margin-bottom: var(--space-4);">
+      Terms of Use
+    </h1>
+    <p style="color: var(--ink-600); max-width: 48ch; margin: 0 auto; font-size: 1.1rem;">
+      Versioned legal surface.
+    </p>
+  </div>
+</section>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def render_privacy():
-    _page("Privacy Policy", "Versioned privacy surface.")
+    # Apply consistent styling like other pages
+    st.markdown(
+        """<style>
+        .main .block-container {
+            background: var(--bg);
+            min-height: 80vh;
+        }
+        </style>""",
+        unsafe_allow_html=True,
+    )
+    
+    st.markdown(
+        """
+<section class="container section">
+  <div class="text-center" style="margin-bottom: var(--space-8);">
+    <h1 style="font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; line-height: 1.15; color: var(--ink); margin-bottom: var(--space-4);">
+      Privacy Policy
+    </h1>
+    <p style="color: var(--ink-600); max-width: 48ch; margin: 0 auto; font-size: 1.1rem;">
+      Versioned privacy surface.
+    </p>
+  </div>
+</section>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def render_about():
-    _page("About Us", "Company, mission, and contact.")
+    # Apply consistent styling like other pages
+    st.markdown(
+        """<style>
+        .main .block-container {
+            background: var(--bg);
+            min-height: 80vh;
+        }
+        </style>""",
+        unsafe_allow_html=True,
+    )
+    
+    st.markdown(
+        """
+<section class="container section">
+  <div class="text-center" style="margin-bottom: var(--space-8);">
+    <h1 style="font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; line-height: 1.15; color: var(--ink); margin-bottom: var(--space-4);">
+      About Us
+    </h1>
+    <p style="color: var(--ink-600); max-width: 48ch; margin: 0 auto; font-size: 1.1rem;">
+      Company, mission, and contact.
+    </p>
+  </div>
+</section>
+        """,
+        unsafe_allow_html=True,
+    )

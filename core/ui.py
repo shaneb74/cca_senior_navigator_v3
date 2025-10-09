@@ -169,15 +169,16 @@ def render_module_tile(product_key: str, module_key: str, state: dict):
 
 def render_hub_tile(title, badge, label, value, status, primary_label, secondary_label, primary_action=None, secondary_action=None):
     """
-    Renders a standardized hub module tile.
+    Renders a standardized hub module tile using the design system.
     Use this in hub pages to maintain visual and behavioral consistency.
     """
-    color_class = {
-        "done": "hub-tile--done",
-        "doing": "hub-tile--doing",
-        "new": "hub-tile--new",
-        "locked": "hub-tile--locked"
-    }.get(status, "hub-tile--new")
+    # Status classes for badges
+    status_class = {
+        "done": "success",
+        "doing": "warning", 
+        "new": "info",
+        "locked": ""
+    }.get(status, "")
 
     status_text = {
         "done": "Completed",
@@ -190,30 +191,29 @@ def render_hub_tile(title, badge, label, value, status, primary_label, secondary
     primary_key = f"{title.lower().replace(' ', '_').replace('&', 'and')}_primary"
     secondary_key = f"{title.lower().replace(' ', '_').replace('&', 'and')}_secondary"
 
-    # Render the tile HTML structure
+    # Render the tile using design system classes
     st.markdown(f"""
-    <article class="hub-tile {color_class}">
-      <div class="hub-tile__header">
-        <h3 class="hub-tile__title">{title}</h3>
-        <span class="hub-tile__badge">{badge}</span>
+    <article class="tile tile--{status if status != 'locked' else 'locked'}">
+      <div class="tile-head">
+        <h3 class="tile-title">{title}</h3>
+        <span class="badge {status_class}">{badge}</span>
       </div>
-
-      <div class="hub-tile__body">
-        <div class="label">{label}</div>
-        <div class="value">{value}</div>
+      
+      <div class="tile-meta">{label}</div>
+      <div style="font-size: 1.25rem; font-weight: 700; color: var(--ink); margin: var(--space-3) 0;">
+        {value}
       </div>
-
-      <div class="hub-tile__footer">
-        <div class="hub-tile__actions" id="actions-{primary_key}">
-        </div>
-        <div class="hub-tile__status">
-          {status_text}
-        </div>
+      
+      <div class="card-actions" id="actions-{primary_key}">
+      </div>
+      
+      <div style="margin-top: var(--space-4); font-size: 0.9rem; color: var(--ink-500);">
+        {status_text}
       </div>
     </article>
     """, unsafe_allow_html=True)
 
-    # Create a container for buttons positioned absolutely within the tile
+    # Create a container for buttons positioned within the tile
     with st.container():
         # Use columns to position buttons within the tile actions area
         col1, col2 = st.columns([1, 1])
