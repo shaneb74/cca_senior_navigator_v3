@@ -1,0 +1,141 @@
+QuestionID,Section,Question,Domain,AnswerOption,ScoreValue,DomainWeight,FlagsEmitted,GatingLogic,Notes
+Q1,Start,Are you currently on Medicaid (state long-term care assistance, not Medicare)?,Funding,Yes,0,0,medicaid_yes,,If Yes → Exit to external Medicaid resources; does not impact tier.
+Q1,Start,Are you currently on Medicaid (state long-term care assistance, not Medicare)?,Funding,No,0,0,medicaid_no,,Proceed to next section.
+Q2,Daily Life & Support,How much help does [name] need with daily activities overall?,ADL/IADL Burden,None – fully independent,0,3,,If "None – fully independent" ⇒ skip Q3 & Q4,Primary burden indicator; drives gating to detailed ADLs.
+Q2,Daily Life & Support,How much help does [name] need with daily activities overall?,ADL/IADL Burden,Occasional – some help with a few tasks,1,3,,If "None – fully independent" ⇒ skip Q3 & Q4,Primary burden indicator; drives gating to detailed ADLs.
+Q2,Daily Life & Support,How much help does [name] need with daily activities overall?,ADL/IADL Burden,Regular – needs daily assistance,2,3,,If "None – fully independent" ⇒ skip Q3 & Q4,Primary burden indicator; drives gating to detailed ADLs.
+Q2,Daily Life & Support,How much help does [name] need with daily activities overall?,ADL/IADL Burden,Extensive – needs full-time support,3,3,,If "None – fully independent" ⇒ skip Q3 & Q4,Primary burden indicator; drives gating to detailed ADLs.
+Q3,Daily Life & Support,BADLs — Bathing/Showering: current level of assistance,ADL/IADL Burden,Independent,0,3,,Show only if Q2 ≠ "None – fully independent",Critical for health/safety; higher weight.
+Q3,Daily Life & Support,BADLs — Bathing/Showering: current level of assistance,ADL/IADL Burden,Some help,1,3,,Show only if Q2 ≠ "None – fully independent",Critical for health/safety; higher weight.
+Q3,Daily Life & Support,BADLs — Bathing/Showering: current level of assistance,ADL/IADL Burden,Daily help,2,3,,Show only if Q2 ≠ "None – fully independent",Critical for health/safety; higher weight.
+Q3,Daily Life & Support,BADLs — Bathing/Showering: current level of assistance,ADL/IADL Burden,Full assistance,3,3,,Show only if Q2 ≠ "None – fully independent",Critical for health/safety; higher weight.
+Q3,Daily Life & Support,BADLs — Dressing: current level of assistance,ADL/IADL Burden,Independent,0,2,,Show only if Q2 ≠ "None – fully independent",Less critical; capped at 2.
+Q3,Daily Life & Support,BADLs — Dressing: current level of assistance,ADL/IADL Burden,Some help,1,2,,Show only if Q2 ≠ "None – fully independent",Less critical; capped at 2.
+Q3,Daily Life & Support,BADLs — Dressing: current level of assistance,ADL/IADL Burden,Daily help,2,2,,Show only if Q2 ≠ "None – fully independent",Less critical; capped at 2.
+Q3,Daily Life & Support,BADLs — Dressing: current level of assistance,ADL/IADL Burden,Full assistance,2,2,,Show only if Q2 ≠ "None – fully independent",Less critical; capped at 2.
+Q3,Daily Life & Support,BADLs — Eating: current level of assistance,ADL/IADL Burden,Independent,0,2,,Show only if Q2 ≠ "None – fully independent",Less critical; capped at 2.
+Q3,Daily Life & Support,BADLs — Eating: current level of assistance,ADL/IADL Burden,Some help,1,2,,Show only if Q2 ≠ "None – fully independent",Less critical; capped at 2.
+Q3,Daily Life & Support,BADLs — Eating: current level of assistance,ADL/IADL Burden,Daily help,2,2,,Show only if Q2 ≠ "None – fully independent",Less critical; capped at 2.
+Q3,Daily Life & Support,BADLs — Eating: current level of assistance,ADL/IADL Burden,Full assistance,2,2,,Show only if Q2 ≠ "None – fully independent",Less critical; capped at 2.
+Q3,Daily Life & Support,BADLs — Toileting: current level of assistance,ADL/IADL Burden,Independent,0,3,,Show only if Q2 ≠ "None – fully independent",Critical for health/safety; higher weight.
+Q3,Daily Life & Support,BADLs — Toileting: current level of assistance,ADL/IADL Burden,Some help,1,3,,Show only if Q2 ≠ "None – fully independent",Critical for health/safety; higher weight.
+Q3,Daily Life & Support,BADLs — Toileting: current level of assistance,ADL/IADL Burden,Daily help,2,3,,Show only if Q2 ≠ "None – fully independent",Critical for health/safety; higher weight.
+Q3,Daily Life & Support,BADLs — Toileting: current level of assistance,ADL/IADL Burden,Full assistance,3,3,,Show only if Q2 ≠ "None – fully independent",Critical for health/safety; higher weight.
+Q3,Daily Life & Support,BADLs — Transferring: current level of assistance,ADL/IADL Burden,Independent,0,3,,Show only if Q2 ≠ "None – fully independent",Critical for health/safety; higher weight.
+Q3,Daily Life & Support,BADLs — Transferring: current level of assistance,ADL/IADL Burden,Some help,1,3,,Show only if Q2 ≠ "None – fully independent",Critical for health/safety; higher weight.
+Q3,Daily Life & Support,BADLs — Transferring: current level of assistance,ADL/IADL Burden,Daily help,2,3,,Show only if Q2 ≠ "None – fully independent",Critical for health/safety; higher weight.
+Q3,Daily Life & Support,BADLs — Transferring: current level of assistance,ADL/IADL Burden,Full assistance,3,3,,Show only if Q2 ≠ "None – fully independent",Critical for health/safety; higher weight.
+Q3,Daily Life & Support,BADLs — Personal Hygiene: current level of assistance,ADL/IADL Burden,Independent,0,2,,Show only if Q2 ≠ "None – fully independent",Less critical; capped at 2.
+Q3,Daily Life & Support,BADLs — Personal Hygiene: current level of assistance,ADL/IADL Burden,Some help,1,2,,Show only if Q2 ≠ "None – fully independent",Less critical; capped at 2.
+Q3,Daily Life & Support,BADLs — Personal Hygiene: current level of assistance,ADL/IADL Burden,Daily help,2,2,,Show only if Q2 ≠ "None – fully independent",Less critical; capped at 2.
+Q3,Daily Life & Support,BADLs — Personal Hygiene: current level of assistance,ADL/IADL Burden,Full assistance,2,2,,Show only if Q2 ≠ "None – fully independent",Less critical; capped at 2.
+Q3,Daily Life & Support,BADLs — Mobility: current level of assistance,ADL/IADL Burden,Independent,0,3,,Show only if Q2 ≠ "None – fully independent",Critical for health/safety; higher weight.
+Q3,Daily Life & Support,BADLs — Mobility: current level of assistance,ADL/IADL Burden,Some help,1,3,,Show only if Q2 ≠ "None – fully independent",Critical for health/safety; higher weight.
+Q3,Daily Life & Support,BADLs — Mobility: current level of assistance,ADL/IADL Burden,Daily help,2,3,,Show only if Q2 ≠ "None – fully independent",Critical for health/safety; higher weight.
+Q3,Daily Life & Support,BADLs — Mobility: current level of assistance,ADL/IADL Burden,Full assistance,3,3,,Show only if Q2 ≠ "None – fully independent",Critical for health/safety; higher weight.
+Q4,Daily Life & Support,IADLs — Meal preparation: current level of assistance,ADL/IADL Burden,Independent,0,2,,Show only if Q2 ≠ "None – fully independent",Less critical; capped at 2.
+Q4,Daily Life & Support,IADLs — Meal preparation: current level of assistance,ADL/IADL Burden,Some help,1,2,,Show only if Q2 ≠ "None – fully independent",Less critical; capped at 2.
+Q4,Daily Life & Support,IADLs — Meal preparation: current level of assistance,ADL/IADL Burden,Daily help,2,2,,Show only if Q2 ≠ "None – fully independent",Less critical; capped at 2.
+Q4,Daily Life & Support,IADLs — Meal preparation: current level of assistance,ADL/IADL Burden,Full assistance,2,2,,Show only if Q2 ≠ "None – fully independent",Less critical; capped at 2.
+Q4,Daily Life & Support,IADLs — Housekeeping: current level of assistance,ADL/IADL Burden,Independent,0,2,,Show only if Q2 ≠ "None – fully independent",Less critical; capped at 2.
+Q4,Daily Life & Support,IADLs — Housekeeping: current level of assistance,ADL/IADL Burden,Some help,1,2,,Show only if Q2 ≠ "None – fully independent",Less critical; capped at 2.
+Q4,Daily Life & Support,IADLs — Housekeeping: current level of assistance,ADL/IADL Burden,Daily help,2,2,,Show only if Q2 ≠ "None – fully independent",Less critical; capped at 2.
+Q4,Daily Life & Support,IADLs — Housekeeping: current level of assistance,ADL/IADL Burden,Full assistance,2,2,,Show only if Q2 ≠ "None – fully independent",Less critical; capped at 2.
+Q4,Daily Life & Support,IADLs — Managing finances: current level of assistance,ADL/IADL Burden,Independent,0,3,,Show only if Q2 ≠ "None – fully independent",Critical for safety; higher weight.
+Q4,Daily Life & Support,IADLs — Managing finances: current level of assistance,ADL/IADL Burden,Some help,1,3,,Show only if Q2 ≠ "None – fully independent",Critical for safety; higher weight.
+Q4,Daily Life & Support,IADLs — Managing finances: current level of assistance,ADL/IADL Burden,Daily help,2,3,,Show only if Q2 ≠ "None – fully independent",Critical for safety; higher weight.
+Q4,Daily Life & Support,IADLs — Managing finances: current level of assistance,ADL/IADL Burden,Full assistance,3,3,,Show only if Q2 ≠ "None – fully independent",Critical for safety; higher weight.
+Q4,Daily Life & Support,IADLs — Medication management: current level of assistance,ADL/IADL Burden,Independent,0,3,,Show only if Q2 ≠ "None – fully independent",Critical for safety; higher weight.
+Q4,Daily Life & Support,IADLs — Medication management: current level of assistance,ADL/IADL Burden,Some help,1,3,,Show only if Q2 ≠ "None – fully independent",Critical for safety; higher weight.
+Q4,Daily Life & Support,IADLs — Medication management: current level of assistance,ADL/IADL Burden,Daily help,2,3,,Show only if Q2 ≠ "None – fully independent",Critical for safety; higher weight.
+Q4,Daily Life & Support,IADLs — Medication management: current level of assistance,ADL/IADL Burden,Full assistance,3,3,,Show only if Q2 ≠ "None – fully independent",Critical for safety; higher weight.
+Q4,Daily Life & Support,IADLs — Transportation: current level of assistance,ADL/IADL Burden,Independent,0,2,,Show only if Q2 ≠ "None – fully independent",Less critical; capped at 2.
+Q4,Daily Life & Support,IADLs — Transportation: current level of assistance,ADL/IADL Burden,Some help,1,2,,Show only if Q2 ≠ "None – fully independent",Less critical; capped at 2.
+Q4,Daily Life & Support,IADLs — Transportation: current level of assistance,ADL/IADL Burden,Daily help,2,2,,Show only if Q2 ≠ "None – fully independent",Less critical; capped at 2.
+Q4,Daily Life & Support,IADLs — Transportation: current level of assistance,ADL/IADL Burden,Full assistance,2,2,,Show only if Q2 ≠ "None – fully independent",Less critical; capped at 2.
+Q4,Daily Life & Support,IADLs — Shopping: current level of assistance,ADL/IADL Burden,Independent,0,2,,Show only if Q2 ≠ "None – fully independent",Less critical; capped at 2.
+Q4,Daily Life & Support,IADLs — Shopping: current level of assistance,ADL/IADL Burden,Some help,1,2,,Show only if Q2 ≠ "None – fully independent",Less critical; capped at 2.
+Q4,Daily Life & Support,IADLs — Shopping: current level of assistance,ADL/IADL Burden,Daily help,2,2,,Show only if Q2 ≠ "None – fully independent",Less critical; capped at 2.
+Q4,Daily Life & Support,IADLs — Shopping: current level of assistance,ADL/IADL Burden,Full assistance,2,2,,Show only if Q2 ≠ "None – fully independent",Less critical; capped at 2.
+Q4,Daily Life & Support,IADLs — Communication: current level of assistance,ADL/IADL Burden,Independent,0,2,,Show only if Q2 ≠ "None – fully independent",Less critical; capped at 2.
+Q4,Daily Life & Support,IADLs — Communication: current level of assistance,ADL/IADL Burden,Some help,1,2,,Show only if Q2 ≠ "None – fully independent",Less critical; capped at 2.
+Q4,Daily Life & Support,IADLs — Communication: current level of assistance,ADL/IADL Burden,Daily help,2,2,,Show only if Q2 ≠ "None – fully independent",Less critical; capped at 2.
+Q4,Daily Life & Support,IADLs — Communication: current level of assistance,ADL/IADL Burden,Full assistance,2,2,,Show only if Q2 ≠ "None – fully independent",Less critical; capped at 2.
+Q5,Daily Life & Support,How many hours per day of assistance does [name] typically receive?,Support Network,Less than 1 hour,0,2,support_none,,
+Q5,Daily Life & Support,How many hours per day of assistance does [name] typically receive?,Support Network,1–3 hours,1,2,,,
+Q5,Daily Life & Support,How many hours per day of assistance does [name] typically receive?,Support Network,4–8 hours,2,2,,,
+Q5,Daily Life & Support,How many hours per day of assistance does [name] typically receive?,Support Network,24-hour support,3,2,support_strong,,
+Q6,Daily Life & Support,Who provides most of the support right now?,Support Network,Family/friends,1,2,informal_support,,
+Q6,Daily Life & Support,Who provides most of the support right now?,Support Network,Paid caregiver,2,2,formal_support,,
+Q6,Daily Life & Support,Who provides most of the support right now?,Support Network,Community or agency,2,2,formal_support,,
+Q6,Daily Life & Support,Who provides most of the support right now?,Support Network,No regular support,3,2,no_support,,
+Q7,Health & Safety,Cognitive health or memory changes,Cognitive Function,No concerns,0,3,,,If "Moderate" or "Severe" ⇒ show Q8 behavior risks.
+Q7,Health & Safety,Cognitive health or memory changes,Cognitive Function,Occasional forgetfulness,1,3,,,If "Moderate" or "Severe" ⇒ show Q8 behavior risks.
+Q7,Health & Safety,Cognitive health or memory changes,Cognitive Function,Moderate memory or thinking issues,2,3,cog_moderate,,If "Moderate" or "Severe" ⇒ show Q8 behavior risks.
+Q7,Health & Safety,Cognitive health or memory changes,Cognitive Function,Severe memory issues or diagnosis (like dementia or Alzheimer’s),3,3,cog_severe,,If "Moderate" or "Severe" ⇒ show Q8 behavior risks.
+Q8,Health & Safety,Have there been any of these behaviors or concerns?,Cognitive Function,Wandering — Present,1,3,behavior_risk,Show only if Q7 ∈ {Moderate, Severe},Each selected item contributes +1 within the Cognitive domain; cap domain at 3 total.
+Q8,Health & Safety,Have there been any of these behaviors or concerns?,Cognitive Function,Wandering — Not present,0,3,,Show only if Q7 ∈ {Moderate, Severe},
+Q8,Health & Safety,Have there been any of these behaviors or concerns?,Cognitive Function,Aggression — Present,1,3,behavior_risk,Show only if Q7 ∈ {Moderate, Severe},Each selected item contributes +1 within the Cognitive domain; cap domain at 3 total.
+Q8,Health & Safety,Have there been any of these behaviors or concerns?,Cognitive Function,Aggression — Not present,0,3,,Show only if Q7 ∈ {Moderate, Severe},
+Q8,Health & Safety,Have there been any of these behaviors or concerns?,Cognitive Function,Elopement / Exit-seeking — Present,1,3,behavior_risk,Show only if Q7 ∈ {Moderate, Severe},Each selected item contributes +1 within the Cognitive domain; cap domain at 3 total.
+Q8,Health & Safety,Have there been any of these behaviors or concerns?,Cognitive Function,Elopement / Exit-seeking — Not present,0,3,,Show only if Q7 ∈ {Moderate, Severe},
+Q8,Health & Safety,Have there been any of these behaviors or concerns?,Cognitive Function,Confusion or disorientation — Present,1,3,behavior_risk,Show only if Q7 ∈ {Moderate, Severe},Each selected item contributes +1 within the Cognitive domain; cap domain at 3 total.
+Q8,Health & Safety,Have there been any of these behaviors or concerns?,Cognitive Function,Confusion or disorientation — Not present,0,3,,Show only if Q7 ∈ {Moderate, Severe},
+Q8,Health & Safety,Have there been any of these behaviors or concerns?,Cognitive Function,Sundowning — Present,1,3,behavior_risk,Show only if Q7 ∈ {Moderate, Severe},Each selected item contributes +1 within the Cognitive domain; cap domain at 3 total.
+Q8,Health & Safety,Have there been any of these behaviors or concerns?,Cognitive Function,Sundowning — Not present,0,3,,Show only if Q7 ∈ {Moderate, Severe},
+Q8,Health & Safety,Have there been any of these behaviors or concerns?,Cognitive Function,Repetitive questioning — Present,1,3,behavior_risk,Show only if Q7 ∈ {Moderate, Severe},Each selected item contributes +1 within the Cognitive domain; cap domain at 3 total.
+Q8,Health & Safety,Have there been any of these behaviors or concerns?,Cognitive Function,Repetitive questioning — Not present,0,3,,Show only if Q7 ∈ {Moderate, Severe},
+Q8,Health & Safety,Have there been any of these behaviors or concerns?,Cognitive Function,Poor judgment — Present,1,3,behavior_risk,Show only if Q7 ∈ {Moderate, Severe},Each selected item contributes +1 within the Cognitive domain; cap domain at 3 total.
+Q8,Health & Safety,Have there been any of these behaviors or concerns?,Cognitive Function,Poor judgment — Not present,0,3,,Show only if Q7 ∈ {Moderate, Severe},
+Q8,Health & Safety,Have there been any of these behaviors or concerns?,Cognitive Function,Hoarding — Present,1,3,behavior_risk,Show only if Q7 ∈ {Moderate, Severe},Each selected item contributes +1 within the Cognitive domain; cap domain at 3 total.
+Q8,Health & Safety,Have there been any of these behaviors or concerns?,Cognitive Function,Hoarding — Not present,0,3,,Show only if Q7 ∈ {Moderate, Severe},
+Q8,Health & Safety,Have there been any of these behaviors or concerns?,Cognitive Function,Sleep disturbances — Present,1,3,behavior_risk,Show only if Q7 ∈ {Moderate, Severe},Each selected item contributes +1 within the Cognitive domain; cap domain at 3 total.
+Q8,Health & Safety,Have there been any of these behaviors or concerns?,Cognitive Function,Sleep disturbances — Not present,0,3,,Show only if Q7 ∈ {Moderate, Severe},
+Q9,Health & Safety,Medication profile,Medication Complexity,None,0,2,,,
+Q9,Health & Safety,Medication profile,Medication Complexity,Simple – a few meds, easy to manage,1,2,,,
+Q9,Health & Safety,Medication profile,Medication Complexity,Moderate – daily meds, some complexity,2,2,,,
+Q9,Health & Safety,Medication profile,Medication Complexity,Complex – many meds or caregiver-managed,3,2,,,
+Q10,Health & Safety,Mobility level,Mobility & Falls,Walks independently,0,2,,,
+Q10,Health & Safety,Mobility level,Mobility & Falls,Uses cane or walker,1,2,,,
+Q10,Health & Safety,Mobility level,Mobility & Falls,Uses wheelchair or scooter,2,2,,,
+Q10,Health & Safety,Mobility level,Mobility & Falls,Bed-bound or limited mobility,3,2,,,
+Q11,Health & Safety,Fall history,Mobility & Falls,No falls in past 6 months,0,2,,,
+Q11,Health & Safety,Fall history,Mobility & Falls,One fall,1,2,fall_recent,,
+Q11,Health & Safety,Fall history,Mobility & Falls,Multiple falls,3,2,falls_multiple,,
+Q12,Health & Safety,Chronic condition — Diabetes,Health & Chronic Conditions,Present,1,2,chronic_present,,Each selected condition adds +1 within domain; cap domain at 3.
+Q12,Health & Safety,Chronic condition — Diabetes,Health & Chronic Conditions,Not present,0,2,,,
+Q12,Health & Safety,Chronic condition — Congestive heart failure (CHF),Health & Chronic Conditions,Present,1,2,chronic_present,,Each selected condition adds +1 within domain; cap domain at 3.
+Q12,Health & Safety,Chronic condition — Congestive heart failure (CHF),Health & Chronic Conditions,Not present,0,2,,,
+Q12,Health & Safety,Chronic condition — COPD / Respiratory disease,Health & Chronic Conditions,Present,1,2,chronic_present,,Each selected condition adds +1 within domain; cap domain at 3.
+Q12,Health & Safety,Chronic condition — COPD / Respiratory disease,Health & Chronic Conditions,Not present,0,2,,,
+Q12,Health & Safety,Chronic condition — Hypertension,Health & Chronic Conditions,Present,1,2,chronic_present,,Each selected condition adds +1 within domain; cap domain at 3.
+Q12,Health & Safety,Chronic condition — Hypertension,Health & Chronic Conditions,Not present,0,2,,,
+Q12,Health & Safety,Chronic condition — Arthritis,Health & Chronic Conditions,Present,1,2,chronic_present,,Each selected condition adds +1 within domain; cap domain at 3.
+Q12,Health & Safety,Chronic condition — Arthritis,Health & Chronic Conditions,Not present,0,2,,,
+Q12,Health & Safety,Chronic condition — Stroke or neurological condition,Health & Chronic Conditions,Present,1,2,chronic_present,,Each selected condition adds +1 within domain; cap domain at 3.
+Q12,Health & Safety,Chronic condition — Stroke or neurological condition,Health & Chronic Conditions,Not present,0,2,,,
+Q12,Health & Safety,Chronic condition — Parkinson’s disease,Health & Chronic Conditions,Present,1,2,chronic_present,,Each selected condition adds +1 within domain; cap domain at 3.
+Q12,Health & Safety,Chronic condition — Parkinson’s disease,Health & Chronic Conditions,Not present,0,2,,,
+Q12,Health & Safety,Chronic condition — Cancer,Health & Chronic Conditions,Present,1,2,chronic_present,,Each selected condition adds +1 within domain; cap domain at 3.
+Q12,Health & Safety,Chronic condition — Cancer,Health & Chronic Conditions,Not present,0,2,,,
+Q12,Health & Safety,Chronic condition — Other,Health & Chronic Conditions,Present,1,2,chronic_present,,Each selected condition adds +1 within domain; cap domain at 3.
+Q12,Health & Safety,Chronic condition — Other,Health & Chronic Conditions,Not present,0,2,,,
+Q13,Health & Safety,How well are these conditions being managed overall?,Health & Chronic Conditions,Very well,0,2,stable,,Show only if Q12 ≥ 2 conditions selected.
+Q13,Health & Safety,How well are these conditions being managed overall?,Health & Chronic Conditions,Mostly managed,1,2,mostly_stable,,Show only if Q12 ≥ 2 conditions selected.
+Q13,Health & Safety,How well are these conditions being managed overall?,Health & Chronic Conditions,Somewhat unstable,2,2,unstable,,Show only if Q12 ≥ 2 conditions selected.
+Q13,Health & Safety,How well are these conditions being managed overall?,Health & Chronic Conditions,Poorly managed,3,2,unstable,,Show only if Q12 ≥ 2 conditions selected.
+Q14,Health & Safety,Overall, how would you describe [name]’s mood these days?,Health & Chronic Conditions,Great – always positive,0,1,,,Low weight to reflect secondary role; flags advisor for high response.
+Q14,Health & Safety,Overall, how would you describe [name]’s mood these days?,Health & Chronic Conditions,Mostly good,1,1,,,Low weight to reflect secondary role; flags advisor for high response.
+Q14,Health & Safety,Overall, how would you describe [name]’s mood these days?,Health & Chronic Conditions,Okay – ups and downs,1,1,,,Low weight to reflect secondary role; flags advisor for high response.
+Q14,Health & Safety,Overall, how would you describe [name]’s mood these days?,Health & Chronic Conditions,Low – feeling down a lot,2,1,emo_concern,If "Low – feeling down a lot" → Flag for advisor follow-up,Low weight to reflect secondary role; flags advisor for high response.
+Q15,Daily Life & Support,Is [name]’s home located far from family, care providers, or essential services?,Geographic Isolation,No – easily accessible,0,1,,,Used as +1 tier modifier only if combined with limited support.
+Q15,Daily Life & Support,Is [name]’s home located far from family, care providers, or essential services?,Geographic Isolation,Somewhat isolated,1,1,,,Used as +1 tier modifier only if combined with limited support.
+Q15,Daily Life & Support,Is [name]’s home located far from family, care providers, or essential services?,Geographic Isolation,Very isolated,2,1,geo_isolated,,Used as +1 tier modifier only if combined with limited support.
+RULE,Rules,OVERRIDE: High-Acuity Memory Care,,cog_severe AND no_support,,,,,Set Tier = 4 (Memory Care — High Acuity) — Strongest rule; ignore base score.
+RULE,Rules,OVERRIDE: Memory Care minimum,,cog_severe,,,,,Set Tier ≥ 3 (Memory Care) — Escalate Assisted → Memory.
+RULE,Rules,OVERRIDE: Memory Care for high burden/safety,,high_dependence (ADL/IADL ≥ 2) AND (behavior_risk OR falls_multiple),,,,,Set Tier ≥ 3 (Memory Care)
+RULE,Rules,OVERRIDE: Assisted due to falls + no support,,falls_multiple AND no_support,,,,,Set Tier ≥ 2 (Assisted Living)
+RULE,Rules,OVERRIDE: Medical instability,,unstable AND (sum chronic_present ≥ 3),,,,,Set Tier ≥ 3 (Memory Care)
+RULE,Rules,MODIFIER: Strong support reduces tier,,support_strong AND NOT cog_severe,,,,,Tier = max(Tier - 1, 0)
+RULE,Rules,MODIFIER: Isolation with limited support adds risk,,geo_isolated AND (support_none OR no_support),,,,,Tier = min(Tier + 1, 4)
+RULE,Rules,MODIFIER: Very well managed conditions,,stable,,,,,Tier = max(Tier - 1, 0) — Applies only if not already Tier 0.
