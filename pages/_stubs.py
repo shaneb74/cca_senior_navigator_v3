@@ -79,36 +79,66 @@ def render_welcome_contextual():
     )
     name_label = "What's your name?" if is_me else "What's their name?"
 
+    # Don't initialize person_name - let it remain unset if not provided
+
+    # Apply the canvas background
     st.markdown(
-        f"""<section class="canvas-soft">
-<div class="container center-wrap">
-  <div>
-    <div class="modal-card stack-sm">
+        """<style>
+        .main .block-container {
+            background: #E6EEFF;
+            min-height: 72vh;
+        }
+        </style>""",
+        unsafe_allow_html=True,
+    )
+
+    # Create the layout using Streamlit columns
+    col1, col2 = st.columns([0.9, 1.1])
+
+    with col1:
+        st.markdown(
+            f"""<div class="modal-card stack-sm">
       <div class="toggle">
         <a class="pill{' is-selected' if not is_me else ''}" href="?page=welcome_contextual&who=someone">For someone</a>
         <a class="pill{' is-selected' if is_me else ''}" href="?page=welcome_contextual&who=me">For me</a>
       </div>
       <h3 class="mt-space-4">{title_copy}</h3>
-      <p>{body_copy}</p>
-      <div class="field mt-space-3">
-        <label>{name_label}</label>
-        <input class="input" placeholder="Type a name"/>
-      </div>
+      <p>{body_copy}</p>""",
+            unsafe_allow_html=True,
+        )
+
+        # Use Streamlit text input to capture the name
+        current_name = st.session_state.get("person_name", "")
+        person_name = st.text_input(
+            name_label,
+            value=current_name,
+            placeholder="Type a name",
+            key="person_name_input"
+        )
+
+        # Update session state when name changes
+        if person_name != current_name:
+            st.session_state["person_name"] = person_name
+
+        st.markdown(
+            f"""
       <div class="card-actions mt-space-4">
         <a class="btn btn--primary" href="?page=hub_concierge">Continue</a>
         <a class="btn btn--ghost" href="?page=welcome">Close</a>
       </div>
       <p class="helper-note mt-space-4">If you want to assess several people, you can move on to the next step later.</p>
-    </div>
-  </div>
-  <div class="photo-stack" aria-hidden="true">
+    </div>""",
+            unsafe_allow_html=True,
+        )
+
+    with col2:
+        st.markdown(
+            f"""<div class="photo-stack" aria-hidden="true">
     <img class="photo-back" src="{photo_back}" alt=""/>
     <img class="photo-front" src="{photo_front}" alt=""/>
-  </div>
-</div>
-</section>""",
-        unsafe_allow_html=True,
-    )
+  </div>""",
+            unsafe_allow_html=True,
+        )
 
 
 def render_pro_welcome():

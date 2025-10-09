@@ -2,6 +2,9 @@ from typing import Optional
 import base64, mimetypes, pathlib, sys, functools
 
 import streamlit as st
+from core.nav import route_to
+
+from .nav import PRODUCTS
 
 # Resolve repository root (…/cca_senior_navigator_v3)
 _REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -96,3 +99,137 @@ def tile_open(size: str = "md"):
 
 def tile_close():
     st.markdown("</article>", unsafe_allow_html=True)
+
+
+def render_product_tile(product_key: str, state: dict):
+    """Render a product tile with status, progress, and actions."""
+    status_class = f"tile--{state['status']}"
+    progress = state['progress']
+    title = PRODUCTS[product_key]['title']
+    
+    # Mock outputs for now; in production, aggregate from modules
+    if product_key == "gcp":
+        summary = "Recommendation: In-Home Care"
+    elif product_key == "cost_planner":
+        summary = "Est. cost $4,200 / Runway 3.8 yrs"
+    else:
+        summary = "Not started"
+    
+    html = f"""
+<div class="tile-head">
+  <div class="tile-title">{title}</div>
+  <span class="badge {status_class}">{state['status'].replace('_', ' ').title()}</span>
+</div>
+<div class="tile-progress">
+  <div class="progress-bar" style="width: {progress}%"></div>
+</div>
+<p class="tile-meta">{summary}</p>
+<div class="kit-row">
+  <a class="btn btn--primary" href="?page={product_key}">Continue</a>
+  <a class="btn btn--secondary" href="?page={product_key}">See responses</a>
+</div>
+"""
+    st.markdown(html, unsafe_allow_html=True)
+
+
+def render_module_tile(product_key: str, module_key: str, state: dict):
+    """Render a module tile with status, progress, outputs, and actions."""
+    status_class = f"tile--{state['status']}"
+    progress = state['progress']
+    title = module_key.replace('_', ' ').title()
+    
+    outputs_html = ""
+    if state['outputs']:
+        primary_output = state['outputs'][0]
+        outputs_html = f'<p class="tile-meta">{primary_output["label"]}<br><strong>{primary_output["value"]}</strong></p>'
+        for output in state['outputs'][1:]:
+            outputs_html += f'<p class="tile-meta">{output["label"]}: {output["value"]}</p>'
+    
+    completed_at = state.get('completed_at', '')
+    if completed_at:
+        outputs_html += f'<p class="tile-meta">Last updated: {completed_at}</p>'
+    
+    html = f"""
+<div class="tile-head">
+  <div class="tile-title">{title}</div>
+  <span class="badge {status_class}">{state['status'].replace('_', ' ').title()}</span>
+</div>
+<div class="tile-progress">
+  <div class="progress-bar" style="width: {progress}%"></div>
+</div>
+{outputs_html}
+<div class="kit-row">
+  <a class="btn btn--primary" href="?page={product_key}_{module_key}">Continue</a>
+  <a class="btn btn--secondary" href="?page={product_key}_{module_key}">See responses</a>
+  <a class="btn btn--ghost" href="?page={product_key}_{module_key}">Start over</a>
+</div>
+"""
+    st.markdown(html, unsafe_allow_html=True)
+
+
+def render_hub_tile(title, badge, label, value, status, primary_label, secondary_label, primary_action=None, secondary_action=None):
+    """
+    Renders a standardized hub module tile.
+    Use this in hub pages to maintain visual and behavioral consistency.
+    """
+    color_class = {
+        "done": "hub-tile--done",
+        "doing": "hub-tile--doing",
+        "new": "hub-tile--new",
+        "locked": "hub-tile--locked"
+    }.get(status, "hub-tile--new")
+
+    st.markdown(f"""
+    <article class="hub-tile {color_class}">
+      <div class="hub-tile__header">
+        <h3 class="hub-tile__title">{title}</h3>
+        <span class="hub-tile__badge">{badge}</span>
+      </div>
+
+      <div class="hub-tile__body">
+        <div class="label">{label}</div>
+        <div class="value">{value}</div>
+      </div>
+
+      <div class="hub-tile__footer">
+        <div class="hub-tile__actions">
+        </div>
+        <div class="hub-tile__status">
+          {"Completed ✓" if status == "done" else ""}
+        </div>
+      </div>
+    </article>
+    """, unsafe_allow_html=True)
+
+    # Add Streamlit buttons with proper CSS classes for styling
+    button_container_id = f"buttons_{title.lower().replace(' ', '_').replace('&', 'and')}"
+
+    # Use columns to position buttons properly within the tile layout
+    col1, col2, col3 = st.columns([1, 1, 1])
+
+    with col1:
+        st.write("")  # Spacer
+
+    with col2:
+        if st.button(primary_label, key=f"{title.lower().replace(' ', '_')}_primary"):
+            if primary_action:
+                primary_action()
+            else:
+                # Default navigation based on title
+                if "Guided Care Plan" in title:
+                    route_to("gcp")
+                elif "Cost Planner" in title:
+                    route_to("cost_planner")
+                elif "Plan with My Advisor" in title:
+                    route_to("pfma")
+
+    with col3:
+        if st.button(secondary_label, key=f"{title.lower().replace(' ', '_')}_secondary"):
+            if secondary_action:
+                secondary_action()
+            else:
+                # Default secondary actions
+                if "Start over" in secondary_label and "Guided Care Plan" in title:
+                    st.session_state["gcp_answers"] = {}
+                    st.session_state["gcp_section"] = 0
+                    st.rerun()
