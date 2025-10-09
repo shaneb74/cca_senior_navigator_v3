@@ -123,5 +123,16 @@ def render():
                     secondary_label=secondary_label
                 )
 
+    # Add FAQs & Answers tile
+    render_hub_tile(
+        title="FAQs & Answers",
+        badge="FAQ",
+        label="Common Questions",
+        value="25 topics",
+        status="new",
+        primary_label="Search FAQs",
+        secondary_label="Contact support"
+    )
+
     # Close the tiles grid and section
     st.markdown('</div></section>', unsafe_allow_html=True)
