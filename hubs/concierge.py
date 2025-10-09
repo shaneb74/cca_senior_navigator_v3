@@ -1,26 +1,15 @@
 import streamlit as st
-
-from core.ui import hub_section, tile_close, tile_open, tiles_close, tiles_open
-
-
-def _status_badge(done: bool) -> str:
-    txt = "Completed ✓" if done else "Next step ✽"
-    cls = "badge success" if done else "badge"
-    return f'<span class="{cls}">{txt}</span>'
-
-
-def _btn(label: str, href: str, kind: str = "primary") -> str:
-    return f'<a class="btn btn--{kind}" href="{href}">{label}</a>'
+from core.ui import hub_section, tiles_open, tiles_close, tile_open, tile_close
 
 
 def render():
-    meta = 'Assessment <span class="badge">For someone</span> <span class="badge">John</span>'
-    hub_section("Dashboard", right_meta=meta)
+    gcp_done = bool(st.session_state.get("gcp_completed"))
+    cp_done = bool(st.session_state.get("cost_planner_completed"))
 
-    gcp_done = bool(st.session_state.get("gcp_completed", False))
-    cost_done = bool(st.session_state.get("cost_planner_completed", False))
-    advisor_done = bool(st.session_state.get("advisor_completed", False))
+    gcp_cta = "See responses" if gcp_done else "Start"
+    cp_cta = "Open" if cp_done else "Start"
 
+    hub_section("Concierge Care Hub")
     tiles_open()
 
     tile_open("md")
@@ -28,13 +17,13 @@ def render():
         f"""
       <div class="tile-head">
         <div class="tile-title">Guided Care Plan</div>
-        <span class="badge info">Guided Care Plan</span>
+        <span class="badge info">Decision support</span>
       </div>
-      <p class="tile-meta">Understand health, safety, and care needs to determine the right care setting.</p>
+      <p class="tile-meta">Answer a few questions to get a personalized next-step recommendation.</p>
       <div class="kit-row">
-        {_btn("See responses", "?page=gcp", "secondary")}
-        {_btn("Start over", "?page=gcp", "ghost")}
-        {_status_badge(gcp_done)}
+        <a class="btn btn--secondary" href="?page=gcp">{gcp_cta}</a>
+        <a class="btn btn--ghost" href="?page=gcp&reset=1">Start over</a>
+        {('<span class=\"badge success\">Completed ✓</span>') if gcp_done else ''}
       </div>
     """,
         unsafe_allow_html=True,
@@ -46,12 +35,12 @@ def render():
         f"""
       <div class="tile-head">
         <div class="tile-title">Cost Planner</div>
-        <span class="badge info">Cost Estimator</span>
+        <span class="badge info">Estimate</span>
       </div>
-      <p class="tile-meta">Estimate and plan costs for each care option, with automatic updates based on your selections.</p>
+      <p class="tile-meta">See an estimated monthly cost for the recommended care and adjust inputs.</p>
       <div class="kit-row">
-        {_btn("Start", "?page=cost_planner")}
-        {_status_badge(cost_done)}
+        <a class="btn btn--primary" href="?page=cost_planner">{cp_cta}</a>
+        {('<span class=\"badge success\">Completed ✓</span>') if cp_done else ''}
       </div>
     """,
         unsafe_allow_html=True,
@@ -60,15 +49,14 @@ def render():
 
     tile_open("md")
     st.markdown(
-        f"""
+        """
       <div class="tile-head">
-        <div class="tile-title">Plan with My Advisor</div>
-        <span class="badge info">Get Connected</span>
+        <div class="tile-title">Plan with my advisor</div>
+        <span class="badge info">Get connected</span>
       </div>
-      <p class="tile-meta">Work one-on-one with a certified care advisor to review options and next steps.</p>
+      <p class="tile-meta">Meet with a Concierge Care Advisor to finalize the plan.</p>
       <div class="kit-row">
-        {_btn("Get connected", "?page=waiting_room")}
-        {_status_badge(advisor_done)}
+        <a class="btn btn--primary" href="?page=waiting_room">Get connected</a>
       </div>
     """,
         unsafe_allow_html=True,
@@ -77,14 +65,14 @@ def render():
 
     tile_open("md")
     st.markdown(
-        f"""
+        """
       <div class="tile-head">
         <div class="tile-title">FAQs &amp; Answers</div>
         <span class="badge info">AI Agent</span>
       </div>
-      <p class="tile-meta">Receive instant, tailored assistance from our advanced AI chat.</p>
+      <p class="tile-meta">Instant, tailored assistance from our AI agent, Navi.</p>
       <div class="kit-row">
-        {_btn("Open", "?page=ai_advisor")}
+        <a class="btn btn--primary" href="?page=ai_advisor">Open</a>
       </div>
     """,
         unsafe_allow_html=True,
@@ -93,18 +81,19 @@ def render():
 
     tiles_close()
 
-    hub_section("Additional services")
+    hub_section("Additional Services")
     tiles_open()
 
     tile_open("md")
     st.markdown(
-        f"""
+        """
       <div class="tile-head">
         <div class="tile-title">AI Health Check</div>
+        <span class="badge info">Senior Life AI</span>
       </div>
-      <p class="tile-meta">Get insights about overall body health.</p>
+      <p class="tile-meta">Cognitive health assessment from our trusted partner.</p>
       <div class="kit-row">
-        {_btn("Open", "?page=trusted_partners&partner=seniorlife")}
+        <a class="btn btn--secondary" href="?page=trusted_partners">Open in Trusted Partners</a>
       </div>
     """,
         unsafe_allow_html=True,
@@ -113,13 +102,14 @@ def render():
 
     tile_open("md")
     st.markdown(
-        f"""
+        """
       <div class="tile-head">
         <div class="tile-title">Resource Library</div>
+        <span class="badge info">Learning Center</span>
       </div>
-      <p class="tile-meta">Media Center</p>
+      <p class="tile-meta">Guides, checklists, and definitions to help you prepare.</p>
       <div class="kit-row">
-        {_btn("Open", "?page=hub_learning")}
+        <a class="btn btn--secondary" href="?page=hub_learning">Open</a>
       </div>
     """,
         unsafe_allow_html=True,

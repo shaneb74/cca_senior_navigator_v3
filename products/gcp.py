@@ -95,6 +95,12 @@ def _pick_recommendation(scores: Dict[str, float]) -> str:
 
 def render():
     _ensure_state()
+    if st.query_params.get("reset") == "1":
+        st.session_state.pop("gcp", None)
+        st.session_state.pop("gcp_completed", None)
+        st.session_state.pop("gcp_recommendation", None)
+        st.session_state.pop("care_profile", None)
+        _ensure_state()
     st.header("Guided Care Plan")
 
     schema = load_schema()
