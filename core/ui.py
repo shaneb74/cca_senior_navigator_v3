@@ -180,7 +180,7 @@ def render_hub_tile(title, badge, label, value, status, primary_label, secondary
     }.get(status, "hub-tile--new")
 
     status_text = {
-        "done": "Completed ✓",
+        "done": "Completed",
         "doing": "In Progress",
         "new": "Not Started",
         "locked": "Locked"
