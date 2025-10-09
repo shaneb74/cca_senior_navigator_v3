@@ -1,0 +1,215 @@
+{
+  "version": "v2025.10",
+  "sections": [
+    {
+      "id": "start",
+      "title": "Covered Concierge Services",
+      "questions": [
+        {
+          "id": "Q1",
+          "label": "Are you currently on Medicaid (state long-term care assistance, not Medicare)?",
+          "type": "single",
+          "options": [
+            {"label": "No", "value": "No"},
+            {"label": "Yes", "value": "Yes"},
+            {"label": "Unsure", "value": "Unsure"}
+          ],
+          "gating": {
+            "ackRequiredIfNotNo": true,
+            "routes": {
+              "Yes": {"action": "EXIT_TO_MEDICAID"},
+              "No": {"continue": true},
+              "Unsure": {"action": "EXIT_TO_MEDICAID"}
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "daily_life",
+      "title": "Daily Life & Support",
+      "questions": [
+        {
+          "id": "Q2",
+          "label": "How much help does [name] need with daily activities overall?",
+          "type": "single",
+          "options": [
+            "None – fully independent",
+            "Occasional – some help with a few tasks",
+            "Regular – needs daily assistance",
+            "Extensive – needs full-time support"
+          ],
+          "gating": {
+            "skipIf": [
+              {
+                "when": {"Q2": "None – fully independent"},
+                "skip": ["Q3", "Q4"]
+              }
+            ]
+          }
+        },
+        {
+          "id": "Q3",
+          "label": "Which basic daily activities require help? (BADLs)",
+          "type": "multiselect",
+          "required": false,
+          "options": [
+            {"label": "Bathing/Showering", "value": "bathing"},
+            {"label": "Dressing", "value": "dressing"},
+            {"label": "Eating", "value": "eating"},
+            {"label": "Toileting", "value": "toileting"},
+            {"label": "Transferring", "value": "transferring"},
+            {"label": "Personal hygiene", "value": "hygiene"},
+            {"label": "Mobility", "value": "mobility"}
+          ],
+          "showIf": [
+            {"anyOf": [{"Q2": {"not": "None – fully independent"}}]}
+          ]
+        },
+        {
+          "id": "Q4",
+          "label": "Which household or community tasks require help? (IADLs)",
+          "type": "multiselect",
+          "required": false,
+          "options": [
+            {"label": "Meal preparation", "value": "meals"},
+            {"label": "Housekeeping", "value": "housekeeping"},
+            {"label": "Managing finances", "value": "finances"},
+            {"label": "Medication management", "value": "meds"},
+            {"label": "Transportation", "value": "transport"},
+            {"label": "Shopping", "value": "shopping"},
+            {"label": "Communication", "value": "communication"}
+          ],
+          "showIf": [
+            {"anyOf": [{"Q2": {"not": "None – fully independent"}}]}
+          ]
+        },
+        {
+          "id": "Q5",
+          "label": "How many hours per day of assistance does [name] typically receive?",
+          "type": "single",
+          "options": ["Less than 1 hour", "1–3 hours", "4–8 hours", "24-hour support"]
+        },
+        {
+          "id": "Q6",
+          "label": "Who provides most of the support right now?",
+          "type": "single",
+          "options": ["Family/friends", "Paid caregiver", "Community or agency", "No regular support"]
+        }
+      ]
+    },
+    {
+      "id": "health_safety",
+      "title": "Health & Safety",
+      "questions": [
+        {
+          "id": "Q7",
+          "label": "Cognitive health or memory changes",
+          "type": "single",
+          "options": [
+            "No concerns",
+            "Occasional forgetfulness",
+            "Moderate memory or thinking issues",
+            "Severe memory issues or diagnosis (like dementia or Alzheimer’s)"
+          ]
+        },
+        {
+          "id": "Q8",
+          "label": "Have there been any of these behaviors or concerns?",
+          "type": "matrix",
+          "items": [
+            {"id": "wandering", "label": "Wandering"},
+            {"id": "aggression", "label": "Aggression"},
+            {"id": "elopement", "label": "Elopement / Exit-seeking"},
+            {"id": "confusion", "label": "Confusion or disorientation"},
+            {"id": "sundowning", "label": "Sundowning"},
+            {"id": "repetitive", "label": "Repetitive questioning"},
+            {"id": "judgment", "label": "Poor judgment"},
+            {"id": "hoarding", "label": "Hoarding"},
+            {"id": "sleep", "label": "Sleep disturbances"}
+          ],
+          "options": ["Not present", "Present"],
+          "showIf": [
+            {
+              "anyOf": [
+                {"Q7": "Moderate memory or thinking issues"},
+                {"Q7": "Severe memory issues or diagnosis (like dementia or Alzheimer’s)"}
+              ]
+            }
+          ]
+        },
+        {
+          "id": "Q9",
+          "label": "Medication profile",
+          "type": "single",
+          "options": [
+            "None",
+            "Simple – a few meds, easy to manage",
+            "Moderate – daily meds, some complexity",
+            "Complex – many meds or caregiver-managed"
+          ]
+        },
+        {
+          "id": "Q10",
+          "label": "Mobility level",
+          "type": "single",
+          "options": [
+            "Walks independently",
+            "Uses cane or walker",
+            "Uses wheelchair or scooter",
+            "Bed-bound or limited mobility"
+          ]
+        },
+        {
+          "id": "Q11",
+          "label": "Fall history",
+          "type": "single",
+          "options": ["No falls in past 6 months", "One fall", "Multiple falls"]
+        },
+        {
+          "id": "Q12",
+          "label": "Chronic conditions (select status for each)",
+          "type": "matrix",
+          "items": [
+            {"id": "diabetes", "label": "Diabetes"},
+            {"id": "chf", "label": "Congestive heart failure (CHF)"},
+            {"id": "copd", "label": "COPD / Respiratory disease"},
+            {"id": "hypertension", "label": "Hypertension"},
+            {"id": "arthritis", "label": "Arthritis"},
+            {"id": "stroke", "label": "Stroke or neurological condition"},
+            {"id": "parkinsons", "label": "Parkinson’s disease"},
+            {"id": "cancer", "label": "Cancer"},
+            {"id": "other", "label": "Other"}
+          ],
+          "options": ["Not present", "Present"]
+        },
+        {
+          "id": "Q13",
+          "label": "How well are these conditions being managed overall?",
+          "type": "single",
+          "options": ["Very well", "Mostly managed", "Somewhat unstable", "Poorly managed"],
+          "showIf": [
+            {"anyOf": [{"count": {"of": "Q12", "where": "Present", "gte": 2}}]}
+          ]
+        },
+        {
+          "id": "Q14",
+          "label": "Overall, how would you describe [name]’s mood these days?",
+          "type": "single",
+          "options": ["Great – always positive", "Mostly good", "Okay – ups and downs", "Low – feeling down a lot"],
+          "gating": {
+            "flags": {
+              "Low – feeling down a lot": "emotional_followup"
+            }
+          }
+        },
+        {
+          "id": "Q15",
+          "label": "Is [name]’s home located far from family, care providers, or essential services?",
+          "type": "single",
+          "options": ["No – easily accessible", "Somewhat isolated", "Very isolated"]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+{
+  "base_rates": {
+    "in_home_hourly": 30,
+    "assisted_living": {
+      "studio": 5500,
+      "1_bedroom": 5900,
+      "2_bedroom": 6400
+    },
+    "memory_care": {
+      "standard": 7500,
+      "high_acuity": 9000
+    }
+  },
+  "modifiers": {
+    "help_level": {
+      "light": 0,
+      "moderate": 300,
+      "high": 700
+    },
+    "mobility": {
+      "independent": 0,
+      "device": 200,
+      "wheelchair": 400,
+      "bedbound": 900
+    },
+    "medical_complexity": {
+      "none": 0,
+      "simple": 150,
+      "moderate": 350,
+      "complex": 700
+    },
+    "behaviors": {
+      "wandering": 300,
+      "aggression": 500,
+      "exit_seeking": 250
+    },
+    "second_person": {
+      "studio": 1200,
+      "1_bedroom": 900,
+      "2_bedroom": 600
+    }
+  },
+  "va_benefits": {
+    "aid_attendance_veteran_spouse": 3600
+  },
+  "zip_multipliers": {
+    "606": 1.08,
+    "default": 1.0
+  },
+  "runway_order": ["liquid_savings", "retirement_accounts", "home_equity"]
+}
