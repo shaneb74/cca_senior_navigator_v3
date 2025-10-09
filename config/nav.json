@@ -6,19 +6,6 @@
       "label": "App Utilities",
       "items": [
         {"key": "welcome", "label": "Welcome", "module": "pages._stubs:render_welcome"},
-        {"key": "welcome_contextual", "label": "Contextual Welcome", "module": "pages._stubs:render_welcome_contextual"},
-        {"key": "pro_welcome", "label": "Pro Welcome", "module": "pages._stubs:render_pro_welcome"},
-        {"key": "pro_welcome_contextual", "label": "Pro Contextual Welcome", "module": "pages._stubs:render_pro_welcome_contextual"},
-        {"key": "professionals", "label": "Professionals", "module": "pages._stubs:render_professionals"},
-        {"key": "login", "label": "Login", "module": "pages._stubs:render_login", "hide_when_auth": true},
-        {"key": "ai_advisor", "label": "AI Advisor (Navi)", "module": "pages._stubs:render_ai_advisor"},
-        {"key": "documents", "label": "Documents", "module": "pages._stubs:render_documents", "requires_auth": true},
-        {"key": "exports", "label": "Exports", "module": "pages._stubs:render_exports", "requires_auth": true},
-        {"key": "waiting_room", "label": "Waiting Room", "module": "pages._stubs:render_waiting_room"},
-        {"key": "trusted_partners", "label": "Trusted Partners", "module": "pages._stubs:render_trusted_partners"},
-        {"key": "my_account", "label": "My Account", "module": "pages._stubs:render_my_account", "requires_auth": true},
-        {"key": "terms", "label": "Terms of Use", "module": "pages._stubs:render_terms"},
-        {"key": "privacy", "label": "Privacy Policy", "module": "pages._stubs:render_privacy"},
         {"key": "about", "label": "About Us", "module": "pages._stubs:render_about"}
       ]
     },
@@ -31,21 +18,6 @@
         {"key": "hub_learning", "label": "Learning & Resources Hub", "module": "hubs.learning:render"},
         {"key": "hub_trusted", "label": "Trusted Partners Hub", "module": "hubs.trusted_partners:render"},
         {"key": "hub_professional", "label": "Professional Hub", "module": "hubs.professional:render", "roles": ["pro", "admin"]}
-      ]
-    },
-    {
-      "id": "products",
-      "label": "Products",
-      "items": [
-        {"key": "gcp", "label": "Guided Care Plan", "module": "products.gcp:render"},
-        {"key": "cost_planner", "label": "Cost Planner", "module": "products.cost_planner:render"},
-        {"key": "cost_planner_quick_estimate", "label": "Quick Estimate", "module": "products.cost_planner:render_landing"},
-        {"key": "cost_planner_income_assets", "label": "Income & Assets", "module": "products.cost_planner:render_income"},
-        {"key": "cost_planner_housing_options", "label": "Housing Options", "module": "products.cost_planner:render_housing_options"},
-        {"key": "cost_planner_va_benefits", "label": "VA Benefits", "module": "products.cost_planner:render_va_benefits"},
-        {"key": "cost_planner_home_mods", "label": "Home Mods", "module": "products.cost_planner:render_home_mods"},
-        {"key": "cost_planner_runway_projection", "label": "Runway Projection", "module": "products.cost_planner:render_runway_projection"},
-        {"key": "pfma", "label": "Plan with My Advisor", "module": "products.pfma:render"}
       ]
     }
   ]
