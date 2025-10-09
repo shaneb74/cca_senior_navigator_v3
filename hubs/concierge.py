@@ -23,6 +23,16 @@ def render():
             background: var(--bg);
             min-height: 80vh;
         }
+        .tiles-2x2 {
+            display: grid !important;
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 24px !important;
+        }
+        @media (max-width: 640px) {
+            .tiles-2x2 {
+                grid-template-columns: 1fr !important;
+            }
+        }
         </style>""",
         unsafe_allow_html=True,
     )
@@ -46,7 +56,7 @@ def render():
     )
     
     # Hub tiles grid
-    st.markdown('<div class="tiles-2x2">', unsafe_allow_html=True)
+    st.markdown('<div class="tiles-2x2" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px;">', unsafe_allow_html=True)
 
     # Render hub tiles for each product
     for product_key in ["gcp", "cost_planner", "pfma"]:
