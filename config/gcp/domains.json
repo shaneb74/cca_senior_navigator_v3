@@ -1,12 +1,44 @@
 {
   "domains": [
-    {"id": "Funding", "weightDefault": 1},
-    {"id": "ADL/IADL Burden", "weightDefault": 1, "cap": 12},
-    {"id": "Cognitive Function", "weightDefault": 1, "cap": 3},
-    {"id": "Medication Complexity", "weightDefault": 1, "cap": 3},
-    {"id": "Mobility & Falls", "weightDefault": 1, "cap": 6},
-    {"id": "Health & Chronic Conditions", "weightDefault": 1, "cap": 6},
-    {"id": "Support Network", "weightDefault": 1, "cap": 6},
-    {"id": "Geographic Isolation", "weightDefault": 1, "cap": 2}
+    {
+      "id": "ADL/IADL Burden",
+      "weightDefault": 1,
+      "cap": 12
+    },
+    {
+      "id": "Cognitive Function",
+      "weightDefault": 1,
+      "cap": 3
+    },
+    {
+      "id": "Medication Complexity",
+      "weightDefault": 1,
+      "cap": 3
+    },
+    {
+      "id": "Mobility & Falls",
+      "weightDefault": 1,
+      "cap": 6
+    },
+    {
+      "id": "Health & Chronic Conditions",
+      "weightDefault": 1,
+      "cap": 6
+    },
+    {
+      "id": "Support Network",
+      "weightDefault": 1,
+      "cap": 6
+    },
+    {
+      "id": "Geographic Isolation",
+      "weightDefault": 1,
+      "cap": 2
+    },
+    {
+      "id": "Age",
+      "weightDefault": 1,
+      "cap": 3
+    }
   ]
 }
