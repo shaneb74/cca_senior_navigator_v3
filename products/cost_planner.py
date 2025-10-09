@@ -63,13 +63,11 @@ def render_landing():
     
     col1, col2 = st.columns(2)
     with col1:
-        st.markdown('<button class="btn btn--primary" onclick="javascript:void(0)" id="start_plan">Start My Plan</button>', unsafe_allow_html=True)
         if st.button("Start My Plan", key="start_plan"):
             # Assume auth handled, or add modal
             st.session_state["cost_planner_step"] = "entry_flow"
             st.rerun()
     with col2:
-        st.markdown('<button class="btn btn--secondary" onclick="javascript:void(0)" id="explore_costs">Explore Costs</button>', unsafe_allow_html=True)
         if st.button("Explore Costs", key="explore_costs"):
             st.session_state["cost_planner_step"] = "explore"
             st.rerun()
@@ -104,7 +102,6 @@ def render_entry_flow():
     st.markdown("Do you own a home?")
     homeowner = st.radio(" ", ["Yes", "No"], index=0 if data.get("homeowner") else 1, key="homeowner", label_visibility="collapsed")
     
-    st.markdown('<div class="card-actions"><button class="btn btn--primary" onclick="javascript:void(0)" id="continue_entry">Continue</button></div>', unsafe_allow_html=True)
     if st.button("Continue", key="continue_entry"):
         st.session_state["cost_data"] = {
             "veteran": veteran == "Yes",
@@ -165,21 +162,16 @@ def render_hub():
   <div class="tile-title">{title}</div>
   <span class="badge {badge_class}">{status}</span>
 </div>
-<p class="tile-meta">{meta}</p>
-<div class="kit-row">
-  <button class="btn btn--primary" onclick="javascript:void(0)" id="edit_{mod_key}">Edit</button>
-</div>""",
+<p class="tile-meta">{meta}</p>""",
             unsafe_allow_html=True,
         )
-        # Use a hidden button to trigger
-        if st.button("Edit", key=f"edit_{mod_key}", help="Edit this module"):
+        if st.button("Edit", key=f"edit_{mod_key}"):
             st.session_state["cost_planner_step"] = f"module_{mod_key}"
             st.rerun()
         tile_close()
     
     tiles_close()
     
-    st.markdown('<div class="card-actions"><button class="btn btn--primary" onclick="javascript:void(0)" id="continue_review">Continue to Expert Review</button></div>', unsafe_allow_html=True)
     if st.button("Continue to Expert Review", key="continue_review"):
         st.session_state["cost_planner_step"] = "expert_review"
         st.rerun()
@@ -207,7 +199,6 @@ def render_income():
                 default_index = 0
         finance_handling = st.radio(" ", options, index=default_index, key="finance_radio", label_visibility="collapsed")
     
-    st.markdown('<div class="card-actions"><button class="btn btn--primary" onclick="javascript:void(0)" id="save_income">Save & Continue</button></div>', unsafe_allow_html=True)
     if st.button("Save & Continue", key="save_income"):
         data.update({
             "social_security": ss,
@@ -237,7 +228,6 @@ def render_expenses():
     transport = st.number_input("Transportation", value=data.get("transportation", 0), step=100)
     other_exp = st.number_input("Other Expenses", value=data.get("other_expenses", 0), step=100)
     
-    st.markdown('<div class="card-actions"><button class="btn btn--primary" onclick="javascript:void(0)" id="save_expenses">Save & Continue</button></div>', unsafe_allow_html=True)
     if st.button("Save & Continue", key="save_expenses"):
         updates = {
             "utilities": utilities,
@@ -270,7 +260,6 @@ def render_va_benefits():
     if st.button("Quick VA Quiz"):
         st.write("Quiz not implemented yet")
     
-    st.markdown('<div class="card-actions"><button class="btn btn--primary" onclick="javascript:void(0)" id="save_va">Save & Continue</button></div>', unsafe_allow_html=True)
     if st.button("Save & Continue", key="save_va"):
         data["va_benefits"] = va_benefit
         st.session_state["cost_data"] = data
@@ -285,7 +274,6 @@ def render_care_needs():
     if gcp_exists:
         care_type, details, _ = get_gcp_recommendation()
         st.write(f"Based on GCP, recommended: {care_type}")
-        st.markdown('<div class="card-actions"><button class="btn btn--secondary" onclick="javascript:void(0)" id="change_care">Change</button></div>', unsafe_allow_html=True)
         if st.button("Change", key="change_care"):
             gcp_exists = False
     
@@ -335,7 +323,6 @@ def render_care_needs():
     
     # Add more as needed
     
-    st.markdown('<div class="card-actions"><button class="btn btn--primary" onclick="javascript:void(0)" id="save_care">Save & Continue</button></div>', unsafe_allow_html=True)
     if st.button("Save & Continue", key="save_care"):
         data["care_type"] = care_type
         data["care_details"] = details
@@ -353,7 +340,6 @@ def render_assets():
     if data.get("homeowner"):
         home_equity = st.number_input("Home Equity", value=data.get("home_equity", 0), step=1000)
     
-    st.markdown('<div class="card-actions"><button class="btn btn--primary" onclick="javascript:void(0)" id="save_assets">Save & Continue</button></div>', unsafe_allow_html=True)
     if st.button("Save & Continue", key="save_assets"):
         data.update({
             "liquid_savings": liquid,
@@ -381,7 +367,6 @@ def render_expert_review():
     # Runway placeholder
     st.write("Runway: Calculation not implemented yet")
     
-    st.markdown('<div class="card-actions"><button class="btn btn--secondary" onclick="javascript:void(0)" id="back_hub">Back to Hub</button></div>', unsafe_allow_html=True)
     if st.button("Back to Hub", key="back_hub"):
         st.session_state["cost_planner_step"] = "hub"
         st.rerun()
