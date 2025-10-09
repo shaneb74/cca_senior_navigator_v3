@@ -39,6 +39,34 @@
     background-color: var(--brand-50) !important;
 }
 
+/* Style st.button to match .btn classes */
+.stButton > button {
+    display: inline-block;
+    font-weight: 600;
+    border-radius: var(--radius);
+    padding: 12px 20px;
+    min-height: 44px;
+    text-align: center;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
+    border: 1px solid var(--brand);
+    background: var(--brand);
+    color: #fff;
+}
+
+.stButton > button:hover {
+    background: var(--brand-400, #6BA8FF);
+    color: #fff;
+    border-color: var(--brand-400, #6BA8FF);
+}
+
+.stButton > button:active {
+    background: var(--brand-700, #0043b8);
+    color: #fff;
+    border-color: var(--brand-700, #0043b8);
+}
+
 /* Tokens */
 :root{
   /* Brand */
