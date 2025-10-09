@@ -1,6 +1,31 @@
 from typing import Optional
+import base64, mimetypes, pathlib, sys, functools
 
 import streamlit as st
+
+# Resolve repository root (…/cca_senior_navigator_v3)
+_REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
+
+
+@functools.lru_cache(maxsize=128)
+def img_src(rel_path: str) -> str:
+    """
+    Return a base64 data URI for an image at repo-relative rel_path.
+    Example: img_src("static/images/hero.png")
+    """
+    safe_rel = rel_path.lstrip("/").replace("\\", "/")
+    p = (_REPO_ROOT / safe_rel).resolve()
+    if not p.exists():
+        print(f"[WARN] Missing static image: {safe_rel} (resolved: {p})", file=sys.stderr)
+        return ""
+    mime, _ = mimetypes.guess_type(p.name)
+    try:
+        data = p.read_bytes()
+    except Exception as e:
+        print(f"[ERROR] Failed to read image {p}: {e}", file=sys.stderr)
+        return ""
+    b64 = base64.b64encode(data).decode("utf-8")
+    return f"data:{mime or 'image/png'};base64,{b64}"
 
 
 def header(app_title: str, current_key: str, pages: dict):
