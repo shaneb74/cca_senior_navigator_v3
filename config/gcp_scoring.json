@@ -1,0 +1,26 @@
+[
+  {"question_id": "help_overall", "answer_value": "None – fully independent", "setting": "In-Home Care", "points": 1},
+  {"question_id": "help_overall", "answer_value": "Occasional – some help with a few tasks", "setting": "Assisted Living", "points": 2},
+  {"question_id": "help_overall", "answer_value": "Regular – needs daily assistance", "setting": "Assisted Living", "points": 3},
+  {"question_id": "help_overall", "answer_value": "Extensive – needs full-time support", "setting": "Memory Care", "points": 4},
+
+  {"question_id": "memory_changes", "answer_value": "No concerns", "setting": "In-Home Care", "points": 1},
+  {"question_id": "memory_changes", "answer_value": "Occasional forgetfulness", "setting": "Assisted Living", "points": 2},
+  {"question_id": "memory_changes", "answer_value": "Moderate memory or thinking issues", "setting": "Memory Care", "points": 3},
+  {"question_id": "memory_changes", "answer_value": "Severe memory issues or diagnosis (like dementia or Alzheimer’s)", "setting": "Memory Care High Acuity", "points": 4},
+
+  {"question_id": "hours_per_day", "answer_value": "Less than 1 hour", "setting": "In-Home Care", "points": 1},
+  {"question_id": "hours_per_day", "answer_value": "1–3 hours", "setting": "In-Home Care", "points": 2},
+  {"question_id": "hours_per_day", "answer_value": "4–8 hours", "setting": "Assisted Living", "points": 3},
+  {"question_id": "hours_per_day", "answer_value": "24-hour support", "setting": "Memory Care High Acuity", "points": 4},
+
+  {"question_id": "primary_support", "answer_value": "Family/friends", "setting": "In-Home Care", "points": 1},
+  {"question_id": "primary_support", "answer_value": "Paid caregiver", "setting": "Assisted Living", "points": 2},
+  {"question_id": "primary_support", "answer_value": "Community or agency", "setting": "Assisted Living", "points": 2},
+  {"question_id": "primary_support", "answer_value": "No regular support", "setting": "Memory Care", "points": 3},
+
+  {"question_id": "mobility", "answer_value": "Walks independently", "setting": "In-Home Care", "points": 1},
+  {"question_id": "mobility", "answer_value": "Uses cane or walker", "setting": "Assisted Living", "points": 2},
+  {"question_id": "mobility", "answer_value": "Uses wheelchair or scooter", "setting": "Memory Care", "points": 3},
+  {"question_id": "mobility", "answer_value": "Bed-bound or limited mobility", "setting": "Memory Care High Acuity", "points": 4}
+]

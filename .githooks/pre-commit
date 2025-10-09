@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
+
 req=(
-  "config/gcp_v3_scoring.csv"
-  "config/gcp_v3_conversational_blurbs.csv"
+  "config/gcp_schema.json"
+  "config/gcp_scoring.json"
+  "config/gcp_blurbs.json"
   "static/images/hero.png"
   "static/images/welcome_self.png"
   "static/images/welcome_someone_else.png"

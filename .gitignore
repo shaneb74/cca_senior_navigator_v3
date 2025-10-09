@@ -6,3 +6,7 @@ __pycache__/
 .venv/
 .DS_Store
 .streamlit/
+
+# legacy GCP CSVs
+config/gcp_v3_scoring.csv
+config/gcp_v3_conversational_blurbs.csv

@@ -10,30 +10,37 @@ _REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
 _CFG = _REPO_ROOT / "config"
 
 SCHEMA_PATH = _CFG / "gcp_schema.json"
-SCORING_PATH = _CFG / "gcp_v3_scoring.csv"
-BLURBS_PATH = _CFG / "gcp_v3_conversational_blurbs.csv"
+SCORING_JSON = _CFG / "gcp_scoring.json"
+BLURBS_JSON = _CFG / "gcp_blurbs.json"
 
 
 @st.cache_data(show_spinner=False)
 def load_schema() -> Dict[str, Any]:
-    with open(SCHEMA_PATH, "r", encoding="utf-8") as f:
+    with SCHEMA_PATH.open("r", encoding="utf-8") as f:
         return json.load(f)
 
 
 @st.cache_data(show_spinner=False)
 def load_scoring() -> pd.DataFrame:
-    df = pd.read_csv(SCORING_PATH)
+    if not SCORING_JSON.exists():
+        raise FileNotFoundError(
+            "Missing config/gcp_scoring.json (run the CSV→JSON converter)."
+        )
+    with SCORING_JSON.open("r", encoding="utf-8") as f:
+        data = json.load(f)
+    df = pd.DataFrame(data)
     required = {"question_id", "answer_value", "setting", "points"}
     missing = required - set(df.columns)
     if missing:
-        raise ValueError(f"gcp_v3_scoring.csv missing columns: {missing}")
+        raise ValueError(f"gcp_scoring.json missing columns: {missing}")
     df["points"] = df["points"].astype(float)
     return df
 
 
 @st.cache_data(show_spinner=False)
 def load_blurbs() -> Dict[str, str]:
-    df = pd.read_csv(BLURBS_PATH)
-    if not {"key", "text"}.issubset(df.columns):
-        raise ValueError("gcp_v3_conversational_blurbs.csv must include columns: key, text")
-    return dict(zip(df["key"].astype(str), df["text"].astype(str)))
+    if not BLURBS_JSON.exists():
+        return {}
+    with BLURBS_JSON.open("r", encoding="utf-8") as f:
+        obj = json.load(f)
+    return {str(k): str(v) for k, v in obj.items()}
