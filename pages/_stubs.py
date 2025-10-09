@@ -1,8 +1,9 @@
-from typing import List, Optional, Tuple
 
+from typing import List, Optional, Tuple
 import streamlit as st
 
 from core.nav import route_to
+from core.ui import img_src
 
 
 def _page(title: str, desc: str, ctas: Optional[List[Tuple[str, str]]] = None):
@@ -15,8 +16,11 @@ def _page(title: str, desc: str, ctas: Optional[List[Tuple[str, str]]] = None):
 
 
 def render_welcome():
+    hero = img_src("static/images/hero.png")
+    someone_img = img_src("static/images/welcome_someone_else.png")
+    self_img = img_src("static/images/welcome_self.png")
     st.markdown(
-        """<section class="container section-hero">
+        f"""<section class="container section-hero">
 <div class="hero-grid">
   <div>
     <div class="hero-eyebrow">Concierge Care Advisors</div>
@@ -28,7 +32,7 @@ def render_welcome():
     </div>
   </div>
   <div>
-    <img class="card-photo" src="static/images/Hero.png" alt="Senior and caregiver"/>
+    <img class="card-photo" src="{hero}" alt="Senior and caregiver"/>
   </div>
 </div>
 </section>
@@ -37,7 +41,7 @@ def render_welcome():
 <h2>How We Can Help You</h2>
 <div class="cards-2">
   <article class="card card--hover">
-    <img class="card-photo" src="static/images/Someone-Else.png" alt="Supporting others"/>
+    <img class="card-photo" src="{someone_img}" alt="Supporting others"/>
     <div class="card-head">Supporting Others</div>
     <div class="card-meta">For a loved one</div>
     <p>Helping you make confident care decisions for someone you love.</p>
@@ -47,7 +51,7 @@ def render_welcome():
   </article>
 
   <article class="card card--hover">
-    <img class="card-photo" src="static/images/Self.png" alt="Getting ready for myself"/>
+    <img class="card-photo" src="{self_img}" alt="Getting ready for myself"/>
     <div class="card-head">Getting Ready for Myself</div>
     <div class="card-meta">For myself</div>
     <p>Plan for your own future care with trusted guidance and peace of mind.</p>
@@ -64,8 +68,9 @@ def render_welcome():
 def render_welcome_contextual():
     mode = st.query_params.get("who", "someone")
     is_me = mode == "me"
-    photo_back = "static/images/contextual_welcome_self.png" if is_me else "static/images/contextual_welcome_someone_else.png"
-    photo_front = "static/images/tell_us_about_you.png" if is_me else "static/images/tell_us_about_them.png"
+    photo_back = img_src("static/images/contextual_self.png") if is_me else img_src("static/images/contextual_someone_else.png")
+    # foreground cards from design
+    photo_front = img_src("static/images/tell_us_about_you.png") if is_me else img_src("static/images/tell_us_about_them.png")
     title_copy = "Getting Ready for Myself" if is_me else "Supporting Others"
     body_copy = (
         "Plan for your own future care with trusted guidance and peace of mind."
@@ -90,7 +95,7 @@ def render_welcome_contextual():
         <input class="input" placeholder="Type a name"/>
       </div>
       <div class="card-actions mt-space-4">
-        <a class="btn btn--primary" href="?page=waiting_room">Continue</a>
+        <a class="btn btn--primary" href="?page=hub_concierge">Continue</a>
         <a class="btn btn--ghost" href="?page=welcome">Close</a>
       </div>
       <p class="helper-note mt-space-4">If you want to assess several people, you can move on to the next step later.</p>
@@ -175,8 +180,9 @@ def render_exports():
 
 
 def render_waiting_room():
+    status_img = img_src("static/images/login.png")
     st.markdown(
-        """
+        f"""
 <section class="container stack">
   <div class="banner banner--success">You’re booked. An advisor will follow up within 24 hours.</div>
   <div class="grid">
@@ -194,7 +200,7 @@ def render_waiting_room():
       </div>
     </div>
     <div class="card grid-span-4 text-center">
-      <img class="img-responsive img-rounded" src="/static/images/login.png" alt="Status" />
+      <img class="img-responsive img-rounded" src="{status_img}" alt="Status" />
     </div>
   </div>
 </section>
