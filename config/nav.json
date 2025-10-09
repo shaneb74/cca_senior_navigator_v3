@@ -32,6 +32,13 @@
         {"key": "hub_trusted", "label": "Trusted Partners Hub", "module": "hubs.trusted_partners:render"},
         {"key": "hub_professional", "label": "Professional Hub", "module": "hubs.professional:render", "roles": ["pro", "admin"]}
       ]
+    },
+    {
+      "id": "products",
+      "label": "Products",
+      "items": [
+        {"key": "gcp", "label": "Guided Care Plan", "module": "products.gcp:render"}
+      ]
     }
   ]
 }
