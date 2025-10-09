@@ -12,7 +12,7 @@ def render():
 
     # Wrap the entire hub content
     st.markdown('<section class="hub-page">', unsafe_allow_html=True)
-    st.markdown('<h2 class="text-center" style="margin: 8px 0 24px;">Learning & Resources Hub</h2>', unsafe_allow_html=True)
+    st.markdown('<h1 class="text-center" style="margin: 16px 0 32px; font-size: 2rem; font-weight: 700; color: #0f172a;">Learning & Resources Hub</h1>', unsafe_allow_html=True)
 
     # Start the hub grid
     st.markdown('<div class="hub-grid">', unsafe_allow_html=True)

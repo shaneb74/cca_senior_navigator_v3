@@ -186,6 +186,11 @@ def render_hub_tile(title, badge, label, value, status, primary_label, secondary
         "locked": "Locked"
     }.get(status, "")
 
+    # Create unique keys for the buttons
+    primary_key = f"{title.lower().replace(' ', '_').replace('&', 'and')}_primary"
+    secondary_key = f"{title.lower().replace(' ', '_').replace('&', 'and')}_secondary"
+
+    # Render the tile HTML structure
     st.markdown(f"""
     <article class="hub-tile {color_class}">
       <div class="hub-tile__header">
@@ -199,7 +204,7 @@ def render_hub_tile(title, badge, label, value, status, primary_label, secondary
       </div>
 
       <div class="hub-tile__footer">
-        <div class="hub-tile__actions">
+        <div class="hub-tile__actions" id="actions-{primary_key}">
         </div>
         <div class="hub-tile__status">
           {status_text}
@@ -208,13 +213,13 @@ def render_hub_tile(title, badge, label, value, status, primary_label, secondary
     </article>
     """, unsafe_allow_html=True)
 
-    # Add Streamlit buttons positioned within the tile's action area
-    # Use a container to keep buttons within the tile layout
+    # Create a container for buttons positioned absolutely within the tile
     with st.container():
-        col1, col2, spacer = st.columns([1, 1, 1])
+        # Use columns to position buttons within the tile actions area
+        col1, col2 = st.columns([1, 1])
 
         with col1:
-            if st.button(primary_label, key=f"{title.lower().replace(' ', '_').replace('&', 'and')}_primary", use_container_width=True):
+            if st.button(primary_label, key=primary_key):
                 if primary_action:
                     primary_action()
                 else:
@@ -227,7 +232,7 @@ def render_hub_tile(title, badge, label, value, status, primary_label, secondary
                         route_to("pfma")
 
         with col2:
-            if st.button(secondary_label, key=f"{title.lower().replace(' ', '_').replace('&', 'and')}_secondary", use_container_width=True):
+            if st.button(secondary_label, key=secondary_key):
                 if secondary_action:
                     secondary_action()
                 else:
