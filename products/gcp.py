@@ -182,7 +182,38 @@ def _render_ack(qid: str, question: Dict[str, Any]):
     _answers()[qid] = bool(checked)
 
 
-def _render_question(question: Dict[str, Any]):
+def _handle_medicaid_ack(blurbs: Dict[str, str]) -> None:
+    answers = _answers()
+    current = answers.get("medicaid_status")
+    if current not in {"yes", "unsure"}:
+        st.session_state.pop("medicaid_acknowledged", None)
+        return
+
+    title = blurbs.get("gcp_medicaid_title", "We may not be able to assist with Medicaid")
+    body = blurbs.get(
+        "gcp_medicaid_body",
+        "If the person is currently on Medicaid or you’re not sure, our Care Advisors aren’t able to provide services under that program. "
+        "Medicaid is a government benefit that offers its own care options for long-term services and supports. You can still complete the Guided Care Plan and use the Cost Planner to learn more about what care might look like and how much it may cost.",
+    )
+    cta = blurbs.get(
+        "gcp_medicaid_cta",
+        "Visit Medicaid.gov to learn more about Long-Term Services & Supports",
+    )
+
+    st.warning(f"**{title}**  \n{body}")
+    st.markdown(
+        "<a class='btn btn--secondary' href='https://www.medicaid.gov/medicaid/long-term-services-supports' target='_blank'>"
+        f"{cta}</a>",
+        unsafe_allow_html=True,
+    )
+
+    acknowledged = st.checkbox(
+        "I understand and wish to continue", key="medicaid_acknowledged"
+    )
+    if not acknowledged:
+        st.stop()
+
+def _render_question(question: Dict[str, Any], blurbs: Dict[str, str]):
     qid = question.get("id") or question.get("key")
     if not qid:
         raise KeyError("Question missing 'id' or 'key'")
@@ -208,6 +239,9 @@ def _render_question(question: Dict[str, Any]):
         default = _answers().get(qid, "")
         value = st.text_input("Answer", value=str(default), key=f"text_{qid}")
         _answers()[qid] = value
+
+    if qid == "medicaid_status":
+        _handle_medicaid_ack(blurbs)
 
 
 def _score(answers: Dict[str, Any]) -> Dict[str, float]:
@@ -251,12 +285,12 @@ def render():
     for section in schema.get("sections", []):
         st.subheader(section.get("title", ""))
         for question in section.get("questions", []):
-            _render_question(question)
+            _render_question(question, blurbs)
         st.divider()
 
     answers = _answers()
     medicaid_val = answers.get("medicaid_status")
-    ack_ok = bool(answers.get("medicaid_ack"))
+    ack_ok = bool(st.session_state.get("medicaid_acknowledged"))
     medicaid_flag = medicaid_val in ("yes", "unsure")
     st.session_state["flags"]["medicaid"] = medicaid_flag
 
@@ -292,6 +326,12 @@ def render():
             )
             log_event("gcp.completed", {"recommendation": recommendation})
             st.success(f"Recommendation: **{recommendation}**")
+            if answers.get("medicaid_status") in ("yes", "unsure"):
+                st.info(
+                    "Because Medicaid provides its own long-term care programs, our Care Advisors can’t schedule services directly. "
+                    "You can still explore care options and costs below. "
+                    "[Learn more about Medicaid Long-Term Services & Supports →](https://www.medicaid.gov/medicaid/long-term-services-supports)"
+                )
             st.markdown(
                 """
                 <div class="card-actions">

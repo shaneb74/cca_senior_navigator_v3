@@ -21,14 +21,6 @@
             {"label": "No", "value": "no"},
             {"label": "Unsure", "value": "unsure"}
           ]
-        },
-        {
-          "id": "medicaid_ack",
-          "type": "ack",
-          "label": "Please confirm:",
-          "text": "Concierge Care Advisors can’t arrange placement for people on Medicaid. You can still complete the Guided Care Plan and use the Cost Planner. For Medicaid programs and support, visit Medicaid.gov.",
-          "link": {"label": "Open Medicaid.gov", "href": "https://www.medicaid.gov/"},
-          "depends_on": {"id": "medicaid_status", "any_of": ["yes", "unsure"]}
         }
       ]
     },
