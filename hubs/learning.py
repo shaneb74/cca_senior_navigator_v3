@@ -1,6 +1,52 @@
 import streamlit as st
+from core.ui import render_hub_tile
 
 
 def render():
-    st.header("Learning & Resources Hub")
-    st.write("Hub placeholder. No styling or product logic yet.")
+    # Import the hub grid CSS
+    st.markdown(
+        "<link rel='stylesheet' href='/assets/css/theme.css'>"
+        "<link rel='stylesheet' href='/assets/css/hub_grid.css'>",
+        unsafe_allow_html=True
+    )
+
+    # Wrap the entire hub content
+    st.markdown('<section class="hub-page">', unsafe_allow_html=True)
+    st.markdown('<h2 class="text-center" style="margin: 8px 0 24px;">Learning & Resources Hub</h2>', unsafe_allow_html=True)
+
+    # Start the hub grid
+    st.markdown('<div class="hub-grid">', unsafe_allow_html=True)
+
+    # Render learning resource tiles
+    render_hub_tile(
+        title="Caregiver Guides",
+        badge="Guides",
+        label="Available Resources",
+        value="12 articles",
+        status="new",
+        primary_label="Browse guides",
+        secondary_label="Most popular"
+    )
+
+    render_hub_tile(
+        title="Video Library",
+        badge="Videos",
+        label="Educational Content",
+        value="8 videos",
+        status="new",
+        primary_label="Watch now",
+        secondary_label="Categories"
+    )
+
+    render_hub_tile(
+        title="FAQ Center",
+        badge="FAQ",
+        label="Common Questions",
+        value="25 topics",
+        status="new",
+        primary_label="Search FAQs",
+        secondary_label="Contact support"
+    )
+
+    # Close the hub grid and page wrapper
+    st.markdown('</div></section>', unsafe_allow_html=True)

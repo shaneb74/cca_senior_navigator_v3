@@ -26,7 +26,7 @@
       "id": "hubs",
       "label": "Hubs",
       "items": [
-        {"key": "hub_concierge", "label": "Concierge Care Hub", "module": "hubs.concierge:render"},
+        {"key": "hub_concierge", "label": "ConciergeCareHub", "module": "hubs.concierge:render"},
         {"key": "hub_waiting", "label": "Waiting Room Hub", "module": "hubs.waiting_room:render"},
         {"key": "hub_learning", "label": "Learning & Resources Hub", "module": "hubs.learning:render"},
         {"key": "hub_trusted", "label": "Trusted Partners Hub", "module": "hubs.trusted_partners:render"},
@@ -38,7 +38,14 @@
       "label": "Products",
       "items": [
         {"key": "gcp", "label": "Guided Care Plan", "module": "products.gcp:render"},
-        {"key": "cost_planner", "label": "Cost Planner", "module": "products.cost_planner:render"}
+        {"key": "cost_planner", "label": "Cost Planner", "module": "products.cost_planner:render"},
+        {"key": "cost_planner_quick_estimate", "label": "Quick Estimate", "module": "products.cost_planner:render_landing"},
+        {"key": "cost_planner_income_assets", "label": "Income & Assets", "module": "products.cost_planner:render_income"},
+        {"key": "cost_planner_housing_options", "label": "Housing Options", "module": "products.cost_planner:render_housing_options"},
+        {"key": "cost_planner_va_benefits", "label": "VA Benefits", "module": "products.cost_planner:render_va_benefits"},
+        {"key": "cost_planner_home_mods", "label": "Home Mods", "module": "products.cost_planner:render_home_mods"},
+        {"key": "cost_planner_runway_projection", "label": "Runway Projection", "module": "products.cost_planner:render_runway_projection"},
+        {"key": "pfma", "label": "Plan with My Advisor", "module": "products.pfma:render"}
       ]
     }
   ]

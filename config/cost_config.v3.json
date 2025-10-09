@@ -41,7 +41,9 @@
     }
   },
   "va_benefits": {
-    "aid_attendance_veteran_spouse": 3600
+    "veteran_alone_base": 1600,
+    "veteran_alone_aid_attendance": 2500,
+    "veteran_spouse_aid_attendance": 3600
   },
   "zip_multipliers": {
     "606": 1.08,

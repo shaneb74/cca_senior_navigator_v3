@@ -1,69 +1,103 @@
 import streamlit as st
 
-from core.ui import hub_section, tile_close, tile_open, tiles_close, tiles_open
+from core.nav import PRODUCTS
+from core.state import get_product_state, get_user_ctx
+from core.ui import hub_section, render_hub_tile
+from core.gcp_data import evaluate
 
 
 def render():
-    hub_section("Dashboard", right_meta='Assessment <span class="badge">For someone</span> <span class="badge">John</span>')
-    tiles_open()
-
-    tile_open("md")
+    ctx = get_user_ctx()
+    user_id = ctx["auth"].get("user_id", "guest")
+    
+    # Import the hub grid CSS
     st.markdown(
-        """<div class="tile-head">
-  <div class="tile-title">Understand the situation</div>
-  <span class="badge info">Guided Care Plan</span>
-</div>
-<p class="tile-meta">Recommendation<br><strong>In-Home Care</strong></p>
-<div class="kit-row">
-  <a class="btn btn--primary" href="?page=gcp">Start Assessment</a>
-  <a class="btn btn--secondary" href="?page=ai_advisor">See responses</a>
-  <a class="btn btn--ghost" href="?page=welcome_contextual">Start over</a>
-</div>""",
-        unsafe_allow_html=True,
+        "<link rel='stylesheet' href='/assets/css/theme.css'>"
+        "<link rel='stylesheet' href='/assets/css/hub_grid.css'>",
+        unsafe_allow_html=True
     )
-    tile_close()
+    
+    # Wrap the entire hub content
+    st.markdown('<section class="hub-page">', unsafe_allow_html=True)
+    st.markdown('<h2 class="text-center" style="margin: 8px 0 24px;">ConciergeCareHub</h2>', unsafe_allow_html=True)
+    
+    # Start the hub grid
+    st.markdown('<div class="hub-grid">', unsafe_allow_html=True)
 
-    tile_open("md")
-    st.markdown(
-        """<div class="tile-head">
-  <div class="tile-title">Understand the costs</div>
-  <span class="badge info">Cost Estimator</span>
-</div>
-<p class="tile-meta">Assess cost structure across care settings. Estimate updates automatically.</p>
-<div class="kit-row">
-  <a class="btn btn--primary" href="?page=waiting_room">Start</a>
-  <span class="tile-meta">Next step ✽</span>
-</div>""",
-        unsafe_allow_html=True,
-    )
-    tile_close()
+    # Render hub tiles for each product
+    for product_key in ["gcp", "cost_planner", "pfma"]:
+        if PRODUCTS[product_key]["hub"] == "concierge":
+            state = get_product_state(user_id, product_key)
+            
+            if product_key == "gcp":
+                # Get GCP recommendation if completed
+                answers = st.session_state.get("gcp_answers", {})
+                if answers:
+                    try:
+                        result = evaluate(answers)
+                        label = "Recommendation"
+                        value = result["tier"]
+                        status = "done"
+                        primary_label = "See responses"
+                        secondary_label = "Start over"
+                    except:
+                        label = "Status"
+                        value = "In progress"
+                        status = "doing"
+                        primary_label = "Continue"
+                        secondary_label = "Start over"
+                else:
+                    label = "Status"
+                    value = "Not started"
+                    status = "new"
+                    primary_label = "Get started"
+                    secondary_label = "Learn more"
+                    
+                render_hub_tile(
+                    title="Guided Care Plan",
+                    badge="Guided Care Plan",
+                    label=label,
+                    value=value,
+                    status=status,
+                    primary_label=primary_label,
+                    secondary_label=secondary_label
+                )
+                
+            elif product_key == "cost_planner":
+                # Mock cost planner data - in real implementation, get from state
+                label = "Monthly Gap"
+                value = "$382"
+                status = "doing"
+                primary_label = "Continue"
+                secondary_label = "Review"
+                
+                render_hub_tile(
+                    title="Cost Planner",
+                    badge="Cost Planner",
+                    label=label,
+                    value=value,
+                    status=status,
+                    primary_label=primary_label,
+                    secondary_label=secondary_label
+                )
+                
+            elif product_key == "pfma":
+                # Mock PFMA data - in real implementation, get from state
+                label = "Next Step"
+                value = "Awaiting Appointment"
+                status = "new"
+                primary_label = "Get connected"
+                secondary_label = "Learn more"
+                
+                render_hub_tile(
+                    title="Plan with My Advisor",
+                    badge="Plan with My Advisor",
+                    label=label,
+                    value=value,
+                    status=status,
+                    primary_label=primary_label,
+                    secondary_label=secondary_label
+                )
 
-    tile_open("md")
-    st.markdown(
-        """<div class="tile-head">
-  <div class="tile-title">Connect with an advisor to plan the care</div>
-  <span class="badge info">Get Connected</span>
-</div>
-<p class="tile-meta">Whenever you’re ready to meet with an advisor.</p>
-<div class="kit-row">
-  <a class="btn btn--primary" href="?page=waiting_room">Get connected</a>
-</div>""",
-        unsafe_allow_html=True,
-    )
-    tile_close()
-
-    tile_open("md")
-    st.markdown(
-        """<div class="tile-head">
-  <div class="tile-title">FAQs &amp; Answers</div>
-  <span class="badge info">AI Agent</span>
-</div>
-<p class="tile-meta">Receive instant, tailored assistance from our advanced AI chat.</p>
-<div class="kit-row">
-  <a class="btn btn--primary" href="?page=ai_advisor">Open</a>
-</div>""",
-        unsafe_allow_html=True,
-    )
-    tile_close()
-
-    tiles_close()
+    # Close the hub grid and page wrapper
+    st.markdown('</div></section>', unsafe_allow_html=True)
