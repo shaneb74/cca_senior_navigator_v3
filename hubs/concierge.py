@@ -46,7 +46,7 @@ def render():
     )
     
     # Hub tiles grid
-    st.markdown('<div class="tiles">', unsafe_allow_html=True)
+    st.markdown('<div class="tiles-2x2">', unsafe_allow_html=True)
 
     # Render hub tiles for each product
     for product_key in ["gcp", "cost_planner", "pfma"]:
