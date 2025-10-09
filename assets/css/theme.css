@@ -15,6 +15,30 @@
     color: var(--ink) !important;
 }
 
+/* Fix progress bar contrast */
+.stProgress > div > div > div {
+    background-color: var(--brand) !important;
+}
+
+.stProgress > div > div {
+    background-color: var(--muted) !important;
+}
+
+/* Fix select dropdown contrast */
+.stSelectbox [data-baseweb="select"] > div {
+    background-color: var(--card) !important;
+    color: var(--ink) !important;
+}
+
+.stSelectbox [data-baseweb="select"] [data-baseweb="popover"] div {
+    background-color: var(--card) !important;
+    color: var(--ink) !important;
+}
+
+.stSelectbox [data-baseweb="select"] [data-baseweb="popover"] div:hover {
+    background-color: var(--brand-50) !important;
+}
+
 /* Tokens */
 :root{
   /* Brand */
