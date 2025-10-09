@@ -291,3 +291,44 @@ input[type="checkbox"] { accent-color: var(--brand); }
   --shadow-md:0 6px 12px rgba(0,0,0,.45);
   --shadow-lg:0 18px 32px rgba(0,0,0,.6);
 }
+
+
+/* --- Streamlit radios styled as pills globally --- */
+.stRadio [role="radiogroup"] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2, 8px);
+}
+
+.stRadio [role="radiogroup"] > label {
+  position: relative;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--ink-300, #d4d7de);
+  background: var(--card, #fff);
+  color: var(--ink, #1f2430);
+  cursor: pointer;
+  user-select: none;
+}
+
+.stRadio input[type="radio"] {
+  appearance: none;
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.stRadio input[type="radio"]:checked + div > label,
+.stRadio [aria-checked="true"] > label {
+  background: var(--brand, #1e56d9);
+  color: #fff;
+  border-color: var(--brand, #1e56d9);
+}
+
+.stRadio [role="radiogroup"] > label:hover {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand, #1e56d9) 14%, transparent);
+}
+.stRadio [role="radiogroup"] > label:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand, #1e56d9) 22%, transparent);
+}
