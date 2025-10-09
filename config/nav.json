@@ -37,7 +37,8 @@
       "id": "products",
       "label": "Products",
       "items": [
-        {"key": "gcp", "label": "Guided Care Plan", "module": "products.gcp:render"}
+        {"key": "gcp", "label": "Guided Care Plan", "module": "products.gcp:render"},
+        {"key": "cost_planner", "label": "Cost Planner", "module": "products.cost_planner:render"}
       ]
     }
   ]
