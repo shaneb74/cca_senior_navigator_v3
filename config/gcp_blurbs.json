@@ -1,7 +1,5 @@
 {
   "gcp_intro": "Answer a few questions so we can recommend the safest, least-disruptive care next step.",
-  "gcp_medicaid_title": "We may not be able to assist with Medicaid",
-  "gcp_medicaid_body": "If the person is currently on Medicaid or you’re not sure, our Care Advisors aren’t able to provide services under that program. Medicaid is a government benefit that offers its own care options for long-term services and supports. You can still complete the Guided Care Plan and use the Cost Planner to learn more about what care might look like and how much it may cost.",
-  "gcp_medicaid_cta": "Visit Medicaid.gov to learn more about Long-Term Services & Supports",
-  "pfma_medicaid_notice": "If you’re on Medicaid or unsure, our team can’t schedule appointments because Medicaid offers its own long-term care programs. You can still explore your results, but placement and follow-up scheduling are limited to private pay and non-Medicaid cases."
+  "medicaid_clarify": "Medicaid is different from Medicare. We can absolutely work with people on Medicare. If someone is on Medicaid or you’re not sure, our advisors can’t arrange placement because Medicaid has its own programs.",
+  "medicaid_ack": "Concierge Care Advisors can’t arrange services for people on Medicaid. You can still complete the Guided Care Plan and use the Cost Planner. For Medicaid programs and support, visit Medicaid.gov or learn about Long-Term Services & Supports (LTSS)."
 }

@@ -14,234 +14,96 @@ SETTINGS_ORDER = [
     "Memory Care High Acuity",
 ]
 
-PILL_CSS = """
-<style>
-div[data-testid="stRadio"] label {display:none;}
-div[data-testid="stRadio"] div[role="radiogroup"] {
-  display:flex;
-  gap:var(--space-3);
-  flex-wrap:wrap;
-}
-div[data-testid="stRadio"] div[role="radio"] {
-  border:1px solid var(--ink-300);
-  border-radius:999px;
-  padding:8px 14px;
-  background:var(--muted);
-  color:var(--ink-600);
-  cursor:pointer;
-}
-div[data-testid="stRadio"] div[role="radio"][aria-checked="true"] {
-  background:var(--ink);
-  color:#fff;
-  border-color:var(--ink);
-}
-</style>
-"""
+ELIG_QID = "elig_medicaid"
+ACK_KEY = "elig_medicaid_ack"
 
 
-def _ensure_state() -> None:
-    st.session_state.setdefault("gcp", {"answers": {}})
-    st.session_state.setdefault("flags", {})
+def _ensure_state():
+    st.session_state.setdefault("gcp", {"answers": {}, "scores": {}, "summary": None})
     st.session_state.setdefault("care_profile", {})
+    st.session_state.setdefault(ACK_KEY, False)
 
 
-def _answers() -> Dict[str, Any]:
-    return st.session_state["gcp"]["answers"]
-
-
-def _normalise_options(options: List[Any]) -> List[Dict[str, str]]:
-    normalised: List[Dict[str, str]] = []
-    for opt in options:
-        if isinstance(opt, dict):
-            label = opt.get("label") or opt.get("title") or opt.get("value")
-            value = opt.get("value") or label
+def _opts(q: Dict[str, Any]) -> List[Dict[str, Any]]:
+    raw = q.get("options") or q.get("choices")
+    if not raw:
+        return []
+    normalised: List[Dict[str, Any]] = []
+    for item in raw:
+        if isinstance(item, dict):
+            label = item.get("label") or item.get("title") or item.get("value")
+            value = item.get("value") or label
         else:
-            label = str(opt)
+            label = str(item)
             value = label
         normalised.append({"label": str(label), "value": str(value)})
     return normalised
 
 
-def _eval_condition(rule: Dict[str, Any]) -> bool:
-    answers = _answers()
-    if not rule:
-        return True
-    if "eq" in rule:
-        key, expected = rule["eq"]
-        return answers.get(key) == expected
-    if "ne" in rule:
-        key, expected = rule["ne"]
-        return answers.get(key) != expected
-    if "in" in rule:
-        key, values = rule["in"]
-        ans = answers.get(key)
-        if isinstance(ans, list):
-            return any(str(a) in [str(v) for v in values] for a in ans)
-        return ans in values
-    if "count_gte" in rule:
-        key, minimum = rule["count_gte"]
-        selected = answers.get(key) or []
-        if isinstance(selected, list):
-            return len(selected) >= minimum
-        if isinstance(selected, dict):
-            return sum(1 for picked in selected.values() if picked) >= minimum
-        return False
-    return True
-
-
-def _depends_on_met(condition: Dict[str, Any]) -> bool:
-    if not condition:
-        return True
-    target = condition.get("id")
-    allowed = condition.get("any_of")
-    if not target:
-        return True
-    value = _answers().get(target)
-    if allowed is None:
-        return value is not None
-    if isinstance(value, list):
-        return any(v in value for v in allowed)
-    return value in allowed
-
-
-def _should_render(question: Dict[str, Any]) -> bool:
-    if not _depends_on_met(question.get("depends_on")):
-        _answers().pop(question.get("id") or question.get("key"), None)
-        return False
-    when = question.get("when")
-    if when and not _eval_condition(when):
-        _answers().pop(question.get("id") or question.get("key"), None)
-        return False
-    return True
-
-
-def _render_single(qid: str, question: Dict[str, Any], options: List[Dict[str, str]]):
-    values = [opt["value"] for opt in options]
-    labels = [opt["label"] for opt in options]
-    current = _answers().get(qid)
-    if current not in values:
-        current = values[0]
-    index = values.index(current)
-    style = question.get("style", "pill")
-    if style == "pill":
-        selected_label = st.radio(
-            " ",
-            labels,
-            index=index,
-            horizontal=True,
-            key=f"pill_{qid}",
-            label_visibility="collapsed",
-        )
-        value = values[labels.index(selected_label)]
-    else:
-        selected_label = st.selectbox(
-            " ",
-            labels,
-            index=index,
-            key=f"select_{qid}",
-            label_visibility="collapsed",
-        )
-        value = values[labels.index(selected_label)]
-    _answers()[qid] = value
-
-
-def _render_multiselect(qid: str, options: List[Dict[str, str]]):
-    labels = [opt["label"] for opt in options]
-    label_to_value = {opt["label"]: opt["value"] for opt in options}
-    stored = _answers().get(qid, [])
-    if isinstance(stored, dict):
-        stored = [val for val, picked in stored.items() if picked]
-    default_labels = [lbl for lbl, val in label_to_value.items() if val in stored]
-    selected_labels = st.multiselect(
-        " ",
-        labels,
-        default=default_labels,
-        label_visibility="collapsed",
-        key=f"multi_{qid}",
-    )
-    _answers()[qid] = [label_to_value[lbl] for lbl in selected_labels]
-
-
-def _render_ack(qid: str, question: Dict[str, Any]):
-    depends = question.get("depends_on")
-    if not _depends_on_met(depends):
-        _answers().pop(qid, None)
-        return
-    text = question.get("text", "")
-    link = question.get("link")
-    link_html = (
-        f"  <a class='btn btn--secondary' href='{link['href']}' target='_blank'>{link['label']}</a>"
-        if link
-        else ""
-    )
-    st.info(f"{text}{'' if not link_html else '<br>' + link_html}")
-    checkbox_key = f"ack_{qid}"
-    if checkbox_key not in st.session_state:
-        st.session_state[checkbox_key] = bool(_answers().get(qid, False))
-    checked = st.checkbox("I understand", key=checkbox_key)
-    _answers()[qid] = bool(checked)
-
-
-def _handle_medicaid_ack(blurbs: Dict[str, str]) -> None:
-    answers = _answers()
-    current = answers.get("medicaid_status")
-    if current not in {"yes", "unsure"}:
-        st.session_state.pop("medicaid_acknowledged", None)
-        return
-
-    title = blurbs.get("gcp_medicaid_title", "We may not be able to assist with Medicaid")
-    body = blurbs.get(
-        "gcp_medicaid_body",
-        "If the person is currently on Medicaid or you’re not sure, our Care Advisors aren’t able to provide services under that program. "
-        "Medicaid is a government benefit that offers its own care options for long-term services and supports. You can still complete the Guided Care Plan and use the Cost Planner to learn more about what care might look like and how much it may cost.",
-    )
-    cta = blurbs.get(
-        "gcp_medicaid_cta",
-        "Visit Medicaid.gov to learn more about Long-Term Services & Supports",
-    )
-
-    st.warning(f"**{title}**  \n{body}")
-    st.markdown(
-        "<a class='btn btn--secondary' href='https://www.medicaid.gov/medicaid/long-term-services-supports' target='_blank'>"
-        f"{cta}</a>",
-        unsafe_allow_html=True,
-    )
-
-    acknowledged = st.checkbox(
-        "I understand and wish to continue", key="medicaid_acknowledged"
-    )
-    if not acknowledged:
-        st.stop()
-
-def _render_question(question: Dict[str, Any], blurbs: Dict[str, str]):
-    qid = question.get("id") or question.get("key")
+def _render_question(q: Dict[str, Any]):
+    qid = q.get("id") or q.get("key")
     if not qid:
-        raise KeyError("Question missing 'id' or 'key'")
-    if not _should_render(question):
+        st.warning("Question missing id/key")
         return
 
-    qlabel = question.get("label", str(qid))
-    qhelp = question.get("help")
-    qtype = question.get("type", "single").lower()
-    options = _normalise_options(question.get("options", []))
+    qlabel = q.get("label", qid)
+    qhelp = q.get("help")
+    qtype = (q.get("type") or q.get("ui") or "single").lower()
+    opts = _opts(q)
 
     st.markdown(f"**{qlabel}**")
     if qhelp:
         st.caption(qhelp)
 
-    if qtype in {"single", "pill", "pills"}:
-        _render_single(qid, question, options)
-    elif qtype in {"multiselect", "multi"}:
-        _render_multiselect(qid, options)
-    elif qtype == "ack":
-        _render_ack(qid, question)
-    else:
-        default = _answers().get(qid, "")
-        value = st.text_input("Answer", value=str(default), key=f"text_{qid}")
-        _answers()[qid] = value
+    key = f"gcp_ans_{qid}"
+    answers = st.session_state["gcp"]["answers"]
 
-    if qid == "medicaid_status":
-        _handle_medicaid_ack(blurbs)
+    if qtype in ("single", "radio"):
+        if not opts:
+            st.warning(f"Missing options for {qid}")
+            return
+        labels = [o["label"] for o in opts]
+        values = [o["value"] for o in opts]
+        idx = 0
+        if qid in answers and answers[qid] in values:
+            idx = values.index(answers[qid])
+        choice = st.radio(" ", labels, index=idx, label_visibility="collapsed", key=key)
+        answers[qid] = values[labels.index(choice)]
+
+    elif qtype in ("multi", "checkboxes"):
+        if not opts:
+            st.warning(f"Missing options for {qid}")
+            return
+        current = answers.get(qid, {})
+        sel = {}
+        cols = st.columns(min(3, len(opts)))
+        for i, opt in enumerate(opts):
+            with cols[i % len(cols)]:
+                ck = st.checkbox(opt["label"], value=bool(current.get(opt["value"])), key=f"{key}_{opt['value']}")
+                sel[opt["value"]] = ck
+        answers[qid] = sel
+
+    elif qtype in ("select", "dropdown"):
+        if not opts:
+            st.warning(f"Missing options for {qid}")
+            return
+        labels = [o["label"] for o in opts]
+        values = [o["value"] for o in opts]
+        idx = 0
+        if qid in answers and answers[qid] in values:
+            idx = values.index(answers[qid])
+        label = st.selectbox(" ", labels, index=idx, label_visibility="collapsed", key=key)
+        answers[qid] = values[labels.index(label)]
+
+    elif qtype == "scale":
+        minimum = int(q.get("min", 0))
+        maximum = int(q.get("max", 10))
+        step = int(q.get("step", 1))
+        default = int(answers.get(qid, q.get("default", minimum)))
+        answers[qid] = st.slider(" ", minimum, maximum, default, step, label_visibility="collapsed", key=key)
+
+    else:
+        st.warning(f"Unsupported question type '{qtype}' for {qid}")
 
 
 def _score(answers: Dict[str, Any]) -> Dict[str, float]:
@@ -252,57 +114,67 @@ def _score(answers: Dict[str, Any]) -> Dict[str, float]:
         aval = str(row["answer_value"])
         setting = row["setting"]
         pts = float(row["points"])
-        ans = answers.get(qid)
-        if isinstance(ans, list):
-            if aval in [str(v) for v in ans]:
-                totals[setting] += pts
-        elif isinstance(ans, dict):
+        if qid not in answers:
+            continue
+        ans = answers[qid]
+        if isinstance(ans, dict):
             if ans.get(aval, False):
                 totals[setting] += pts
         else:
             if str(ans) == aval:
                 totals[setting] += pts
-    return {setting: totals.get(setting, 0.0) for setting in SETTINGS_ORDER}
+    return {s: totals.get(s, 0.0) for s in SETTINGS_ORDER}
 
 
 def _pick_recommendation(scores: Dict[str, float]) -> str:
-    return max(scores.items(), key=lambda kv: kv[1])[0] if scores else SETTINGS_ORDER[0]
+    return max(scores.items(), key=lambda kv: kv[1])[0] if scores else "In-Home Care"
+
+
+def _medicaid_gate(answers: Dict[str, Any], blurbs: Dict[str, str]):
+    val = str(answers.get(ELIG_QID, "")).lower()
+    needs_ack = val in {"yes", "unsure"}
+    if not needs_ack:
+        st.session_state[ACK_KEY] = True
+        return
+
+    st.session_state[ACK_KEY] = False
+    st.info(blurbs.get("medicaid_clarify", "Medicaid is different from Medicare. We can work with Medicare."))
+    st.markdown(
+        f"""
+<div class='banner banner--info'>
+  {blurbs.get('medicaid_ack', 'Our advisors can’t arrange placement for Medicaid cases, but you can complete the plan and estimator.')}
+  <br/>
+  <a class='btn btn--secondary' href='https://www.medicaid.gov/' target='_blank' rel='noopener'>Open Medicaid.gov</a>
+  <a class='btn btn--ghost' href='https://www.medicaid.gov/medicaid/long-term-services-supports' target='_blank' rel='noopener'>LTSS (Medicaid)</a>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+    st.session_state[ACK_KEY] = st.checkbox("I understand", value=st.session_state.get(ACK_KEY, False))
 
 
 def render():
     _ensure_state()
-    st.markdown(PILL_CSS, unsafe_allow_html=True)
-
     st.header("Guided Care Plan")
 
     schema = load_schema()
     blurbs = load_blurbs()
 
-    intro = blurbs.get("gcp_intro")
-    if intro:
-        st.markdown(f'<div class="banner banner--info">{intro}</div>', unsafe_allow_html=True)
+    if lead := blurbs.get("gcp_intro"):
+        st.caption(lead)
 
     for section in schema.get("sections", []):
-        st.subheader(section.get("title", ""))
-        for question in section.get("questions", []):
-            _render_question(question, blurbs)
+        title = section.get("title") or section.get("name") or ""
+        if title:
+            st.subheader(title)
+        for q in section.get("questions", []):
+            if not q.get("id") and q.get("key"):
+                q["id"] = q["key"]
+            _render_question(q)
         st.divider()
 
-    answers = _answers()
-    medicaid_val = answers.get("medicaid_status")
-    ack_ok = bool(st.session_state.get("medicaid_acknowledged"))
-    medicaid_flag = medicaid_val in ("yes", "unsure")
-    st.session_state["flags"]["medicaid"] = medicaid_flag
-
-    if medicaid_flag:
-        st.markdown(
-            """<div class=\"banner banner--warning\">
-            We can’t schedule advisor appointments for Medicaid cases. You can still finish your plan and estimate costs.
-            </div>""",
-            unsafe_allow_html=True,
-        )
-
-    disabled_complete = medicaid_flag and not ack_ok
+    answers = st.session_state["gcp"]["answers"]
+    _medicaid_gate(answers, blurbs)
 
     col1, col2 = st.columns(2)
     with col1:
@@ -310,34 +182,32 @@ def render():
             st.success("Progress saved.")
 
     with col2:
-        if st.button("Complete", disabled=disabled_complete):
+        disabled = False
+        if str(answers.get(ELIG_QID, "")).lower() in {"yes", "unsure"} and not st.session_state[ACK_KEY]:
+            disabled = True
+        if st.button("Complete", disabled=disabled):
             scores = _score(answers)
-            recommendation = _pick_recommendation(scores)
-            st.session_state.update(
-                {
-                    "gcp_completed": True,
-                    "gcp_recommendation": recommendation,
-                    "care_profile": {
-                        "care_setting": recommendation,
-                        "scores": scores,
-                        "answers": answers.copy(),
-                    },
-                }
-            )
-            log_event("gcp.completed", {"recommendation": recommendation})
-            st.success(f"Recommendation: **{recommendation}**")
-            if answers.get("medicaid_status") in ("yes", "unsure"):
-                st.info(
-                    "Because Medicaid provides its own long-term care programs, our Care Advisors can’t schedule services directly. "
-                    "You can still explore care options and costs below. "
-                    "[Learn more about Medicaid Long-Term Services & Supports →](https://www.medicaid.gov/medicaid/long-term-services-supports)"
-                )
+            rec = _pick_recommendation(scores)
+            st.session_state["gcp"]["scores"] = scores
+            st.session_state["gcp_completed"] = True
+            st.session_state["gcp_recommendation"] = rec
+            st.session_state["care_profile"] = {
+                "care_setting": rec,
+                "scores": scores,
+                "answers": answers,
+                "elig_medicaid": answers.get(ELIG_QID),
+                "medicaid_acknowledged": st.session_state.get(ACK_KEY, False),
+            }
+            log_event("gcp.completed", {"recommendation": rec})
+            st.success(f"Recommendation: **{rec}**")
             st.markdown(
                 """
-                <div class="card-actions">
-                  <a class="btn btn--secondary" href="?page=hub_concierge">Back to Hub</a>
-                  <a class="btn btn--primary" href="?page=cost_planner">Continue to Cost Planner</a>
-                </div>
-                """,
+<div class="kit-row">
+  <a class="btn btn--secondary" href="?page=hub_concierge">Back to Hub</a>
+  <a class="btn btn--primary" href="?page=cost_planner">Continue to Cost Planner</a>
+</div>
+""",
                 unsafe_allow_html=True,
             )
+        if disabled:
+            st.caption("Please acknowledge the Medicaid notice to continue.")
