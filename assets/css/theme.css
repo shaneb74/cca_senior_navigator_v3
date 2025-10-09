@@ -40,12 +40,9 @@ html, body { font-size:var(--fs-root); background:var(--bg); color:var(--ink); f
 * { box-sizing:border-box; }
 a { color:var(--brand); text-decoration:none; }
 a:hover { text-decoration:underline; }
-:root { --accent: var(--brand-600, #1f57e7); }
+input[type="radio"],
+input[type="checkbox"] { accent-color: var(--brand); }
 
-.stRadio input[type="radio"],
-.stCheckbox input[type="checkbox"] {
-  accent-color: var(--accent);
-}
 
 /* Containers & layout */
 .container { max-width:1200px; margin:0 auto; padding:0 var(--space-6); }

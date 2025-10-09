@@ -1,5 +1,5 @@
 {
   "gcp_intro": "Answer a few questions so we can recommend the safest, least-disruptive care next step.",
-  "medicaid_clarify": "Medicaid is different from Medicare. We can absolutely work with people on Medicare. If someone is on Medicaid or you\u2019re not sure, our advisors can\u2019t arrange placement because Medicaid has its own programs.",
-  "medicaid_ack": "You can still complete the Guided Care Plan and use the Cost Planner. For Medicaid programs and support, visit Medicaid.gov or learn about Long-Term Services & Supports (LTSS)."
+  "medicaid_ack": "Concierge Care Advisors can\u2019t arrange care services for people on Medicaid because those programs are provided directly through state and federal agencies. You can still complete the Guided Care Plan and use the Cost Planner. For program details and support, visit <a class='btn btn--secondary' href='https://www.medicaid.gov/' target='_blank'>Medicaid.gov</a> or learn about long-term services and supports at <a class='btn btn--secondary' href='https://www.medicaid.gov/medicaid/long-term-services-supports' target='_blank'>LTSS</a>.",
+  "medicaid_banner": "Medicaid is different from Medicare. We can absolutely work with people on Medicare."
 }
