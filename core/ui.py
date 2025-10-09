@@ -2,6 +2,7 @@ from typing import Optional
 import base64, mimetypes, pathlib, sys, functools
 
 import streamlit as st
+from core.nav import route_to
 
 from .nav import PRODUCTS
 
@@ -216,11 +217,11 @@ def render_hub_tile(title, badge, label, value, status, primary_label, secondary
             else:
                 # Default navigation based on title
                 if "Guided Care Plan" in title:
-                    st.switch_page("products/gcp.py")
+                    route_to("gcp")
                 elif "Cost Planner" in title:
-                    st.switch_page("products/cost_planner.py")
+                    route_to("cost_planner")
                 elif "Plan with My Advisor" in title:
-                    st.switch_page("products/pfma.py")
+                    route_to("pfma")
 
     with col3:
         if st.button(secondary_label, key=f"{title.lower().replace(' ', '_')}_secondary"):
