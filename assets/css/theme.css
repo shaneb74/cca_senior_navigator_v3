@@ -358,6 +358,7 @@ a:hover { text-decoration:underline; }
 .section { padding: var(--space-10) 0; }
 .section-title { letter-spacing: 0.06em; font-weight: 800; }
 .tiles { display: grid; gap: var(--space-6); grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+.tiles-2x2 { display: grid; gap: var(--space-6); grid-template-columns: repeat(2, 1fr); }
 .tile { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: var(--space-6); }
 .tile--lg { grid-column: span 2; }
 .tile--new .badge { background: var(--muted); color: var(--ink-600); }
@@ -400,6 +401,7 @@ a:hover { text-decoration:underline; }
 /* Responsive */
 @media (max-width: 640px){
   .tiles { grid-template-columns: 1fr; }
+  .tiles-2x2 { grid-template-columns: 1fr; }
 }
 
 /* Utilities for hero + contextual */
