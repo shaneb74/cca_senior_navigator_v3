@@ -191,7 +191,7 @@ def render_hub_tile(title, badge, label, value, status, primary_label, secondary
     primary_key = f"{title.lower().replace(' ', '_').replace('&', 'and')}_primary"
     secondary_key = f"{title.lower().replace(' ', '_').replace('&', 'and')}_secondary"
 
-    # Render the tile using design system classes
+    # Render the tile using design system classes with buttons inside
     st.markdown(f"""
     <article class="tile tile--{status if status != 'locked' else 'locked'}">
       <div class="tile-head">
@@ -204,40 +204,41 @@ def render_hub_tile(title, badge, label, value, status, primary_label, secondary
         {value}
       </div>
       
-      <div class="card-actions" id="actions-{primary_key}">
-      </div>
-      
       <div style="margin-top: var(--space-4); font-size: 0.9rem; color: var(--ink-500);">
         {status_text}
       </div>
-    </article>
+      
+      <div class="card-actions" style="margin-top: var(--space-6);">
     """, unsafe_allow_html=True)
 
-    # Create a container for buttons positioned within the tile
-    with st.container():
-        # Use columns to position buttons within the tile actions area
-        col1, col2 = st.columns([1, 1])
+    # Create buttons within the tile using Streamlit columns for proper layout
+    col1, col2 = st.columns([1, 1])
 
-        with col1:
-            if st.button(primary_label, key=primary_key):
-                if primary_action:
-                    primary_action()
-                else:
-                    # Default navigation based on title
-                    if "Guided Care Plan" in title:
-                        route_to("gcp")
-                    elif "Cost Planner" in title:
-                        route_to("cost_planner")
-                    elif "Plan with My Advisor" in title:
-                        route_to("pfma")
+    with col1:
+        if st.button(primary_label, key=primary_key, use_container_width=True):
+            if primary_action:
+                primary_action()
+            else:
+                # Default navigation based on title
+                if "Guided Care Plan" in title:
+                    route_to("gcp")
+                elif "Cost Planner" in title:
+                    route_to("cost_planner")
+                elif "Plan with My Advisor" in title:
+                    route_to("pfma")
+                elif "FAQs & Answers" in title:
+                    route_to("faqs")
 
-        with col2:
-            if st.button(secondary_label, key=secondary_key):
-                if secondary_action:
-                    secondary_action()
-                else:
-                    # Default secondary actions
-                    if "Start over" in secondary_label and "Guided Care Plan" in title:
-                        st.session_state["gcp_answers"] = {}
-                        st.session_state["gcp_section"] = 0
-                        st.rerun()
+    with col2:
+        if st.button(secondary_label, key=secondary_key, use_container_width=True):
+            if secondary_action:
+                secondary_action()
+            else:
+                # Default secondary actions
+                if "Start over" in secondary_label and "Guided Care Plan" in title:
+                    st.session_state["gcp_answers"] = {}
+                    st.session_state["gcp_section"] = 0
+                    st.rerun()
+
+    # Close the card-actions div and tile
+    st.markdown('</div></article>', unsafe_allow_html=True)
