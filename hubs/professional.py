@@ -48,8 +48,7 @@ def render():
         label="Service Status",
         value="Available",
         status="new",
-        primary_label="Schedule consultation",
-        secondary_label="Learn more"
+        primary_label="Schedule consultation"
     )
 
     render_hub_tile(
