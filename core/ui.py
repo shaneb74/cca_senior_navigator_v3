@@ -179,6 +179,13 @@ def render_hub_tile(title, badge, label, value, status, primary_label, secondary
         "locked": "hub-tile--locked"
     }.get(status, "hub-tile--new")
 
+    status_text = {
+        "done": "Completed ✓",
+        "doing": "In Progress",
+        "new": "Not Started",
+        "locked": "Locked"
+    }.get(status, "")
+
     st.markdown(f"""
     <article class="hub-tile {color_class}">
       <div class="hub-tile__header">
@@ -195,41 +202,37 @@ def render_hub_tile(title, badge, label, value, status, primary_label, secondary
         <div class="hub-tile__actions">
         </div>
         <div class="hub-tile__status">
-          {"Completed ✓" if status == "done" else ""}
+          {status_text}
         </div>
       </div>
     </article>
     """, unsafe_allow_html=True)
 
-    # Add Streamlit buttons with proper CSS classes for styling
-    button_container_id = f"buttons_{title.lower().replace(' ', '_').replace('&', 'and')}"
+    # Add Streamlit buttons positioned within the tile's action area
+    # Use a container to keep buttons within the tile layout
+    with st.container():
+        col1, col2, spacer = st.columns([1, 1, 1])
 
-    # Use columns to position buttons properly within the tile layout
-    col1, col2, col3 = st.columns([1, 1, 1])
+        with col1:
+            if st.button(primary_label, key=f"{title.lower().replace(' ', '_').replace('&', 'and')}_primary", use_container_width=True):
+                if primary_action:
+                    primary_action()
+                else:
+                    # Default navigation based on title
+                    if "Guided Care Plan" in title:
+                        route_to("gcp")
+                    elif "Cost Planner" in title:
+                        route_to("cost_planner")
+                    elif "Plan with My Advisor" in title:
+                        route_to("pfma")
 
-    with col1:
-        st.write("")  # Spacer
-
-    with col2:
-        if st.button(primary_label, key=f"{title.lower().replace(' ', '_')}_primary"):
-            if primary_action:
-                primary_action()
-            else:
-                # Default navigation based on title
-                if "Guided Care Plan" in title:
-                    route_to("gcp")
-                elif "Cost Planner" in title:
-                    route_to("cost_planner")
-                elif "Plan with My Advisor" in title:
-                    route_to("pfma")
-
-    with col3:
-        if st.button(secondary_label, key=f"{title.lower().replace(' ', '_')}_secondary"):
-            if secondary_action:
-                secondary_action()
-            else:
-                # Default secondary actions
-                if "Start over" in secondary_label and "Guided Care Plan" in title:
-                    st.session_state["gcp_answers"] = {}
-                    st.session_state["gcp_section"] = 0
-                    st.rerun()
+        with col2:
+            if st.button(secondary_label, key=f"{title.lower().replace(' ', '_').replace('&', 'and')}_secondary", use_container_width=True):
+                if secondary_action:
+                    secondary_action()
+                else:
+                    # Default secondary actions
+                    if "Start over" in secondary_label and "Guided Care Plan" in title:
+                        st.session_state["gcp_answers"] = {}
+                        st.session_state["gcp_section"] = 0
+                        st.rerun()
