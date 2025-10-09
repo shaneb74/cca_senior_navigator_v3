@@ -1,92 +1,142 @@
-import json
-from pathlib import Path
-from typing import Any, Dict
+from __future__ import annotations
+from collections import defaultdict
+from typing import Any, Dict, List
 
 import streamlit as st
 
-from core.forms import render_question
-from core.state import set_module_status
+from core.data import load_blurbs, load_schema, load_scoring
+from core.events import log_event
 
-_SCHEMA_PATH = Path("config/gcp_schema.json")
-
-
-def _load_schema() -> Dict[str, Any]:
-    with _SCHEMA_PATH.open("r", encoding="utf-8") as f:
-        return json.load(f)
-
-
-def _get(key: str):
-    return st.session_state.get(key)
+SETTINGS_ORDER = [
+    "In-Home Care",
+    "Assisted Living",
+    "Memory Care",
+    "Memory Care High Acuity",
+]
 
 
-def _eval_when(rule: Dict[str, Any]) -> bool:
-    if not rule:
-        return True
-    if "eq" in rule:
-        k, v = rule["eq"]
-        return _get(k) == v
-    if "ne" in rule:
-        k, v = rule["ne"]
-        return _get(k) != v
-    if "in" in rule:
-        k, arr = rule["in"]
-        val = _get(k)
-        return val in arr
-    if "count_gte" in rule:
-        k, n = rule["count_gte"]
-        val = _get(k) or []
-        return isinstance(val, list) and len(val) >= n
-    return False
+def _ensure_state():
+    st.session_state.setdefault("gcp", {"answers": {}, "scores": {}, "summary": None})
+    st.session_state.setdefault("care_profile", {})
 
 
-def _handle_effect(effect: Dict[str, Any]):
-    if not _eval_when(effect.get("when", {})):
-        return
-    action = effect.get("action")
-    if action == "exit":
-        st.warning(effect.get("message", ""))
-        st.markdown('<a class="btn btn--primary" href="?page=hub_concierge">Return to Care Hub</a>', unsafe_allow_html=True)
-        st.stop()
-    if action == "flag":
-        flags = st.session_state.setdefault("_gcp_flags", set())
-        flag = effect.get("flag")
-        if flag:
-            flags.add(flag)
-        if effect.get("message"):
-            st.info(effect["message"])
+def _render_question(q: Dict[str, Any]):
+    qid = q["id"]
+    qlabel = q.get("label", qid)
+    qhelp = q.get("help")
+    qtype = q.get("type", "single")
+    opts: List[Dict[str, Any]] = q.get("options", [])
+
+    st.markdown(f"### {qlabel}")
+    if qhelp:
+        st.caption(qhelp)
+
+    key = f"gcp_ans_{qid}"
+    ans_store = st.session_state["gcp"]["answers"]
+
+    if qtype == "single":
+        labels = [o["label"] for o in opts]
+        values = [o["value"] for o in opts]
+        default_idx = 0
+        if qid in ans_store and ans_store[qid] in values:
+            default_idx = values.index(ans_store[qid])
+        choice_label = st.radio(
+            " ",
+            labels,
+            index=default_idx,
+            label_visibility="collapsed",
+            key=key,
+        )
+        ans_store[qid] = values[labels.index(choice_label)]
+    elif qtype == "multi":
+        current = ans_store.get(qid, {})
+        picks = {}
+        for option in opts:
+            opt_val = option["value"]
+            opt_key = f"{key}_{opt_val}"
+            picks[opt_val] = st.checkbox(
+                option["label"],
+                key=opt_key,
+                value=current.get(opt_val, False),
+            )
+        ans_store[qid] = picks
+    else:
+        text_val = st.text_input("Answer", value=ans_store.get(qid, ""), key=key)
+        ans_store[qid] = text_val
+
+
+def _score(answers: Dict[str, Any]) -> Dict[str, float]:
+    df = load_scoring()
+    totals = defaultdict(float)
+
+    for _, row in df.iterrows():
+        qid = row["question_id"]
+        aval = str(row["answer_value"])
+        setting = row["setting"]
+        pts = float(row["points"])
+
+        if qid not in answers:
+            continue
+
+        answer_val = answers[qid]
+        if isinstance(answer_val, dict):
+            if answer_val.get(aval, False):
+                totals[setting] += pts
+        else:
+            if str(answer_val) == aval:
+                totals[setting] += pts
+
+    return {setting: totals.get(setting, 0.0) for setting in SETTINGS_ORDER}
+
+
+def _pick_recommendation(scores: Dict[str, float]) -> str:
+    return max(scores.items(), key=lambda kv: kv[1])[0] if scores else "In-Home Care"
 
 
 def render():
-    schema = _load_schema()
-    intro = schema.get("intro", {})
-    st.header(intro.get("title", "Guided Care Plan"))
-    if intro.get("body"):
-        st.write(intro["body"])
-    if intro.get("cta"):
-        st.markdown('<div class="card-actions"><a class="btn btn--primary" href="#gcp-form">{}</a></div>'.format(intro["cta"]), unsafe_allow_html=True)
+    _ensure_state()
+    st.header("Guided Care Plan")
 
-    st.markdown('<div id="gcp-form"></div>', unsafe_allow_html=True)
+    schema = load_schema()
+    blurbs = load_blurbs()
+
+    intro = blurbs.get("gcp_intro")
+    if intro:
+        st.info(intro)
 
     for section in schema.get("sections", []):
-        title = section.get("title")
-        if title:
-            st.subheader(title)
-        if "summary" in section:
-            summary = section["summary"]
-            for bullet in summary.get("bullets", []):
-                st.write(f"- {bullet}")
-            for cta in summary.get("ctas", []):
-                st.markdown(f'<a class="btn btn--primary" href="?page=hub_concierge">{cta}</a>', unsafe_allow_html=True)
-            continue
+        if section.get("title"):
+            st.subheader(section["title"])
+        for question in section.get("questions", []):
+            _render_question(question)
+        st.divider()
 
-        for q in section.get("questions", []):
-            if "when" in q and not _eval_when(q["when"]):
-                continue
-            render_question(q)
-            for eff in q.get("effects", []):
-                _handle_effect(eff)
-            st.markdown('<div class="helper"></div>', unsafe_allow_html=True)
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Save progress"):
+            st.success("Progress saved.")
 
-    set_module_status("gcp", "done")
-    st.success("Guided Care Plan responses saved.")
+    with col2:
+        if st.button("Complete"):
+            answers = st.session_state["gcp"]["answers"]
+            scores = _score(answers)
+            rec = _pick_recommendation(scores)
 
+            st.session_state["gcp"]["scores"] = scores
+            st.session_state["gcp_completed"] = True
+            st.session_state["gcp_recommendation"] = rec
+            st.session_state["care_profile"] = {
+                "care_setting": rec,
+                "scores": scores,
+                "answers": answers,
+            }
+
+            log_event("gcp.completed", {"recommendation": rec})
+            st.success(f"Recommendation: **{rec}**")
+            st.markdown(
+                '<div class="kit-row">'
+                '<a class="btn btn--secondary" href="?page=hub_concierge">Back to Hub</a>'
+                '<a class="btn btn--primary" href="?page=cost_planner">Continue to Cost Planner</a>'
+                '</div>',
+                unsafe_allow_html=True,
+            )
