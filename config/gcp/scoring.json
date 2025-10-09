@@ -1287,110 +1287,110 @@
     {
       "QuestionID": "Q8",
       "Section": "Cognition & Mental Health",
-      "Question": "Have there been any of these behaviors or concerns?",
+      "Question": "Have there been any of these behaviors? (Select all that apply)",
       "Domain": "Cognitive Function",
-      "AnswerOption": "Wandering — Present",
+      "AnswerOption": "Wandering",
       "ScoreValue": 1,
       "DomainWeight": 3,
       "FlagsEmitted": "behavior_risk",
       "GatingLogic": "",
-      "Notes": "Each selected item contributes +1 within the Cognitive domain; cap domain at 3 total."
+      "Notes": "Each selected behavior contributes +1 within the Cognitive domain; cap domain at 3 total."
     },
     {
       "QuestionID": "Q8",
       "Section": "Cognition & Mental Health",
-      "Question": "Have there been any of these behaviors or concerns?",
+      "Question": "Have there been any of these behaviors? (Select all that apply)",
       "Domain": "Cognitive Function",
-      "AnswerOption": "Aggression — Present",
+      "AnswerOption": "Aggression",
       "ScoreValue": 1,
       "DomainWeight": 3,
       "FlagsEmitted": "behavior_risk",
       "GatingLogic": "",
-      "Notes": "Each selected item contributes +1 within the Cognitive domain; cap domain at 3 total."
+      "Notes": "Each selected behavior contributes +1 within the Cognitive domain; cap domain at 3 total."
     },
     {
       "QuestionID": "Q8",
       "Section": "Cognition & Mental Health",
-      "Question": "Have there been any of these behaviors or concerns?",
+      "Question": "Have there been any of these behaviors? (Select all that apply)",
       "Domain": "Cognitive Function",
-      "AnswerOption": "Elopement / Exit-seeking — Present",
+      "AnswerOption": "Elopement / Exit-seeking",
       "ScoreValue": 1,
       "DomainWeight": 3,
       "FlagsEmitted": "behavior_risk",
       "GatingLogic": "",
-      "Notes": "Each selected item contributes +1 within the Cognitive domain; cap domain at 3 total."
+      "Notes": "Each selected behavior contributes +1 within the Cognitive domain; cap domain at 3 total."
     },
     {
       "QuestionID": "Q8",
       "Section": "Cognition & Mental Health",
-      "Question": "Have there been any of these behaviors or concerns?",
+      "Question": "Have there been any of these behaviors? (Select all that apply)",
       "Domain": "Cognitive Function",
-      "AnswerOption": "Confusion or disorientation — Present",
+      "AnswerOption": "Confusion or disorientation",
       "ScoreValue": 1,
       "DomainWeight": 3,
       "FlagsEmitted": "behavior_risk",
       "GatingLogic": "",
-      "Notes": "Each selected item contributes +1 within the Cognitive domain; cap domain at 3 total."
+      "Notes": "Each selected behavior contributes +1 within the Cognitive domain; cap domain at 3 total."
     },
     {
       "QuestionID": "Q8",
       "Section": "Cognition & Mental Health",
-      "Question": "Have there been any of these behaviors or concerns?",
+      "Question": "Have there been any of these behaviors? (Select all that apply)",
       "Domain": "Cognitive Function",
-      "AnswerOption": "Sundowning — Present",
+      "AnswerOption": "Sundowning",
       "ScoreValue": 1,
       "DomainWeight": 3,
       "FlagsEmitted": "behavior_risk",
       "GatingLogic": "",
-      "Notes": "Each selected item contributes +1 within the Cognitive domain; cap domain at 3 total."
+      "Notes": "Each selected behavior contributes +1 within the Cognitive domain; cap domain at 3 total."
     },
     {
       "QuestionID": "Q8",
       "Section": "Cognition & Mental Health",
-      "Question": "Have there been any of these behaviors or concerns?",
+      "Question": "Have there been any of these behaviors? (Select all that apply)",
       "Domain": "Cognitive Function",
-      "AnswerOption": "Repetitive questioning — Present",
+      "AnswerOption": "Repetitive questioning",
       "ScoreValue": 1,
       "DomainWeight": 3,
       "FlagsEmitted": "behavior_risk",
       "GatingLogic": "",
-      "Notes": "Each selected item contributes +1 within the Cognitive domain; cap domain at 3 total."
+      "Notes": "Each selected behavior contributes +1 within the Cognitive domain; cap domain at 3 total."
     },
     {
       "QuestionID": "Q8",
       "Section": "Cognition & Mental Health",
-      "Question": "Have there been any of these behaviors or concerns?",
+      "Question": "Have there been any of these behaviors? (Select all that apply)",
       "Domain": "Cognitive Function",
-      "AnswerOption": "Poor judgment — Present",
+      "AnswerOption": "Poor judgment",
       "ScoreValue": 1,
       "DomainWeight": 3,
       "FlagsEmitted": "behavior_risk",
       "GatingLogic": "",
-      "Notes": "Each selected item contributes +1 within the Cognitive domain; cap domain at 3 total."
+      "Notes": "Each selected behavior contributes +1 within the Cognitive domain; cap domain at 3 total."
     },
     {
       "QuestionID": "Q8",
       "Section": "Cognition & Mental Health",
-      "Question": "Have there been any of these behaviors or concerns?",
+      "Question": "Have there been any of these behaviors? (Select all that apply)",
       "Domain": "Cognitive Function",
-      "AnswerOption": "Hoarding — Present",
+      "AnswerOption": "Hoarding",
       "ScoreValue": 1,
       "DomainWeight": 3,
       "FlagsEmitted": "behavior_risk",
       "GatingLogic": "",
-      "Notes": "Each selected item contributes +1 within the Cognitive domain; cap domain at 3 total."
+      "Notes": "Each selected behavior contributes +1 within the Cognitive domain; cap domain at 3 total."
     },
     {
       "QuestionID": "Q8",
       "Section": "Cognition & Mental Health",
-      "Question": "Have there been any of these behaviors or concerns?",
+      "Question": "Have there been any of these behaviors? (Select all that apply)",
       "Domain": "Cognitive Function",
-      "AnswerOption": "Sleep disturbances — Present",
+      "AnswerOption": "Sleep disturbances",
       "ScoreValue": 1,
       "DomainWeight": 3,
       "FlagsEmitted": "behavior_risk",
       "GatingLogic": "",
-      "Notes": "Each selected item contributes +1 within the Cognitive domain; cap domain at 3 total."
+      "Notes": "Each selected behavior contributes +1 within the Cognitive domain; cap domain at 3 total."
     },
     {
       "QuestionID": "Q14",
