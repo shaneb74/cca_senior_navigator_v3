@@ -15,9 +15,9 @@ def render():
 </div>
 <p class="tile-meta">Recommendation<br><strong>In-Home Care</strong></p>
 <div class="kit-row">
+  <a class="btn btn--primary" href="?page=gcp">Start Assessment</a>
   <a class="btn btn--secondary" href="?page=ai_advisor">See responses</a>
   <a class="btn btn--ghost" href="?page=welcome_contextual">Start over</a>
-  <span class="badge success">Completed ✓</span>
 </div>""",
         unsafe_allow_html=True,
     )
