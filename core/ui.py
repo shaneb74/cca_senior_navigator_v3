@@ -167,7 +167,7 @@ def render_module_tile(product_key: str, module_key: str, state: dict):
     st.markdown(html, unsafe_allow_html=True)
 
 
-def render_hub_tile(title, badge, label, value, status, primary_label, secondary_label, primary_action=None, secondary_action=None):
+def render_hub_tile(title, badge, label, value, status, primary_label, secondary_label=None, primary_action=None, secondary_action=None):
     """
     Renders a standardized hub module tile using the design system.
     Use this in hub pages to maintain visual and behavioral consistency.
@@ -212,9 +212,36 @@ def render_hub_tile(title, badge, label, value, status, primary_label, secondary
     """, unsafe_allow_html=True)
 
     # Create buttons within the tile using Streamlit columns for proper layout
-    col1, col2 = st.columns([1, 1])
+    if secondary_label:
+        col1, col2 = st.columns([1, 1])
 
-    with col1:
+        with col1:
+            if st.button(primary_label, key=primary_key, use_container_width=True):
+                if primary_action:
+                    primary_action()
+                else:
+                    # Default navigation based on title
+                    if "Guided Care Plan" in title:
+                        route_to("gcp")
+                    elif "Cost Planner" in title:
+                        route_to("cost_planner")
+                    elif "Plan with My Advisor" in title:
+                        route_to("pfma")
+                    elif "FAQs & Answers" in title:
+                        route_to("faqs")
+
+        with col2:
+            if st.button(secondary_label, key=secondary_key, use_container_width=True):
+                if secondary_action:
+                    secondary_action()
+                else:
+                    # Default secondary actions
+                    if "Start over" in secondary_label and "Guided Care Plan" in title:
+                        st.session_state["gcp_answers"] = {}
+                        st.session_state["gcp_section"] = 0
+                        st.rerun()
+    else:
+        # Single button layout - full width
         if st.button(primary_label, key=primary_key, use_container_width=True):
             if primary_action:
                 primary_action()
@@ -228,17 +255,6 @@ def render_hub_tile(title, badge, label, value, status, primary_label, secondary
                     route_to("pfma")
                 elif "FAQs & Answers" in title:
                     route_to("faqs")
-
-    with col2:
-        if st.button(secondary_label, key=secondary_key, use_container_width=True):
-            if secondary_action:
-                secondary_action()
-            else:
-                # Default secondary actions
-                if "Start over" in secondary_label and "Guided Care Plan" in title:
-                    st.session_state["gcp_answers"] = {}
-                    st.session_state["gcp_section"] = 0
-                    st.rerun()
 
     # Close the card-actions div and tile
     st.markdown('</div></article>', unsafe_allow_html=True)

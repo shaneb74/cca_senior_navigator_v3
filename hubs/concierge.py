@@ -75,7 +75,6 @@ def render():
                     value = "Not started"
                     status = "new"
                     primary_label = "Get started"
-                    secondary_label = "Learn more"
                     
                 render_hub_tile(
                     title="Guided Care Plan",
@@ -83,8 +82,7 @@ def render():
                     label=label,
                     value=value,
                     status=status,
-                    primary_label=primary_label,
-                    secondary_label=secondary_label
+                    primary_label=primary_label
                 )
                 
             elif product_key == "cost_planner":
@@ -111,7 +109,6 @@ def render():
                 value = "Awaiting Appointment"
                 status = "new"
                 primary_label = "Get connected"
-                secondary_label = "Learn more"
                 
                 render_hub_tile(
                     title="Plan with My Advisor",
@@ -119,8 +116,7 @@ def render():
                     label=label,
                     value=value,
                     status=status,
-                    primary_label=primary_label,
-                    secondary_label=secondary_label
+                    primary_label=primary_label
                 )
 
     # Add FAQs & Answers tile
