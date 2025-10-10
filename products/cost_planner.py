@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 from core.state import get_module_state, get_user_ctx
 from core.ui import hub_section, tiles_open, tiles_close, render_module_tile
+from core.product_tile import ProductTile
 
 # Load config
 CONFIG_PATH = Path(__file__).parent.parent / "config" / "cost_config.v3.json"
@@ -233,6 +234,46 @@ def get_gcp_recommendation():
     return care_type, details, cost
 
 def render_landing():
+    # Import the theme CSS and apply new styling
+    st.markdown(
+        """
+        <link rel='stylesheet' href='/assets/css/theme.css'>
+        <style>
+        .main .block-container {
+            background: var(--bg);
+            min-height: 80vh;
+        }
+        /* New styling overrides */
+        .stButton > button {
+            background: #3B82F6 !important;
+            color: white !important;
+            border-radius: 5px !important;
+            border: none !important;
+        }
+        .stButton > button:hover {
+            background: #2563EB !important;
+        }
+        .stRadio label[data-baseweb="radio"] input:checked + div {
+            color: black !important;
+        }
+        .stRadio label[data-baseweb="radio"] input:not(:checked) + div {
+            color: gray !important;
+        }
+        .stTextInput > div > div, .stNumberInput > div > div, .stSelectbox > div > div, .stTextArea > div > div {
+            border-radius: 5px !important;
+            padding: 10px !important;
+        }
+        .container {
+            padding: 10px !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
+    # Main content container
+    st.markdown('<section class="container section" style="padding: 10px;">', unsafe_allow_html=True)
+
     st.title("Cost Planner: See How Long Your Money Lasts")
     
     gcp_exists = "gcp_data" in st.session_state
@@ -259,7 +300,50 @@ def render_landing():
             st.session_state["cost_planner_step"] = "explore"
             st.rerun()
 
+    # Close section
+    st.markdown('</section>', unsafe_allow_html=True)
+
 def render_explore():
+    # Import the theme CSS and apply new styling
+    st.markdown(
+        """
+        <link rel='stylesheet' href='/assets/css/theme.css'>
+        <style>
+        .main .block-container {
+            background: var(--bg);
+            min-height: 80vh;
+        }
+        /* New styling overrides */
+        .stButton > button {
+            background: #3B82F6 !important;
+            color: white !important;
+            border-radius: 5px !important;
+            border: none !important;
+        }
+        .stButton > button:hover {
+            background: #2563EB !important;
+        }
+        .stRadio label[data-baseweb="radio"] input:checked + div {
+            color: black !important;
+        }
+        .stRadio label[data-baseweb="radio"] input:not(:checked) + div {
+            color: gray !important;
+        }
+        .stTextInput > div > div, .stNumberInput > div > div, .stSelectbox > div > div, .stTextArea > div > div {
+            border-radius: 5px !important;
+            padding: 10px !important;
+        }
+        .container {
+            padding: 10px !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
+    # Main content container
+    st.markdown('<section class="container section" style="padding: 10px;">', unsafe_allow_html=True)
+
     st.title("Explore Care Costs")
     care_type = st.selectbox("Care Type", ["in_home", "assisted_living", "memory_care"])
     if care_type == "in_home":
@@ -279,7 +363,50 @@ def render_explore():
         st.session_state["cost_planner_step"] = "landing"
         st.rerun()
 
+    # Close section
+    st.markdown('</section>', unsafe_allow_html=True)
+
 def render_auth_required():
+    # Import the theme CSS and apply new styling
+    st.markdown(
+        """
+        <link rel='stylesheet' href='/assets/css/theme.css'>
+        <style>
+        .main .block-container {
+            background: var(--bg);
+            min-height: 80vh;
+        }
+        /* New styling overrides */
+        .stButton > button {
+            background: #3B82F6 !important;
+            color: white !important;
+            border-radius: 5px !important;
+            border: none !important;
+        }
+        .stButton > button:hover {
+            background: #2563EB !important;
+        }
+        .stRadio label[data-baseweb="radio"] input:checked + div {
+            color: black !important;
+        }
+        .stRadio label[data-baseweb="radio"] input:not(:checked) + div {
+            color: gray !important;
+        }
+        .stTextInput > div > div, .stNumberInput > div > div, .stSelectbox > div > div, .stTextArea > div > div {
+            border-radius: 5px !important;
+            padding: 10px !important;
+        }
+        .container {
+            padding: 10px !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
+    # Main content container
+    st.markdown('<section class="container section" style="padding: 10px;">', unsafe_allow_html=True)
+
     st.title("Authentication Required")
     st.write("To create and save your personalized care cost plan, please log in or sign up.")
     
@@ -314,7 +441,50 @@ def render_auth_required():
         st.session_state["cost_planner_step"] = "landing"
         st.rerun()
 
+    # Close section
+    st.markdown('</section>', unsafe_allow_html=True)
+
 def render_hub():
+    # Import the theme CSS and apply new styling
+    st.markdown(
+        """
+        <link rel='stylesheet' href='/assets/css/theme.css'>
+        <style>
+        .main .block-container {
+            background: var(--bg);
+            min-height: 80vh;
+        }
+        /* New styling overrides */
+        .stButton > button {
+            background: #3B82F6 !important;
+            color: white !important;
+            border-radius: 5px !important;
+            border: none !important;
+        }
+        .stButton > button:hover {
+            background: #2563EB !important;
+        }
+        .stRadio label[data-baseweb="radio"] input:checked + div {
+            color: black !important;
+        }
+        .stRadio label[data-baseweb="radio"] input:not(:checked) + div {
+            color: gray !important;
+        }
+        .stTextInput > div > div, .stNumberInput > div > div, .stSelectbox > div > div, .stTextArea > div > div {
+            border-radius: 5px !important;
+            padding: 10px !important;
+        }
+        .container {
+            padding: 10px !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
+    # Main content container
+    st.markdown('<section class="container section" style="padding: 10px;">', unsafe_allow_html=True)
+
     ctx = get_user_ctx()
     user_id = ctx["auth"].get("user_id", "guest")
     product_key = "cost_planner"
@@ -328,57 +498,78 @@ def render_hub():
     summary = f"Current Plan: {care_type.replace('_', ' ').title()} | Estimated Monthly Cost: ${cost:,.0f}/mo"
     
     hub_section("Cost Planner", right_meta=summary)
+    st.markdown("## Sub-Products")
     tiles_open()
     
     # Get module configurations
     module_configs = get_module_config()
     
-    # Render tiles for each module
+    # Create ProductTile instances for each module
+    tiles = []
+    order = 1
     for module_key, config in module_configs.items():
         # Skip conditional modules that don't apply
         if "conditional" in config and not config["conditional"](data):
             continue
             
-        # Mock state for now
         state = get_module_state(user_id, product_key, module_key)
-        st.markdown('<article class="tile tile--md">', unsafe_allow_html=True)
-        render_module_tile(product_key, module_key, state)
-        st.markdown('</article>', unsafe_allow_html=True)
+        
+        # Set session state for ProductTile
+        session_key = f"{product_key}_{module_key}"
+        st.session_state[session_key] = {"progress": state['progress']}
+        
+        # Determine workflow config
+        if module_key == "va_benefits":
+            workflow_type = 'financial'
+            workflow_config = [
+                {"id": 1, "label": "Monthly Income", "type": "slider", "min": 0, "max": 5000, "required": True},
+                {"id": 2, "label": "Veteran ID", "type": "text", "required": True},
+                {"id": 3, "label": "Chronic Conditions", "type": "pill_list", "required": False}
+            ]
+        elif module_key == "income":
+            workflow_type = 'financial'
+            workflow_config = [
+                {"id": 1, "label": "Social Security", "type": "slider", "min": 0, "max": 5000, "required": True},
+                {"id": 2, "label": "Pension", "type": "slider", "min": 0, "max": 5000, "required": True},
+                {"id": 3, "label": "Other Income Sources", "type": "pill_list", "required": False}
+            ]
+        elif module_key == "care_needs":
+            workflow_type = 'planning'
+            workflow_config = [
+                {"id": 1, "label": "Care Type", "type": "radio", "options": ["in_home", "assisted_living", "memory_care"], "required": True},
+                {"id": 2, "label": "Daily Hours", "type": "slider", "min": 1, "max": 24, "required": True},
+                {"id": 3, "label": "Care Modifiers", "type": "pill_list", "required": False}
+            ]
+        else:
+            workflow_type = None
+            workflow_config = []
+        
+        tile = ProductTile(
+            title=config["title"],
+            icon_path="calculator.png",
+            pre_start_text=config["description"],
+            in_progress_text=f"Continue {config['description'].lower()}",
+            post_complete_text=config["get_status"](data),
+            buttons=[
+                {"text": "Start", "callback": lambda t=config["title"]: st.session_state.update({"current_tile": t})},
+            ],
+            visible=True,
+            order=order,
+            prereq=None,
+            parent_product="cost_planner",
+            progress=state['progress'],
+            meta={"steps": 1, "time": "5 min", "last_activity": state.get('completed_at')},
+            workflow_type=workflow_type,
+            workflow_config=workflow_config
+        )
+        tile.module_key = module_key  # Add module_key for session_key
+        tiles.append(tile)
+        order += 1
     
-    tiles_close()
-    
-    if st.button("Continue to Expert Review", key="continue_review"):
-        st.session_state["cost_planner_step"] = "expert_review"
-        st.rerun()
-    ctx = get_user_ctx()
-    user_id = ctx["auth"].get("user_id", "guest")
-    product_key = "cost_planner"
-    
-    data = st.session_state.get("cost_data", {})
-    
-    # Cost summary
-    care_type = data.get("care_type", "in_home")
-    details = data.get("care_details", {})
-    cost = calculate_monthly_cost(care_type, details, data.get("zip"))
-    summary = f"Current Plan: {care_type.replace('_', ' ').title()} | Estimated Monthly Cost: ${cost:,.0f}/mo"
-    
-    hub_section("Cost Planner", right_meta=summary)
-    tiles_open()
-    
-    # Get module configurations
-    module_configs = get_module_config()
-    
-    # Render tiles for each module
-    for module_key, config in module_configs.items():
-        # Skip conditional modules that don't apply
-        if "conditional" in config and not config["conditional"](data):
-            continue
-            
-        # Mock state for now
-        state = get_module_state(user_id, product_key, module_key)
-        st.markdown('<article class="tile tile--md">', unsafe_allow_html=True)
-        render_module_tile(product_key, module_key, state)
-        st.markdown('</article>', unsafe_allow_html=True)
+    # Render tiles
+    for tile in tiles:
+        session_key = f"{product_key}_{tile.module_key}"
+        tile.render(session_key, tiles)
     
     tiles_close()
     
@@ -386,8 +577,64 @@ def render_hub():
         st.session_state["cost_planner_step"] = "expert_review"
         st.rerun()
 
+
+
 def render_quick_estimate():
-    st.title("Quick Estimate")
+    # Import the theme CSS and apply new styling
+    st.markdown(
+        """
+        <link rel='stylesheet' href='/assets/css/theme.css'>
+        <style>
+        .main .block-container {
+            background: var(--bg);
+            min-height: 80vh;
+        }
+        /* New styling overrides */
+        .stButton > button {
+            background: #3B82F6 !important;
+            color: white !important;
+            border-radius: 5px !important;
+            border: none !important;
+        }
+        .stButton > button:hover {
+            background: #2563EB !important;
+        }
+        .stRadio label[data-baseweb="radio"] input:checked + div {
+            color: black !important;
+        }
+        .stRadio label[data-baseweb="radio"] input:not(:checked) + div {
+            color: gray !important;
+        }
+        .stTextInput > div > div, .stNumberInput > div > div, .stSelectbox > div > div, .stTextArea > div > div {
+            border-radius: 5px !important;
+            padding: 10px !important;
+        }
+        .container {
+            padding: 10px !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+    
+    # Main content container
+    st.markdown('<section class="container section" style="padding: 10px;">', unsafe_allow_html=True)
+    
+    # Hero section with title
+    st.markdown(
+        f"""
+        <div class="text-center" style="margin-bottom: var(--space-10);">
+            <h1 style="font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; line-height: 1.15; color: var(--ink); margin-bottom: var(--space-4);">
+                Quick Estimate
+            </h1>
+            <p style="color: var(--ink-600); max-width: 48ch; margin: 0 auto; font-size: 1.1rem;">
+                Get a quick estimate of your care costs based on basic information.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    
     data = st.session_state.get("cost_data", {})
     
     care_type = st.selectbox("Care Type", ["in_home", "assisted_living", "memory_care"])
@@ -410,23 +657,46 @@ def render_quick_estimate():
         st.session_state["cost_data"] = data
         st.session_state["cost_planner_step"] = "hub"
         st.rerun()
+    
+    # Close section
+    st.markdown('</section>', unsafe_allow_html=True)
 
 def render_income():
-    # Import the theme CSS
+    # Import the theme CSS and apply new styling
     st.markdown(
-        "<link rel='stylesheet' href='/assets/css/theme.css'>",
-        unsafe_allow_html=True
-    )
-    
-    # Apply canvas background like welcome pages
-    st.markdown(
-        """<style>
+        """
+        <link rel='stylesheet' href='/assets/css/theme.css'>
+        <style>
         .main .block-container {
             background: var(--bg);
             min-height: 80vh;
         }
-        </style>""",
-        unsafe_allow_html=True,
+        /* New styling overrides */
+        .stButton > button {
+            background: #3B82F6 !important;
+            color: white !important;
+            border-radius: 5px !important;
+            border: none !important;
+        }
+        .stButton > button:hover {
+            background: #2563EB !important;
+        }
+        .stRadio label[data-baseweb="radio"] input:checked + div {
+            color: black !important;
+        }
+        .stRadio label[data-baseweb="radio"] input:not(:checked) + div {
+            color: gray !important;
+        }
+        .stTextInput > div > div, .stNumberInput > div > div, .stSelectbox > div > div, .stTextArea > div > div {
+            border-radius: 5px !important;
+            padding: 10px !important;
+        }
+        .container {
+            padding: 10px !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
     )
     
     # Main content container
@@ -485,25 +755,45 @@ def render_income():
     st.markdown('</section>', unsafe_allow_html=True)
 
 def render_housing_options():
-    # Import the theme CSS
+    # Import the theme CSS and apply new styling
     st.markdown(
-        "<link rel='stylesheet' href='/assets/css/theme.css'>",
-        unsafe_allow_html=True
-    )
-    
-    # Apply canvas background like welcome pages
-    st.markdown(
-        """<style>
+        """
+        <link rel='stylesheet' href='/assets/css/theme.css'>
+        <style>
         .main .block-container {
             background: var(--bg);
             min-height: 80vh;
         }
-        </style>""",
-        unsafe_allow_html=True,
+        /* New styling overrides */
+        .stButton > button {
+            background: #3B82F6 !important;
+            color: white !important;
+            border-radius: 5px !important;
+            border: none !important;
+        }
+        .stButton > button:hover {
+            background: #2563EB !important;
+        }
+        .stRadio label[data-baseweb="radio"] input:checked + div {
+            color: black !important;
+        }
+        .stRadio label[data-baseweb="radio"] input:not(:checked) + div {
+            color: gray !important;
+        }
+        .stTextInput > div > div, .stNumberInput > div > div, .stSelectbox > div > div, .stTextArea > div > div {
+            border-radius: 5px !important;
+            padding: 10px !important;
+        }
+        .container {
+            padding: 10px !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
     )
     
     # Main content container
-    st.markdown('<section class="container section">', unsafe_allow_html=True)
+    st.markdown('<section class="container section" style="padding: 10px;">', unsafe_allow_html=True)
     
     # Hero section with title
     st.markdown(
@@ -584,25 +874,45 @@ def render_housing_options():
     st.markdown('</section>', unsafe_allow_html=True)
 
 def render_va_benefits():
-    # Import the theme CSS
+    # Import the theme CSS and apply new styling
     st.markdown(
-        "<link rel='stylesheet' href='/assets/css/theme.css'>",
-        unsafe_allow_html=True
-    )
-    
-    # Apply canvas background like welcome pages
-    st.markdown(
-        """<style>
+        """
+        <link rel='stylesheet' href='/assets/css/theme.css'>
+        <style>
         .main .block-container {
             background: var(--bg);
             min-height: 80vh;
         }
-        </style>""",
-        unsafe_allow_html=True,
+        /* New styling overrides */
+        .stButton > button {
+            background: #3B82F6 !important;
+            color: white !important;
+            border-radius: 5px !important;
+            border: none !important;
+        }
+        .stButton > button:hover {
+            background: #2563EB !important;
+        }
+        .stRadio label[data-baseweb="radio"] input:checked + div {
+            color: black !important;
+        }
+        .stRadio label[data-baseweb="radio"] input:not(:checked) + div {
+            color: gray !important;
+        }
+        .stTextInput > div > div, .stNumberInput > div > div, .stSelectbox > div > div, .stTextArea > div > div {
+            border-radius: 5px !important;
+            padding: 10px !important;
+        }
+        .container {
+            padding: 10px !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
     )
     
     # Main content container
-    st.markdown('<section class="container section">', unsafe_allow_html=True)
+    st.markdown('<section class="container section" style="padding: 10px;">', unsafe_allow_html=True)
     
     # Hero section with title
     st.markdown(
@@ -728,25 +1038,45 @@ def render_va_benefits():
     st.markdown('</section>', unsafe_allow_html=True)
 
 def render_expenses():
-    # Import the theme CSS
+    # Import the theme CSS and apply new styling
     st.markdown(
-        "<link rel='stylesheet' href='/assets/css/theme.css'>",
-        unsafe_allow_html=True
-    )
-    
-    # Apply canvas background like welcome pages
-    st.markdown(
-        """<style>
+        """
+        <link rel='stylesheet' href='/assets/css/theme.css'>
+        <style>
         .main .block-container {
             background: var(--bg);
             min-height: 80vh;
         }
-        </style>""",
-        unsafe_allow_html=True,
+        /* New styling overrides */
+        .stButton > button {
+            background: #3B82F6 !important;
+            color: white !important;
+            border-radius: 5px !important;
+            border: none !important;
+        }
+        .stButton > button:hover {
+            background: #2563EB !important;
+        }
+        .stRadio label[data-baseweb="radio"] input:checked + div {
+            color: black !important;
+        }
+        .stRadio label[data-baseweb="radio"] input:not(:checked) + div {
+            color: gray !important;
+        }
+        .stTextInput > div > div, .stNumberInput > div > div, .stSelectbox > div > div, .stTextArea > div > div {
+            border-radius: 5px !important;
+            padding: 10px !important;
+        }
+        .container {
+            padding: 10px !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
     )
     
     # Main content container
-    st.markdown('<section class="container section">', unsafe_allow_html=True)
+    st.markdown('<section class="container section" style="padding: 10px;">', unsafe_allow_html=True)
     
     # Hero section with title
     st.markdown(
@@ -796,25 +1126,45 @@ def render_expenses():
     st.markdown('</section>', unsafe_allow_html=True)
 
 def render_assets():
-    # Import the theme CSS
+    # Import the theme CSS and apply new styling
     st.markdown(
-        "<link rel='stylesheet' href='/assets/css/theme.css'>",
-        unsafe_allow_html=True
-    )
-    
-    # Apply canvas background like welcome pages
-    st.markdown(
-        """<style>
+        """
+        <link rel='stylesheet' href='/assets/css/theme.css'>
+        <style>
         .main .block-container {
             background: var(--bg);
             min-height: 80vh;
         }
-        </style>""",
-        unsafe_allow_html=True,
+        /* New styling overrides */
+        .stButton > button {
+            background: #3B82F6 !important;
+            color: white !important;
+            border-radius: 5px !important;
+            border: none !important;
+        }
+        .stButton > button:hover {
+            background: #2563EB !important;
+        }
+        .stRadio label[data-baseweb="radio"] input:checked + div {
+            color: black !important;
+        }
+        .stRadio label[data-baseweb="radio"] input:not(:checked) + div {
+            color: gray !important;
+        }
+        .stTextInput > div > div, .stNumberInput > div > div, .stSelectbox > div > div, .stTextArea > div > div {
+            border-radius: 5px !important;
+            padding: 10px !important;
+        }
+        .container {
+            padding: 10px !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
     )
     
     # Main content container
-    st.markdown('<section class="container section">', unsafe_allow_html=True)
+    st.markdown('<section class="container section" style="padding: 10px;">', unsafe_allow_html=True)
     
     # Hero section with title
     st.markdown(
@@ -855,25 +1205,45 @@ def render_assets():
     st.markdown('</section>', unsafe_allow_html=True)
 
 def render_health_life_benefits():
-    # Import the theme CSS
+    # Import the theme CSS and apply new styling
     st.markdown(
-        "<link rel='stylesheet' href='/assets/css/theme.css'>",
-        unsafe_allow_html=True
-    )
-    
-    # Apply canvas background like welcome pages
-    st.markdown(
-        """<style>
+        """
+        <link rel='stylesheet' href='/assets/css/theme.css'>
+        <style>
         .main .block-container {
             background: var(--bg);
             min-height: 80vh;
         }
-        </style>""",
-        unsafe_allow_html=True,
+        /* New styling overrides */
+        .stButton > button {
+            background: #3B82F6 !important;
+            color: white !important;
+            border-radius: 5px !important;
+            border: none !important;
+        }
+        .stButton > button:hover {
+            background: #2563EB !important;
+        }
+        .stRadio label[data-baseweb="radio"] input:checked + div {
+            color: black !important;
+        }
+        .stRadio label[data-baseweb="radio"] input:not(:checked) + div {
+            color: gray !important;
+        }
+        .stTextInput > div > div, .stNumberInput > div > div, .stSelectbox > div > div, .stTextArea > div > div {
+            border-radius: 5px !important;
+            padding: 10px !important;
+        }
+        .container {
+            padding: 10px !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
     )
     
     # Main content container
-    st.markdown('<section class="container section">', unsafe_allow_html=True)
+    st.markdown('<section class="container section" style="padding: 10px;">', unsafe_allow_html=True)
     
     # Hero section with title
     st.markdown(
@@ -932,25 +1302,45 @@ def render_health_life_benefits():
     st.markdown('</section>', unsafe_allow_html=True)
 
 def render_medicaid_navigation():
-    # Import the theme CSS
+    # Import the theme CSS and apply new styling
     st.markdown(
-        "<link rel='stylesheet' href='/assets/css/theme.css'>",
-        unsafe_allow_html=True
-    )
-    
-    # Apply canvas background like welcome pages
-    st.markdown(
-        """<style>
+        """
+        <link rel='stylesheet' href='/assets/css/theme.css'>
+        <style>
         .main .block-container {
             background: var(--bg);
             min-height: 80vh;
         }
-        </style>""",
-        unsafe_allow_html=True,
+        /* New styling overrides */
+        .stButton > button {
+            background: #3B82F6 !important;
+            color: white !important;
+            border-radius: 5px !important;
+            border: none !important;
+        }
+        .stButton > button:hover {
+            background: #2563EB !important;
+        }
+        .stRadio label[data-baseweb="radio"] input:checked + div {
+            color: black !important;
+        }
+        .stRadio label[data-baseweb="radio"] input:not(:checked) + div {
+            color: gray !important;
+        }
+        .stTextInput > div > div, .stNumberInput > div > div, .stSelectbox > div > div, .stTextArea > div > div {
+            border-radius: 5px !important;
+            padding: 10px !important;
+        }
+        .container {
+            padding: 10px !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
     )
     
     # Main content container
-    st.markdown('<section class="container section">', unsafe_allow_html=True)
+    st.markdown('<section class="container section" style="padding: 10px;">', unsafe_allow_html=True)
     
     # Hero section with title
     st.markdown(
@@ -1068,25 +1458,45 @@ def render_medicaid_navigation():
     st.markdown('</section>', unsafe_allow_html=True)
 
 def render_expert_review():
-    # Import the theme CSS
+    # Import the theme CSS and apply new styling
     st.markdown(
-        "<link rel='stylesheet' href='/assets/css/theme.css'>",
-        unsafe_allow_html=True
-    )
-    
-    # Apply canvas background like welcome pages
-    st.markdown(
-        """<style>
+        """
+        <link rel='stylesheet' href='/assets/css/theme.css'>
+        <style>
         .main .block-container {
             background: var(--bg);
             min-height: 80vh;
         }
-        </style>""",
-        unsafe_allow_html=True,
+        /* New styling overrides */
+        .stButton > button {
+            background: #3B82F6 !important;
+            color: white !important;
+            border-radius: 5px !important;
+            border: none !important;
+        }
+        .stButton > button:hover {
+            background: #2563EB !important;
+        }
+        .stRadio label[data-baseweb="radio"] input:checked + div {
+            color: black !important;
+        }
+        .stRadio label[data-baseweb="radio"] input:not(:checked) + div {
+            color: gray !important;
+        }
+        .stTextInput > div > div, .stNumberInput > div > div, .stSelectbox > div > div, .stTextArea > div > div {
+            border-radius: 5px !important;
+            padding: 10px !important;
+        }
+        .container {
+            padding: 10px !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
     )
     
     # Main content container
-    st.markdown('<section class="container section">', unsafe_allow_html=True)
+    st.markdown('<section class="container section" style="padding: 10px;">', unsafe_allow_html=True)
     
     # Hero section with title
     st.markdown(
