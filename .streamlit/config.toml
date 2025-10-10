@@ -7,7 +7,10 @@ textColor = "#0d1f4b"
 font = "sans serif"
 
 [client]
-# Hide verbose error styling banners that can color widgets red:
+# CRITICAL: Hide verbose error styling banners that can color widgets red
+# This prevents background exceptions from injecting red borders and backgrounds into the UI
+# When combined with CSS overrides in assets/css/theme.css, this ensures consistent theming
+# DO NOT REMOVE - this is essential for production deployment
 showErrorDetails = false
 
 [browser]

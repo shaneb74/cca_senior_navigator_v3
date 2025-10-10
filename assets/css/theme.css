@@ -1,3 +1,28 @@
+/* Suppress Streamlit error styling to prevent red borders and backgrounds */
+/* These rules ensure consistent theming even when background exceptions occur */
+.stTextInput > div > div > input[aria-invalid="true"],
+.stTextArea > div > div > textarea[aria-invalid="true"],
+.stSelectbox > div > div[aria-invalid="true"],
+.stMultiSelect > div > div[aria-invalid="true"],
+.stNumberInput > div > div > input[aria-invalid="true"] {
+    border-color: var(--muted) !important;
+    background-color: var(--card) !important;
+}
+
+/* Suppress error styling on buttons */
+.stButton > button[aria-invalid="true"],
+.stButton > button[data-testid="baseButton-primary"][aria-invalid="true"] {
+    background-color: var(--brand) !important;
+    border-color: var(--brand) !important;
+    color: #fff !important;
+}
+
+/* Hide error messages and exception details that may cause red styling */
+.stException,
+.stAlert[data-baseweb="notification"][kind="error"] {
+    display: none !important;
+}
+
 /* Streamlit overrides for better selection visibility */
 .stRadio label[data-baseweb="radio"] input:checked + div {
     background-color: var(--brand-50) !important;

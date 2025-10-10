@@ -9,6 +9,18 @@ st.set_page_config(page_title="Senior Navigator", page_icon="🧭", layout="wide
 
 
 def inject_css():
+    """
+    Inject custom CSS to override Streamlit's default theming.
+    
+    CRITICAL: The try-except block is essential for cloud deployments where
+    the file path may differ. This prevents the app from crashing if the CSS
+    file is not found, while still allowing the custom theme to be applied
+    when available.
+    
+    DO NOT REMOVE - this is required to suppress error styling (red borders,
+    red backgrounds) that can appear when background exceptions occur in Streamlit.
+    Works in conjunction with .streamlit/config.toml settings.
+    """
     try:
         with open("assets/css/theme.css", "r", encoding="utf-8") as f:
             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
