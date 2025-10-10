@@ -9,8 +9,12 @@ st.set_page_config(page_title="Senior Navigator", page_icon="🧭", layout="wide
 
 
 def inject_css():
-    with open("assets/css/theme.css", "r", encoding="utf-8") as f:
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    try:
+        with open("assets/css/theme.css", "r", encoding="utf-8") as f:
+            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    except FileNotFoundError:
+        # no-op on Cloud if path differs; don't crash
+        pass
 
 
 inject_css()
