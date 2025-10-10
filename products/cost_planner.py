@@ -12,49 +12,58 @@ with open(CONFIG_PATH) as f:
 def get_module_config():
     """Returns modular module configuration with completion logic and status generators."""
     return {
-        "quick_estimate": {
-            "title": "Quick Estimate",
-            "description": "Get a fast cost estimate",
-            "required_fields": [],
-            "get_status": lambda data: "Completed" if "care_type" in data else "Not started",
-            "is_complete": lambda data: "care_type" in data
-        },
-        "income_assets": {
-            "title": "Income & Assets",
-            "description": "Capture monthly income and household finances",
-            "required_fields": ["social_security", "pension", "wages", "other_income", "liquid_savings", "retirement"],
-            "optional_fields": ["partner", "finance_handling", "home_equity"],
+        "income": {
+            "title": "Income",
+            "description": "Monthly income sources and household finances",
+            "required_fields": ["social_security", "pension", "wages", "other_income"],
+            "optional_fields": ["partner", "finance_handling"],
             "get_status": lambda data: get_income_status(data),
             "is_complete": lambda data: is_income_complete(data)
         },
-        "housing_options": {
-            "title": "Housing Options",
-            "description": "Define care requirements and modifiers",
+        "expenses": {
+            "title": "Expenses",
+            "description": "Monthly expenses including housing",
+            "required_fields": ["housing", "utilities", "groceries", "medications", "transportation", "other_expenses"],
+            "get_status": lambda data: get_expenses_status(data),
+            "is_complete": lambda data: is_expenses_complete(data)
+        },
+        "assets": {
+            "title": "Assets",
+            "description": "Liquid savings and retirement accounts",
+            "required_fields": ["liquid_savings"],
+            "optional_fields": ["retirement", "home_equity"],
+            "get_status": lambda data: get_assets_status(data),
+            "is_complete": lambda data: is_assets_complete(data)
+        },
+        "care_needs": {
+            "title": "Care Needs",
+            "description": "Care requirements and modifiers",
             "required_fields": ["care_type", "care_details"],
             "get_status": lambda data: get_care_status(data),
             "is_complete": lambda data: is_care_complete(data)
         },
         "va_benefits": {
             "title": "VA Benefits",
-            "description": "Estimate veteran benefits and eligibility",
+            "description": "Veteran benefits and eligibility",
             "required_fields": ["va_benefits"],
             "conditional": lambda data: data.get("veteran", False),
             "get_status": lambda data: get_va_status(data),
             "is_complete": lambda data: is_va_complete(data)
         },
-        "home_mods": {
-            "title": "Home Modifications",
-            "description": "Plan home modifications for accessibility",
+        "health_life_benefits": {
+            "title": "Health, Life & Benefits",
+            "description": "Health insurance and life insurance benefits",
             "required_fields": [],
-            "get_status": lambda data: "Not implemented",
-            "is_complete": lambda data: False
+            "get_status": lambda data: get_health_life_status(data),
+            "is_complete": lambda data: is_health_life_complete(data)
         },
-        "runway_projection": {
-            "title": "Runway Projection",
-            "description": "Calculate how long your money will last",
+        "medicaid_navigation": {
+            "title": "Medicaid Navigation",
+            "description": "Medicaid eligibility and spend-down planning",
             "required_fields": [],
-            "get_status": lambda data: "Not implemented",
-            "is_complete": lambda data: False
+            "conditional": lambda data: is_medicaid_unlocked(data),
+            "get_status": lambda data: get_medicaid_status(data),
+            "is_complete": lambda data: is_medicaid_complete(data)
         }
     }
 
@@ -81,6 +90,31 @@ def get_income_status(data):
         household = f" • {handling}"
     
     return f"${total:,.0f}/mo from {', '.join(sources)}{household}"
+
+def is_expenses_complete(data):
+    """Check if expenses module is complete."""
+    required = ["housing", "utilities", "groceries", "medications", "transportation", "other_expenses"]
+    return all(k in data for k in required)
+
+def get_expenses_status(data):
+    """Generate detailed expenses status."""
+    if not is_expenses_complete(data):
+        return "Not started"
+    
+    total = sum([data.get(k, 0) for k in ['housing', 'utilities', 'groceries', 'medications', 'transportation', 'other_expenses']])
+    return f"${total:,.0f}/mo total expenses"
+
+def is_assets_complete(data):
+    """Check if assets module is complete."""
+    return "liquid_savings" in data
+
+def get_assets_status(data):
+    """Generate detailed assets status."""
+    if not is_assets_complete(data):
+        return "Not started"
+    
+    total = data.get('liquid_savings', 0) + data.get('retirement', 0) + data.get('home_equity', 0)
+    return f"${total:,.0f} total assets"
 
 def is_care_complete(data):
     """Check if care needs module is complete."""
@@ -121,6 +155,45 @@ def get_va_status(data):
     
     amount = data.get('va_benefits', 0)
     return f"${amount:,.0f}/mo estimated benefits"
+
+def is_health_life_complete(data):
+    """Check if health/life benefits module is complete."""
+    # This module is optional, so it's always "complete"
+    return True
+
+def get_health_life_status(data):
+    """Generate detailed health/life benefits status."""
+    benefits = []
+    if data.get('long_term_care', False):
+        benefits.append(f"LTC: ${data.get('ltc_payout', 0):,.0f}/mo")
+    if data.get('whole_life', False):
+        benefits.append(f"Whole Life: ${data.get('cash_value', 0):,.0f}")
+    
+    if benefits:
+        return f"Benefits: {', '.join(benefits)}"
+    return "No benefits configured"
+
+def is_medicaid_unlocked(data):
+    """Check if Medicaid Navigation should be unlocked."""
+    return (is_income_complete(data) and is_expenses_complete(data) and 
+            is_assets_complete(data) and is_care_complete(data))
+
+def is_medicaid_complete(data):
+    """Check if Medicaid Navigation module is complete."""
+    # This is optional, so it's always "complete" once unlocked
+    return True
+
+def get_medicaid_status(data):
+    """Generate detailed Medicaid status."""
+    if not is_medicaid_unlocked(data):
+        return "Locked - Complete Income, Expenses, Assets, Care Needs first"
+    
+    if data.get('medicaid', False):
+        return "Already on Medicaid"
+    elif data.get('spend_down_confirmed', False):
+        return "Spend-down planning completed"
+    else:
+        return "Available - Review eligibility and spend-down options"
 
 def get_base_cost(care_type, details):
     if care_type == "in_home":
@@ -173,13 +246,13 @@ def render_landing():
         st.write(f"Based on your Guided Care Plan, we recommend: {care_label}")
         st.write(f"Estimated Monthly Cost: ${cost:,.0f}/mo (national average)")
     else:
-        st.write("Plan your care costs (e.g., ~$5,500/mo for Assisted Living).")
+        st.write("Plan care costs (e.g., ~$5,500/mo for Assisted Living).")
     
     col1, col2 = st.columns(2)
     with col1:
         if st.button("Start My Plan", key="start_plan"):
-            # Assume auth handled, or add modal
-            st.session_state["cost_planner_step"] = "entry_flow"
+            # Force authentication via login modal
+            st.session_state["cost_planner_step"] = "auth_required"
             st.rerun()
     with col2:
         if st.button("Explore Costs", key="explore_costs"):
@@ -206,25 +279,77 @@ def render_explore():
         st.session_state["cost_planner_step"] = "landing"
         st.rerun()
 
-def render_entry_flow():
-    st.title("Planning Context")
-    data = st.session_state.get("cost_data", {})
+def render_auth_required():
+    st.title("Authentication Required")
+    st.write("To create and save your personalized care cost plan, please log in or sign up.")
     
-    st.markdown("Are you a veteran?")
-    veteran = st.radio(" ", ["Yes", "No"], index=0 if data.get("veteran") else 1, key="veteran", label_visibility="collapsed")
+    # Development bypass
+    if st.button("Skip Authentication (Development)", key="dev_skip"):
+        st.session_state["cost_planner_authenticated"] = True
+        st.session_state["cost_planner_step"] = "income"
+        st.rerun()
     
-    st.markdown("Do you own a home?")
-    homeowner = st.radio(" ", ["Yes", "No"], index=0 if data.get("homeowner") else 1, key="homeowner", label_visibility="collapsed")
+    st.markdown("---")
     
-    if st.button("Continue", key="continue_entry"):
-        st.session_state["cost_data"] = {
-            "veteran": veteran == "Yes",
-            "homeowner": homeowner == "Yes"
-        }
-        st.session_state["cost_planner_step"] = "hub"
+    # Simple login form (in production, use proper auth)
+    with st.form("login_form"):
+        email = st.text_input("Email")
+        password = st.text_input("Password", type="password")
+        submitted = st.form_submit_button("Log In")
+        
+        if submitted:
+            # Mock authentication - in production, validate credentials
+            if email and password:
+                st.session_state["cost_planner_authenticated"] = True
+                st.session_state["cost_planner_step"] = "income"
+                st.rerun()
+            else:
+                st.error("Please enter email and password")
+    
+    st.write("Don't have an account?")
+    if st.button("Sign Up", key="signup"):
+        st.info("Sign up functionality would be implemented here")
+    
+    if st.button("Back to Landing", key="back_landing_auth"):
+        st.session_state["cost_planner_step"] = "landing"
         st.rerun()
 
 def render_hub():
+    ctx = get_user_ctx()
+    user_id = ctx["auth"].get("user_id", "guest")
+    product_key = "cost_planner"
+    
+    data = st.session_state.get("cost_data", {})
+    
+    # Cost summary
+    care_type = data.get("care_type", "in_home")
+    details = data.get("care_details", {})
+    cost = calculate_monthly_cost(care_type, details, data.get("zip"))
+    summary = f"Current Plan: {care_type.replace('_', ' ').title()} | Estimated Monthly Cost: ${cost:,.0f}/mo"
+    
+    hub_section("Cost Planner", right_meta=summary)
+    tiles_open()
+    
+    # Get module configurations
+    module_configs = get_module_config()
+    
+    # Render tiles for each module
+    for module_key, config in module_configs.items():
+        # Skip conditional modules that don't apply
+        if "conditional" in config and not config["conditional"](data):
+            continue
+            
+        # Mock state for now
+        state = get_module_state(user_id, product_key, module_key)
+        st.markdown('<article class="tile tile--md">', unsafe_allow_html=True)
+        render_module_tile(product_key, module_key, state)
+        st.markdown('</article>', unsafe_allow_html=True)
+    
+    tiles_close()
+    
+    if st.button("Continue to Expert Review", key="continue_review"):
+        st.session_state["cost_planner_step"] = "expert_review"
+        st.rerun()
     ctx = get_user_ctx()
     user_id = ctx["auth"].get("user_id", "guest")
     product_key = "cost_planner"
@@ -287,7 +412,41 @@ def render_quick_estimate():
         st.rerun()
 
 def render_income():
-    st.title("Income Module")
+    # Import the theme CSS
+    st.markdown(
+        "<link rel='stylesheet' href='/assets/css/theme.css'>",
+        unsafe_allow_html=True
+    )
+    
+    # Apply canvas background like welcome pages
+    st.markdown(
+        """<style>
+        .main .block-container {
+            background: var(--bg);
+            min-height: 80vh;
+        }
+        </style>""",
+        unsafe_allow_html=True,
+    )
+    
+    # Main content container
+    st.markdown('<section class="container section">', unsafe_allow_html=True)
+    
+    # Hero section with title
+    st.markdown(
+        f"""
+        <div class="text-center" style="margin-bottom: var(--space-10);">
+            <h1 style="font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; line-height: 1.15; color: var(--ink); margin-bottom: var(--space-4);">
+                Income Module
+            </h1>
+            <p style="color: var(--ink-600); max-width: 48ch; margin: 0 auto; font-size: 1.1rem;">
+                Let's understand your monthly income sources to build an accurate care cost plan.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    
     data = st.session_state.get("cost_data", {})
     
     ss = st.number_input("Social Security", value=data.get("social_security", 0), step=100)
@@ -321,9 +480,46 @@ def render_income():
         st.session_state["cost_data"] = data
         st.session_state["cost_planner_step"] = "hub"
         st.rerun()
+    
+    # Close section
+    st.markdown('</section>', unsafe_allow_html=True)
 
 def render_housing_options():
-    st.title("Housing Options Module")
+    # Import the theme CSS
+    st.markdown(
+        "<link rel='stylesheet' href='/assets/css/theme.css'>",
+        unsafe_allow_html=True
+    )
+    
+    # Apply canvas background like welcome pages
+    st.markdown(
+        """<style>
+        .main .block-container {
+            background: var(--bg);
+            min-height: 80vh;
+        }
+        </style>""",
+        unsafe_allow_html=True,
+    )
+    
+    # Main content container
+    st.markdown('<section class="container section">', unsafe_allow_html=True)
+    
+    # Hero section with title
+    st.markdown(
+        f"""
+        <div class="text-center" style="margin-bottom: var(--space-10);">
+            <h1 style="font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; line-height: 1.15; color: var(--ink); margin-bottom: var(--space-4);">
+                Care Needs Module
+            </h1>
+            <p style="color: var(--ink-600); max-width: 48ch; margin: 0 auto; font-size: 1.1rem;">
+                Choose your care path and tell us about your specific care requirements.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    
     data = st.session_state.get("cost_data", {})
     
     gcp_exists = "gcp_data" in st.session_state
@@ -383,9 +579,46 @@ def render_housing_options():
         st.session_state["cost_data"] = data
         st.session_state["cost_planner_step"] = "hub"
         st.rerun()
+    
+    # Close section
+    st.markdown('</section>', unsafe_allow_html=True)
 
 def render_va_benefits():
-    st.title("VA Benefits Module")
+    # Import the theme CSS
+    st.markdown(
+        "<link rel='stylesheet' href='/assets/css/theme.css'>",
+        unsafe_allow_html=True
+    )
+    
+    # Apply canvas background like welcome pages
+    st.markdown(
+        """<style>
+        .main .block-container {
+            background: var(--bg);
+            min-height: 80vh;
+        }
+        </style>""",
+        unsafe_allow_html=True,
+    )
+    
+    # Main content container
+    st.markdown('<section class="container section">', unsafe_allow_html=True)
+    
+    # Hero section with title
+    st.markdown(
+        f"""
+        <div class="text-center" style="margin-bottom: var(--space-10);">
+            <h1 style="font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; line-height: 1.15; color: var(--ink); margin-bottom: var(--space-4);">
+                VA Benefits Module
+            </h1>
+            <p style="color: var(--ink-600); max-width: 48ch; margin: 0 auto; font-size: 1.1rem;">
+                Let's explore VA benefits that may help cover your care costs.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    
     data = st.session_state.get("cost_data", {})
     
     # Only show if veteran
@@ -394,6 +627,8 @@ def render_va_benefits():
         if st.button("Back to Hub", key="back_hub_va"):
             st.session_state["cost_planner_step"] = "hub"
             st.rerun()
+        # Close section
+        st.markdown('</section>', unsafe_allow_html=True)
         return
     
     # Get ADL flags from care needs
@@ -488,23 +723,386 @@ def render_va_benefits():
         st.session_state["cost_data"] = data
         st.session_state["cost_planner_step"] = "hub"
         st.rerun()
+    
+    # Close section
+    st.markdown('</section>', unsafe_allow_html=True)
 
-def render_home_mods():
-    st.title("Home Modifications Module")
-    st.info("This module is not yet implemented.")
-    if st.button("Back to Hub", key="back_hub_mods"):
+def render_expenses():
+    # Import the theme CSS
+    st.markdown(
+        "<link rel='stylesheet' href='/assets/css/theme.css'>",
+        unsafe_allow_html=True
+    )
+    
+    # Apply canvas background like welcome pages
+    st.markdown(
+        """<style>
+        .main .block-container {
+            background: var(--bg);
+            min-height: 80vh;
+        }
+        </style>""",
+        unsafe_allow_html=True,
+    )
+    
+    # Main content container
+    st.markdown('<section class="container section">', unsafe_allow_html=True)
+    
+    # Hero section with title
+    st.markdown(
+        f"""
+        <div class="text-center" style="margin-bottom: var(--space-10);">
+            <h1 style="font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; line-height: 1.15; color: var(--ink); margin-bottom: var(--space-4);">
+                Expenses Module
+            </h1>
+            <p style="color: var(--ink-600); max-width: 48ch; margin: 0 auto; font-size: 1.1rem;">
+                Tell us about your monthly expenses so we can calculate your care affordability.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    
+    data = st.session_state.get("cost_data", {})
+    
+    homeowner = data.get("homeowner", False)
+    
+    if homeowner:
+        housing = st.number_input("Housing (Mortgage/Property Taxes/Insurance)", value=data.get("housing", 0), step=100)
+    else:
+        housing = st.number_input("Rent", value=data.get("housing", 0), step=100)
+    
+    utilities = st.number_input("Utilities (Electric, Water, etc.)", value=data.get("utilities", 0), step=50)
+    groceries = st.number_input("Groceries", value=data.get("groceries", 0), step=50)
+    medications = st.number_input("Medications/Healthcare", value=data.get("medications", 0), step=50)
+    transportation = st.number_input("Transportation (Car, Gas, Transit)", value=data.get("transportation", 0), step=50)
+    other_expenses = st.number_input("Other Expenses", value=data.get("other_expenses", 0), step=50,
+                                   help="e.g., phone, subscriptions, personal care")
+    
+    if st.button("Save & Continue", key="save_expenses"):
+        data.update({
+            "housing": housing,
+            "utilities": utilities,
+            "groceries": groceries,
+            "medications": medications,
+            "transportation": transportation,
+            "other_expenses": other_expenses
+        })
+        st.session_state["cost_data"] = data
         st.session_state["cost_planner_step"] = "hub"
         st.rerun()
+    
+    # Close section
+    st.markdown('</section>', unsafe_allow_html=True)
 
-def render_runway_projection():
-    st.title("Runway Projection Module")
-    st.info("This module is not yet implemented.")
-    if st.button("Back to Hub", key="back_hub_runway"):
+def render_assets():
+    # Import the theme CSS
+    st.markdown(
+        "<link rel='stylesheet' href='/assets/css/theme.css'>",
+        unsafe_allow_html=True
+    )
+    
+    # Apply canvas background like welcome pages
+    st.markdown(
+        """<style>
+        .main .block-container {
+            background: var(--bg);
+            min-height: 80vh;
+        }
+        </style>""",
+        unsafe_allow_html=True,
+    )
+    
+    # Main content container
+    st.markdown('<section class="container section">', unsafe_allow_html=True)
+    
+    # Hero section with title
+    st.markdown(
+        f"""
+        <div class="text-center" style="margin-bottom: var(--space-10);">
+            <h1 style="font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; line-height: 1.15; color: var(--ink); margin-bottom: var(--space-4);">
+                Assets Module
+            </h1>
+            <p style="color: var(--ink-600); max-width: 48ch; margin: 0 auto; font-size: 1.1rem;">
+                Let's review your savings and assets to understand your financial runway for care.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    
+    data = st.session_state.get("cost_data", {})
+    
+    liquid_savings = st.number_input("Liquid Savings (Checking/Savings)", value=data.get("liquid_savings", 0), step=1000)
+    retirement = st.number_input("Retirement Accounts (401k, IRA)", value=data.get("retirement", 0), step=1000)
+    
+    homeowner = data.get("homeowner", False)
+    home_equity = 0
+    if homeowner:
+        home_equity = st.number_input("Home Equity (if owned)", value=data.get("home_equity", 0), step=10000)
+    
+    if st.button("Save & Continue", key="save_assets"):
+        data.update({
+            "liquid_savings": liquid_savings,
+            "retirement": retirement,
+            "home_equity": home_equity
+        })
+        st.session_state["cost_data"] = data
         st.session_state["cost_planner_step"] = "hub"
         st.rerun()
+    
+    # Close section
+    st.markdown('</section>', unsafe_allow_html=True)
+
+def render_health_life_benefits():
+    # Import the theme CSS
+    st.markdown(
+        "<link rel='stylesheet' href='/assets/css/theme.css'>",
+        unsafe_allow_html=True
+    )
+    
+    # Apply canvas background like welcome pages
+    st.markdown(
+        """<style>
+        .main .block-container {
+            background: var(--bg);
+            min-height: 80vh;
+        }
+        </style>""",
+        unsafe_allow_html=True,
+    )
+    
+    # Main content container
+    st.markdown('<section class="container section">', unsafe_allow_html=True)
+    
+    # Hero section with title
+    st.markdown(
+        f"""
+        <div class="text-center" style="margin-bottom: var(--space-10);">
+            <h1 style="font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; line-height: 1.15; color: var(--ink); margin-bottom: var(--space-4);">
+                Health, Life & Benefits Module
+            </h1>
+            <p style="color: var(--ink-600); max-width: 48ch; margin: 0 auto; font-size: 1.1rem;">
+                Tell us about your insurance and benefits that may help with care costs.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    
+    data = st.session_state.get("cost_data", {})
+    
+    st.markdown("Long-term care insurance?")
+    ltc = st.radio(" ", ["Yes", "No"], index=0 if data.get("long_term_care") else 1, key="ltc_radio", label_visibility="collapsed")
+    ltc_payout = 0
+    if ltc == "Yes":
+        ltc_payout = st.number_input("Monthly payout", value=data.get("ltc_payout", 0), step=100)
+    
+    st.markdown("Medicare?")
+    medicare = st.radio(" ", ["Yes", "No"], index=0 if data.get("medicare") else 1, key="medicare_radio", label_visibility="collapsed")
+    st.write("*Note: Covers hospital/drugs, not daily care. Gaps may apply.*")
+    
+    st.markdown("Whole life insurance policy?")
+    whole_life = st.radio(" ", ["Yes", "No"], index=0 if data.get("whole_life") else 1, key="whole_life_radio", label_visibility="collapsed")
+    cash_value = 0
+    expected_payout = 0
+    plan_to_sell = False
+    if whole_life == "Yes":
+        cash_value = st.number_input("Cash value", value=data.get("cash_value", 0), step=1000)
+        st.markdown("Plan to sell/liquidate?")
+        plan_to_sell = st.radio(" ", ["Yes", "No"], index=0 if data.get("plan_to_sell") else 1, key="sell_radio", label_visibility="collapsed")
+        if plan_to_sell == "Yes":
+            expected_payout = st.number_input("Expected one-time payout", value=data.get("expected_payout", cash_value), step=1000)
+    
+    if st.button("Save & Continue", key="save_health_life"):
+        data.update({
+            "long_term_care": ltc == "Yes",
+            "ltc_payout": ltc_payout,
+            "medicare": medicare == "Yes",
+            "whole_life": whole_life == "Yes",
+            "cash_value": cash_value,
+            "plan_to_sell": plan_to_sell == "Yes",
+            "expected_payout": expected_payout
+        })
+        st.session_state["cost_data"] = data
+        st.session_state["cost_planner_step"] = "hub"
+        st.rerun()
+    
+    # Close section
+    st.markdown('</section>', unsafe_allow_html=True)
+
+def render_medicaid_navigation():
+    # Import the theme CSS
+    st.markdown(
+        "<link rel='stylesheet' href='/assets/css/theme.css'>",
+        unsafe_allow_html=True
+    )
+    
+    # Apply canvas background like welcome pages
+    st.markdown(
+        """<style>
+        .main .block-container {
+            background: var(--bg);
+            min-height: 80vh;
+        }
+        </style>""",
+        unsafe_allow_html=True,
+    )
+    
+    # Main content container
+    st.markdown('<section class="container section">', unsafe_allow_html=True)
+    
+    # Hero section with title
+    st.markdown(
+        f"""
+        <div class="text-center" style="margin-bottom: var(--space-10);">
+            <h1 style="font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; line-height: 1.15; color: var(--ink); margin-bottom: var(--space-4);">
+                Navigating Medicaid
+            </h1>
+            <p style="color: var(--ink-600); max-width: 48ch; margin: 0 auto; font-size: 1.1rem;">
+                What's safe to keep when planning for Medicaid eligibility.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    
+    data = st.session_state.get("cost_data", {})
+    
+    # Check if unlocked
+    if not is_medicaid_unlocked(data):
+        st.error("Locked: Complete Income, Expenses, Assets, Care Needs first")
+        st.image("https://via.placeholder.com/50x50?text=🔒", width=50)  # Placeholder for padlock icon
+        if st.button("Back to Hub", key="back_hub_medicaid_locked"):
+            st.session_state["cost_planner_step"] = "hub"
+            st.rerun()
+        # Close section
+        st.markdown('</section>', unsafe_allow_html=True)
+        return
+    
+    # Main content
+    already_on_medicaid = data.get("medicaid", False)
+    has_spouse = data.get("partner", False)
+    finance_handling = data.get("finance_handling", "Joint household")
+    homeowner = data.get("homeowner", False)
+    
+    if already_on_medicaid:
+        st.info("Already on Medicaid? We'll factor it in.")
+    else:
+        st.markdown("**One spouse needs care? Medicaid won't take everything:**")
+        st.markdown("- Community spouse keeps up to $154,140 (2025), plus home, car, personal items.")
+        st.markdown("- Care recipient spends down to ~$2,000 in assets.")
+        
+        if has_spouse:
+            st.markdown("**Does this plan include your spouse?**")
+            spouse_included = st.radio(" ", ["Yes", "No"], 
+                                     index=0 if data.get("spouse_included", True) else 1, 
+                                     key="spouse_included_radio", label_visibility="collapsed")
+            
+            if spouse_included == "No":
+                st.markdown("**Is your spouse paying for this care plan?**")
+                spouse_paying = st.radio(" ", ["Yes (their money stays separate)", "No (estimate spend-down for care recipient)"], 
+                                       index=0 if data.get("spouse_paying") else 1, 
+                                       key="spouse_paying_radio", label_visibility="collapsed")
+            else:
+                spouse_paying = True
+        else:
+            spouse_included = False
+            spouse_paying = False
+        
+        if homeowner:
+            st.markdown("**Own a home?** Keep it—no forced sale, cover upkeep.")
+        else:
+            st.markdown("**Renting?** Medicaid won't affect your lease.")
+        
+        # Spend-down preview
+        if "spend_down_open" not in st.session_state:
+            st.session_state["spend_down_open"] = False
+        
+        if st.button("Show Spend-Down Preview →", key="open_spend_down"):
+            st.session_state["spend_down_open"] = True
+            st.rerun()
+        
+        if st.session_state["spend_down_open"]:
+            st.markdown("---")
+            st.subheader("Spend-Down Preview")
+            
+            # Calculate spend-down
+            care_cost = calculate_monthly_cost(data.get("care_type", "in_home"), data.get("care_details", {}))
+            income = sum([data.get(k, 0) for k in ['social_security', 'pension', 'wages', 'other_income']])
+            expenses = sum([data.get(k, 0) for k in ['housing', 'utilities', 'groceries', 'medications', 'transportation', 'other_expenses']])
+            assets = data.get('liquid_savings', 0) + data.get('retirement', 0) + data.get('home_equity', 0)
+            
+            gap = care_cost + expenses - income
+            if gap > 0:
+                months = assets / gap if gap > 0 else 999
+                st.write(f"With ${care_cost:,.0f}/mo care, ${income:,.0f}/mo income, ${gap:,.0f}/mo gap, ${assets:,.0f} assets, Medicaid covers in ~{months:.0f} months.")
+            else:
+                st.write("No spend-down needed - income covers care costs.")
+            
+            spend_down_amount = st.slider("Spend before Medicaid?", 0, min(assets, 154140), data.get("spend_down_amount", 0))
+            
+            if st.button("Confirm Spend-Down Plan", key="confirm_spend_down"):
+                data["spend_down_confirmed"] = True
+                data["spend_down_amount"] = spend_down_amount
+                st.session_state["cost_data"] = data
+                st.success("Spend-down plan confirmed!")
+        
+        if st.button("Close Spend-Down Preview", key="close_spend_down"):
+            st.session_state["spend_down_open"] = False
+            st.rerun()
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Generate Plan PDF", key="generate_pdf"):
+            st.info("PDF generation would be implemented here")
+    with col2:
+        if st.button("Find a Planner", key="find_planner"):
+            st.info("State-specific planner links would be shown here")
+    
+    if st.button("Back to Hub", key="back_hub_medicaid"):
+        st.session_state["cost_planner_step"] = "hub"
+        st.rerun()
+    
+    # Close section
+    st.markdown('</section>', unsafe_allow_html=True)
 
 def render_expert_review():
-    st.title("Expert Review Snapshot")
+    # Import the theme CSS
+    st.markdown(
+        "<link rel='stylesheet' href='/assets/css/theme.css'>",
+        unsafe_allow_html=True
+    )
+    
+    # Apply canvas background like welcome pages
+    st.markdown(
+        """<style>
+        .main .block-container {
+            background: var(--bg);
+            min-height: 80vh;
+        }
+        </style>""",
+        unsafe_allow_html=True,
+    )
+    
+    # Main content container
+    st.markdown('<section class="container section">', unsafe_allow_html=True)
+    
+    # Hero section with title
+    st.markdown(
+        f"""
+        <div class="text-center" style="margin-bottom: var(--space-10);">
+            <h1 style="font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; line-height: 1.15; color: var(--ink); margin-bottom: var(--space-4);">
+                Expert Review Snapshot
+            </h1>
+            <p style="color: var(--ink-600); max-width: 48ch; margin: 0 auto; font-size: 1.1rem;">
+                Your personalized care cost plan summary and recommendations.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    
     data = st.session_state.get("cost_data", {})
     
     care_type = data.get("care_type", "in_home")
@@ -522,6 +1120,9 @@ def render_expert_review():
     if st.button("Back to Hub", key="back_hub"):
         st.session_state["cost_planner_step"] = "hub"
         st.rerun()
+    
+    # Close section
+    st.markdown('</section>', unsafe_allow_html=True)
 
 def render():
     """Main render function that routes to the appropriate step."""
@@ -529,24 +1130,26 @@ def render():
     
     if step == "landing":
         render_landing()
+    elif step == "auth_required":
+        render_auth_required()
     elif step == "explore":
         render_explore()
-    elif step == "entry_flow":
-        render_entry_flow()
     elif step == "hub":
         render_hub()
-    elif step == "quick_estimate":
-        render_quick_estimate()
-    elif step == "income_assets":
+    elif step == "income":
         render_income()
-    elif step == "housing_options":
-        render_housing_options()
+    elif step == "expenses":
+        render_expenses()
+    elif step == "assets":
+        render_assets()
+    elif step == "care_needs":
+        render_housing_options()  # Reusing existing function
     elif step == "va_benefits":
         render_va_benefits()
-    elif step == "home_mods":
-        render_home_mods()
-    elif step == "runway_projection":
-        render_runway_projection()
+    elif step == "health_life_benefits":
+        render_health_life_benefits()
+    elif step == "medicaid_navigation":
+        render_medicaid_navigation()
     elif step == "expert_review":
         render_expert_review()
     else:

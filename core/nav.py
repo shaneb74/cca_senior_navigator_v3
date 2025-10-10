@@ -41,6 +41,7 @@ def load_nav(ctx: dict) -> Dict[str, dict]:
                 "label": item["label"],
                 "render": _import_callable(item["module"]),
                 "group": group["label"],
+                "hidden": item.get("hidden", False),
             }
     return pages
 

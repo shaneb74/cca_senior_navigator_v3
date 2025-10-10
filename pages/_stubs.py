@@ -73,7 +73,7 @@ def render_welcome():
     <div class="card-meta">For a loved one</div>
     <p>Helping you make confident care decisions for someone you love.</p>
     <div class="card-actions">
-      <a class="btn btn--primary" href="?page=welcome_contextual&who=someone">For someone</a>
+      <a class="btn btn--primary" href="?page=for_someone">For someone</a>
     </div>
   </article>
 
@@ -83,7 +83,7 @@ def render_welcome():
     <div class="card-meta">For myself</div>
     <p>Plan for your own future care with trusted guidance and peace of mind.</p>
     <div class="card-actions">
-      <a class="btn btn--primary" href="?page=welcome_contextual&who=me">For me</a>
+      <a class="btn btn--primary" href="?page=for_me_contextual">For me</a>
     </div>
   </article>
 </div>
@@ -128,6 +128,142 @@ def render_welcome_contextual():
       <div class="toggle">
         <a class="pill{' is-selected' if not is_me else ''}" href="?page=welcome_contextual&who=someone">For someone</a>
         <a class="pill{' is-selected' if is_me else ''}" href="?page=welcome_contextual&who=me">For me</a>
+      </div>
+      <h3 class="mt-space-4">{title_copy}</h3>
+      <p>{body_copy}</p>""",
+            unsafe_allow_html=True,
+        )
+
+        # Use Streamlit text input to capture the name
+        current_name = st.session_state.get("person_name", "")
+        person_name = st.text_input(
+            name_label,
+            value=current_name,
+            placeholder="Type a name",
+            key="person_name_input"
+        )
+
+        # Update session state when name changes
+        if person_name != current_name:
+            st.session_state["person_name"] = person_name
+
+        st.markdown(
+            f"""
+      <div class="card-actions mt-space-4">
+        <a class="btn btn--primary" href="?page=hub_concierge">Continue</a>
+        <a class="btn btn--ghost" href="?page=welcome">Close</a>
+      </div>
+      <p class="helper-note mt-space-4">If you want to assess several people, you can move on to the next step later.</p>
+    </div>""",
+            unsafe_allow_html=True,
+        )
+
+    with col2:
+        st.markdown(
+            f"""<div class="photo-stack" aria-hidden="true">
+    <img class="photo-back" src="{photo_back}" alt=""/>
+    <img class="photo-front" src="{photo_front}" alt=""/>
+  </div>""",
+            unsafe_allow_html=True,
+        )
+
+
+def render_for_someone():
+    """Dedicated page for 'For Someone' flow."""
+    photo_back = img_src("static/images/contextual_someone_else.png")
+    photo_front = img_src("static/images/tell_us_about_them.png")
+    title_copy = "Supporting Others"
+    body_copy = "Helping you make confident care decisions for someone you love."
+    name_label = "What's their name?"
+
+    # Apply the canvas background
+    st.markdown(
+        """<style>
+        .main .block-container {
+            background: #E6EEFF;
+            min-height: 72vh;
+        }
+        </style>""",
+        unsafe_allow_html=True,
+    )
+
+    # Create the layout using Streamlit columns
+    col1, col2 = st.columns([0.9, 1.1])
+
+    with col1:
+        st.markdown(
+            f"""<div class="modal-card stack-sm">
+      <div class="toggle">
+        <a class="pill is-selected" href="?page=for_someone">For someone</a>
+        <a class="pill" href="?page=for_me_contextual">For me</a>
+      </div>
+      <h3 class="mt-space-4">{title_copy}</h3>
+      <p>{body_copy}</p>""",
+            unsafe_allow_html=True,
+        )
+
+        # Use Streamlit text input to capture the name
+        current_name = st.session_state.get("person_name", "")
+        person_name = st.text_input(
+            name_label,
+            value=current_name,
+            placeholder="Type a name",
+            key="person_name_input"
+        )
+
+        # Update session state when name changes
+        if person_name != current_name:
+            st.session_state["person_name"] = person_name
+
+        st.markdown(
+            f"""
+      <div class="card-actions mt-space-4">
+        <a class="btn btn--primary" href="?page=hub_concierge">Continue</a>
+        <a class="btn btn--ghost" href="?page=welcome">Close</a>
+      </div>
+      <p class="helper-note mt-space-4">If you want to assess several people, you can move on to the next step later.</p>
+    </div>""",
+            unsafe_allow_html=True,
+        )
+
+    with col2:
+        st.markdown(
+            f"""<div class="photo-stack" aria-hidden="true">
+    <img class="photo-back" src="{photo_back}" alt=""/>
+    <img class="photo-front" src="{photo_front}" alt=""/>
+  </div>""",
+            unsafe_allow_html=True,
+        )
+
+
+def render_for_me_contextual():
+    """Dedicated page for 'For Me' flow."""
+    photo_back = img_src("static/images/contextual_self.png")
+    photo_front = img_src("static/images/tell_us_about_you.png")
+    title_copy = "Getting Ready for Myself"
+    body_copy = "Plan for your own future care with trusted guidance and peace of mind."
+    name_label = "What's your name?"
+
+    # Apply the canvas background
+    st.markdown(
+        """<style>
+        .main .block-container {
+            background: #E6EEFF;
+            min-height: 72vh;
+        }
+        </style>""",
+        unsafe_allow_html=True,
+    )
+
+    # Create the layout using Streamlit columns
+    col1, col2 = st.columns([0.9, 1.1])
+
+    with col1:
+        st.markdown(
+            f"""<div class="modal-card stack-sm">
+      <div class="toggle">
+        <a class="pill" href="?page=for_someone">For someone</a>
+        <a class="pill is-selected" href="?page=for_me_contextual">For me</a>
       </div>
       <h3 class="mt-space-4">{title_copy}</h3>
       <p>{body_copy}</p>""",
@@ -577,6 +713,38 @@ def render_about():
     <p style="color: var(--ink-600); max-width: 48ch; margin: 0 auto; font-size: 1.1rem;">
       Company, mission, and contact.
     </p>
+  </div>
+</section>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_faqs():
+    # Apply consistent styling like other pages
+    st.markdown(
+        """<style>
+        .main .block-container {
+            background: var(--bg);
+            min-height: 80vh;
+        }
+        </style>""",
+        unsafe_allow_html=True,
+    )
+    
+    st.markdown(
+        """
+<section class="container section">
+  <div class="text-center" style="margin-bottom: var(--space-8);">
+    <h1 style="font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; line-height: 1.15; color: var(--ink); margin-bottom: var(--space-4);">
+      FAQs & Answers
+    </h1>
+    <p style="color: var(--ink-600); max-width: 48ch; margin: 0 auto; font-size: 1.1rem;">
+      Common questions and answers about senior care navigation and our services.
+    </p>
+  </div>
+  <div class="card-actions" style="justify-content: center; margin-top: var(--space-6);">
+    <a class="btn btn--primary" href="?page=hub_concierge" style="margin: 0 var(--space-2);">Back to Hub</a>
   </div>
 </section>
         """,
