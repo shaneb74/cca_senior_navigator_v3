@@ -34,6 +34,9 @@ def img_src(rel_path: str) -> str:
 def header(app_title: str, current_key: str, pages: dict):
     links = []
     for key, meta in pages.items():
+        # Skip hidden pages
+        if meta.get("hidden", False):
+            continue
         active = " is-active" if key == current_key else ""
         links.append(f'<a class="nav-link{active}" href="?page={key}">{meta["label"]}</a>')
     html = f"""
@@ -227,7 +230,7 @@ def render_hub_tile(title, badge, label, value, status, primary_label, secondary
                         route_to("cost_planner")
                     elif "Plan with My Advisor" in title:
                         route_to("pfma")
-                    elif "FAQs & Answers" in title:
+                    elif "FAQs & Answers" in title or "FAQ Center" in title:
                         route_to("faqs")
 
         with col2:
@@ -253,7 +256,7 @@ def render_hub_tile(title, badge, label, value, status, primary_label, secondary
                     route_to("cost_planner")
                 elif "Plan with My Advisor" in title:
                     route_to("pfma")
-                elif "FAQs & Answers" in title:
+                elif "FAQs & Answers" in title or "FAQ Center" in title:
                     route_to("faqs")
 
     # Close the card-actions div and tile
