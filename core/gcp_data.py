@@ -23,7 +23,14 @@ def _load(name: str) -> dict:
 
 @lru_cache(maxsize=None)
 def load_schema() -> dict:
-    return _load("schema.json")
+    path = Path(__file__).resolve().parents[1] / "config" / "gcp_schema.json"
+    try:
+        with path.open("r", encoding="utf-8") as handle:
+            return json.load(handle)
+    except FileNotFoundError as exc:
+        raise RuntimeError(f"Missing GCP config file: {path}") from exc
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(f"Invalid JSON in GCP config file {path}: {exc}") from exc
 
 
 @lru_cache(maxsize=None)

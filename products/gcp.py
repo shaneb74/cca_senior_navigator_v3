@@ -31,7 +31,7 @@ def generate_conversational_blurb(result, answers):
             cost_config = json.load(f)
         
         tier_name = result["tier"]
-        behaviors = answers.get("Q8", [])
+        behaviors = answers.get("behaviors", [])
         
         # Base messages by care type
         base_messages = {
@@ -56,7 +56,7 @@ def generate_conversational_blurb(result, answers):
             blurb_parts.append(f"Since you've mentioned certain behaviors, {', and '.join(behavior_messages)}.")
         
         # Add mobility considerations
-        mobility = answers.get("Q10")
+        mobility = answers.get("mobility")
         if mobility in ["Uses wheelchair or scooter", "Bed-bound or limited mobility"]:
             blurb_parts.append("Your mobility needs also suggest assistance with daily activities, which this option covers well.")
         
@@ -72,6 +72,46 @@ def generate_conversational_blurb(result, answers):
 
 
 def render():
+    # Import the theme CSS and apply new styling
+    st.markdown(
+        """
+        <link rel='stylesheet' href='/assets/css/theme.css'>
+        <style>
+        .main .block-container {
+            background: var(--bg);
+            min-height: 80vh;
+        }
+        /* New styling overrides */
+        .stButton > button {
+            background: #3B82F6 !important;
+            color: white !important;
+            border-radius: 5px !important;
+            border: none !important;
+        }
+        .stButton > button:hover {
+            background: #2563EB !important;
+        }
+        .stRadio label[data-baseweb="radio"] input:checked + div {
+            color: black !important;
+        }
+        .stRadio label[data-baseweb="radio"] input:not(:checked) + div {
+            color: gray !important;
+        }
+        .stTextInput > div > div, .stNumberInput > div > div, .stSelectbox > div > div, .stTextArea > div > div {
+            border-radius: 5px !important;
+            padding: 10px !important;
+        }
+        .container {
+            padding: 10px !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+    
+    # Main content container
+    st.markdown('<section class="container section" style="padding: 10px;">', unsafe_allow_html=True)
+    
     ctx = get_user_ctx()
     user_id = ctx["auth"].get("user_id", "guest")
     product_key = "gcp"
@@ -84,12 +124,22 @@ def render():
     if "gcp_answers" not in st.session_state:
         st.session_state["gcp_answers"] = {}
     
+    # Load sections from schema
+    schema = load_schema()
+    section_icons = {
+        "about": "👤",
+        "care_needs": "💊",
+        "daily_living": "🏠",
+        "cognition_mental_health": "🧠",
+        "results": "📊"
+    }
     sections = [
-        {"id": "about", "title": "About", "icon": "👤"},
-        {"id": "care_needs", "title": "Care Needs", "icon": "�"},
-        {"id": "daily_living", "title": "Daily Living", "icon": "🏠"},
-        {"id": "cognition_mental_health", "title": "Cognition & Mental Health", "icon": "🧠"},
-        {"id": "results", "title": "Results", "icon": "📊"}
+        {
+            "id": s["id"],
+            "title": s["title"],
+            "icon": section_icons.get(s["id"], "�")
+        }
+        for s in schema["sections"]
     ]
     
     current_section_idx = st.session_state["gcp_section"]
@@ -100,7 +150,7 @@ def render():
     st.progress(progress)
     
     # Section header with improved styling
-    header_title = f"About {get_person_name()}" if current_section["id"] == "about" else current_section["title"]
+    header_title = current_section["title"]
     
     st.markdown(f"""
     <div style="text-align: center; margin: 1rem 0; padding: 1rem; background: #F5F5F5; border: 1px solid #E0E0E0; border-radius: 8px;">
@@ -132,6 +182,9 @@ def render():
         else:
             # On results page, show different navigation
             pass
+    
+    # Close section
+    st.markdown('</section>', unsafe_allow_html=True)
 
 
 def render_section_questions(section_id):
@@ -146,15 +199,24 @@ def render_section_questions(section_id):
     answers = st.session_state["gcp_answers"]
     
     for question in section_data["questions"]:
-        qid = question["id"]
-        label = replace_name_placeholder(question["label"])  # Replace [name] with actual name
+        qkey = question["key"]
+        label = replace_name_placeholder(question["label"])
         qtype = question["type"]
-        options = question["options"]
+        options = question.get("options", [])
+        required = question.get("required", False)
         
-        # Check showIf conditions
+        # Check conditional display
         should_show = True
-        if "showIf" in question:
-            should_show = evaluate_show_conditions(question["showIf"], answers)
+        if "when" in question:
+            when = question["when"]
+            if "in" in when:
+                dep_key = when["in"][0]  # assuming single dependency
+                dep_values = when["in"][1:]
+                dep_answer = answers.get(dep_key)
+                if isinstance(dep_answer, list):
+                    should_show = any(val in dep_answer for val in dep_values)
+                else:
+                    should_show = dep_answer in dep_values
         
         if not should_show:
             continue
@@ -165,115 +227,62 @@ def render_section_questions(section_id):
         </div>
         """, unsafe_allow_html=True)
         
-        if qtype == "single":
-            # Use segmented control for single choice
-            current_value = answers.get(qid)
-            selected_idx = None
-            if current_value:
-                try:
-                    selected_idx = options.index(current_value)
-                except ValueError:
-                    selected_idx = None
-            
-            selected_option = st.segmented_control(
-                label=f"Select answer for {label}",
+        if qtype == "pills":
+            # Use radio buttons for single choice pills
+            current_value = answers.get(qkey)
+            selected_option = st.radio(
+                f"Select answer for {label}",
                 options=options,
-                default=current_value,
-                key=f"gcp_{qid}",
+                index=options.index(current_value) if current_value in options else None,
+                key=f"gcp_{qkey}",
                 label_visibility="collapsed"
             )
-            
             if selected_option:
-                answers[qid] = selected_option
+                answers[qkey] = selected_option
                 
-        elif qtype == "multi_select":
-            # Use multiselect for multi-select questions with custom styling
-            current_selections = answers.get(qid, [])
-            
+        elif qtype == "multiselect":
+            # Use multiselect for multi-select questions
+            current_selections = answers.get(qkey, [])
             selected = st.multiselect(
                 f"Select all that apply for {label}",
                 options=options,
                 default=current_selections,
-                key=f"gcp_{qid}",
+                key=f"gcp_{qkey}",
                 label_visibility="collapsed"
             )
+            answers[qkey] = selected
             
-            answers[qid] = selected
-                
-        elif qtype == "matrix":
-            # Use multiselect for matrix questions
-            items = question.get("items", [])
-            matrix_options = question.get("options", ["Not present", "Present"])
+        elif qtype == "pill_list":
+            # Implement pill list similar to product_tile.py
+            current_pills = answers.get(qkey, [])
+            new_pill = st.text_input(f"Add item for {label}", key=f"gcp_{qkey}_input")
+            col1, col2 = st.columns([3, 1])
+            with col1:
+                pass  # text input is above
+            with col2:
+                if st.button("Add", key=f"gcp_{qkey}_add") and new_pill.strip():
+                    new_pill = new_pill.strip()
+                    if new_pill not in current_pills:
+                        current_pills.append(new_pill)
+                        answers[qkey] = current_pills
+                        st.rerun()
             
-            st.markdown("<div style='margin-top: 0.5rem;'>", unsafe_allow_html=True)
-            
-            # Initialize answers[qid] as a list if it doesn't exist
-            if qid not in answers:
-                answers[qid] = []
-            
-            for item in items:
-                item_id = item["id"]
-                item_label = item["label"]
-                
-                # Create unique key for this matrix item
-                matrix_key = f"{qid}_{item_id}"
-                current_selections = answers.get(matrix_key, [])
-                
-                selected = st.multiselect(
-                    f"{item_label}",
-                    options=matrix_options,
-                    default=current_selections,
-                    key=f"gcp_{matrix_key}",
-                    label_visibility="visible"
-                )
-                
-                answers[matrix_key] = selected
-                
-                # Convert matrix selections to the expected format for scoring
-                # Remove old entries for this item
-                answers[qid] = [entry for entry in answers[qid] if not entry.startswith(f"{item_label} — ")]
-                
-                # Add new selections
-                for option in selected:
-                    answer_key = f"{item_label} — {option}"
-                    if answer_key not in answers[qid]:
-                        answers[qid].append(answer_key)
-            
-            st.markdown("</div>", unsafe_allow_html=True)
+            # Display current pills
+            if current_pills:
+                st.markdown('<div style="margin-top: 10px;">', unsafe_allow_html=True)
+                for i, pill in enumerate(current_pills):
+                    col1, col2 = st.columns([4, 1])
+                    with col1:
+                        st.markdown(f"<span style='background: #007BFF; color: white; padding: 2px 8px; border-radius: 12px; margin-right: 5px;'>{pill}</span>", unsafe_allow_html=True)
+                    with col2:
+                        if st.button("×", key=f"gcp_{qkey}_remove_{i}"):
+                            current_pills.remove(pill)
+                            answers[qkey] = current_pills
+                            st.rerun()
+                st.markdown('</div>', unsafe_allow_html=True)
 
 
-def evaluate_show_conditions(conditions, answers):
-    """Evaluate showIf conditions for questions."""
-    for condition in conditions:
-        if "anyOf" in condition:
-            any_match = False
-            for sub_condition in condition["anyOf"]:
-                if "count" in sub_condition:
-                    # Handle count conditions (e.g., chronic conditions >= 2)
-                    count_spec = sub_condition["count"]
-                    question_id = count_spec["of"]
-                    threshold = count_spec["gte"]
-                    question_answers = answers.get(question_id, [])
-                    if isinstance(question_answers, list) and len(question_answers) >= threshold:
-                        any_match = True
-                        break
-                elif "not" in sub_condition:
-                    # Handle "not" conditions
-                    key = list(sub_condition.keys())[0]
-                    value = sub_condition[key]
-                    if answers.get(key) != value:
-                        any_match = True
-                        break
-                else:
-                    # Handle direct equality conditions
-                    key = list(sub_condition.keys())[0]
-                    value = sub_condition[key]
-                    if answers.get(key) == value:
-                        any_match = True
-                        break
-            if not any_match:
-                return False
-    return True
+
 
 
 def render_results():

@@ -1,5 +1,45 @@
 import streamlit as st
 
+# Import the theme CSS and apply new styling
+st.markdown(
+    """
+    <link rel='stylesheet' href='/assets/css/theme.css'>
+    <style>
+    .main .block-container {
+        background: var(--bg);
+        min-height: 80vh;
+    }
+    /* New styling overrides */
+    .stButton > button {
+        background: #3B82F6 !important;
+        color: white !important;
+        border-radius: 5px !important;
+        border: none !important;
+    }
+    .stButton > button:hover {
+        background: #2563EB !important;
+    }
+    .stRadio label[data-baseweb="radio"] input:checked + div {
+        color: black !important;
+    }
+    .stRadio label[data-baseweb="radio"] input:not(:checked) + div {
+        color: gray !important;
+    }
+    .stTextInput > div > div, .stNumberInput > div > div, .stSelectbox > div > div, .stTextArea > div > div {
+        border-radius: 5px !important;
+        padding: 10px !important;
+    }
+    .container {
+        padding: 10px !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# Main content container
+st.markdown('<section class="container section" style="padding: 10px;">', unsafe_allow_html=True)
+
 # Track the current page in session state
 if "current_page" not in st.session_state:
     st.session_state.current_page = 1
@@ -99,3 +139,6 @@ elif st.session_state.current_page == 5:
     page_5()
     if st.button("Restart"):
         go_to_page(1)
+
+# Close section
+st.markdown('</section>', unsafe_allow_html=True)
