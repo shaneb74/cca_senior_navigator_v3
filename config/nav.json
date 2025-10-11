@@ -9,8 +9,6 @@
         {"key": "for_someone", "label": "For Someone", "module": "pages._stubs:render_for_someone", "hidden": true},
         {"key": "for_me_contextual", "label": "For Me Contextual", "module": "pages._stubs:render_for_me_contextual", "hidden": true},
         {"key": "welcome_contextual", "label": "Contextual Welcome", "module": "pages._stubs:render_welcome_contextual", "hidden": true},
-        {"key": "signup", "label": "Sign Up", "module": "pages._stubs:render_signup"},
-        {"key": "login", "label": "Login", "module": "pages._stubs:render_login"},
         {"key": "about", "label": "About Us", "module": "pages._stubs:render_about"}
       ]
     },
@@ -29,6 +27,9 @@
       "id": "products",
       "label": "Products",
       "items": [
+        {"key": "gcp_stub", "label": "Guided Care Plan (Preview)", "module": "pages.gcp:render", "hidden": true},
+        {"key": "cost_planner_stub", "label": "Cost Planner (Preview)", "module": "pages.cost_planner:render", "hidden": true},
+        {"key": "pfma_stub", "label": "Plan with My Advisor (Preview)", "module": "pages.pfma:render", "hidden": true},
         {"key": "gcp", "label": "Guided Care Plan", "module": "products.gcp:render", "hidden": true},
         {"key": "cost_planner", "label": "Cost Planner", "module": "products.cost_planner:render", "hidden": true},
         {"key": "pfma", "label": "Plan with My Advisor", "module": "products.pfma:render", "hidden": true},

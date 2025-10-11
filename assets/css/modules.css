@@ -1,0 +1,74 @@
+/* ===== MODULES (assessment/workflows) ===== */
+/* Scope everything under .sn-app (global root) to avoid clashes with hubs/welcome */
+:root {
+  /* reuse global tokens; only add module-specific ones if truly needed */
+  --rail-height: 6px;
+  --rail-bg: #e9eef7;
+  --rail-fill: #89b5ff;
+  --chip-bg: #f3f5f9;
+  --chip-border: #e3eaf5;
+  --chip-ink: #1f2937;
+  --note-bg: #eef5ff;
+  --note-border: #d6e8ff;
+}
+
+/* Container rhythm */
+.sn-app .mod-wrap { max-width: 860px; margin: 0 auto; padding: 16px 8px 40px; }
+@media (min-width: 960px){ .sn-app .mod-wrap { padding-top: 24px; } }
+
+/* Top nav row (Back + context + name chip) */
+.sn-app .mod-top { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:18px; }
+.sn-app .mod-back { display:inline-flex; align-items:center; gap:8px; color: var(--brand-700); text-decoration:none; font-weight:600; }
+.sn-app .mod-context { color: var(--ink-400); }
+.sn-app .mod-namechip { background:#eaf1ff; color:#1e40af; border-radius:10px; padding:4px 8px; font-size:12px; }
+
+/* Progress rail (5 dots → we render as a rail for simplicity) */
+.sn-app .mod-rail { height: var(--rail-height); background: var(--rail-bg); border-radius: 999px; overflow: hidden; position: relative; margin: 10px 0 22px; }
+.sn-app .mod-rail__fill { position:absolute; inset:0; width: var(--mod-rail-pct, 0%); background: var(--rail-fill); }
+
+/* Page title + section note */
+.sn-app .mod-title { font-size: 22px; font-weight: 800; color: var(--ink); margin: 6px 0 12px; }
+.sn-app .mod-note { background: var(--note-bg); border: 1px solid var(--note-border); color: var(--ink-600);
+  border-radius: 12px; padding: 10px 12px; margin: 8px 0 16px; }
+
+/* Field blocks */
+.sn-app .mod-field { margin: 16px 0 18px; }
+.sn-app .mod-field > .mod-label { display:block; font-weight: 700; color: var(--ink); margin: 2px 0 8px; }
+.sn-app .mod-help { display:inline-flex; align-items:center; gap:6px; color: var(--ink-400); font-size: 12px; }
+
+/* Choice chips row (single/multi-select) */
+.sn-app .mod-choices { display:flex; flex-wrap:wrap; gap: 8px; }
+.sn-app .mod-chip {
+  display:inline-flex; align-items:center; gap:6px; padding:.52rem .8rem; border-radius:999px;
+  background: var(--chip-bg); border: 1px solid var(--chip-border); color: var(--chip-ink);
+  font-weight:600; user-select:none; cursor:pointer;
+}
+.sn-app .mod-chip.is-active { background:#0b5cd8; border-color:#0b5cd8; color:#fff; }
+.sn-app .mod-chip.is-muted  { opacity:.55; }
+
+/* Inputs (use global form base; just tweak heights where needed) */
+.sn-app .mod-input { height: 42px; border-radius: 12px; border:1px solid #d9e3ef; background:#fff; padding:0 12px; font-size:14px; color:var(--ink); width: 100%; }
+.sn-app .mod-input:focus { outline:none; box-shadow: var(--focus-ring); border-color: var(--brand-400); }
+
+/* Action row */
+.sn-app .mod-actions { display:flex; gap:12px; flex-wrap:wrap; margin-top: 18px; }
+.sn-app .mod-actions .btn-primary { background: var(--brand-600); color:#fff; border:1px solid var(--brand-700); }
+.sn-app .mod-actions .btn-primary:hover { background: var(--brand-700); box-shadow: var(--focus-ring); }
+.sn-app .mod-actions .btn-secondary { background:#eef2f7; color:#0f172a; border:1px solid #d9e3ef; }
+.sn-app .mod-actions .btn-secondary:hover { background:#e7ecf5; }
+
+/* Button sizing to match comps */
+.sn-app .mod-actions .btn-primary,
+.sn-app .mod-actions .btn-secondary { height: 44px; border-radius: 12px; padding: 0 18px; font-weight: 700; }
+
+/* Inline badges & tiny helpers */
+.sn-app .mod-badge { display:inline-flex; align-items:center; gap:6px; background:#eef5ff; color:#1e40af; border:1px solid #d6e8ff; border-radius:999px; padding:2px 8px; font-size:12px; }
+
+/* Compact info rows (e.g., “monthly” text to the right of inputs) */
+.sn-app .mod-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+
+/* Mobile tidy */
+@media (max-width: 720px){
+  .sn-app .mod-wrap { padding: 8px 8px 28px; }
+  .sn-app .mod-actions { gap:10px; }
+}

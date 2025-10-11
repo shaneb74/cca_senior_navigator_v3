@@ -52,7 +52,7 @@ class BaseTile:
         if not self.meta_lines:
             return ""
         items = "".join(f"<span>{html_escape(line)}</span>" for line in self.meta_lines)
-        return f'<div class="tile-meta">{items}</div>'
+        return f'<div class="dashboard-card__meta">{items}</div>'
 
     def _status(self) -> str:
         if self.status_text is not None:
@@ -95,7 +95,7 @@ class BaseTile:
                     f'<a class="dashboard-cta dashboard-cta--ghost" href="?go={html_escape(self.secondary_go)}">'
                     f'{html_escape(self.secondary_label)}</a>'
                 )
-        return f'<div class="tile-actions">{"".join(buttons)}</div>' if buttons else ""
+        return f'<div class="dashboard-card__actions">{"".join(buttons)}</div>' if buttons else ""
 
     def _pills(self) -> str:
         pills: List[str] = []
@@ -107,9 +107,10 @@ class BaseTile:
 
 
 class ProductTileHub(BaseTile):
-    def render_html(self) -> str:
+    def render(self) -> None:
         if not self.visible:
-            return ""
+            return
+        # ONE markdown call => ONE grid child
         out: List[str] = []
         out.append(f'<div class="ptile dashboard-card"{self._variant()}{self._style()}>')
         out.append('<div class="dashboard-card__head">')
@@ -117,13 +118,13 @@ class ProductTileHub(BaseTile):
         if pills:
             out.append(pills)
         out.append(
-            '<div class="tile-row">'
-            f'<h3 class="tile-title">{html_escape(self.title)}</h3>'
+            '<div class="dashboard-card__title-row">'
+            f'<h3 class="dashboard-card__title">{html_escape(self.title)}</h3>'
             f'{self._status()}'
             '</div>'
         )
         if self.desc:
-            out.append(f'<p class="tile-subtitle">{html_escape(self.desc)}</p>')
+            out.append(f'<p class="dashboard-card__subtitle">{html_escape(self.desc)}</p>')
         if self.blurb:
             out.append(f'<p class="dashboard-description">{html_escape(self.blurb)}</p>')
         out.append('</div>')  # /head
@@ -132,23 +133,18 @@ class ProductTileHub(BaseTile):
             out.append(meta)
         out.append(self._actions())
         out.append('</div>')  # /card
-        return "".join(out)
-
-    def render(self) -> None:
-        html = self.render_html()
-        if html:
-            st.markdown(html, unsafe_allow_html=True)
+        st.markdown("".join(out), unsafe_allow_html=True)
 
 
 class ModuleTileCompact(BaseTile):
-    def render_html(self) -> str:
+    def render(self) -> None:
         if not self.visible:
-            return ""
+            return
         out: List[str] = []
         out.append(f'<div class="mtile dashboard-card"{self._variant()}{self._style()}>')
         out.append(
-            '<div class="tile-row">'
-            f'<h3 class="tile-title">{html_escape(self.title)}</h3>'
+            '<div class="dashboard-card__title-row">'
+            f'<h3 class="dashboard-card__title">{html_escape(self.title)}</h3>'
             f'{self._status()}'
             '</div>'
         )
@@ -159,12 +155,7 @@ class ModuleTileCompact(BaseTile):
             out.append(meta)
         out.append(self._actions())
         out.append('</div>')
-        return "".join(out)
-
-    def render(self) -> None:
-        html = self.render_html()
-        if html:
-            st.markdown(html, unsafe_allow_html=True)
+        st.markdown("".join(out), unsafe_allow_html=True)
 
 
 __all__ = ["ProductTileHub", "ModuleTileCompact"]

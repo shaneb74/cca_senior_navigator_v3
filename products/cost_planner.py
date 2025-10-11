@@ -2,8 +2,8 @@ import streamlit as st
 import json
 from pathlib import Path
 from core.state import get_module_state, get_user_ctx
-from core.ui import hub_section, tiles_open, tiles_close, render_module_tile
-from core.product_tile import ProductTile
+from core.ui import hub_section
+from senior_navigator.ui.tiles import render_module_tile
 
 # Load config
 CONFIG_PATH = Path(__file__).parent.parent / "config" / "cost_config.v3.json"
@@ -499,79 +499,55 @@ def render_hub():
     
     hub_section("Cost Planner", right_meta=summary)
     st.markdown("## Sub-Products")
-    tiles_open()
-    
-    # Get module configurations
+
     module_configs = get_module_config()
-    
-    # Create ProductTile instances for each module
-    tiles = []
-    order = 1
+    badge_map = {
+        "va_benefits": "AI Assisted",
+    }
+
+    st.markdown('<div class="stack" style="gap: var(--space-4);">', unsafe_allow_html=True)
     for module_key, config in module_configs.items():
-        # Skip conditional modules that don't apply
         if "conditional" in config and not config["conditional"](data):
             continue
-            
+
         state = get_module_state(user_id, product_key, module_key)
-        
-        # Set session state for ProductTile
-        session_key = f"{product_key}_{module_key}"
-        st.session_state[session_key] = {"progress": state['progress']}
-        
-        # Determine workflow config
-        if module_key == "va_benefits":
-            workflow_type = 'financial'
-            workflow_config = [
-                {"id": 1, "label": "Monthly Income", "type": "slider", "min": 0, "max": 5000, "required": True},
-                {"id": 2, "label": "Veteran ID", "type": "text", "required": True},
-                {"id": 3, "label": "Chronic Conditions", "type": "pill_list", "required": False}
-            ]
-        elif module_key == "income":
-            workflow_type = 'financial'
-            workflow_config = [
-                {"id": 1, "label": "Social Security", "type": "slider", "min": 0, "max": 5000, "required": True},
-                {"id": 2, "label": "Pension", "type": "slider", "min": 0, "max": 5000, "required": True},
-                {"id": 3, "label": "Other Income Sources", "type": "pill_list", "required": False}
-            ]
-        elif module_key == "care_needs":
-            workflow_type = 'planning'
-            workflow_config = [
-                {"id": 1, "label": "Care Type", "type": "radio", "options": ["in_home", "assisted_living", "memory_care"], "required": True},
-                {"id": 2, "label": "Daily Hours", "type": "slider", "min": 1, "max": 24, "required": True},
-                {"id": 3, "label": "Care Modifiers", "type": "pill_list", "required": False}
-            ]
-        else:
-            workflow_type = None
-            workflow_config = []
-        
-        tile = ProductTile(
-            title=config["title"],
-            icon_path="calculator.png",
-            pre_start_text=config["description"],
-            in_progress_text=f"Continue {config['description'].lower()}",
-            post_complete_text=config["get_status"](data),
-            buttons=[
-                {"text": "Start", "callback": lambda t=config["title"]: st.session_state.update({"current_tile": t})},
-            ],
-            visible=True,
-            order=order,
-            prereq=None,
-            parent_product="cost_planner",
-            progress=state['progress'],
-            meta={"steps": 1, "time": "5 min", "last_activity": state.get('completed_at')},
-            workflow_type=workflow_type,
-            workflow_config=workflow_config
+        progress = state.get("progress", 0)
+        state_status = (state.get("status") or "").lower()
+
+        summary_value = ""
+        try:
+            summary_value = config.get("get_status", lambda _: "")(data)
+        except Exception:
+            summary_value = ""
+        summary_value = summary_value or "Not started"
+
+        status_text = None
+        if state_status == "completed" or progress >= 100:
+            status_text = "Completed"
+        elif state_status == "in_progress" or progress > 0:
+            status_text = "In Progress"
+
+        primary_label = "Continue" if progress > 0 else "Start"
+        primary_go = f"cp_{module_key}_continue" if progress > 0 else f"cp_{module_key}_start"
+        secondary_label = "See responses" if progress > 0 else None
+        secondary_go = f"cp_{module_key}_view" if progress > 0 else None
+
+        render_module_tile(
+            {
+                "key": module_key,
+                "title": config["title"],
+                "badge_text": badge_map.get(module_key),
+                "summary_label": "Status",
+                "summary_value": summary_value,
+                "primary_label": primary_label,
+                "primary_go": primary_go,
+                "secondary_label": secondary_label,
+                "secondary_go": secondary_go,
+                "status_text": status_text,
+            }
         )
-        tile.module_key = module_key  # Add module_key for session_key
-        tiles.append(tile)
-        order += 1
-    
-    # Render tiles
-    for tile in tiles:
-        session_key = f"{product_key}_{tile.module_key}"
-        tile.render(session_key, tiles)
-    
-    tiles_close()
+
+    st.markdown("</div>", unsafe_allow_html=True)
     
     if st.button("Continue to Expert Review", key="continue_review"):
         st.session_state["cost_planner_step"] = "expert_review"

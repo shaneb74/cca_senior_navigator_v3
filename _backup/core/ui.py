@@ -75,7 +75,7 @@ def page_container_close():
 
 
 def hub_section(title: str, right_meta: Optional[str] = None):
-    right = f'<div class="tile-meta"><span>{right_meta}</span></div>' if right_meta else ""
+    right = f'<div class="tile-meta">{right_meta}</div>' if right_meta else ""
     st.markdown(
         f"""<section class="container section">
 <div class="tile-head">
@@ -118,15 +118,15 @@ def render_product_tile(product_key: str, state: dict):
     else:
         summary = "Not started"
     
-        html = f"""
+    html = f"""
 <div class="tile-head">
-    <div class="tile-title">{title}</div>
-    <span class="badge {status_class}">{state['status'].replace('_', ' ').title()}</span>
+  <div class="tile-title">{title}</div>
+  <span class="badge {status_class}">{state['status'].replace('_', ' ').title()}</span>
 </div>
 <div class="tile-progress">
-    <div class="progress-bar" style="width: {progress}%"></div>
+  <div class="progress-bar" style="width: {progress}%"></div>
 </div>
-<div class="tile-meta"><span>{summary}</span></div>
+<p class="tile-meta">{summary}</p>
 <div class="kit-row">
   <a class="btn btn--primary" href="?page={product_key}">Continue</a>
   <a class="btn btn--secondary" href="?page={product_key}">See responses</a>
@@ -141,18 +141,16 @@ def render_module_tile(product_key: str, module_key: str, state: dict):
     progress = state['progress']
     title = module_key.replace('_', ' ').title()
     
-    meta_spans: list[str] = []
+    outputs_html = ""
     if state['outputs']:
         primary_output = state['outputs'][0]
-        meta_spans.append(f'<span>{primary_output["label"]}: <strong>{primary_output["value"]}</strong></span>')
+        outputs_html = f'<p class="tile-meta">{primary_output["label"]}<br><strong>{primary_output["value"]}</strong></p>'
         for output in state['outputs'][1:]:
-            meta_spans.append(f'<span>{output["label"]}: {output["value"]}</span>')
-
+            outputs_html += f'<p class="tile-meta">{output["label"]}: {output["value"]}</p>'
+    
     completed_at = state.get('completed_at', '')
     if completed_at:
-        meta_spans.append(f'<span>Last updated: {completed_at}</span>')
-
-    outputs_html = f'<div class="tile-meta">{"".join(meta_spans)}</div>' if meta_spans else ""
+        outputs_html += f'<p class="tile-meta">Last updated: {completed_at}</p>'
     
     html = f"""
 <div class="tile-head">
@@ -204,10 +202,16 @@ def render_hub_tile(title, badge, label, value, status, primary_label, secondary
         <span class="badge {status_class}">{badge}</span>
       </div>
       
-            <div class="tile-meta"><span>{label}</span></div>
-            <div class="tile-value">{value}</div>
-            <div class="tile-status-note">{status_text}</div>
-            <div class="tile-actions">
+      <div class="tile-meta">{label}</div>
+      <div style="font-size: 1.25rem; font-weight: 700; color: var(--ink); margin: var(--space-3) 0;">
+        {value}
+      </div>
+      
+      <div style="margin-top: var(--space-4); font-size: 0.9rem; color: var(--ink-500);">
+        {status_text}
+      </div>
+      
+      <div class="card-actions" style="margin-top: var(--space-6);">
     """, unsafe_allow_html=True)
 
     # Create buttons within the tile using Streamlit columns for proper layout
