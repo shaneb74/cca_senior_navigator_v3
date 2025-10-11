@@ -29,10 +29,21 @@ class ProfessionalHub(BaseHub):
                 "status_label": status_label("in_progress"),
                 "badges": [{"label": "Team workspace", "variant": "brand"}],
                 "description": "Centralize updates, request records, and share notes with families.",
-                "meta": [f"{active_cases} active cases", "Secure messaging & templates included"],
+                "meta": [
+                    f"{active_cases} active cases",
+                    "Secure messaging & templates included",
+                ],
                 "actions": [
-                    {"label": "View cases", "route": "hub_professional", "variant": "primary"},
-                    {"label": "Schedule consult", "route": "pfma_stub", "variant": "ghost"},
+                    {
+                        "label": "View cases",
+                        "route": "hub_professional",
+                        "variant": "primary",
+                    },
+                    {
+                        "label": "Schedule consult",
+                        "route": "pfma_stub",
+                        "variant": "ghost",
+                    },
                 ],
                 "footnote": "Collaborate with Concierge advisors in real time.",
             },
@@ -45,8 +56,16 @@ class ProfessionalHub(BaseHub):
                 "description": "Connect families with vetted elder law attorneys and document prep specialists.",
                 "meta": [f"{legal_requests} pending requests"],
                 "actions": [
-                    {"label": "Find attorney", "route": "hub_trusted", "variant": "primary"},
-                    {"label": "Document prep", "route": "hub_trusted", "variant": "ghost"},
+                    {
+                        "label": "Find attorney",
+                        "route": "hub_trusted",
+                        "variant": "primary",
+                    },
+                    {
+                        "label": "Document prep",
+                        "route": "hub_trusted",
+                        "variant": "ghost",
+                    },
                 ],
                 "footnote": "Set reminders for key filing deadlines.",
             },
@@ -57,10 +76,21 @@ class ProfessionalHub(BaseHub):
                 "status_label": status_label("in_progress"),
                 "badges": [{"label": "Advisor", "variant": "brand"}],
                 "description": "Coordinate with financial professionals to align budgets with care decisions.",
-                "meta": ["Integrates with Cost Planner", "Share secure summaries with families"],
+                "meta": [
+                    "Integrates with Cost Planner",
+                    "Share secure summaries with families",
+                ],
                 "actions": [
-                    {"label": "Book appointment", "route": "cost_planner_stub", "variant": "primary"},
-                    {"label": "Resource center", "route": "hub_learning", "variant": "ghost"},
+                    {
+                        "label": "Book appointment",
+                        "route": "cost_planner_stub",
+                        "variant": "primary",
+                    },
+                    {
+                        "label": "Resource center",
+                        "route": "hub_learning",
+                        "variant": "ghost",
+                    },
                 ],
                 "footnote": "Invite families to review projections together.",
             },
@@ -73,8 +103,16 @@ class ProfessionalHub(BaseHub):
                 "description": "Monitor case velocity, satisfaction scores, and referral sources.",
                 "meta": ["Export to CSV or share interactive reports."],
                 "actions": [
-                    {"label": "View analytics", "route": "hub_professional", "variant": "primary"},
-                    {"label": "Download latest", "route": "hub_professional", "variant": "ghost"},
+                    {
+                        "label": "View analytics",
+                        "route": "hub_professional",
+                        "variant": "primary",
+                    },
+                    {
+                        "label": "Download latest",
+                        "route": "hub_professional",
+                        "variant": "ghost",
+                    },
                 ],
                 "footnote": "Data refreshes every morning at 6 AM.",
             },
@@ -85,8 +123,16 @@ class ProfessionalHub(BaseHub):
             "title": "Bring families and partners into one shared workspace.",
             "body": "Use Concierge advisors as an extension of your team—sync notes, upload documents, and track handoffs effortlessly.",
             "actions": [
-                {"label": "Invite a family", "route": "hub_concierge", "variant": "primary"},
-                {"label": "Meet the advisor team", "route": "pfma_stub", "variant": "ghost"},
+                {
+                    "label": "Invite a family",
+                    "route": "hub_concierge",
+                    "variant": "primary",
+                },
+                {
+                    "label": "Meet the advisor team",
+                    "route": "pfma_stub",
+                    "variant": "ghost",
+                },
             ],
         }
 

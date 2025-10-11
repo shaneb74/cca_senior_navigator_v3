@@ -51,7 +51,11 @@ def render_dashboard(
     _cards = []
     for c in cards:
         # support both component instances and dict configs
-        vis = getattr(c, "visible", True) if hasattr(c, "visible") else c.get("visible", True)
+        vis = (
+            getattr(c, "visible", True)
+            if hasattr(c, "visible")
+            else c.get("visible", True)
+        )
         if not vis:
             continue
         order = getattr(c, "order", 100) if hasattr(c, "order") else c.get("order", 100)
@@ -66,9 +70,15 @@ def render_dashboard(
     if has_head:
         st.markdown('<div class="dashboard-head">', unsafe_allow_html=True)
         if title:
-            st.markdown(f'<h1 class="dashboard-title">{_escape(title)}</h1>', unsafe_allow_html=True)
+            st.markdown(
+                f'<h1 class="dashboard-title">{_escape(title)}</h1>',
+                unsafe_allow_html=True,
+            )
         if subtitle:
-            st.markdown(f'<p class="dashboard-subtitle">{_escape(subtitle)}</p>', unsafe_allow_html=True)
+            st.markdown(
+                f'<p class="dashboard-subtitle">{_escape(subtitle)}</p>',
+                unsafe_allow_html=True,
+            )
         if chips:
             st.markdown('<div class="dashboard-breadcrumbs">', unsafe_allow_html=True)
             for chip in chips:
@@ -76,7 +86,10 @@ def render_dashboard(
                 if not label:
                     continue
                 muted = " is-muted" if chip.get("variant") == "muted" else ""
-                st.markdown(f'<span class="dashboard-chip{muted}">{label}</span>', unsafe_allow_html=True)
+                st.markdown(
+                    f'<span class="dashboard-chip{muted}">{label}</span>',
+                    unsafe_allow_html=True,
+                )
             st.markdown("</div>", unsafe_allow_html=True)
 
         if hub_guide_block:
@@ -117,7 +130,11 @@ def _render_additional(data: object) -> str:
         if not items:
             return ""
         title = _escape(data.get("title", "Additional services"))
-        description = _escape(data.get("description", "Curated partner solutions that complement your plan."))
+        description = _escape(
+            data.get(
+                "description", "Curated partner solutions that complement your plan."
+            )
+        )
     elif isinstance(data, Sequence) and not isinstance(data, (str, bytes)):
         items = [item for item in data if isinstance(item, Mapping)]
         if not items:
@@ -141,7 +158,13 @@ def _render_additional(data: object) -> str:
         tile = item if isinstance(item, Mapping) else {}
         title_text = _escape(tile.get("title", ""))
         subtitle = _escape(tile.get("subtitle") or tile.get("body") or "")
-        go = tile.get("go") or tile.get("route") or tile.get("href") or tile.get("key") or "#"
+        go = (
+            tile.get("go")
+            or tile.get("route")
+            or tile.get("href")
+            or tile.get("key")
+            or "#"
+        )
         label = _escape(tile.get("cta", "Open"))
         href = tile.get("href") or f"?go={go}"
 
@@ -150,7 +173,9 @@ def _render_additional(data: object) -> str:
             card_bits.append(f"<h4>{title_text}</h4>")
         if subtitle:
             card_bits.append(f'<p class="dashboard-muted">{subtitle}</p>')
-        card_bits.append(f'<a class="dashboard-additional__cta" href="{_escape(href)}">{label}</a>')
+        card_bits.append(
+            f'<a class="dashboard-additional__cta" href="{_escape(href)}">{label}</a>'
+        )
         card_bits.append("</article>")
         bits.append("".join(card_bits))
 
@@ -192,7 +217,9 @@ def _render_card(card: Mapping[str, object]) -> str:
         variant = badge.get("variant", "brand")
         badge_markup.append(f'<span class="badge badge--{variant}">{label}</span>')
     if badge_markup:
-        html_parts.append('<div class="dashboard-badges">' + "".join(badge_markup) + "</div>")
+        html_parts.append(
+            '<div class="dashboard-badges">' + "".join(badge_markup) + "</div>"
+        )
 
     if description:
         html_parts.append(f'<p class="dashboard-description">{description}</p>')
@@ -218,7 +245,9 @@ def _render_card(card: Mapping[str, object]) -> str:
     return "".join(html_parts)
 
 
-def _render_action(action: Mapping[str, object], *, primary_default: bool = True) -> str:
+def _render_action(
+    action: Mapping[str, object], *, primary_default: bool = True
+) -> str:
     label = _escape(action.get("label", "Open"))
     variant = action.get("variant")
     if not variant and primary_default:

@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional
 
 import html as _html
 import streamlit as st
+
 
 def html_escape(s: str) -> str:
     return _html.escape(str(s), quote=True)
@@ -23,8 +24,8 @@ class BaseTile:
         self.secondary_label = kwargs.get("secondary_label")
         self.secondary_go = kwargs.get("secondary_go", "#")
         # None means “no linear status”; otherwise numeric progress
-        self.progress: Optional[float] = (
-            kwargs.get("progress", 0 if kwargs.get("progress") is not None else None)
+        self.progress: Optional[float] = kwargs.get(
+            "progress", 0 if kwargs.get("progress") is not None else None
         )
         self.status_text: Optional[str] = kwargs.get("status_text")
         self.order = int(kwargs.get("order", 100))
@@ -56,7 +57,9 @@ class BaseTile:
 
     def _status(self) -> str:
         if self.status_text is not None:
-            return f'<div class="dashboard-status">{html_escape(self.status_text)}</div>'
+            return (
+                f'<div class="dashboard-status">{html_escape(self.status_text)}</div>'
+            )
         if self.progress is None:
             return ""
         try:
@@ -77,32 +80,40 @@ class BaseTile:
             if self.locked:
                 buttons.append(
                     '<span class="dashboard-cta dashboard-cta--primary is-disabled" aria-disabled="true">'
-                    f'{html_escape(self.primary_label)}</span>'
+                    f"{html_escape(self.primary_label)}</span>"
                 )
             else:
                 buttons.append(
                     f'<a class="dashboard-cta dashboard-cta--primary" href="?go={html_escape(self.primary_go)}">'
-                    f'{html_escape(self.primary_label)}</a>'
+                    f"{html_escape(self.primary_label)}</a>"
                 )
         if self.secondary_label:
             if self.locked:
                 buttons.append(
                     '<span class="dashboard-cta dashboard-cta--ghost is-disabled" aria-disabled="true">'
-                    f'{html_escape(self.secondary_label)}</span>'
+                    f"{html_escape(self.secondary_label)}</span>"
                 )
             else:
                 buttons.append(
                     f'<a class="dashboard-cta dashboard-cta--ghost" href="?go={html_escape(self.secondary_go)}">'
-                    f'{html_escape(self.secondary_label)}</a>'
+                    f"{html_escape(self.secondary_label)}</a>"
                 )
-        return f'<div class="dashboard-card__actions">{"".join(buttons)}</div>' if buttons else ""
+        return (
+            f'<div class="dashboard-card__actions">{"".join(buttons)}</div>'
+            if buttons
+            else ""
+        )
 
     def _pills(self) -> str:
         pills: List[str] = []
         if self.badge_text:
-            pills.append(f'<div class="badge badge--brand">{html_escape(self.badge_text)}</div>')
+            pills.append(
+                f'<div class="badge badge--brand">{html_escape(self.badge_text)}</div>'
+            )
         for badge in self.badges:
-            pills.append(f'<div class="badge badge--neutral">{html_escape(str(badge))}</div>')
+            pills.append(
+                f'<div class="badge badge--neutral">{html_escape(str(badge))}</div>'
+            )
         return f'<div class="dashboard-badges">{"".join(pills)}</div>' if pills else ""
 
 
@@ -112,7 +123,9 @@ class ProductTileHub(BaseTile):
             return
         # ONE markdown call => ONE grid child
         out: List[str] = []
-        out.append(f'<div class="ptile dashboard-card"{self._variant()}{self._style()}>')
+        out.append(
+            f'<div class="ptile dashboard-card"{self._variant()}{self._style()}>'
+        )
         out.append('<div class="dashboard-card__head">')
         pills = self._pills()
         if pills:
@@ -120,19 +133,23 @@ class ProductTileHub(BaseTile):
         out.append(
             '<div class="dashboard-card__title-row">'
             f'<h3 class="dashboard-card__title">{html_escape(self.title)}</h3>'
-            f'{self._status()}'
-            '</div>'
+            f"{self._status()}"
+            "</div>"
         )
         if self.desc:
-            out.append(f'<p class="dashboard-card__subtitle">{html_escape(self.desc)}</p>')
+            out.append(
+                f'<p class="dashboard-card__subtitle">{html_escape(self.desc)}</p>'
+            )
         if self.blurb:
-            out.append(f'<p class="dashboard-description">{html_escape(self.blurb)}</p>')
-        out.append('</div>')  # /head
+            out.append(
+                f'<p class="dashboard-description">{html_escape(self.blurb)}</p>'
+            )
+        out.append("</div>")  # /head
         meta = self._meta()
         if meta:
             out.append(meta)
         out.append(self._actions())
-        out.append('</div>')  # /card
+        out.append("</div>")  # /card
         st.markdown("".join(out), unsafe_allow_html=True)
 
 
@@ -141,20 +158,24 @@ class ModuleTileCompact(BaseTile):
         if not self.visible:
             return
         out: List[str] = []
-        out.append(f'<div class="mtile dashboard-card"{self._variant()}{self._style()}>')
+        out.append(
+            f'<div class="mtile dashboard-card"{self._variant()}{self._style()}>'
+        )
         out.append(
             '<div class="dashboard-card__title-row">'
             f'<h3 class="dashboard-card__title">{html_escape(self.title)}</h3>'
-            f'{self._status()}'
-            '</div>'
+            f"{self._status()}"
+            "</div>"
         )
         if self.blurb:
-            out.append(f'<p class="dashboard-description">{html_escape(self.blurb)}</p>')
+            out.append(
+                f'<p class="dashboard-description">{html_escape(self.blurb)}</p>'
+            )
         meta = self._meta()
         if meta:
             out.append(meta)
         out.append(self._actions())
-        out.append('</div>')
+        out.append("</div>")
         st.markdown("".join(out), unsafe_allow_html=True)
 
 

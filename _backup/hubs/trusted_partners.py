@@ -30,10 +30,21 @@ class TrustedPartnersHub(BaseHub):
                 "status_label": status_label("in_progress"),
                 "badges": [{"label": "Concierge curated", "variant": "brand"}],
                 "description": "Compare hourly support, live-in aides, and respite options with transparent pricing.",
-                "meta": [f"{verified_partners} verified partners", "Background checked & insured"],
+                "meta": [
+                    f"{verified_partners} verified partners",
+                    "Background checked & insured",
+                ],
                 "actions": [
-                    {"label": "View agencies", "route": "hub_trusted", "variant": "primary"},
-                    {"label": "Compare services", "route": "hub_trusted", "variant": "ghost"},
+                    {
+                        "label": "View agencies",
+                        "route": "hub_trusted",
+                        "variant": "primary",
+                    },
+                    {
+                        "label": "Compare services",
+                        "route": "hub_trusted",
+                        "variant": "ghost",
+                    },
                 ],
                 "footnote": "Save favourites to share with your advisor.",
             },
@@ -44,10 +55,21 @@ class TrustedPartnersHub(BaseHub):
                 "status_label": status_label("in_progress" if tours_booked else "new"),
                 "badges": [{"label": "Onsite & virtual", "variant": "neutral"}],
                 "description": "See availability, starting rates, and upcoming events at recommended communities.",
-                "meta": [f"{tours_booked} tour(s) booked", "Personalized shortlist based on your plan"],
+                "meta": [
+                    f"{tours_booked} tour(s) booked",
+                    "Personalized shortlist based on your plan",
+                ],
                 "actions": [
-                    {"label": "Explore options", "route": "hub_trusted", "variant": "primary"},
-                    {"label": "Schedule tour", "route": "pfma_stub", "variant": "ghost"},
+                    {
+                        "label": "Explore options",
+                        "route": "hub_trusted",
+                        "variant": "primary",
+                    },
+                    {
+                        "label": "Schedule tour",
+                        "route": "pfma_stub",
+                        "variant": "ghost",
+                    },
                 ],
                 "footnote": "Advisors confirm with communities within 24 hours.",
             },
@@ -60,8 +82,16 @@ class TrustedPartnersHub(BaseHub):
                 "description": "Collaborate with vetted professionals on pensions, VA benefits, and long-term care insurance.",
                 "meta": ["Coordinate with your Cost Planner outputs."],
                 "actions": [
-                    {"label": "Find advisor", "route": "pfma_stub", "variant": "primary"},
-                    {"label": "Resource center", "route": "hub_learning", "variant": "ghost"},
+                    {
+                        "label": "Find advisor",
+                        "route": "pfma_stub",
+                        "variant": "primary",
+                    },
+                    {
+                        "label": "Resource center",
+                        "route": "hub_learning",
+                        "variant": "ghost",
+                    },
                 ],
                 "footnote": "We pre-screen for licensure and experience.",
             },
@@ -69,13 +99,23 @@ class TrustedPartnersHub(BaseHub):
                 "title": "Partner network",
                 "subtitle": "Trusted services for daily living",
                 "status": "complete" if verified_partners > 0 else "new",
-                "status_label": status_label("complete" if verified_partners > 0 else "new"),
+                "status_label": status_label(
+                    "complete" if verified_partners > 0 else "new"
+                ),
                 "badges": [{"label": "Growing library", "variant": "ai"}],
                 "description": "Coordinate transportation, meal delivery, home safety upgrades, and more.",
                 "meta": ["Tap to filter by category or urgency."],
                 "actions": [
-                    {"label": "Browse network", "route": "hub_trusted", "variant": "primary"},
-                    {"label": "Share with family", "route": "hub_concierge", "variant": "ghost"},
+                    {
+                        "label": "Browse network",
+                        "route": "hub_trusted",
+                        "variant": "primary",
+                    },
+                    {
+                        "label": "Share with family",
+                        "route": "hub_concierge",
+                        "variant": "ghost",
+                    },
                 ],
                 "footnote": "Partners sign the Concierge Care standards pledge.",
             },
@@ -86,8 +126,16 @@ class TrustedPartnersHub(BaseHub):
             "title": f"Discover vetted partners ready to support {person_name}.",
             "body": "Your advisor works alongside this network—tell us what you need and we'll coordinate the intros.",
             "actions": [
-                {"label": "Request recommendations", "route": "pfma_stub", "variant": "primary"},
-                {"label": "See saved partners", "route": "hub_trusted", "variant": "ghost"},
+                {
+                    "label": "Request recommendations",
+                    "route": "pfma_stub",
+                    "variant": "primary",
+                },
+                {
+                    "label": "See saved partners",
+                    "route": "hub_trusted",
+                    "variant": "ghost",
+                },
             ],
         }
 

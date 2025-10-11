@@ -131,9 +131,7 @@ def _value_matches(answer_option: str, value: Any) -> bool:
     return False
 
 
-def _answer_matches(
-    stored: Any, answer_option: str, question_text: str
-) -> bool:
+def _answer_matches(stored: Any, answer_option: str, question_text: str) -> bool:
     if stored is None:
         return False
 
@@ -171,8 +169,12 @@ def evaluate(answers: Dict[str, Any]) -> Dict[str, Any]:
     scoring_rows = load_scoring().get("scoring", [])
     domains_cfg = {d["id"]: d for d in load_domains().get("domains", [])}
     blurbs_payload = load_blurbs()
-    system_cfg = blurbs_payload.get("system", {}) if isinstance(blurbs_payload, Mapping) else {}
-    advisory_map = system_cfg.get("advisories", {}) if isinstance(system_cfg, Mapping) else {}
+    system_cfg = (
+        blurbs_payload.get("system", {}) if isinstance(blurbs_payload, Mapping) else {}
+    )
+    advisory_map = (
+        system_cfg.get("advisories", {}) if isinstance(system_cfg, Mapping) else {}
+    )
 
     domain_totals: Dict[str, float] = {}
     contributions: List[Tuple[str, str, str, float]] = []
@@ -206,9 +208,13 @@ def evaluate(answers: Dict[str, Any]) -> Dict[str, Any]:
         score_value = row.get("ScoreValue")
         contribution = 0.0
         if isinstance(score_value, (int, float)):
-            contribution = _add(row["Domain"], float(score_value), row.get("DomainWeight"))
+            contribution = _add(
+                row["Domain"], float(score_value), row.get("DomainWeight")
+            )
             if contribution != 0:
-                contributions.append((qid, row["AnswerOption"], row["Domain"], contribution))
+                contributions.append(
+                    (qid, row["AnswerOption"], row["Domain"], contribution)
+                )
 
         for flag in _normalize_flag_tokens(row.get("FlagsEmitted", "")):
             _append_flag(flag)
@@ -231,7 +237,9 @@ def evaluate(answers: Dict[str, Any]) -> Dict[str, Any]:
     else:
         base_tier = 0
 
-    tier_index, rule_flags, rule_advisories = apply_rules(base_tier, ordered_flags, counters)
+    tier_index, rule_flags, rule_advisories = apply_rules(
+        base_tier, ordered_flags, counters
+    )
     for flag in rule_flags:
         _append_flag(flag)
 
@@ -245,7 +253,9 @@ def evaluate(answers: Dict[str, Any]) -> Dict[str, Any]:
     tier_name = tier_map.get(tier_index, "In-Home Care")
 
     drivers = sorted(contributions, key=lambda item: abs(item[3]), reverse=True)[:3]
-    driver_payload = [(qid, answer, round(points, 2)) for qid, answer, _domain, points in drivers]
+    driver_payload = [
+        (qid, answer, round(points, 2)) for qid, answer, _domain, points in drivers
+    ]
 
     advisories: List[str] = []
     for flag in ordered_flags:

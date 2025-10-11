@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import re
 import sys
-from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, Iterable, List, Mapping, Set, Tuple
@@ -60,7 +59,9 @@ def _option_labels(question: Mapping[str, object]) -> Set[str]:
     return labels
 
 
-def _matrix_combinations(question: Mapping[str, object], base_options: Iterable[str]) -> Set[str]:
+def _matrix_combinations(
+    question: Mapping[str, object], base_options: Iterable[str]
+) -> Set[str]:
     combos: Set[str] = set()
     items = question.get("items", [])
     for item in items if isinstance(items, list) else []:
@@ -74,17 +75,23 @@ def _matrix_combinations(question: Mapping[str, object], base_options: Iterable[
     return combos
 
 
-def _collect_questions(schema: dict, schema_res: CategoryResult) -> Dict[str, Mapping[str, object]]:
+def _collect_questions(
+    schema: dict, schema_res: CategoryResult
+) -> Dict[str, Mapping[str, object]]:
     questions: Dict[str, Mapping[str, object]] = {}
     seen_ids: Set[str] = set()
     for section in schema.get("sections", []):
         for question in section.get("questions", []):
             if not isinstance(question, Mapping):
-                schema_res.error(f"section '{section.get('id', '<unknown>')}' contains non-object question")
+                schema_res.error(
+                    f"section '{section.get('id', '<unknown>')}' contains non-object question"
+                )
                 continue
             qid = question.get("id")
             if not qid:
-                schema_res.error(f"section '{section.get('id', '<unknown>')}' contains question without id")
+                schema_res.error(
+                    f"section '{section.get('id', '<unknown>')}' contains question without id"
+                )
                 continue
             if qid in seen_ids:
                 schema_res.error(f"duplicate question id '{qid}'")
@@ -97,7 +104,9 @@ def _collect_questions(schema: dict, schema_res: CategoryResult) -> Dict[str, Ma
                     schema_res.error(f"question '{qid}' ({qtype}) has no options")
                 for opt in opts:
                     if not opt:
-                        schema_res.error(f"question '{qid}' has option with empty label")
+                        schema_res.error(
+                            f"question '{qid}' has option with empty label"
+                        )
     return questions
 
 
@@ -155,11 +164,15 @@ def _validate_schema_and_scoring(
 
         score_value = row.get("ScoreValue")
         if not isinstance(score_value, (int, float)):
-            scoring_res.error(f"ScoreValue for question '{qid}' / option '{answer}' must be numeric")
+            scoring_res.error(
+                f"ScoreValue for question '{qid}' / option '{answer}' must be numeric"
+            )
 
         domain_weight = row.get("DomainWeight")
         if not isinstance(domain_weight, (int, float)):
-            scoring_res.error(f"DomainWeight for question '{qid}' / option '{answer}' must be numeric")
+            scoring_res.error(
+                f"DomainWeight for question '{qid}' / option '{answer}' must be numeric"
+            )
 
     unused = sorted(domains - used_domains)
     if unused:
@@ -227,7 +240,9 @@ def _validate_rules(
 
         for tier_key in ("minTier", "maxTier"):
             if tier_key in rule and not isinstance(rule[tier_key], int):
-                rules_res.error(f"rule '{rule_id}' {tier_key} must be integer when present")
+                rules_res.error(
+                    f"rule '{rule_id}' {tier_key} must be integer when present"
+                )
 
         when_expr = str(rule.get("when", "") or "")
         cleaned = re.sub(r"[><=]{1,2}\s*\d+", "", when_expr)
@@ -245,7 +260,9 @@ def _validate_blurbs(
     valid_options: Mapping[str, Set[str]],
     blurbs_res: CategoryResult,
 ) -> None:
-    for entry in blurbs_payload.get("byAnswer", []) or blurbs_payload.get("by_answer", []):
+    for entry in blurbs_payload.get("byAnswer", []) or blurbs_payload.get(
+        "by_answer", []
+    ):
         if not isinstance(entry, Mapping):
             blurbs_res.error("blurbs byAnswer entry is not an object")
             continue
@@ -255,7 +272,9 @@ def _validate_blurbs(
             blurbs_res.error(f"unknown QuestionID '{qid}' in blurbs")
             continue
         if answer not in valid_options.get(qid, set()):
-            blurbs_res.error(f"invalid AnswerOption '{answer}' for question '{qid}' in blurbs")
+            blurbs_res.error(
+                f"invalid AnswerOption '{answer}' for question '{qid}' in blurbs"
+            )
 
     allowed_tiers = {
         "In-Home Care",
