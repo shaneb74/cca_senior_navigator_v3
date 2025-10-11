@@ -1,5 +1,9 @@
 from typing import Optional
-import base64, mimetypes, pathlib, sys, functools
+import base64
+import mimetypes
+import pathlib
+import sys
+import functools
 
 import streamlit as st
 from core.nav import route_to
@@ -107,9 +111,9 @@ def tile_close():
 def render_product_tile(product_key: str, state: dict):
     """Render a product tile with status, progress, and actions."""
     status_class = f"tile--{state['status']}"
-    progress = state['progress']
-    title = PRODUCTS[product_key]['title']
-    
+    progress = state["progress"]
+    title = PRODUCTS[product_key]["title"]
+
     # Mock outputs for now; in production, aggregate from modules
     if product_key == "gcp":
         summary = "Recommendation: In-Home Care"
@@ -117,7 +121,7 @@ def render_product_tile(product_key: str, state: dict):
         summary = "Est. cost $4,200 / Runway 3.8 yrs"
     else:
         summary = "Not started"
-    
+
         html = f"""
 <div class="tile-head">
     <div class="tile-title">{title}</div>
@@ -138,22 +142,24 @@ def render_product_tile(product_key: str, state: dict):
 def render_module_tile(product_key: str, module_key: str, state: dict):
     """Render a module tile with status, progress, outputs, and actions."""
     status_class = f"tile--{state['status']}"
-    progress = state['progress']
-    title = module_key.replace('_', ' ').title()
-    
+    progress = state["progress"]
+    title = module_key.replace("_", " ").title()
+
     meta_spans: list[str] = []
-    if state['outputs']:
-        primary_output = state['outputs'][0]
-        meta_spans.append(f'<span>{primary_output["label"]}: <strong>{primary_output["value"]}</strong></span>')
-        for output in state['outputs'][1:]:
+    if state["outputs"]:
+        primary_output = state["outputs"][0]
+        meta_spans.append(
+            f'<span>{primary_output["label"]}: <strong>{primary_output["value"]}</strong></span>'
+        )
+        for output in state["outputs"][1:]:
             meta_spans.append(f'<span>{output["label"]}: {output["value"]}</span>')
 
-    completed_at = state.get('completed_at', '')
+    completed_at = state.get("completed_at", "")
     if completed_at:
-        meta_spans.append(f'<span>Last updated: {completed_at}</span>')
+        meta_spans.append(f"<span>Last updated: {completed_at}</span>")
 
     outputs_html = f'<div class="tile-meta">{"".join(meta_spans)}</div>' if meta_spans else ""
-    
+
     html = f"""
 <div class="tile-head">
   <div class="tile-title">{title}</div>
@@ -172,7 +178,17 @@ def render_module_tile(product_key: str, module_key: str, state: dict):
     st.markdown(html, unsafe_allow_html=True)
 
 
-def render_hub_tile(title, badge, label, value, status, primary_label, secondary_label=None, primary_action=None, secondary_action=None):
+def render_hub_tile(
+    title,
+    badge,
+    label,
+    value,
+    status,
+    primary_label,
+    secondary_label=None,
+    primary_action=None,
+    secondary_action=None,
+):
     """
     Renders a standardized hub module tile using the design system.
     Use this in hub pages to maintain visual and behavioral consistency.
@@ -180,16 +196,16 @@ def render_hub_tile(title, badge, label, value, status, primary_label, secondary
     # Status classes for badges
     status_class = {
         "done": "success",
-        "doing": "warning", 
+        "doing": "warning",
         "new": "info",
-        "locked": ""
+        "locked": "",
     }.get(status, "")
 
     status_text = {
         "done": "Completed",
         "doing": "In Progress",
         "new": "Not Started",
-        "locked": "Locked"
+        "locked": "Locked",
     }.get(status, "")
 
     # Create unique keys for the buttons
@@ -197,7 +213,8 @@ def render_hub_tile(title, badge, label, value, status, primary_label, secondary
     secondary_key = f"{title.lower().replace(' ', '_').replace('&', 'and')}_secondary"
 
     # Render the tile using design system classes with buttons inside
-    st.markdown(f"""
+    st.markdown(
+        f"""
     <article class="tile tile--{status if status != 'locked' else 'locked'}">
       <div class="tile-head">
         <h3 class="tile-title">{title}</h3>
@@ -208,7 +225,9 @@ def render_hub_tile(title, badge, label, value, status, primary_label, secondary
             <div class="tile-value">{value}</div>
             <div class="tile-status-note">{status_text}</div>
             <div class="tile-actions">
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
     # Create buttons within the tile using Streamlit columns for proper layout
     if secondary_label:
@@ -256,4 +275,4 @@ def render_hub_tile(title, badge, label, value, status, primary_label, secondary
                     route_to("faqs")
 
     # Close the card-actions div and tile
-    st.markdown('</div></article>', unsafe_allow_html=True)
+    st.markdown("</div></article>", unsafe_allow_html=True)

@@ -5,8 +5,8 @@ def run(user_id: str, ctx: dict) -> dict:
         "status": "done",
         "outputs": [
             {"label": "Recommendation", "value": "In-Home Care"},
-            {"label": "Notes", "value": "Mobility support recommended"}
-        ]
+            {"label": "Notes", "value": "Mobility support recommended"},
+        ],
     }
 
 

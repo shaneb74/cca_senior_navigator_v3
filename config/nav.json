@@ -5,9 +5,10 @@
       "id": "app_utilities",
       "label": "App Utilities",
       "items": [
-        {"key": "welcome", "label": "Welcome", "module": "pages._stubs:render_welcome"},
-        {"key": "for_someone", "label": "For Someone", "module": "pages._stubs:render_for_someone", "hidden": true},
-        {"key": "for_me_contextual", "label": "For Me Contextual", "module": "pages._stubs:render_for_me_contextual", "hidden": true},
+  {"key": "welcome", "label": "Welcome", "module": "pages.welcome:render"},
+        {"key": "someone_else", "label": "For Someone", "module": "pages.someone_else:render", "hidden": true},
+        {"key": "self", "label": "For Me", "module": "pages.self:render", "hidden": true},
+        {"key": "professionals", "label": "For Professionals", "module": "pages.professionals:render", "hidden": true},
         {"key": "welcome_contextual", "label": "Contextual Welcome", "module": "pages._stubs:render_welcome_contextual", "hidden": true},
         {"key": "about", "label": "About Us", "module": "pages._stubs:render_about"}
       ]

@@ -20,13 +20,18 @@ class ConciergeHub(BaseHub):
 
     def build_dashboard(self) -> Dict:
         person_name = st.session_state.get("person_name", "John")
-        appointment_time = st.session_state.get("appointment_time") or "No appointment scheduled yet"
+        appointment_time = (
+            st.session_state.get("appointment_time") or "No appointment scheduled yet"
+        )
         appointment_status = st.session_state.get("appointment_status", "Scheduled")
 
         gcp_state = st.session_state.get("gcp", {})
         gcp_progress = float(gcp_state.get("progress", 0) or 0)
         cost_state = st.session_state.get("cost", {})
-        cost_progress = float(cost_state.get("progress", st.session_state.get("cost_planner_progress", 0)) or 0)
+        cost_progress = float(
+            cost_state.get("progress", st.session_state.get("cost_planner_progress", 0))
+            or 0
+        )
 
         def gcp_meta() -> list[str]:
             lines = ["≈12 minutes • Auto-saves"]
@@ -68,7 +73,11 @@ class ConciergeHub(BaseHub):
             cost_primary_label, cost_primary_go = "Start", "cost_open"
             cost_secondary_label = cost_secondary_go = None
 
-        pfma_progress = 100 if appointment_status.lower() == "completed" else (40 if appointment_time != "No appointment scheduled yet" else 0)
+        pfma_progress = (
+            100
+            if appointment_status.lower() == "completed"
+            else (40 if appointment_time != "No appointment scheduled yet" else 0)
+        )
 
         cards = [
             ProductTileHub(
