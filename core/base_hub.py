@@ -1,395 +1,280 @@
+# core/base_hub.py
+from __future__ import annotations
+
+from html import escape as html_escape
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
+
 import streamlit as st
-from core.state import get_user_ctx
+
+def _inject_hub_css_once() -> None:
+    """Load global + hub + product styles once per Streamlit session."""
+    key = "_sn_hub_css_loaded_v4"
+    if st.session_state.get(key):
+        return
+
+    here = Path(__file__).resolve().parent
+    search_paths = [
+        Path("assets/css/global.css"),
+        Path("assets/css/hubs.css"),
+        Path("assets/css/products.css"),
+        Path("assets/css/modules.css"),
+        here.parents[1] / "assets" / "css" / "global.css",
+        here.parents[1] / "assets" / "css" / "hubs.css",
+        here.parents[1] / "assets" / "css" / "products.css",
+        here.parents[1] / "assets" / "css" / "modules.css",
+    ]
+
+    seen: set[str] = set()
+    for css_path in search_paths:
+        try:
+            if not css_path.is_file():
+                continue
+            resolved = str(css_path.resolve())
+            if resolved in seen:
+                continue
+            css = css_path.read_text(encoding="utf-8")
+            if "</style>" in css.lower():
+                continue
+            st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
+            seen.add(resolved)
+        except Exception:
+            continue
+
+    st.session_state[key] = True
+
+
+# -----------------------------
+# Primary hub renderer (namespaced shell)
+# -----------------------------
+def render_dashboard(
+    *,
+    title: str = "",
+    subtitle: Optional[str] = None,
+    chips: Optional[List[Dict[str, str]]] = None,
+    hub_guide_block: Optional[Any] = None,
+    series_steps: Optional[List[Dict[str, Any]]] = None,
+    cards: Optional[List[Any]] = None,
+    additional_services: Optional[List[Dict[str, Any]]] = None,
+    **_ignored,  # ignore legacy extras safely
+) -> None:
+    st.set_page_config(layout="wide")
+    _inject_hub_css_once()
+
+    chips = chips or []
+    series_steps = series_steps or []
+    cards = cards or []
+
+    head_segments: List[str] = []
+    if any([title, subtitle, chips, series_steps]):
+        head_segments.append('<div class="dashboard-head">')
+        if title:
+            head_segments.append(f'<h1 class="dashboard-title">{html_escape(str(title))}</h1>')
+        if subtitle:
+            head_segments.append(f'<p class="dashboard-subtitle">{html_escape(str(subtitle))}</p>')
+        if series_steps:
+            head_segments.append('<div class="series-steps" role="list">')
+
+            def _sanitize_modifier(value: str) -> str:
+                return "".join(
+                    ch for ch in value.lower().replace(" ", "-") if ch.isalnum() or ch in {"-", "_"}
+                )
+
+            for idx, item in enumerate(series_steps, start=1):
+                label = html_escape(str(item.get("label", "")))
+                step_value = item.get("step")
+                try:
+                    number = int(step_value)
+                except (TypeError, ValueError):
+                    number = idx
+                number_html = html_escape(str(number))
+                state = item.get("state") or item.get("variant") or ""
+                modifier = _sanitize_modifier(str(state)) if state else ""
+                cls = "series-chip"
+                if modifier:
+                    cls += f" is-{modifier}"
+                head_segments.append(
+                    f'<span class="{cls}" role="listitem">'
+                    f'<span class="series-chip__number">{number_html}</span>'
+                    f'<span class="series-chip__label">{label}</span>'
+                    '</span>'
+                )
+            head_segments.append('</div>')
+        if chips:
+            head_segments.append('<div class="dashboard-breadcrumbs">')
+            for chip in chips:
+                cls = "dashboard-chip" + (" is-muted" if chip.get("variant") == "muted" else "")
+                head_segments.append(
+                    f'<span class="{cls}">{html_escape(str(chip.get("label", "")))}</span>'
+                )
+            head_segments.append('</div>')
+        head_segments.append('</div>')
+    head_html = "".join(head_segments)
+
+    guide_html = ""
+    if isinstance(hub_guide_block, str):
+        guide_html = hub_guide_block
+    elif hub_guide_block:
+        # Legacy dict support: render simple eyebrow/title/body/actions structure.
+        eyebrow = html_escape(str(hub_guide_block.get("eyebrow", "")))
+        title_text = html_escape(str(hub_guide_block.get("title", "")))
+        body_text = html_escape(str(hub_guide_block.get("body", "")))
+        actions = hub_guide_block.get("actions") or []
+        action_html: List[str] = []
+        for action in actions:
+            label = html_escape(str(action.get("label", "Open")))
+            go = html_escape(str(action.get("route") or action.get("go") or ""))
+            action_html.append(f'<a href="?go={go}" class="btn btn--secondary">{label}</a>')
+        guide_html = "".join(
+            [
+                '<section class="hub-guide">',
+                f'<div class="hub-guide__eyebrow">{eyebrow}</div>' if eyebrow else "",
+                f'<h2 class="hub-guide__title">{title_text}</h2>' if title_text else "",
+                f'<p class="hub-guide__text">{body_text}</p>' if body_text else "",
+                '<div class="hub-guide__actions">' + "".join(action_html) + '</div>' if action_html else "",
+                '</section>',
+            ]
+        )
+
+    # Cards grid (ordered)
+    sorted_cards: List[Tuple[int, str, Any]] = []
+    for c in cards:
+        vis = getattr(c, "visible", True) if hasattr(c, "visible") else c.get("visible", True)
+        if not vis:
+            continue
+        order = getattr(c, "order", 100) if hasattr(c, "order") else int(c.get("order", 100))
+        t = getattr(c, "title", "") if hasattr(c, "title") else c.get("title", "")
+        sorted_cards.append((int(order), str(t).casefold(), c))
+    sorted_cards.sort(key=lambda x: (x[0], x[1]))
+
+    card_html_chunks: List[str] = []
+    for _, __, card in sorted_cards:
+        if hasattr(card, "render_html"):
+            chunk = card.render_html()
+            if chunk:
+                card_html_chunks.append(chunk)
+        elif hasattr(card, "render"):
+            # Fallback for legacy tiles that only implement render()
+            buffer = st.container()
+            with buffer:
+                card.render()
+            continue
+        elif isinstance(card, dict) and card.get("html"):
+            card_html_chunks.append(str(card["html"]))
+
+    grid_html = ""
+    if card_html_chunks:
+        grid_html = "".join(
+            [
+                '<div class="dashboard-grid">',
+                "".join(card_html_chunks),
+                '</div>',
+            ]
+        )
+
+    # Additional services (optional)
+    additional_html = ""
+    if additional_services:
+        rows: List[str] = []
+        for s in additional_services:
+            subtitle_val = s.get("subtitle")
+            cta_label = html_escape(str(s.get("cta", "Open")))
+            cta_route = html_escape(str(s.get("go", "")))
+            rows.append(
+                "".join(
+                    [
+                        '<div class="dashboard-additional__card">',
+                        f'<h4>{html_escape(str(s.get("title", "")))}</h4>',
+                        f'<p>{html_escape(str(subtitle_val))}</p>' if subtitle_val else "",
+                        f'<a class="dashboard-additional__cta" href="?go={cta_route}">{cta_label}</a>',
+                        '</div>',
+                    ]
+                )
+            )
+
+        additional_html = "".join(
+            [
+                '<section class="dashboard-additional">',
+                '<header class="dashboard-additional__head">',
+                '<h3 class="dashboard-additional__title">Additional services</h3>',
+                '<p class="dashboard-muted">Curated partner solutions that complement your plan.</p>',
+                '</header>',
+                '<div class="dashboard-additional__grid">',
+                "".join(rows),
+                '</div>',
+                '</section>',
+            ]
+        )
+
+    shell = "".join(
+        [
+            '<section class="sn-hub dashboard-shell">',
+            head_html,
+            guide_html,
+            grid_html,
+            additional_html,
+            '</section>',
+        ]
+    )
+
+    st.markdown(shell, unsafe_allow_html=True)
+
+
+# -----------------------------
+# Back-compat helpers
+# -----------------------------
+def status_label(progress: float | int | None, locked: bool = False) -> str:
+    """Legacy helper that returns a simple status string."""
+    if locked:
+        return "Locked"
+    if progress is None:
+        return ""
+    try:
+        p = float(progress)
+    except Exception:
+        p = 0.0
+    if p >= 100:
+        return "Complete"
+    if p > 0:
+        return "In progress"
+    return "New"
 
 
 class BaseHub:
-    """Base class for all hub pages with consistent layout and styling."""
+    """
+    Legacy wrapper so old hubs that did:
 
-    def __init__(self, title, icon, description):
-        self.title = title
-        self.icon = icon
-        self.description = description
+        from core.base_hub import BaseHub
+        hub = BaseHub()
+        hub.render(title=..., cards=[...])
 
-    def render_header(self):
-        """Render the common header structure."""
-        # Login Banner
-        st.markdown(
-            """
-            <div class="login-banner">
-                <span>Log in for a better experience — continue where you left off, with your information kept secure and confidential following HIPAA guidelines.</span>
-                <button class="close-btn" onclick="this.parentElement.style.display='none'">×</button>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+    still work. Internally delegates to render_dashboard.
+    """
+    def __init__(self, **default_kwargs):
+        self._default_kwargs = dict(default_kwargs or {})
 
-        # Main Header
-        person_name = st.session_state.get("person_name", "John")
-        col1, col2 = st.columns([1, 1])
-        with col1:
-            st.markdown(f'<h1 class="main-title">{self.title.upper()}</h1>', unsafe_allow_html=True)
-        with col2:
-            st.markdown(
-                f"""
-                <div class="assessment-info">
-                    <span>Assessment for someone: {person_name}</span>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-            if st.button("Add +", key="add_person", help="Add another person"):
-                # Add person functionality
-                pass
+    def render(self, **kwargs) -> None:
+        merged = {**self._default_kwargs, **kwargs}
 
-    def render_footer(self):
-        """Render the common footer structure."""
-        # Footer Navigation
-        st.markdown(
-            """
-            <div class="footer-nav">
-                <div class="footer-columns">
-                    <div class="footer-column">
-                        <h5>Concierge Care Senior Navigator</h5>
-                        <ul>
-                            <li><a href="#">Landing</a></li>
-                            <li><a href="#">Dashboard</a></li>
-                            <li><a href="#">Login</a></li>
-                            <li><a href="#">Sign In</a></li>
-                            <li><a href="#">Account</a></li>
-                        </ul>
-                    </div>
-                    <div class="footer-column">
-                        <h5>Our Tools</h5>
-                        <ul>
-                            <li><a href="#">Guided Care Plan</a></li>
-                            <li><a href="#">Cost Estimator</a></li>
-                            <li><a href="#">Get Connected</a></li>
-                            <li><a href="#">AI Agent</a></li>
-                            <li><a href="#">Media Center</a></li>
-                            <li><a href="#">AI Health Check</a></li>
-                        </ul>
-                    </div>
-                    <div class="footer-column">
-                        <h5>Concierge Care Advisors</h5>
-                        <ul>
-                            <li><a href="#">Home</a></li>
-                            <li><a href="#">Contact</a></li>
-                            <li><a href="#">Log In</a></li>
-                        </ul>
-                    </div>
-                    <div class="footer-column">
-                        <h5>For Partners</h5>
-                        <ul>
-                            <li><a href="#">Sign up</a></li>
-                            <li><a href="#">Log in</a></li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+        # Accept only the keys render_dashboard cares about.
+        allowed = {
+            "title",
+            "subtitle",
+            "chips",
+            "hub_guide_block",
+            "series_steps",
+            "cards",
+            "additional_services",
+        }
+        safe = {k: v for k, v in merged.items() if k in allowed}
 
-        # Bottom Footer
-        st.markdown(
-            """
-            <div class="bottom-footer">
-                <div class="bottom-footer-content">
-                    <div class="copyright">© 2025 Concierge Care Senior Navigator™</div>
-                    <div class="footer-links">
-                        <a href="#">Terms & Conditions</a>
-                        <a href="#">Privacy Policy</a>
-                    </div>
-                    <div class="social-icons">
-                        <a href="#" class="social-icon">📷</a>
-                        <a href="#" class="social-icon">📘</a>
-                        <a href="#" class="social-icon">🐦</a>
-                        <a href="#" class="social-icon">📺</a>
-                        <a href="#" class="social-icon">💼</a>
-                    </div>
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+        # Common legacy aliases
+        if "guide" in merged and "hub_guide_block" not in safe:
+            safe["hub_guide_block"] = merged["guide"]
+        if "additional" in merged and "additional_services" not in safe:
+            safe["additional_services"] = merged["additional"]
 
-    def render_css(self):
-        """Render the common CSS styles."""
-        st.markdown(
-            """
-            <style>
-            .login-banner {
-                background-color: #F5F5F5;
-                width: 100%;
-                max-width: 1200px;
-                height: 30px;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                padding: 0 20px;
-                margin: 0 auto 20px auto;
-                font-family: sans-serif;
-                font-size: 12px;
-                color: #333333;
-            }
-            .login-banner .close-btn {
-                background: none;
-                border: none;
-                color: #007BFF;
-                font-size: 20px;
-                cursor: pointer;
-                padding: 0;
-                width: 20px;
-                height: 20px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
-            .main-header {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                max-width: 1200px;
-                margin: 0 auto 30px auto;
-                padding: 0 20px;
-            }
-            .main-title {
-                font-family: sans-serif;
-                font-size: 24px;
-                font-weight: bold;
-                color: #333333;
-                text-transform: uppercase;
-                margin: 0;
-            }
-            .assessment-info {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                font-family: sans-serif;
-                font-size: 16px;
-                color: #333333;
-            }
-            .add-btn {
-                background-color: #007BFF;
-                color: white;
-                border: none;
-                border-radius: 3px;
-                width: 60px;
-                height: 30px;
-                font-size: 12px;
-                cursor: pointer;
-            }
-            .content-section {
-                max-width: 1200px;
-                margin: 0 auto;
-                padding: 0 20px;
-            }
-            .section-card {
-                background-color: white;
-                border-radius: 5px;
-                padding: 20px;
-                margin-bottom: 20px;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            }
-            .section-title {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                font-family: sans-serif;
-                font-size: 16px;
-                font-weight: bold;
-                color: #333333;
-                margin-bottom: 10px;
-            }
-            .section-icon {
-                color: #007BFF;
-                font-size: 20px;
-            }
-            .section-text {
-                font-family: sans-serif;
-                font-size: 12px;
-                color: #333333;
-                margin-bottom: 15px;
-                line-height: 1.4;
-            }
-            .button-row {
-                display: flex;
-                gap: 10px;
-                justify-content: flex-end;
-                align-items: center;
-            }
-            .btn {
-                border: none;
-                border-radius: 3px;
-                font-family: sans-serif;
-                font-size: 12px;
-                cursor: pointer;
-                box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 5px;
-            }
-            .btn-gray {
-                background-color: #666666;
-                color: white;
-            }
-            .btn-blue {
-                background-color: #007BFF;
-                color: white;
-            }
-            .btn-green {
-                background-color: #28A745;
-                color: white;
-            }
-            .btn-glow {
-                background-color: #007BFF;
-                color: white;
-                box-shadow: 0 0 10px rgba(255, 192, 203, 0.3);
-            }
-            .separator {
-                border: none;
-                border-top: 1px solid #E0E0E0;
-                margin: 20px 0;
-            }
-            .additional-services {
-                text-align: center;
-                margin: 40px 0 20px 0;
-            }
-            .services-title {
-                font-family: sans-serif;
-                font-size: 16px;
-                font-weight: bold;
-                color: #333333;
-                margin-bottom: 20px;
-            }
-            .service-cards {
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-                gap: 20px;
-                max-width: 800px;
-                margin: 0 auto;
-            }
-            .service-card {
-                background-color: white;
-                border-radius: 5px;
-                padding: 20px;
-                display: flex;
-                align-items: center;
-                gap: 15px;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            }
-            .service-icon {
-                color: #007BFF;
-                font-size: 40px;
-            }
-            .service-content h4 {
-                font-family: sans-serif;
-                font-size: 14px;
-                color: #333333;
-                margin: 0 0 5px 0;
-            }
-            .service-content p {
-                font-family: sans-serif;
-                font-size: 12px;
-                color: #666666;
-                margin: 0;
-            }
-            .footer-nav {
-                background-color: #F8F9FA;
-                padding: 30px 20px;
-                margin-top: 40px;
-            }
-            .footer-columns {
-                max-width: 1200px;
-                margin: 0 auto;
-                display: grid;
-                grid-template-columns: repeat(4, 1fr);
-                gap: 20px;
-            }
-            .footer-column h5 {
-                font-family: sans-serif;
-                font-size: 12px;
-                font-weight: bold;
-                color: #333333;
-                margin-bottom: 10px;
-                text-transform: uppercase;
-            }
-            .footer-column ul {
-                list-style: none;
-                padding: 0;
-                margin: 0;
-            }
-            .footer-column li {
-                margin-bottom: 10px;
-            }
-            .footer-column a {
-                font-family: sans-serif;
-                font-size: 12px;
-                color: #333333;
-                text-decoration: none;
-            }
-            .footer-column a:hover {
-                color: #007BFF;
-            }
-            .bottom-footer {
-                background-color: white;
-                padding: 20px;
-                border-top: 1px solid #E0E0E0;
-            }
-            .bottom-footer-content {
-                max-width: 1200px;
-                margin: 0 auto;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-            }
-            .copyright {
-                font-family: sans-serif;
-                font-size: 10px;
-                color: #666666;
-            }
-            .footer-links {
-                display: flex;
-                gap: 20px;
-            }
-            .footer-links a {
-                font-family: sans-serif;
-                font-size: 10px;
-                color: #666666;
-                text-decoration: none;
-            }
-            .social-icons {
-                display: flex;
-                gap: 5px;
-            }
-            .social-icon {
-                color: #666666;
-                font-size: 20px;
-                text-decoration: none;
-            }
-            </style>
-            """,
-            unsafe_allow_html=True
-        )
+        render_dashboard(**safe)
 
-    def render(self):
-        """Main render method - override in subclasses."""
-        # Set page config
-        st.set_page_config(page_title=self.title, layout="wide")
 
-        # Render common CSS
-        self.render_css()
-
-        # Render header
-        self.render_header()
-
-        # Render content area (to be overridden by subclasses)
-        self.render_content()
-
-        # Render footer
-        self.render_footer()
-
-    def render_content(self):
-        """Override this method in subclasses to provide specific content."""
-        pass
+__all__ = ["render_dashboard", "BaseHub", "status_label", "_inject_hub_css_once"]
