@@ -331,3 +331,21 @@
   margin-top: -60px !important;
   margin-bottom: 20px !important;
 }
+
+/* --- Hub fallback rules (safe for marketing pages) --- */
+.sn-hub .dashboard-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:var(--space-6)}
+.sn-hub .dashboard-grid > [data-testid="stMarkdownContainer"],
+.sn-hub .dashboard-grid > [data-testid="stMarkdown"],
+.sn-hub .dashboard-grid > div[data-testid="stMarkdown"]{grid-column:span 6 !important}
+@media (max-width:900px){
+  .sn-hub .dashboard-grid > [data-testid="stMarkdownContainer"],
+  .sn-hub .dashboard-grid > [data-testid="stMarkdown"],
+  .sn-hub .dashboard-grid > div[data-testid="stMarkdown"]{grid-column:span 12 !important}
+}
+.sn-hub .dashboard-grid .ptile{grid-column:span 6}
+.sn-hub .dashboard-grid .mtile{grid-column:span 12}
+@media (max-width:900px){
+  .sn-hub .dashboard-grid .ptile,.sn-hub .dashboard-grid .mtile{grid-column:span 12}
+}
+.sn-hub .dashboard-head:empty{padding:0;margin:0;height:auto}
+.sn-hub .dashboard-additional:empty{display:none}

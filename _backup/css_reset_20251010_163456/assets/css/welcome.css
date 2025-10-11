@@ -1,0 +1,31 @@
+.wl-shell{min-height:100vh;background:var(--bg,#eaf1ff);position:relative;padding:0 0 48px;}
+.wl-hero{width:100%;display:grid;grid-template-columns:minmax(340px,520px) minmax(320px,640px);gap:48px;align-items:center;padding:64px clamp(24px,6vw,80px);}
+@media(max-width:1000px){.wl-hero{grid-template-columns:1fr;gap:28px;padding:40px clamp(20px,5vw,48px);}}
+.wl-frame{position:relative;border-radius:24px;background:linear-gradient(135deg,#ffffff 0%,#f7fafc 100%);box-shadow:0 12px 40px rgba(15,23,42,.16);border:1px solid rgba(148,163,184,.25);padding:28px;}
+.wl-card{position:relative;border-radius:20px;background:#fff;box-shadow:0 16px 44px rgba(15,23,42,.18);border:1px solid rgba(203,213,225,.55);padding:32px;}
+.wl-close{position:absolute;top:16px;right:16px;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;border:1px solid #d8e0ea;background:#fff;color:#475569;font-weight:700;text-decoration:none;}
+.wl-close:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(37,99,235,.32);}
+.wl-pills{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:18px;}
+.wl-pill{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:999px;border:1px solid #cbd5e1;background:#f1f5f9;color:#334155;font-weight:700;text-decoration:none;min-height:40px;}
+.wl-pill.is-active{background:#0f172a;color:#fff;border-color:#0f172a;}
+.wl-title{font-size:clamp(1.65rem,2.6vw,2.1rem);line-height:1.25;font-weight:800;color:#0f172a;margin:6px 0 18px;}
+.wl-input-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:12px;}
+.wl-input{flex:1;min-height:48px;border:2px solid #d0d8e7;border-radius:12px;padding:12px 16px;font-size:1rem;color:#0f172a;background:#fff;box-shadow:none;}
+.wl-input:focus-visible{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.18);}
+.wl-btn{min-height:48px;border-radius:10px;background:#2563eb;color:#fff;border:1px solid #1d4ed8;font-weight:800;padding:12px 22px;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;transition:background .2s ease,box-shadow .2s ease;}
+.wl-btn:hover,.wl-btn:focus-visible{background:#1d4ed8;color:#fff;box-shadow:0 0 0 3px rgba(37,99,235,.25);text-decoration:none;}
+.wl-note{margin-top:18px;border-radius:14px;background:#eef4ff;border:1px solid #cfe0ff;padding:14px;}
+.wl-note__text{margin:0;color:#334155;font-size:.98rem;}
+.wl-right{position:relative;display:flex;justify-content:center;align-items:center;min-height:420px;}
+.wl-photo{position:relative;border-radius:16px;border:10px solid #fff;overflow:hidden;box-shadow:0 14px 42px rgba(15,23,42,.24);width:100%;max-width:640px;background:#fff;}
+.wl-photo img{display:block;width:100%;height:auto;}
+@media(max-width:1000px){.wl-right{min-height:260px;}}
+/* Streamlit widget alignment inside welcome card */
+.wl-card [data-testid="stButton"]>button{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:12px;border:1px solid #cbd5e1;background:#f1f5f9;color:#334155;font-weight:700;font-size:.95rem;padding:10px 16px;min-height:40px;box-shadow:none;}
+.wl-card [data-testid="stButton"]>button:hover,.wl-card [data-testid="stButton"]>button:focus-visible{border-color:#94a3b8;background:#e2e8f0;outline:none;box-shadow:0 0 0 3px rgba(148,163,184,.35);}
+.wl-card [data-testid="stButton"]>button:disabled{background:#0f172a;border-color:#0f172a;color:#fff;opacity:1;box-shadow:none;}
+.wl-card [data-testid="stFormSubmitButton"]>button{min-height:48px;border-radius:10px;background:#2563eb;color:#fff;border:1px solid #1d4ed8;font-weight:800;padding:12px 22px;}
+.wl-card [data-testid="stFormSubmitButton"]>button:hover,.wl-card [data-testid="stFormSubmitButton"]>button:focus-visible{background:#1d4ed8;color:#fff;box-shadow:0 0 0 3px rgba(37,99,235,.25);outline:none;}
+.wl-card [data-testid="column"] div[data-testid="stTextInput"] input{min-height:48px;border:2px solid #d0d8e7;border-radius:12px;padding:12px 16px;font-size:1rem;color:#0f172a;background:#fff;}
+.wl-card [data-testid="column"] div[data-testid="stTextInput"] input:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.18);outline:none;}
+.wl-card [data-testid="stHorizontalBlock"]{gap:12px;}

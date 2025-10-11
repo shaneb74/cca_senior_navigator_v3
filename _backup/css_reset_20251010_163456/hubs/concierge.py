@@ -5,9 +5,9 @@ from core.hub_guide import compute_hub_guide
 from core.additional_services import get_additional_services
 from core.product_tile import ProductTileHub
 
+
 __all__ = ["render"]
 
-# Ensure global + hub CSS are injected once per session
 _inject_hub_css_once()
 
 def render(ctx=None) -> None:

@@ -8,6 +8,25 @@ from core.ui import footer, header, page_container_close, page_container_open
 st.set_page_config(page_title="Senior Navigator", page_icon="🧭", layout="wide")
 
 
+def _sanitize_query_params_for_welcome(current_route: str) -> None:
+    if current_route not in ("welcome", "welcome_contextual"):
+        return
+
+    qp = dict(st.query_params)
+    dirty = False
+    for key in list(qp.keys()):
+        if key == "page" and qp.get(key) in ("login", "signup", "render_signup"):
+            qp.pop(key, None)
+            dirty = True
+
+    if not dirty:
+        return
+
+    st.query_params.clear()
+    for key, value in qp.items():
+        st.query_params[key] = value
+
+
 def inject_css():
     try:
         with open("assets/css/theme.css", "r", encoding="utf-8") as f:
@@ -22,6 +41,7 @@ ensure_session()
 ctx = get_user_ctx()
 PAGES = load_nav(ctx)
 route = current_route("welcome", PAGES)
+_sanitize_query_params_for_welcome(route)
 
 header("Senior Navigator", route, PAGES)
 
