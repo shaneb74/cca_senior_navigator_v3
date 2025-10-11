@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional
 
 import html as _html
 import streamlit as st
+
 
 def html_escape(s: str) -> str:
     return _html.escape(str(s), quote=True)
@@ -23,8 +24,8 @@ class BaseTile:
         self.secondary_label = kwargs.get("secondary_label")
         self.secondary_go = kwargs.get("secondary_go", "#")
         # None means “no linear status”; otherwise numeric progress
-        self.progress: Optional[float] = (
-            kwargs.get("progress", 0 if kwargs.get("progress") is not None else None)
+        self.progress: Optional[float] = kwargs.get(
+            "progress", 0 if kwargs.get("progress") is not None else None
         )
         self.status_text: Optional[str] = kwargs.get("status_text")
         self.order = int(kwargs.get("order", 100))
@@ -77,23 +78,23 @@ class BaseTile:
             if self.locked:
                 buttons.append(
                     '<span class="dashboard-cta dashboard-cta--primary is-disabled" aria-disabled="true">'
-                    f'{html_escape(self.primary_label)}</span>'
+                    f"{html_escape(self.primary_label)}</span>"
                 )
             else:
                 buttons.append(
                     f'<a class="dashboard-cta dashboard-cta--primary" href="?go={html_escape(self.primary_go)}">'
-                    f'{html_escape(self.primary_label)}</a>'
+                    f"{html_escape(self.primary_label)}</a>"
                 )
         if self.secondary_label:
             if self.locked:
                 buttons.append(
                     '<span class="dashboard-cta dashboard-cta--ghost is-disabled" aria-disabled="true">'
-                    f'{html_escape(self.secondary_label)}</span>'
+                    f"{html_escape(self.secondary_label)}</span>"
                 )
             else:
                 buttons.append(
                     f'<a class="dashboard-cta dashboard-cta--ghost" href="?go={html_escape(self.secondary_go)}">'
-                    f'{html_escape(self.secondary_label)}</a>'
+                    f"{html_escape(self.secondary_label)}</a>"
                 )
         return f'<div class="tile-actions">{"".join(buttons)}</div>' if buttons else ""
 
@@ -119,19 +120,19 @@ class ProductTileHub(BaseTile):
         out.append(
             '<div class="tile-row">'
             f'<h3 class="tile-title">{html_escape(self.title)}</h3>'
-            f'{self._status()}'
-            '</div>'
+            f"{self._status()}"
+            "</div>"
         )
         if self.desc:
             out.append(f'<p class="tile-subtitle">{html_escape(self.desc)}</p>')
         if self.blurb:
             out.append(f'<p class="dashboard-description">{html_escape(self.blurb)}</p>')
-        out.append('</div>')  # /head
+        out.append("</div>")  # /head
         meta = self._meta()
         if meta:
             out.append(meta)
         out.append(self._actions())
-        out.append('</div>')  # /card
+        out.append("</div>")  # /card
         return "".join(out)
 
     def render(self) -> None:
@@ -149,8 +150,8 @@ class ModuleTileCompact(BaseTile):
         out.append(
             '<div class="tile-row">'
             f'<h3 class="tile-title">{html_escape(self.title)}</h3>'
-            f'{self._status()}'
-            '</div>'
+            f"{self._status()}"
+            "</div>"
         )
         if self.blurb:
             out.append(f'<p class="dashboard-description">{html_escape(self.blurb)}</p>')
@@ -158,7 +159,7 @@ class ModuleTileCompact(BaseTile):
         if meta:
             out.append(meta)
         out.append(self._actions())
-        out.append('</div>')
+        out.append("</div>")
         return "".join(out)
 
     def render(self) -> None:

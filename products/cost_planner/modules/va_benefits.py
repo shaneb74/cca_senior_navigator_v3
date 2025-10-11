@@ -3,7 +3,7 @@ def run(user_id: str, ctx: dict) -> dict:
     # TODO: Implement VA benefits logic
     return {
         "status": "done",
-        "outputs": [{"label": "Aid & Attendance", "value": "Eligible"}]
+        "outputs": [{"label": "Aid & Attendance", "value": "Eligible"}],
     }
 
 

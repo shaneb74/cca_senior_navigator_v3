@@ -21,7 +21,11 @@ class LearningHub(BaseHub):
         learning_progress = st.session_state.get("learning_progress", 0)
         completed_resources = st.session_state.get("completed_resources", [])
 
-        progress_status = "complete" if learning_progress >= 100 else "in_progress" if learning_progress else "new"
+        progress_status = (
+            "complete"
+            if learning_progress >= 100
+            else "in_progress" if learning_progress else "new"
+        )
         modules_viewed = len(completed_resources)
 
         cards = [
@@ -32,10 +36,21 @@ class LearningHub(BaseHub):
                 "status_label": status_label("in_progress" if modules_viewed else "new"),
                 "badges": [{"label": "Concierge", "variant": "brand"}],
                 "description": "Understand levels of care, funding paths, and decision checklists.",
-                "meta": [f"{modules_viewed} guide(s) completed", "Save favourites to share with family."],
+                "meta": [
+                    f"{modules_viewed} guide(s) completed",
+                    "Save favourites to share with family.",
+                ],
                 "actions": [
-                    {"label": "Browse guides", "route": "hub_learning", "variant": "primary"},
-                    {"label": "Most popular", "route": "hub_learning", "variant": "ghost"},
+                    {
+                        "label": "Browse guides",
+                        "route": "hub_learning",
+                        "variant": "primary",
+                    },
+                    {
+                        "label": "Most popular",
+                        "route": "hub_learning",
+                        "variant": "ghost",
+                    },
                 ],
                 "footnote": "New guides drop every week.",
             },
@@ -46,10 +61,21 @@ class LearningHub(BaseHub):
                 "status_label": status_label("new"),
                 "badges": [{"label": "On demand", "variant": "neutral"}],
                 "description": "Walk through real scenarios, from dementia care to financing assisted living.",
-                "meta": ["Captions + downloadable notes", "Created with our advisor network"],
+                "meta": [
+                    "Captions + downloadable notes",
+                    "Created with our advisor network",
+                ],
                 "actions": [
-                    {"label": "Watch now", "route": "hub_learning", "variant": "primary"},
-                    {"label": "See categories", "route": "hub_learning", "variant": "ghost"},
+                    {
+                        "label": "Watch now",
+                        "route": "hub_learning",
+                        "variant": "primary",
+                    },
+                    {
+                        "label": "See categories",
+                        "route": "hub_learning",
+                        "variant": "ghost",
+                    },
                 ],
                 "footnote": "Add videos to your playlist to revisit later.",
             },
@@ -63,7 +89,11 @@ class LearningHub(BaseHub):
                 "meta": ["42 topics ready today", "Tailored answers for your journey"],
                 "actions": [
                     {"label": "Search FAQs", "route": "faqs", "variant": "primary"},
-                    {"label": "Contact support", "route": "pfma_stub", "variant": "ghost"},
+                    {
+                        "label": "Contact support",
+                        "route": "pfma_stub",
+                        "variant": "ghost",
+                    },
                 ],
                 "footnote": "AI summaries sync with your dashboard history.",
             },
@@ -76,8 +106,16 @@ class LearningHub(BaseHub):
                 "description": "Stay on track with recommended lessons and follow-up actions.",
                 "meta": [f"Goal: {min(learning_progress + 20, 100)}% by next week"],
                 "actions": [
-                    {"label": "Continue path", "route": "hub_learning", "variant": "primary"},
-                    {"label": "Reset topics", "route": "hub_learning", "variant": "ghost"},
+                    {
+                        "label": "Continue path",
+                        "route": "hub_learning",
+                        "variant": "primary",
+                    },
+                    {
+                        "label": "Reset topics",
+                        "route": "hub_learning",
+                        "variant": "ghost",
+                    },
                 ],
                 "footnote": "We’ll nudge you when new lessons match your plan.",
             },
@@ -88,8 +126,16 @@ class LearningHub(BaseHub):
             "title": f"Keep {person_name}'s circle aligned with quick, shareable lessons.",
             "body": "Save favourites to create a family digest, or invite your advisor to drop in notes.",
             "actions": [
-                {"label": "Share with family", "route": "hub_concierge", "variant": "primary"},
-                {"label": "See saved lessons", "route": "hub_learning", "variant": "ghost"},
+                {
+                    "label": "Share with family",
+                    "route": "hub_concierge",
+                    "variant": "primary",
+                },
+                {
+                    "label": "See saved lessons",
+                    "route": "hub_learning",
+                    "variant": "ghost",
+                },
             ],
         }
 

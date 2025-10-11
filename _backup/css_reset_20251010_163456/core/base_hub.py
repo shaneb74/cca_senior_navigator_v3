@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import streamlit as st
 
+
 # -----------------------------
 # CSS injector (theme -> hub_grid -> dashboard), once per session
 # -----------------------------
@@ -92,7 +93,9 @@ def render_dashboard(
 
     # Visible probe bar so we know injection happened:
     # green = file CSS loaded, yellow = inline fallback only.
-    probe_color = "#00e676" if any(src != "[inline fallback]" for src in loaded) else "#ffdd57"
+    probe_color = (
+        "#00e676" if any(src != "[inline fallback]" for src in loaded) else "#ffdd57"
+    )
     st.markdown(
         f'<div style="height:3px;background:{probe_color};margin:-0.5rem 0 0.75rem;border-radius:2px"></div>',
         unsafe_allow_html=True,
@@ -120,29 +123,47 @@ def render_dashboard(
         st.markdown('<div class="dashboard-head">', unsafe_allow_html=True)
 
         if title:
-            st.markdown(f'<h1 class="dashboard-title">{title}</h1>', unsafe_allow_html=True)
+            st.markdown(
+                f'<h1 class="dashboard-title">{title}</h1>', unsafe_allow_html=True
+            )
         if subtitle:
-            st.markdown(f'<p class="dashboard-subtitle">{subtitle}</p>', unsafe_allow_html=True)
+            st.markdown(
+                f'<p class="dashboard-subtitle">{subtitle}</p>', unsafe_allow_html=True
+            )
         if chips:
             st.markdown('<div class="dashboard-breadcrumbs">', unsafe_allow_html=True)
             for chip in chips:
-                cls = "dashboard-chip" + (" is-muted" if chip.get("variant") == "muted" else "")
-                st.markdown(f'<span class="{cls}">{chip.get("label","")}</span>', unsafe_allow_html=True)
-            st.markdown('</div>', unsafe_allow_html=True)
+                cls = "dashboard-chip" + (
+                    " is-muted" if chip.get("variant") == "muted" else ""
+                )
+                st.markdown(
+                    f'<span class="{cls}">{chip.get("label","")}</span>',
+                    unsafe_allow_html=True,
+                )
+            st.markdown("</div>", unsafe_allow_html=True)
 
         if hub_guide_block:
             from core.hub_guide import render_hub_guide
+
             render_hub_guide(hub_guide_block)
 
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
 
     # Cards grid (ordered)
     sorted_cards: List[Tuple[int, str, Any]] = []
     for c in cards:
-        vis = getattr(c, "visible", True) if hasattr(c, "visible") else c.get("visible", True)
+        vis = (
+            getattr(c, "visible", True)
+            if hasattr(c, "visible")
+            else c.get("visible", True)
+        )
         if not vis:
             continue
-        order = getattr(c, "order", 100) if hasattr(c, "order") else int(c.get("order", 100))
+        order = (
+            getattr(c, "order", 100)
+            if hasattr(c, "order")
+            else int(c.get("order", 100))
+        )
         t = getattr(c, "title", "") if hasattr(c, "title") else c.get("title", "")
         sorted_cards.append((int(order), str(t).casefold(), c))
     sorted_cards.sort(key=lambda x: (x[0], x[1]))
@@ -153,19 +174,27 @@ def render_dashboard(
             card.render()
         elif isinstance(card, dict) and card.get("html"):
             st.markdown(str(card["html"]), unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
     # Additional services (optional)
     if additional_services:
         st.markdown('<section class="dashboard-additional">', unsafe_allow_html=True)
         st.markdown('<div class="dashboard-additional__head">', unsafe_allow_html=True)
-        st.markdown('<h3 class="dashboard-additional__title">Additional services</h3>', unsafe_allow_html=True)
-        st.markdown('<p class="dashboard-muted">Curated partner solutions that complement your plan.</p>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<h3 class="dashboard-additional__title">Additional services</h3>',
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            '<p class="dashboard-muted">Curated partner solutions that complement your plan.</p>',
+            unsafe_allow_html=True,
+        )
+        st.markdown("</div>", unsafe_allow_html=True)
 
         st.markdown('<div class="dashboard-additional__grid">', unsafe_allow_html=True)
         for s in additional_services:
-            st.markdown('<div class="dashboard-additional__card">', unsafe_allow_html=True)
+            st.markdown(
+                '<div class="dashboard-additional__card">', unsafe_allow_html=True
+            )
             st.markdown(f'<h4>{s["title"]}</h4>', unsafe_allow_html=True)
             if s.get("subtitle"):
                 st.markdown(f"<p>{s['subtitle']}</p>", unsafe_allow_html=True)
@@ -173,13 +202,16 @@ def render_dashboard(
                 f'<a class="dashboard-additional__cta" href="?go={s.get("go", "")}">{s.get("cta", "Open")}</a>',
                 unsafe_allow_html=True,
             )
-            st.markdown('</div>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
-        st.markdown('</section>', unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown("</section>", unsafe_allow_html=True)
 
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
-    st.markdown("<style>.sn-hub .dashboard-card{outline:2px solid red!important}</style>", unsafe_allow_html=True)
+    st.markdown(
+        "<style>.sn-hub .dashboard-card{outline:2px solid red!important}</style>",
+        unsafe_allow_html=True,
+    )
 
 
 # -----------------------------
@@ -212,6 +244,7 @@ class BaseHub:
 
     still work. Internally delegates to render_dashboard.
     """
+
     def __init__(self, **default_kwargs):
         self._default_kwargs = dict(default_kwargs or {})
 

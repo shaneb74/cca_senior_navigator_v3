@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import re
 import sys
-from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, Iterable, List, Mapping, Set, Tuple
@@ -80,11 +79,15 @@ def _collect_questions(schema: dict, schema_res: CategoryResult) -> Dict[str, Ma
     for section in schema.get("sections", []):
         for question in section.get("questions", []):
             if not isinstance(question, Mapping):
-                schema_res.error(f"section '{section.get('id', '<unknown>')}' contains non-object question")
+                schema_res.error(
+                    f"section '{section.get('id', '<unknown>')}' contains non-object question"
+                )
                 continue
             qid = question.get("id")
             if not qid:
-                schema_res.error(f"section '{section.get('id', '<unknown>')}' contains question without id")
+                schema_res.error(
+                    f"section '{section.get('id', '<unknown>')}' contains question without id"
+                )
                 continue
             if qid in seen_ids:
                 schema_res.error(f"duplicate question id '{qid}'")
@@ -155,11 +158,15 @@ def _validate_schema_and_scoring(
 
         score_value = row.get("ScoreValue")
         if not isinstance(score_value, (int, float)):
-            scoring_res.error(f"ScoreValue for question '{qid}' / option '{answer}' must be numeric")
+            scoring_res.error(
+                f"ScoreValue for question '{qid}' / option '{answer}' must be numeric"
+            )
 
         domain_weight = row.get("DomainWeight")
         if not isinstance(domain_weight, (int, float)):
-            scoring_res.error(f"DomainWeight for question '{qid}' / option '{answer}' must be numeric")
+            scoring_res.error(
+                f"DomainWeight for question '{qid}' / option '{answer}' must be numeric"
+            )
 
     unused = sorted(domains - used_domains)
     if unused:

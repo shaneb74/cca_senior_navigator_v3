@@ -6,24 +6,27 @@ import streamlit as st
 Tile = Dict[str, Any]
 Rule = Dict[str, Any]
 
+
 def _get(ctx: Dict[str, Any], dotted: str, default: Any = None) -> Any:
     cur: Any = ctx
-    for part in dotted.split('.'):
+    for part in dotted.split("."):
         if isinstance(cur, dict) and part in cur:
             cur = cur[part]
         else:
             return default
     return cur
 
+
 def _ctx() -> Dict[str, Any]:
     ss = st.session_state
     return {
-        "role": ss.get("role", "consumer"),      # consumer | care_partner | professional
+        "role": ss.get("role", "consumer"),  # consumer | care_partner | professional
         "person_name": ss.get("person_name", ""),
         "gcp": ss.get("gcp", {}),
         "cost": ss.get("cost", {}),
         "flags": ss.get("flags", {}),
     }
+
 
 def _passes(rule: Rule, ctx: Dict[str, Any]) -> bool:
     if not rule:
@@ -49,11 +52,13 @@ def _passes(rule: Rule, ctx: Dict[str, Any]) -> bool:
         return _get(ctx, "role") in roles
     return False
 
+
 def _visible(tile: Tile, ctx: Dict[str, Any]) -> bool:
     if not tile.get("visible", True):
         return False
     rules: List[Rule] = tile.get("visible_when", []) or []
     return all(_passes(r, ctx) for r in rules)
+
 
 # Registry: add new tiles here
 # Optional: order:int (lower first), hubs: List[str]
@@ -107,7 +112,10 @@ REGISTRY: List[Tile] = [
     },
 ]
 
-def get_additional_services(hub: str = "concierge", limit: Optional[int] = None) -> List[Tile]:
+
+def get_additional_services(
+    hub: str = "concierge", limit: Optional[int] = None
+) -> List[Tile]:
     """Return visible tiles for a given hub, sorted by order then title."""
     ctx = _ctx()
     name = ctx.get("person_name") or "your plan"
@@ -119,14 +127,16 @@ def get_additional_services(hub: str = "concierge", limit: Optional[int] = None)
             continue
         if not _visible(t, ctx):
             continue
-        tiles.append({
-            "key": t["key"],
-            "title": t["title"],
-            "subtitle": (t.get("subtitle") or "").replace("{name}", name),
-            "cta": t.get("cta", "Open"),
-            "go": t.get("go", t["key"]),
-            "order": t.get("order", 100),
-        })
+        tiles.append(
+            {
+                "key": t["key"],
+                "title": t["title"],
+                "subtitle": (t.get("subtitle") or "").replace("{name}", name),
+                "cta": t.get("cta", "Open"),
+                "go": t.get("go", t["key"]),
+                "order": t.get("order", 100),
+            }
+        )
 
     tiles.sort(key=lambda x: (x.get("order", 100), x.get("title", "").casefold()))
     if limit is not None:

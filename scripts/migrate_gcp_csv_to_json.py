@@ -85,7 +85,9 @@ def _parse_scoring_line(line: str) -> Dict[str, str]:
         answer_tokens.append(candidate)
         pos += 1
 
-    answer_option = ", ".join(token.strip() for token in answer_tokens if token is not None).strip(", ")
+    answer_option = ", ".join(token.strip() for token in answer_tokens if token is not None).strip(
+        ", "
+    )
 
     score_value = None
     if pos < len(tail):

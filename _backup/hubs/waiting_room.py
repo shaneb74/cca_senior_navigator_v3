@@ -19,7 +19,9 @@ class WaitingRoomHub(BaseHub):
 
     def build_dashboard(self) -> Dict:
         person_name = st.session_state.get("person_name", "John")
-        appointment_time = st.session_state.get("appointment_time", "Advisor call pending")
+        appointment_time = st.session_state.get(
+            "appointment_time", "Advisor call pending"
+        )
         appointment_status = st.session_state.get("appointment_status", "Scheduled")
         prep_completed = st.session_state.get("prep_completed", False)
         ride_confirmed = st.session_state.get("ride_confirmed", False)
@@ -51,7 +53,10 @@ class WaitingRoomHub(BaseHub):
                 desc="Upload docs and confirm topics.",
                 blurb="Bring recent medical updates, medications, and top questions.",
                 badge_text="GUIDED",
-                meta_lines=["Checklist saves automatically", "Share securely with advisors"],
+                meta_lines=[
+                    "Checklist saves automatically",
+                    "Share securely with advisors",
+                ],
                 primary_label="Review tasks" if prep_completed else "Start checklist",
                 primary_go="gcp_stub",
                 secondary_label="Questions for advisor",
@@ -97,7 +102,11 @@ class WaitingRoomHub(BaseHub):
             "title": "Relax — we’ll notify you the moment your advisor joins.",
             "body": "Complete the pre-visit checklist so your advisor has the latest updates before the call.",
             "actions": [
-                {"label": "Finish checklist", "route": "gcp_stub", "variant": "primary"},
+                {
+                    "label": "Finish checklist",
+                    "route": "gcp_stub",
+                    "variant": "primary",
+                },
                 {"label": "Contact support", "route": "pfma_stub", "variant": "ghost"},
             ],
         }

@@ -29,7 +29,7 @@ def _sanitize_query_params_for_welcome(current_route: str) -> None:
 
 def inject_css():
     try:
-        with open("assets/css/theme.css", "r", encoding="utf-8") as f:
+        with open("assets/css/global.css", "r", encoding="utf-8") as f:
             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
     except FileNotFoundError:
         # no-op on Cloud if path differs; don't crash
@@ -43,7 +43,11 @@ PAGES = load_nav(ctx)
 route = current_route("welcome", PAGES)
 _sanitize_query_params_for_welcome(route)
 
-header("Senior Navigator", route, PAGES)
+LAYOUT_CHROME_ROUTES = {"welcome", "self", "someone_else", "professionals"}
+show_app_chrome = route not in LAYOUT_CHROME_ROUTES
+
+if show_app_chrome:
+    header("Senior Navigator", route, PAGES)
 
 # Dev-only auth toggles (remove before prod)
 with st.sidebar.expander("Dev: auth & role"):
@@ -51,24 +55,23 @@ with st.sidebar.expander("Dev: auth & role"):
         "Authenticated", value=ctx["auth"]["is_authenticated"]
     )
     roles = ["guest", "user", "pro", "admin"]
-    ctx["auth"]["role"] = st.selectbox(
-        "Role", roles, index=roles.index(ctx["auth"]["role"])
-    )
+    ctx["auth"]["role"] = st.selectbox("Role", roles, index=roles.index(ctx["auth"]["role"]))
 
 page_container_open()
 log_event("nav.page_change", {"to": route})
 PAGES[route]["render"]()
 page_container_close()
 
-st.markdown(
-    """<nav class="mnav">
+if show_app_chrome:
+    st.markdown(
+        """<nav class="mnav">
   <div class="bar">
     <a class="is-active" href="?page=welcome">Dashboard</a>
     <a href="?page=hub_learning">Learning Center</a>
     <a href="?page=waiting_room">Get Connected</a>
   </div>
 </nav>""",
-    unsafe_allow_html=True,
-)
+        unsafe_allow_html=True,
+    )
 
-footer()
+    footer()

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import html
-from typing import Dict, Iterable, Optional
+from typing import Dict, Iterable
 
 import streamlit as st
 
@@ -52,9 +52,7 @@ def render_product_tile(config: Dict[str, object]) -> None:
 
     actions = []
     if primary_label and primary_go:
-        actions.append(
-            f'<a class="ptile__btn" href="?go={primary_go}">{primary_label}</a>'
-        )
+        actions.append(f'<a class="ptile__btn" href="?go={primary_go}">{primary_label}</a>')
     if secondary_label and secondary_go:
         actions.append(
             f'<a class="ptile__btn ghost" href="?go={secondary_go}">{secondary_label}</a>'
@@ -98,9 +96,7 @@ def render_module_tile(config: Dict[str, object]) -> None:
 
     action_bits = []
     if primary_label and primary_go:
-        action_bits.append(
-            f'<a class="mtile__link" href="?go={primary_go}">{primary_label}</a>'
-        )
+        action_bits.append(f'<a class="mtile__link" href="?go={primary_go}">{primary_label}</a>')
     if secondary_label and secondary_go:
         action_bits.append(
             f'<a class="mtile__link" href="?go={secondary_go}">{secondary_label}</a>'

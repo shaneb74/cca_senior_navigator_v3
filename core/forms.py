@@ -9,16 +9,24 @@ def _ensure_container(label: str):
         st.markdown(f"<p><strong>{label}</strong></p>", unsafe_allow_html=True)
 
 
-def pill_row(key: str, options: list[str], value: Optional[str] = None, label_to_value: Optional[dict] = None):
+def pill_row(
+    key: str,
+    options: list[str],
+    value: Optional[str] = None,
+    label_to_value: Optional[dict] = None,
+):
     st.markdown('<div class="choice-pills">', unsafe_allow_html=True)
     current = st.session_state.get(key, value or "")
     current_label = next((k for k, v in (label_to_value or {}).items() if v == current), current)
     for opt in options:
         selected_class = " is-selected" if current_label == opt else ""
-        st.markdown(f'<div class="pill{selected_class}" style="display: inline-block; margin-right: 5px;">', unsafe_allow_html=True)
+        st.markdown(
+            f'<div class="pill{selected_class}" style="display: inline-block; margin-right: 5px;">',
+            unsafe_allow_html=True,
+        )
         if st.button(opt, key=f"{key}::{opt}"):
             st.session_state[key] = opt
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
     selected = st.session_state.get(key, value or "")
     if label_to_value:
@@ -63,8 +71,16 @@ def render_question(q: dict):
     if q_type == "single":
         stored_value = st.session_state.get(q["key"])
         default_label = next((k for k, v in label_to_value.items() if v == stored_value), None)
-        index = normalized_options.index(default_label) if default_label in normalized_options else 0
-        selected_label = st.radio(" ", normalized_options, index=index, key=q["key"], label_visibility="collapsed")
+        index = (
+            normalized_options.index(default_label) if default_label in normalized_options else 0
+        )
+        selected_label = st.radio(
+            " ",
+            normalized_options,
+            index=index,
+            key=q["key"],
+            label_visibility="collapsed",
+        )
         return label_to_value.get(selected_label, selected_label)
     if q_type == "pills":
         selected_label = pills(q["key"], normalized_options, label_to_value)
@@ -74,8 +90,14 @@ def render_question(q: dict):
     if q_type == "multiselect":
         stored_values = st.session_state.get(q["key"], [])
         default_labels = [k for k, v in label_to_value.items() if v in stored_values]
-        selected_labels = st.multiselect(" ", normalized_options, default=default_labels, key=q["key"], label_visibility="collapsed")
-        return [label_to_value.get(l, l) for l in selected_labels]
+        selected_labels = st.multiselect(
+            " ",
+            normalized_options,
+            default=default_labels,
+            key=q["key"],
+            label_visibility="collapsed",
+        )
+        return [label_to_value.get(label, label) for label in selected_labels]
     if q_type == "slider":
         return st.slider(
             "",

@@ -3,7 +3,7 @@ def run(user_id: str, ctx: dict) -> dict:
     # TODO: Implement quick estimate logic
     return {
         "status": "done",
-        "outputs": [{"label": "Est. monthly cost", "value": "$4,200"}]
+        "outputs": [{"label": "Est. monthly cost", "value": "$4,200"}],
     }
 
 

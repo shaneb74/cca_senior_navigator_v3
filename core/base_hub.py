@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import streamlit as st
 
+
 def _inject_hub_css_once() -> None:
     """Load global + hub + product styles once per Streamlit session."""
     key = "_sn_hub_css_loaded_v4"
@@ -97,9 +98,9 @@ def render_dashboard(
                     f'<span class="{cls}" role="listitem">'
                     f'<span class="series-chip__number">{number_html}</span>'
                     f'<span class="series-chip__label">{label}</span>'
-                    '</span>'
+                    "</span>"
                 )
-            head_segments.append('</div>')
+            head_segments.append("</div>")
         if chips:
             head_segments.append('<div class="dashboard-breadcrumbs">')
             for chip in chips:
@@ -107,8 +108,8 @@ def render_dashboard(
                 head_segments.append(
                     f'<span class="{cls}">{html_escape(str(chip.get("label", "")))}</span>'
                 )
-            head_segments.append('</div>')
-        head_segments.append('</div>')
+            head_segments.append("</div>")
+        head_segments.append("</div>")
     head_html = "".join(head_segments)
 
     guide_html = ""
@@ -131,8 +132,12 @@ def render_dashboard(
                 f'<div class="hub-guide__eyebrow">{eyebrow}</div>' if eyebrow else "",
                 f'<h2 class="hub-guide__title">{title_text}</h2>' if title_text else "",
                 f'<p class="hub-guide__text">{body_text}</p>' if body_text else "",
-                '<div class="hub-guide__actions">' + "".join(action_html) + '</div>' if action_html else "",
-                '</section>',
+                (
+                    '<div class="hub-guide__actions">' + "".join(action_html) + "</div>"
+                    if action_html
+                    else ""
+                ),
+                "</section>",
             ]
         )
 
@@ -168,7 +173,7 @@ def render_dashboard(
             [
                 '<div class="dashboard-grid">',
                 "".join(card_html_chunks),
-                '</div>',
+                "</div>",
             ]
         )
 
@@ -185,9 +190,9 @@ def render_dashboard(
                     [
                         '<div class="dashboard-additional__card">',
                         f'<h4>{html_escape(str(s.get("title", "")))}</h4>',
-                        f'<p>{html_escape(str(subtitle_val))}</p>' if subtitle_val else "",
+                        (f"<p>{html_escape(str(subtitle_val))}</p>" if subtitle_val else ""),
                         f'<a class="dashboard-additional__cta" href="?go={cta_route}">{cta_label}</a>',
-                        '</div>',
+                        "</div>",
                     ]
                 )
             )
@@ -198,11 +203,11 @@ def render_dashboard(
                 '<header class="dashboard-additional__head">',
                 '<h3 class="dashboard-additional__title">Additional services</h3>',
                 '<p class="dashboard-muted">Curated partner solutions that complement your plan.</p>',
-                '</header>',
+                "</header>",
                 '<div class="dashboard-additional__grid">',
                 "".join(rows),
-                '</div>',
-                '</section>',
+                "</div>",
+                "</section>",
             ]
         )
 
@@ -213,7 +218,7 @@ def render_dashboard(
             guide_html,
             grid_html,
             additional_html,
-            '</section>',
+            "</section>",
         ]
     )
 
@@ -250,6 +255,7 @@ class BaseHub:
 
     still work. Internally delegates to render_dashboard.
     """
+
     def __init__(self, **default_kwargs):
         self._default_kwargs = dict(default_kwargs or {})
 

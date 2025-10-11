@@ -10,6 +10,7 @@ __all__ = ["render"]
 
 _inject_hub_css_once()
 
+
 def render(ctx=None) -> None:
     person = st.session_state.get("person_name", "John")
 
@@ -17,8 +18,12 @@ def render(ctx=None) -> None:
     appt = st.session_state.get("appointment", {}) or {}
     appointment_summary = appt.get("summary", "No appointment scheduled")
     appointment_countdown = appt.get("countdown", "No date")
-    edu_progress = float((st.session_state.get("learning", {}) or {}).get("progress", 0))
-    gamification_progress = float((st.session_state.get("gamification", {}) or {}).get("progress", 0))
+    edu_progress = float(
+        (st.session_state.get("learning", {}) or {}).get("progress", 0)
+    )
+    gamification_progress = float(
+        (st.session_state.get("gamification", {}) or {}).get("progress", 0)
+    )
 
     cards = [
         ProductTileHub(
@@ -30,7 +35,7 @@ def render(ctx=None) -> None:
             primary_go="appointment_details",
             secondary_label="Reschedule",
             secondary_go="appointment_reschedule",
-            progress=None,                # no pill; explicit status below
+            progress=None,  # no pill; explicit status below
             status_text="Scheduled",
             badges=["countdown"],
             variant="warn",

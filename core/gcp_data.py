@@ -60,9 +60,7 @@ def _normalize_flag_tokens(raw: str) -> List[str]:
     return [tok for tok in tokens if tok]
 
 
-def _match_from_mapping(
-    question_text: str, answer_option: str, mapping: Mapping[str, Any]
-) -> bool:
+def _match_from_mapping(question_text: str, answer_option: str, mapping: Mapping[str, Any]) -> bool:
     """
     Attempt to match a scoring row to an answer stored as a dict.
 
@@ -131,9 +129,7 @@ def _value_matches(answer_option: str, value: Any) -> bool:
     return False
 
 
-def _answer_matches(
-    stored: Any, answer_option: str, question_text: str
-) -> bool:
+def _answer_matches(stored: Any, answer_option: str, question_text: str) -> bool:
     if stored is None:
         return False
 

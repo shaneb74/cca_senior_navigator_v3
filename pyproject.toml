@@ -1,0 +1,13 @@
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+exclude = [
+  "venv", "_backup", "build", "dist", ".git", ".streamlit", "__pycache__"
+]
+
+[tool.black]
+target-version = ["py313"]
+line-length = 100
+exclude = '''
+(venv|_backup|build|dist|\.git|\.streamlit|__pycache__)
+'''
