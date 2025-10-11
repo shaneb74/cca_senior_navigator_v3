@@ -8,7 +8,7 @@ def render():
     # Import the theme CSS and apply new styling
     st.markdown(
         """
-        <link rel='stylesheet' href='/assets/css/theme.css'>
+        <link rel='stylesheet' href='/assets/css/global.css'>
         <style>
         .main .block-container {
             background: var(--bg);
@@ -25,10 +25,10 @@ def render():
             background: #2563EB !important;
         }
         .stRadio label[data-baseweb="radio"] input:checked + div {
-            color: black !important;
+            color: black;
         }
         .stRadio label[data-baseweb="radio"] input:not(:checked) + div {
-            color: gray !important;
+            color: gray;
         }
         .stTextInput > div > div, .stNumberInput > div > div, .stSelectbox > div > div, .stTextArea > div > div {
             border-radius: 5px !important;
@@ -39,16 +39,19 @@ def render():
         }
         </style>
         """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
-    
+
     # Main content container
-    st.markdown('<section class="container section" style="padding: 10px;">', unsafe_allow_html=True)
-    
+    st.markdown(
+        '<section class="container section" style="padding: 10px;">',
+        unsafe_allow_html=True,
+    )
+
     ctx = get_user_ctx()
     user_id = ctx["auth"].get("user_id", "guest")
     product_key = "pfma"
-    
+
     hub_section("Plan with My Advisor")
     tiles_open()
 
@@ -56,11 +59,14 @@ def render():
     modules = ["schedule", "verify_summary", "prep_questions"]
     for module_key in modules:
         state = get_module_state(user_id, product_key, module_key)
-        st.markdown('<article class="tile tile--md" style="padding: 10px;">', unsafe_allow_html=True)
+        st.markdown(
+            '<article class="tile tile--md" style="padding: 10px;">',
+            unsafe_allow_html=True,
+        )
         render_module_tile(product_key, module_key, state)
-        st.markdown('</article>', unsafe_allow_html=True)
+        st.markdown("</article>", unsafe_allow_html=True)
 
     tiles_close()
-    
+
     # Close section
-    st.markdown('</section>', unsafe_allow_html=True)
+    st.markdown("</section>", unsafe_allow_html=True)

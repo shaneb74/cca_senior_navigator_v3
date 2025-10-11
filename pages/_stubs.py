@@ -1,7 +1,6 @@
 from typing import List, Optional, Tuple
 import streamlit as st
 
-from core.nav import route_to
 from core.ui import img_src
 
 
@@ -16,7 +15,7 @@ def _page(title: str, desc: str, ctas: Optional[List[Tuple[str, str]]] = None):
         </style>""",
         unsafe_allow_html=True,
     )
-    
+
     st.markdown(
         f"""
 <section class="container section">
@@ -31,14 +30,20 @@ def _page(title: str, desc: str, ctas: Optional[List[Tuple[str, str]]] = None):
         """,
         unsafe_allow_html=True,
     )
-    
+
     if ctas:
-        st.markdown('<div class="card-actions" style="justify-content: center; margin-top: var(--space-6);">', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="card-actions" style="justify-content: center; margin-top: var(--space-6);">',
+            unsafe_allow_html=True,
+        )
         for label, target in ctas:
-            st.markdown(f'<a class="btn btn--primary" href="?page={target}" style="margin: 0 var(--space-2);">{label}</a>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
-    
-    st.markdown('</section>', unsafe_allow_html=True)
+            st.markdown(
+                f'<a class="btn btn--primary" href="?page={target}" style="margin: 0 var(--space-2);">{label}</a>',
+                unsafe_allow_html=True,
+            )
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown("</section>", unsafe_allow_html=True)
 
 
 def render_welcome():
@@ -54,7 +59,6 @@ def render_welcome():
     <p class="hero-sub">Expert advisors - no cost. Helping families navigate the most important senior living decisions with clarity and compassion.</p>
     <div class="cta-row">
       <a class="btn btn--primary" href="?page=welcome_contextual">Start Now</a>
-      <a class="btn btn--secondary" href="?page=login">Log in or sign up</a>
     </div>
   </div>
   <div>
@@ -94,9 +98,17 @@ def render_welcome():
 def render_welcome_contextual():
     mode = st.query_params.get("who", "someone")
     is_me = mode == "me"
-    photo_back = img_src("static/images/contextual_self.png") if is_me else img_src("static/images/contextual_someone_else.png")
+    photo_back = (
+        img_src("static/images/contextual_self.png")
+        if is_me
+        else img_src("static/images/contextual_someone_else.png")
+    )
     # foreground cards from design
-    photo_front = img_src("static/images/tell_us_about_you.png") if is_me else img_src("static/images/tell_us_about_them.png")
+    photo_front = (
+        img_src("static/images/tell_us_about_you.png")
+        if is_me
+        else img_src("static/images/tell_us_about_them.png")
+    )
     title_copy = "Getting Ready for Myself" if is_me else "Supporting Others"
     body_copy = (
         "Plan for your own future care with trusted guidance and peace of mind."
@@ -139,7 +151,7 @@ def render_welcome_contextual():
             name_label,
             value=current_name,
             placeholder="Type a name",
-            key="person_name_input"
+            key="person_name_input",
         )
 
         # Update session state when name changes
@@ -147,7 +159,7 @@ def render_welcome_contextual():
             st.session_state["person_name"] = person_name
 
         st.markdown(
-            f"""
+            """
       <div class="card-actions mt-space-4">
         <a class="btn btn--primary" href="?page=hub_concierge">Continue</a>
         <a class="btn btn--ghost" href="?page=welcome">Close</a>
@@ -207,7 +219,7 @@ def render_for_someone():
             name_label,
             value=current_name,
             placeholder="Type a name",
-            key="person_name_input"
+            key="person_name_input",
         )
 
         # Update session state when name changes
@@ -215,7 +227,7 @@ def render_for_someone():
             st.session_state["person_name"] = person_name
 
         st.markdown(
-            f"""
+            """
       <div class="card-actions mt-space-4">
         <a class="btn btn--primary" href="?page=hub_concierge">Continue</a>
         <a class="btn btn--ghost" href="?page=welcome">Close</a>
@@ -275,7 +287,7 @@ def render_for_me_contextual():
             name_label,
             value=current_name,
             placeholder="Type a name",
-            key="person_name_input"
+            key="person_name_input",
         )
 
         # Update session state when name changes
@@ -283,7 +295,7 @@ def render_for_me_contextual():
             st.session_state["person_name"] = person_name
 
         st.markdown(
-            f"""
+            """
       <div class="card-actions mt-space-4">
         <a class="btn btn--primary" href="?page=hub_concierge">Continue</a>
         <a class="btn btn--ghost" href="?page=welcome">Close</a>
@@ -314,7 +326,7 @@ def render_pro_welcome():
         </style>""",
         unsafe_allow_html=True,
     )
-    
+
     st.markdown(
         """
 <section class="container section">
@@ -346,7 +358,7 @@ def render_pro_welcome_contextual():
         </style>""",
         unsafe_allow_html=True,
     )
-    
+
     st.markdown(
         """
 <section class="container section">
@@ -378,7 +390,7 @@ def render_professionals():
         </style>""",
         unsafe_allow_html=True,
     )
-    
+
     st.markdown(
         """
 <section class="container stack">
@@ -411,35 +423,8 @@ def render_professionals():
 
 
 def render_login():
-    # Apply consistent styling like other pages
-    st.markdown(
-        """<style>
-        .main .block-container {
-            background: var(--bg);
-            min-height: 80vh;
-        }
-        </style>""",
-        unsafe_allow_html=True,
-    )
-    
-    st.markdown(
-        """
-<section class="container section">
-  <div class="text-center" style="margin-bottom: var(--space-8);">
-    <h1 style="font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; line-height: 1.15; color: var(--ink); margin-bottom: var(--space-4);">
-      Login
-    </h1>
-    <p style="color: var(--ink-600); max-width: 48ch; margin: 0 auto; font-size: 1.1rem;">
-      Auth form placeholder.
-    </p>
-  </div>
-  <div class="card-actions" style="justify-content: center; margin-top: var(--space-6);">
-    <a class="btn btn--primary" href="?page=my_account" style="margin: 0 var(--space-2);">My Account</a>
-  </div>
-</section>
-        """,
-        unsafe_allow_html=True,
-    )
+    # intentionally disabled (will be rebuilt as its own page)
+    return
 
 
 def render_ai_advisor():
@@ -453,7 +438,7 @@ def render_ai_advisor():
         </style>""",
         unsafe_allow_html=True,
     )
-    
+
     st.markdown(
         """
 <section class="container section">
@@ -482,7 +467,7 @@ def render_documents():
         </style>""",
         unsafe_allow_html=True,
     )
-    
+
     st.markdown(
         """
 <section class="container section">
@@ -511,7 +496,7 @@ def render_exports():
         </style>""",
         unsafe_allow_html=True,
     )
-    
+
     st.markdown(
         """
 <section class="container section">
@@ -540,7 +525,7 @@ def render_waiting_room():
         </style>""",
         unsafe_allow_html=True,
     )
-    
+
     status_img = img_src("static/images/login.png")
     st.markdown(
         f"""
@@ -581,7 +566,7 @@ def render_trusted_partners():
         </style>""",
         unsafe_allow_html=True,
     )
-    
+
     st.markdown(
         """
 <section class="container section">
@@ -610,7 +595,7 @@ def render_my_account():
         </style>""",
         unsafe_allow_html=True,
     )
-    
+
     st.markdown(
         """
 <section class="container section">
@@ -643,7 +628,7 @@ def render_terms():
         </style>""",
         unsafe_allow_html=True,
     )
-    
+
     st.markdown(
         """
 <section class="container section">
@@ -672,7 +657,7 @@ def render_privacy():
         </style>""",
         unsafe_allow_html=True,
     )
-    
+
     st.markdown(
         """
 <section class="container section">
@@ -701,7 +686,7 @@ def render_about():
         </style>""",
         unsafe_allow_html=True,
     )
-    
+
     st.markdown(
         """
 <section class="container section">
@@ -730,7 +715,7 @@ def render_faqs():
         </style>""",
         unsafe_allow_html=True,
     )
-    
+
     st.markdown(
         """
 <section class="container section">
@@ -751,282 +736,7 @@ def render_faqs():
     )
 
 
+# --- DEPRECATED: temporarily disabled during CSS/IA refactor ---
 def render_signup():
-    # Apply custom styling for the signup page
-    st.markdown(
-        """
-        <style>
-        .main .block-container {
-            background: #F5F5F5;
-            min-height: 100vh;
-            font-family: sans-serif;
-        }
-        .logo-section {
-            display: flex;
-            align-items: center;
-            padding: 20px 0;
-            margin-bottom: 20px;
-        }
-        .logo-icon {
-            width: 20px;
-            height: 20px;
-            margin-right: 10px;
-            color: #007BFF;
-        }
-        .logo-text {
-            color: #333333;
-            font-size: 14px;
-            font-weight: normal;
-            margin: 0;
-        }
-        .signup-card {
-            background: #FFFFFF;
-            border: 1px solid #E0E0E0;
-            border-radius: 10px;
-            padding: 20px;
-            max-width: 600px;
-            margin: 0 auto;
-        }
-        .signup-title {
-            color: #333333;
-            font-size: 24px;
-            font-weight: bold;
-            text-align: center;
-            margin-bottom: 10px;
-        }
-        .signup-subtitle {
-            color: #666666;
-            font-size: 12px;
-            text-align: center;
-            max-width: 300px;
-            margin: 0 auto 20px auto;
-        }
-        .benefits-list {
-            margin-bottom: 20px;
-        }
-        .benefit-item {
-            display: flex;
-            align-items: center;
-            margin-bottom: 10px;
-            color: #333333;
-            font-size: 12px;
-        }
-        .benefit-icon {
-            width: 10px;
-            height: 10px;
-            margin-right: 8px;
-            flex-shrink: 0;
-        }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        .form-label {
-            color: #333333;
-            font-size: 12px;
-            margin-bottom: 5px;
-            display: block;
-        }
-        .form-input-container {
-            position: relative;
-            display: flex;
-            align-items: center;
-        }
-        .form-input {
-            width: 200px;
-            height: 30px;
-            padding: 0 35px 0 10px;
-            border: 1px solid #CCCCCC;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-        .input-icon {
-            position: absolute;
-            right: 10px;
-            width: 20px;
-            height: 20px;
-            color: #666666;
-            cursor: pointer;
-        }
-        .password-requirements {
-            color: #666666;
-            font-size: 10px;
-            margin-bottom: 15px;
-        }
-        .requirement-item {
-            display: flex;
-            align-items: center;
-            margin-bottom: 5px;
-        }
-        .checkbox-custom {
-            width: 15px;
-            height: 15px;
-            margin-right: 8px;
-        }
-        .consent-text {
-            color: #666666;
-            font-size: 10px;
-            margin-bottom: 10px;
-        }
-        .terms-link {
-            color: #007BFF;
-            font-size: 10px;
-            text-align: center;
-            display: block;
-            margin-bottom: 20px;
-        }
-        .button-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .btn-signup {
-            background: #007BFF;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            width: 120px;
-            height: 40px;
-            font-size: 14px;
-            cursor: pointer;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .btn-login {
-            background: #D3D3D3;
-            color: #333333;
-            border: none;
-            border-radius: 5px;
-            width: 120px;
-            height: 30px;
-            font-size: 12px;
-            cursor: pointer;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .image-container {
-            text-align: center;
-            padding: 20px;
-        }
-        .signup-image {
-            max-width: 550px;
-            max-height: 400px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
-
-    # Top Section - Logo and Title
-    st.markdown(
-        """
-        <div class="logo-section">
-            <div class="logo-icon">🐦</div>
-            <h2 class="logo-text">Concierge Care Senior Navigator</h2>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-    # Main Content Area - Two Column Layout
-    col1, col2 = st.columns(2, gap="medium")
-
-    # Left Column - Form Section
-    with col1:
-        st.markdown(
-            """
-            <div class="signup-card">
-                <h1 class="signup-title">Sign up</h1>
-                <p class="signup-subtitle">There's never any cost to you. Creating an account unlocks additional support and benefits.</p>
-                
-                <div class="benefits-list">
-                    <div class="benefit-item">
-                        <span class="benefit-icon" style="color: #007BFF;">✓</span>
-                        Assess multiple people with our tools
-                    </div>
-                    <div class="benefit-item">
-                        <span class="benefit-icon" style="color: #007BFF;">✓</span>
-                        Eligibility to get additional free benefits.
-                    </div>
-                    <div class="benefit-item">
-                        <span class="benefit-icon" style="color: #007BFF;">🎧</span>
-                        Connect with our advisor to get individual consultation and support.
-                    </div>
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-        # Form Fields
-        with st.container():
-            # Email Field
-            st.markdown('<label class="form-label">Email *</label>', unsafe_allow_html=True)
-            email = st.text_input("", placeholder="Enter your email", key="signup_email", label_visibility="collapsed")
-            
-            # Password Field with visibility toggle
-            st.markdown('<label class="form-label">Password *</label>', unsafe_allow_html=True)
-            password_visible = st.session_state.get("password_visible", False)
-            password = st.text_input("", 
-                                   placeholder="Enter your password", 
-                                   type="password" if not password_visible else "default",
-                                   key="signup_password", 
-                                   label_visibility="collapsed")
-            
-            # Password visibility toggle button
-            if st.button("👁️", key="toggle_password", help="Toggle password visibility"):
-                st.session_state["password_visible"] = not password_visible
-                st.rerun()
-            
-            # Password Requirements
-            st.markdown(
-                """
-                <div class="password-requirements">
-                    <div>Ensure your password is both safe and strong:</div>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-            
-            # Password requirement checkboxes
-            req_8_chars = st.checkbox("8 characters", key="req_8_chars", label_visibility="collapsed")
-            req_uppercase = st.checkbox("one uppercase letter", key="req_uppercase", label_visibility="collapsed")
-            req_lowercase = st.checkbox("one lowercase letter", key="req_lowercase", label_visibility="collapsed")
-            req_digit = st.checkbox("one digit", key="req_digit", label_visibility="collapsed")
-            req_special = st.checkbox("one special character ! @ # $ % ^ & *", key="req_special", label_visibility="collapsed")
-            
-            # Consent Checkbox
-            consent = st.checkbox("I consent to the collection of my consumer health data. If I am consenting on behalf of someone else, I have proper authorization to do so.", 
-                                key="consent_checkbox", label_visibility="collapsed")
-            
-            # Terms Link
-            st.markdown(
-                """
-                <div class="terms-link">
-                    By sharing your contact information, you agree to our <a href="?page=terms">Terms & Conditions</a> and <a href="?page=privacy">Privacy Policy</a>.
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-            
-            # Buttons
-            col_btn1, col_btn2 = st.columns([1, 1])
-            with col_btn1:
-                if st.button("Sign up", key="signup_button", use_container_width=True):
-                    # Handle signup logic here
-                    st.success("Account created successfully!")
-                    
-            with col_btn2:
-                if st.button("I have an account", key="login_button", use_container_width=True):
-                    route_to("login")
-
-    # Right Column - Image Section
-    with col2:
-        login_image = img_src("static/images/login.png")
-        st.markdown(
-            f"""
-            <div class="image-container">
-                <img src="{login_image}" alt="Login" class="signup-image">
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+    # intentionally disabled (will be rebuilt as its own page)
+    return

@@ -1,160 +1,177 @@
+from __future__ import annotations
+
+from typing import Dict
+
 import streamlit as st
-from core.nav import route_to
-from core.state import get_user_ctx
-from core.base_hub import BaseHub
+
+from core.base_hub import BaseHub, status_label
 
 
 class ProfessionalHub(BaseHub):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(
             title="Professional Hub",
             icon="💼",
-            description="Tools and resources for discharge planners, social workers, and care partners."
+            description="Coordinate discharge planning, track cases, and share updates with families.",
         )
 
-    def render_content(self):
-        # Get dynamic data
-        person_name = st.session_state.get("person_name", "John")
+    def build_dashboard(self) -> Dict:
         professional_role = st.session_state.get("professional_role", "Care Coordinator")
         active_cases = st.session_state.get("active_cases", 3)
+        legal_requests = st.session_state.get("legal_requests", 0)
+        analytics_ready = st.session_state.get("analytics_ready", False)
 
-        # Main Content Area - Two Column Layout
-        col1, col2 = st.columns(2)
+        cards = [
+            {
+                "title": "Care coordination",
+                "subtitle": f"Toolkit for {professional_role}",
+                "status": "in_progress",
+                "status_label": status_label("in_progress"),
+                "badges": [{"label": "Team workspace", "variant": "brand"}],
+                "description": "Centralize updates, request records, and share notes with families.",
+                "meta": [
+                    f"{active_cases} active cases",
+                    "Secure messaging & templates included",
+                ],
+                "actions": [
+                    {
+                        "label": "View cases",
+                        "route": "hub_professional",
+                        "variant": "primary",
+                    },
+                    {
+                        "label": "Schedule consult",
+                        "route": "pfma_stub",
+                        "variant": "ghost",
+                    },
+                ],
+                "footnote": "Collaborate with Concierge advisors in real time.",
+            },
+            {
+                "title": "Legal services",
+                "subtitle": "Power of attorney, guardianship, more",
+                "status": "new" if legal_requests == 0 else "in_progress",
+                "status_label": status_label("new" if legal_requests == 0 else "in_progress"),
+                "badges": [{"label": "Partner network", "variant": "neutral"}],
+                "description": "Connect families with vetted elder law attorneys and document prep specialists.",
+                "meta": [f"{legal_requests} pending requests"],
+                "actions": [
+                    {
+                        "label": "Find attorney",
+                        "route": "hub_trusted",
+                        "variant": "primary",
+                    },
+                    {
+                        "label": "Document prep",
+                        "route": "hub_trusted",
+                        "variant": "ghost",
+                    },
+                ],
+                "footnote": "Set reminders for key filing deadlines.",
+            },
+            {
+                "title": "Financial planning",
+                "subtitle": "Funding paths and benefit reviews",
+                "status": "in_progress",
+                "status_label": status_label("in_progress"),
+                "badges": [{"label": "Advisor", "variant": "brand"}],
+                "description": "Coordinate with financial professionals to align budgets with care decisions.",
+                "meta": [
+                    "Integrates with Cost Planner",
+                    "Share secure summaries with families",
+                ],
+                "actions": [
+                    {
+                        "label": "Book appointment",
+                        "route": "cost_planner_stub",
+                        "variant": "primary",
+                    },
+                    {
+                        "label": "Resource center",
+                        "route": "hub_learning",
+                        "variant": "ghost",
+                    },
+                ],
+                "footnote": "Invite families to review projections together.",
+            },
+            {
+                "title": "Analytics dashboard",
+                "subtitle": "Outcomes & performance",
+                "status": "complete" if analytics_ready else "new",
+                "status_label": status_label("complete" if analytics_ready else "new"),
+                "badges": [{"label": "Beta", "variant": "ai"}],
+                "description": "Monitor case velocity, satisfaction scores, and referral sources.",
+                "meta": ["Export to CSV or share interactive reports."],
+                "actions": [
+                    {
+                        "label": "View analytics",
+                        "route": "hub_professional",
+                        "variant": "primary",
+                    },
+                    {
+                        "label": "Download latest",
+                        "route": "hub_professional",
+                        "variant": "ghost",
+                    },
+                ],
+                "footnote": "Data refreshes every morning at 6 AM.",
+            },
+        ]
 
-        # Left Column
-        with col1:
-            # Care Coordination Section
-            st.markdown(
-                f"""
-                <div class="section-card">
-                    <div class="section-title">
-                        <span>Care Coordination</span>
-                        <span class="section-icon">🤝</span>
-                    </div>
-                    <div class="section-text">
-                        Comprehensive care planning and coordination services.
-                    </div>
-                    <div style="text-align: center; margin-bottom: 15px;">
-                        <button class="btn btn-blue" style="width: 140px; height: 40px;">Schedule consultation</button>
-                    </div>
-                    <div class="button-row">
-                        <button class="btn btn-gray" style="width: 120px; height: 40px;">View cases</button>
-                    </div>
-                </div>
-                <hr class="separator">
-                """,
-                unsafe_allow_html=True
-            )
+        callout = {
+            "eyebrow": "For professionals",
+            "title": "Bring families and partners into one shared workspace.",
+            "body": "Use Concierge advisors as an extension of your team—sync notes, upload documents, and track handoffs effortlessly.",
+            "actions": [
+                {
+                    "label": "Invite a family",
+                    "route": "hub_concierge",
+                    "variant": "primary",
+                },
+                {
+                    "label": "Meet the advisor team",
+                    "route": "pfma_stub",
+                    "variant": "ghost",
+                },
+            ],
+        }
 
-            # Legal Services Section
-            st.markdown(
-                f"""
-                <div class="section-card">
-                    <div class="section-title">
-                        <span>Legal Services</span>
-                        <span class="section-icon">⚖️</span>
-                    </div>
-                    <div class="section-text">
-                        Estate planning, guardianship, and legal support services.
-                    </div>
-                    <div class="button-row">
-                        <button class="btn btn-blue">Find attorney</button>
-                        <button class="btn btn-gray">Document prep</button>
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+        chips = [
+            {"label": "Care delivery"},
+            {"label": "Partner tools", "variant": "muted"},
+            {"label": "Secure collaboration"},
+        ]
 
-        # Right Column
-        with col2:
-            # Financial Planning Section
-            st.markdown(
-                f"""
-                <div class="section-card">
-                    <div class="section-title">
-                        <span>Financial Planning</span>
-                        <span class="section-icon">💰</span>
-                    </div>
-                    <div class="section-text">
-                        Specialized financial guidance for seniors and families.
-                    </div>
-                    <div style="text-align: center; margin-bottom: 15px;">
-                        <button class="btn btn-blue" style="width: 120px; height: 40px;">Book appointment</button>
-                    </div>
-                    <div class="button-row">
-                        <button class="btn btn-gray" style="width: 80px; height: 40px;">Resource center</button>
-                    </div>
-                </div>
-                <hr class="separator">
-                """,
-                unsafe_allow_html=True
-            )
+        additional = {
+            "title": "Partner resources",
+            "description": "Extend your toolkit with vetted solutions.",
+            "items": [
+                {
+                    "title": "Training center",
+                    "body": "Micro-learning modules for frontline teams.",
+                    "action": {"label": "Access courses", "route": "hub_learning"},
+                },
+                {
+                    "title": "Network directory",
+                    "body": "Find vetted providers by specialty and location.",
+                    "action": {"label": "Browse network", "route": "hub_trusted"},
+                },
+                {
+                    "title": "Marketing kit",
+                    "body": "Ready-to-use templates to introduce families to Concierge.",
+                    "action": {"label": "Download kit", "route": "hub_professional"},
+                },
+            ],
+        }
 
-            # Case Management Section
-            st.markdown(
-                f"""
-                <div class="section-card">
-                    <div class="section-title">
-                        <span>Case Management</span>
-                        <span class="section-icon">📋</span>
-                    </div>
-                    <div class="section-text">
-                        Track and manage active cases and client progress.
-                    </div>
-                    <div style="margin: 15px 0;">
-                        <div style="background: #E5E7EB; border-radius: 10px; height: 8px; overflow: hidden;">
-                            <div style="background: #10B981; height: 100%; width: {min(active_cases * 25, 100)}%; border-radius: 10px;"></div>
-                        </div>
-                        <div style="text-align: center; font-size: 14px; color: #6B7280; margin-top: 5px;">
-                            {active_cases} Active Cases
-                        </div>
-                    </div>
-                    <div style="text-align: center;">
-                        <button class="btn btn-blue" style="width: 100px; height: 40px;">Manage cases</button>
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-
-        # Professional Resources Section
-        st.markdown(
-            """
-            <div class="additional-services">
-                <h3 class="services-title">Professional Resources</h3>
-                <div class="service-cards">
-                    <div class="service-card">
-                        <div class="service-icon">📊</div>
-                        <div class="service-content">
-                            <h4>Analytics Dashboard</h4>
-                            <p>Track outcomes and performance metrics</p>
-                        </div>
-                        <button class="btn btn-blue" style="width: 80px; height: 30px;">View</button>
-                    </div>
-                    <div class="service-card">
-                        <div class="service-icon">📚</div>
-                        <div class="service-content">
-                            <h4>Training Center</h4>
-                            <p>Professional development resources</p>
-                        </div>
-                        <button class="btn btn-blue" style="width: 80px; height: 30px;">Access</button>
-                    </div>
-                    <div class="service-card">
-                        <div class="service-icon">👥</div>
-                        <div class="service-content">
-                            <h4>Network Directory</h4>
-                            <p>Connect with care providers</p>
-                        </div>
-                        <button class="btn btn-blue" style="width: 80px; height: 30px;">Browse</button>
-                    </div>
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+        return {
+            "chips": chips,
+            "callout": callout,
+            "cards": cards,
+            "additional_services": additional,
+        }
 
 
-def render():
+def render() -> None:
     hub = ProfessionalHub()
     hub.render()
