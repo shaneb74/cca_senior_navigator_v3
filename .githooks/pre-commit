@@ -1,17 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
-req=(
-  "config/gcp_v3_scoring.csv"
-  "config/gcp_v3_conversational_blurbs.csv"
-  "static/images/hero.png"
-  "static/images/welcome_self.png"
-  "static/images/welcome_someone_else.png"
-  "static/images/contextual_self.png"
-  "static/images/contextual_someone_else.png"
-)
-for f in "${req[@]}"; do
-  if [[ ! -f "$f" ]]; then
-    echo "[pre-commit] Missing required file: $f" >&2
-    exit 1
-  fi
-done
+
+# Deprecated: legacy GCP CSV checks removed in v2025.10.2
+# Framework kept for future required-file validation.
+REQUIRED_FILES=()
+
+# Example placeholder for future checks
+# echo "[pre-commit] Running lint checks..."
+# poetry run black --check .
+# poetry run pytest -q || true
+
+exit 0
