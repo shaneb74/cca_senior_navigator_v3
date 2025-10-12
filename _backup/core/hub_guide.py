@@ -1,6 +1,8 @@
 # core/hub_guide.py
 from __future__ import annotations
+
 from typing import Any, Dict, List, Optional
+
 import streamlit as st
 
 GuideAction = Dict[str, str]

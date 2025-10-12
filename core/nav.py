@@ -4,10 +4,9 @@ from typing import Callable, Dict
 
 import streamlit as st
 
-
 # Registry records
 PRODUCTS = {
-    "gcp": {"hub": "concierge", "title": "Guided Care Plan", "route": "/products/gcp"},
+    "gcp": {"hub": "concierge", "title": "Guided Care Plan", "route": "/product/gcp"},
     "cost_planner": {
         "hub": "concierge",
         "title": "Cost Planner",

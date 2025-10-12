@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import html as _html
 from typing import Any, List, Optional
 
-import html as _html
 import streamlit as st
 
 

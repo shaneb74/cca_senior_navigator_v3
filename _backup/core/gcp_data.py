@@ -6,7 +6,6 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Tuple
 
-
 BASE = Path(__file__).resolve().parents[1] / "config" / "gcp"
 
 

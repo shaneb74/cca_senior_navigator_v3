@@ -1,0 +1,58 @@
+{
+  "order": [
+    "OVERRIDE_HIGH_ACUITY_MC",
+    "OVERRIDE_MC_MINIMUM",
+    "OVERRIDE_MC_BURDEN_SAFETY",
+    "OVERRIDE_ASSISTED_FALLS_NOSUPPORT",
+    "OVERRIDE_MEDICAL_INSTABILITY",
+    "MODIFIER_STRONG_SUPPORT",
+    "MODIFIER_ISOLATION_PLUS_LOW_SUPPORT",
+    "MODIFIER_VERY_WELL_MANAGED"
+  ],
+  "rules": {
+    "OVERRIDE_HIGH_ACUITY_MC": {
+      "kind": "override",
+      "when": "cog_severe AND no_support",
+      "setTier": 4
+    },
+    "OVERRIDE_MC_MINIMUM": {
+      "kind": "floor",
+      "when": "cog_severe",
+      "minTier": 3
+    },
+    "OVERRIDE_MC_BURDEN_SAFETY": {
+      "kind": "floor",
+      "when": "high_dependence AND (behavior_risk OR falls_multiple)",
+      "minTier": 3
+    },
+    "OVERRIDE_ASSISTED_FALLS_NOSUPPORT": {
+      "kind": "floor",
+      "when": "falls_multiple AND no_support",
+      "minTier": 2
+    },
+    "OVERRIDE_MEDICAL_INSTABILITY": {
+      "kind": "floor",
+      "when": "unstable AND (chronic_present >= 3)",
+      "minTier": 3
+    },
+    "MODIFIER_STRONG_SUPPORT": {
+      "kind": "modifier",
+      "when": "support_strong AND NOT cog_severe",
+      "delta": -1,
+      "minTier": 0
+    },
+    "MODIFIER_ISOLATION_PLUS_LOW_SUPPORT": {
+      "kind": "modifier",
+      "when": "geo_isolated AND (support_none OR no_support)",
+      "delta": 1,
+      "maxTier": 4
+    },
+    "MODIFIER_VERY_WELL_MANAGED": {
+      "kind": "modifier",
+      "when": "stable",
+      "delta": -1,
+      "minTier": 0,
+      "note": "No effect if already Tier 0"
+    }
+  }
+}

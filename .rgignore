@@ -1,0 +1,8 @@
+_backup/
+archive/
+venv/
+**/__pycache__/**
+_backup/
+archive/
+venv/
+**/__pycache__/**

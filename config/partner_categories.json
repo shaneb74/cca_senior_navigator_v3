@@ -1,0 +1,32 @@
+[
+  {
+    "id": "health_plan",
+    "label": "Health Plans",
+    "icon": "shield"
+  },
+  {
+    "id": "medication",
+    "label": "Medication Management",
+    "icon": "capsule"
+  },
+  {
+    "id": "mobility_ai",
+    "label": "Mobility & AI",
+    "icon": "chip"
+  },
+  {
+    "id": "specialty_care",
+    "label": "Specialty Care",
+    "icon": "stethoscope"
+  },
+  {
+    "id": "benefits_education",
+    "label": "Benefits & Education",
+    "icon": "book"
+  },
+  {
+    "id": "home_care",
+    "label": "In-Home Care",
+    "icon": "heart"
+  }
+]

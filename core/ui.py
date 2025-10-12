@@ -1,11 +1,12 @@
-from typing import Optional
 import base64
+import functools
 import mimetypes
 import pathlib
 import sys
-import functools
+from typing import Optional
 
 import streamlit as st
+
 from core.nav import route_to
 
 from .nav import PRODUCTS
@@ -35,39 +36,37 @@ def img_src(rel_path: str) -> str:
     return f"data:{mime or 'image/png'};base64,{b64}"
 
 
-def header(app_title: str, current_key: str, pages: dict):
-    links = []
-    for key, meta in pages.items():
-        # Skip hidden pages
-        if meta.get("hidden", False):
+def safe_img_src(filename: str) -> str:
+    """
+    Resolve a static image by delegating to layout.static_url while avoiding circular imports.
+    Accepts bare filenames or repo-relative static paths.
+    """
+    try:
+        from layout import static_url  # type: ignore
+    except Exception:
+        return ""
+    candidates = []
+    clean = filename.lstrip("/").replace("\\", "/")
+    candidates.append(clean)
+    if not clean.startswith("logos/"):
+        candidates.append(f"logos/{clean}")
+    if not clean.startswith("images/"):
+        candidates.append(f"images/{clean}")
+    if not clean.startswith("static/images/"):
+        candidates.append(f"static/images/{clean}")
+    for candidate in candidates:
+        try:
+            return static_url(candidate)
+        except FileNotFoundError:
             continue
-        active = " is-active" if key == current_key else ""
-        links.append(f'<a class="nav-link{active}" href="?page={key}">{meta["label"]}</a>')
-    html = f"""
-    <header class="header">
-      <div class="container header__inner">
-        <div class="brand">{app_title}</div>
-        <nav class="nav cluster">{''.join(links)}</nav>
-      </div>
-    </header>
-    """
-    st.markdown(html, unsafe_allow_html=True)
+    return ""
 
 
-def footer():
-    html = """
-    <footer class="footer">
-      <div class="container footer__inner">
-        <div class="muted">© Senior Navigator</div>
-        <div class="cluster">
-          <a class="nav-link" href="?page=terms">Terms</a>
-          <a class="nav-link" href="?page=privacy">Privacy</a>
-          <a class="nav-link" href="?page=about">About</a>
-        </div>
-      </div>
-    </footer>
-    """
-    st.markdown(html, unsafe_allow_html=True)
+def header(app_title: str, current_key: str, pages: dict):
+    from layout import \
+        render_header  # local import to avoid circular at module load
+
+    render_header(active_route=current_key)
 
 
 def page_container_open():

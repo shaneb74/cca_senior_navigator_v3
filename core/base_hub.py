@@ -7,6 +7,8 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import streamlit as st
 
+from layout import render_page
+
 
 def _inject_hub_css_once() -> None:
     """Load global + hub + product styles once per Streamlit session."""
@@ -48,23 +50,23 @@ def _inject_hub_css_once() -> None:
 # -----------------------------
 # Primary hub renderer (namespaced shell)
 # -----------------------------
-def render_dashboard(
+def render_dashboard_body(
     *,
     title: str = "",
     subtitle: Optional[str] = None,
     chips: Optional[List[Dict[str, str]]] = None,
     hub_guide_block: Optional[Any] = None,
-    series_steps: Optional[List[Dict[str, Any]]] = None,
+    hub_order: Optional[Dict[str, Any]] = None,
     cards: Optional[List[Any]] = None,
+    cards_html: Optional[str] = None,
+    series_steps: Optional[List[Dict[str, Any]]] = None,
     additional_services: Optional[List[Dict[str, Any]]] = None,
-    **_ignored,  # ignore legacy extras safely
-) -> None:
-    st.set_page_config(layout="wide")
+) -> str:
     _inject_hub_css_once()
 
     chips = chips or []
     series_steps = series_steps or []
-    cards = cards or []
+    card_items = list(cards or [])
 
     head_segments: List[str] = []
     if any([title, subtitle, chips, series_steps]):
@@ -117,33 +119,36 @@ def render_dashboard(
         guide_html = hub_guide_block
     elif hub_guide_block:
         # Legacy dict support: render simple eyebrow/title/body/actions structure.
-        eyebrow = html_escape(str(hub_guide_block.get("eyebrow", "")))
-        title_text = html_escape(str(hub_guide_block.get("title", "")))
-        body_text = html_escape(str(hub_guide_block.get("body", "")))
-        actions = hub_guide_block.get("actions") or []
-        action_html: List[str] = []
-        for action in actions:
-            label = html_escape(str(action.get("label", "Open")))
-            go = html_escape(str(action.get("route") or action.get("go") or ""))
-            action_html.append(f'<a href="?go={go}" class="btn btn--secondary">{label}</a>')
-        guide_html = "".join(
-            [
-                '<section class="hub-guide">',
-                f'<div class="hub-guide__eyebrow">{eyebrow}</div>' if eyebrow else "",
-                f'<h2 class="hub-guide__title">{title_text}</h2>' if title_text else "",
-                f'<p class="hub-guide__text">{body_text}</p>' if body_text else "",
-                (
-                    '<div class="hub-guide__actions">' + "".join(action_html) + "</div>"
-                    if action_html
-                    else ""
-                ),
-                "</section>",
-            ]
-        )
+        if isinstance(hub_guide_block, dict) and "html" in hub_guide_block:
+            guide_html = str(hub_guide_block.get("html") or "")
+        else:
+            eyebrow = html_escape(str(hub_guide_block.get("eyebrow", "")))
+            title_text = html_escape(str(hub_guide_block.get("title", "")))
+            body_text = html_escape(str(hub_guide_block.get("body", "")))
+            actions = hub_guide_block.get("actions") or []
+            action_html: List[str] = []
+            for action in actions:
+                label = html_escape(str(action.get("label", "Open")))
+                go = html_escape(str(action.get("route") or action.get("go") or ""))
+                action_html.append(f'<a href="?go={go}" class="btn btn--secondary">{label}</a>')
+            guide_html = "".join(
+                [
+                    '<section class="hub-guide">',
+                    f'<div class="hub-guide__eyebrow">{eyebrow}</div>' if eyebrow else "",
+                    f'<h2 class="hub-guide__title">{title_text}</h2>' if title_text else "",
+                    f'<p class="hub-guide__text">{body_text}</p>' if body_text else "",
+                    (
+                        '<div class="hub-guide__actions">' + "".join(action_html) + "</div>"
+                        if action_html
+                        else ""
+                    ),
+                    "</section>",
+                ]
+            )
 
     # Cards grid (ordered)
     sorted_cards: List[Tuple[int, str, Any]] = []
-    for c in cards:
+    for c in card_items:
         vis = getattr(c, "visible", True) if hasattr(c, "visible") else c.get("visible", True)
         if not vis:
             continue
@@ -158,24 +163,14 @@ def render_dashboard(
             chunk = card.render_html()
             if chunk:
                 card_html_chunks.append(chunk)
-        elif hasattr(card, "render"):
-            # Fallback for legacy tiles that only implement render()
-            buffer = st.container()
-            with buffer:
-                card.render()
-            continue
         elif isinstance(card, dict) and card.get("html"):
             card_html_chunks.append(str(card["html"]))
 
     grid_html = ""
     if card_html_chunks:
-        grid_html = "".join(
-            [
-                '<div class="dashboard-grid">',
-                "".join(card_html_chunks),
-                "</div>",
-            ]
-        )
+        grid_html = '<div class="dashboard-grid">' + "".join(card_html_chunks) + "</div>"
+    elif cards_html:
+        grid_html = cards_html
 
     # Additional services (optional)
     additional_html = ""
@@ -214,15 +209,17 @@ def render_dashboard(
     shell = "".join(
         [
             '<section class="sn-hub dashboard-shell">',
+            '<div class="container dashboard-shell__inner">',
             head_html,
             guide_html,
             grid_html,
             additional_html,
+            "</div>",
             "</section>",
         ]
     )
 
-    st.markdown(shell, unsafe_allow_html=True)
+    return shell
 
 
 # -----------------------------
@@ -260,27 +257,46 @@ class BaseHub:
         self._default_kwargs = dict(default_kwargs or {})
 
     def render(self, **kwargs) -> None:
-        merged = {**self._default_kwargs, **kwargs}
+        payload: Dict[str, Any] = {}
+        if hasattr(self, "build_dashboard"):
+            try:
+                payload = self.build_dashboard() or {}
+            except Exception:
+                payload = {}
 
-        # Accept only the keys render_dashboard cares about.
-        allowed = {
+        merged = {**self._default_kwargs, **payload, **kwargs}
+
+        show_header = merged.pop("show_header", True)
+        show_footer = merged.pop("show_footer", True)
+        active_route = merged.pop("active_route", None)
+
+        body_keys = {
             "title",
             "subtitle",
             "chips",
             "hub_guide_block",
-            "series_steps",
+            "hub_order",
             "cards",
+            "cards_html",
+            "series_steps",
             "additional_services",
         }
-        safe = {k: v for k, v in merged.items() if k in allowed}
 
-        # Common legacy aliases
-        if "guide" in merged and "hub_guide_block" not in safe:
-            safe["hub_guide_block"] = merged["guide"]
-        if "additional" in merged and "additional_services" not in safe:
-            safe["additional_services"] = merged["additional"]
+        # Legacy aliases
+        if "guide" in merged and "hub_guide_block" not in merged:
+            merged["hub_guide_block"] = merged["guide"]
+        if "additional" in merged and "additional_services" not in merged:
+            merged["additional_services"] = merged["additional"]
 
-        render_dashboard(**safe)
+        body_kwargs = {k: merged.get(k) for k in body_keys if k in merged}
+        body_html = render_dashboard_body(**body_kwargs)
+
+        render_page(
+            body_html=body_html,
+            show_header=show_header,
+            show_footer=show_footer,
+            active_route=active_route,
+        )
 
 
-__all__ = ["render_dashboard", "BaseHub", "status_label", "_inject_hub_css_once"]
+__all__ = ["render_dashboard_body", "BaseHub", "status_label", "_inject_hub_css_once"]

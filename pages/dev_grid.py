@@ -1,5 +1,6 @@
-from core.base_hub import _inject_hub_css_once, render_dashboard
+from core.base_hub import _inject_hub_css_once, render_dashboard_body
 from core.product_tile import ProductTileHub
+from layout import render_page
 
 __all__ = ["render"]
 
@@ -34,7 +35,7 @@ def render(ctx=None):
         ),
     ]
 
-    render_dashboard(
+    body_html = render_dashboard_body(
         title="Grid Sanity Check",
         subtitle="Should be 2×2 on desktop (two tiles next to each other).",
         chips=[{"label": "Dev test"}, {"label": "No data", "variant": "muted"}],
@@ -42,3 +43,5 @@ def render(ctx=None):
         cards=tiles,
         additional_services=[],
     )
+
+    render_page(body_html=body_html, active_route=None)
