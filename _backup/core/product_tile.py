@@ -1,5 +1,6 @@
 # core/ui/product_tile.py
 import html
+
 import streamlit as st
 
 
@@ -442,9 +443,10 @@ if __name__ == "__main__":
     ]
     for tile in tiles:
         tile.render("test_state", tiles)
+from typing import Any, Dict, List, Optional
+
 # core/ui/product_tile.py
 import streamlit as st
-from typing import Any, Dict, List, Optional
 
 # NOTE: This module now provides a shared base class and two concrete renderers:
 # - ProductTileHub: large, blue gradient tile for hub-level Products (dual CTAs, status chip)

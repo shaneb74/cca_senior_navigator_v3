@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import streamlit as st
 from typing import Optional
+
+import streamlit as st
 
 
 def _ensure_container(label: str):

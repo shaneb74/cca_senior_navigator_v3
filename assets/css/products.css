@@ -105,6 +105,7 @@
   display: grid;
   gap: 0.75rem;
   padding: 1.25rem 1.25rem 1.1rem;
+  position: relative;
 }
 
 .ptile[data-variant="brand"] {
@@ -135,6 +136,31 @@
   --tile-from: #e6fbff;
   --tile-to: #ccf6ff;
   --tile-border: #aeeaf5;
+}
+
+.ptile__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.ptile__heading {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1 1 auto;
+}
+
+.ptile__title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ptile__title-row .dashboard-status {
+  margin-left: auto;
 }
 
 /* Compact module tile */
@@ -192,7 +218,7 @@
 
 .dashboard-cta--primary {
   background: var(--brand-600);
-  color: #ffffff;
+  color: #ffffff !important;
   border-color: var(--brand-700);
 }
 
@@ -200,7 +226,7 @@
 .dashboard-cta--primary:focus-visible {
   background: var(--brand-700);
   box-shadow: var(--focus-ring);
-  color: #ffffff;
+  color: #ffffff !important;
 }
 
 .dashboard-cta--ghost {
@@ -254,4 +280,122 @@
 .dashboard-cta.is-disabled {
   opacity: 0.55;
   cursor: not-allowed;
+}
+
+/* === Tile logo (square) === */
+.ptile .tile-logo {
+  width: 96px;
+  height: 96px;
+  border-radius: 12px;
+  background: var(--surface-subtle, #f5f7fa);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 0 .5rem 0;
+  position: relative;
+}
+.ptile .tile-logo-img {
+  max-width: 100%;
+  max-height: 100%;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  position: relative;
+  z-index: 1;
+}
+
+.ptile .tile-logo-debug {
+  font-size: 10px;
+  opacity: 0.35;
+  margin-top: 2px;
+}
+
+/* === Step chip === */
+.badge--step {
+  font-size: .75rem;
+  padding: .25rem .5rem;
+  border-radius: 999px;
+  background: var(--surface-contrast-weak, #eef2f7);
+  color: var(--text-muted, #5b6570);
+  margin-left: auto;
+}
+
+/* === Lock overlay & message === */
+.ptile .icon-lock {
+  position: absolute;
+  top: .75rem;
+  right: .75rem;
+  width: 1rem;
+  height: 1rem;
+  mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24'><path fill='black' d='M17 8h-1V6a4 4 0 1 0-8 0v2H7a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2m-6 8.73V17a1 1 0 1 1 2 0v-.27a2 2 0 1 1-2 0M9 8V6a3 3 0 1 1 6 0v2z'/></svg>") center / contain no-repeat;
+  background: currentColor;
+  color: var(--text-muted, #5b6570);
+}
+.ptile.tile--locked { opacity: .80; }
+.ptile .tile-lock-msg {
+  margin-top: .5rem;
+  font-size: .875rem;
+  color: var(--text-muted, #5b6570);
+  max-width: 40ch;
+}
+
+/* === Hub guide order messaging === */
+.hub-guide--order {
+  display: grid;
+  gap: .75rem;
+  align-content: start;
+}
+.hub-guide--order .btn--primary {
+  justify-self: start;
+}
+.mcip-msg {
+  font-weight: 700;
+  color: var(--ink-700, #1f2937);
+}
+.mcip-sub {
+  font-size: .95rem;
+  color: var(--ink-500, #475569);
+}
+.mcip-extra {
+  font-size: .95rem;
+  color: var(--ink-600, #334155);
+  line-height: 1.55;
+}
+
+.dashboard-empty {
+  padding: 1.5rem;
+  border-radius: 16px;
+  background: #f8faff;
+  color: var(--ink-500);
+  text-align: center;
+  font-weight: 500;
+}
+
+/* Module engine hooks */
+.mod-head{margin:24px 0 16px;display:grid;gap:12px;}
+.mod-head .mod-steps{display:flex;gap:8px;}
+.step-pill{width:10px;height:10px;border-radius:50%;background:#dbe7fe;display:inline-block;}
+.step-pill.is-active{background:var(--brand-600);}
+.mod-head-row{display:flex;align-items:center;gap:12px;}
+.mod-back{color:var(--ink-600);text-decoration:none;font-weight:600;}
+.mod-back:hover{color:var(--brand-600);}
+.mod-label{font-weight:600;margin:12px 0 6px;}
+.mod-help{color:var(--ink-600);margin-bottom:8px;font-size:.95rem;}
+.mod-bottom{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--divider,#e2e8f0);padding:10px 16px;display:flex;gap:24px;justify-content:center;flex-wrap:wrap;}
+.mod-bottom .sum-item{display:grid;gap:2px;text-align:center;}
+.mod-bottom .sum-item .meta{font-size:.8rem;color:var(--ink-500);}
+.mod-bottom .sum-item .value{font-weight:700;color:var(--ink-700);}
+.visually-hidden{position:absolute!important;height:1px;width:1px;overflow:hidden;clip:rect(1px,1px,1px,1px);}
+.mod-flags{display:flex;gap:8px;margin:12px 0 24px;flex-wrap:wrap;}
+
+/* Partners: cards reuse .ptile; add minimal extras */
+.ptile[data-variant="partner"] {
+  border-color: rgba(37, 99, 235, 0.25);
+  box-shadow: 0 10px 22px rgba(37, 99, 235, 0.08);
 }

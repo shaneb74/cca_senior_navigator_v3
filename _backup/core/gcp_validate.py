@@ -7,7 +7,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, Iterable, List, Mapping, Set, Tuple
 
-
 BASE = Path(__file__).resolve().parents[1] / "config" / "gcp"
 IDENT = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
 

@@ -1,11 +1,12 @@
-from typing import Optional
 import base64
+import functools
 import mimetypes
 import pathlib
 import sys
-import functools
+from typing import Optional
 
 import streamlit as st
+
 from core.nav import route_to
 
 from .nav import PRODUCTS

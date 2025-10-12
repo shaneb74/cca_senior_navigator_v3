@@ -1,0 +1,443 @@
+{
+  "product": "gcp",
+  "version": "v1.0",
+  "state_key": "gcp",
+  "steps": [
+    {
+      "id": "intro",
+      "title": "Find the Right Senior Care",
+      "subtitle": "We'll match you to the best living options based on daily needs, safety, cognition, and more. Takes two minutes.",
+      "fields": [],
+      "next_label": "Start",
+      "skip_label": null,
+      "show_progress": true
+    },
+    {
+      "id": "about_you",
+      "title": "About You",
+      "fields": [
+        {
+          "key": "age_range",
+          "label": "What is this person's age range?",
+          "type": "pill",
+          "required": true,
+          "options": [
+            {
+              "label": "Under 65",
+              "value": "u65"
+            },
+            {
+              "label": "65–74",
+              "value": "65_74"
+            },
+            {
+              "label": "75–84",
+              "value": "75_84"
+            },
+            {
+              "label": "85+",
+              "value": "85p"
+            }
+          ]
+        },
+        {
+          "key": "living_situation",
+          "label": "Current living situation?",
+          "type": "pill",
+          "required": true,
+          "options": [
+            {
+              "label": "Alone",
+              "value": "alone"
+            },
+            {
+              "label": "With family",
+              "value": "with_family"
+            },
+            {
+              "label": "Assisted living",
+              "value": "assisted_living"
+            },
+            {
+              "label": "Other",
+              "value": "other"
+            }
+          ]
+        },
+        {
+          "key": "isolation",
+          "label": "Is this person's home located far from family, care providers, or essential services?",
+          "type": "pill",
+          "required": true,
+          "options": [
+            {
+              "label": "No – easily accessible",
+              "value": "no"
+            },
+            {
+              "label": "Somewhat isolated",
+              "value": "somewhat"
+            },
+            {
+              "label": "Very isolated",
+              "value": "very"
+            }
+          ]
+        }
+      ],
+      "show_bottom_bar": true,
+      "summary_keys": [
+        "age_range",
+        "living_situation",
+        "isolation"
+      ]
+    },
+    {
+      "id": "meds_mobility",
+      "title": "Medication & Mobility",
+      "fields": [
+        {
+          "key": "meds_complexity",
+          "label": "How complex is this person's medication routine?",
+          "type": "pill",
+          "required": true,
+          "options": [
+            {
+              "label": "None",
+              "value": "none"
+            },
+            {
+              "label": "Simple – a few meds, easy to manage",
+              "value": "simple"
+            },
+            {
+              "label": "Moderate – daily meds, some complexity",
+              "value": "moderate"
+            },
+            {
+              "label": "Complex – many meds or caregiver-managed",
+              "value": "complex"
+            }
+          ]
+        },
+        {
+          "key": "mobility",
+          "label": "Mobility level?",
+          "type": "pill",
+          "required": true,
+          "options": [
+            {
+              "label": "Walks independently",
+              "value": "independent"
+            },
+            {
+              "label": "Uses cane or walker",
+              "value": "device"
+            },
+            {
+              "label": "Uses wheelchair or scooter",
+              "value": "wheelchair"
+            },
+            {
+              "label": "Bed-bound or limited mobility",
+              "value": "bedbound"
+            }
+          ]
+        },
+        {
+          "key": "falls",
+          "label": "Fall history?",
+          "type": "pill",
+          "required": true,
+          "options": [
+            {
+              "label": "No falls in the past six months",
+              "value": "none_6m"
+            },
+            {
+              "label": "One fall",
+              "value": "one"
+            },
+            {
+              "label": "Multiple falls",
+              "value": "multiple"
+            }
+          ]
+        },
+        {
+          "key": "chronic_conditions",
+          "label": "Chronic conditions (select all that apply):",
+          "type": "chip_multi",
+          "options": [
+            {
+              "label": "Diabetes",
+              "value": "diabetes"
+            },
+            {
+              "label": "Congestive heart failure (CHF)",
+              "value": "chf"
+            },
+            {
+              "label": "COPD / Respiratory disease",
+              "value": "copd"
+            },
+            {
+              "label": "Hypertension",
+              "value": "htn"
+            },
+            {
+              "label": "Arthritis",
+              "value": "arthritis"
+            },
+            {
+              "label": "Stroke or neurological condition",
+              "value": "neuro"
+            },
+            {
+              "label": "Parkinson's disease",
+              "value": "parkinsons"
+            },
+            {
+              "label": "Cancer",
+              "value": "cancer"
+            },
+            {
+              "label": "Other",
+              "value": "other_dx"
+            }
+          ]
+        },
+        {
+          "key": "additional_conditions",
+          "label": "List any additional chronic conditions (type and press Add)",
+          "type": "pill_list",
+          "required": false
+        }
+      ],
+      "show_bottom_bar": true,
+      "summary_keys": [
+        "meds_complexity",
+        "mobility",
+        "falls"
+      ]
+    },
+    {
+      "id": "daily_living",
+      "title": "Daily Living",
+      "fields": [
+        {
+          "key": "help_overall",
+          "label": "How much help does this person need with daily activities overall?",
+          "type": "pill",
+          "required": true,
+          "options": [
+            {
+              "label": "None – fully independent",
+              "value": "none"
+            },
+            {
+              "label": "Occasional – some help with a few tasks",
+              "value": "occasional"
+            },
+            {
+              "label": "Regular – needs daily assistance",
+              "value": "regular"
+            },
+            {
+              "label": "Extensive – needs full-time support",
+              "value": "extensive"
+            }
+          ]
+        },
+        {
+          "key": "hours_per_day",
+          "label": "How many hours per day of assistance does this person typically receive?",
+          "type": "pill",
+          "required": true,
+          "options": [
+            {
+              "label": "Less than 1 hour",
+              "value": "lt1"
+            },
+            {
+              "label": "1–3 hours",
+              "value": "1_3"
+            },
+            {
+              "label": "4–8 hours",
+              "value": "4_8"
+            },
+            {
+              "label": "24-hour support",
+              "value": "24h"
+            }
+          ]
+        },
+        {
+          "key": "primary_support",
+          "label": "Who provides most of the support right now?",
+          "type": "pill",
+          "required": true,
+          "options": [
+            {
+              "label": "Family/friends",
+              "value": "family"
+            },
+            {
+              "label": "Paid caregiver",
+              "value": "paid"
+            },
+            {
+              "label": "Community or agency",
+              "value": "agency"
+            },
+            {
+              "label": "No regular support",
+              "value": "none"
+            }
+          ]
+        },
+        {
+          "key": "advisor_notes",
+          "label": "Anything else you’d like your advisor to know?",
+          "type": "textarea",
+          "required": false,
+          "placeholder": "Optional. Add details about routines, preferences, or concerns."
+        }
+      ],
+      "show_bottom_bar": true,
+      "summary_keys": [
+        "help_overall",
+        "hours_per_day",
+        "primary_support"
+      ]
+    },
+    {
+      "id": "cognition",
+      "title": "Cognition & Mental Health",
+      "fields": [
+        {
+          "key": "memory_changes",
+          "type": "pill",
+          "label": "Cognitive health or memory changes:",
+          "required": true,
+          "options": [
+            {
+              "label": "No concerns",
+              "value": "No concerns"
+            },
+            {
+              "label": "Occasional forgetfulness",
+              "value": "Occasional forgetfulness"
+            },
+            {
+              "label": "Moderate memory or thinking issues",
+              "value": "Moderate memory or thinking issues"
+            },
+            {
+              "label": "Severe memory issues or diagnosis like dementia or Alzheimer's",
+              "value": "Severe memory issues or diagnosis like dementia or Alzheimer's"
+            }
+          ]
+        },
+        {
+          "key": "behaviors",
+          "type": "multiselect",
+          "label": "Have there been any of these behaviors or concerns?",
+          "required": false,
+          "visible_if": {
+            "key": "memory_changes",
+            "in": [
+              "Moderate memory or thinking issues",
+              "Severe memory issues or diagnosis like dementia or Alzheimer's"
+            ]
+          },
+          "options": [
+            {
+              "label": "Wandering",
+              "value": "Wandering"
+            },
+            {
+              "label": "Aggression",
+              "value": "Aggression"
+            },
+            {
+              "label": "Elopement / Exit-seeking",
+              "value": "Elopement / Exit-seeking"
+            },
+            {
+              "label": "Confusion or disorientation",
+              "value": "Confusion or disorientation"
+            },
+            {
+              "label": "Sundowning",
+              "value": "Sundowning"
+            },
+            {
+              "label": "Repetitive questioning",
+              "value": "Repetitive questioning"
+            },
+            {
+              "label": "Poor judgment",
+              "value": "Poor judgment"
+            },
+            {
+              "label": "Hoarding",
+              "value": "Hoarding"
+            },
+            {
+              "label": "Sleep disturbances",
+              "value": "Sleep disturbances"
+            }
+          ]
+        },
+        {
+          "key": "mood",
+          "type": "pill",
+          "label": "Overall, how would you describe this person's mood these days?",
+          "required": true,
+          "options": [
+            {
+              "label": "Great – always positive",
+              "value": "Great – always positive"
+            },
+            {
+              "label": "Mostly good",
+              "value": "Mostly good"
+            },
+            {
+              "label": "Okay – ups and downs",
+              "value": "Okay – ups and downs"
+            },
+            {
+              "label": "Low – feeling down a lot",
+              "value": "Low – feeling down a lot"
+            }
+          ],
+          "effects": [
+            {
+              "when_value_in": [
+                "Low – feeling down a lot"
+              ],
+              "set_flag": "emotional_followup",
+              "flag_message": "It might help to discuss emotional well-being with a professional to ensure the best care plan."
+            }
+          ]
+        }
+      ],
+      "show_bottom_bar": true,
+      "summary_keys": [
+        "memory_changes",
+        "mood"
+      ]
+    },
+    {
+      "id": "results",
+      "title": "Your Guided Care Plan Summary",
+      "fields": [],
+      "next_label": null,
+      "skip_label": null,
+      "show_progress": false
+    }
+  ]
+}

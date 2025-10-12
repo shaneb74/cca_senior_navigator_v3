@@ -1,177 +1,115 @@
 from __future__ import annotations
 
-from typing import Dict
+from typing import Dict, List
 
 import streamlit as st
 
-from core.base_hub import BaseHub, status_label
+from core.base_hub import render_dashboard_body
+from core.product_tile import ProductTileHub
+from layout import render_page
+
+__all__ = ["render"]
 
 
-class ProfessionalHub(BaseHub):
-    def __init__(self) -> None:
-        super().__init__(
-            title="Professional Hub",
-            icon="💼",
-            description="Coordinate discharge planning, track cases, and share updates with families.",
-        )
+def _to_tile(card: Dict[str, any], order: int) -> ProductTileHub:
+    actions = card.get("actions", [])
+    primary = actions[0] if actions else {}
+    secondary = actions[1] if len(actions) > 1 else {}
 
-    def build_dashboard(self) -> Dict:
-        professional_role = st.session_state.get("professional_role", "Care Coordinator")
-        active_cases = st.session_state.get("active_cases", 3)
-        legal_requests = st.session_state.get("legal_requests", 0)
-        analytics_ready = st.session_state.get("analytics_ready", False)
+    meta = [str(line) for line in card.get("meta", [])]
+    footnote = card.get("footnote")
+    if footnote:
+        meta.append(str(footnote))
 
-        cards = [
-            {
-                "title": "Care coordination",
-                "subtitle": f"Toolkit for {professional_role}",
-                "status": "in_progress",
-                "status_label": status_label("in_progress"),
-                "badges": [{"label": "Team workspace", "variant": "brand"}],
-                "description": "Centralize updates, request records, and share notes with families.",
-                "meta": [
-                    f"{active_cases} active cases",
-                    "Secure messaging & templates included",
-                ],
-                "actions": [
-                    {
-                        "label": "View cases",
-                        "route": "hub_professional",
-                        "variant": "primary",
-                    },
-                    {
-                        "label": "Schedule consult",
-                        "route": "pfma_stub",
-                        "variant": "ghost",
-                    },
-                ],
-                "footnote": "Collaborate with Concierge advisors in real time.",
-            },
-            {
-                "title": "Legal services",
-                "subtitle": "Power of attorney, guardianship, more",
-                "status": "new" if legal_requests == 0 else "in_progress",
-                "status_label": status_label("new" if legal_requests == 0 else "in_progress"),
-                "badges": [{"label": "Partner network", "variant": "neutral"}],
-                "description": "Connect families with vetted elder law attorneys and document prep specialists.",
-                "meta": [f"{legal_requests} pending requests"],
-                "actions": [
-                    {
-                        "label": "Find attorney",
-                        "route": "hub_trusted",
-                        "variant": "primary",
-                    },
-                    {
-                        "label": "Document prep",
-                        "route": "hub_trusted",
-                        "variant": "ghost",
-                    },
-                ],
-                "footnote": "Set reminders for key filing deadlines.",
-            },
-            {
-                "title": "Financial planning",
-                "subtitle": "Funding paths and benefit reviews",
-                "status": "in_progress",
-                "status_label": status_label("in_progress"),
-                "badges": [{"label": "Advisor", "variant": "brand"}],
-                "description": "Coordinate with financial professionals to align budgets with care decisions.",
-                "meta": [
-                    "Integrates with Cost Planner",
-                    "Share secure summaries with families",
-                ],
-                "actions": [
-                    {
-                        "label": "Book appointment",
-                        "route": "cost_planner_stub",
-                        "variant": "primary",
-                    },
-                    {
-                        "label": "Resource center",
-                        "route": "hub_learning",
-                        "variant": "ghost",
-                    },
-                ],
-                "footnote": "Invite families to review projections together.",
-            },
-            {
-                "title": "Analytics dashboard",
-                "subtitle": "Outcomes & performance",
-                "status": "complete" if analytics_ready else "new",
-                "status_label": status_label("complete" if analytics_ready else "new"),
-                "badges": [{"label": "Beta", "variant": "ai"}],
-                "description": "Monitor case velocity, satisfaction scores, and referral sources.",
-                "meta": ["Export to CSV or share interactive reports."],
-                "actions": [
-                    {
-                        "label": "View analytics",
-                        "route": "hub_professional",
-                        "variant": "primary",
-                    },
-                    {
-                        "label": "Download latest",
-                        "route": "hub_professional",
-                        "variant": "ghost",
-                    },
-                ],
-                "footnote": "Data refreshes every morning at 6 AM.",
-            },
-        ]
+    return ProductTileHub(
+        key=card.get("title", f"tile-{order}").lower().replace(" ", "-") + f"-{order}",
+        title=card.get("title", ""),
+        desc=card.get("subtitle", ""),
+        blurb=card.get("description", ""),
+        badges=card.get("badges", []),
+        meta_lines=meta,
+        primary_label=primary.get("label"),
+        primary_route=f"?go={primary.get('route')}" if primary.get("route") else "#",
+        secondary_label=secondary.get("label") if secondary.get("route") else None,
+        secondary_route=f"?go={secondary.get('route')}" if secondary.get("route") else None,
+        order=order,
+    )
 
-        callout = {
-            "eyebrow": "For professionals",
-            "title": "Bring families and partners into one shared workspace.",
-            "body": "Use Concierge advisors as an extension of your team—sync notes, upload documents, and track handoffs effortlessly.",
-            "actions": [
-                {
-                    "label": "Invite a family",
-                    "route": "hub_concierge",
-                    "variant": "primary",
-                },
-                {
-                    "label": "Meet the advisor team",
-                    "route": "pfma_stub",
-                    "variant": "ghost",
-                },
+
+def render(ctx=None) -> None:
+    professional_role = st.session_state.get("professional_role", "Care Coordinator")
+    active_cases = st.session_state.get("active_cases", 3)
+    legal_requests = st.session_state.get("legal_requests", 0)
+    analytics_ready = st.session_state.get("analytics_ready", False)
+
+    raw_cards: List[Dict[str, any]] = [
+        {
+            "title": "Care coordination",
+            "subtitle": f"Toolkit for {professional_role}",
+            "badges": [{"label": "Team workspace", "tone": "brand"}],
+            "description": "Centralize updates, request records, and share notes with families.",
+            "meta": [
+                f"{active_cases} active cases",
+                "Secure messaging & templates included",
             ],
-        }
+            "actions": [
+                {"label": "View cases", "route": "hub_professional"},
+                {"label": "Schedule consult", "route": "pfma_stub"},
+            ],
+            "footnote": "Collaborate with Concierge advisors in real time.",
+        },
+        {
+            "title": "Legal services",
+            "subtitle": "Power of attorney, guardianship, more",
+            "badges": [{"label": "Partner network", "tone": "neutral"}],
+            "description": "Connect families with vetted elder law attorneys and document prep specialists.",
+            "meta": [f"{legal_requests} pending requests"],
+            "actions": [
+                {"label": "Find attorney", "route": "hub_trusted"},
+                {"label": "Document prep", "route": "hub_trusted"},
+            ],
+            "footnote": "Set reminders for key filing deadlines.",
+        },
+        {
+            "title": "Financial planning",
+            "subtitle": "Funding paths and benefit reviews",
+            "badges": [{"label": "Advisor", "tone": "brand"}],
+            "description": "Coordinate with financial professionals to align budgets with care decisions.",
+            "meta": [
+                "Integrates with Cost Planner",
+                "Share secure summaries with families",
+            ],
+            "actions": [
+                {"label": "Book appointment", "route": "cost_planner_stub"},
+                {"label": "Resource center", "route": "hub_learning"},
+            ],
+            "footnote": "Invite families to review projections together.",
+        },
+        {
+            "title": "Analytics dashboard",
+            "subtitle": "Outcomes & performance",
+            "badges": [{"label": "Beta", "tone": "ai"}],
+            "description": "Monitor case velocity, satisfaction scores, and referral sources.",
+            "meta": ["Export to CSV or share interactive reports."],
+            "actions": [
+                {"label": "View analytics", "route": "hub_professional"},
+                {"label": "Download latest", "route": "hub_professional"},
+            ],
+            "footnote": "Data refreshes every morning at 6 AM.",
+        },
+    ]
 
-        chips = [
+    cards = [_to_tile(card, (idx + 1) * 10) for idx, card in enumerate(raw_cards)]
+
+    body_html = render_dashboard_body(
+        title="Professional Hub",
+        subtitle="Coordinate discharge planning, track cases, and share updates with families.",
+        chips=[
             {"label": "Care delivery"},
             {"label": "Partner tools", "variant": "muted"},
             {"label": "Secure collaboration"},
-        ]
+        ],
+        cards=cards,
+    )
 
-        additional = {
-            "title": "Partner resources",
-            "description": "Extend your toolkit with vetted solutions.",
-            "items": [
-                {
-                    "title": "Training center",
-                    "body": "Micro-learning modules for frontline teams.",
-                    "action": {"label": "Access courses", "route": "hub_learning"},
-                },
-                {
-                    "title": "Network directory",
-                    "body": "Find vetted providers by specialty and location.",
-                    "action": {"label": "Browse network", "route": "hub_trusted"},
-                },
-                {
-                    "title": "Marketing kit",
-                    "body": "Ready-to-use templates to introduce families to Concierge.",
-                    "action": {"label": "Download kit", "route": "hub_professional"},
-                },
-            ],
-        }
-
-        return {
-            "chips": chips,
-            "callout": callout,
-            "cards": cards,
-            "additional_services": additional,
-        }
-
-
-def render() -> None:
-    hub = ProfessionalHub()
-    hub.render()
+    render_page(body_html=body_html, active_route="hub_professional")

@@ -1,14 +1,13 @@
 # hubs/waiting_room.py
 import streamlit as st
-from core.base_hub import render_dashboard, _inject_hub_css_once
-from core.hub_guide import compute_hub_guide
-from core.additional_services import get_additional_services
-from core.product_tile import ProductTileHub
 
+from core.additional_services import get_additional_services
+from core.base_hub import render_dashboard_body
+from core.hub_guide import compute_hub_guide
+from core.product_tile import ProductTileHub
+from layout import render_page
 
 __all__ = ["render"]
-
-_inject_hub_css_once()
 
 
 def render(ctx=None) -> None:
@@ -82,7 +81,7 @@ def render(ctx=None) -> None:
     guide = compute_hub_guide("waiting_room")
     additional = get_additional_services("waiting_room")
 
-    render_dashboard(
+    body_html = render_dashboard_body(
         title="Waiting Room",
         subtitle="Your plan is active. Keep it fresh and share updates with your advisor.",
         chips=[{"label": "In service"}, {"label": f"For {person}", "variant": "muted"}],
@@ -90,3 +89,5 @@ def render(ctx=None) -> None:
         cards=cards,
         additional_services=additional,
     )
+
+    render_page(body_html=body_html, active_route="hub_waiting")

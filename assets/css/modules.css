@@ -39,12 +39,39 @@
 /* Choice chips row (single/multi-select) */
 .sn-app .mod-choices { display:flex; flex-wrap:wrap; gap: 8px; }
 .sn-app .mod-chip {
-  display:inline-flex; align-items:center; gap:6px; padding:.52rem .8rem; border-radius:999px;
-  background: var(--chip-bg); border: 1px solid var(--chip-border); color: var(--chip-ink);
-  font-weight:600; user-select:none; cursor:pointer;
+  display:inline-flex; align-items:center; gap:6px;
+  padding:.52rem .8rem; border-radius:999px;
+  background: var(--muted); border:1px solid var(--divider);
+  color: var(--ink-700); font-weight:600; cursor:pointer; user-select:none;
 }
-.sn-app .mod-chip.is-active { background:#0b5cd8; border-color:#0b5cd8; color:#fff; }
+.sn-app .mod-chip.is-active { background: var(--ink-700); border-color: var(--ink-700); color:#fff; }
 .sn-app .mod-chip.is-muted  { opacity:.55; }
+
+/* Streamlit radio buttons restyled as pills */
+.sn-app .stRadio > div { display:flex !important; flex-wrap:wrap; gap:8px; }
+.sn-app .stRadio label[data-baseweb="radio"] {
+  display:inline-flex; align-items:center; border-radius:999px;
+  border:1px solid var(--chip-border); background: var(--chip-bg);
+  color: var(--chip-ink); font-weight:600; padding:.52rem .9rem;
+  cursor:pointer; margin:0;
+}
+.sn-app .stRadio label[data-baseweb="radio"] > div:first-child { display:none; }
+.sn-app .stRadio label[data-baseweb="radio"] > div:last-child { padding:0; }
+.sn-app .stRadio label[data-baseweb="radio"]:has(input:checked) {
+  background: var(--ink-700); border-color: var(--ink-700); color:#fff;
+}
+
+/* Streamlit checkboxes restyled as chips */
+.sn-app label[data-testid="stCheckbox"] {
+  display:inline-flex; align-items:center; border-radius:999px;
+  border:1px solid var(--chip-border); background: var(--chip-bg);
+  color: var(--chip-ink); font-weight:600; padding:.52rem .9rem;
+  cursor:pointer; margin:0 8px 8px 0;
+}
+.sn-app label[data-testid="stCheckbox"] > div:first-child { display:none; }
+.sn-app label[data-testid="stCheckbox"]:has(input:checked) {
+  background: var(--ink-700); border-color: var(--ink-700); color:#fff;
+}
 
 /* Inputs (use global form base; just tweak heights where needed) */
 .sn-app .mod-input { height: 42px; border-radius: 12px; border:1px solid #d9e3ef; background:#fff; padding:0 12px; font-size:14px; color:var(--ink); width: 100%; }
@@ -72,3 +99,38 @@
   .sn-app .mod-wrap { padding: 8px 8px 28px; }
   .sn-app .mod-actions { gap:10px; }
 }
+
+/* --- Module pill look (single-choice via st.radio) --- */
+.sn-app .stRadio [role="radiogroup"] > label {
+  display:inline-flex;
+  align-items:center;
+  padding:.52rem .8rem;
+  margin:.25rem .25rem 0 0;
+  border-radius:999px;
+  background: var(--muted);
+  border:1px solid var(--divider);
+  color: var(--ink-700);
+  font-weight:600;
+  cursor:pointer;
+}
+.sn-app .stRadio [role="radiogroup"] input:checked + div + label,
+.sn-app .stRadio [role="radiogroup"] label:has(input:checked) {
+  background: var(--ink-700);
+  border-color: var(--ink-700);
+  color:#fff;
+}
+
+/* --- Module multi pills (st.multiselect tokens) --- */
+.sn-app .stMultiSelect .st-bq,
+.sn-app .stMultiSelect .st-bs {
+  background: var(--ink-700) !important;
+  color:#fff !important;
+  border-radius:999px !important;
+}
+.sn-app .stMultiSelect [data-baseweb="select"] {
+  border-radius:12px;
+}
+
+/* Recommendation line right under results title */
+.rec-line { margin: 8px 0 12px; color: var(--ink-800); }
+.cta-rail { display:flex; gap:12px; flex-wrap:wrap; margin-top:12px; }

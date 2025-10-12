@@ -54,7 +54,6 @@ def _inject_welcome_css() -> None:
 
     css = dedent(
         """
-        .header{display:none!important;}
         .welcome-brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--ink);}
         .welcome-brand__logo{height:32px;width:auto;display:block;}
         .welcome-brand__text{display:flex;flex-direction:column;font-weight:600;line-height:1.05;}
@@ -190,7 +189,7 @@ def _inject_welcome_css() -> None:
         .context-input{flex:1 1 220px;}
         .context-submit{flex:0 0 160px;}
         .context-submit .stButton{width:100%;}
-        .context-submit .stButton button{width:100%;height:48px;border-radius:14px;font-weight:700;border:none;background:linear-gradient(90deg,#2563eb,#3b82f6);color:#fff;}
+        .context-submit .stButton button{width:100%;height:48px;border-radius:14px;font-weight:700;border:none;background:linear-gradient(90deg,#2563eb,#3b82f6);color:#fff !important;}
         .context-note{margin-top:24px;background:#eaf2ff;border:1px solid #d5e4ff;border-radius:16px;padding:16px 20px;color:#1f3b7a;font-size:.95rem;font-weight:500;}
         .context-image{position:relative;display:flex;justify-content:center;align-items:center;padding:12px;}
         .context-collage{position:relative;display:inline-block;}
@@ -365,16 +364,13 @@ def render_welcome_card(
             )
 
 
-def _welcome_content(ctx: Optional[dict] = None) -> None:
-    _inject_welcome_css()
-
+def _welcome_body() -> str:
     hero_url = static_url("hero.png")
     family_main = static_url("welcome_someone_else.png")
     self_main = static_url("welcome_self.png")
 
-    st.markdown(
-        _clean_html(
-            f"""
+    return _clean_html(
+        f"""
             <main>
               <section class="container section-hero">
                 <div class="hero-grid">
@@ -386,7 +382,7 @@ def _welcome_content(ctx: Optional[dict] = None) -> None:
                       choices clearly, confidently, and compassionately.
                     </p>
                     <div class="cta-row">
-                      <a href="?page=hub_concierge" class="btn btn--primary wl-btn">Start Now</a>
+                      <a href="?page=someone_else" class="btn btn--primary wl-btn">Start Now</a>
                       <a href="?page=login" class="btn btn--secondary">Log in</a>
                     </div>
                   </div>
@@ -437,13 +433,12 @@ def _welcome_content(ctx: Optional[dict] = None) -> None:
               </section>
             </main>
             """
-        ),
-        unsafe_allow_html=True,
     )
 
 
 def render(ctx: Optional[dict] = None) -> None:
-    render_page(_welcome_content, ctx, show_header=True, show_footer=True)
+    _inject_welcome_css()
+    render_page(body_html=_welcome_body(), active_route="welcome")
 
 
 __all__ = ["render", "render_welcome_card"]
