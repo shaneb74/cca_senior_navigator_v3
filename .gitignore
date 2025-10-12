@@ -11,3 +11,9 @@ _backup/
 archive/
 _backup/
 archive/
+
+
+_backup/
+archive/
+*.zip
+*.docx
