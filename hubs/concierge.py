@@ -113,8 +113,8 @@ def render(ctx=None) -> None:
             blurb="Project expenses, compare living options, and see how long current funds will last.",
             image_square="cp.png",
             meta_lines=["≈10–15 min • Save anytime"],
-            primary_route="/product/cost",
-            primary_go="cost_open",
+            primary_route="?page=cost",
+            primary_go="cost",
             secondary_label="See responses" if cost_prog > 0 else None,  # Only show after started
             secondary_go="cost_view" if cost_prog > 0 else None,
             progress=cost_prog,
@@ -137,7 +137,14 @@ def render(ctx=None) -> None:
             blurb="Get matched with the right advisor to coordinate care, benefits, and trusted partners.",
             badge_text="CONCIERGE TEAM",
             image_square="pfma.png",
-            meta_lines=["≈5–8 min • Ducks in a Row"],
+            meta_lines=(
+                ["✅ 🦆🦆🦆🦆 All Ducks in a Row!"] if pfma_prog >= 100
+                else ["≈5–8 min • Ducks in a Row"]
+            ),
+            badges=(
+                [{"label": "🦆🦆🦆🦆 Earned", "tone": "success"}] if pfma_prog >= 100
+                else []
+            ),
             primary_route="/product/pfma",
             primary_go="pfma_start",
             secondary_label="Share updates",
@@ -162,7 +169,7 @@ def render(ctx=None) -> None:
             badge_text="AI AGENT",
             image_square="faq.png",
             primary_label="Open",
-            primary_go="faqs_open",
+            primary_route="?page=faqs",
             progress=0,
             variant="teal",
             order=40,
