@@ -11,10 +11,28 @@ DEFAULT_CTX = {
 def ensure_session():
     if "ctx" not in st.session_state:
         st.session_state.ctx = deepcopy(DEFAULT_CTX)
+    # Initialize user role (member vs professional mode)
+    if "user_role" not in st.session_state:
+        st.session_state.user_role = "member"
 
 
 def get_user_ctx():
     return st.session_state.ctx
+
+
+def is_professional() -> bool:
+    """Check if user is in professional mode."""
+    return st.session_state.get("user_role") == "professional"
+
+
+def switch_to_professional():
+    """Switch to professional mode."""
+    st.session_state.user_role = "professional"
+
+
+def switch_to_member():
+    """Switch to member mode (default)."""
+    st.session_state.user_role = "member"
 
 
 def set_module_status(module_key: str, status: str):

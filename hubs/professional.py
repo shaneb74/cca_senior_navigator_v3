@@ -6,6 +6,7 @@ import streamlit as st
 
 from core.base_hub import render_dashboard_body
 from core.product_tile import ProductTileHub
+from core.state import is_professional, switch_to_professional
 from layout import render_page
 
 __all__ = ["render"]
@@ -37,65 +38,98 @@ def _to_tile(card: Dict[str, any], order: int) -> ProductTileHub:
 
 
 def render(ctx=None) -> None:
-    professional_role = st.session_state.get("professional_role", "Care Coordinator")
-    active_cases = st.session_state.get("active_cases", 3)
-    legal_requests = st.session_state.get("legal_requests", 0)
-    analytics_ready = st.session_state.get("analytics_ready", False)
+    # Ensure professional mode is active (should be set by welcome.py before navigation)
+    # If somehow accessed without professional mode, switch to it
+    if not is_professional():
+        switch_to_professional()
+        st.rerun()
+        return
 
+    # MCIP panel data
+    pending_actions = 7
+    new_referrals = 3
+    cases_needing_updates = 5
+    last_login = "2025-10-12 14:30"
+
+    # 6 Professional product tiles as specified
     raw_cards: List[Dict[str, any]] = [
         {
-            "title": "Care coordination",
-            "subtitle": f"Toolkit for {professional_role}",
-            "badges": [{"label": "Team workspace", "tone": "brand"}],
-            "description": "Centralize updates, request records, and share notes with families.",
+            "title": "Professional Dashboard",
+            "subtitle": "Overview and priorities",
+            "badges": [{"label": "7 new", "tone": "brand"}],
+            "description": "At-a-glance priorities and recent activity across all your cases.",
             "meta": [
-                f"{active_cases} active cases",
-                "Secure messaging & templates included",
+                f"{pending_actions} pending actions",
+                f"{new_referrals} new referrals today",
             ],
             "actions": [
-                {"label": "View cases", "route": "hub_professional"},
-                {"label": "Schedule consult", "route": "pfma_stub"},
+                {"label": "Open Dashboard", "route": "hub_professional"},
             ],
-            "footnote": "Collaborate with Concierge advisors in real time.",
         },
         {
-            "title": "Legal services",
-            "subtitle": "Power of attorney, guardianship, more",
-            "badges": [{"label": "Partner network", "tone": "neutral"}],
-            "description": "Connect families with vetted elder law attorneys and document prep specialists.",
-            "meta": [f"{legal_requests} pending requests"],
-            "actions": [
-                {"label": "Find attorney", "route": "hub_trusted"},
-                {"label": "Document prep", "route": "hub_trusted"},
-            ],
-            "footnote": "Set reminders for key filing deadlines.",
-        },
-        {
-            "title": "Financial planning",
-            "subtitle": "Funding paths and benefit reviews",
-            "badges": [{"label": "Advisor", "tone": "brand"}],
-            "description": "Coordinate with financial professionals to align budgets with care decisions.",
+            "title": "Client List / Search",
+            "subtitle": "Find and access client profiles",
+            "badges": [],
+            "description": "Find clients and open their profiles with full case history.",
             "meta": [
-                "Integrates with Cost Planner",
-                "Share secure summaries with families",
+                "Search by name, ID, or case number",
+                "Quick filters for active cases",
             ],
             "actions": [
-                {"label": "Book appointment", "route": "cost_planner_stub"},
-                {"label": "Resource center", "route": "hub_learning"},
+                {"label": "Find a Client", "route": "hub_professional"},
             ],
-            "footnote": "Invite families to review projections together.",
         },
         {
-            "title": "Analytics dashboard",
-            "subtitle": "Outcomes & performance",
+            "title": "Case Management & Referrals",
+            "subtitle": "Track cases and referrals",
+            "badges": [{"label": f"{cases_needing_updates} due", "tone": "neutral"}],
+            "description": "Create, track, and update cases or referrals with integrated notes.",
+            "meta": [
+                f"{cases_needing_updates} cases need updates",
+                "Automated status tracking",
+            ],
+            "actions": [
+                {"label": "Manage Cases", "route": "hub_professional"},
+            ],
+        },
+        {
+            "title": "Scheduling + Analytics",
+            "subtitle": "Appointments and metrics",
+            "badges": [{"label": "3 due today", "tone": "ai"}],
+            "description": "Manage appointments and view engagement metrics across your caseload.",
+            "meta": [
+                "Calendar integration available",
+                "Weekly performance reports",
+            ],
+            "actions": [
+                {"label": "View Schedule", "route": "hub_professional"},
+            ],
+        },
+        {
+            "title": "Health Assessment Access",
+            "subtitle": "View assessments and flags",
+            "badges": [],
+            "description": "Open assessment summaries and recidivism-risk flags for your clients.",
+            "meta": [
+                "Risk scores and alerts included",
+                "Historical comparison views",
+            ],
+            "actions": [
+                {"label": "View Assessments", "route": "hub_professional"},
+            ],
+        },
+        {
+            "title": "Advisor Mode Navi (CRM Query Engine)",
+            "subtitle": "Professional CRM insights",
             "badges": [{"label": "Beta", "tone": "ai"}],
-            "description": "Monitor case velocity, satisfaction scores, and referral sources.",
-            "meta": ["Export to CSV or share interactive reports."],
-            "actions": [
-                {"label": "View analytics", "route": "hub_professional"},
-                {"label": "Download latest", "route": "hub_professional"},
+            "description": "Professional-grade CRM queries and quick insights powered by AI.",
+            "meta": [
+                "Natural language queries",
+                "Export to reports or share links",
             ],
-            "footnote": "Data refreshes every morning at 6 AM.",
+            "actions": [
+                {"label": "Open CRM", "route": "hub_professional"},
+            ],
         },
     ]
 
@@ -103,11 +137,12 @@ def render(ctx=None) -> None:
 
     body_html = render_dashboard_body(
         title="Professional Hub",
-        subtitle="Coordinate discharge planning, track cases, and share updates with families.",
+        subtitle="Comprehensive tools for discharge planners, nurses, physicians, social workers, and geriatric care managers.",
         chips=[
-            {"label": "Care delivery"},
-            {"label": "Partner tools", "variant": "muted"},
-            {"label": "Secure collaboration"},
+            {"label": f"Pending: {pending_actions}"},
+            {"label": f"New referrals: {new_referrals}", "variant": "muted"},
+            {"label": f"Updates needed: {cases_needing_updates}"},
+            {"label": f"Last login: {last_login}", "variant": "muted"},
         ],
         cards=cards,
     )
