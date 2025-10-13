@@ -22,11 +22,41 @@ def run_module(config: ModuleConfig) -> Dict[str, Any]:
     state = st.session_state[state_key]
 
     total_steps = len(config.steps)
-    step_index = int(st.session_state.get(f"{state_key}._step", 0))
-    step_index = min(step_index, total_steps - 1)
+    
+    # Check tile state for last saved step (resume functionality)
+    tiles = st.session_state.setdefault("tiles", {})
+    tile_state = tiles.setdefault(config.product, {})
+    saved_step = tile_state.get("last_step")
+    
+    # Resume from saved step if exists, otherwise start at 0
+    if saved_step is not None and saved_step >= 0:
+        step_index = saved_step
+    else:
+        step_index = int(st.session_state.get(f"{state_key}._step", 0))
+    
+    # Clamp to valid range
+    step_index = max(0, min(step_index, total_steps - 1))
+    
+    # Store step index for internal navigation
+    st.session_state[f"{state_key}._step"] = step_index
+    
     step = config.steps[step_index]
 
-    header(step_index, total_steps, step.title, step.subtitle)
+    # Substitute {{name}} template in title
+    title = _substitute_title(step.title, state)
+    
+    # Calculate progress BEFORE rendering header
+    progress = _update_progress(config, state, step, step_index)
+    
+    # Calculate progress-eligible steps (exclude intro/results pages)
+    progress_steps = [s for s in config.steps if s.show_progress]
+    progress_total = len(progress_steps)
+    
+    # Check if current step should show progress indicators
+    show_step_dots = step.show_progress
+    
+    # Render header with actual progress
+    _render_header(step_index, total_steps, title, step.subtitle, progress, progress_total, show_step_dots, step.id == config.steps[0].id)
 
     new_values = _render_fields(step, state)
     if new_values:
@@ -38,14 +68,21 @@ def run_module(config: ModuleConfig) -> Dict[str, Any]:
         _render_results_view(state, config)
         return state
 
-    progress = _update_progress(config, state, step, step_index)
-
     _render_summary(step, state)
 
     required_fields = _required_fields(step, state)
     missing = _required_missing(required_fields, state)
 
-    next_clicked, skip_clicked = actions(step.next_label, step.skip_label)
+    # Render actions - get save_exit button state
+    # Detect if this is the intro page (first step) - nothing to save yet
+    is_intro_page = (step.id == config.steps[0].id)
+    next_clicked, skip_clicked, save_exit_clicked = actions(step.next_label, step.skip_label, is_intro=is_intro_page)
+    
+    # Handle Save & Continue Later
+    if save_exit_clicked:
+        _handle_save_exit(config, state, step_index, total_steps)
+        return state
+    
     if next_clicked and missing:
         st.warning(f"Please complete the required fields: {', '.join(missing)}")
     allow_next = next_clicked and not missing
@@ -58,6 +95,95 @@ def run_module(config: ModuleConfig) -> Dict[str, Any]:
         return state
 
     return state
+
+
+def _render_header(step_index: int, total: int, title: str, subtitle: str | None, progress: float, progress_total: int, show_step_dots: bool = True, is_intro: bool = False) -> None:
+    """Render module header with progress bar based on actual progress."""
+    from html import escape as _escape
+    
+    # Calculate progress percentage (0-100)
+    progress_pct = progress * 100
+    
+    # Dot-style tracker removed - only showing horizontal blue progress bar
+    
+    subtitle_html = ""
+    if subtitle:
+        # Convert newlines to <br> tags and wrap paragraphs
+        lines = subtitle.split('\n')
+        formatted_lines = []
+        first_line = True
+        for line in lines:
+            stripped = line.strip()
+            if stripped:
+                # First line gets emphasized styling (h3)
+                if first_line and stripped.endswith(':'):
+                    formatted_lines.append(f"<h3 class='h3' style='margin-top: 1.5rem; margin-bottom: 1rem;'>{_escape(stripped)}</h3>")
+                    first_line = False
+                else:
+                    # Escape the line but preserve emoji and special chars
+                    formatted_lines.append(f"<p>{_escape(stripped)}</p>")
+            elif formatted_lines:  # Add spacing between paragraphs
+                formatted_lines.append("<br/>")
+        subtitle_html = f"<div class='lead'>{''.join(formatted_lines)}</div>"
+    
+    # Blue progress bar using segmented rail
+    segments = []
+    for i in range(progress_total):
+        current_progress = progress * progress_total  # Convert 0-1 to 0-progress_total
+        if current_progress >= i + 1:
+            fill_pct = 100  # Fully filled
+        elif current_progress > i:
+            fill_pct = int((current_progress - i) * 100)  # Partial fill
+        else:
+            fill_pct = 0  # Empty
+        
+        segments.append(
+            f'<div class="mod-rail-segment">'
+            f'<div class="mod-rail-segment__fill" style="width: {fill_pct}%"></div>'
+            f'</div>'
+        )
+    
+    progress_bar_html = f'<div class="mod-rail-container">{"".join(segments)}</div>'
+    
+    # Back button - on intro page, go to hub; otherwise use browser back
+    if is_intro:
+        back_html = '<a class="mod-back" href="?page=hub_concierge">← Back</a>'
+    else:
+        back_html = '<a class="mod-back" href="javascript:history.back()">← Back</a>'
+    
+    st.markdown(
+        f"""
+        <div class="mod-head">
+          {progress_bar_html}
+          <div class="mod-head-row">
+            {back_html}
+            <h2 class="h2">{_escape(title)}</h2>
+          </div>
+          {subtitle_html}
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def _substitute_title(title: str, state: Mapping[str, Any]) -> str:
+    """Replace {{name}} with person's name from state or session."""
+    if "{{name}}" not in title:
+        return title
+    
+    # Try to get name from module state first
+    name = state.get("recipient_name") or state.get("person_name")
+    
+    # Fall back to session state
+    if not name:
+        profile = st.session_state.get("profile", {})
+        name = profile.get("recipient_name") or profile.get("person_name")
+    
+    # Default to generic text
+    if not name:
+        name = "This Person"
+    
+    return title.replace("{{name}}", name)
 
 
 def _render_fields(step: StepDef, state: Mapping[str, Any]) -> Dict[str, Any]:
@@ -78,17 +204,31 @@ def _render_fields(step: StepDef, state: Mapping[str, Any]) -> Dict[str, Any]:
 def _update_progress(
     config: ModuleConfig, state: Dict[str, Any], step: StepDef, step_index: int
 ) -> float:
-    total = len(config.steps) or 1
-    if config.results_step_id and step.id == config.results_step_id:
-        progress = 1.0
+    # Only count steps that have show_progress=True (exclude intro)
+    progress_steps = [s for s in config.steps if s.show_progress]
+    total = len(progress_steps) or 1
+    
+    # Find the current step's index among progress-eligible steps
+    try:
+        progress_index = next(i for i, s in enumerate(progress_steps) if s.id == step.id)
+    except StopIteration:
+        # Current step doesn't count toward progress (like intro page)
+        progress = 0.0
     else:
-        required = _required_fields(step, state)
-        if required:
-            completed = sum(1 for f in required if _has_value(state.get(f.write_key or f.key)))
-            fraction = completed / len(required)
+        # Check if we're on results page - that's always 100%
+        if config.results_step_id and step.id == config.results_step_id:
+            progress = 1.0
         else:
-            fraction = 1.0
-        progress = min(1.0, max(0.0, (step_index + fraction) / total))
+            # Calculate fractional progress within current step
+            required = _required_fields(step, state)
+            if required:
+                completed = sum(1 for f in required if _has_value(state.get(f.write_key or f.key)))
+                fraction = completed / len(required)
+            else:
+                fraction = 1.0
+            
+            # Progress is (completed steps + fraction of current) / total
+            progress = (progress_index + fraction) / total
 
     progress_pct = round(progress * 100, 1)
     state["progress"] = progress_pct
@@ -102,6 +242,9 @@ def _update_progress(
     tiles = st.session_state.setdefault("tiles", {})
     tile_state = tiles.setdefault(config.product, {})
     tile_state["progress"] = progress_pct
+    # NOTE: Do NOT update last_step here - it should only update on navigation
+    # to avoid overwriting the step before user clicks Continue
+    
     if progress >= 1.0:
         tile_state["status"] = "done"
     elif progress > 0:
@@ -122,6 +265,7 @@ def _update_progress(
 
 
 def _render_summary(step: StepDef, state: Mapping[str, Any]) -> None:
+    """Render developer info in sidebar for debugging."""
     if step.show_bottom_bar and step.summary_keys:
         field_map = {f.write_key or f.key: f for f in step.fields}
         items = {
@@ -129,7 +273,12 @@ def _render_summary(step: StepDef, state: Mapping[str, Any]) -> None:
             for key in step.summary_keys
             if key in state
         }
-        bottom_summary(items)
+        # Render in sidebar instead of bottom of main content
+        with st.sidebar:
+            st.markdown("### 🔧 Developer Info")
+            for key, value in items.items():
+                st.markdown(f"**{key}**")
+                st.code(value, language="text")
 
 
 def _handle_nav(
@@ -145,6 +294,11 @@ def _handle_nav(
 
     next_index = min(step_index + 1, total_steps - 1)
     st.session_state[f"{config.state_key}._step"] = next_index
+    
+    # Update tile state with new step for resume functionality
+    tiles = st.session_state.setdefault("tiles", {})
+    tile_state = tiles.setdefault(config.product, {})
+    tile_state["last_step"] = next_index
 
     if next_clicked and config.results_step_id and step.id == config.results_step_id:
         _emit(
@@ -153,6 +307,54 @@ def _handle_nav(
         )
 
     _rerun_app()
+
+
+def _handle_save_exit(
+    config: ModuleConfig,
+    state: Dict[str, Any],
+    step_index: int,
+    total_steps: int,
+) -> None:
+    """Handle Save & Continue Later button - saves progress and returns to hub."""
+    # Progress is already auto-saved in state
+    progress_pct = state.get("progress", 0)
+    
+    # Calculate readable step info
+    progress_steps = [s for s in config.steps if s.show_progress]
+    completed_progress_steps = min(step_index, len(progress_steps))
+    
+    # Store exit info for hub message
+    state["last_exit_step"] = step_index
+    state["last_exit_time"] = time.strftime("%Y-%m-%d %H:%M:%S")
+    
+    # Update tile state with current step for resume functionality
+    tiles = st.session_state.setdefault("tiles", {})
+    tile_state = tiles.setdefault(config.product, {})
+    tile_state["last_step"] = step_index
+    
+    # Set a session flag to show completion message
+    st.session_state["_show_save_message"] = {
+        "product": config.product,
+        "progress": progress_pct,
+        "step": completed_progress_steps + 1,
+        "total": len(progress_steps),
+    }
+    
+    _emit(
+        "product.saved_exit",
+        {
+            "product": config.product,
+            "state_key": config.state_key,
+            "progress": progress_pct,
+            "step_index": step_index,
+        },
+    )
+    
+    # Navigate to concierge hub
+    st.query_params.clear()
+    st.query_params["page"] = "hub_concierge"
+    _rerun_app()
+
 
 
 def _ensure_outcomes(config: ModuleConfig, answers: Dict[str, Any]) -> None:
@@ -379,7 +581,26 @@ def _find_field(config: ModuleConfig, key: str) -> Optional[FieldDef]:
     return None
 
 
-def _get_recommendation(mod: Dict[str, Any]) -> Optional[str]:
+def _get_recommendation(mod: Dict[str, Any], config: ModuleConfig) -> Optional[str]:
+    """Get recommendation text from outcomes or module state."""
+    # Try to get from outcomes first (preferred)
+    outcome_key = f"{config.state_key}._outcomes"
+    outcomes = st.session_state.get(outcome_key, {})
+    recommendation = outcomes.get("recommendation")
+    
+    if recommendation:
+        mapping = {
+            "independent_in_home": "Independent / In-Home",
+            "in_home": "In-Home Care",
+            "assisted_living": "Assisted Living",
+            "memory_care": "Memory Care",
+            "memory_care_high_acuity": "Memory Care (High Acuity)",
+            "skilled_nursing": "Skilled Nursing",
+        }
+        pretty = mapping.get(recommendation.lower().replace(" ", "_"), recommendation.replace("_", " ").title())
+        return f"Based on your answers, we recommend {pretty}."
+    
+    # Fallback: try module state
     text = str(mod.get("recommendation_text", "")).strip()
     if text:
         if text.lower().startswith("based on your answers"):
@@ -401,7 +622,7 @@ def _get_recommendation(mod: Dict[str, Any]) -> Optional[str]:
 
 
 def _render_results_view(mod: Dict[str, Any], config: ModuleConfig) -> None:
-    recommendation = _get_recommendation(mod)
+    recommendation = _get_recommendation(mod, config)
     if recommendation:
         st.markdown(f"<h3 class='h3 rec-line'>{H(recommendation)}</h3>", unsafe_allow_html=True)
 
@@ -462,19 +683,45 @@ def _render_results_summary(state: Dict[str, Any], config: ModuleConfig) -> None
 
 
 def _render_results_ctas_once(config: ModuleConfig) -> None:
-    flag_key = f"{config.state_key}.__results_cta_once"
-    if st.session_state.get(flag_key):
-        return
-    st.session_state[flag_key] = True
-    st.markdown(
-        """
-        <div class="cta-rail">
-          <a class="btn btn--primary" href="/product/cost">Continue to Cost Planner</a>
-          <a class="btn btn--ghost" href="/hub/concierge">Return to Care Hub</a>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    """Render three action buttons on results page."""
+    st.markdown('<div class="sn-app mod-actions">', unsafe_allow_html=True)
+    
+    # Three action buttons
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        if st.button("← Back to Hub", key="_results_hub", use_container_width=True):
+            st.query_params.clear()
+            st.query_params["page"] = "hub_concierge"
+            _rerun_app()
+    
+    with col2:
+        if st.button("Continue to Cost Planner →", key="_results_cost", type="primary", use_container_width=True):
+            st.query_params.clear()
+            st.query_params["page"] = "cost"
+            _rerun_app()
+    
+    with col3:
+        if st.button("🔄 Restart", key="_results_restart", use_container_width=True):
+            # Clear module state to restart
+            if config.state_key in st.session_state:
+                st.session_state[config.state_key] = {}
+            st.session_state[f"{config.state_key}._step"] = 0
+            st.session_state.pop(f"{config.state_key}._outcomes", None)
+            
+            # Clear tile state to restart from intro
+            tiles = st.session_state.get("tiles", {})
+            if config.product in tiles:
+                tile_state = tiles[config.product]
+                tile_state.pop("last_step", None)  # Clear saved step
+                tile_state["progress"] = 0
+                tile_state["status"] = "new"
+            
+            # Clear handoff
+            if "handoff" in st.session_state and config.state_key in st.session_state["handoff"]:
+                del st.session_state["handoff"][config.state_key]
+            _rerun_app()
+    
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
 def _effect_triggered(values: Sequence[str], triggers: Sequence[str]) -> bool:

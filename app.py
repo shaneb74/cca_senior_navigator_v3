@@ -29,9 +29,16 @@ def _sanitize_query_params_for_welcome(current_route: str) -> None:
 
 
 def inject_css():
+    """Load global CSS and module-specific CSS."""
     try:
+        # Load global CSS
         with open("assets/css/global.css", "r", encoding="utf-8") as f:
             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+        
+        # Load module CSS (must come after global to override)
+        with open("assets/css/modules.css", "r", encoding="utf-8") as f:
+            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    
     except FileNotFoundError:
         # no-op on Cloud if path differs; don't crash
         pass
@@ -62,6 +69,7 @@ LAYOUT_CHROME_ROUTES = {
     "hub_learning",
     "hub_trusted",
     "hub_professional",
+    "gcp",
 }
 uses_layout_frame = route in LAYOUT_CHROME_ROUTES
 

@@ -166,6 +166,8 @@ class BaseTile:
         self.recommended_in_hub: Optional[str] = kwargs.get("recommended_in_hub")
         self.recommended_reason: Optional[str] = kwargs.get("recommended_reason")
         self.cta_tooltip: Optional[str] = kwargs.get("cta_tooltip")
+        self.is_next_step: bool = kwargs.get("is_next_step", False)  # NEW: for MCIP gradient
+        self.desc_html: Optional[str] = kwargs.get("desc_html")  # NEW: for raw HTML in desc
         raw_badges = kwargs.get("badges") or []
         self.badges: List[Any] = raw_badges
 
@@ -295,6 +297,17 @@ class ProductTileHub(BaseTile):
         classes = ["ptile", "dashboard-card", f"tile--{self._state_class()}"]
         if self.variant:
             classes.append(f"tile--{self.variant}")
+        
+        # Add "recommended" class for MCIP gradient
+        # Conditions: is the current next step, not complete, not FAQ tile
+        is_recommended = (
+            self.is_next_step and 
+            float(self.progress or 0) < 100 and
+            getattr(self, "key", "") != "faqs"
+        )
+        if is_recommended:
+            classes.append("tile--recommended")
+        
         out.append(f'<div class="{" ".join(classes)}"{self._variant()}{self._style()}>')
 
         lock_icon = ""
@@ -306,14 +319,12 @@ class ProductTileHub(BaseTile):
         out.append('<div class="ptile__head">')
         logo_src, logo_path = _resolve_img(getattr(self, "image_square", None))
         if logo_src:
-            alt_text = H(self.title or self.key or "logo")
             debug_html = (
                 f"<div class='tile-logo-debug'>img: {H(logo_path)}</div>" if SN_DEBUG_TILES else ""
             )
             out.append(
                 '<div class="tile-logo" aria-hidden="true" '
                 f"style=\"background-image:url('{logo_src}')\">"
-                f'<img class="tile-logo-img" src="{logo_src}" alt="{alt_text}" onerror="this.style.display=\'none\'" />'
                 "</div>"
                 f"{debug_html}"
             )
@@ -342,7 +353,10 @@ class ProductTileHub(BaseTile):
         out.append("</div>")  # /heading
         out.append("</div>")  # /head
 
-        if self.desc:
+        if self.desc_html:
+            # Allow raw HTML for special formatting (e.g., prominent recommendations)
+            out.append(f'<div class="tile-subtitle">{self.desc_html}</div>')
+        elif self.desc:
             out.append(f'<p class="tile-subtitle">{html_escape(self.desc)}</p>')
         if self.blurb:
             out.append(f'<p class="dashboard-description">{html_escape(self.blurb)}</p>')

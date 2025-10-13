@@ -11,7 +11,9 @@ __all__ = ["render"]
 
 
 def render(ctx=None) -> None:
-    person = st.session_state.get("person_name", "John")
+    person_name = st.session_state.get("person_name", "").strip()
+    # Use person's name if available, otherwise use neutral "you"
+    person = person_name if person_name else "you"
 
     # Pull state safely with fallbacks
     appt = st.session_state.get("appointment", {}) or {}

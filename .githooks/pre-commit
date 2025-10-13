@@ -1,13 +1,21 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Deprecated: legacy GCP CSV checks removed in v2025.10.2
-# Framework kept for future required-file validation.
-REQUIRED_FILES=()
+# Senior Navigator pre-commit hook
+# (v2025.10.2) – legacy GCP CSV checks deprecated
+# Framework retained for future required-file validation.
 
-# Example placeholder for future checks
-# echo "[pre-commit] Running lint checks..."
-# poetry run black --check .
-# poetry run pytest -q || true
+REQUIRED_FILES=()  # no required files in current release
 
+# Only run the loop if there are entries (safe under `set -u`)
+if ((${#REQUIRED_FILES[@]:-0} > 0)); then
+  for file in "${REQUIRED_FILES[@]}"; do
+    if [[ ! -f "$file" ]]; then
+      echo "[pre-commit] Missing required file: $file" >&2
+      exit 1
+    fi
+  done
+fi
+
+echo "[pre-commit] Hook executed successfully (no required files enforced)"
 exit 0

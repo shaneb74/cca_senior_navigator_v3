@@ -4,14 +4,35 @@ import streamlit as st
 from core.additional_services import get_additional_services
 from core.base_hub import render_dashboard_body
 from core.hub_guide import compute_hub_guide
-from core.product_tile import ProductTileHub
+from core.product_tile import ProductTileHub, html_escape
 from layout import render_page
 
 __all__ = ["render"]
 
 
 def render(ctx=None) -> None:
-    person = st.session_state.get("person_name", "John")
+    person_name = st.session_state.get("person_name", "").strip()
+    # Use person's name if available, otherwise use neutral "you"
+    person = person_name if person_name else "you"
+    
+    # Check for save message from module
+    save_msg = st.session_state.pop("_show_save_message", None)
+    if save_msg:
+        product_name = {
+            "gcp": "Guided Care Plan",
+            "cost": "Cost Planner",
+            "pfma": "Plan with My Advisor"
+        }.get(save_msg.get("product", ""), "questionnaire")
+        
+        progress = save_msg.get("progress", 0)
+        step = save_msg.get("step", 0)
+        total = save_msg.get("total", 0)
+        
+        if progress >= 100:
+            st.success(f"✅ {product_name} complete! You can review your results anytime.")
+        else:
+            st.info(f"💾 Progress saved! You're {progress:.0f}% through the {product_name} (step {step} of {total}). Click Continue below to pick up where you left off.")
+    
     gcp_prog = float(st.session_state.get("gcp", {}).get("progress", 0))
     cost_prog = float(st.session_state.get("cost", {}).get("progress", 0))
     pfma_prog = float(st.session_state.get("pfma", {}).get("progress", 0))
@@ -22,12 +43,36 @@ def render(ctx=None) -> None:
     elif cost_prog >= 100 and pfma_prog < 100:
         next_step = "pfma"
 
-    care_tier = st.session_state.get("gcp", {}).get("care_tier")
+    # Read recommendation from handoff (written by module engine)
+    handoff = st.session_state.get("handoff", {}).get("gcp", {})
+    recommendation = handoff.get("recommendation")
+    recommendation_display = str(recommendation).replace('_', ' ').title() if recommendation else None
+    
+    # Build reason for MCIP
     reason = (
-        f"Based on your {str(care_tier).replace('_', ' ').title()} recommendation"
-        if care_tier
+        f"Based on your {recommendation_display} recommendation"
+        if recommendation
         else None
     )
+    
+    # Build GCP status text with recommendation
+    gcp_status_text = None
+    if gcp_prog >= 100 and recommendation_display:
+        gcp_status_text = f"✓ {recommendation_display}"
+    
+    # Build GCP tile description based on completion
+    gcp_desc = "Discover the type of care that's right for you."
+    gcp_desc_html = None  # For raw HTML when showing prominent recommendation
+    gcp_recommended_reason = "Start here to personalize everything."
+    
+    if gcp_prog >= 100 and recommendation_display:
+        # Display recommendation prominently with custom CSS class
+        gcp_desc = None  # Clear standard desc
+        gcp_desc_html = f'<span class="tile-recommendation">Recommendation: {html_escape(recommendation_display)}</span>'
+    elif gcp_prog > 0:
+        # In progress - show resume prompt
+        gcp_desc = f"Resume questionnaire ({gcp_prog:.0f}% complete)"
+        gcp_recommended_reason = "Pick up where you left off"
 
     hub_order = {
         "hub_id": "concierge",
@@ -43,15 +88,14 @@ def render(ctx=None) -> None:
         ProductTileHub(
             key="gcp",
             title="Guided Care Plan",
-            desc="Answer a few questions to get a care recommendation.",
-            blurb="Personalized assessment across daily life, health, and cognition.",
+            desc=gcp_desc,
+            desc_html=gcp_desc_html,  # For prominent recommendation display
+            blurb="Answer a few short questions about your daily needs, health, and safety. We'll create a personal care plan to help you take the next step with confidence. Everything saves automatically, and it only takes about 2 minutes.",
             image_square="gcp.png",
-            meta_lines=["≈12 min • Auto-saves"],
+            meta_lines=["≈2 min • Auto-saves"],
             primary_route="?page=gcp",
-            primary_go="gcp_start",
-            secondary_label="See responses",
-            secondary_go="gcp_view",
             progress=gcp_prog,
+            status_text=gcp_status_text,
             variant="brand",
             order=10,
             visible=True,
@@ -59,7 +103,8 @@ def render(ctx=None) -> None:
             recommended_in_hub="concierge",
             recommended_total=hub_order["total"],
             recommended_order=ordered_index["gcp"],
-            recommended_reason="Start here to personalize everything.",
+            recommended_reason=gcp_recommended_reason,
+            is_next_step=(next_step == "gcp"),  # MCIP gradient control
         ),
         ProductTileHub(
             key="cost",
@@ -70,8 +115,8 @@ def render(ctx=None) -> None:
             meta_lines=["≈10–15 min • Save anytime"],
             primary_route="/product/cost",
             primary_go="cost_open",
-            secondary_label="See responses",
-            secondary_go="cost_view",
+            secondary_label="See responses" if cost_prog > 0 else None,  # Only show after started
+            secondary_go="cost_view" if cost_prog > 0 else None,
             progress=cost_prog,
             variant="brand",
             order=20,
@@ -83,6 +128,7 @@ def render(ctx=None) -> None:
             recommended_total=hub_order["total"],
             recommended_order=ordered_index["cost"],
             recommended_reason=reason,
+            is_next_step=(next_step == "cost"),  # MCIP gradient control
         ),
         ProductTileHub(
             key="pfma",
@@ -106,6 +152,7 @@ def render(ctx=None) -> None:
             recommended_total=hub_order["total"],
             recommended_order=ordered_index["pfma"],
             recommended_reason=reason,
+            is_next_step=(next_step == "pfma"),  # MCIP gradient control
         ),
         ProductTileHub(
             key="faqs",
@@ -119,20 +166,23 @@ def render(ctx=None) -> None:
             progress=0,
             variant="teal",
             order=40,
+            is_next_step=False,  # FAQ never gets MCIP gradient
         ),
     ]
 
-    guide = compute_hub_guide("concierge", hub_order=hub_order)
+    guide = compute_hub_guide("concierge", hub_order=hub_order, mode="auto")
     additional = get_additional_services("concierge")
+    
+    # Build chips - only include "For {person}" chip if name exists
+    chips = [{"label": "Concierge journey"}]
+    if person_name:  # Only show "For X" if name is set
+        chips.append({"label": f"For {person}", "variant": "muted"})
+    chips.append({"label": "Advisor & AI blended"})
 
     body_html = render_dashboard_body(
         title="Concierge Care Hub",
         subtitle="Finish the essentials, then unlock curated next steps with your advisor.",
-        chips=[
-            {"label": "Concierge journey"},
-            {"label": f"For {person}", "variant": "muted"},
-            {"label": "Advisor & AI blended"},
-        ],
+        chips=chips,
         hub_guide_block=guide,
         hub_order=hub_order,
         cards=cards,

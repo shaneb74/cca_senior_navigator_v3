@@ -28,10 +28,7 @@
       "id": "products",
       "label": "Products",
       "items": [
-        {"key": "gcp_stub", "label": "Guided Care Plan (Preview)", "module": "hubs.gcp_entry:page_gcp_entry", "hidden": true},
-        {"key": "cost_planner_stub", "label": "Cost Planner (Preview)", "module": "pages.cost_planner:render", "hidden": true},
-        {"key": "pfma_stub", "label": "Plan with My Advisor (Preview)", "module": "pages.pfma:render", "hidden": true},
-        {"key": "gcp", "label": "Guided Care Plan", "module": "hubs.gcp_entry:page_gcp_entry", "hidden": true},
+        {"key": "gcp", "label": "Guided Care Plan", "module": "products.gcp.product:render", "hidden": true},
         {"key": "cost_planner", "label": "Cost Planner", "module": "products.cost_planner:render", "hidden": true},
         {"key": "pfma", "label": "Plan with My Advisor", "module": "products.pfma:render", "hidden": true},
         {"key": "faqs", "label": "FAQs", "module": "pages._stubs:render_faqs", "hidden": true}

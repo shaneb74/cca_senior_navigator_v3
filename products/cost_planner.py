@@ -3,6 +3,14 @@ from pathlib import Path
 
 import streamlit as st
 
+
+def _debug_write(message: str) -> None:
+    try:
+        if st.secrets.get("DEV_DEBUG", False):
+            st.write(message)
+    except Exception:
+        pass
+
 from core.state import get_module_state, get_user_ctx
 from core.ui import hub_section
 from senior_navigator.ui.tiles import render_module_tile
@@ -346,8 +354,8 @@ def render_landing():
             "assisted_living": "Assisted Living (studio)",
             "memory_care": "Memory Care (standard)",
         }.get(care_type, "In-Home Care")
-        st.write(f"Based on your Guided Care Plan, we recommend: {care_label}")
-        st.write(f"Estimated Monthly Cost: ${cost:,.0f}/mo (national average)")
+        _debug_write(f"Based on your Guided Care Plan, we recommend: {care_label}")
+        _debug_write(f"Estimated Monthly Cost: ${cost:,.0f}/mo (national average)")
     else:
         st.write("Plan care costs (e.g., ~$5,500/mo for Assisted Living).")
 
@@ -423,7 +431,7 @@ def render_explore():
         details = {"care_intensity": intensity}
 
     cost = calculate_monthly_cost(care_type, details)
-    st.write(f"Estimated Monthly Cost: ${cost:,.0f}/mo")
+    _debug_write(f"Estimated Monthly Cost: ${cost:,.0f}/mo")
 
     if st.button("Back to Landing"):
         st.session_state["cost_planner_step"] = "landing"
@@ -701,7 +709,7 @@ def render_quick_estimate():
         details = {"care_intensity": intensity}
 
     cost = calculate_monthly_cost(care_type, details)
-    st.write(f"Estimated Monthly Cost: ${cost:,.0f}/mo")
+    _debug_write(f"Estimated Monthly Cost: ${cost:,.0f}/mo")
 
     if st.button("Save & Continue", key="save_quick"):
         data["care_type"] = care_type
@@ -886,7 +894,7 @@ def render_housing_options():
     gcp_exists = "gcp_data" in st.session_state
     if gcp_exists:
         care_type, details, _ = get_gcp_recommendation()
-        st.write(f"Based on GCP, recommended: {care_type}")
+        _debug_write(f"Based on GCP, recommended: {care_type}")
         if st.button("Change", key="change_care"):
             gcp_exists = False
 
@@ -1791,13 +1799,13 @@ def render_expert_review():
     care_type = data.get("care_type", "in_home")
     details = data.get("care_details", {})
     cost = calculate_monthly_cost(care_type, details, data.get("zip"))
-    st.write(f"Care Plan: {care_type}")
-    st.write(f"Monthly Cost: ${cost:,.0f}")
-    st.write(
+    _debug_write(f"Care Plan: {care_type}")
+    _debug_write(f"Monthly Cost: ${cost:,.0f}")
+    _debug_write(
         f"Income: ${sum([data.get(k, 0) for k in ['social_security', 'pension', 'wages', 'other_income']])}"
     )
-    st.write(f"VA Benefits: ${data.get('va_benefits', 0):,.0f}")
-    st.write(
+    _debug_write(f"VA Benefits: ${data.get('va_benefits', 0):,.0f}")
+    _debug_write(
         f"Assets: ${data.get('liquid_savings', 0) + data.get('retirement', 0) + data.get('home_equity', 0)}"
     )
 
