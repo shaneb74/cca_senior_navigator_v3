@@ -631,9 +631,21 @@ def render_hub():
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-    if st.button("Continue to Expert Review", key="continue_review"):
-        st.session_state["cost_planner_step"] = "expert_review"
-        st.rerun()
+    st.divider()
+
+    # Navigation buttons
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("← Back to Hub", key="back_to_hub", use_container_width=True):
+            st.session_state["_nav_override"] = "concierge"
+            st.rerun()
+    with col2:
+        if st.button("Continue to Expert Review →", key="continue_review", type="primary", use_container_width=True):
+            st.session_state["cost_planner_step"] = "expert_review"
+            st.rerun()
+
+    # Close section
+    st.markdown("</section>", unsafe_allow_html=True)
 
 
 def render_quick_estimate():
@@ -1795,26 +1807,367 @@ def render_expert_review():
     )
 
     data = st.session_state.get("cost_data", {})
+    
+    # Calculate completion stats
+    module_configs = get_module_config()
+    completed_modules = []
+    pending_modules = []
+    
+    for module_key, config in module_configs.items():
+        # Skip conditional modules that don't apply
+        if "conditional" in config and not config["conditional"](data):
+            continue
+        
+        is_complete = config.get("is_complete", lambda _: False)(data)
+        if is_complete:
+            completed_modules.append(config["title"])
+        else:
+            pending_modules.append(config["title"])
+    
+    # Display summary
+    st.success(f"✅ **{len(completed_modules)} modules completed**")
+    if pending_modules:
+        st.info(f"⏳ **{len(pending_modules)} modules pending** (optional)")
+    
+    # Show completed modules
+    if completed_modules:
+        st.markdown("#### ✅ Completed Modules")
+        for title in completed_modules:
+            st.markdown(f"- {title}")
+    
+    # Show pending modules (non-required)
+    if pending_modules:
+        st.markdown("#### ⏳ Pending Modules (Optional)")
+        st.caption("You can continue without completing these, or go back to finish them.")
+        for title in pending_modules:
+            st.markdown(f"- {title}")
+    
+    st.divider()
+    
+    # Navigation buttons
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("← Back to Modules", key="back_hub_review", use_container_width=True):
+            st.session_state["cost_planner_step"] = "hub"
+            st.rerun()
+    with col2:
+        if st.button("Continue to Financial Timeline →", key="continue_timeline", type="primary", use_container_width=True):
+            st.session_state["cost_planner_step"] = "financial_timeline"
+            # Mark Cost Planner as 100% complete
+            if "cost_planner" not in st.session_state:
+                st.session_state["cost_planner"] = {}
+            st.session_state["cost_planner"]["progress"] = 100
+            st.rerun()
 
-    care_type = data.get("care_type", "in_home")
+    # Close section
+    st.markdown("</section>", unsafe_allow_html=True)
+
+
+def render_financial_timeline():
+    """Financial Timeline: Final page showing runway analysis and PFMA entry point."""
+    # Import the theme CSS and apply new styling
+    st.markdown(
+        """
+        <link rel='stylesheet' href='/assets/css/global.css'>
+        <style>
+        .main .block-container {
+            background: var(--bg);
+            min-height: 80vh;
+        }
+        .stButton > button {
+            background: #3B82F6 !important;
+            color: white !important;
+            border-radius: 5px !important;
+            border: none !important;
+        }
+        .stButton > button:hover {
+            background: #2563EB !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    # Main content container
+    st.markdown(
+        '<section class="container section" style="padding: 10px;">',
+        unsafe_allow_html=True,
+    )
+
+    # Header section
+    st.markdown(
+        """
+        <div style="margin-bottom: var(--space-6);">
+            <h1 style="font-size: clamp(1.75rem, 3.5vw, 2.5rem); font-weight: 700; color: var(--ink); margin-bottom: var(--space-2);">
+                Understand the costs
+            </h1>
+            <p style="color: var(--ink-600); font-size: 1rem; margin-bottom: 0;">
+                Your financial assessment and care timeline
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    data = st.session_state.get("cost_data", {})
+    
+    # Get GCP recommendation for care type
+    gcp = st.session_state.get("gcp", {})
+    recommendation = gcp.get("recommendation", {})
+    care_type = recommendation.get("care_type", data.get("care_type", "in_home"))
+    care_type_display = care_type.replace("_", " ").title()
+    
+    # Calculate monthly cost
     details = data.get("care_details", {})
-    cost = calculate_monthly_cost(care_type, details, data.get("zip"))
-    _debug_write(f"Care Plan: {care_type}")
-    _debug_write(f"Monthly Cost: ${cost:,.0f}")
-    _debug_write(
-        f"Income: ${sum([data.get(k, 0) for k in ['social_security', 'pension', 'wages', 'other_income']])}"
+    monthly_care_cost = calculate_monthly_cost(care_type, details, data.get("zip"))
+    
+    # Financial inputs
+    monthly_income = sum([
+        data.get("social_security", 0),
+        data.get("pension", 0),
+        data.get("wages", 0),
+        data.get("other_income", 0)
+    ])
+    
+    monthly_expenses = sum([
+        data.get("housing", 0),
+        data.get("utilities", 0),
+        data.get("groceries", 0),
+        data.get("medications", 0),
+        data.get("transportation", 0),
+        data.get("other_expenses", 0)
+    ])
+    
+    total_assets = sum([
+        data.get("liquid_savings", 0),
+        data.get("retirement", 0),
+        data.get("home_equity", 0)
+    ])
+    
+    va_benefits = data.get("va_benefits", 0)
+    
+    # Calculate monthly shortfall/surplus
+    total_monthly_expenses = monthly_expenses + monthly_care_cost
+    total_monthly_income = monthly_income + va_benefits
+    monthly_net = total_monthly_income - total_monthly_expenses
+    
+    # Calculate runway (months assets will last)
+    if monthly_net >= 0:
+        runway_months_num = None
+        runway_years_num = None
+        runway_text = "indefinitely"
+    else:
+        monthly_burn = abs(monthly_net)
+        if monthly_burn > 0 and total_assets > 0:
+            runway_months_num = int(total_assets / monthly_burn)
+            runway_years_num = round(runway_months_num / 12, 1)
+            # Format the runway text
+            if runway_years_num >= 1:
+                years_int = int(runway_years_num)
+                months_remainder = int((runway_years_num - years_int) * 12)
+                if months_remainder > 0:
+                    runway_text = f"{years_int} year{'s' if years_int != 1 else ''} and {months_remainder} month{'s' if months_remainder != 1 else ''}"
+                else:
+                    runway_text = f"{years_int} year{'s' if years_int != 1 else ''}"
+            else:
+                runway_text = f"{runway_months_num} month{'s' if runway_months_num != 1 else ''}"
+        else:
+            runway_months_num = None
+            runway_years_num = None
+            runway_text = "an uncertain duration"
+    
+    # Display care type header with result callout
+    st.markdown(
+        f"""
+        <div style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 24px; border: 1px solid #e5e7eb;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <div>
+                    <p style="color: #6b7280; font-size: 0.875rem; margin: 0 0 4px 0;">Selected care type</p>
+                    <p style="font-size: 1.125rem; font-weight: 600; color: #111827; margin: 0;">{care_type_display}</p>
+                </div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
-    _debug_write(f"VA Benefits: ${data.get('va_benefits', 0):,.0f}")
-    _debug_write(
-        f"Assets: ${data.get('liquid_savings', 0) + data.get('retirement', 0) + data.get('home_equity', 0)}"
+    
+    # Prominent runway callout
+    if monthly_net >= 0:
+        st.success(f"""
+        ### ✅ Your income covers your care costs
+        
+        **Based on your care plan and financial resources, you can pay for your care plan {runway_text}.**
+        
+        Your assets can remain intact while your income sustains your care needs.
+        """)
+    else:
+        monthly_shortfall = abs(monthly_net)
+        if runway_years_num and runway_years_num >= 10:
+            st.success(f"""
+            ### 🟢 Strong Financial Position
+            
+            **Based on your care plan and financial resources, you can pay for your care plan for {runway_text}.**
+            
+            You have a monthly shortfall of ${monthly_shortfall:,.0f}, but your assets provide a strong runway of 10+ years.
+            """)
+        elif runway_years_num and runway_years_num >= 5:
+            st.info(f"""
+            ### 🟡 Moderate Financial Runway
+            
+            **Based on your care plan and financial resources, you can pay for your care plan for {runway_text}.**
+            
+            You have a monthly shortfall of ${monthly_shortfall:,.0f}. Consider exploring additional funding options to extend your runway.
+            """)
+        elif runway_years_num and runway_years_num >= 2:
+            st.warning(f"""
+            ### 🟠 Limited Financial Runway
+            
+            **Based on your care plan and financial resources, you can pay for your care plan for {runway_text}.**
+            
+            You have a monthly shortfall of ${monthly_shortfall:,.0f}. We recommend exploring long-term funding strategies soon.
+            """)
+        elif runway_months_num:
+            st.error(f"""
+            ### 🔴 Urgent Planning Needed
+            
+            **Based on your care plan and financial resources, you can pay for your care plan for {runway_text}.**
+            
+            You have a monthly shortfall of ${monthly_shortfall:,.0f}. Immediate action recommended to secure additional funding sources.
+            """)
+        else:
+            st.warning("""
+            ### ⚠️ Financial Planning Recommended
+            
+            Based on your current financial information, we recommend speaking with a financial advisor to assess your care funding options.
+            """)
+    
+    st.divider()
+    
+    # Two-column layout for income vs costs (matching mockup design)
+    st.markdown("### 📊 Monthly Financial Overview")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("""
+        <div style="background: white; border-radius: 12px; padding: 20px; border: 1px solid #e5e7eb;">
+            <p style="color: #6b7280; font-size: 0.875rem; margin: 0 0 8px 0; text-align: center;">Monthly income</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.metric("Total Monthly Income", f"${total_monthly_income:,.0f}", delta=None)
+        
+        # Income breakdown
+        if data.get("social_security", 0) > 0:
+            st.caption(f"Social Security: ${data.get('social_security', 0):,.0f}")
+        if data.get("pension", 0) > 0:
+            st.caption(f"Pension: ${data.get('pension', 0):,.0f}")
+        if data.get("wages", 0) > 0:
+            st.caption(f"Wages: ${data.get('wages', 0):,.0f}")
+        if data.get("other_income", 0) > 0:
+            st.caption(f"Other Income: ${data.get('other_income', 0):,.0f}")
+        if va_benefits > 0:
+            st.caption(f"VA Benefits: ${va_benefits:,.0f}")
+    
+    with col2:
+        st.markdown("""
+        <div style="background: white; border-radius: 12px; padding: 20px; border: 1px solid #e5e7eb;">
+            <p style="color: #6b7280; font-size: 0.875rem; margin: 0 0 8px 0; text-align: center;">Monthly costs</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.metric("Total Monthly Costs", f"${total_monthly_expenses:,.0f}", delta=None)
+        
+        # Cost breakdown
+        st.caption(f"Living Expenses: ${monthly_expenses:,.0f}")
+        st.caption(f"{care_type_display} Care: ${monthly_care_cost:,.0f}")
+    
+    st.divider()
+    
+    # Monthly gap
+    st.markdown(
+        f"""
+        <div style="background: {'#f0fdf4' if monthly_net >= 0 else '#fef2f2'}; border-radius: 12px; padding: 24px; margin-bottom: 24px; border: 1px solid {'#86efac' if monthly_net >= 0 else '#fecaca'};">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <p style="color: #6b7280; font-size: 0.875rem; margin: 0 0 4px 0;">Per month</p>
+                    <p style="font-size: 1.5rem; font-weight: 700; color: {'#16a34a' if monthly_net >= 0 else '#dc2626'}; margin: 0;">
+                        {'Surplus' if monthly_net >= 0 else 'Shortfall'}: ${abs(monthly_net):,.0f}
+                    </p>
+                </div>
+                <p style="color: #6b7280; font-size: 0.875rem; margin: 0;">Monthly {'surplus' if monthly_net >= 0 else 'gap'}</p>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
-
-    # Runway placeholder
-    st.write("Runway: Calculation not implemented yet")
-
-    if st.button("Back to Hub", key="back_hub"):
-        st.session_state["cost_planner_step"] = "hub"
-        st.rerun()
+    
+    # Assets section
+    st.markdown("### 💰 Financial Resources")
+    
+    assets_col, costs_col = st.columns(2)
+    
+    with assets_col:
+        st.markdown(
+            f"""
+            <div style="background: white; border-radius: 12px; padding: 20px; border: 1px solid #e5e7eb;">
+                <p style="color: #6b7280; font-size: 0.875rem; margin: 0 0 8px 0;">Assets</p>
+                <p style="font-size: 1.5rem; font-weight: 700; color: #111827; margin: 0 0 16px 0;">${total_assets:,.0f}</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        
+        if data.get("liquid_savings", 0) > 0:
+            st.caption(f"Liquid Savings: ${data.get('liquid_savings', 0):,.0f}")
+        if data.get("retirement", 0) > 0:
+            st.caption(f"Retirement Accounts: ${data.get('retirement', 0):,.0f}")
+        if data.get("home_equity", 0) > 0:
+            st.caption(f"Home Equity: ${data.get('home_equity', 0):,.0f}")
+    
+    with costs_col:
+        # Could add one-time costs here if we track them
+        st.markdown(
+            """
+            <div style="background: white; border-radius: 12px; padding: 20px; border: 1px solid #e5e7eb;">
+                <p style="color: #6b7280; font-size: 0.875rem; margin: 0 0 8px 0;">One time costs</p>
+                <p style="font-size: 1.5rem; font-weight: 700; color: #111827; margin: 0 0 16px 0;">$0</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        st.caption("No one-time costs recorded")
+    
+    st.divider()
+    
+    # Next steps
+    st.markdown("### 🎯 Next Steps")
+    st.markdown("""
+    You've completed your financial assessment! Here's what you can do now:
+    
+    1. **Talk to an Advisor** — Schedule a personalized session to refine your care plan
+    2. **Explore Funding Options** — Learn about Medicaid, VA benefits, and other programs
+    3. **Return to Hub** — Access all your care planning tools and resources
+    """)
+    
+    st.divider()
+    
+    # Call to action buttons - matching mockup design
+    col1, col2, col3 = st.columns(3)
+    # Call to action buttons - matching mockup design
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        if st.button("← Back to Expert Review", use_container_width=True):
+            st.session_state["cost_planner_step"] = "expert_review"
+            st.rerun()
+    with col2:
+        if st.button("🏠 Return to Hub", use_container_width=True):
+            st.session_state["_nav_override"] = "concierge"
+            st.rerun()
+    with col3:
+        if st.button("🦆 Talk to an Advisor →", type="primary", use_container_width=True):
+            st.session_state["_nav_override"] = "pfma"
+            st.rerun()
 
     # Close section
     st.markdown("</section>", unsafe_allow_html=True)
@@ -1848,6 +2201,8 @@ def render():
         render_medicaid_navigation()
     elif step == "expert_review":
         render_expert_review()
+    elif step == "financial_timeline":
+        render_financial_timeline()
     else:
         # Default to landing if unknown step
         render_landing()

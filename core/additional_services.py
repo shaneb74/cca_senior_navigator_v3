@@ -251,8 +251,8 @@ REGISTRY: List[Tile] = [
         "order": 16,
         "hubs": ["concierge"],
         "visible_when": [
-            {"min_progress": {"path": "cost.progress", "value": 50}},
-            {"equals": {"path": "pfma.progress", "value": 0}},
+            # Show after Cost Planner is 100% complete
+            {"min_progress": {"path": "cost.progress", "value": 100}},
         ],
     },
     

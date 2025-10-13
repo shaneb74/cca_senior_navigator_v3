@@ -706,35 +706,9 @@ def render_about():
 
 
 def render_faqs():
-    # Apply consistent styling like other pages
-    st.markdown(
-        """<style>
-        .main .block-container {
-            background: var(--bg);
-            min-height: 80vh;
-        }
-        </style>""",
-        unsafe_allow_html=True,
-    )
-
-    st.markdown(
-        """
-<section class="container section">
-  <div class="text-center" style="margin-bottom: var(--space-8);">
-    <h1 style="font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; line-height: 1.15; color: var(--ink); margin-bottom: var(--space-4);">
-      FAQs & Answers
-    </h1>
-    <p style="color: var(--ink-600); max-width: 48ch; margin: 0 auto; font-size: 1.1rem;">
-      Common questions and answers about senior care navigation and our services.
-    </p>
-  </div>
-  <div class="card-actions" style="justify-content: center; margin-top: var(--space-6);">
-    <a class="btn btn--primary" href="?page=hub_concierge" style="margin: 0 var(--space-2);">Back to Hub</a>
-  </div>
-</section>
-        """,
-        unsafe_allow_html=True,
-    )
+    """Delegate to the full FAQ/AI Advisor implementation."""
+    from pages import faq
+    faq.render()
 
 
 # --- DEPRECATED: temporarily disabled during CSS/IA refactor ---

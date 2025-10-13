@@ -1,0 +1,307 @@
+{
+  "logic": {
+    "aggregate_method": "sum",
+    "scoring": {
+      "in_home": {
+        "care_burden": 1,
+        "social_isolation": 1,
+        "mental_health_concern": 1,
+        "home_safety": 1,
+        "geographic_access": 1,
+        "cognitive_function": 1,
+        "health_management": 1
+      },
+      "assisted_living": {
+        "care_burden": 3,
+        "social_isolation": 3,
+        "mental_health_concern": 2,
+        "home_safety": 2,
+        "geographic_access": 2,
+        "cognitive_function": 2,
+        "health_management": 2
+      }
+    },
+    "flag_to_category_mapping": {
+      "high_dependence": "care_burden",
+      "moderate_dependence": "care_burden",
+      "high_mobility_dependence": "care_burden",
+      "moderate_mobility": "care_burden",
+      "veteran_aanda_risk": "care_burden",
+      "high_risk": "social_isolation",
+      "moderate_risk": "social_isolation",
+      "mental_health_concern": "mental_health_concern",
+      "no_support": "caregiver_support",
+      "limited_support": "caregiver_support",
+      "moderate_cognitive_decline": "cognitive_function",
+      "mild_cognitive_decline": "cognitive_function",
+      "severe_cognitive_risk": "cognitive_function",
+      "cognition_risk_mild": "cognitive_function",
+      "cognition_risk_moderate": "cognitive_function",
+      "cognition_risk_severe": "cognitive_function",
+      "cognitive_safety_risk": "cognitive_function",
+      "moderate_safety_concern": "home_safety",
+      "high_safety_concern": "home_safety",
+      "fall_risk": "home_safety",
+      "safety_risk": "home_safety",
+      "low_access": "geographic_access",
+      "very_low_access": "geographic_access",
+      "isolation_risk": "geographic_access",
+      "chronic_present": "health_management",
+      "health_management_risk": "health_management",
+      "medication_risk": "health_management",
+      "medication_adherence_risk": "health_management",
+      "aging_risk": "health_management",
+      "caregiver_burnout": "caregiver_support",
+      "emotional_support_risk": "mental_health_concern",
+      "daily_living_risk": "care_burden"
+    },
+    "decision_thresholds": {
+      "assisted_living": {
+        "criteria": "assisted_living_score >= 6",
+        "recommendation": "Assisted Living",
+        "message_template": "{greeting} {name}, based on needs like {key_issues}, assisted living could provide the care and comfort you deserve."
+      },
+      "in_home_with_support": {
+        "criteria": "in_home_score >= 3 && assisted_living_score < 6",
+        "recommendation": "In-Home with Support",
+        "message_template": "{greeting} {name}, in-home care with help for {key_issues} keeps you comfortable at home."
+      },
+      "no_care_needed": {
+        "criteria": "in_home_score < 3 && assisted_living_score < 3 && !high_dependence && !high_mobility_dependence && !no_support && !severe_cognitive_risk && !high_safety_concern",
+        "recommendation": "No Care Needed",
+        "message_template": "{greeting} {name}, you're {positive_state} with no support needs right now! {encouragement}."
+      },
+      "memory_care_override": {
+        "trigger_if_flags": ["severe_cognitive_risk", "no_support"],
+        "criteria": "Always trigger if severe_cognitive_risk && no_support",
+        "recommendation": "Memory Care",
+        "message_template": "{greeting} {name}, with significant memory challenges and no one around daily, memory care is the safest way to ensure you're well supported."
+      },
+      "moderate_needs_assisted_living": {
+        "criteria": "assisted_living_score >= 6 && in_home_score >= 3 && moderate_dependence && moderate_mobility && moderate_cognitive_decline",
+        "recommendation": "Assisted Living",
+        "message_template": "{greeting} {name}, your needs around {key_issues} point to assisted living for extra help, but with strong support, staying home might still work."
+      },
+      "close_to_assisted_living": {
+        "criteria": "assisted_living_score >= 5 && in_home_score >= 3 && moderate_dependence && moderate_cognitive_decline",
+        "recommendation": "In-Home with Support",
+        "message_template": "{greeting} {name}, you're managing at home, but {key_issues} suggest more support may be needed soon. In-home care works for now, but let's plan ahead."
+      },
+      "balanced_recommendation": {
+        "criteria": "assisted_living_score >= 6 && in_home_score >= 3 && !high_dependence && !high_mobility_dependence && !no_support && !high_safety_concern && !severe_cognitive_risk",
+        "recommendation": "In-Home with Support",
+        "message_template": "{greeting} {name}, with {key_issues}, in-home care with some help fits well."
+      },
+      "in_home_with_mobility_challenges": {
+        "criteria": "assisted_living_score >= 5 && in_home_score >= 3 && high_mobility_dependence && !mild_cognitive_decline && !moderate_cognitive_decline && !severe_cognitive_risk",
+        "recommendation": "In-Home with Support",
+        "message_template": "{greeting} {name}, your mobility needs ({key_issues}) make in-home care with aids a good fit, but assisted living could make daily life easier."
+      },
+      "in_home_possible_with_cognitive_and_safety_risks": {
+        "criteria": "in_home_score >= 3 && assisted_living_score >= 3 && (moderate_cognitive_decline || severe_cognitive_risk || moderate_safety_concern || high_safety_concern)",
+        "recommendation": "In-Home with Support",
+        "message_template": "{greeting} {name}, you're holding strong, but {key_issues} like memory or safety mean in-home care with extra support is key."
+      },
+      "in_home_with_uncertain_support": {
+        "criteria": "in_home_score >= 3 && (limited_support || moderate_risk || high_risk || mental_health_concern || moderate_dependence || moderate_mobility || moderate_safety_concern || low_access || very_low_access)",
+        "recommendation": "In-Home with Support",
+        "message_template": "{greeting} {name}, in-home care could work with help for {key_issues}, but if support's spotty, assisted living might be safer."
+      }
+    },
+    "flags": {
+      "emo_concern": {
+        "trigger": "mood == 'low'",
+        "priority": "high",
+        "message": "It might help to discuss emotional well-being with a professional to ensure the best care plan."
+      },
+      "fall_recent": {
+        "trigger": "falls == 'one'",
+        "priority": "medium"
+      },
+      "falls_multiple": {
+        "trigger": "falls == 'multiple'",
+        "priority": "high"
+      },
+      "cog_moderate": {
+        "trigger": "memory_changes == 'moderate'",
+        "priority": "medium"
+      },
+      "cog_severe": {
+        "trigger": "memory_changes == 'severe'",
+        "priority": "high"
+      },
+      "behavior_risk": {
+        "trigger": "behaviors.length > 0",
+        "priority": "high"
+      },
+      "chronic_present": {
+        "trigger": "chronic_conditions.length > 0 || additional_conditions.length > 0",
+        "priority": "medium"
+      },
+      "high_dependence": {
+        "trigger": "help_overall == 'full_support'",
+        "priority": "high"
+      },
+      "moderate_dependence": {
+        "trigger": "help_overall in ['some_help', 'daily_help'] || badls.length > 0 || iadls.length > 0",
+        "priority": "medium"
+      },
+      "moderate_mobility": {
+        "trigger": "mobility == 'walker'",
+        "priority": "medium"
+      },
+      "high_mobility_dependence": {
+        "trigger": "mobility in ['wheelchair', 'bedbound']",
+        "priority": "high"
+      },
+      "moderate_risk": {
+        "trigger": "mood in ['mostly_good', 'okay']",
+        "priority": "medium"
+      },
+      "high_risk": {
+        "trigger": "mood == 'low'",
+        "priority": "high"
+      },
+      "mental_health_concern": {
+        "trigger": "mood == 'low'",
+        "priority": "high"
+      },
+      "no_support": {
+        "trigger": "hours_per_day == '<1h' || primary_support == 'none'",
+        "priority": "high"
+      },
+      "limited_support": {
+        "trigger": "hours_per_day == '1-3h'",
+        "priority": "medium"
+      },
+      "moderate_cognitive_decline": {
+        "trigger": "memory_changes == 'moderate' || chronic_conditions includes ['parkinsons', 'stroke']",
+        "priority": "medium"
+      },
+      "mild_cognitive_decline": {
+        "trigger": "memory_changes == 'occasional'",
+        "priority": "low"
+      },
+      "severe_cognitive_risk": {
+        "trigger": "memory_changes == 'severe' || additional_conditions matches '(?i)dementia|alzheimer|vascular dementia'",
+        "priority": "high"
+      },
+      "moderate_safety_concern": {
+        "trigger": "falls == 'one' || behaviors.length > 0",
+        "priority": "medium"
+      },
+      "high_safety_concern": {
+        "trigger": "falls == 'multiple'",
+        "priority": "high"
+      },
+      "low_access": {
+        "trigger": "isolation == 'somewhat'",
+        "priority": "medium"
+      },
+      "very_low_access": {
+        "trigger": "isolation == 'very'",
+        "priority": "high"
+      },
+      "veteran_aanda_risk": {
+        "trigger": "badls.length > 0 || iadls.length > 0",
+        "priority": "medium",
+        "message": "Any impairment in basic or instrumental daily activities may qualify for VA Aid & Attendance benefits."
+      },
+      "caregiver_burnout": {
+        "trigger": "(badls.length >= 3 || iadls.length >= 3) && hours_per_day == '24h' && primary_support == 'family'",
+        "priority": "high",
+        "message": "Significant daily needs with 24-hour family support suggest an unsustainable caregiver burden."
+      },
+      "medication_risk": {
+        "trigger": "isolation == 'very' && meds_complexity in ['moderate', 'complex']",
+        "priority": "high",
+        "message": "Complex medication needs in a remote location may require closer monitoring or facility-based care."
+      },
+      "cognition_risk_mild": {
+        "trigger": "memory_changes == 'occasional' && behaviors.length > 0",
+        "priority": "low",
+        "message": "Early cognitive issues with behaviors may need minimal supervision or in-home support."
+      },
+      "cognition_risk_moderate": {
+        "trigger": "memory_changes == 'moderate' && behaviors.length > 0",
+        "priority": "medium",
+        "message": "Moderate cognitive issues with behaviors suggest a need for structured supervision."
+      },
+      "cognition_risk_severe": {
+        "trigger": "memory_changes == 'severe'",
+        "priority": "high",
+        "message": "Severe cognitive issues require significant supervision, likely in a memory care setting."
+      },
+      "fall_risk": {
+        "trigger": "falls == 'multiple' && mobility in ['wheelchair', 'bedbound']",
+        "priority": "high",
+        "message": "Multiple falls with limited mobility indicate a high risk requiring safety interventions."
+      },
+      "isolation_risk": {
+        "trigger": "isolation == 'very' && primary_support == 'none'",
+        "priority": "high",
+        "message": "Isolation with no support increases risks for emergencies, suggesting a need for facility care."
+      },
+      "health_management_risk": {
+        "trigger": "(chronic_conditions.length >= 3 || additional_conditions.length >= 3) && mood == 'low'",
+        "priority": "medium",
+        "message": "Multiple chronic conditions with low mood may complicate health management."
+      },
+      "safety_risk": {
+        "trigger": "(badls includes 'toileting' || badls includes 'transferring') && behaviors.length > 0",
+        "priority": "high",
+        "message": "Critical ADL needs with behavioral issues pose a significant safety risk."
+      },
+      "mobility_support_risk": {
+        "trigger": "mobility in ['wheelchair', 'bedbound'] && primary_support == 'none'",
+        "priority": "high",
+        "message": "Limited mobility with no support increases risks of immobility-related complications."
+      },
+      "emotional_support_risk": {
+        "trigger": "mood == 'low' && (isolation == 'very' || primary_support in ['none', 'family'])",
+        "priority": "medium",
+        "message": "Low mood with isolation or limited formal support may worsen mental health, requiring interventions."
+      },
+      "daily_living_risk": {
+        "trigger": "(badls.length >= 2 || iadls.length >= 2) && primary_support == 'none'",
+        "priority": "medium",
+        "message": "Significant daily needs with no support risk unmet care requirements."
+      },
+      "medication_adherence_risk": {
+        "trigger": "meds_complexity in ['moderate', 'complex'] && iadls includes 'med_management'",
+        "priority": "high",
+        "message": "Complex medication needs with management issues risk medication errors."
+      },
+      "cognitive_safety_risk": {
+        "trigger": "memory_changes in ['moderate', 'severe'] && hours_per_day == '<1h'",
+        "priority": "high",
+        "message": "Moderate to severe cognitive issues with minimal support pose a safety risk."
+      },
+      "aging_risk": {
+        "trigger": "age_range == '85_plus' && (chronic_conditions.length >= 2 || additional_conditions.length >= 2 || falls == 'multiple')",
+        "priority": "medium",
+        "message": "Advanced age with health or fall issues increases vulnerability, requiring proactive care."
+      }
+    },
+    "greeting_templates": [
+      "Hi",
+      "Hello",
+      "Hey",
+      "Greetings"
+    ],
+    "positive_state_templates": [
+      "doing amazing",
+      "thriving beautifully",
+      "on top of things",
+      "shining bright",
+      "doing wonderfully"
+    ],
+    "encouragement_templates": [
+      "Keep shining",
+      "Stay amazing",
+      "Keep thriving",
+      "Continue doing great",
+      "Stay strong"
+    ]
+  }
+}
