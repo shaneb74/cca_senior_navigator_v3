@@ -1,76 +1,95 @@
+# hubs/waiting_room.py
 import streamlit as st
-from core.ui import render_hub_tile
+
+from core.additional_services import get_additional_services
+from core.base_hub import render_dashboard_body
+from core.hub_guide import compute_hub_guide
+from core.product_tile import ProductTileHub
+from layout import render_page
+
+__all__ = ["render"]
 
 
-def render():
-    # Import the theme CSS
-    st.markdown(
-        "<link rel='stylesheet' href='/assets/css/theme.css'>",
-        unsafe_allow_html=True
+def render(ctx=None) -> None:
+    person_name = st.session_state.get("person_name", "").strip()
+    # Use person's name if available, otherwise use neutral "you"
+    person = person_name if person_name else "you"
+
+    # Pull state safely with fallbacks
+    appt = st.session_state.get("appointment", {}) or {}
+    appointment_summary = appt.get("summary", "No appointment scheduled")
+    appointment_countdown = appt.get("countdown", "No date")
+    edu_progress = float((st.session_state.get("learning", {}) or {}).get("progress", 0))
+    gamification_progress = float(
+        (st.session_state.get("gamification", {}) or {}).get("progress", 0)
     )
 
-    # Apply canvas background like welcome pages
-    st.markdown(
-        """<style>
-        .main .block-container {
-            background: var(--bg);
-            min-height: 80vh;
-        }
-        </style>""",
-        unsafe_allow_html=True,
-    )
-    
-    # Main content container
-    st.markdown('<section class="container section">', unsafe_allow_html=True)
-    
-    # Hero section with title
-    st.markdown(
-        f"""
-        <div class="text-center" style="margin-bottom: var(--space-10);">
-            <h1 style="font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; line-height: 1.15; color: var(--ink); margin-bottom: var(--space-4);">
-                Waiting Room Hub
-            </h1>
-            <p style="color: var(--ink-600); max-width: 48ch; margin: 0 auto; font-size: 1.1rem;">
-                Track your appointment status and complete pre-visit tasks.
-            </p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-    
-    # Hub tiles grid
-    st.markdown('<div class="tiles">', unsafe_allow_html=True)
+    cards = [
+        ProductTileHub(
+            key="appointment",
+            title="Your Upcoming Appointment",
+            desc=f"Starts in {appointment_countdown} • {appointment_summary}",
+            blurb="Review details, prepare questions, and confirm your concierge consult.",
+            primary_label="View details",
+            primary_go="appointment_details",
+            secondary_label="Reschedule",
+            secondary_go="appointment_reschedule",
+            progress=None,  # no pill; explicit status below
+            status_text="Scheduled",
+            badges=["countdown"],
+            variant="warn",
+            order=10,
+        ),
+        ProductTileHub(
+            key="partners_spotlight",
+            title="Featured Partners",
+            desc="Tailored recommendations for home care, tech, and more",
+            blurb="Browse verified providers spotlighted for your plan.",
+            primary_label="Browse partners",
+            primary_go="partners_spotlight_carousel",
+            progress=None,
+            badges=["verified"],
+            variant="brand",
+            order=20,
+        ),
+        ProductTileHub(
+            key="educational_feed",
+            title="Recommended Learning",
+            desc="Videos, guides, and tips for your journey",
+            blurb="Pick up where you left off or discover new resources.",
+            primary_label="Explore feed",
+            primary_go="educational_feed",
+            secondary_label="Continue watching",
+            secondary_go="resume_edu_content",
+            progress=edu_progress,
+            badges=["personalized"],
+            variant="teal",
+            order=30,
+        ),
+        ProductTileHub(
+            key="entertainment",
+            title="While You Wait",
+            desc="Fun trivia and quick games",
+            blurb="Earn badges and stay relaxed before your consult.",
+            primary_label="Start playing",
+            primary_go="entertainment_deck",
+            progress=gamification_progress,
+            badges=["badges"],
+            variant="violet",
+            order=40,
+        ),
+    ]
 
-    # Render waiting room tiles
-    render_hub_tile(
-        title="Appointment Status",
-        badge="Status",
-        label="Next Appointment",
-        value="Dr. Smith - Oct 15",
-        status="new",
-        primary_label="View details",
-        secondary_label="Reschedule"
+    guide = compute_hub_guide("waiting_room")
+    additional = get_additional_services("waiting_room")
+
+    body_html = render_dashboard_body(
+        title="Waiting Room",
+        subtitle="Your plan is active. Keep it fresh and share updates with your advisor.",
+        chips=[{"label": "In service"}, {"label": f"For {person}", "variant": "muted"}],
+        hub_guide_block=guide,
+        cards=cards,
+        additional_services=additional,
     )
 
-    render_hub_tile(
-        title="Preparation Guide",
-        badge="Prep",
-        label="What to Bring",
-        value="Documents ready",
-        status="new",
-        primary_label="Check list",
-        secondary_label="Questions"
-    )
-
-    render_hub_tile(
-        title="Virtual Waiting",
-        badge="Virtual",
-        label="Current Status",
-        value="Room 204",
-        status="doing",
-        primary_label="Join call",
-        secondary_label="Estimated wait"
-    )
-
-    # Close the tiles grid and section
-    st.markdown('</div></section>', unsafe_allow_html=True)
+    render_page(body_html=body_html, active_route="hub_waiting")

@@ -1,0 +1,169 @@
+[
+  {
+    "id": "hpone",
+    "name": "HealthPlanOne",
+    "category": "health_plan",
+    "states": [
+      "US"
+    ],
+    "image_square": "logos/hp_one_logo.png",
+    "headline": "Medicare & Health Plan Enrollment Partner",
+    "blurb": "Connect to Medicare and health plan options with licensed agents and guided enrollment.",
+    "tags": [
+      "Medicare",
+      "Enrollment",
+      "Broker",
+      "Health Plans"
+    ],
+    "unlock_requires": [
+      "gcp:>=50"
+    ],
+    "lock_msg": "Get at least halfway through your Guided Care Plan to see tailored plan options.",
+    "primary_cta": {
+      "label": "Connect",
+      "route": "/partner/connect?id=hpone"
+    },
+    "secondary_cta": {
+      "label": "Learn more",
+      "route": "https://www.hpone.com/"
+    },
+    "rating": 4.6
+  },
+  {
+    "id": "omcare",
+    "name": "Omcare",
+    "category": "medication",
+    "states": [
+      "US"
+    ],
+    "image_square": "logos/omcae.webp",
+    "headline": "Home Health & Medication Management Hub",
+    "blurb": "Automated dispensing with visual adherence plus telehealth and remote monitoring.",
+    "tags": [
+      "Medications",
+      "Telehealth",
+      "Adherence",
+      "Remote Monitoring"
+    ],
+    "unlock_requires": [
+      "gcp:complete",
+      "flag:meds_management_needed"
+    ],
+    "lock_msg": "Your plan must indicate medication management needs to unlock Omcare.",
+    "primary_cta": {
+      "label": "Schedule demo",
+      "route": "/partner/connect?id=omcare"
+    },
+    "secondary_cta": {
+      "label": "Learn more",
+      "route": "https://omcare.com/"
+    },
+    "rating": 4.7
+  },
+  {
+    "id": "seniorlife_ai",
+    "name": "SeniorLife.AI",
+    "category": "mobility_ai",
+    "states": [
+      "US"
+    ],
+    "image_square": "logos/senior_life_logo.png",
+    "headline": "Mobility & Wellness Insights with AI",
+    "blurb": "AI-driven mobility metrics and wellness tracking; FDA-registered software device for mobility assessment.",
+    "tags": [
+      "Mobility",
+      "AI Insights",
+      "Risk Screening",
+      "Wellness"
+    ],
+    "unlock_requires": [
+      "gcp:>=50"
+    ],
+    "lock_msg": "Reach 50% progress in your Guided Care Plan to personalize AI insights.",
+    "primary_cta": {
+      "label": "Connect",
+      "route": "/partner/connect?id=seniorlife_ai"
+    },
+    "secondary_cta": {
+      "label": "Learn more",
+      "route": "https://seniorlife.ai/"
+    },
+    "rating": 4.5
+  },
+  {
+    "id": "lantern",
+    "name": "Lantern",
+    "category": "specialty_care",
+    "states": [
+      "US"
+    ],
+    "image_square": "logos/lantern_logo.m4fxqhv_irjkhwejv0xf1whacr",
+    "headline": "Specialty & Infusion Care Network",
+    "blurb": "High-performance network for surgery, oncology, and infusion therapies with curated access.",
+    "tags": [
+      "Specialty Care",
+      "Infusion",
+      "Oncology",
+      "Network"
+    ],
+    "unlock_requires": [
+      "gcp:>=50"
+    ],
+    "lock_msg": "Reach at least halfway through your plan to view specialty care options.",
+    "primary_cta": {
+      "label": "Connect",
+      "route": "/partner/connect?id=lantern"
+    },
+    "secondary_cta": {
+      "label": "Learn more",
+      "route": "https://lanterncare.com/"
+    },
+    "rating": 4.8
+  },
+  {
+    "id": "ncoa",
+    "name": "National Council on Aging (NCOA)",
+    "category": "benefits_education",
+    "states": [
+      "US"
+    ],
+    "image_square": "logos/ncoa.png",
+    "headline": "Medicaid & Assisted Living Coverage Guide",
+    "blurb": "Understand how Medicaid can help pay for assisted living through waivers, state plans, and the costs families still manage.",
+    "tags": [
+      "Medicaid",
+      "Assisted Living",
+      "Benefits"
+    ],
+    "primary_cta": {
+      "label": "Read article",
+      "route": "https://www.ncoa.org/article/does-medicaid-pay-for-assisted-living/"
+    }
+  },
+  {
+    "id": "home_instead",
+    "name": "Home Instead",
+    "category": "home_care",
+    "states": [
+      "US"
+    ],
+    "image_square": "logos/cca_logo.png",
+    "headline": "Personalized In-Home Care & Support",
+    "blurb": "Professional caregivers providing personalized in-home assistance, respite, companionship, and safety planning for older adults.",
+    "tags": [
+      "In-Home Care",
+      "Caregivers",
+      "Respite",
+      "Companionship"
+    ],
+    "primary_cta": {
+      "label": "Connect",
+      "route": "/partner/connect?id=home_instead"
+    },
+    "secondary_cta": {
+      "label": "Visit Home Instead",
+      "route": "https://www.homeinstead.com/"
+    },
+    "rating": 4.7
+  }
+]

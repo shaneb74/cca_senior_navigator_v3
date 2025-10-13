@@ -5,9 +5,10 @@
       "id": "app_utilities",
       "label": "App Utilities",
       "items": [
-        {"key": "welcome", "label": "Welcome", "module": "pages._stubs:render_welcome"},
-        {"key": "for_someone", "label": "For Someone", "module": "pages._stubs:render_for_someone", "hidden": true},
-        {"key": "for_me_contextual", "label": "For Me Contextual", "module": "pages._stubs:render_for_me_contextual", "hidden": true},
+  {"key": "welcome", "label": "Welcome", "module": "pages.welcome:render"},
+        {"key": "someone_else", "label": "For Someone", "module": "pages.someone_else:render", "hidden": true},
+        {"key": "self", "label": "For Me", "module": "pages.self:render", "hidden": true},
+        {"key": "professionals", "label": "For Professionals", "module": "pages.professionals:render", "hidden": true},
         {"key": "welcome_contextual", "label": "Contextual Welcome", "module": "pages._stubs:render_welcome_contextual", "hidden": true},
         {"key": "about", "label": "About Us", "module": "pages._stubs:render_about"}
       ]
@@ -16,18 +17,18 @@
       "id": "hubs",
       "label": "Hubs",
       "items": [
-        {"key": "hub_concierge", "label": "ConciergeCareHub", "module": "hubs.concierge:render"},
-        {"key": "hub_waiting", "label": "Waiting Room Hub", "module": "hubs.waiting_room:render"},
-        {"key": "hub_learning", "label": "Learning & Resources Hub", "module": "hubs.learning:render"},
-        {"key": "hub_trusted", "label": "Trusted Partners Hub", "module": "hubs.trusted_partners:render"},
-        {"key": "hub_professional", "label": "Professional Hub", "module": "hubs.professional:render", "roles": ["pro", "admin"]}
+        {"key": "hub_concierge", "label": "Concierge", "module": "hubs.concierge:render"},
+        {"key": "hub_waiting", "label": "Waiting Room", "module": "hubs.waiting_room:render"},
+        {"key": "hub_learning", "label": "Learning", "module": "hubs.learning:render"},
+        {"key": "hub_trusted", "label": "Trusted Partners", "module": "hubs.partners:render"},
+        {"key": "hub_professional", "label": "Professional", "module": "hubs.professional:render", "roles": ["pro", "admin"]}
       ]
     },
     {
       "id": "products",
       "label": "Products",
       "items": [
-        {"key": "gcp", "label": "Guided Care Plan", "module": "products.gcp:render", "hidden": true},
+        {"key": "gcp", "label": "Guided Care Plan", "module": "products.gcp.product:render", "hidden": true},
         {"key": "cost_planner", "label": "Cost Planner", "module": "products.cost_planner:render", "hidden": true},
         {"key": "pfma", "label": "Plan with My Advisor", "module": "products.pfma:render", "hidden": true},
         {"key": "faqs", "label": "FAQs", "module": "pages._stubs:render_faqs", "hidden": true}

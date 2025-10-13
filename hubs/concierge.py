@@ -1,144 +1,199 @@
+# hubs/concierge.py
 import streamlit as st
 
-from core.nav import PRODUCTS
-from core.state import get_product_state, get_user_ctx
-from core.ui import hub_section, render_hub_tile
-from core.gcp_data import evaluate
+from core.additional_services import get_additional_services
+from core.base_hub import render_dashboard_body
+from core.hub_guide import compute_hub_guide
+from core.product_tile import ProductTileHub, html_escape
+from layout import render_page
+
+__all__ = ["render"]
 
 
-def render():
-    ctx = get_user_ctx()
-    user_id = ctx["auth"].get("user_id", "guest")
+def render(ctx=None) -> None:
+    person_name = st.session_state.get("person_name", "").strip()
+    # Use person's name if available, otherwise use neutral "you"
+    person = person_name if person_name else "you"
     
-    # Import the theme CSS
-    st.markdown(
-        "<link rel='stylesheet' href='/assets/css/theme.css'>",
-        unsafe_allow_html=True
+    # Check for save message from module
+    save_msg = st.session_state.pop("_show_save_message", None)
+    if save_msg:
+        product_name = {
+            "gcp": "Guided Care Plan",
+            "cost": "Cost Planner",
+            "pfma": "Plan with My Advisor"
+        }.get(save_msg.get("product", ""), "questionnaire")
+        
+        progress = save_msg.get("progress", 0)
+        step = save_msg.get("step", 0)
+        total = save_msg.get("total", 0)
+        
+        if progress >= 100:
+            st.success(f"✅ {product_name} complete! You can review your results anytime.")
+        else:
+            st.info(f"💾 Progress saved! You're {progress:.0f}% through the {product_name} (step {step} of {total}). Click Continue below to pick up where you left off.")
+    
+    gcp_prog = float(st.session_state.get("gcp", {}).get("progress", 0))
+    cost_prog = float(st.session_state.get("cost", {}).get("progress", 0))
+    pfma_prog = float(st.session_state.get("pfma", {}).get("progress", 0))
+
+    next_step = "gcp"
+    if gcp_prog >= 100 and cost_prog < 100:
+        next_step = "cost"
+    elif cost_prog >= 100 and pfma_prog < 100:
+        next_step = "pfma"
+
+    # Read recommendation from handoff (written by module engine)
+    handoff = st.session_state.get("handoff", {}).get("gcp", {})
+    recommendation = handoff.get("recommendation")
+    recommendation_display = str(recommendation).replace('_', ' ').title() if recommendation else None
+    
+    # Build reason for MCIP
+    reason = (
+        f"Based on your {recommendation_display} recommendation"
+        if recommendation
+        else None
     )
     
-    # Apply canvas background like welcome pages
-    st.markdown(
-        """<style>
-        .main .block-container {
-            background: var(--bg);
-            min-height: 80vh;
-        }
-        .tiles-2x2 {
-            display: grid !important;
-            grid-template-columns: repeat(2, 1fr) !important;
-            gap: 24px !important;
-        }
-        @media (max-width: 640px) {
-            .tiles-2x2 {
-                grid-template-columns: 1fr !important;
-            }
-        }
-        </style>""",
-        unsafe_allow_html=True,
-    )
+    # Build GCP status text with recommendation
+    gcp_status_text = None
+    if gcp_prog >= 100 and recommendation_display:
+        gcp_status_text = f"✓ {recommendation_display}"
     
-    # Main content container
-    st.markdown('<section class="container section">', unsafe_allow_html=True)
+    # Build GCP tile description based on completion
+    gcp_desc = "Discover the type of care that's right for you."
+    gcp_desc_html = None  # For raw HTML when showing prominent recommendation
+    gcp_recommended_reason = "Start here to personalize everything."
     
-    # Hero section with title
-    st.markdown(
-        f"""
-        <div class="text-center" style="margin-bottom: var(--space-10);">
-            <h1 style="font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; line-height: 1.15; color: var(--ink); margin-bottom: var(--space-4);">
-                Concierge Care Hub
-            </h1>
-            <p style="color: var(--ink-600); max-width: 48ch; margin: 0 auto; font-size: 1.1rem;">
-                Your personalized dashboard for senior care planning and guidance.
-            </p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    if gcp_prog >= 100 and recommendation_display:
+        # Display recommendation prominently with custom CSS class
+        gcp_desc = None  # Clear standard desc
+        gcp_desc_html = f'<span class="tile-recommendation">Recommendation: {html_escape(recommendation_display)}</span>'
+    elif gcp_prog > 0:
+        # In progress - show resume prompt
+        gcp_desc = f"Resume questionnaire ({gcp_prog:.0f}% complete)"
+        gcp_recommended_reason = "Pick up where you left off"
+
+    hub_order = {
+        "hub_id": "concierge",
+        "ordered_products": ["gcp", "cost", "pfma"],
+        "reason": reason,
+        "total": 3,
+        "next_step": next_step,
+    }
+    hub_order["next_route"] = f"/product/{next_step}"
+    ordered_index = {pid: idx + 1 for idx, pid in enumerate(hub_order["ordered_products"])}
+
+    cards = [
+        ProductTileHub(
+            key="gcp",
+            title="Guided Care Plan",
+            desc=gcp_desc,
+            desc_html=gcp_desc_html,  # For prominent recommendation display
+            blurb="Answer a few short questions about your daily needs, health, and safety. We'll create a personal care plan to help you take the next step with confidence. Everything saves automatically, and it only takes about 2 minutes.",
+            image_square="gcp.png",
+            meta_lines=["≈2 min • Auto-saves"],
+            primary_route="?page=gcp",
+            progress=gcp_prog,
+            status_text=gcp_status_text,
+            variant="brand",
+            order=10,
+            visible=True,
+            locked=False,
+            recommended_in_hub="concierge",
+            recommended_total=hub_order["total"],
+            recommended_order=ordered_index["gcp"],
+            recommended_reason=gcp_recommended_reason,
+            is_next_step=(next_step == "gcp"),  # MCIP gradient control
+        ),
+        ProductTileHub(
+            key="cost",
+            title="Cost Planner",
+            desc="Estimate monthly costs and runway",
+            blurb="Project expenses, compare living options, and see how long current funds will last.",
+            image_square="cp.png",
+            meta_lines=["≈10–15 min • Save anytime"],
+            primary_route="?page=cost",
+            primary_go="cost",
+            secondary_label="See responses" if cost_prog > 0 else None,  # Only show after started
+            secondary_go="cost_view" if cost_prog > 0 else None,
+            progress=cost_prog,
+            variant="brand",
+            order=20,
+            visible=True,
+            locked=not (gcp_prog >= 100),
+            unlock_requires=["gcp:complete"],
+            lock_msg="Finish your Guided Care Plan to continue.",
+            recommended_in_hub="concierge",
+            recommended_total=hub_order["total"],
+            recommended_order=ordered_index["cost"],
+            recommended_reason=reason,
+            is_next_step=(next_step == "cost"),  # MCIP gradient control
+        ),
+        ProductTileHub(
+            key="pfma",
+            title="Plan with My Advisor",
+            desc="Schedule a 1:1 planning session",
+            blurb="Get matched with the right advisor to coordinate care, benefits, and trusted partners.",
+            badge_text="CONCIERGE TEAM",
+            image_square="pfma.png",
+            meta_lines=(
+                ["✅ 🦆🦆🦆🦆 All Ducks in a Row!"] if pfma_prog >= 100
+                else ["≈5–8 min • Ducks in a Row"]
+            ),
+            badges=(
+                [{"label": "🦆🦆🦆🦆 Earned", "tone": "success"}] if pfma_prog >= 100
+                else []
+            ),
+            primary_route="/product/pfma",
+            primary_go="pfma_start",
+            secondary_label="Share updates",
+            secondary_go="pfma_updates",
+            progress=pfma_prog,
+            variant="brand",
+            order=30,
+            locked=not (cost_prog >= 50),
+            unlock_requires=["cost:>=50"],
+            lock_msg="Estimate at least half your costs, then book.",
+            recommended_in_hub="concierge",
+            recommended_total=hub_order["total"],
+            recommended_order=ordered_index["pfma"],
+            recommended_reason=reason,
+            is_next_step=(next_step == "pfma"),  # MCIP gradient control
+        ),
+        ProductTileHub(
+            key="faqs",
+            title="FAQs & Answers",
+            desc="Ask the Senior Navigator AI",
+            blurb="Instant, tailored assistance.",
+            badge_text="AI AGENT",
+            image_square="faq.png",
+            primary_label="Open",
+            primary_route="?page=faqs",
+            progress=0,
+            variant="teal",
+            order=40,
+            is_next_step=False,  # FAQ never gets MCIP gradient
+        ),
+    ]
+
+    guide = compute_hub_guide("concierge", hub_order=hub_order, mode="auto")
+    additional = get_additional_services("concierge")
     
-    # Hub tiles grid
-    st.markdown('<div class="tiles-2x2" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px;">', unsafe_allow_html=True)
+    # Build chips - only include "For {person}" chip if name exists
+    chips = [{"label": "Concierge journey"}]
+    if person_name:  # Only show "For X" if name is set
+        chips.append({"label": f"For {person}", "variant": "muted"})
+    chips.append({"label": "Advisor & AI blended"})
 
-    # Render hub tiles for each product
-    for product_key in ["gcp", "cost_planner", "pfma"]:
-        if PRODUCTS[product_key]["hub"] == "concierge":
-            state = get_product_state(user_id, product_key)
-            
-            if product_key == "gcp":
-                # Get GCP recommendation if completed
-                answers = st.session_state.get("gcp_answers", {})
-                if answers:
-                    try:
-                        result = evaluate(answers)
-                        label = "Recommendation"
-                        value = result["tier"]
-                        status = "done"
-                        primary_label = "See responses"
-                        secondary_label = "Start over"
-                    except:
-                        label = "Status"
-                        value = "In progress"
-                        status = "doing"
-                        primary_label = "Continue"
-                        secondary_label = "Start over"
-                else:
-                    label = "Status"
-                    value = "Not started"
-                    status = "new"
-                    primary_label = "Get started"
-                    
-                render_hub_tile(
-                    title="Guided Care Plan",
-                    badge="Guided Care Plan",
-                    label=label,
-                    value=value,
-                    status=status,
-                    primary_label=primary_label
-                )
-                
-            elif product_key == "cost_planner":
-                # Mock cost planner data - in real implementation, get from state
-                label = "Monthly Gap"
-                value = "$382"
-                status = "doing"
-                primary_label = "Continue"
-                secondary_label = "Review"
-                
-                render_hub_tile(
-                    title="Cost Planner",
-                    badge="Cost Planner",
-                    label=label,
-                    value=value,
-                    status=status,
-                    primary_label=primary_label,
-                    secondary_label=secondary_label
-                )
-                
-            elif product_key == "pfma":
-                # Mock PFMA data - in real implementation, get from state
-                label = "Next Step"
-                value = "Awaiting Appointment"
-                status = "new"
-                primary_label = "Get connected"
-                
-                render_hub_tile(
-                    title="Plan with My Advisor",
-                    badge="Plan with My Advisor",
-                    label=label,
-                    value=value,
-                    status=status,
-                    primary_label=primary_label
-                )
-
-    # Add FAQs & Answers tile
-    render_hub_tile(
-        title="FAQs & Answers",
-        badge="FAQ",
-        label="Common Questions",
-        value="25 topics",
-        status="new",
-        primary_label="Search FAQs",
-        secondary_label="Contact support"
+    body_html = render_dashboard_body(
+        title="Concierge Care Hub",
+        subtitle="Finish the essentials, then unlock curated next steps with your advisor.",
+        chips=chips,
+        hub_guide_block=guide,
+        hub_order=hub_order,
+        cards=cards,
+        additional_services=additional,
     )
 
-    # Close the tiles grid and section
-    st.markdown('</div></section>', unsafe_allow_html=True)
+    render_page(body_html=body_html, active_route="hub_concierge")

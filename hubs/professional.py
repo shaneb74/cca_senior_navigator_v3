@@ -1,75 +1,115 @@
+from __future__ import annotations
+
+from typing import Dict, List
+
 import streamlit as st
-from core.ui import render_hub_tile
+
+from core.base_hub import render_dashboard_body
+from core.product_tile import ProductTileHub
+from layout import render_page
+
+__all__ = ["render"]
 
 
-def render():
-    # Import the theme CSS
-    st.markdown(
-        "<link rel='stylesheet' href='/assets/css/theme.css'>",
-        unsafe_allow_html=True
+def _to_tile(card: Dict[str, any], order: int) -> ProductTileHub:
+    actions = card.get("actions", [])
+    primary = actions[0] if actions else {}
+    secondary = actions[1] if len(actions) > 1 else {}
+
+    meta = [str(line) for line in card.get("meta", [])]
+    footnote = card.get("footnote")
+    if footnote:
+        meta.append(str(footnote))
+
+    return ProductTileHub(
+        key=card.get("title", f"tile-{order}").lower().replace(" ", "-") + f"-{order}",
+        title=card.get("title", ""),
+        desc=card.get("subtitle", ""),
+        blurb=card.get("description", ""),
+        badges=card.get("badges", []),
+        meta_lines=meta,
+        primary_label=primary.get("label"),
+        primary_route=f"?go={primary.get('route')}" if primary.get("route") else "#",
+        secondary_label=secondary.get("label") if secondary.get("route") else None,
+        secondary_route=f"?go={secondary.get('route')}" if secondary.get("route") else None,
+        order=order,
     )
 
-    # Apply canvas background like welcome pages
-    st.markdown(
-        """<style>
-        .main .block-container {
-            background: var(--bg);
-            min-height: 80vh;
-        }
-        </style>""",
-        unsafe_allow_html=True,
-    )
-    
-    # Main content container
-    st.markdown('<section class="container section">', unsafe_allow_html=True)
-    
-    # Hero section with title
-    st.markdown(
-        f"""
-        <div class="text-center" style="margin-bottom: var(--space-10);">
-            <h1 style="font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; line-height: 1.15; color: var(--ink); margin-bottom: var(--space-4);">
-                Professional Hub
-            </h1>
-            <p style="color: var(--ink-600); max-width: 48ch; margin: 0 auto; font-size: 1.1rem;">
-                Tools and resources for discharge planners, social workers, and care partners.
-            </p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-    
-    # Hub tiles grid
-    st.markdown('<div class="tiles">', unsafe_allow_html=True)
 
-    # Render professional service tiles
-    render_hub_tile(
-        title="Care Coordination",
-        badge="Coordination",
-        label="Service Status",
-        value="Available",
-        status="new",
-        primary_label="Schedule consultation"
+def render(ctx=None) -> None:
+    professional_role = st.session_state.get("professional_role", "Care Coordinator")
+    active_cases = st.session_state.get("active_cases", 3)
+    legal_requests = st.session_state.get("legal_requests", 0)
+    analytics_ready = st.session_state.get("analytics_ready", False)
+
+    raw_cards: List[Dict[str, any]] = [
+        {
+            "title": "Care coordination",
+            "subtitle": f"Toolkit for {professional_role}",
+            "badges": [{"label": "Team workspace", "tone": "brand"}],
+            "description": "Centralize updates, request records, and share notes with families.",
+            "meta": [
+                f"{active_cases} active cases",
+                "Secure messaging & templates included",
+            ],
+            "actions": [
+                {"label": "View cases", "route": "hub_professional"},
+                {"label": "Schedule consult", "route": "pfma_stub"},
+            ],
+            "footnote": "Collaborate with Concierge advisors in real time.",
+        },
+        {
+            "title": "Legal services",
+            "subtitle": "Power of attorney, guardianship, more",
+            "badges": [{"label": "Partner network", "tone": "neutral"}],
+            "description": "Connect families with vetted elder law attorneys and document prep specialists.",
+            "meta": [f"{legal_requests} pending requests"],
+            "actions": [
+                {"label": "Find attorney", "route": "hub_trusted"},
+                {"label": "Document prep", "route": "hub_trusted"},
+            ],
+            "footnote": "Set reminders for key filing deadlines.",
+        },
+        {
+            "title": "Financial planning",
+            "subtitle": "Funding paths and benefit reviews",
+            "badges": [{"label": "Advisor", "tone": "brand"}],
+            "description": "Coordinate with financial professionals to align budgets with care decisions.",
+            "meta": [
+                "Integrates with Cost Planner",
+                "Share secure summaries with families",
+            ],
+            "actions": [
+                {"label": "Book appointment", "route": "cost_planner_stub"},
+                {"label": "Resource center", "route": "hub_learning"},
+            ],
+            "footnote": "Invite families to review projections together.",
+        },
+        {
+            "title": "Analytics dashboard",
+            "subtitle": "Outcomes & performance",
+            "badges": [{"label": "Beta", "tone": "ai"}],
+            "description": "Monitor case velocity, satisfaction scores, and referral sources.",
+            "meta": ["Export to CSV or share interactive reports."],
+            "actions": [
+                {"label": "View analytics", "route": "hub_professional"},
+                {"label": "Download latest", "route": "hub_professional"},
+            ],
+            "footnote": "Data refreshes every morning at 6 AM.",
+        },
+    ]
+
+    cards = [_to_tile(card, (idx + 1) * 10) for idx, card in enumerate(raw_cards)]
+
+    body_html = render_dashboard_body(
+        title="Professional Hub",
+        subtitle="Coordinate discharge planning, track cases, and share updates with families.",
+        chips=[
+            {"label": "Care delivery"},
+            {"label": "Partner tools", "variant": "muted"},
+            {"label": "Secure collaboration"},
+        ],
+        cards=cards,
     )
 
-    render_hub_tile(
-        title="Legal Services",
-        badge="Legal",
-        label="Estate Planning",
-        value="Specialized help",
-        status="new",
-        primary_label="Find attorney",
-        secondary_label="Document prep"
-    )
-
-    render_hub_tile(
-        title="Financial Planning",
-        badge="Finance",
-        label="Senior Finance",
-        value="Expert guidance",
-        status="new",
-        primary_label="Book appointment",
-        secondary_label="Resource center"
-    )
-
-    # Close the tiles grid and section
-    st.markdown('</div></section>', unsafe_allow_html=True)
+    render_page(body_html=body_html, active_route="hub_professional")

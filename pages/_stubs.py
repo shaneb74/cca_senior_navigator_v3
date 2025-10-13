@@ -1,8 +1,7 @@
-
 from typing import List, Optional, Tuple
+
 import streamlit as st
 
-from core.nav import route_to
 from core.ui import img_src
 
 
@@ -17,7 +16,7 @@ def _page(title: str, desc: str, ctas: Optional[List[Tuple[str, str]]] = None):
         </style>""",
         unsafe_allow_html=True,
     )
-    
+
     st.markdown(
         f"""
 <section class="container section">
@@ -32,14 +31,20 @@ def _page(title: str, desc: str, ctas: Optional[List[Tuple[str, str]]] = None):
         """,
         unsafe_allow_html=True,
     )
-    
+
     if ctas:
-        st.markdown('<div class="card-actions" style="justify-content: center; margin-top: var(--space-6);">', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="card-actions" style="justify-content: center; margin-top: var(--space-6);">',
+            unsafe_allow_html=True,
+        )
         for label, target in ctas:
-            st.markdown(f'<a class="btn btn--primary" href="?page={target}" style="margin: 0 var(--space-2);">{label}</a>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
-    
-    st.markdown('</section>', unsafe_allow_html=True)
+            st.markdown(
+                f'<a class="btn btn--primary" href="?page={target}" style="margin: 0 var(--space-2);">{label}</a>',
+                unsafe_allow_html=True,
+            )
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown("</section>", unsafe_allow_html=True)
 
 
 def render_welcome():
@@ -55,7 +60,6 @@ def render_welcome():
     <p class="hero-sub">Expert advisors - no cost. Helping families navigate the most important senior living decisions with clarity and compassion.</p>
     <div class="cta-row">
       <a class="btn btn--primary" href="?page=welcome_contextual">Start Now</a>
-      <a class="btn btn--secondary" href="?page=login">Log in or sign up</a>
     </div>
   </div>
   <div>
@@ -95,9 +99,17 @@ def render_welcome():
 def render_welcome_contextual():
     mode = st.query_params.get("who", "someone")
     is_me = mode == "me"
-    photo_back = img_src("static/images/contextual_self.png") if is_me else img_src("static/images/contextual_someone_else.png")
+    photo_back = (
+        img_src("static/images/contextual_self.png")
+        if is_me
+        else img_src("static/images/contextual_someone_else.png")
+    )
     # foreground cards from design
-    photo_front = img_src("static/images/tell_us_about_you.png") if is_me else img_src("static/images/tell_us_about_them.png")
+    photo_front = (
+        img_src("static/images/tell_us_about_you.png")
+        if is_me
+        else img_src("static/images/tell_us_about_them.png")
+    )
     title_copy = "Getting Ready for Myself" if is_me else "Supporting Others"
     body_copy = (
         "Plan for your own future care with trusted guidance and peace of mind."
@@ -140,7 +152,7 @@ def render_welcome_contextual():
             name_label,
             value=current_name,
             placeholder="Type a name",
-            key="person_name_input"
+            key="person_name_input",
         )
 
         # Update session state when name changes
@@ -148,7 +160,7 @@ def render_welcome_contextual():
             st.session_state["person_name"] = person_name
 
         st.markdown(
-            f"""
+            """
       <div class="card-actions mt-space-4">
         <a class="btn btn--primary" href="?page=hub_concierge">Continue</a>
         <a class="btn btn--ghost" href="?page=welcome">Close</a>
@@ -208,7 +220,7 @@ def render_for_someone():
             name_label,
             value=current_name,
             placeholder="Type a name",
-            key="person_name_input"
+            key="person_name_input",
         )
 
         # Update session state when name changes
@@ -216,7 +228,7 @@ def render_for_someone():
             st.session_state["person_name"] = person_name
 
         st.markdown(
-            f"""
+            """
       <div class="card-actions mt-space-4">
         <a class="btn btn--primary" href="?page=hub_concierge">Continue</a>
         <a class="btn btn--ghost" href="?page=welcome">Close</a>
@@ -276,7 +288,7 @@ def render_for_me_contextual():
             name_label,
             value=current_name,
             placeholder="Type a name",
-            key="person_name_input"
+            key="person_name_input",
         )
 
         # Update session state when name changes
@@ -284,7 +296,7 @@ def render_for_me_contextual():
             st.session_state["person_name"] = person_name
 
         st.markdown(
-            f"""
+            """
       <div class="card-actions mt-space-4">
         <a class="btn btn--primary" href="?page=hub_concierge">Continue</a>
         <a class="btn btn--ghost" href="?page=welcome">Close</a>
@@ -315,7 +327,7 @@ def render_pro_welcome():
         </style>""",
         unsafe_allow_html=True,
     )
-    
+
     st.markdown(
         """
 <section class="container section">
@@ -347,7 +359,7 @@ def render_pro_welcome_contextual():
         </style>""",
         unsafe_allow_html=True,
     )
-    
+
     st.markdown(
         """
 <section class="container section">
@@ -379,7 +391,7 @@ def render_professionals():
         </style>""",
         unsafe_allow_html=True,
     )
-    
+
     st.markdown(
         """
 <section class="container stack">
@@ -412,35 +424,8 @@ def render_professionals():
 
 
 def render_login():
-    # Apply consistent styling like other pages
-    st.markdown(
-        """<style>
-        .main .block-container {
-            background: var(--bg);
-            min-height: 80vh;
-        }
-        </style>""",
-        unsafe_allow_html=True,
-    )
-    
-    st.markdown(
-        """
-<section class="container section">
-  <div class="text-center" style="margin-bottom: var(--space-8);">
-    <h1 style="font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; line-height: 1.15; color: var(--ink); margin-bottom: var(--space-4);">
-      Login
-    </h1>
-    <p style="color: var(--ink-600); max-width: 48ch; margin: 0 auto; font-size: 1.1rem;">
-      Auth form placeholder.
-    </p>
-  </div>
-  <div class="card-actions" style="justify-content: center; margin-top: var(--space-6);">
-    <a class="btn btn--primary" href="?page=my_account" style="margin: 0 var(--space-2);">My Account</a>
-  </div>
-</section>
-        """,
-        unsafe_allow_html=True,
-    )
+    # intentionally disabled (will be rebuilt as its own page)
+    return
 
 
 def render_ai_advisor():
@@ -454,7 +439,7 @@ def render_ai_advisor():
         </style>""",
         unsafe_allow_html=True,
     )
-    
+
     st.markdown(
         """
 <section class="container section">
@@ -483,7 +468,7 @@ def render_documents():
         </style>""",
         unsafe_allow_html=True,
     )
-    
+
     st.markdown(
         """
 <section class="container section">
@@ -512,7 +497,7 @@ def render_exports():
         </style>""",
         unsafe_allow_html=True,
     )
-    
+
     st.markdown(
         """
 <section class="container section">
@@ -541,7 +526,7 @@ def render_waiting_room():
         </style>""",
         unsafe_allow_html=True,
     )
-    
+
     status_img = img_src("static/images/login.png")
     st.markdown(
         f"""
@@ -582,7 +567,7 @@ def render_trusted_partners():
         </style>""",
         unsafe_allow_html=True,
     )
-    
+
     st.markdown(
         """
 <section class="container section">
@@ -611,7 +596,7 @@ def render_my_account():
         </style>""",
         unsafe_allow_html=True,
     )
-    
+
     st.markdown(
         """
 <section class="container section">
@@ -644,7 +629,7 @@ def render_terms():
         </style>""",
         unsafe_allow_html=True,
     )
-    
+
     st.markdown(
         """
 <section class="container section">
@@ -673,7 +658,7 @@ def render_privacy():
         </style>""",
         unsafe_allow_html=True,
     )
-    
+
     st.markdown(
         """
 <section class="container section">
@@ -702,7 +687,7 @@ def render_about():
         </style>""",
         unsafe_allow_html=True,
     )
-    
+
     st.markdown(
         """
 <section class="container section">
@@ -731,7 +716,7 @@ def render_faqs():
         </style>""",
         unsafe_allow_html=True,
     )
-    
+
     st.markdown(
         """
 <section class="container section">
@@ -750,3 +735,9 @@ def render_faqs():
         """,
         unsafe_allow_html=True,
     )
+
+
+# --- DEPRECATED: temporarily disabled during CSS/IA refactor ---
+def render_signup():
+    # intentionally disabled (will be rebuilt as its own page)
+    return

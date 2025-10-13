@@ -1,0 +1,430 @@
+/* ===== PRODUCTS (shared product/module presentation) ===== */
+
+.dashboard-card,
+.sn-hub .dashboard-card {
+  position: relative;
+  background: var(--card, #ffffff);
+  border: 1px solid #e6edf5;
+  border-radius: var(--radius-lg, 20px);
+  padding: var(--space-6, 1.5rem);
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(15, 23, 42, 0.06));
+  transition: transform 0.16s ease, box-shadow 0.16s ease;
+}
+
+.dashboard-card:hover,
+.sn-hub .dashboard-card:hover {
+  box-shadow: var(--shadow-md, 0 6px 18px rgba(15, 23, 42, 0.1));
+}
+
+.sn-hub .dashboard-card.is-hoverable:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md, 0 6px 18px rgba(15, 23, 42, 0.1));
+}
+
+.ptile.dashboard-card,
+.mtile.dashboard-card {
+  position: relative;
+}
+
+/* Titles & status row */
+/* header row */
+.tile-row,
+.dashboard-card__title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.tile-title,
+.dashboard-card__title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.tile-subtitle,
+.dashboard-card__subtitle {
+  margin: 0.25rem 0 0.5rem;
+  color: var(--ink-600);
+  font-size: 0.98rem;
+}
+
+/* Prominent recommendation display on completed tiles */
+.tile-recommendation {
+  display: block;
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--ink-900);
+  margin: 0.75rem 0 0.5rem;
+  line-height: 1.3;
+}
+
+/* Meta line chips */
+/* Meta line chips */
+.tile-meta,
+.dashboard-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 0.75rem;
+  color: var(--ink-500);
+  font-size: 0.95rem;
+  margin: 0.5rem 0;
+}
+
+.tile-meta span {
+  background: #f3f5f9;
+  border: 1px solid #e3eaf5;
+  border-radius: 999px;
+  padding: 0.25rem 0.5rem;
+}
+
+.tile-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin: var(--space-3) 0;
+}
+
+.tile-status-note {
+  margin-top: var(--space-4);
+  font-size: 0.9rem;
+  color: var(--ink-500);
+}
+
+/* CTAs */
+/* CTA row: reuse global .btn but allow spacing */
+.tile-actions,
+.dashboard-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.5rem;
+}
+
+/* Large product tile wrapper */
+.ptile {
+  --tile-from: #f2f6ff;
+  --tile-to: #eaf2ff;
+  --tile-border: #d9e3f7;
+  background: linear-gradient(180deg, var(--tile-from) 0%, var(--tile-to) 100%);
+  border: 1px solid var(--tile-border);
+  border-radius: 16px;
+  box-shadow: 0 8px 28px rgba(16, 24, 40, 0.08);
+  display: grid;
+  gap: 0.75rem;
+  padding: 1.25rem 1.25rem 1.1rem;
+  position: relative;
+}
+
+.ptile[data-variant="brand"] {
+  --tile-from: #eaf2ff;
+  --tile-to: #d7e6ff;
+  --tile-border: #bdd2ff;
+}
+
+.ptile[data-variant="success"] {
+  --tile-from: #e8f8f0;
+  --tile-to: #d9f3e8;
+  --tile-border: #bfe8d7;
+}
+
+.ptile[data-variant="warn"] {
+  --tile-from: #fff4e6;
+  --tile-to: #ffe7cc;
+  --tile-border: #ffd3a3;
+}
+
+.ptile[data-variant="violet"] {
+  --tile-from: #f3e9ff;
+  --tile-to: #e8d6ff;
+  --tile-border: #d6baff;
+}
+
+.ptile[data-variant="teal"] {
+  --tile-from: #e6fbff;
+  --tile-to: #ccf6ff;
+  --tile-border: #aeeaf5;
+}
+
+.ptile__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.ptile__heading {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1 1 auto;
+}
+
+.ptile__title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ptile__title-row .dashboard-status {
+  margin-left: auto;
+}
+
+/* Compact module tile */
+.mtile {
+  --mtile-border: #e2e8f0;
+  background: #ffffff;
+  border: 1px solid var(--mtile-border);
+  border-radius: 14px;
+  box-shadow: 0 4px 16px rgba(16, 24, 40, 0.06);
+  display: grid;
+  gap: 0.75rem;
+  padding: 1.1rem;
+}
+
+/* Headings & status */
+.dashboard-card__head {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.dashboard-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  background: #eef5ff;
+  color: #1e40af;
+  border: 1px solid #d6e8ff;
+  font-weight: 700;
+  font-size: 0.78rem;
+}
+
+.dashboard-description {
+  margin: 0;
+  color: var(--ink-600);
+  line-height: 1.55;
+}
+
+/* Buttons used inside tiles */
+/* CTA legacy helpers (kept for backward compatibility) */
+.dashboard-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1rem;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  border: 1px solid transparent;
+  text-decoration: none;
+}
+
+.dashboard-cta--primary {
+  background: var(--brand-600);
+  color: #ffffff !important;
+  border-color: var(--brand-700);
+}
+
+.dashboard-cta--primary:hover,
+.dashboard-cta--primary:focus-visible {
+  background: var(--brand-700);
+  box-shadow: var(--focus-ring);
+  color: #ffffff !important;
+}
+
+.dashboard-cta--ghost {
+  background: #ffffff;
+  color: var(--ink-600);
+  border: 1px solid rgba(71, 85, 105, 0.22);
+}
+
+.dashboard-cta--ghost:hover,
+.dashboard-cta--ghost:focus-visible {
+  border-color: rgba(71, 85, 105, 0.36);
+  color: var(--ink);
+}
+
+.dashboard-cta.is-disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Badges */
+.dashboard-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.78rem;
+}
+
+.badge--brand {
+  background: #eaf1ff;
+  color: #1e40af;
+  border: 1px solid #d6e8ff;
+}
+
+.badge--neutral {
+  background: #f3f5f9;
+  color: var(--ink-600);
+  border: 1px solid #e6edf5;
+}
+
+/* Locked modifier */
+.ptile.is-locked .dashboard-cta,
+.dashboard-cta.is-disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* === Tile logo (square) === */
+.ptile .tile-logo {
+  width: 96px;
+  height: 96px;
+  border-radius: 12px;
+  background: var(--surface-subtle, #f5f7fa);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 0 .5rem 0;
+  position: relative;
+}
+.ptile .tile-logo-img {
+  max-width: 100%;
+  max-height: 100%;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  position: relative;
+  z-index: 1;
+}
+
+.ptile .tile-logo-debug {
+  font-size: 10px;
+  opacity: 0.35;
+  margin-top: 2px;
+}
+
+/* === Step chip === */
+.badge--step {
+  font-size: .75rem;
+  padding: .25rem .5rem;
+  border-radius: 999px;
+  background: var(--surface-contrast-weak, #eef2f7);
+  color: var(--text-muted, #5b6570);
+  margin-left: auto;
+}
+
+/* === Lock overlay & message === */
+.ptile .icon-lock {
+  position: absolute;
+  top: .75rem;
+  right: .75rem;
+  width: 1rem;
+  height: 1rem;
+  mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24'><path fill='black' d='M17 8h-1V6a4 4 0 1 0-8 0v2H7a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2m-6 8.73V17a1 1 0 1 1 2 0v-.27a2 2 0 1 1-2 0M9 8V6a3 3 0 1 1 6 0v2z'/></svg>") center / contain no-repeat;
+  background: currentColor;
+  color: var(--text-muted, #5b6570);
+}
+.ptile.tile--locked { opacity: .80; }
+.ptile .tile-lock-msg {
+  margin-top: .5rem;
+  font-size: .875rem;
+  color: var(--text-muted, #5b6570);
+  max-width: 40ch;
+}
+
+/* MCIP Recommended Tile Gradient */
+.ptile.tile--recommended {
+  background: linear-gradient(135deg, 
+    rgba(255, 215, 0, 0.08) 0%,     /* Soft gold */
+    rgba(255, 235, 120, 0.05) 50%,  /* Light yellow */
+    rgba(255, 255, 255, 0) 100%     /* Fade to transparent */
+  );
+  border-color: rgba(255, 215, 0, 0.2);
+}
+
+.ptile.tile--recommended:hover {
+  background: linear-gradient(135deg, 
+    rgba(255, 215, 0, 0.12) 0%,
+    rgba(255, 235, 120, 0.08) 50%,
+    rgba(255, 255, 255, 0.02) 100%
+  );
+  border-color: rgba(255, 215, 0, 0.3);
+}
+
+/* === Hub guide order messaging === */
+.hub-guide--order {
+  display: grid;
+  gap: .75rem;
+  align-content: start;
+}
+.hub-guide--order .btn--primary {
+  justify-self: start;
+}
+.mcip-msg {
+  font-weight: 700;
+  color: var(--ink-700, #1f2937);
+}
+.mcip-sub {
+  font-size: .95rem;
+  color: var(--ink-500, #475569);
+}
+.mcip-extra {
+  font-size: .95rem;
+  color: var(--ink-600, #334155);
+  line-height: 1.55;
+}
+
+.dashboard-empty {
+  padding: 1.5rem;
+  border-radius: 16px;
+  background: #f8faff;
+  color: var(--ink-500);
+  text-align: center;
+  font-weight: 500;
+}
+
+/* Module engine hooks */
+.mod-head{margin:24px 0 16px;display:grid;gap:12px;}
+.mod-head .mod-steps{display:flex;gap:8px;}
+.step-pill{width:10px;height:10px;border-radius:50%;background:#dbe7fe;display:inline-block;}
+.step-pill.is-active{background:var(--brand-600);}
+.mod-head-row{display:flex;align-items:center;gap:12px;}
+.mod-back{color:var(--ink-600);text-decoration:none;font-weight:600;}
+.mod-back:hover{color:var(--brand-600);}
+.mod-label{font-weight:600;margin:12px 0 6px;}
+.mod-help{color:var(--ink-600);margin-bottom:8px;font-size:.95rem;}
+.mod-bottom{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--divider,#e2e8f0);padding:10px 16px;display:flex;gap:24px;justify-content:center;flex-wrap:wrap;}
+.mod-bottom .sum-item{display:grid;gap:2px;text-align:center;}
+.mod-bottom .sum-item .meta{font-size:.8rem;color:var(--ink-500);}
+.mod-bottom .sum-item .value{font-weight:700;color:var(--ink-700);}
+.visually-hidden{position:absolute!important;height:1px;width:1px;overflow:hidden;clip:rect(1px,1px,1px,1px);}
+.mod-flags{display:flex;gap:8px;margin:12px 0 24px;flex-wrap:wrap;}
+
+/* Partners: cards reuse .ptile; add minimal extras */
+.ptile[data-variant="partner"] {
+  border-color: rgba(37, 99, 235, 0.25);
+  box-shadow: 0 10px 22px rgba(37, 99, 235, 0.08);
+}

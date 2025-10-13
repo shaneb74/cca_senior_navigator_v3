@@ -5,4 +5,15 @@ __pycache__/
 *.pyc
 .venv/
 .DS_Store
-.streamlit/
+.streamlit/secrets.toml
+# quarantine old code
+_backup/
+archive/
+_backup/
+archive/
+
+
+_backup/
+archive/
+*.zip
+*.docx
