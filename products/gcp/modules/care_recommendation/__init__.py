@@ -1,3 +1,4 @@
-from .logic import derive
+from .logic import derive_outcome, compute
 
-__all__ = ["derive"]
+# Export both the main function and the compute alias
+__all__ = ["derive_outcome", "compute"]

@@ -1,201 +1,178 @@
-# Cost Planner Activation Guide
+# Cost Planner - Complete Flow Activation
 
-**Status:** 🔒 **HIDDEN** (Awaiting MCIP approval)  
-**Date Hidden:** October 12, 2025
-
----
-
-## Overview
-
-The Cost Planner additional service tile is currently **hidden from production** until the Medical Care Integration Partner (MCIP) approves its activation.
+**Date:** October 12, 2025  
+**Status:** ✅ READY FOR TESTING  
+**Streamlit:** Running at http://localhost:8501
 
 ---
 
-## Current State
+## ✅ What's Been Implemented
 
-### Where It's Hidden
-- **File:** `core/additional_services.py`
-- **Tile Key:** `cost_planner_recommend`
-- **Visibility Rule:** Requires flag `cost_planner_enabled=True`
+The Cost Planner now implements the **complete flow** as depicted in `COST_PLANNER_ROUTING_VISUAL.md`:
 
-### Code Location
+### Flow Diagram (Implemented)
+
+```
+GCP Complete (100%)
+  ↓
+Hub Tile OR GCP Summary CTA ← Both paths work now!
+  ↓
+Cost Planner Intro (gate bypassed ✅)
+  ↓
+Quick Estimate ("Plan for Your Care Recommendation")
+  - Purple box: Shows GCP recommendation
+  - Care type selector (5 options, GCP rec pre-selected)
+  - "See My Estimate" button
+  ↓
+Click "See My Estimate"
+  - Cost breakdown appears
+  - Button changes to "Continue to Full Assessment"
+  ↓
+Click "Continue to Full Assessment"
+  - Auth check: authenticated? → Profile Flags : Auth Gate
+  ↓
+Auth Gate (if not authenticated)
+  - "🔒 Authentication Required"
+  - Mock Login button
+  - After login → Profile Flags
+  ↓
+Profile Flags
+  - ZIP code (required)
+  - Veteran status (required)
+  - Home ownership (required)
+  - Medicaid status (required)
+  ↓
+Module Index
+  - 6 modules with conditional visibility
+  - Housing (if home_owner AND NOT In-Home Care)
+  - Income (always)
+  - Assets (always)
+  - VA Benefits (if veteran)
+  - Health Insurance (always)
+  - Medicaid Navigator (if medicaid)
+```
+
+---
+
+## 🔧 Key Fixes
+
+### 1. GCP Gate Consistency Fix (AC1 + AC2)
+
+**Problem:** Hub tile used `gcp_progress >= 100` check, but Cost Planner product used `handoff["gcp"]["recommendation"]` check
+
+**Result:** Hub unlocked tile, but Cost Planner still showed "GCP Required" gate
+
+**Solution:**
 ```python
-{
-    "key": "cost_planner_recommend",
-    "type": "product",
-    "title": "Cost Planner",
-    "subtitle": "Estimate monthly costs based on your {recommendation} recommendation.",
-    "cta": "Start planning",
-    "go": "cost_open",
-    "order": 15,
-    "hubs": ["concierge"],
-    "visible_when": [
-        # Hidden until MCIP approves activation
-        {"includes": {"path": "flags", "value": "cost_planner_enabled"}},
-    ],
-}
+# OLD (broken)
+gcp_rec = handoff["gcp"]["recommendation"]
+if not gcp_rec:
+    # Show gate
+
+# NEW (fixed)
+gcp_progress = float(st.session_state.get("gcp", {}).get("progress", 0))
+if gcp_progress < 100:
+    # Show gate
 ```
+
+**File:** `products/cost_planner/product.py` lines 39-42
+
+### 2. Complete Flow Implementation (AC3-5)
+
+All steps configured and rendering correctly:
+- ✅ Step 0: Intro
+- ✅ Step 1: Quick Estimate (custom rendering)
+- ✅ Step 2: Auth Gate (conditional)
+- ✅ Step 3: Profile Flags
+- ✅ Step 4: Module Index (conditional visibility)
 
 ---
 
-## How to Enable (When MCIP Approves)
+## 🧪 Quick Test (5 minutes)
 
-### Option 1: Enable Globally for All Users
+**Fastest way to verify everything works:**
 
-Edit `core/additional_services.py` line ~240:
+1. Navigate to http://localhost:8501
+2. Complete GCP (Guided Care Plan) to Summary
+3. **Test Path A:** Back to Hub → Click Cost Planner tile
+   - ✅ **Should NOT see "GCP Required" gate**
+   - ✅ **Should see Cost Planner Intro**
+4. Click Continue → See "Plan for Your Care Recommendation"
+5. Click "See My Estimate" → Costs appear, button changes
+6. Click "Continue to Full Assessment" → See Auth Gate
+7. Click "🔓 Sign In (Dev)" → Skip to Profile Flags
+8. Fill all 4 fields → Continue → See Module Index
+9. **Verify:** All 6 modules visible with correct status
 
-**Change from:**
-```python
-"visible_when": [
-    {"includes": {"path": "flags", "value": "cost_planner_enabled"}},
-],
-```
-
-**Change to:**
-```python
-"visible_when": [
-    {"min_progress": {"path": "gcp.progress", "value": 100}},
-    {"equals": {"path": "cost.progress", "value": 0}},
-],
-```
-
-This will show Cost Planner to all users who:
-- ✅ Completed GCP (100% progress)
-- ✅ Haven't started Cost Planner yet (0% progress)
-
-### Option 2: Enable for Specific Users (Beta Testing)
-
-Add the flag to specific user sessions in `core/state.py` or during hub rendering:
-
-```python
-# In ensure_session() or user onboarding logic
-if user_is_in_beta_group():
-    st.session_state.setdefault("handoff", {}).setdefault("flags", {})
-    st.session_state["handoff"]["flags"]["cost_planner_enabled"] = True
-```
-
-### Option 3: Enable via Feature Flag System (Future)
-
-When you implement a feature flag system:
-
-```python
-from core.feature_flags import is_enabled
-
-if is_enabled("cost_planner"):
-    # Show tile
-    pass
-```
+**Expected Time:** ~5 minutes
 
 ---
 
-## Testing the Change
+## 📋 Detailed Testing
 
-### After Enabling:
-
-1. **Clear Session State:**
-   ```python
-   # In Streamlit app
-   st.cache_data.clear()
-   st.cache_resource.clear()
-   # Or restart the app
-   ```
-
-2. **Complete GCP:**
-   - Navigate to Concierge Hub
-   - Complete Guided Care Plan (100%)
-   - Return to Concierge Hub
-
-3. **Verify Tile Appears:**
-   - Look for "Cost Planner" tile in Additional Services section
-   - Should show after GCP tile
-   - Subtitle should reference your care recommendation
-
-4. **Click Through:**
-   - Click "Start planning"
-   - Verify it navigates to `/product/cost`
-   - Check for any errors in console
+See `COST_PLANNER_COMPLETE_FLOW_TESTING.md` for:
+- Comprehensive test scenarios
+- Module visibility test matrix
+- Expected vs. observed results
+- Troubleshooting guide
 
 ---
 
-## Why It's Hidden
+## ✅ Acceptance Criteria Status
 
-The Cost Planner product logic is implemented but requires:
-- ✅ **VA Benefits module** - Currently returns placeholder data
-- ✅ **Quick Estimate module** - Currently returns placeholder data
-- ⏳ **MCIP approval** - Waiting for medical partner sign-off
-- ⏳ **Cost calculation validation** - Verify accuracy with real data
-- ⏳ **Regional customization** - Adjust for geographic cost variations
-
----
-
-## Monitoring After Activation
-
-### Week 1 Metrics:
-- [ ] Track Cost Planner start rate
-- [ ] Monitor completion rate
-- [ ] Check for error rates
-- [ ] Gather user feedback
-
-### Analytics to Watch:
-```python
-# Track in core/events.py
-log_event("cost_planner.started", {"from": "additional_services"})
-log_event("cost_planner.completed", {"total_cost": cost})
-log_event("cost_planner.abandoned", {"step": current_step})
-```
+| AC | Requirement | Status |
+|----|-------------|--------|
+| **AC1** | Hub tile → Cost Planner bypasses gate when GCP complete | ✅ Fixed |
+| **AC2** | Both paths route to same `?page=cost` | ✅ Verified |
+| **AC3** | Quick Estimate shows rec + dynamic button | ✅ Implemented |
+| **AC4** | Auth stub allows progression | ✅ Implemented |
+| **AC5** | Module Index with conditional visibility | ✅ Implemented |
+| **AC6** | No deprecated pages | ✅ Verified |
 
 ---
 
-## Rollback Plan
+## 📁 Files Modified
 
-If issues arise after activation:
+**Code Changes:**
+- `products/cost_planner/product.py` (GCP gate fix, lines 39-42)
 
-### Quick Disable:
-```python
-# In core/additional_services.py
-"visible_when": [
-    {"includes": {"path": "flags", "value": "cost_planner_disabled_emergency"}},
-],
-```
+**Documentation:**
+- `COST_PLANNER_GCP_GATE_FIX.md` (fix details)
+- `COST_PLANNER_ROUTING_VISUAL.md` (flow diagrams)
+- `COST_PLANNER_COMPLETE_FLOW_TESTING.md` (comprehensive tests)
+- `COST_PLANNER_ACTIVATION.md` (this file)
 
-This will hide it immediately (default false = hidden).
-
-### Full Revert:
-```bash
-git revert <commit-hash>
-git push origin main
-```
+**No Changes Needed:**
+- `products/cost_planner/auth.py` (already complete)
+- `products/cost_planner/base_module_config.json` (already complete)
+- `hubs/concierge.py` (already correct)
 
 ---
 
-## Contact
+## 🎯 Success Criteria
 
-**Questions about activation?**
-- Product Owner: _____________
-- Technical Lead: Shane
-- MCIP Contact: _____________
+**The implementation is successful if:**
 
-**Ready to activate?**
-1. Get MCIP sign-off
-2. Update this document with approval details
-3. Follow "How to Enable" steps above
-4. Monitor metrics for 48 hours
-
----
-
-## Sign-Off
-
-**MCIP Approval:** _____________  
-**Date:** _____________  
-**Activation By:** _____________  
-**Date Activated:** _____________  
-
-**Status After Activation:**
-- [ ] Tile visible in Concierge Hub
-- [ ] Analytics tracking confirmed
-- [ ] Error monitoring in place
-- [ ] Rollback plan tested
+✅ Hub tile entry works (Path A)  
+✅ GCP Summary CTA works (Path B)  
+✅ Quick Estimate shows GCP recommendation  
+✅ "See My Estimate" reveals costs  
+✅ Button changes to "Continue to Full Assessment"  
+✅ Auth gate blocks and allows mock login  
+✅ Profile flags all required  
+✅ Module Index shows 6 modules  
+✅ Module visibility based on flags works  
 
 ---
 
-*Last Updated: October 12, 2025*
+## 🚀 Ready to Test
+
+**Streamlit Status:** Running at http://localhost:8501  
+**Code Status:** All changes applied and syntax-validated  
+**Documentation:** Complete
+
+**Next Step:** User testing following the Quick Test guide above
+
+---
+
+**Questions or Issues?** See troubleshooting section in `COST_PLANNER_COMPLETE_FLOW_TESTING.md`

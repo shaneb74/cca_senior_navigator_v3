@@ -6,6 +6,9 @@ from core.state import ensure_session, get_user_ctx
 from core.ui import page_container_close, page_container_open
 from layout import reset_global_frame
 
+# Development utilities
+from products.cost_planner.dev_unlock import show_dev_controls
+
 st.set_page_config(page_title="Senior Navigator", page_icon="🧭", layout="wide")
 
 
@@ -74,6 +77,9 @@ LAYOUT_CHROME_ROUTES = {
 uses_layout_frame = route in LAYOUT_CHROME_ROUTES
 
 reset_global_frame()
+
+# Show development controls in sidebar
+show_dev_controls()
 
 if not uses_layout_frame:
     page_container_open()

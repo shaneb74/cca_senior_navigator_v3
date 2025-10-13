@@ -20,6 +20,16 @@ html,body{
 }
 img{max-width:100%;height:auto;display:block}
 
+/* Remove excessive Streamlit top padding */
+section.main > div.block-container {
+  padding-top: 1rem !important;
+}
+
+/* Ensure header sticks to top without gap */
+header.sn-global-header {
+  margin-top: 0 !important;
+}
+
 /* Layout helpers used by pages/_stubs.py */
 .container{max-width:1120px;margin:0 auto;padding:0 var(--space-6)}
 .section{padding:var(--space-10) 0}

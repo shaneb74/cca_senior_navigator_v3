@@ -1,0 +1,729 @@
+import json
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+from core.modules.schema import OutcomeContract
+
+
+def sections_to_inputs(manifest: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """Extract all input questions from manifest sections."""
+    inputs: List[Dict[str, Any]] = []
+    for section in manifest.get("sections", []):
+        inputs.extend(section.get("questions", []))
+    return inputs
+
+
+def _score_from_options(questions: List[Dict[str, Any]], key: str, answers: Dict[str, Any]) -> int:
+    """Get score for a single-select answer from question options."""
+    val = answers.get(key)
+    if not val:
+        return 0
+    
+    for question in questions:
+        q_id = question.get("id") or question.get("key")
+        if q_id != key:
+            continue
+        for option in question.get("options", []):
+            opt_value = option.get("value", option.get("label"))
+            if opt_value == val:
+                try:
+                    return int(option.get("score", 0))
+                except (ValueError, TypeError):
+                    return 0
+    return 0
+
+
+def _score_multi(
+    questions: List[Dict[str, Any]],
+    key: str,
+    answers: Dict[str, Any],
+    cap: Optional[int] = None,
+) -> int:
+    """Get cumulative score for multi-select answers, with optional cap."""
+    values = answers.get(key) or []
+    if not isinstance(values, list):
+        values = [values]
+    
+    total = 0
+    for question in questions:
+        q_id = question.get("id") or question.get("key")
+        if q_id != key:
+            continue
+        per_question_scores = {
+            option.get("value", option.get("label")): int(option.get("score", 0))
+            for option in question.get("options", [])
+        }
+        for value in values:
+            total += per_question_scores.get(value, 0)
+        if cap is not None:
+            try:
+                total = min(total, int(cap))
+            except (ValueError, TypeError):
+                pass
+        return total
+    return 0
+
+def _eval(rule: dict, ctx: dict) -> bool:
+    if not rule:
+        return True
+    if "all" in rule: return all(_eval(r, ctx) for r in rule["all"])
+    if "any" in rule: return any(_eval(r, ctx) for r in rule["any"])
+    if "eq" in rule:
+        k, v = rule["eq"]; return ctx.get(k) == v
+    if "neq" in rule:
+        k, v = rule["neq"]; return ctx.get(k) != v
+    if "in" in rule:
+        k, arr = rule["in"]; return ctx.get(k) in arr
+    if "not_in" in rule:
+        k, arr = rule["not_in"]; return ctx.get(k) not in arr
+    if "includes" in rule:
+        # Check if array contains value (for multi-select fields like badls, iadls)
+        arr_key, value = rule["includes"]
+        arr = ctx.get(arr_key) or []
+        return value in arr if isinstance(arr, (list, tuple, set)) else False
+    if "lt" in rule:
+        k, t = rule["lt"]; return float(ctx.get(k, 0)) < float(t)
+    if "lte" in rule:
+        k, t = rule["lte"]; return float(ctx.get(k, 0)) <= float(t)
+    if "gt" in rule:
+        k, t = rule["gt"]; return float(ctx.get(k, 0)) > float(t)
+    if "gte" in rule:
+        k, t = rule["gte"]; return float(ctx.get(k, 0)) >= float(t)
+    if "len_gt" in rule:
+        k, t = rule["len_gt"]; return len(ctx.get(k) or []) > int(t)
+    if "len_gte" in rule:
+        k, t = rule["len_gte"]; return len(ctx.get(k) or []) >= int(t)
+    if "len_lt" in rule:
+        k, t = rule["len_lt"]; return len(ctx.get(k) or []) < int(t)
+    if "len_lte" in rule:
+        k, t = rule["len_lte"]; return len(ctx.get(k) or []) <= int(t)
+    return False
+
+def _confidence_label(confidence: float) -> str:
+    """Convert confidence score to human-readable label."""
+    if confidence >= 0.9:
+        return "High confidence"
+    elif confidence >= 0.7:
+        return "Moderate confidence"
+    elif confidence >= 0.5:
+        return "Low confidence"
+    else:
+        return "Insufficient data"
+
+
+def _generate_summary_points(
+    answers: dict, 
+    score: float, 
+    recommendation: str, 
+    tier: int,
+    flags: dict,
+    flag_messages: List[str] = None
+) -> List[str]:
+    """Generate contextual, actionable summary bullet points.
+    
+    Args:
+        answers: User responses
+        score: Total weighted score
+        recommendation: Care level recommendation
+        tier: Numeric tier level
+        flags: Active flags dictionary with priority and messages
+        flag_messages: Pre-rendered high-priority flag messages to display first
+    
+    Returns:
+        List of formatted summary bullet points
+    """
+    points = []
+    
+    # If there are high-priority flag messages, add them FIRST (above standard summary)
+    if flag_messages:
+        points.extend(flag_messages)
+    
+    # Independence snapshot using help_overall or badls
+    help_level = answers.get("help_overall", "")
+    badls = answers.get("badls", [])
+    iadls = answers.get("iadls", [])
+    
+    if badls and isinstance(badls, list):
+        adl_summary = f"{', '.join(badls[:3])}"
+        if len(badls) > 3:
+            adl_summary += f" (+ {len(badls) - 3} more)"
+        independence = f"Needs help with: {adl_summary}"
+    elif help_level:
+        help_labels = {
+            "independent": "Fully independent",
+            "some_help": "Occasional – some help with a few tasks",
+            "daily_help": "Regular – needs daily assistance",
+            "full_support": "Extensive – needs full-time support"
+        }
+        independence = help_labels.get(help_level, help_level)
+    else:
+        independence = "Not assessed"
+    
+    if iadls and isinstance(iadls, list) and len(iadls) > 0:
+        iadl_summary = f"{', '.join(iadls[:3])}"
+        if len(iadls) > 3:
+            iadl_summary += f" (+ {len(iadls) - 3} more)"
+        independence += f"; plus {iadl_summary}"
+    
+    points.append(f"Independence snapshot: {independence}")
+    
+    # Cognitive notes
+    memory = answers.get("memory_changes", "")
+    memory_labels = {
+        "no_concerns": "No concerns",
+        "occasional": "Occasional forgetfulness",
+        "moderate": "Moderate memory or thinking issues",
+        "severe": "Severe memory issues or diagnosis like dementia or Alzheimer's"
+    }
+    cognitive_note = memory_labels.get(memory, memory if memory else "Not assessed")
+    
+    behaviors = answers.get("behaviors", [])
+    if behaviors and isinstance(behaviors, list) and len(behaviors) > 0:
+        behavior_summary = f"{', '.join(behaviors[:3])}"
+        if len(behaviors) > 3:
+            behavior_summary += f" (+ {len(behaviors) - 3} more)"
+        cognitive_note += f"; behaviors: {behavior_summary}"
+    
+    points.append(f"Cognitive notes: {cognitive_note}")
+    
+    # Medication complexity
+    meds = answers.get("meds_complexity", "")
+    meds_labels = {
+        "none": "None",
+        "simple": "Simple – a few meds, easy to manage",
+        "moderate": "Moderate – daily meds, some complexity",
+        "complex": "Complex – many meds or caregiver-managed"
+    }
+    meds_note = meds_labels.get(meds, meds if meds else "Not assessed")
+    points.append(f"Medication complexity: {meds_note}")
+    
+    # Caregiver hours/day
+    hours = answers.get("hours_per_day", "")
+    hours_labels = {
+        "<1h": "Less than 1 hour",
+        "1-3h": "1–3 hours",
+        "4-8h": "4–8 hours",
+        "24h": "24-hour support"
+    }
+    hours_note = hours_labels.get(hours, hours if hours else "Not assessed")
+    points.append(f"Caregiver hours/day: {hours_note}")
+    
+    # Location/access
+    isolation = answers.get("isolation", "")
+    isolation_labels = {
+        "accessible": "No – easily accessible",
+        "somewhat": "Somewhat isolated",
+        "very": "Very isolated"
+    }
+    location_note = isolation_labels.get(isolation, isolation if isolation else "Not assessed")
+    points.append(f"Location/access: {location_note}")
+    
+    return points
+
+
+def derive(manifest: Dict[str, Any], answers: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Derive care recommendation from user assessment responses.
+    
+    Args:
+        manifest: Module configuration with scoring rules and decision tree
+        answers: User responses to assessment questions
+        context: Additional context (product, debug flags, etc.)
+    
+    Returns:
+        {
+            "tier": str,              # Care level recommendation
+            "score": float,           # Weighted numeric score
+            "points": List[str],      # Summary bullet points
+            "confidence": float,      # 0-1 confidence score
+            "confidence_label": str,  # Human-readable confidence
+            "flags": dict,            # Active warning flags
+            "metadata": dict          # Additional scoring details
+        }
+    """
+    # Validate inputs
+    if not answers:
+        return {
+            "tier": "Unable to determine",
+            "score": 0,
+            "points": ["No answers provided. Please complete the assessment."],
+            "confidence": 0.0,
+            "confidence_label": "Insufficient data",
+            "flags": {},
+            "metadata": {}
+        }
+    
+    # Normalize answer values to match OLD manifest expectations
+    # The new module_config.json uses full label text as values, but OLD manifest expects short codes
+    normalized_answers = dict(answers)
+    
+    # Normalize memory_changes
+    memory_val = str(normalized_answers.get("memory_changes", "")).lower()
+    if "severe" in memory_val or "dementia" in memory_val or "alzheimer" in memory_val:
+        normalized_answers["memory_changes"] = "severe"
+    elif "moderate" in memory_val:
+        normalized_answers["memory_changes"] = "moderate"
+    elif "occasional" in memory_val:
+        normalized_answers["memory_changes"] = "occasional"
+    elif "no concern" in memory_val:
+        normalized_answers["memory_changes"] = "none"
+    
+    # Normalize meds_complexity
+    meds_val = str(normalized_answers.get("meds_complexity", "")).lower()
+    if "complex" in meds_val:
+        normalized_answers["meds_complexity"] = "complex"
+    elif "moderate" in meds_val:
+        normalized_answers["meds_complexity"] = "moderate"
+    elif "simple" in meds_val:
+        normalized_answers["meds_complexity"] = "simple"
+    elif "none" in meds_val:
+        normalized_answers["meds_complexity"] = "none"
+    
+    # Normalize mobility
+    mobility_val = str(normalized_answers.get("mobility", "")).lower()
+    if "wheelchair" in mobility_val or "scooter" in mobility_val:
+        normalized_answers["mobility"] = "wheelchair"
+    elif "bed" in mobility_val or "bedbound" in mobility_val:
+        normalized_answers["mobility"] = "bedbound"
+    elif "walker" in mobility_val or "cane" in mobility_val:
+        normalized_answers["mobility"] = "walker"
+    elif "independent" in mobility_val or "walks" in mobility_val:
+        normalized_answers["mobility"] = "independent"
+    
+    # Normalize falls
+    falls_val = str(normalized_answers.get("falls", "")).lower()
+    if "multiple" in falls_val:
+        normalized_answers["falls"] = "multiple"
+    elif "one" in falls_val or "once" in falls_val:
+        normalized_answers["falls"] = "one"
+    elif "no" in falls_val or "none" in falls_val:
+        normalized_answers["falls"] = "none"
+    
+    # Normalize mood
+    mood_val = str(normalized_answers.get("mood", "")).lower()
+    if "low" in mood_val or "down" in mood_val:
+        normalized_answers["mood"] = "low"
+    elif "okay" in mood_val or "ups and downs" in mood_val:
+        normalized_answers["mood"] = "okay"
+    elif "great" in mood_val or "positive" in mood_val:
+        normalized_answers["mood"] = "great"
+    
+    # Normalize isolation
+    isolation_val = str(normalized_answers.get("isolation", "")).lower()
+    if "very" in isolation_val:
+        normalized_answers["isolation"] = "very"
+    elif "somewhat" in isolation_val:
+        normalized_answers["isolation"] = "somewhat"
+    elif "easy" in isolation_val or "accessible" in isolation_val:
+        normalized_answers["isolation"] = "easy"
+    
+    # Check for critical required fields
+    required_keys = ["memory_changes", "mobility", "help_overall"]
+    missing = [k for k in required_keys if k not in normalized_answers or not normalized_answers.get(k)]
+    if missing:
+        return {
+            "tier": "Incomplete assessment",
+            "score": 0,
+            "points": [
+                "⚠️ Assessment incomplete",
+                f"Missing critical information: {', '.join(missing)}",
+                "Please complete all required questions for an accurate recommendation."
+            ],
+            "confidence": 0.0,
+            "confidence_label": "Insufficient data",
+            "flags": {},
+            "metadata": {"missing_fields": missing}
+        }
+    
+    questions = sections_to_inputs(manifest)
+    logic = manifest.get("logic", {})
+    scored_inputs = logic.get("scored_inputs", [])
+    
+    # Calculate weighted score using NORMALIZED answers
+    total = 0.0
+    score_breakdown = {}
+    
+    for scored in scored_inputs:
+        key = scored.get("id")
+        if not key:
+            continue
+        
+        weight = float(scored.get("weight", 1))
+        score_cap = scored.get("score_cap")
+        domain = scored.get("domain", "General")
+        
+        if isinstance(normalized_answers.get(key), list):
+            raw = _score_multi(questions, key, normalized_answers, score_cap)
+        else:
+            raw = _score_from_options(questions, key, normalized_answers)
+            if score_cap is not None:
+                raw = min(raw, int(score_cap))
+        
+        weighted = raw * weight
+        total += weighted
+        
+        # Track scoring breakdown by domain
+        if domain not in score_breakdown:
+            score_breakdown[domain] = {"raw": 0, "weighted": 0, "count": 0}
+        score_breakdown[domain]["raw"] += raw
+        score_breakdown[domain]["weighted"] += weighted
+        score_breakdown[domain]["count"] += 1
+    
+    # Build context for decision tree using NORMALIZED answers
+    ctx = dict(normalized_answers)
+    ctx["score"] = total
+    
+    # Evaluate decision tree
+    tier = 0
+    recommendation = None
+    matched_rule = None
+    
+    for idx, node in enumerate(logic.get("decision_tree", [])):
+        if _eval(node.get("if", {}), ctx):
+            recommendation = node.get("recommendation")
+            tier = node.get("tier", tier)
+            matched_rule = idx
+            break
+    
+    # Apply modifiers
+    modifiers_applied = []
+    for modifier in logic.get("modifiers", []):
+        if _eval(modifier.get("if", {}), ctx):
+            action = modifier.get("action")
+            value = int(modifier.get("value", 1))
+            if action == "increase_tier":
+                tier = int(tier or 0) + value
+                modifiers_applied.append(f"Tier increased by {value}")
+            elif action == "decrease_tier":
+                tier = int(tier or 0) - value
+                modifiers_applied.append(f"Tier decreased by {value}")
+    
+    # Clamp tier and set default recommendation
+    tier = max(0, min(int(tier or 0), 4))
+    if recommendation is None:
+        recommendation = "Independent / In-Home"
+    
+    # Evaluate flags
+    flags = {}
+    flag_config = logic.get("flags", {})
+    for flag_name, flag_rule in flag_config.items():
+        if _eval(flag_rule.get("if", {}), ctx):
+            flags[flag_name] = {
+                "priority": flag_rule.get("priority", "medium"),
+                "message": flag_rule.get("message", "")
+            }
+    
+    # Extract high-priority flag messages to display at top of results
+    high_priority_messages = []
+    for flag_name, flag_data in flags.items():
+        if flag_data.get("priority") == "high" and flag_data.get("message"):
+            msg = flag_data.get("message")
+            if msg and msg not in high_priority_messages:
+                high_priority_messages.append(msg)
+    
+    # Calculate confidence
+    total_questions = len(questions)
+    answered_questions = len([k for k in answers.keys() if answers.get(k)])
+    completeness = answered_questions / total_questions if total_questions > 0 else 0
+    
+    # Boost confidence if critical questions answered
+    critical_answered = all(
+        answers.get(k) for k in ["memory_changes", "mobility", "help_overall", "primary_support", "meds_complexity"]
+    )
+    confidence = completeness * (1.1 if critical_answered else 0.9)
+    confidence = min(1.0, max(0.0, confidence))
+    
+    # Generate detailed summary points (flag messages will be prepended)
+    points = _generate_summary_points(
+        answers, 
+        total, 
+        recommendation, 
+        tier, 
+        flags,
+        flag_messages=high_priority_messages
+    )
+    
+    # Build metadata
+    metadata = {
+        "total_score": round(total, 2),
+        "tier_level": tier,
+        "matched_rule_index": matched_rule,
+        "modifiers_applied": modifiers_applied,
+        "score_breakdown": score_breakdown,
+        "answered_count": answered_questions,
+        "total_questions": total_questions
+    }
+    
+    # Debug output if requested
+    if context.get("debug"):
+        print("\n=== CARE RECOMMENDATION DEBUG ===")
+        print(f"Total score: {total} (tier {tier})")
+        print(f"Recommendation: {recommendation}")
+        print(f"Confidence: {confidence:.2%}")
+        print(f"Flags: {list(flags.keys())}")
+        print(f"Modifiers: {modifiers_applied}")
+        print("=================================\n")
+    
+    return {
+        "tier": recommendation,
+        "score": round(total, 2),
+        "points": points,
+        "confidence": round(confidence, 2),
+        "confidence_label": _confidence_label(confidence),
+        "flags": flags,
+        "metadata": metadata
+    }
+
+
+def derive_outcome(answers: Dict[str, Any], context: Dict[str, Any]) -> OutcomeContract:
+    """
+    Wrapper for the module engine - loads manifest and calls scoring logic.
+    
+    Expected by core.modules.engine when specified in outcomes_compute.
+    
+    Uses NEW scoring system from logic.json based on flags and categories.
+    """
+    # Load the manifest (module.json) with question structure
+    manifest_path = Path(__file__).parent / "module.json"
+    with manifest_path.open() as f:
+        manifest = json.load(f)
+    
+    # Load the logic.json with scoring rules
+    logic_path = Path(__file__).parent / "logic.json"
+    with logic_path.open() as f:
+        logic_config = json.load(f)
+    
+    logic = logic_config.get("logic", {})
+    
+    # Step 1: Evaluate all flags from logic.json
+    flags_config = logic.get("flags", {})
+    active_flags = {}
+    
+    for flag_name, flag_def in flags_config.items():
+        trigger = flag_def.get("trigger", "")
+        priority = flag_def.get("priority", "medium")
+        message = flag_def.get("message", "")
+        
+        # Evaluate the trigger condition
+        if _evaluate_trigger(trigger, answers):
+            active_flags[flag_name] = {
+                "priority": priority,
+                "message": message
+            }
+    
+    # Step 2: Merge field-level flags from step navigation
+    field_flags = answers.get("flags", {})
+    if isinstance(field_flags, dict):
+        for flag_key in field_flags.keys():
+            if flag_key not in active_flags and field_flags.get(flag_key) is True:
+                active_flags[flag_key] = {"priority": "medium", "message": ""}
+    
+    # Step 3: Calculate category scores using flag mapping
+    flag_to_category = logic.get("flag_to_category_mapping", {})
+    scoring_weights = logic.get("scoring", {})
+    
+    category_scores = {
+        "care_burden": 0,
+        "social_isolation": 0,
+        "mental_health_concern": 0,
+        "home_safety": 0,
+        "geographic_access": 0,
+        "cognitive_function": 0,
+        "health_management": 0,
+        "caregiver_support": 0
+    }
+    
+    # Count how many flags contribute to each category
+    for flag_name in active_flags.keys():
+        category = flag_to_category.get(flag_name)
+        if category and category in category_scores:
+            category_scores[category] += 1
+    
+    # Step 4: Calculate aggregate scores for care settings
+    in_home_score = 0
+    assisted_living_score = 0
+    
+    in_home_weights = scoring_weights.get("in_home", {})
+    assisted_living_weights = scoring_weights.get("assisted_living", {})
+    
+    for category, count in category_scores.items():
+        in_home_score += count * in_home_weights.get(category, 0)
+        assisted_living_score += count * assisted_living_weights.get(category, 0)
+    
+    # Step 5: Evaluate decision thresholds to determine recommendation
+    decision_thresholds = logic.get("decision_thresholds", {})
+    recommendation = "Independent / In-Home"  # Default
+    confidence = 0.5
+    matched_threshold = None
+    
+    # Build evaluation context with scores and flags
+    eval_ctx = dict(answers)
+    eval_ctx["in_home_score"] = in_home_score
+    eval_ctx["assisted_living_score"] = assisted_living_score
+    eval_ctx.update(active_flags)  # Add flags as boolean context
+    
+    # Evaluate thresholds in priority order (check memory_care_override first)
+    priority_order = [
+        "memory_care_override",
+        "no_care_needed", 
+        "assisted_living",
+        "moderate_needs_assisted_living",
+        "close_to_assisted_living",
+        "in_home_with_mobility_challenges",
+        "in_home_possible_with_cognitive_and_safety_risks",
+        "balanced_recommendation",
+        "in_home_with_support",
+        "in_home_with_uncertain_support"
+    ]
+    
+    for threshold_key in priority_order:
+        threshold = decision_thresholds.get(threshold_key)
+        if not threshold:
+            continue
+            
+        criteria = threshold.get("criteria", "")
+        if _evaluate_criteria(criteria, eval_ctx):
+            recommendation = threshold.get("recommendation", recommendation)
+            matched_threshold = threshold_key
+            confidence = 0.85 if "override" in threshold_key else 0.75
+            break
+    
+    # Step 6: Generate summary points
+    points = _generate_summary_points(
+        answers, 
+        in_home_score + assisted_living_score, 
+        recommendation, 
+        0,  # tier not used in new system
+        active_flags,
+        flag_messages=[msg for f in active_flags.values() if f.get("priority") == "high" and f.get("message") for msg in [f.get("message")]]
+    )
+    
+    # Step 7: Build simplified flags for handoff
+    simple_flags = {k: True for k in active_flags.keys()}
+    
+    # Add convenience flags
+    if any(k.startswith("cognition_risk") or k.startswith("cog_") for k in simple_flags):
+        simple_flags["cognitive_risk"] = True
+    if any(k.startswith("moderate_cognitive") or k.startswith("severe_cognitive") for k in simple_flags):
+        simple_flags["cognitive_risk"] = True
+        
+    meds_val = str(answers.get("meds_complexity", "")).lower()
+    if "moderate" in meds_val or "complex" in meds_val:
+        simple_flags["meds_management_needed"] = True
+    
+    # Convert to OutcomeContract
+    return OutcomeContract(
+        recommendation=recommendation.lower().replace(" ", "_").replace("/", "_").replace("-", "_"),
+        confidence=confidence,
+        flags=simple_flags,
+        tags=[],
+        domain_scores=category_scores,
+        summary={
+            "points": points,
+            "score": in_home_score + assisted_living_score,
+            "confidence_label": _confidence_label(confidence),
+            "in_home_score": in_home_score,
+            "assisted_living_score": assisted_living_score
+        },
+        routing={},
+        audit={
+            "matched_threshold": matched_threshold,
+            "category_scores": category_scores,
+            "active_flags": list(active_flags.keys())
+        },
+    )
+
+
+def _evaluate_trigger(trigger: str, answers: Dict[str, Any]) -> bool:
+    """Evaluate a flag trigger condition against answers."""
+    if not trigger:
+        return False
+    
+    try:
+        # Simple condition parsing
+        if " == " in trigger:
+            key, value = trigger.split(" == ")
+            key = key.strip()
+            value = value.strip().strip("'\"")
+            return str(answers.get(key, "")).lower() == value.lower()
+        
+        if " in " in trigger and "[" in trigger:
+            key, values_str = trigger.split(" in ")
+            key = key.strip()
+            values_str = values_str.strip().strip("[]")
+            values = [v.strip().strip("'\"") for v in values_str.split(",")]
+            answer_val = str(answers.get(key, "")).lower()
+            return any(answer_val == v.lower() for v in values)
+        
+        if ".length >" in trigger:
+            key = trigger.split(".length")[0].strip()
+            threshold = int(trigger.split(">")[1].strip())
+            val = answers.get(key, [])
+            return isinstance(val, (list, tuple, set)) and len(val) > threshold
+        
+        if ".length >=" in trigger:
+            key = trigger.split(".length")[0].strip()
+            threshold = int(trigger.split(">=")[1].strip())
+            val = answers.get(key, [])
+            return isinstance(val, (list, tuple, set)) and len(val) >= threshold
+        
+        if " includes " in trigger:
+            key, values_str = trigger.split(" includes ")
+            key = key.strip()
+            values_str = values_str.strip().strip("[]")
+            search_values = [v.strip().strip("'\"") for v in values_str.split(",")]
+            answer_list = answers.get(key, [])
+            if not isinstance(answer_list, (list, tuple, set)):
+                answer_list = [answer_list]
+            return any(sv in str(av).lower() for av in answer_list for sv in search_values)
+        
+        if " matches " in trigger:
+            import re
+            key, pattern_str = trigger.split(" matches ")
+            key = key.strip()
+            pattern = pattern_str.strip().strip("'\"")
+            val = str(answers.get(key, ""))
+            return bool(re.search(pattern, val))
+        
+        if " || " in trigger:
+            conditions = trigger.split(" || ")
+            return any(_evaluate_trigger(c.strip(), answers) for c in conditions)
+        
+        return False
+    except Exception:
+        return False
+
+
+def _evaluate_criteria(criteria: str, ctx: Dict[str, Any]) -> bool:
+    """Evaluate a decision threshold criteria against context."""
+    if not criteria or criteria == "Always trigger if severe_cognitive_risk && no_support":
+        # Special case for memory_care_override
+        return ctx.get("severe_cognitive_risk") and ctx.get("no_support")
+    
+    try:
+        # Replace score comparisons
+        criteria = criteria.replace("in_home_score", str(ctx.get("in_home_score", 0)))
+        criteria = criteria.replace("assisted_living_score", str(ctx.get("assisted_living_score", 0)))
+        
+        # Replace flag checks (convert flag names to boolean)
+        for flag_name in ctx.keys():
+            if flag_name in criteria:
+                flag_val = "True" if ctx.get(flag_name) else "False"
+                criteria = criteria.replace(flag_name, flag_val)
+        
+        # Replace logical operators
+        criteria = criteria.replace("&&", " and ")
+        criteria = criteria.replace("||", " or ")
+        criteria = criteria.replace("!", " not ")
+        
+        # Evaluate the expression
+        return eval(criteria)
+    except Exception:
+        return False
+
+
+if __name__ == "__main__":
+    import json
+    manifest = json.load(open("module.json"))
+    answers = {"memory_changes": "moderate", "falls": "multiple", "primary_support": "none"}
+    print(derive(manifest, answers, {}))

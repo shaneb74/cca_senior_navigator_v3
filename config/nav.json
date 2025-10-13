@@ -5,33 +5,110 @@
       "id": "app_utilities",
       "label": "App Utilities",
       "items": [
-  {"key": "welcome", "label": "Welcome", "module": "pages.welcome:render"},
-        {"key": "someone_else", "label": "For Someone", "module": "pages.someone_else:render", "hidden": true},
-        {"key": "self", "label": "For Me", "module": "pages.self:render", "hidden": true},
-        {"key": "professionals", "label": "For Professionals", "module": "pages.professionals:render", "hidden": true},
-        {"key": "welcome_contextual", "label": "Contextual Welcome", "module": "pages._stubs:render_welcome_contextual", "hidden": true},
-        {"key": "about", "label": "About Us", "module": "pages._stubs:render_about"}
+        {
+          "key": "welcome",
+          "label": "Welcome",
+          "module": "pages.welcome:render"
+        },
+        {
+          "key": "someone_else",
+          "label": "For Someone",
+          "module": "pages.someone_else:render",
+          "hidden": true
+        },
+        {
+          "key": "self",
+          "label": "For Me",
+          "module": "pages.self:render",
+          "hidden": true
+        },
+        {
+          "key": "professionals",
+          "label": "For Professionals",
+          "module": "pages.professionals:render",
+          "hidden": true
+        },
+        {
+          "key": "welcome_contextual",
+          "label": "Contextual Welcome",
+          "module": "pages._stubs:render_welcome_contextual",
+          "hidden": true
+        },
+        {
+          "key": "about",
+          "label": "About Us",
+          "module": "pages._stubs:render_about"
+        },
+        {
+          "key": "debug_gcp",
+          "label": "\ud83d\udd0d Debug GCP",
+          "module": "pages.debug_gcp:render"
+        }
       ]
     },
     {
       "id": "hubs",
       "label": "Hubs",
       "items": [
-        {"key": "hub_concierge", "label": "Concierge", "module": "hubs.concierge:render"},
-        {"key": "hub_waiting", "label": "Waiting Room", "module": "hubs.waiting_room:render"},
-        {"key": "hub_learning", "label": "Learning", "module": "hubs.learning:render"},
-        {"key": "hub_trusted", "label": "Trusted Partners", "module": "hubs.partners:render"},
-        {"key": "hub_professional", "label": "Professional", "module": "hubs.professional:render", "roles": ["pro", "admin"]}
+        {
+          "key": "hub_concierge",
+          "label": "Concierge",
+          "module": "hubs.concierge:render"
+        },
+        {
+          "key": "hub_waiting",
+          "label": "Waiting Room",
+          "module": "hubs.waiting_room:render"
+        },
+        {
+          "key": "hub_learning",
+          "label": "Learning",
+          "module": "hubs.learning:render"
+        },
+        {
+          "key": "hub_trusted",
+          "label": "Trusted Partners",
+          "module": "hubs.partners:render"
+        },
+        {
+          "key": "hub_professional",
+          "label": "Professional",
+          "module": "hubs.professional:render",
+          "roles": [
+            "pro",
+            "admin"
+          ]
+        }
       ]
     },
     {
       "id": "products",
       "label": "Products",
       "items": [
-        {"key": "gcp", "label": "Guided Care Plan", "module": "products.gcp.product:render", "hidden": true},
-        {"key": "cost_planner", "label": "Cost Planner", "module": "products.cost_planner:render", "hidden": true},
-        {"key": "pfma", "label": "Plan with My Advisor", "module": "products.pfma:render", "hidden": true},
-        {"key": "faqs", "label": "FAQs", "module": "pages._stubs:render_faqs", "hidden": true}
+        {
+          "key": "gcp",
+          "label": "Guided Care Plan",
+          "module": "products.gcp.product:render",
+          "hidden": true
+        },
+        {
+          "key": "cost",
+          "label": "Cost Planner",
+          "module": "products.cost_planner.product:render",
+          "hidden": true
+        },
+        {
+          "key": "pfma",
+          "label": "Plan with My Advisor",
+          "module": "products.pfma:render",
+          "hidden": true
+        },
+        {
+          "key": "faqs",
+          "label": "FAQs",
+          "module": "pages._stubs:render_faqs",
+          "hidden": true
+        }
       ]
     }
   ]
