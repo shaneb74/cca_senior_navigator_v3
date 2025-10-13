@@ -494,13 +494,47 @@ def render(ctx: Optional[dict] = None) -> None:
     _inject_welcome_css()
     render_page(body_html=_welcome_body(), active_route="welcome")
     
-    # Add Streamlit button for Professional Login below the rendered HTML
-    # This ensures reliable navigation without HTML anchor issues
-    st.markdown('<div style="max-width:1240px;margin:0 auto;padding:0 24px;">', unsafe_allow_html=True)
+    # Professional Login Section - positioned above footer
+    # Uses custom CSS to match the page's card design
+    st.markdown("""
+        <div class="container" style="max-width:1240px;margin:0 auto 60px;padding:0 24px;">
+            <div style="
+                padding:40px;
+                background:#fff;
+                border:1px solid #e6edf5;
+                border-radius:20px;
+                box-shadow:0 18px 42px rgba(15,23,42,.12);
+                text-align:center;
+            ">
+                <h2 style="
+                    font-size:1.5rem;
+                    font-weight:700;
+                    color:var(--ink);
+                    margin:0 0 12px;
+                ">Professional Login</h2>
+                <p style="
+                    font-size:1.05rem;
+                    color:var(--ink-600);
+                    margin:0 0 20px;
+                ">Login here to access your personalized dashboards.</p>
+                <p style="
+                    font-size:0.95rem;
+                    color:var(--ink-500);
+                    margin:0 0 28px;
+                    font-weight:500;
+                ">Discharge Planners • Nurses • Physicians • Social Workers • Geriatric Care Managers</p>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    # Streamlit button positioned within the Professional Login section
+    st.markdown('<div style="max-width:1240px;margin:-90px auto 60px;padding:0 24px;text-align:center;">', unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
         if st.button("🔐 For Professionals", key="pro_login_btn", use_container_width=True, type="primary"):
+            # Enable Professional Mode FIRST
             switch_to_professional()
+            # Then navigate to Professional Hub
             st.query_params.clear()
             st.query_params["page"] = "hub_professional"
             st.rerun()
