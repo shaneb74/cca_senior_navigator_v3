@@ -7,6 +7,7 @@ from typing import Dict, Optional, Sequence
 import streamlit as st
 
 from core.nav import route_to
+from core.state import is_professional, switch_to_member, switch_to_professional
 from core.ui import img_src
 from layout import render_page, static_url
 
@@ -122,6 +123,37 @@ def _inject_welcome_css() -> None:
         .welcome-card .card-meta{color:var(--ink-500);margin-bottom:10px;font-size:.95rem;}
         .welcome-card .dashboard-description{color:var(--ink-500);margin-bottom:20px;line-height:1.55;}
         .welcome-card .card-actions{display:flex;justify-content:flex-end;}
+
+        /* Professional Login section */
+        .professional-login{
+          margin-top:60px;
+          padding:40px;
+          background:#fff;
+          border:1px solid #e6edf5;
+          border-radius:20px;
+          box-shadow:0 18px 42px rgba(15,23,42,.12);
+          text-align:center;
+        }
+        .professional-login__title{
+          font-size:1.5rem;
+          font-weight:700;
+          color:var(--ink);
+          margin:0 0 12px;
+        }
+        .professional-login__message{
+          font-size:1.05rem;
+          color:var(--ink-600);
+          margin:0 0 20px;
+        }
+        .professional-login__roles{
+          font-size:0.95rem;
+          color:var(--ink-500);
+          margin:0 0 28px;
+          font-weight:500;
+        }
+        .professional-login__button .btn{
+          display:inline-block;
+        }
 
         .welcome-context-sentinel,
         .context-card-sentinel{display:none;}
@@ -446,12 +478,41 @@ def _welcome_body() -> str:
                   </article>
                 </div>
               </section>
+
+              <section class="container section">
+                <div class="professional-login">
+                  <h2 class="professional-login__title">Professional Login</h2>
+                  <p class="professional-login__message">Login here to access your personalized dashboards.</p>
+                  <p class="professional-login__roles">
+                    Discharge Planners • Nurses • Physicians • Social Workers • Geriatric Care Managers
+                  </p>
+                  <div class="professional-login__button">
+                    <a href="?page=welcome&enable_professional=1" class="btn btn--primary">For Professionals</a>
+                  </div>
+                </div>
+              </section>
             </main>
             """
     )
 
 
 def render(ctx: Optional[dict] = None) -> None:
+    # Handle logout from professional mode
+    if st.query_params.get("logout") == "1":
+        switch_to_member()
+        st.query_params.clear()
+        st.query_params["page"] = "welcome"
+        st.rerun()
+    
+    # Handle professional mode activation from the Professional Login button
+    # This enables fake authentication during development
+    if st.query_params.get("enable_professional") == "1":
+        if not is_professional():
+            switch_to_professional()
+        st.query_params.clear()
+        st.query_params["page"] = "hub_professional"
+        st.rerun()
+    
     _inject_welcome_css()
     render_page(body_html=_welcome_body(), active_route="welcome")
 
