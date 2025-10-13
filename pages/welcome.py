@@ -487,7 +487,7 @@ def _welcome_body() -> str:
                     Discharge Planners • Nurses • Physicians • Social Workers • Geriatric Care Managers
                   </p>
                   <div class="professional-login__button">
-                    <a href="?page=welcome&enable_professional=1" class="btn btn--primary">For Professionals</a>
+                    <a href="?page=welcome&enable_professional=1" class="btn btn--primary" onclick="event.preventDefault(); window.location.href='?page=welcome&enable_professional=1'; return false;">For Professionals</a>
                   </div>
                 </div>
               </section>
