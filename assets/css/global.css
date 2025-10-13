@@ -31,7 +31,7 @@ header.sn-global-header {
 }
 
 /* Layout helpers used by pages/_stubs.py */
-.container{max-width:1120px;margin:0 auto;padding:0 var(--space-6)}
+.container{max-width:1240px;margin:0 auto;padding:0 var(--space-6)}
 .section{padding:var(--space-10) 0}
 .stack{display:grid;gap:var(--space-8)}
 .stack-sm{display:grid;gap:var(--space-4)}
@@ -41,9 +41,9 @@ header.sn-global-header {
 .header__inner{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:12px 0}
 .brand{display:flex;align-items:center;gap:12px;font-weight:700;color:var(--ink);text-decoration:none}
 .sn-global-header + .sn-global-header{display:none!important}
-.brand-logo{height:28px;width:auto;display:block;vertical-align:middle;margin-right:10px}
+.brand-logo{height:48px;width:auto;display:block;vertical-align:middle;margin-right:10px}
 .brand-text{font-size:1.05rem;font-weight:700;margin-left:2px}
-.brand img{height:24px;width:auto;display:block}
+.brand img{height:44px;width:auto;display:block}
 .nav-toggle{display:none;border:none;background:transparent;font-size:1.4rem;cursor:pointer;color:var(--ink-600)}
 .cluster{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
 .global-nav{display:flex;align-items:center;gap:16px}
@@ -113,38 +113,8 @@ header.sn-global-header {
 }
 .btn--secondary:hover{border-color:rgba(71,85,105,.38);color:var(--ink)}
 
-/* Streamlit-native buttons and downloads */
-/* NOTE: keep !important to override Streamlit's inline text color from theme config */
-.stButton>button,
-.stDownloadButton>button{
-  display:inline-flex;align-items:center;justify-content:center;gap:.5rem;
-  height:42px;padding:0 16px;border-radius:12px;border:1px solid var(--brand-700);
-  background:var(--brand-600);color:#fff !important;font-weight:700;
-  transition:background .18s ease, box-shadow .18s ease;
-}
-.stButton>button:hover:not(:disabled),
-.stDownloadButton>button:hover:not(:disabled){
-  background:var(--brand-700);color:#fff !important;box-shadow:var(--focus-ring);
-}
-.stButton>button:focus-visible,
-.stDownloadButton>button:focus-visible{
-  outline:none;box-shadow:var(--focus-ring);
-}
-.stButton>button:disabled,
-.stDownloadButton>button:disabled{
-  opacity:.7;cursor:not-allowed;box-shadow:none;
-}
-
-/* HTML buttons */
-button{
-  background:var(--brand-600);color:#fff;border:1px solid var(--brand-700);border-radius:5px;padding:10px 16px;font-weight:700;cursor:pointer;
-}
-button:hover:not(:disabled){
-  background:var(--brand-700);
-}
-button:disabled{
-  opacity:.7;cursor:not-allowed;
-}
+/* Streamlit native buttons inherit from config.toml theme colors */
+/* No CSS overrides - let primaryColor control st.button() appearance */
 
 /* Forms – text inputs, selects, sliders mimic the comps */
 input[type="text"],input[type="email"],input[type="password"],input[type="number"],select,textarea{
@@ -183,13 +153,11 @@ input:focus,select:focus,textarea:focus{outline:none;box-shadow:var(--focus-ring
 /* Ensure blue buttons always use white text */
 .btn--primary,
 .btn--brand,
-button[type="primary"],
-.stButton button {
+button[type="primary"] {
   color: #fff !important;
 }
 .btn--primary:hover,
 .btn--brand:hover,
-button[type="primary"]:hover,
-.stButton button:hover {
+button[type="primary"]:hover {
   color: #fff !important;
 }

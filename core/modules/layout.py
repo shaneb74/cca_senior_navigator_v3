@@ -55,26 +55,32 @@ def actions(next_label: str = "Continue", skip_label: str | None = "Skip", show_
     """
     st.markdown('<div class="sn-app mod-actions">', unsafe_allow_html=True)
     
-    # Primary action row (Continue / Skip)
-    cols = st.columns(2) if skip_label else [st.container()]
-    with cols[0]:
-        next_clicked = st.button(next_label, key="_mod_next", type="primary")
-    skip_clicked = False
-    if skip_label:
-        with cols[1]:
-            skip_clicked = st.button(skip_label, key="_mod_skip")
+    # Primary action - full width Continue button using native st.button
+    # This ensures proper click handling while applying CSS classes
+    next_clicked = st.button(
+        next_label, 
+        key="_mod_next", 
+        type="primary", 
+        use_container_width=True,
+        help=None
+    )
     
-    # Secondary action (Save & Continue Later) - hide on intro page
+    # Secondary action (Save & Continue Later) - smaller, below Continue, muted
     save_exit_clicked = False
     if show_save_exit and not is_intro:
-        st.markdown('<div style="margin-top: 0.75rem;">', unsafe_allow_html=True)
+        st.markdown('<div class="mod-save-exit-wrapper">', unsafe_allow_html=True)
         save_exit_clicked = st.button(
             "💾 Save & Continue Later",
             key="_mod_save_exit",
             type="secondary",
-            use_container_width=True
+            use_container_width=False,
+            help=None
         )
         st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Skip button (if needed) - removed from primary row
+    skip_clicked = False
+    # Note: Skip functionality removed - can be re-added if needed
     
     st.markdown('</div>', unsafe_allow_html=True)
     return next_clicked, skip_clicked, save_exit_clicked

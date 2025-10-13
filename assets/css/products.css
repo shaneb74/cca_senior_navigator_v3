@@ -211,21 +211,24 @@
   line-height: 1.55;
 }
 
-/* Buttons used inside tiles */
-/* CTA legacy helpers (kept for backward compatibility) */
+/* Buttons used inside tiles - INHERIT from global.css btn--primary and btn--secondary */
+/* CTA legacy helpers (match welcome page hero buttons exactly) */
 .dashboard-cta {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  padding: 0.65rem 1rem;
+  height: 42px;
+  padding: 0 16px;
   border-radius: 12px;
   font-weight: 700;
   font-size: 0.95rem;
   border: 1px solid transparent;
   text-decoration: none;
+  transition: background 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
 }
 
+/* PRIMARY buttons - match "Start Now" (blue) */
 .dashboard-cta--primary {
   background: var(--brand-600);
   color: #ffffff !important;
@@ -239,16 +242,21 @@
   color: #ffffff !important;
 }
 
-.dashboard-cta--ghost {
+/* SECONDARY/GHOST buttons - match "Log in" (white with gray border) */
+.dashboard-cta--ghost,
+.dashboard-cta--secondary {
   background: #ffffff;
-  color: var(--ink-600);
+  color: var(--ink-700);
   border: 1px solid rgba(71, 85, 105, 0.22);
 }
 
 .dashboard-cta--ghost:hover,
-.dashboard-cta--ghost:focus-visible {
-  border-color: rgba(71, 85, 105, 0.36);
+.dashboard-cta--ghost:focus-visible,
+.dashboard-cta--secondary:hover,
+.dashboard-cta--secondary:focus-visible {
+  border-color: rgba(71, 85, 105, 0.38);
   color: var(--ink);
+  background: #ffffff;
 }
 
 .dashboard-cta.is-disabled {
