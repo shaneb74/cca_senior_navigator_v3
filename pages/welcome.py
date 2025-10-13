@@ -478,19 +478,6 @@ def _welcome_body() -> str:
                   </article>
                 </div>
               </section>
-
-              <section class="container section">
-                <div class="professional-login">
-                  <h2 class="professional-login__title">Professional Login</h2>
-                  <p class="professional-login__message">Login here to access your personalized dashboards.</p>
-                  <p class="professional-login__roles">
-                    Discharge Planners • Nurses • Physicians • Social Workers • Geriatric Care Managers
-                  </p>
-                  <div class="professional-login__button">
-                    <a href="?page=welcome&enable_professional=1" class="btn btn--primary" onclick="event.preventDefault(); window.location.href='?page=welcome&enable_professional=1'; return false;">For Professionals</a>
-                  </div>
-                </div>
-              </section>
             </main>
             """
     )
@@ -504,17 +491,20 @@ def render(ctx: Optional[dict] = None) -> None:
         st.query_params["page"] = "welcome"
         st.rerun()
     
-    # Handle professional mode activation from the Professional Login button
-    # This enables fake authentication during development
-    if st.query_params.get("enable_professional") == "1":
-        if not is_professional():
-            switch_to_professional()
-        st.query_params.clear()
-        st.query_params["page"] = "hub_professional"
-        st.rerun()
-    
     _inject_welcome_css()
     render_page(body_html=_welcome_body(), active_route="welcome")
+    
+    # Add Streamlit button for Professional Login below the rendered HTML
+    # This ensures reliable navigation without HTML anchor issues
+    st.markdown('<div style="max-width:1240px;margin:0 auto;padding:0 24px;">', unsafe_allow_html=True)
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col2:
+        if st.button("🔐 For Professionals", key="pro_login_btn", use_container_width=True, type="primary"):
+            switch_to_professional()
+            st.query_params.clear()
+            st.query_params["page"] = "hub_professional"
+            st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
 __all__ = ["render", "render_welcome_card"]
