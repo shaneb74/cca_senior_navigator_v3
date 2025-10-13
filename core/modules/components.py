@@ -71,23 +71,34 @@ def input_radio(field: FieldDef, current: Any = None) -> Any:
 
 
 def input_pill(field: FieldDef, current: Any = None) -> Any:
+    """Render pill-style radio buttons (uses st.radio with custom CSS)."""
     label = _safe_label(field.label, field.key)
-    _label(label, field.help, field.a11y_hint)
-
     options = field.options or []
     if not options:
         return current if current is not None else field.default
 
+    # Build value mapping
     labels = [opt.get("label", "") for opt in options]
     label_to_value = {
         opt.get("label", ""): opt.get("value", opt.get("label", "")) for opt in options
     }
-
+    
+    # Get current value and find its label
     current_value = current if current is not None else field.default
     current_label = next(
-        (lab for lab, val in label_to_value.items() if val == current_value), labels[0]
+        (lab for lab, val in label_to_value.items() if val == current_value), 
+        labels[0] if labels else ""
     )
 
+    # Render with wrapper for custom styling
+    st.markdown('<div class="sn-app mod-field mod-radio-pills">', unsafe_allow_html=True)
+    st.markdown(f"<div class='mod-label'><span>{H(label)}</span></div>", unsafe_allow_html=True)
+    if field.help:
+        st.markdown(f"<div class='mod-help'>{H(field.help)}</div>", unsafe_allow_html=True)
+    if field.a11y_hint:
+        st.markdown(f"<div class='visually-hidden'>{H(field.a11y_hint)}</div>", unsafe_allow_html=True)
+    
+    # Use native st.radio with horizontal layout
     choice_label = st.radio(
         label=label,
         options=labels,
@@ -96,6 +107,9 @@ def input_pill(field: FieldDef, current: Any = None) -> Any:
         label_visibility="collapsed",
         key=f"{field.key}_pill",
     )
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    
     return label_to_value.get(choice_label, choice_label)
 
 
@@ -193,20 +207,31 @@ def input_textarea(field: FieldDef, current: Any = None) -> str:
 
 
 def input_chip_multi(field: FieldDef, current: Any = None) -> List[str]:
+    """Render pill-style multi-select (uses st.multiselect with custom CSS)."""
     label = _safe_label(field.label, field.key)
-    _label(label, field.help, field.a11y_hint)
-
     options = field.options or []
     if not options:
         return _normalize_list(current if current is not None else field.default)
 
+    # Build value mapping
     labels = [opt.get("label", "") for opt in options]
     label_to_value = {
         opt.get("label", ""): opt.get("value", opt.get("label", "")) for opt in options
     }
+    
+    # Get current selected values
     current_values = set(_normalize_list(current if current is not None else field.default))
     default_labels = [lab for lab in labels if label_to_value.get(lab) in current_values]
 
+    # Render with wrapper for custom styling
+    st.markdown('<div class="sn-app mod-field mod-multi-pills">', unsafe_allow_html=True)
+    st.markdown(f"<div class='mod-label'><span>{H(label)}</span></div>", unsafe_allow_html=True)
+    if field.help:
+        st.markdown(f"<div class='mod-help'>{H(field.help)}</div>", unsafe_allow_html=True)
+    if field.a11y_hint:
+        st.markdown(f"<div class='visually-hidden'>{H(field.a11y_hint)}</div>", unsafe_allow_html=True)
+    
+    # Use native st.multiselect
     chosen_labels = st.multiselect(
         label=label,
         options=labels,
@@ -214,6 +239,9 @@ def input_chip_multi(field: FieldDef, current: Any = None) -> List[str]:
         label_visibility="collapsed",
         key=f"{field.key}_chips",
     )
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    
     return [label_to_value[label] for label in chosen_labels]
 
 

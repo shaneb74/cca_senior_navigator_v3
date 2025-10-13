@@ -47,7 +47,7 @@ def _card_to_tile(card: Dict[str, any], order: int) -> ProductTileHub:
 
 
 def render(ctx=None) -> None:
-    person_name = st.session_state.get("person_name", "John")
+    person_name = st.session_state.get("person_name", "").strip()
     learning_progress = st.session_state.get("learning_progress", 0)
     completed_resources = st.session_state.get("completed_resources", [])
 

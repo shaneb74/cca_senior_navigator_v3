@@ -17,19 +17,21 @@ def _inject_hub_css_once() -> None:
         return
 
     here = Path(__file__).resolve().parent
-    search_paths = [
-        Path("assets/css/global.css"),
-        Path("assets/css/hubs.css"),
-        Path("assets/css/products.css"),
-        Path("assets/css/modules.css"),
-        here.parents[1] / "assets" / "css" / "global.css",
-        here.parents[1] / "assets" / "css" / "hubs.css",
-        here.parents[1] / "assets" / "css" / "products.css",
-        here.parents[1] / "assets" / "css" / "modules.css",
+    groups = [
+        [Path("assets/css/global.css"), here.parents[1] / "assets" / "css" / "global.css"],
+        [Path("assets/css/hubs.css"), here.parents[1] / "assets" / "css" / "hubs.css"],
+        [Path("assets/css/products.css"), here.parents[1] / "assets" / "css" / "products.css"],
+        [Path("assets/css/modules.css"), here.parents[1] / "assets" / "css" / "modules.css"],
     ]
 
+    ordered_paths: List[Path] = []
+    for group in groups:
+        for css_path in group:
+            if css_path not in ordered_paths:
+                ordered_paths.append(css_path)
+
     seen: set[str] = set()
-    for css_path in search_paths:
+    for css_path in ordered_paths:
         try:
             if not css_path.is_file():
                 continue
@@ -174,7 +176,12 @@ def render_dashboard_body(
 
     # Additional services (optional)
     additional_html = ""
+    
+    # Check if GCP is complete
+    gcp_prog = float(st.session_state.get("tiles", {}).get("gcp", {}).get("progress", 0))
+    
     if additional_services:
+        # Have services to show - render them
         rows: List[str] = []
         for s in additional_services:
             subtitle_val = s.get("subtitle")
@@ -205,6 +212,19 @@ def render_dashboard_body(
                 "</section>",
             ]
         )
+    elif gcp_prog >= 100:
+        # GCP complete but no services (user didn't trigger any flags)
+        additional_html = "".join(
+            [
+                '<section class="dashboard-additional">',
+                '<header class="dashboard-additional__head">',
+                '<h3 class="dashboard-additional__title">Additional services</h3>',
+                '<p class="dashboard-muted">No additional services recommended at this time. Your care plan looks solid!</p>',
+                "</header>",
+                "</section>",
+            ]
+        )
+    # If GCP not complete, don't show anything (section will appear after completion)
 
     shell = "".join(
         [

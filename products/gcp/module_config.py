@@ -17,7 +17,7 @@ def get_config() -> ModuleConfig:
         version=raw.get("version", "v1.0"),
         steps=steps,
         state_key=raw.get("state_key", "gcp"),
-        outcomes_compute="products.gcp.derive:derive_outcomes_v1",
+        outcomes_compute=raw.get("outcomes_compute"),
         results_step_id="results",
     )
 

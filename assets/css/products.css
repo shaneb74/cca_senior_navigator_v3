@@ -51,6 +51,16 @@
   font-size: 0.98rem;
 }
 
+/* Prominent recommendation display on completed tiles */
+.tile-recommendation {
+  display: block;
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--ink-900);
+  margin: 0.75rem 0 0.5rem;
+  line-height: 1.3;
+}
+
 /* Meta line chips */
 /* Meta line chips */
 .tile-meta,
@@ -343,6 +353,25 @@
   font-size: .875rem;
   color: var(--text-muted, #5b6570);
   max-width: 40ch;
+}
+
+/* MCIP Recommended Tile Gradient */
+.ptile.tile--recommended {
+  background: linear-gradient(135deg, 
+    rgba(255, 215, 0, 0.08) 0%,     /* Soft gold */
+    rgba(255, 235, 120, 0.05) 50%,  /* Light yellow */
+    rgba(255, 255, 255, 0) 100%     /* Fade to transparent */
+  );
+  border-color: rgba(255, 215, 0, 0.2);
+}
+
+.ptile.tile--recommended:hover {
+  background: linear-gradient(135deg, 
+    rgba(255, 215, 0, 0.12) 0%,
+    rgba(255, 235, 120, 0.08) 50%,
+    rgba(255, 255, 255, 0.02) 100%
+  );
+  border-color: rgba(255, 215, 0, 0.3);
 }
 
 /* === Hub guide order messaging === */

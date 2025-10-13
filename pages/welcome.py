@@ -285,8 +285,11 @@ def render_welcome_card(
         classes = "context-pill-link"
         if key == safe_active:
             classes += " is-active"
+        
+        # Build aria-current attribute separately to avoid quote nesting issues
+        aria_attr = 'aria-current="page"' if key == safe_active else ''
         pill_links.append(
-            f"<a href='?page={route}' class='{classes}' data-pill='{key}' {'aria-current="page"' if key == safe_active else ''}>{icon}<span>{html.escape(cfg['label'])}</span></a>"
+            f"<a href='?page={route}' class='{classes}' data-pill='{key}' {aria_attr}>{icon}<span>{html.escape(cfg['label'])}</span></a>"
         )
 
     with left_col:
