@@ -113,8 +113,8 @@ def render(ctx=None) -> None:
             blurb="Project expenses, compare living options, and see how long current funds will last.",
             image_square="cp.png",
             meta_lines=["≈10–15 min • Save anytime"],
-            primary_route="/products/cost_planner",
-            primary_go="cost_planner",
+            primary_route="?page=cost",
+            primary_go="cost",
             secondary_label="See responses" if cost_prog > 0 else None,  # Only show after started
             secondary_go="cost_view" if cost_prog > 0 else None,
             progress=cost_prog,
