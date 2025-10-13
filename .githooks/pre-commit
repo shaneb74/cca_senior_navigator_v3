@@ -18,3 +18,4 @@ if ((${#REQUIRED_FILES[@]:-0} > 0)); then
 fi
 
 echo "[pre-commit] Hook executed successfully (no required files enforced)"
+exit 0
