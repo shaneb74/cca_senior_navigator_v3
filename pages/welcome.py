@@ -484,22 +484,28 @@ def _welcome_body() -> str:
 
 
 def render(ctx: Optional[dict] = None) -> None:
-    # Handle logout from professional mode
-    if st.query_params.get("logout") == "1":
-        switch_to_member()
-        st.query_params.clear()
-        st.query_params["page"] = "welcome"
-        st.rerun()
+    # ============================================================
+    # AUTHENTICATION DISABLED FOR DEVELOPMENT TESTING
+    # ============================================================
+    # Logout handler temporarily disabled - role switching removed
+    # The following code is intentionally commented out:
+    #
+    # if st.query_params.get("logout") == "1":
+    #     switch_to_member()
+    #     st.query_params.clear()
+    #     st.query_params["page"] = "welcome"
+    #     st.rerun()
+    # ============================================================
     
     _inject_welcome_css()
     render_page(body_html=_welcome_body(), active_route="welcome")
     
     # Professional Login Section - positioned above footer
-    # Uses custom CSS to match the page's card design
+    # Button is now INSIDE the box, not below it
     st.markdown("""
-        <div class="container" style="max-width:1240px;margin:0 auto 60px;padding:0 24px;">
+        <div class="container" style="max-width:1240px;margin:60px auto 60px;padding:0 24px;">
             <div style="
-                padding:40px;
+                padding:40px 40px 20px;
                 background:#fff;
                 border:1px solid #e6edf5;
                 border-radius:20px;
@@ -520,21 +526,23 @@ def render(ctx: Optional[dict] = None) -> None:
                 <p style="
                     font-size:0.95rem;
                     color:var(--ink-500);
-                    margin:0 0 28px;
+                    margin:0 0 24px;
                     font-weight:500;
                 ">Discharge Planners • Nurses • Physicians • Social Workers • Geriatric Care Managers</p>
             </div>
         </div>
     """, unsafe_allow_html=True)
     
-    # Streamlit button positioned within the Professional Login section
-    st.markdown('<div style="max-width:1240px;margin:-90px auto 60px;padding:0 24px;text-align:center;">', unsafe_allow_html=True)
-    col1, col2, col3 = st.columns([1, 1, 1])
+    # Streamlit button positioned INSIDE the Professional Login box
+    st.markdown('<div style="max-width:1240px;margin:-100px auto 60px;padding:0 64px;text-align:center;">', unsafe_allow_html=True)
+    col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
+        # AUTHENTICATION DISABLED FOR DEVELOPMENT TESTING
+        # Role-based gating temporarily removed to verify navigation and rendering
+        # Button navigates directly to Professional Hub without role checks
         if st.button("🔐 For Professionals", key="pro_login_btn", use_container_width=True, type="primary"):
-            # Enable Professional Mode FIRST
-            switch_to_professional()
-            # Then navigate to Professional Hub
+            # NOTE: switch_to_professional() call removed - authentication disabled
+            # Navigate directly to Professional Hub
             st.query_params.clear()
             st.query_params["page"] = "hub_professional"
             st.rerun()

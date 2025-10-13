@@ -38,12 +38,21 @@ def _to_tile(card: Dict[str, any], order: int) -> ProductTileHub:
 
 
 def render(ctx=None) -> None:
-    # Ensure professional mode is active (should be set by welcome.py before navigation)
-    # If somehow accessed without professional mode, switch to it
-    if not is_professional():
-        switch_to_professional()
-        st.rerun()
-        return
+    # ============================================================
+    # AUTHENTICATION DISABLED FOR DEVELOPMENT TESTING
+    # ============================================================
+    # Role-based gating temporarily removed to verify navigation and rendering
+    # Professional Hub is now accessible without role checks
+    # The following code is intentionally commented out:
+    #
+    # if not is_professional():
+    #     switch_to_professional()
+    #     st.rerun()
+    #     return
+    #
+    # Once navigation and rendering are confirmed stable, role-based
+    # authentication will be re-enabled.
+    # ============================================================
 
     # MCIP panel data
     pending_actions = 7
