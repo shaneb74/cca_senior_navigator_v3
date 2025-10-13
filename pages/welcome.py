@@ -61,27 +61,27 @@ def _inject_welcome_css() -> None:
         .welcome-header__inner{display:flex;align-items:center;justify-content:space-between;gap:24px;}
         .welcome-auth{margin-left:auto;display:flex;align-items:center;}
 
-        /* spacing tightened */
-        .section-hero{padding:56px 0 28px;}
-        .hero-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:32px;align-items:center;}
+        /* spacing tightened - reduced bottom padding to bring sections closer */
+        .section-hero{padding:56px 0 4px;}
+        .hero-grid{display:grid;grid-template-columns:1.3fr .7fr;gap:12px;align-items:center;}
 
         .hero-eyebrow{font-weight:700;color:var(--brand-700);letter-spacing:.04em;margin-bottom:.75rem;}
 
-        /* headline refined */
+        /* headline refined - increased by 20% more */
         .hero-title{
           font-weight:700;
           color:var(--ink);
-          font-size:clamp(2.6rem,4.2vw,3.6rem);
-          line-height:1.06;
+          font-size:clamp(3.4rem,5.4vw,4.6rem);
+          line-height:1.04;
           letter-spacing:-.01em;
           margin:0 0 16px;
           text-wrap:balance;
         }
 
-        /* subhead a touch bolder & tighter */
+        /* subhead 20% larger */
         .hero-sub{
           color:var(--ink-600);
-          font-size:1.05rem;
+          font-size:1.26rem;
           line-height:1.55;
           font-weight:500;
           max-width:44ch;
@@ -90,21 +90,26 @@ def _inject_welcome_css() -> None:
 
         .cta-row{display:flex;gap:14px;flex-wrap:wrap;}
         .cta-row .btn--primary{background:linear-gradient(90deg,#2563eb,#3b82f6);border-color:#2563eb;}
-        .welcome-hero-media{position:relative;display:flex;justify-content:flex-end;padding-right:2%;}
+        .welcome-hero-media{position:relative;display:flex;justify-content:flex-end;padding-right:2%;transform:scale(1.05);transform-origin:center right;}
         .welcome-hero-frame{position:relative;background:#fff;border-radius:24px;padding:14px;border:1px solid #e8eff8;box-shadow:0 26px 60px rgba(15,23,42,.18);transform:rotate(-2.2deg);}
         .welcome-hero-frame::after{content:"";position:absolute;inset:12px;border:1px solid rgba(15,23,42,.07);border-radius:18px;}
         .welcome-hero-photo{border-radius:18px;overflow:hidden;}
         .welcome-hero-photo img{display:block;border-radius:18px;}
 
-        /* section header: sentence case, closer to content */
-        .section--tight{padding:18px 0 6px;}
+        /* section header: tightened spacing dramatically */
+        .section--tight{padding:4px 0 2px;}
         .welcome-section-title{
           text-transform:none;
           letter-spacing:.02em;
           font-size:1.35rem;
-          margin:0;
+          margin:0 0 12px;
           color:var(--ink);
           font-weight:800;
+        }
+
+        /* Remove top padding from cards section to bring closer to title */
+        .section--tight + .section{
+          padding-top:0 !important;
         }
 
         .cards-2{display:grid;gap:32px;grid-template-columns:1fr 1fr;}
@@ -331,8 +336,16 @@ def render_welcome_card(
                 st.markdown("</div>", unsafe_allow_html=True)
             st.markdown("</div>", unsafe_allow_html=True)
 
-        if submitted and name_value.strip():
-            st.session_state["person_name"] = name_value.strip()
+        # Handle form submission - allow navigation with or without a name
+        if submitted:
+            # Only store name if provided (not empty or whitespace)
+            if name_value and name_value.strip():
+                st.session_state["person_name"] = name_value.strip()
+            else:
+                # Clear person_name if it exists, allowing generic terms to be used
+                st.session_state.pop("person_name", None)
+            
+            # Navigate regardless of whether name was provided
             if submit_route:
                 _go_to(None, submit_route)
 
@@ -379,10 +392,9 @@ def _welcome_body() -> str:
                 <div class="hero-grid">
                   <div>
                     <p class="hero-eyebrow">Concierge Care Advisors</p>
-                    <h1 class="hero-title">Care decisions are hard. You don’t have to make them alone.</h1>
+                    <h1 class="hero-title">Care decisions are hard. You don't have to make them alone.</h1>
                     <p class="hero-sub">
-                      Talk with a no-cost advisor who helps your family navigate senior living
-                      choices clearly, confidently, and compassionately.
+                      Get personalized guidance from a trusted advisor who helps your family explore senior living options with clarity, care, and confidence—always at no cost.
                     </p>
                     <div class="cta-row">
                       <a href="?page=someone_else" class="btn btn--primary wl-btn">Start Now</a>

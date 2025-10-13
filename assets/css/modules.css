@@ -277,14 +277,31 @@ div[data-testid="stRadio"] label:has(input:checked) p {
   margin-top: 8px;
 }
 
-/* Style selected items as pills */
-.mod-multi-pills div[data-testid="stMultiSelect"] span[data-baseweb="tag"] {
+/* Style selected items as pills - BLACK CHIPS */
+.sn-app .mod-multi-pills div[data-testid="stMultiSelect"] span[data-baseweb="tag"],
+.sn-app .mod-field.mod-multi-pills div[data-testid="stMultiSelect"] span[data-baseweb="tag"],
+div.mod-multi-pills div[data-testid="stMultiSelect"] span[data-baseweb="tag"] {
   background: #111827 !important;
+  background-color: #111827 !important;
   color: #ffffff !important;
   border-radius: 999px !important;
   padding: 6px 12px !important;
   font-weight: 600 !important;
   border: none !important;
+}
+
+/* Force black background on the tag's direct children too */
+.sn-app .mod-multi-pills div[data-testid="stMultiSelect"] span[data-baseweb="tag"] > span,
+.sn-app .mod-field.mod-multi-pills div[data-testid="stMultiSelect"] span[data-baseweb="tag"] > span {
+  color: #ffffff !important;
+}
+
+/* NUCLEAR OVERRIDE: All tags in ANY module field should be black */
+.sn-app .mod-field span[data-baseweb="tag"],
+.sn-app div[data-testid="stMultiSelect"] span[data-baseweb="tag"] {
+  background: #111827 !important;
+  background-color: #111827 !important;
+  color: #ffffff !important;
 }
 
 /* ===================================================================
@@ -576,35 +593,53 @@ div[data-testid="stRadio"] label:has(input:checked) p {
    MODULE ACTION BUTTONS (Continue, Back, Save & Exit)
    =================================================================== */
 
-/* Primary action (Continue) - Black button */
+/* Primary action (Continue) - BLUE button */
 .sn-app .mod-actions .stButton > button:first-child,
 .sn-app .mod-actions .stButton:first-child > button,
 .sn-app .mod-actions .stButton:first-child > button[class^="css-"],
 .sn-app .mod-actions .stButton:first-child > button[class*=" css-"]{
-  background: #111827 !important;
+  background: #2563eb !important;
   color: #ffffff !important;
-  border: 1px solid #111827 !important;
+  border: 1px solid #2563eb !important;
   height: 46px !important;
   border-radius: 12px !important;
   padding: 0 24px !important;
   font-weight: 700 !important;
   font-size: 15px !important;
-  box-shadow: 0 2px 8px rgba(17, 24, 39, 0.15) !important;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15) !important;
   transition: all 0.18s ease !important;
 }
 
 .sn-app .mod-actions .stButton:first-child > button:hover:not(:disabled){
-  background: #1f2937 !important;
+  background: #1d4ed8 !important;
   color: #ffffff !important;
-  box-shadow: 0 4px 12px rgba(17, 24, 39, 0.25) !important;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25) !important;
   transform: translateY(-1px) !important;
 }
 
-/* Secondary actions (Back, Save & Exit) - Gray outline buttons */
+/* Secondary actions (Back, Save & Exit) - Light gray buttons */
 .sn-app .mod-actions .stButton:not(:first-child) > button,
 .sn-app .mod-actions .stButton:not(:first-child) > button[class^="css-"],
 .sn-app .mod-actions .stButton:not(:first-child) > button[class*=" css-"]{
-  background: #ffffff !important;
+  background: #f3f4f6 !important;
+  color: #374151 !important;
+  border: 1px solid #d1d5db !important;
+  height: 46px !important;
+  border-radius: 12px !important;
+  padding: 0 24px !important;
+  font-weight: 600 !important;
+  font-size: 15px !important;
+  box-shadow: none !important;
+  transition: all 0.18s ease !important;
+}
+
+/* Results page: buttons inside columns (col1, col3 get gray; col2 stays black) */
+.sn-app .mod-actions [data-testid="column"]:first-child .stButton > button,
+.sn-app .mod-actions [data-testid="column"]:first-child button[data-testid*="baseButton"],
+.sn-app .mod-actions [data-testid="column"]:last-child .stButton > button,
+.sn-app .mod-actions [data-testid="column"]:last-child button[data-testid*="baseButton"] {
+  background: #f3f4f6 !important;
+  background-color: #f3f4f6 !important;
   color: #374151 !important;
   border: 1px solid #d1d5db !important;
   height: 46px !important;
@@ -617,7 +652,19 @@ div[data-testid="stRadio"] label:has(input:checked) p {
 }
 
 .sn-app .mod-actions .stButton:not(:first-child) > button:hover:not(:disabled){
-  background: #f9fafb !important;
+  background: #e5e7eb !important;
+  color: #111827 !important;
+  border-color: #9ca3af !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Results page hover states */
+.sn-app .mod-actions [data-testid="column"]:first-child .stButton > button:hover:not(:disabled),
+.sn-app .mod-actions [data-testid="column"]:first-child button[data-testid*="baseButton"]:hover:not(:disabled),
+.sn-app .mod-actions [data-testid="column"]:last-child .stButton > button:hover:not(:disabled),
+.sn-app .mod-actions [data-testid="column"]:last-child button[data-testid*="baseButton"]:hover:not(:disabled) {
+  background: #e5e7eb !important;
+  background-color: #e5e7eb !important;
   color: #111827 !important;
   border-color: #9ca3af !important;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08) !important;
@@ -726,23 +773,31 @@ div[data-testid="stVerticalBlock"]:has(.chip-wrap.is-active) .stButton > button{
 /* ===================================================================
    SAVE & CONTINUE LATER BUTTON STYLING
    =================================================================== */
-/* Style Streamlit secondary buttons in mod-actions to match btn--secondary */
-/* Updated: White text on blue background for prominence */
+/* Style Streamlit secondary buttons in mod-actions to match light gray */
+/* Updated: Light gray background for secondary actions */
 .sn-app .mod-actions button[kind="secondary"],
 .sn-app .mod-actions .stButton > button[kind="secondary"],
-.sn-app .mod-actions div[data-testid="stButton"] > button[kind="secondary"] {
-  background: var(--brand-600, #2563eb) !important;
-  color: #ffffff !important;
-  border: 1px solid var(--brand-700, #1d4ed8) !important;
-  font-weight: 700 !important;
+.sn-app .mod-actions div[data-testid="stButton"] > button[kind="secondary"],
+.sn-app .mod-actions button[data-testid*="BaseButton-secondary"] {
+  background: #f3f4f6 !important;
+  background-color: #f3f4f6 !important;
+  color: #374151 !important;
+  border: 1px solid #d1d5db !important;
+  font-weight: 600 !important;
+  height: 46px !important;
+  border-radius: 12px !important;
+  padding: 0 24px !important;
+  box-shadow: none !important;
+  transition: all 0.18s ease !important;
 }
 
 .sn-app .mod-actions button[kind="secondary"]:hover:not(:disabled),
 .sn-app .mod-actions .stButton > button[kind="secondary"]:hover:not(:disabled),
-.sn-app .mod-actions div[data-testid="stButton"] > button[kind="secondary"]:hover:not(:disabled) {
-  background: var(--brand-700, #1d4ed8) !important;
-  color: #ffffff !important;
-  box-shadow: var(--focus-ring, 0 0 0 3px rgba(37, 99, 235, 0.2)) !important;
-  border-color: var(--brand-700, #1d4ed8) !important;
+.sn-app .mod-actions div[data-testid="stButton"] > button[kind="secondary"]:hover:not(:disabled),
+.sn-app .mod-actions button[data-testid*="BaseButton-secondary"]:hover:not(:disabled) {
+  background: #e5e7eb !important;
+  background-color: #e5e7eb !important;
+  color: #111827 !important;
+  border-color: #9ca3af !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08) !important;
 }
-
