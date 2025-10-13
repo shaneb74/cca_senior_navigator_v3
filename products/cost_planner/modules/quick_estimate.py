@@ -1,6 +1,9 @@
 def run(user_id: str, ctx: dict) -> dict:
-    """Run Quick Estimate."""
-    # TODO: Implement quick estimate logic
+    """Run Quick Estimate.
+    
+    Future enhancement: Full cost estimation calculation.
+    Currently returns placeholder for UI development.
+    """
     return {
         "status": "done",
         "outputs": [{"label": "Est. monthly cost", "value": "$4,200"}],

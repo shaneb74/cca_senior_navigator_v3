@@ -234,14 +234,56 @@ def render_footer() -> None:
     st.markdown(FOOTER_HTML, unsafe_allow_html=True)
 
 
+def render_shell_start(
+    title: str = "",
+    *,
+    active_route: Optional[str] = None,
+    show_header: bool = True,
+) -> None:
+    """Open the global layout shell without relying on render_page."""
+    try:
+        from core.base_hub import _inject_hub_css_once  # type: ignore
+    except Exception:
+        _inject_hub_css_once = None
+    else:
+        try:
+            _inject_hub_css_once()  # type: ignore[misc]
+        except Exception:
+            pass
+    _ensure_global_css()
+    if not st.session_state.get(_RESPONSIVE_SENTINEL):
+        st.markdown(RESPONSIVE_CSS, unsafe_allow_html=True)
+        st.session_state[_RESPONSIVE_SENTINEL] = True
+    if show_header:
+        render_header(active_route=active_route)
+    if title:
+        st.markdown(
+            f"<div class='container'><h1 class='hero-title' style='margin:.5rem 0 0'>{title}</h1></div>",
+            unsafe_allow_html=True,
+        )
+    st.markdown("<main class='container stack'>", unsafe_allow_html=True)
+    st.session_state[_FRAME_SENTINEL] = True
+
+
+def render_shell_end(*, show_footer: bool = True) -> None:
+    """Close the global layout shell opened via render_shell_start."""
+    st.markdown("</main>", unsafe_allow_html=True)
+    if show_footer:
+        render_footer()
+
+
 def reset_global_frame() -> None:
     st.session_state.pop(_FRAME_SENTINEL, None)
     st.session_state.pop(_RESPONSIVE_SENTINEL, None)
     st.session_state.pop(_HEADER_SENTINEL, None)
+    # Also reset hub CSS flag so it gets re-injected on next hub render
+    st.session_state.pop("_sn_hub_css_loaded_v4", None)
 
 
 __all__ = [
     "render_page",
+    "render_shell_start",
+    "render_shell_end",
     "render_header",
     "render_footer",
     "static_url",

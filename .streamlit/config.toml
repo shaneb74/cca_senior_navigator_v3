@@ -1,6 +1,6 @@
 [theme]
 base = "light"
-primaryColor = "#2563eb"            # brand blue for selection
+primaryColor = "#111827"            # dark gray/black for selection (matches module design)
 backgroundColor = "#FFFFFF"
 secondaryBackgroundColor = "#F1F5F9"
 textColor = "#0d1f4b"

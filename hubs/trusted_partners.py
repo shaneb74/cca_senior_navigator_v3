@@ -17,7 +17,7 @@ class TrustedPartnersHub(BaseHub):
         )
 
     def build_dashboard(self) -> Dict:
-        person_name = st.session_state.get("person_name", "John")
+        person_name = st.session_state.get("person_name", "").strip()
         location = st.session_state.get("location", "your area")
         verified_partners = st.session_state.get("verified_partners", 23)
         tours_booked = st.session_state.get("tours_booked", 0)

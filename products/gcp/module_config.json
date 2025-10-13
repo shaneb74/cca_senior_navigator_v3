@@ -2,19 +2,20 @@
   "product": "gcp",
   "version": "v1.0",
   "state_key": "gcp",
+  "outcomes_compute": "products.gcp.modules.care_recommendation.logic:derive_outcome",
   "steps": [
     {
       "id": "intro",
-      "title": "Find the Right Senior Care",
-      "subtitle": "We'll match you to the best living options based on daily needs, safety, cognition, and more. Takes two minutes.",
+      "title": "🏮 Guided Care Plan",
+      "subtitle": "Here's what to expect:\n\n🕒 Takes just a few minutes — a short guided plan to help you make informed care decisions.\n\n❤️ Focused on your situation — every question helps personalize recommendations for you or your loved one.\n\n🧩 No wrong answers — this isn't a test; it's a conversation that helps us understand daily living, health, and safety needs.\n\n💡 Instant recommendation — when you finish, you'll see your care tier (like In-Home, Assisted Living, or Memory Care) with next steps and trusted resources.",
       "fields": [],
-      "next_label": "Start",
+      "next_label": "Get Started",
       "skip_label": null,
-      "show_progress": true
+      "show_progress": false
     },
     {
       "id": "about_you",
-      "title": "About You",
+      "title": "About {{name}}",
       "fields": [
         {
           "key": "age_range",
@@ -211,7 +212,11 @@
           "key": "additional_conditions",
           "label": "List any additional chronic conditions (type and press Add)",
           "type": "pill_list",
-          "required": false
+          "required": false,
+          "visible_if": {
+            "key": "_never_show",
+            "in": ["__hidden__"]
+          }
         }
       ],
       "show_bottom_bar": true,
@@ -437,7 +442,7 @@
       "fields": [],
       "next_label": null,
       "skip_label": null,
-      "show_progress": false
+      "show_progress": true
     }
   ]
 }

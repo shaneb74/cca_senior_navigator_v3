@@ -1,136 +1,748 @@
-/* ===== MODULES (assessment/workflows) ===== */
-/* Scope everything under .sn-app (global root) to avoid clashes with hubs/welcome */
+/* ===================================================================
+   MODULE DESIGN SYSTEM — Gray/Black Theme
+   =================================================================== */
+
+/* ===================================================================
+   🎯 HIDE GLOBAL HEADER IN MODULE CONTEXT
+   =================================================================== */
+/* Modules have their own header (mod-head), so hide the global nav header */
+.sn-app .sn-global-header,
+.sn-app header.sn-global-header,
+.sn-app #sn-global-header {
+  display: none !important;
+}
+
+/* ===================================================================
+   🎯 CRITICAL: HIDE RADIO CIRCLES FIRST (Load Before Everything)
+   =================================================================== */
+/* This MUST come first to prevent radio circles from showing */
+
+/* Target ALL radio inputs in module context - GLOBAL OVERRIDE */
+[data-testid="stRadio"] input[type="radio"],
+div[data-testid="stRadio"] input[type="radio"],
+input[type="radio"] {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  opacity: 0 !important;
+  position: absolute !important;
+  left: -9999px !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+}
+
+/* Hide the radio circle container div too */
+[data-testid="stRadio"] label > div:first-child,
+div[data-testid="stRadio"] label > div:first-child {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  opacity: 0 !important;
+}
+
+/* ===================================================================
+   🧹 HIDE GHOST/EMPTY STREAMLIT CONTAINERS
+   =================================================================== */
+/* Hide empty containers that Streamlit creates below widgets */
+.sn-app .mod-field + .element-container:empty,
+.sn-app .mod-field + [data-testid="stVerticalBlock"] > .element-container:empty,
+.sn-app [data-testid="stVerticalBlock"] > .element-container:empty,
+div.element-container:empty {
+  display: none !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Hide empty vertical blocks */
+[data-testid="stVerticalBlock"]:empty {
+  display: none !important;
+  height: 0 !important;
+  margin: 0 !important;
+}
+
+/* Hide Streamlit's native widget labels (we use custom styled labels) */
+.sn-app .mod-field [data-testid="stWidgetLabel"],
+.mod-field [data-testid="stWidgetLabel"],
+.mod-radio-pills [data-testid="stWidgetLabel"],
+.mod-multi-pills [data-testid="stWidgetLabel"],
+[data-testid="stWidgetLabel"][aria-hidden="true"],
+label[data-testid="stWidgetLabel"] {
+  display: none !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  visibility: hidden !important;
+  position: absolute !important;
+  left: -9999px !important;
+}
+
+/* Also hide the markdown container inside widget labels */
+[data-testid="stWidgetLabel"] [data-testid="stMarkdownContainer"] {
+  display: none !important;
+}
+
+/* ===================================================================
+   COLOR VARIABLES
+   =================================================================== */
+
 :root {
-  /* reuse global tokens; only add module-specific ones if truly needed */
-  --rail-height: 6px;
-  --rail-bg: #e9eef7;
-  --rail-fill: #89b5ff;
-  --chip-bg: #f3f5f9;
-  --chip-border: #e3eaf5;
-  --chip-ink: #1f2937;
-  --note-bg: #eef5ff;
-  --note-border: #d6e8ff;
+  /* Chip colors - Gray to Black progression */
+  --module-chip-bg: #f3f5f9;              /* Light gray background (unselected) */
+  --module-chip-ink: #1f2937;             /* Dark gray text (unselected) */
+  --module-chip-border: #e3eaf5;          /* Subtle gray border (unselected) */
+  --module-chip-active-bg: #111827;       /* Black background (selected) */
+  --module-chip-active-ink: #ffffff;      /* White text (selected) */
+  
+  /* Progress rail colors */
+  --module-rail-bg: #e5e7eb;              /* Light gray track */
+  --module-rail-fill: #2563eb;            /* Blue fill (matches Continue button) */
+  
+  /* Typography */
+  --module-text-primary: #111827;         /* Headings, labels */
+  --module-text-secondary: #6b7280;       /* Help text, descriptions */
+  --module-text-muted: #9ca3af;           /* Disabled states */
 }
 
-/* Container rhythm */
-.sn-app .mod-wrap { max-width: 860px; margin: 0 auto; padding: 16px 8px 40px; }
-@media (min-width: 960px){ .sn-app .mod-wrap { padding-top: 24px; } }
+/* ===================================================================
+   🎯 RADIO PILLS - NUCLEAR OVERRIDE - Style as Gray/Black Pills
+   =================================================================== */
+/* Strategy: Maximum specificity + !important to override Streamlit theme */
 
-/* Top nav row (Back + context + name chip) */
-.sn-app .mod-top { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:18px; }
-.sn-app .mod-back { display:inline-flex; align-items:center; gap:8px; color: var(--brand-700); text-decoration:none; font-weight:600; }
-.sn-app .mod-context { color: var(--ink-400); }
-.sn-app .mod-namechip { background:#eaf1ff; color:#1e40af; border-radius:10px; padding:4px 8px; font-size:12px; }
-
-/* Progress rail (5 dots → we render as a rail for simplicity) */
-.sn-app .mod-rail { height: var(--rail-height); background: var(--rail-bg); border-radius: 999px; overflow: hidden; position: relative; margin: 10px 0 22px; }
-.sn-app .mod-rail__fill { position:absolute; inset:0; width: var(--mod-rail-pct, 0%); background: var(--rail-fill); }
-
-/* Page title + section note */
-.sn-app .mod-title { font-size: 22px; font-weight: 800; color: var(--ink); margin: 6px 0 12px; }
-.sn-app .mod-note { background: var(--note-bg); border: 1px solid var(--note-border); color: var(--ink-600);
-  border-radius: 12px; padding: 10px 12px; margin: 8px 0 16px; }
-
-/* Field blocks */
-.sn-app .mod-field { margin: 16px 0 18px; }
-.sn-app .mod-field > .mod-label { display:block; font-weight: 700; color: var(--ink); margin: 2px 0 8px; }
-.sn-app .mod-help { display:inline-flex; align-items:center; gap:6px; color: var(--ink-400); font-size: 12px; }
-
-/* Choice chips row (single/multi-select) */
-.sn-app .mod-choices { display:flex; flex-wrap:wrap; gap: 8px; }
-.sn-app .mod-chip {
-  display:inline-flex; align-items:center; gap:6px;
-  padding:.52rem .8rem; border-radius:999px;
-  background: var(--muted); border:1px solid var(--divider);
-  color: var(--ink-700); font-weight:600; cursor:pointer; user-select:none;
-}
-.sn-app .mod-chip.is-active { background: var(--ink-700); border-color: var(--ink-700); color:#fff; }
-.sn-app .mod-chip.is-muted  { opacity:.55; }
-
-/* Streamlit radio buttons restyled as pills */
-.sn-app .stRadio > div { display:flex !important; flex-wrap:wrap; gap:8px; }
-.sn-app .stRadio label[data-baseweb="radio"] {
-  display:inline-flex; align-items:center; border-radius:999px;
-  border:1px solid var(--chip-border); background: var(--chip-bg);
-  color: var(--chip-ink); font-weight:600; padding:.52rem .9rem;
-  cursor:pointer; margin:0;
-}
-.sn-app .stRadio label[data-baseweb="radio"] > div:first-child { display:none; }
-.sn-app .stRadio label[data-baseweb="radio"] > div:last-child { padding:0; }
-.sn-app .stRadio label[data-baseweb="radio"]:has(input:checked) {
-  background: var(--ink-700); border-color: var(--ink-700); color:#fff;
+/* RESET: Remove ALL Streamlit radio styling */
+.mod-radio-pills div[data-testid="stRadio"],
+.mod-radio-pills [data-testid="stRadio"] {
+  all: unset !important;
+  display: block !important;
+  width: 100% !important;
 }
 
-/* Streamlit checkboxes restyled as chips */
-.sn-app label[data-testid="stCheckbox"] {
-  display:inline-flex; align-items:center; border-radius:999px;
-  border:1px solid var(--chip-border); background: var(--chip-bg);
-  color: var(--chip-ink); font-weight:600; padding:.52rem .9rem;
-  cursor:pointer; margin:0 8px 8px 0;
-}
-.sn-app label[data-testid="stCheckbox"] > div:first-child { display:none; }
-.sn-app label[data-testid="stCheckbox"]:has(input:checked) {
-  background: var(--ink-700); border-color: var(--ink-700); color:#fff;
-}
-
-/* Inputs (use global form base; just tweak heights where needed) */
-.sn-app .mod-input { height: 42px; border-radius: 12px; border:1px solid #d9e3ef; background:#fff; padding:0 12px; font-size:14px; color:var(--ink); width: 100%; }
-.sn-app .mod-input:focus { outline:none; box-shadow: var(--focus-ring); border-color: var(--brand-400); }
-
-/* Action row */
-.sn-app .mod-actions { display:flex; gap:12px; flex-wrap:wrap; margin-top: 18px; }
-.sn-app .mod-actions .btn-primary { background: var(--brand-600); color:#fff; border:1px solid var(--brand-700); }
-.sn-app .mod-actions .btn-primary:hover { background: var(--brand-700); box-shadow: var(--focus-ring); }
-.sn-app .mod-actions .btn-secondary { background:#eef2f7; color:#0f172a; border:1px solid #d9e3ef; }
-.sn-app .mod-actions .btn-secondary:hover { background:#e7ecf5; }
-
-/* Button sizing to match comps */
-.sn-app .mod-actions .btn-primary,
-.sn-app .mod-actions .btn-secondary { height: 44px; border-radius: 12px; padding: 0 18px; font-weight: 700; }
-
-/* Inline badges & tiny helpers */
-.sn-app .mod-badge { display:inline-flex; align-items:center; gap:6px; background:#eef5ff; color:#1e40af; border:1px solid #d6e8ff; border-radius:999px; padding:2px 8px; font-size:12px; }
-
-/* Compact info rows (e.g., “monthly” text to the right of inputs) */
-.sn-app .mod-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
-
-/* Mobile tidy */
-@media (max-width: 720px){
-  .sn-app .mod-wrap { padding: 8px 8px 28px; }
-  .sn-app .mod-actions { gap:10px; }
+.mod-radio-pills div[data-testid="stRadio"] > div,
+.mod-radio-pills [data-testid="stRadio"] > div,
+.mod-radio-pills div[role="radiogroup"],
+.mod-radio-pills [role="radiogroup"] {
+  all: unset !important;
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  align-items: center !important;
 }
 
-/* --- Module pill look (single-choice via st.radio) --- */
-.sn-app .stRadio [role="radiogroup"] > label {
-  display:inline-flex;
-  align-items:center;
-  padding:.52rem .8rem;
-  margin:.25rem .25rem 0 0;
-  border-radius:999px;
-  background: var(--muted);
-  border:1px solid var(--divider);
-  color: var(--ink-700);
-  font-weight:600;
-  cursor:pointer;
-}
-.sn-app .stRadio [role="radiogroup"] input:checked + div + label,
-.sn-app .stRadio [role="radiogroup"] label:has(input:checked) {
-  background: var(--ink-700);
-  border-color: var(--ink-700);
-  color:#fff;
+/* BASE PILL STYLE - Gray unselected */
+/* Target ALL possible label variations Streamlit generates */
+/* GLOBAL: Apply to ALL radio buttons in the app */
+[data-testid="stRadio"] label,
+[data-testid="stRadio"] > div > label,
+[data-testid="stRadio"] div[role="radiogroup"] > label,
+div[data-testid="stRadio"] label,
+div[data-testid="stRadio"] > div > label,
+div[data-testid="stRadio"] div[role="radiogroup"] > label {
+  /* Reset everything first */
+  all: unset !important;
+  
+  /* Force pill appearance */
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-direction: row !important;
+  
+  /* Gray pill colors - ROUNDED RECTANGLE (more square) */
+  background-color: #f3f5f9 !important;
+  background: #f3f5f9 !important;
+  color: #1f2937 !important;
+  border: 1px solid #e3eaf5 !important;
+  border-radius: 8px !important;  /* Less rounded = more square */
+  
+  /* Size */
+  height: 42px !important;
+  min-height: 42px !important;
+  max-height: 42px !important;
+  padding: 0 24px !important;
+  margin: 0 6px 6px 0 !important;
+  min-width: 120px !important;
+  
+  /* Typography */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  font-weight: 600 !important;
+  font-size: 15px !important;
+  line-height: 42px !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+  
+  /* Interaction */
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  box-sizing: border-box !important;
+  user-select: none !important;
+  
+  /* Remove any default styling */
+  outline: none !important;
+  text-decoration: none !important;
+  list-style: none !important;
 }
 
-/* --- Module multi pills (st.multiselect tokens) --- */
-.sn-app .stMultiSelect .st-bq,
-.sn-app .stMultiSelect .st-bs {
-  background: var(--ink-700) !important;
-  color:#fff !important;
-  border-radius:999px !important;
-}
-.sn-app .stMultiSelect [data-baseweb="select"] {
-  border-radius:12px;
+/* HIDE the radio circle completely - NUCLEAR APPROACH */
+.mod-radio-pills input[type="radio"],
+.mod-radio-pills label input[type="radio"],
+.mod-radio-pills label > div:first-child,
+.mod-radio-pills label > div:first-child input,
+.mod-radio-pills div[data-testid="stRadio"] input[type="radio"],
+.mod-radio-pills div[data-testid="stRadio"] label > div:first-child,
+.mod-radio-pills div[data-testid="stRadio"] label input[type="radio"],
+.mod-radio-pills [data-testid="stRadio"] input[type="radio"],
+.mod-radio-pills [data-testid="stRadio"] label > div:first-child {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  opacity: 0 !important;
+  position: absolute !important;
+  left: -9999px !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
 }
 
-/* Recommendation line right under results title */
-.rec-line { margin: 8px 0 12px; color: var(--ink-800); }
-.cta-rail { display:flex; gap:12px; flex-wrap:wrap; margin-top:12px; }
+/* Text container - force inline display */
+[data-testid="stRadio"] label > div:last-child,
+[data-testid="stRadio"] label > div,
+div[data-testid="stRadio"] label > div:last-child,
+div[data-testid="stRadio"] label > div {
+  display: inline !important;
+  color: inherit !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  line-height: inherit !important;
+}
+
+/* HOVER - Slightly darker gray */
+[data-testid="stRadio"] label:hover,
+div[data-testid="stRadio"] label:hover {
+  background: #e8ecf3 !important;
+  background-color: #e8ecf3 !important;
+  border-color: #d1d9e6 !important;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08) !important;
+  transform: translateY(0) !important;
+}
+
+/* SELECTED STATE - Black pill with white text */
+[data-testid="stRadio"] label:has(input[type="radio"]:checked),
+[data-testid="stRadio"] label:has(input:checked),
+div[data-testid="stRadio"] label:has(input[type="radio"]:checked),
+div[data-testid="stRadio"] label:has(input:checked) {
+  background: #111827 !important;
+  background-color: #111827 !important;
+  color: #ffffff !important;
+  border: 1px solid #111827 !important;
+  border-color: #111827 !important;
+  border-radius: 8px !important;  /* Match unselected border radius */
+  box-shadow: 0 4px 12px rgba(17, 24, 39, 0.25) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* SELECTED HOVER - Slightly lighter black */
+[data-testid="stRadio"] label:has(input:checked):hover,
+div[data-testid="stRadio"] label:has(input:checked):hover {
+  background: #1f2937 !important;
+  background-color: #1f2937 !important;
+  border-radius: 8px !important;  /* Match border radius */
+  box-shadow: 0 6px 16px rgba(17, 24, 39, 0.3) !important;
+}
+
+/* Force text color inside selected pills */
+[data-testid="stRadio"] label:has(input:checked) div,
+[data-testid="stRadio"] label:has(input:checked) > div,
+[data-testid="stRadio"] label:has(input:checked) span,
+[data-testid="stRadio"] label:has(input:checked) p,
+div[data-testid="stRadio"] label:has(input:checked) div,
+div[data-testid="stRadio"] label:has(input:checked) > div,
+div[data-testid="stRadio"] label:has(input:checked) span,
+div[data-testid="stRadio"] label:has(input:checked) p {
+  color: #ffffff !important;
+  background: transparent !important;
+}
+
+/* ===================================================================
+   🎯 MULTI-SELECT PILLS - Style Native st.multiselect() 
+   =================================================================== */
+
+/* Style the multiselect container */
+.mod-multi-pills div[data-testid="stMultiSelect"] {
+  /* Add spacing */
+  margin-top: 8px;
+}
+
+/* Style selected items as pills */
+.mod-multi-pills div[data-testid="stMultiSelect"] span[data-baseweb="tag"] {
+  background: #111827 !important;
+  color: #ffffff !important;
+  border-radius: 999px !important;
+  padding: 6px 12px !important;
+  font-weight: 600 !important;
+  border: none !important;
+}
+
+/* ===================================================================
+   MODULE LAYOUT & TYPOGRAPHY
+   =================================================================== */
+
+.sn-app .mod-wrap { 
+  max-width: 920px; 
+  margin: 0 auto; 
+  padding: 8px 12px 40px; 
+}
+
+@media (min-width: 960px){ 
+  .sn-app .mod-wrap { 
+    padding-top: 24px; 
+  } 
+}
+
+/* Module header section */
+.sn-app .mod-top { 
+  display: flex; 
+  align-items: center; 
+  justify-content: space-between; 
+  gap: 16px; 
+  margin-bottom: 18px; 
+}
+
+.sn-app .mod-top .mod-context { 
+  color: var(--module-text-secondary); 
+  font-size: 0.9rem; 
+}
+
+/* Question field container */
+.sn-app .mod-field { 
+  position: relative; 
+  margin: 20px 0 24px; 
+}
+
+/* Question label - bold and prominent */
+.sn-app .mod-label { 
+  font-weight: 700; 
+  font-size: 20px;  /* Increased from 16px to 20px for better prominence */
+  color: var(--module-text-primary); 
+  margin: 0 0 12px; 
+  line-height: 1.5;
+}
+
+/* Help text - subtle gray */
+.sn-app .mod-help { 
+  color: var(--module-text-secondary); 
+  font-size: 15px;  /* Increased from 14px for better readability */
+  line-height: 1.6;
+  margin-bottom: 10px; 
+}
+
+/* Title with optional icon */
+.mod-title { 
+  display: flex; 
+  align-items: center; 
+  gap: 0.5rem; 
+  margin-bottom: 0.75rem; 
+}
+
+.mod-icon { 
+  font-size: 1.1rem; 
+  line-height: 1; 
+}
+
+/* Choice containers */
+.sn-app .mod-choices { 
+  display: flex; 
+  flex-wrap: wrap; 
+  gap: 10px; 
+}
+
+.sn-app .chips-grid { 
+  display: flex; 
+  flex-wrap: wrap; 
+  gap: 10px 12px; 
+}
+
+.sn-app .chip-wrap { 
+  display: inline-flex; 
+}
+
+/* Action button container */
+.sn-app .mod-actions { 
+  display: flex; 
+  gap: 12px; 
+  flex-wrap: wrap; 
+  margin-top: 28px; 
+  padding-top: 20px;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* Info note boxes */
+.sn-app .mod-note {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  color: var(--module-text-secondary);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin: 12px 0 20px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Developer info / debug summary - bottom of page */
+.sn-app .mod-bottom { 
+  margin-top: 40px;
+  padding: 16px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--module-text-muted);
+}
+
+.sn-app .mod-bottom .sum-item {
+  display: flex;
+  gap: 8px;
+  margin: 4px 0;
+  line-height: 1.4;
+}
+
+.sn-app .mod-bottom .meta {
+  font-weight: 600;
+  color: var(--module-text-secondary);
+  min-width: 120px;
+}
+
+.sn-app .mod-bottom .value {
+  color: var(--module-text-primary);
+  font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
+}
+
+/* Progress rail bar - SEGMENTED (discrete bars per module) */
+.sn-app .mod-rail-container,
+.mod-rail-container {
+  display: flex !important;
+  gap: 8px !important;
+  width: 100% !important;
+  margin: 10px 0 24px !important;
+  padding: 0 !important;
+}
+
+.sn-app .mod-rail-segment,
+.mod-rail-segment {
+  flex: 1 !important;
+  min-width: 0 !important;
+  height: 6px !important;
+  background: var(--module-rail-bg) !important;
+  border-radius: 999px !important;
+  overflow: hidden !important;
+  position: relative !important;
+}
+
+.sn-app .mod-rail-segment__fill,
+.mod-rail-segment__fill {
+  height: 100%;
+  background: var(--module-rail-fill);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.sn-app .mod-rail-segment.is-complete .mod-rail-segment__fill,
+.mod-rail-segment.is-complete .mod-rail-segment__fill {
+  width: 100% !important;
+}
+
+/* OLD CONTINUOUS RAIL - Kept for backwards compatibility if needed */
+.sn-app .mod-rail {
+  display: none !important;  /* Hide old continuous bar */
+}
+
+.sn-app .mod-rail__fill {
+  display: none !important;  /* Hide old continuous bar fill */
+}
+
+/* ===================================================================
+   CHIP BUTTONS — Gray/Black Design (Override Global Blue)
+   =================================================================== */
+
+/* Base chip button styling - GRAY STATE (Unselected) */
+.sn-app .chips-grid .stButton > button,
+.sn-app .chips-grid .stButton > button[class^="css-"],
+.sn-app .chips-grid .stButton > button[class*=" css-"],
+.sn-app .chips-grid button,
+.sn-app .mod-choices .stButton > button,
+.sn-app .mod-choices .stButton > button[class^="css-"],
+.sn-app .mod-choices .stButton > button[class*=" css-"]{
+  /* Gray background and dark text */
+  background: #f3f5f9 !important;
+  color: #1f2937 !important;
+  
+  /* Subtle gray border */
+  border: 1px solid #e3eaf5 !important;
+  
+  /* Rounded pill shape */
+  border-radius: 999px !important;
+  
+  /* Size and spacing */
+  height: 42px !important;
+  min-height: 42px !important;
+  padding: 0 20px !important;
+  
+  /* Typography */
+  font-weight: 600 !important;
+  font-size: 15px !important;
+  line-height: 1.4 !important;
+  
+  /* Remove brand shadows */
+  box-shadow: none !important;
+  
+  /* Smooth transitions */
+  transition: all 0.15s ease !important;
+}
+
+/* Hover state - slightly darker gray */
+.sn-app .chips-grid .stButton > button:hover:not(:disabled),
+.sn-app .chips-grid .stButton > button[class^="css-"]:hover:not(:disabled),
+.sn-app .chips-grid .stButton > button[class*=" css-"]:hover:not(:disabled),
+.sn-app .mod-choices .stButton > button:hover:not(:disabled){
+  background: #e8ecf3 !important;
+  color: #111827 !important;
+  border-color: #d1d9e6 !important;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08) !important;
+}
+
+/* Focus state - accessibility outline */
+.sn-app .chips-grid .stButton > button:focus-visible,
+.sn-app .chips-grid .stButton > button[class^="css-"]:focus-visible,
+.sn-app .chips-grid .stButton > button[class*=" css-"]:focus-visible{
+  outline: 2px solid #94a3b8 !important;
+  outline-offset: 2px !important;
+  box-shadow: none !important;
+}
+
+/* ===================================================================
+   ACTIVE CHIP — Black State (Selected Answer)
+   =================================================================== */
+
+.sn-app .chips-grid .chip-wrap.is-active .stButton > button,
+.sn-app .chips-grid .chip-wrap.is-active .stButton > button[class^="css-"],
+.sn-app .chips-grid .chip-wrap.is-active .stButton > button[class*=" css-"],
+.sn-app .mod-choices .chip-wrap.is-active .stButton > button,
+.sn-app .mod-choices .chip-wrap.is-active button{
+  /* Black background with white text */
+  background: #111827 !important;
+  color: #ffffff !important;
+  
+  /* Black border */
+  border: 1px solid #111827 !important;
+  
+  /* Stronger shadow for emphasis */
+  box-shadow: 0 4px 12px rgba(17, 24, 39, 0.25) !important;
+  
+  /* Transform slightly for tactile feedback */
+  transform: translateY(-1px) !important;
+}
+
+/* Active chip hover - slightly lighter black */
+.sn-app .chips-grid .chip-wrap.is-active .stButton > button:hover:not(:disabled),
+.sn-app .chips-grid .chip-wrap.is-active .stButton > button[class^="css-"]:hover:not(:disabled),
+.sn-app .chips-grid .chip-wrap.is-active .stButton > button[class*=" css-"]:hover:not(:disabled){
+  background: #1f2937 !important;
+  color: #ffffff !important;
+  border-color: #1f2937 !important;
+  box-shadow: 0 6px 16px rgba(17, 24, 39, 0.3) !important;
+}
+
+/* Disabled chips - muted gray */
+.sn-app .chips-grid .stButton > button:disabled,
+.sn-app .chips-grid .stButton > button[class^="css-"]:disabled,
+.sn-app .chips-grid .stButton > button[class*=" css-"]:disabled{
+  background: #f8f9fb !important;
+  color: #94a3b8 !important;
+  border-color: #e8ecf3 !important;
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+/* ===================================================================
+   MODULE ACTION BUTTONS (Continue, Back, Save & Exit)
+   =================================================================== */
+
+/* Primary action (Continue) - Black button */
+.sn-app .mod-actions .stButton > button:first-child,
+.sn-app .mod-actions .stButton:first-child > button,
+.sn-app .mod-actions .stButton:first-child > button[class^="css-"],
+.sn-app .mod-actions .stButton:first-child > button[class*=" css-"]{
+  background: #111827 !important;
+  color: #ffffff !important;
+  border: 1px solid #111827 !important;
+  height: 46px !important;
+  border-radius: 12px !important;
+  padding: 0 24px !important;
+  font-weight: 700 !important;
+  font-size: 15px !important;
+  box-shadow: 0 2px 8px rgba(17, 24, 39, 0.15) !important;
+  transition: all 0.18s ease !important;
+}
+
+.sn-app .mod-actions .stButton:first-child > button:hover:not(:disabled){
+  background: #1f2937 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(17, 24, 39, 0.25) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Secondary actions (Back, Save & Exit) - Gray outline buttons */
+.sn-app .mod-actions .stButton:not(:first-child) > button,
+.sn-app .mod-actions .stButton:not(:first-child) > button[class^="css-"],
+.sn-app .mod-actions .stButton:not(:first-child) > button[class*=" css-"]{
+  background: #ffffff !important;
+  color: #374151 !important;
+  border: 1px solid #d1d5db !important;
+  height: 46px !important;
+  border-radius: 12px !important;
+  padding: 0 24px !important;
+  font-weight: 600 !important;
+  font-size: 15px !important;
+  box-shadow: none !important;
+  transition: all 0.18s ease !important;
+}
+
+.sn-app .mod-actions .stButton:not(:first-child) > button:hover:not(:disabled){
+  background: #f9fafb !important;
+  color: #111827 !important;
+  border-color: #9ca3af !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Disabled state for all action buttons */
+.sn-app .mod-actions .stButton > button:disabled,
+.sn-app .mod-actions .stButton > button[class^="css-"]:disabled,
+.sn-app .mod-actions .stButton > button[class*=" css-"]:disabled{
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+/* ===================================================================
+   PROGRESS INDICATORS
+   =================================================================== */
+
+/* Blue progress bar (segmented bars showing discrete steps) - REMOVED DUPLICATE */
+/* See lines ~344 for the main implementation with proper .sn-app specificity */
+
+/* Progress steps (discrete section indicators) */
+.sn-app .ps{ 
+  display: flex; 
+  gap: 10px; 
+  margin: 10px 0 24px; 
+  padding: 0; 
+  list-style: none; 
+  align-items: center;
+}
+
+.sn-app .ps-step{
+  width: 54px; 
+  height: 6px; 
+  border-radius: 999px;
+  background: #e5e7eb;
+  transition: background 0.3s ease;
+}
+
+/* Completed steps - subtle gray */
+.sn-app .ps-step.is-done{ 
+  background: #9ca3af;
+}
+
+/* Current step - black to match active chips */
+.sn-app .ps-step.is-current{ 
+  background: #111827;
+  box-shadow: 0 0 0 3px rgba(17, 24, 39, 0.1);
+}
+
+/* ===================================================================
+   DEFENSIVE OVERRIDES — Ensure NO Blue Bleeds Through
+   =================================================================== */
+
+/* Kill any brand colors in module context */
+.sn-app .mod-wrap .stButton > button,
+.sn-app .mod-wrap button:not(.chip-wrap button):not(.mod-actions button),
+.sn-app .mod-field .stButton > button{
+  /* Force inheritance of module chip colors if not explicitly styled above */
+  background-color: #f3f5f9 !important;
+  color: #1f2937 !important;
+  border-color: #e3eaf5 !important;
+}
+
+/* Ensure no blue focus rings in module */
+.sn-app .mod-wrap button:focus,
+.sn-app .mod-wrap .stButton > button:focus{
+  outline-color: #94a3b8 !important;
+  box-shadow: none !important;
+}
+
+/* Kill any brand gradient backgrounds */
+.sn-app .mod-wrap button[style*="background"],
+.sn-app .mod-wrap .stButton > button[style*="gradient"]{
+  background: #f3f5f9 !important;
+}
+
+/* Ensure no blue text anywhere in modules */
+.sn-app .mod-wrap .stButton > button span,
+.sn-app .mod-wrap button span{
+  color: inherit !important;
+}
+
+/* Force white text on active/black buttons */
+.sn-app .chips-grid .chip-wrap.is-active button span,
+.sn-app .chips-grid .chip-wrap.is-active .stButton > button span{
+  color: #ffffff !important;
+}
+
+/* Additional safeguard for Streamlit's dynamic classes */
+div[data-testid="column"]:has(.mod-wrap) .stButton > button,
+div[data-testid="stVerticalBlock"]:has(.mod-wrap) .stButton > button{
+  background: #f3f5f9 !important;
+  color: #1f2937 !important;
+  border: 1px solid #e3eaf5 !important;
+}
+
+/* Active state for the above */
+div[data-testid="column"]:has(.chip-wrap.is-active) .stButton > button,
+div[data-testid="stVerticalBlock"]:has(.chip-wrap.is-active) .stButton > button{
+  background: #111827 !important;
+  color: #ffffff !important;
+}
+
+/* ===================================================================
+   SAVE & CONTINUE LATER BUTTON STYLING
+   =================================================================== */
+/* Style Streamlit secondary buttons in mod-actions to match btn--secondary */
+/* Updated: White text on blue background for prominence */
+.sn-app .mod-actions button[kind="secondary"],
+.sn-app .mod-actions .stButton > button[kind="secondary"],
+.sn-app .mod-actions div[data-testid="stButton"] > button[kind="secondary"] {
+  background: var(--brand-600, #2563eb) !important;
+  color: #ffffff !important;
+  border: 1px solid var(--brand-700, #1d4ed8) !important;
+  font-weight: 700 !important;
+}
+
+.sn-app .mod-actions button[kind="secondary"]:hover:not(:disabled),
+.sn-app .mod-actions .stButton > button[kind="secondary"]:hover:not(:disabled),
+.sn-app .mod-actions div[data-testid="stButton"] > button[kind="secondary"]:hover:not(:disabled) {
+  background: var(--brand-700, #1d4ed8) !important;
+  color: #ffffff !important;
+  box-shadow: var(--focus-ring, 0 0 0 3px rgba(37, 99, 235, 0.2)) !important;
+  border-color: var(--brand-700, #1d4ed8) !important;
+}
+
