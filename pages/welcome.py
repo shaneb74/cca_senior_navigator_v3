@@ -501,11 +501,11 @@ def render(ctx: Optional[dict] = None) -> None:
     render_page(body_html=_welcome_body(), active_route="welcome")
     
     # Professional Login Section - positioned above footer
-    # Button is now INSIDE the box, not below it
+    # Button is HTML inside the box, not a separate Streamlit widget
     st.markdown("""
         <div class="container" style="max-width:1240px;margin:60px auto 60px;padding:0 24px;">
             <div style="
-                padding:40px 40px 20px;
+                padding:40px;
                 background:#fff;
                 border:1px solid #e6edf5;
                 border-radius:20px;
@@ -529,24 +529,20 @@ def render(ctx: Optional[dict] = None) -> None:
                     margin:0 0 24px;
                     font-weight:500;
                 ">Discharge Planners • Nurses • Physicians • Social Workers • Geriatric Care Managers</p>
+                <a href="?page=hub_professional" class="btn btn--primary" style="
+                    display:inline-block;
+                    padding:12px 32px;
+                    border-radius:12px;
+                    background:#111827;
+                    color:#fff;
+                    text-decoration:none;
+                    font-weight:700;
+                    font-size:1rem;
+                    transition:all 0.2s ease;
+                ">🔐 For Professionals</a>
             </div>
         </div>
     """, unsafe_allow_html=True)
-    
-    # Streamlit button positioned INSIDE the Professional Login box
-    st.markdown('<div style="max-width:1240px;margin:-100px auto 60px;padding:0 64px;text-align:center;">', unsafe_allow_html=True)
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        # AUTHENTICATION DISABLED FOR DEVELOPMENT TESTING
-        # Role-based gating temporarily removed to verify navigation and rendering
-        # Button navigates directly to Professional Hub without role checks
-        if st.button("🔐 For Professionals", key="pro_login_btn", use_container_width=True, type="primary"):
-            # NOTE: switch_to_professional() call removed - authentication disabled
-            # Navigate directly to Professional Hub
-            st.query_params.clear()
-            st.query_params["page"] = "hub_professional"
-            st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
 
 
 __all__ = ["render", "render_welcome_card"]
