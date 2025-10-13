@@ -63,6 +63,7 @@ def run_module(config: ModuleConfig) -> Dict[str, Any]:
         state.update(new_values)
 
     is_results = config.results_step_id and step.id == config.results_step_id
+    
     if is_results:
         _ensure_outcomes(config, state)
         _render_results_view(state, config)
@@ -208,16 +209,16 @@ def _update_progress(
     progress_steps = [s for s in config.steps if s.show_progress]
     total = len(progress_steps) or 1
     
-    # Find the current step's index among progress-eligible steps
-    try:
-        progress_index = next(i for i, s in enumerate(progress_steps) if s.id == step.id)
-    except StopIteration:
-        # Current step doesn't count toward progress (like intro page)
-        progress = 0.0
+    # Check if we're on results page FIRST - that's always 100%
+    if config.results_step_id and step.id == config.results_step_id:
+        progress = 1.0
     else:
-        # Check if we're on results page - that's always 100%
-        if config.results_step_id and step.id == config.results_step_id:
-            progress = 1.0
+        # Find the current step's index among progress-eligible steps
+        try:
+            progress_index = next(i for i, s in enumerate(progress_steps) if s.id == step.id)
+        except StopIteration:
+            # Current step doesn't count toward progress (like intro page)
+            progress = 0.0
         else:
             # Calculate fractional progress within current step
             required = _required_fields(step, state)
@@ -232,6 +233,7 @@ def _update_progress(
 
     progress_pct = round(progress * 100, 1)
     state["progress"] = progress_pct
+    
     if progress >= 1.0:
         state["status"] = "done"
     elif progress > 0:
@@ -360,6 +362,7 @@ def _handle_save_exit(
 def _ensure_outcomes(config: ModuleConfig, answers: Dict[str, Any]) -> None:
     state_key = config.state_key
     outcome_key = f"{state_key}._outcomes"
+    
     if st.session_state.get(outcome_key):
         return
 
@@ -373,7 +376,10 @@ def _ensure_outcomes(config: ModuleConfig, answers: Dict[str, Any]) -> None:
                 outcome = result
             elif isinstance(result, dict):
                 outcome = OutcomeContract(**result)
-        except Exception:
+        except Exception as e:
+            import traceback
+            st.error(f"❌ Error computing outcomes: {type(e).__name__}: {str(e)}")
+            st.text(traceback.format_exc())
             outcome = OutcomeContract()
 
     audit = dict(outcome.audit)
@@ -589,15 +595,34 @@ def _get_recommendation(mod: Dict[str, Any], config: ModuleConfig) -> Optional[s
     recommendation = outcomes.get("recommendation")
     
     if recommendation:
+        # If the recommendation is already properly formatted (contains capitals or special chars),
+        # use it as-is (this is the case for new logic_v3 output)
+        if any(c.isupper() for c in recommendation) or "/" in recommendation or "-" in recommendation:
+            return f"Based on your answers, we recommend {recommendation}."
+        
+        # Otherwise, normalize the recommendation key for backward compatibility
+        rec_key = recommendation.lower().replace(" ", "_").replace("/", "_").replace("-", "_")
+        
         mapping = {
+            "independent___in_home": "Independent / In-Home",
             "independent_in_home": "Independent / In-Home",
             "in_home": "In-Home Care",
+            "in_home_care": "In-Home Care",
+            "in_home_with_support": "In-Home with Support",
             "assisted_living": "Assisted Living",
             "memory_care": "Memory Care",
             "memory_care_high_acuity": "Memory Care (High Acuity)",
+            "high_acuity_memory_care": "High-Acuity Memory Care",  # Handle both orderings
+            "memory_care_override": "Memory Care",
             "skilled_nursing": "Skilled Nursing",
+            "no_care_needed": "Independent / In-Home",
         }
-        pretty = mapping.get(recommendation.lower().replace(" ", "_"), recommendation.replace("_", " ").title())
+        
+        pretty = mapping.get(rec_key)
+        if not pretty:
+            # Fallback: title case the recommendation
+            pretty = recommendation.replace("_", " ").replace("/", " / ").title()
+        
         return f"Based on your answers, we recommend {pretty}."
     
     # Fallback: try module state
@@ -622,11 +647,29 @@ def _get_recommendation(mod: Dict[str, Any], config: ModuleConfig) -> Optional[s
 
 
 def _render_results_view(mod: Dict[str, Any], config: ModuleConfig) -> None:
+    # Get recommendation from outcomes
     recommendation = _get_recommendation(mod, config)
+    
     if recommendation:
         st.markdown(f"<h3 class='h3 rec-line'>{H(recommendation)}</h3>", unsafe_allow_html=True)
+    else:
+        # Fallback message if no recommendation
+        st.markdown("<h3 class='h3 rec-line'>Your Guided Care Plan Summary</h3>", unsafe_allow_html=True)
 
-    _render_results_summary(mod, config)
+    # Try to get summary points from outcomes first (preferred)
+    outcome_key = f"{config.state_key}._outcomes"
+    outcomes = st.session_state.get(outcome_key, {})
+    summary_data = outcomes.get("summary", {})
+    points = summary_data.get("points", [])
+    
+    if points:
+        # Use the detailed summary points from the derive() function
+        items = "".join(f"<li>{H(p)}</li>" for p in points)
+        st.markdown(f"<ul>{items}</ul>", unsafe_allow_html=True)
+    else:
+        # Fallback to basic summary if no points available
+        _render_results_summary(mod, config)
+    
     _render_results_ctas_once(config)
 
 
