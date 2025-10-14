@@ -159,6 +159,37 @@ def test_tips():
     print()
 
 
+def test_module_guidance():
+    """Test module-level guidance messages."""
+    print("🧪 Test 8: Module guidance (NEW)...")
+    
+    from core.navi_dialogue import NaviDialogue
+    
+    # Test GCP modules
+    gcp_modules = ["intro", "mobility", "cognitive", "medical", "social", "living", "complete"]
+    for module in gcp_modules:
+        message = NaviDialogue.get_module_message("gcp", module)
+        assert "text" in message
+        assert "icon" in message
+        print(f"✅ gcp.{module}: {message['icon']} {message['text'][:50]}...")
+    
+    # Test Cost Planner modules
+    cost_modules = ["intro", "income", "assets", "expenses", "complete"]
+    for module in cost_modules:
+        message = NaviDialogue.get_module_message("cost_planner", module)
+        assert "text" in message
+        print(f"✅ cost_planner.{module}: {message['icon']} {message['text'][:50]}...")
+    
+    # Test PFMA modules
+    pfma_modules = ["intro", "select_advisor", "choose_time", "confirm", "complete"]
+    for module in pfma_modules:
+        message = NaviDialogue.get_module_message("pfma", module)
+        assert "text" in message
+        print(f"✅ pfma.{module}: {message['icon']} {message['text'][:50]}...")
+    
+    print()
+
+
 def run_all_tests():
     """Run all tests."""
     print("=" * 70)
@@ -174,6 +205,7 @@ def run_all_tests():
         test_product_intros()
         test_micro_moments()
         test_tips()
+        test_module_guidance()  # NEW TEST
         
         print("=" * 70)
         print("🎉 ALL TESTS PASSED!")
@@ -182,10 +214,10 @@ def run_all_tests():
         print("Next steps:")
         print("1. ✅ Dialogue system working")
         print("2. ✅ Journey status banner integrated")
-        print("3. ⏳ Add product intro messages")
-        print("4. ⏳ Add product gate messages")
-        print("5. ⏳ Add micro-moment messages")
-        print("6. ⏳ End-to-end testing with Navi")
+        print("3. ✅ Module guidance system built")
+        print("4. ✅ Navi sits at top of every module")
+        print("5. ⏳ Test live app with Navi in modules")
+        print("6. ⏳ End-to-end testing with full Navi guidance")
         print()
         
         return True
