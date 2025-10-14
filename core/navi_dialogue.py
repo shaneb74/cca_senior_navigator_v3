@@ -10,7 +10,11 @@ import random
 from pathlib import Path
 from typing import Optional, Dict, Any, List
 
-import streamlit as st
+try:
+    import streamlit as st
+    HAS_STREAMLIT = True
+except ImportError:
+    HAS_STREAMLIT = False
 
 
 class NaviDialogue:
@@ -48,15 +52,25 @@ class NaviDialogue:
         phase_data = dialogue["journey_phases"].get(phase, {})
         messages = phase_data.get("messages", {})
         
-        # Choose authenticated or guest message
-        if is_authenticated and "main_authenticated" in messages:
-            message = messages["main_authenticated"]
-        elif is_authenticated and "greeting_authenticated" in messages:
-            message = messages["greeting_authenticated"]
-        elif "main_guest" in messages:
-            message = messages["main_guest"]
-        else:
-            message = messages.get("greeting_guest", {})
+        # Choose authenticated or guest message (try multiple patterns)
+        message = None
+        if is_authenticated:
+            # Try authenticated variants
+            for key in ["main_authenticated", "greeting_authenticated", "celebration_authenticated"]:
+                if key in messages:
+                    message = messages[key]
+                    break
+        
+        # Fall back to guest message
+        if message is None:
+            for key in ["main_guest", "greeting_guest", "celebration_guest"]:
+                if key in messages:
+                    message = messages[key]
+                    break
+        
+        # Last resort: return empty dict
+        if message is None:
+            message = {}
         
         # Format with context
         if context:
@@ -207,6 +221,9 @@ def render_navi_message(
         show_cta: Whether to show CTA button
         cta_callback: Function to call when CTA clicked
     """
+    if not HAS_STREAMLIT:
+        return
+    
     icon = message.get("icon", "🤖")
     text = message.get("text", "")
     subtext = message.get("subtext", "")
@@ -240,11 +257,15 @@ def render_navi_message(
 
 def render_navi_tip(tip: str) -> None:
     """Render a Navi tip/hint box."""
+    if not HAS_STREAMLIT:
+        return
     st.info(f"💡 **Navi's Tip:** {tip}")
 
 
 def render_navi_boost(boost_messages: List[str]) -> None:
     """Render Navi's context boost messages."""
+    if not HAS_STREAMLIT:
+        return
     if boost_messages:
         st.markdown("**🤖 Here's what I know so far:**")
         for msg in boost_messages:
@@ -253,6 +274,8 @@ def render_navi_boost(boost_messages: List[str]) -> None:
 
 def render_navi_intro(intro: Dict[str, Any]) -> None:
     """Render Navi's product introduction."""
+    if not HAS_STREAMLIT:
+        return
     welcome = intro.get("welcome", "")
     what_to_expect = intro.get("what_to_expect", [])
     navi_says = intro.get("navi_says", "")
@@ -279,6 +302,8 @@ def show_navi_journey_phase(phase: str, context: Optional[Dict[str, Any]] = None
         phase: Journey phase (getting_started, in_progress, nearly_there, complete)
         context: User context (name, tier, costs, etc.)
     """
+    if not HAS_STREAMLIT:
+        return
     from core.state import is_authenticated, get_user_name
     
     # Build context
@@ -305,6 +330,8 @@ def show_navi_product_intro(product_key: str, context: Optional[Dict[str, Any]] 
         product_key: Product key (gcp_start, cost_start, pfma_start)
         context: Context for formatting
     """
+    if not HAS_STREAMLIT:
+        return
     intro = NaviDialogue.get_product_intro(product_key, context)
     render_navi_intro(intro)
 
@@ -315,6 +342,8 @@ def show_navi_gate(product_key: str) -> None:
     Args:
         product_key: Product key (gcp_locked, cost_locked, pfma_locked)
     """
+    if not HAS_STREAMLIT:
+        return
     gate = NaviDialogue.get_gate_message(product_key)
     message = {
         "text": gate.get("message", ""),
@@ -332,6 +361,8 @@ def show_navi_micro_moment(moment_type: str, context: Optional[Dict[str, Any]] =
         moment_type: Moment type (progress_save, product_unlock, achievement_earned, etc.)
         context: Context for formatting
     """
+    if not HAS_STREAMLIT:
+        return
     message = NaviDialogue.get_micro_moment(moment_type, context)
     if message:
         st.success(f"🤖 {message}")
