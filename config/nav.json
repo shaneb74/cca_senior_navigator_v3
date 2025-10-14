@@ -103,12 +103,6 @@
         {
           "key": "gcp",
           "label": "Guided Care Plan",
-          "module": "products.gcp.product:render",
-          "hidden": true
-        },
-        {
-          "key": "gcp_v4",
-          "label": "Guided Care Plan v4",
           "module": "products.gcp_v4.product:render",
           "hidden": true
         },
