@@ -669,7 +669,6 @@ def render_navi_panel_v2(
     </style>
     """
     st.markdown(navi_css, unsafe_allow_html=True)
-    st.markdown(navi_css, unsafe_allow_html=True)
     
     # Build HTML components
     progress_badge = ""
@@ -685,43 +684,15 @@ def render_navi_panel_v2(
             if chip.get('sublabel'):
                 sublabel_html = f'<div class="navi-panel-v2__chip-sublabel">{chip["sublabel"]}</div>'
             
-            chip_items.append(f'''
-                <div class="navi-panel-v2__chip">
-                    <div class="navi-panel-v2__chip-label">
-                        <span>{chip.get("icon", "")}</span>
-                        <span>{chip.get("label", "")}</span>
-                    </div>
-                    <div class="navi-panel-v2__chip-value">{chip.get("value", "Not set")}</div>
-                    {sublabel_html}
-                </div>
-            ''')
+            chip_items.append(f'<div class="navi-panel-v2__chip"><div class="navi-panel-v2__chip-label"><span>{chip.get("icon", "")}</span><span>{chip.get("label", "")}</span></div><div class="navi-panel-v2__chip-value">{chip.get("value", "Not set")}</div>{sublabel_html}</div>')
         
-        chips_html = f'''
-            <div class="navi-panel-v2__chips-label">What I know so far:</div>
-            <div class="navi-panel-v2__chips">{''.join(chip_items)}</div>
-        '''
+        chips_html = f'<div class="navi-panel-v2__chips-label">What I know so far:</div><div class="navi-panel-v2__chips">{"".join(chip_items)}</div>'
     
     # Get encouragement status
     status = encouragement.get('status', 'in_progress')
     
-    # Build complete panel HTML
-    panel_html = f'''
-    <div class="navi-panel-v2">
-        <div class="navi-panel-v2__inner">
-            <div class="navi-panel-v2__header">
-                <div class="navi-panel-v2__eyebrow">🤖 Navi</div>
-                {progress_badge}
-            </div>
-            <div class="navi-panel-v2__title">{title}</div>
-            <div class="navi-panel-v2__reason">{reason}</div>
-            <div class="navi-panel-v2__encouragement navi-panel-v2__encouragement--{status}">
-                <span style="font-size: 18px;">{encouragement.get('icon', '💪')}</span>
-                <span>{encouragement.get('text', '')}</span>
-            </div>
-            {chips_html}
-        </div>
-    </div>
-    '''
+    # Build complete panel HTML (single line to avoid whitespace issues)
+    panel_html = f'<div class="navi-panel-v2"><div class="navi-panel-v2__inner"><div class="navi-panel-v2__header"><div class="navi-panel-v2__eyebrow">🤖 Navi</div>{progress_badge}</div><div class="navi-panel-v2__title">{title}</div><div class="navi-panel-v2__reason">{reason}</div><div class="navi-panel-v2__encouragement navi-panel-v2__encouragement--{status}"><span style="font-size: 18px;">{encouragement.get("icon", "💪")}</span><span>{encouragement.get("text", "")}</span></div>{chips_html}</div></div>'
     
     st.markdown(panel_html, unsafe_allow_html=True)
     
