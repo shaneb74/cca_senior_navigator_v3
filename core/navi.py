@@ -342,19 +342,12 @@ def render_navi_panel(
             for item in boost:
                 st.markdown(f"- {item}")
         
-        # Suggested questions (3 dynamic chips)
-        questions = NaviOrchestrator.get_suggested_questions(
-            ctx.flags,
-            ctx.progress['completed_products']
-        )
-        
-        st.markdown("**💬 Quick questions:**")
-        cols = st.columns(3)
-        for i, question in enumerate(questions):
-            with cols[i]:
-                if st.button(question, key=f"navi_q_{i}", use_container_width=True):
-                    # Route to FAQs or show answer
-                    route_to("faq")
+        # CTA to FAQs for questions (don't show question chips in Navi - keep focused on mission)
+        num_suggested = len(NaviOrchestrator.get_suggested_questions(ctx.flags, ctx.progress['completed_products']))
+        if num_suggested > 0:
+            st.markdown(f"**💬 Have questions?** I have {num_suggested} personalized answers ready for you.")
+            if st.button("Ask Navi →", key="navi_faq_cta", type="secondary", use_container_width=True):
+                route_to("faq")
     
     elif location == "product":
         # Product/module-level guidance

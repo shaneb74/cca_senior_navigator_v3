@@ -6,8 +6,7 @@ Questions rotate based on user context (care flags, cost planner flags).
 Maintains archive of previously asked questions.
 
 FLAG-DRIVEN PERSONALIZATION:
-- Reads handoff.gcp.flags (fall_risk, cog_moderate, veteran_eligible, etc.)
-- Reads Cost Planner state (is_veteran, is_home_owner, has_medicaid)
+- Uses NaviOrchestrator.get_suggested_questions() for centralized flag logic
 - Surfaces 3 most relevant questions at any time
 - Auto-refreshes as user completes products and flags change
 """
@@ -17,6 +16,9 @@ import random
 from typing import List, Dict, Set, Any
 
 from core.nav import route_to
+from core.navi import NaviOrchestrator
+from core.flags import get_all_flags
+from core.mcip import MCIP
 
 
 # ==============================================================================
@@ -554,83 +556,29 @@ def _ask_question(question: str):
 
 
 def _get_suggested_questions_pool() -> list:
-    """Generate pool of suggested questions based on user context and flags."""
+    """Generate pool of suggested questions based on user context and flags.
     
-    # Get user context from session state
-    handoff = st.session_state.get("handoff", {})
-    gcp_state = handoff.get("gcp", {})
-    cost_planner_state = st.session_state.get("cost_planner_base", {})
-    cost_data = st.session_state.get("cost_data", {})
+    Uses NaviOrchestrator for centralized flag-driven question logic.
+    """
     
-    # Get GCP flags from handoff
-    gcp_flags = gcp_state.get("flags", {})
-    care_recommendation = gcp_state.get("recommendation", "")
-    # care_recommendation is now a string (e.g., "In-Home Care", "Assisted Living")
-    care_type = care_recommendation.lower().replace(" ", "_") if care_recommendation else ""
+    # Get centralized flags from all products/modules
+    flags = get_all_flags()
     
-    # Get Cost Planner profile flags
-    profile = cost_planner_state.get("profile", {})
-    is_veteran = profile.get("is_veteran", False)
-    is_home_owner = profile.get("is_home_owner", False)
-    has_medicaid = profile.get("has_medicaid", False)
+    # Get completed products for context
+    progress = MCIP.get_journey_progress()
+    completed_products = progress.get("completed_products", [])
     
-    # Build active flags set
-    active_flags = set()
+    # Use NaviOrchestrator for centralized question generation
+    questions = NaviOrchestrator.get_suggested_questions(flags, completed_products)
     
-    # Always include these general flags
-    active_flags.add("next")
-    active_flags.add("care_plan")
-    active_flags.add("afford")
+    # Filter out already asked questions
+    asked = set(st.session_state.get("ai_asked_questions", []))
+    available = [q for q in questions if q not in asked]
     
-    # Care type flags from GCP
-    if "in-home" in care_type.lower() or "in_home" in care_type.lower():
-        active_flags.add("home_care_cost")
-        active_flags.add("home_modification")
-    if "assisted living" in care_type.lower():
-        active_flags.add("assisted_living")
-    if "memory care" in care_type.lower() or gcp_flags.get("cognitive_decline"):
-        active_flags.add("memory_care")
-    if "skilled nursing" in care_type.lower():
-        active_flags.add("skilled_nursing")
+    # If we've asked everything, reset and show all again
+    if len(available) < 3:
+        available = questions
     
-    # Veteran flags
-    if is_veteran or gcp_flags.get("is_veteran"):
-        active_flags.add("va")
-    
-    # Medicaid flags
-    if has_medicaid or gcp_flags.get("medicaid_likely"):
-        active_flags.add("medicaid")
-    
-    # Medicare (always relevant for seniors)
-    active_flags.add("medicare")
-    
-    # Home owner flags
-    if is_home_owner:
-        active_flags.add("home_modification")
-    
-    # Caregiver support
-    if gcp_flags.get("caregiver_strain") or gcp_flags.get("family_caregiver"):
-        active_flags.add("caregiver_support")
-    
-    # Hospice/palliative care
-    if gcp_flags.get("end_of_life") or gcp_flags.get("hospice_appropriate"):
-        active_flags.add("hospice")
-    
-    # Long-term care insurance
-    if cost_data.get("has_ltc_insurance"):
-        active_flags.add("ltc_insurance")
-    
-    # Build question pool from database based on active flags
-    questions = []
-    for item in QUESTION_DATABASE:
-        if item["flag"] in active_flags:
-            questions.append(item["question"])
-    
-    # Always return at least 3 questions
-    if len(questions) < 3:
-        # Add all questions from database as fallback
-        questions = [item["question"] for item in QUESTION_DATABASE]
-    
-    return questions
+    return available
 
 
