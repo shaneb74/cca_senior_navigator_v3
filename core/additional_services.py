@@ -14,6 +14,22 @@ Rule = Dict[str, Any]
 # This module defines flag-based and product-based additional service tiles
 # that appear in various hubs (concierge, waiting_room, trusted_partners, etc.)
 #
+# MCIP v2 INTEGRATION:
+# - Reads care recommendation from MCIP.get_care_recommendation()
+# - Reads financial profile from MCIP.get_financial_profile()
+# - Uses structured flags from CareRecommendation.flags
+# - Personalizes recommendations based on tier, confidence, and financial data
+# - Falls back to legacy handoff for backwards compatibility
+#
+# RULE TYPES:
+# - equals: path equals value
+# - includes: value in container (list/dict for flags)
+# - exists: path exists and is not None
+# - min_progress: numeric value >= threshold
+# - role_in: role in list of allowed roles
+# - cost_gap: financial gap >= threshold (MCIP financial profile)
+# - runway_low: runway months <= threshold (MCIP financial profile)
+#
 # HIDDEN SERVICES:
 # - cost_planner_recommend: Hidden until MCIP approves. To enable, add this
 #   to your session state setup or flag system:
@@ -36,33 +52,75 @@ def _get(ctx: Dict[str, Any], dotted: str, default: Any = None) -> Any:
 
 
 def _ctx() -> Dict[str, Any]:
+    """Build context from MCIP v2 and session state.
+    
+    MCIP Integration:
+    - Reads care recommendation from MCIP.get_care_recommendation()
+    - Reads financial profile from MCIP.get_financial_profile()
+    - Uses structured flags from CareRecommendation.flags
+    - Falls back to legacy handoff for backwards compatibility
+    """
+    from core.mcip import MCIP
+    
     ss = st.session_state
     
-    # Get flags from handoff (union of all product flags)
+    # Get flags from MCIP v2 (primary source)
     all_flags = {}
-    handoff = ss.get("handoff", {})
     
+    # Primary: Get flags from MCIP CareRecommendation
+    care_rec = MCIP.get_care_recommendation()
+    if care_rec and care_rec.flags:
+        # Convert structured flags list to dict {flag_id: True}
+        for flag in care_rec.flags:
+            flag_id = flag.get("id")
+            if flag_id:
+                all_flags[flag_id] = True
+    
+    # Backwards compatibility: Merge with legacy handoff flags if present
+    handoff = ss.get("handoff", {})
     for product_key, product_data in handoff.items():
         if isinstance(product_data, dict):
             product_flags = product_data.get("flags", {})
             if isinstance(product_flags, dict):
                 all_flags.update(product_flags)
     
+    # Build context with MCIP data
+    financial_profile = MCIP.get_financial_profile()
+    
     return {
         "role": ss.get("role", "consumer"),
         "person_name": ss.get("person_name", ""),
-        "gcp": ss.get("gcp", {}),
-        "cost": ss.get("cost", {}),
-        "flags": all_flags,  # Now contains actual flags from module outcomes
+        "gcp": ss.get("gcp", {}),  # Legacy compatibility
+        "cost": ss.get("cost", {}),  # Legacy compatibility
+        "flags": all_flags,  # Unified flags from MCIP + legacy
+        "mcip": {
+            "care_recommendation": care_rec,
+            "financial_profile": financial_profile,
+            "tier": care_rec.tier if care_rec else None,
+            "confidence": care_rec.confidence if care_rec else 0.0,
+        }
     }
 
 
 def _passes(rule: Rule, ctx: Dict[str, Any]) -> bool:
+    """Check if a visibility rule passes.
+    
+    Rule Types:
+    - equals: path equals value
+    - includes: value in container (list/dict)
+    - exists: path exists and is not None
+    - min_progress: numeric value >= threshold
+    - role_in: role in list of allowed roles
+    - cost_gap: financial gap >= threshold (uses MCIP financial profile)
+    - runway_low: runway months <= threshold (uses MCIP financial profile)
+    """
     if not rule:
         return True
+    
     if "equals" in rule:
         spec = rule["equals"]
         return _get(ctx, spec["path"]) == spec.get("value")
+    
     if "includes" in rule:
         spec = rule["includes"]
         # Handle both lists and dicts (for flags)
@@ -74,18 +132,47 @@ def _passes(rule: Rule, ctx: Dict[str, Any]) -> bool:
         elif isinstance(container, (list, tuple, set)):
             return value in container
         return False
+    
     if "exists" in rule:
         spec = rule["exists"]
         return _get(ctx, spec["path"]) is not None
+    
     if "min_progress" in rule:
         spec = rule["min_progress"]
         try:
             return float(_get(ctx, spec["path"], 0)) >= float(spec.get("value", 0))
         except Exception:
             return False
+    
     if "role_in" in rule:
         roles = rule["role_in"] or []
         return _get(ctx, "role") in roles
+    
+    # MCIP Financial Profile Rules
+    if "cost_gap" in rule:
+        spec = rule["cost_gap"]
+        financial = _get(ctx, "mcip.financial_profile")
+        if not financial:
+            return False
+        try:
+            gap = financial.gap_amount
+            threshold = float(spec.get("value", 0))
+            return gap >= threshold
+        except Exception:
+            return False
+    
+    if "runway_low" in rule:
+        spec = rule["runway_low"]
+        financial = _get(ctx, "mcip.financial_profile")
+        if not financial:
+            return False
+        try:
+            runway = financial.runway_months
+            threshold = float(spec.get("value", 0))
+            return runway <= threshold
+        except Exception:
+            return False
+    
     return False
 
 
@@ -282,6 +369,42 @@ REGISTRY: List[Tile] = [
         "hubs": ["concierge"],
         "visible_when": [
             {"includes": {"path": "flags", "value": "medicaid_likely"}},
+            # Show if financial gap is significant (>$1000/month uncovered)
+            {"cost_gap": {"value": 1000}},
+            # Show if runway is critically low (<24 months)
+            {"runway_low": {"value": 24}},
+        ],
+    },
+    
+    # === FINANCIAL PLANNING SERVICES (MCIP Financial Profile Integration) ===
+    {
+        "key": "reverse_mortgage",
+        "type": "partner",
+        "title": "Reverse Mortgage Options",
+        "subtitle": "Unlock home equity to fund care costs for {name}.",
+        "cta": "Explore options",
+        "go": "partner_reverse_mortgage",
+        "order": 19,
+        "hubs": ["concierge", "trusted_partners"],
+        "tags": ["financing"],
+        "visible_when": [
+            # Show if runway is low (<36 months) - suggests need for additional funding
+            {"runway_low": {"value": 36}},
+        ],
+    },
+    {
+        "key": "elder_law_attorney",
+        "type": "partner",
+        "title": "Elder Law Attorney",
+        "subtitle": "Protect assets and plan for long-term care expenses.",
+        "cta": "Schedule consultation",
+        "go": "partner_elder_law",
+        "order": 20,
+        "hubs": ["concierge", "trusted_partners"],
+        "tags": ["legal", "financing"],
+        "visible_when": [
+            # Show if there's a significant cost gap (>$500/month)
+            {"cost_gap": {"value": 500}},
         ],
     },
     
@@ -293,7 +416,7 @@ REGISTRY: List[Tile] = [
         "subtitle": "Short lessons and guides to stay ahead of every decision.",
         "cta": "Browse library",
         "go": "svc_learning",
-        "order": 20,
+        "order": 30,
         "hubs": ["concierge", "learning", "waiting_room"],
         "visible_when": [],
     },
@@ -304,23 +427,94 @@ REGISTRY: List[Tile] = [
         "subtitle": "Connect with vetted professionals when you need extra hands.",
         "cta": "Find partners",
         "go": "svc_partners",
-        "order": 30,
+        "order": 40,
         "hubs": ["concierge", "trusted_partners", "waiting_room"],
         "visible_when": [
             {"min_progress": {"path": "cost.progress", "value": 0}},
         ],
     },
+    
+    # === FUTURE SERVICE CATEGORIES (Currently Disabled) ===
+    # Uncomment when respective hubs are implemented
+    
+    # Estate Planning Services (Future Hub: hubs/estate_planning.py)
+    # {
+    #     "key": "estate_planning_suite",
+    #     "type": "service",
+    #     "title": "Estate Planning Services",
+    #     "subtitle": "Protect assets and plan for {name}'s legacy.",
+    #     "cta": "Start planning",
+    #     "go": "hub_estate_planning",
+    #     "order": 50,
+    #     "hubs": ["concierge", "estate_planning"],
+    #     "visible_when": [
+    #         {"runway_low": {"value": 60}},  # Have substantial assets (60+ months)
+    #     ],
+    # },
+    
+    # Retirement Planning Services (Future Hub: hubs/retirement_planning.py)
+    # {
+    #     "key": "social_security_optimizer",
+    #     "type": "service",
+    #     "title": "Social Security Optimization",
+    #     "subtitle": "Maximize retirement benefits for {name}.",
+    #     "cta": "Get analysis",
+    #     "go": "hub_retirement_planning",
+    #     "order": 51,
+    #     "hubs": ["concierge", "retirement_planning"],
+    #     "visible_when": [
+    #         {"includes": {"path": "flags", "value": "retirement_age"}},
+    #     ],
+    # },
+    
+    # Care Coordination Services (Future Hub: hubs/care_coordination.py)
+    # {
+    #     "key": "professional_care_manager",
+    #     "type": "service",
+    #     "title": "Professional Care Manager",
+    #     "subtitle": "Coordinate all aspects of care for {name}.",
+    #     "cta": "Connect now",
+    #     "go": "hub_care_coordination",
+    #     "order": 52,
+    #     "hubs": ["concierge", "care_coordination"],
+    #     "visible_when": [
+    #         {"includes": {"path": "flags", "value": "caregiver_burnout"}},
+    #         {"includes": {"path": "flags", "value": "complex_care_needs"}},
+    #     ],
+    # },
 ]
 
 
 def get_additional_services(hub: str = "concierge", limit: Optional[int] = None) -> List[Tile]:
+    """Get additional service tiles for a hub, filtered by MCIP data and flags.
+    
+    MCIP Integration:
+    - Uses MCIP.get_care_recommendation() for tier and flags
+    - Uses MCIP.get_financial_profile() for cost-based filtering
+    - Personalizes subtitles with user name and care tier
+    - Falls back to legacy handoff for backwards compatibility
+    
+    Args:
+        hub: Hub identifier (concierge, trusted_partners, etc.)
+        limit: Optional max number of tiles to return
+    
+    Returns:
+        List of visible service tiles for the hub
+    """
+    from core.mcip import MCIP
+    
     ctx = _ctx()
     name = ctx.get("person_name") or "your plan"
     
-    # Get recommendation for subtitle interpolation
-    handoff = st.session_state.get("handoff", {}).get("gcp", {})
-    recommendation = handoff.get("recommendation", "")
-    recommendation_display = recommendation.replace("_", " ").title() if recommendation else "personalized"
+    # Get recommendation from MCIP v2 (primary source)
+    care_rec = MCIP.get_care_recommendation()
+    if care_rec and care_rec.tier:
+        recommendation_display = care_rec.tier.replace("_", " ").title()
+    else:
+        # Fall back to legacy handoff
+        handoff = st.session_state.get("handoff", {}).get("gcp", {})
+        recommendation = handoff.get("recommendation", "")
+        recommendation_display = recommendation.replace("_", " ").title() if recommendation else "personalized"
     
     tiles: List[Tile] = []
 
