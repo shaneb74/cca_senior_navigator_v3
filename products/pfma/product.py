@@ -12,6 +12,8 @@ Multi-step flow that transitions users from self-guided planning to advisor cons
 
 import streamlit as st
 
+from core.nav import route_to
+
 
 def render():
     """Main entry point for PFMA product."""
@@ -55,8 +57,7 @@ def render():
     else:
         st.error(f"❌ Unknown step: {step}")
         if st.button("← Return to Hub"):
-            st.session_state["_nav_override"] = "concierge"
-            st.rerun()
+            route_to("hub_concierge")
 
 
 def _render_cost_planner_gate():
@@ -75,12 +76,10 @@ def _render_cost_planner_gate():
     col1, col2 = st.columns(2)
     with col1:
         if st.button("← Back to Hub", use_container_width=True):
-            st.session_state["_nav_override"] = "concierge"
-            st.rerun()
+            route_to("hub_concierge")
     with col2:
         if st.button("Continue Cost Planner →", type="primary", use_container_width=True):
-            st.session_state["_nav_override"] = "cost_planner"
-            st.rerun()
+            route_to("cost")
 
 
 def _render_duck_progress_sidebar():
@@ -122,8 +121,7 @@ def _render_intro():
         st.rerun()
     
     if st.button("← Back to Hub", use_container_width=True):
-        st.session_state["_nav_override"] = "concierge"
-        st.rerun()
+        route_to("hub_concierge")
 
 
 def _render_appointment_booking():
@@ -410,7 +408,4 @@ def _render_completion():
     st.session_state["pfma"]["completed"] = True
     
     if st.button("← Return to Hub", type="primary", use_container_width=True):
-        # Use query params for proper navigation
-        st.query_params.clear()
-        st.query_params["page"] = "concierge"
-        st.rerun()
+        route_to("hub_concierge")
