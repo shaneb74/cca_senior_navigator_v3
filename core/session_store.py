@@ -449,7 +449,9 @@ SESSION_PERSIST_KEYS = {
 USER_PERSIST_KEYS = {
     'profile',
     'progress',
-    'mcip',
+    'mcip_contracts',  # MCIP contracts (care_recommendation, financial_profile, etc.)
+    # Note: 'mcip' itself is NOT persisted - MCIP.initialize() reconstructs
+    # the full state structure and journey tracking from contracts + progress
     'tiles',
     'preferences',
     'auth',

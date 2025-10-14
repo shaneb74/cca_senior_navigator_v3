@@ -70,20 +70,49 @@ class MCIP:
         """Initialize MCIP state structure if not exists.
         
         Called at app startup to ensure MCIP state is ready.
+        Handles partial state from persistence by filling in missing keys.
+        Restores contracts from mcip_contracts if available.
         """
+        # Default structure
+        default_state = {
+            "care_recommendation": cls._default_care_recommendation(),
+            "financial_profile": None,
+            "advisor_appointment": None,
+            "journey": {
+                "current_hub": "concierge",
+                "completed_products": [],
+                "unlocked_products": ["gcp"],  # GCP always unlocked
+                "recommended_next": "gcp"
+            },
+            "events": []
+        }
+        
         if cls.STATE_KEY not in st.session_state:
-            st.session_state[cls.STATE_KEY] = {
-                "care_recommendation": cls._default_care_recommendation(),
-                "financial_profile": None,
-                "advisor_appointment": None,
-                "journey": {
-                    "current_hub": "concierge",
-                    "completed_products": [],
-                    "unlocked_products": ["gcp"],  # GCP always unlocked
-                    "recommended_next": "gcp"
-                },
-                "events": []
-            }
+            # Fresh initialization
+            st.session_state[cls.STATE_KEY] = default_state
+            
+            # Restore contracts from persistence if available
+            if "mcip_contracts" in st.session_state:
+                contracts = st.session_state["mcip_contracts"]
+                if "care_recommendation" in contracts:
+                    st.session_state[cls.STATE_KEY]["care_recommendation"] = contracts["care_recommendation"]
+                if "financial_profile" in contracts:
+                    st.session_state[cls.STATE_KEY]["financial_profile"] = contracts["financial_profile"]
+                if "advisor_appointment" in contracts:
+                    st.session_state[cls.STATE_KEY]["advisor_appointment"] = contracts["advisor_appointment"]
+        else:
+            # Merge with existing state (fill in missing keys)
+            existing = st.session_state[cls.STATE_KEY]
+            
+            # Ensure all top-level keys exist
+            for key, default_value in default_state.items():
+                if key not in existing:
+                    existing[key] = default_value
+                elif key == "journey" and isinstance(existing[key], dict):
+                    # Ensure all journey sub-keys exist
+                    for journey_key, journey_default in default_state["journey"].items():
+                        if journey_key not in existing[key]:
+                            existing[key][journey_key] = journey_default
     
     # =========================================================================
     # CARE RECOMMENDATION (Published by GCP)
@@ -116,6 +145,9 @@ class MCIP:
         
         # Store recommendation
         st.session_state[cls.STATE_KEY]["care_recommendation"] = asdict(recommendation)
+        
+        # Save for persistence
+        cls._save_contracts_for_persistence()
         
         # Fire event
         cls._fire_event("mcip.recommendation.updated", {
@@ -164,6 +196,9 @@ class MCIP:
         cls.initialize()
         st.session_state[cls.STATE_KEY]["financial_profile"] = asdict(profile)
         
+        # Save for persistence
+        cls._save_contracts_for_persistence()
+        
         cls._fire_event("mcip.financial.updated", {
             "monthly_cost": profile.estimated_monthly_cost,
             "confidence": profile.confidence,
@@ -198,6 +233,9 @@ class MCIP:
         cls.initialize()
         st.session_state[cls.STATE_KEY]["advisor_appointment"] = asdict(appointment)
         
+        # Save for persistence
+        cls._save_contracts_for_persistence()
+        
         cls._fire_event("mcip.appointment.scheduled", {
             "date": appointment.date,
             "time": appointment.time,
@@ -208,6 +246,20 @@ class MCIP:
     # =========================================================================
     # JOURNEY MANAGEMENT
     # =========================================================================
+    
+    @classmethod
+    def _save_contracts_for_persistence(cls) -> None:
+        """Save MCIP contracts to session state for persistence.
+        
+        This allows session_store to persist contracts separately from
+        the full MCIP state structure (which is reconstructed on load).
+        """
+        if cls.STATE_KEY in st.session_state:
+            st.session_state["mcip_contracts"] = {
+                "care_recommendation": st.session_state[cls.STATE_KEY].get("care_recommendation"),
+                "financial_profile": st.session_state[cls.STATE_KEY].get("financial_profile"),
+                "advisor_appointment": st.session_state[cls.STATE_KEY].get("advisor_appointment"),
+            }
     
     @classmethod
     def get_unlocked_products(cls) -> List[str]:
