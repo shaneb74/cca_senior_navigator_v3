@@ -79,12 +79,12 @@ def render(ctx=None) -> None:
         chips.append({"label": f"For {person}", "variant": "muted"})
     chips.append({"label": "Advisor & AI blended"})
     
-    # Render dashboard (Navi journey status already shown above)
+    # Render dashboard (Navi panel already shown above - single intelligence layer)
     body_html = render_dashboard_body(
         title="Concierge Care Hub",
         subtitle="Finish the essentials, then unlock curated next steps with your advisor.",
         chips=chips,
-        hub_guide_block=None,  # Deprecated - using render_mcip_journey_status() instead
+        hub_guide_block=None,  # Deprecated - Navi is the single intelligence layer now
         hub_order=hub_order,
         cards=cards,
         additional_services=additional,
