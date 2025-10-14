@@ -789,10 +789,11 @@ def render_export_results():
     if care_rec:
         st.markdown("### 🧭 Guided Care Plan")
         tier_map = {
-            "independent": "Independent Living",
+            "no_care": "No Care Needed",
             "in_home": "In-Home Care", 
             "assisted_living": "Assisted Living",
-            "memory_care": "Memory Care"
+            "memory_care": "Memory Care",
+            "memory_care_high": "Memory Care — High Acuity"
         }
         tier_label = tier_map.get(care_rec.tier, care_rec.tier)
         st.markdown(f"**Navi's Recommendation:** {tier_label}")
