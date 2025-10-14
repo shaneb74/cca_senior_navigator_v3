@@ -703,11 +703,7 @@ def _get_recommendation(mod: Dict[str, Any], config: ModuleConfig) -> Optional[s
 def _render_confidence_improvement(outcomes: Dict[str, Any], config: ModuleConfig, state: Dict[str, Any]) -> None:
     """Render confidence improvement guidance on results page.
     
-    Shows users:
-    1. Current confidence score and breakdown
-    2. What's affecting their confidence
-    3. How to improve it (answer missed questions / boundary info)
-    4. Button to go back and improve
+    Redesigned as split cards showing progress and clarity with actionable guidance.
     
     Args:
         outcomes: Outcome data with confidence and scoring details
@@ -721,12 +717,11 @@ def _render_confidence_improvement(outcomes: Dict[str, Any], config: ModuleConfi
     if confidence_pct >= 100:
         return
     
-    # Get scoring details if available
+    # Get scoring details
     tier_score = outcomes.get("tier_score", 0)
     tier = outcomes.get("tier", "")
     
-    # Calculate what's affecting confidence
-    # Get unanswered questions
+    # Calculate completeness
     answered_count = 0
     total_count = 0
     unanswered_questions = []
@@ -750,8 +745,7 @@ def _render_confidence_improvement(outcomes: Dict[str, Any], config: ModuleConfi
     completeness = answered_count / total_count if total_count > 0 else 1.0
     completeness_pct = int(completeness * 100)
     
-    # Determine tier boundaries for clarity assessment
-    # CRITICAL: These are the ONLY 5 allowed tiers
+    # Determine tier boundaries for clarity
     tier_thresholds = {
         "no_care_needed": (0, 8),
         "in_home": (9, 16),
@@ -761,160 +755,285 @@ def _render_confidence_improvement(outcomes: Dict[str, Any], config: ModuleConfi
     }
     
     boundary_clarity = 100  # Default
+    clarity_message = "Clear"
     if tier in tier_thresholds:
         min_score, max_score = tier_thresholds[tier]
         distance_from_min = tier_score - min_score
         distance_from_max = max_score - tier_score
         distance_from_boundary = min(distance_from_min, distance_from_max)
         boundary_clarity = min(int((distance_from_boundary / 3.0) * 100), 100)
+        
+        if boundary_clarity >= 80:
+            clarity_message = "Strong — well within tier"
+        elif boundary_clarity >= 50:
+            clarity_message = "Moderate — some distance from boundary"
+        else:
+            clarity_message = "Near boundary — consider reviewing"
     
-    # Build improvement message
-    st.markdown("---")
-    st.markdown("### 💡 Improve Your Recommendation Confidence")
+    st.markdown("### 💡 Improve Your Confidence")
     
-    # Show confidence breakdown
+    st.markdown("""
+    <p style="font-size: 14px; color: #64748b; margin-bottom: 20px;">
+        Your confidence score is based on how complete your answers are and how clear your tier placement is.
+    </p>
+    """, unsafe_allow_html=True)
+    
+    # Split into two horizontal cards
     col1, col2 = st.columns(2)
+    
     with col1:
+        # Progress card
         completeness_color = "#22c55e" if completeness_pct >= 90 else "#f59e0b" if completeness_pct >= 70 else "#ef4444"
+        
         st.markdown(f"""
         <div style="
-            background: {completeness_color}15;
-            border-left: 3px solid {completeness_color};
-            padding: 12px 16px;
-            border-radius: 6px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            height: 100%;
         ">
-            <div style="font-size: 12px; color: #64748b; font-weight: 500; margin-bottom: 4px;">
+            <div style="font-size: 12px; color: #64748b; font-weight: 600; letter-spacing: 0.5px; margin-bottom: 12px;">
                 QUESTION COMPLETENESS
             </div>
-            <div style="font-size: 24px; font-weight: 600; color: {completeness_color};">
+            <div style="font-size: 32px; font-weight: 600; color: {completeness_color}; margin-bottom: 8px;">
                 {completeness_pct}%
             </div>
-            <div style="font-size: 12px; color: #64748b; margin-top: 4px;">
-                {answered_count} of {total_count} answered
+            <div style="font-size: 13px; color: #64748b; margin-bottom: 12px;">
+                {answered_count} of {total_count} questions answered
+            </div>
+            <div style="
+                background: #f1f5f9;
+                height: 8px;
+                border-radius: 4px;
+                overflow: hidden;
+            ">
+                <div style="
+                    background: {completeness_color};
+                    height: 100%;
+                    width: {completeness_pct}%;
+                    transition: width 0.3s ease;
+                "></div>
             </div>
         </div>
         """, unsafe_allow_html=True)
     
     with col2:
-        clarity_color = "#22c55e" if boundary_clarity >= 90 else "#f59e0b" if boundary_clarity >= 70 else "#ef4444"
+        # Clarity card
+        clarity_color = "#22c55e" if boundary_clarity >= 80 else "#f59e0b" if boundary_clarity >= 50 else "#ef4444"
+        
         st.markdown(f"""
         <div style="
-            background: {clarity_color}15;
-            border-left: 3px solid {clarity_color};
-            padding: 12px 16px;
-            border-radius: 6px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            height: 100%;
         ">
-            <div style="font-size: 12px; color: #64748b; font-weight: 500; margin-bottom: 4px;">
+            <div style="font-size: 12px; color: #64748b; font-weight: 600; letter-spacing: 0.5px; margin-bottom: 12px;">
                 RECOMMENDATION CLARITY
             </div>
-            <div style="font-size: 24px; font-weight: 600; color: {clarity_color};">
+            <div style="font-size: 32px; font-weight: 600; color: {clarity_color}; margin-bottom: 8px;">
                 {boundary_clarity}%
             </div>
-            <div style="font-size: 12px; color: #64748b; margin-top: 4px;">
-                {tier_score:.1f} points in {tier.replace('_', ' ').title()}
+            <div style="font-size: 13px; color: #64748b; margin-bottom: 12px;">
+                {clarity_message}
+            </div>
+            <div style="
+                background: #f1f5f9;
+                height: 8px;
+                border-radius: 4px;
+                overflow: hidden;
+            ">
+                <div style="
+                    background: {clarity_color};
+                    height: 100%;
+                    width: {boundary_clarity}%;
+                    transition: width 0.3s ease;
+                "></div>
             </div>
         </div>
         """, unsafe_allow_html=True)
     
-    st.markdown("<br/>", unsafe_allow_html=True)
-    
-    # Build actionable suggestions
-    suggestions = []
-    
-    if completeness_pct < 100:
-        missed_count = total_count - answered_count
-        suggestions.append({
-            'icon': '📝',
-            'title': f'Answer {missed_count} missed question{"s" if missed_count != 1 else ""}',
-            'description': 'Complete all required questions to increase confidence by up to 30%.',
-            'impact': 'High Impact'
-        })
-    
-    if boundary_clarity < 100:
-        suggestions.append({
-            'icon': '🎯',
-            'title': 'Your score is near a tier boundary',
-            'description': f'Answering more questions accurately could strengthen your {tier.replace("_", " ").title()} recommendation or reveal if another tier is a better fit.',
-            'impact': 'Medium Impact'
-        })
-    
-    if suggestions:
-        st.markdown("**How to improve:**")
-        for sug in suggestions:
-            impact_color = "#22c55e" if sug['impact'] == 'High Impact' else "#f59e0b"
-            st.markdown(f"""
-            <div style="
-                background: white;
-                border: 1px solid #e2e8f0;
-                border-radius: 8px;
-                padding: 16px;
-                margin-bottom: 12px;
-            ">
-                <div style="display: flex; align-items: start; gap: 12px;">
-                    <div style="font-size: 24px; flex-shrink: 0;">
-                        {sug['icon']}
-                    </div>
-                    <div style="flex: 1;">
-                        <div style="font-size: 14px; font-weight: 600; color: #0f172a; margin-bottom: 4px;">
-                            {sug['title']}
-                        </div>
-                        <div style="font-size: 13px; color: #475569; margin-bottom: 8px;">
-                            {sug['description']}
-                        </div>
-                        <div style="
-                            display: inline-block;
-                            font-size: 11px;
-                            font-weight: 500;
-                            color: {impact_color};
-                            background: {impact_color}15;
-                            padding: 4px 8px;
-                            border-radius: 4px;
-                        ">
-                            {sug['impact']}
-                        </div>
-                    </div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+    # Guidance section below both cards
+    if completeness_pct < 100 or boundary_clarity < 80:
+        st.markdown("<div style='margin: 20px 0;'></div>", unsafe_allow_html=True)
         
-        # Show "Review Answers" button if there are unanswered questions
-        if unanswered_questions:
-            col1, col2, col3 = st.columns([2, 1, 2])
-            with col2:
-                if st.button("📝 Review & Improve", type="primary", use_container_width=True, key="improve_confidence"):
-                    # Reset to first question step (skip intro)
-                    question_steps = [i for i, s in enumerate(config.steps) if s.fields]
-                    if question_steps:
-                        st.session_state[f"{config.state_key}._step"] = question_steps[0]
-                        st.rerun()
+        with st.expander("🔍 How to Improve Your Confidence", expanded=(completeness_pct < 90)):
+            if completeness_pct < 100 and unanswered_questions:
+                st.markdown("**📝 Complete Unanswered Questions**")
+                st.markdown(f"You have {len(unanswered_questions)} unanswered question(s). Answering them will improve your confidence score.")
+                
+                if len(unanswered_questions) <= 5:
+                    for q in unanswered_questions:
+                        st.markdown(f"- {q['label']}")
+            
+            if boundary_clarity < 80 and tier in tier_thresholds:
+                st.markdown("**📊 Your Score is Near a Tier Boundary**")
+                min_score, max_score = tier_thresholds[tier]
+                st.markdown(f"""
+                Your current score is **{tier_score} points**, which places you in the **{tier.replace('_', ' ').title()}** tier (range: {min_score}-{max_score} points).
+                
+                You're close to a tier boundary, which means small changes in your answers could affect your recommendation. Consider reviewing your responses for accuracy.
+                """)
+            
+            # Go back button
+            st.markdown("<div style='margin: 16px 0;'></div>", unsafe_allow_html=True)
+            if st.button("← Review Your Answers", type="secondary", use_container_width=True):
+                # Go back to first question step
+                for idx, step in enumerate(config.steps):
+                    if step.fields and not step.id.startswith("intro"):
+                        st.session_state[f"{config.state_key}._step"] = idx
+                        _rerun_app()
+                        break
+
 
 
 def _render_results_view(mod: Dict[str, Any], config: ModuleConfig) -> None:
-    # Get recommendation from outcomes
-    recommendation = _get_recommendation(mod, config)
+    """Render results as guided narrative: outcome → why → how to improve → next steps."""
     
-    if recommendation:
-        st.markdown(f"<h3 class='h3 rec-line'>{H(recommendation)}</h3>", unsafe_allow_html=True)
-    else:
-        # Fallback message if no recommendation
-        st.markdown("<h3 class='h3 rec-line'>Your Guided Care Plan Summary</h3>", unsafe_allow_html=True)
-
-    # Try to get summary points from outcomes first (preferred)
+    # Get data
     outcome_key = f"{config.state_key}._outcomes"
     outcomes = st.session_state.get(outcome_key, {})
+    recommendation = _get_recommendation(mod, config)
+    confidence = outcomes.get("confidence", 1.0)
+    confidence_pct = int(confidence * 100)
+    tier = outcomes.get("tier", "")
+    tier_score = outcomes.get("tier_score", 0)
+    
+    # ========================================
+    # 1. TOP SECTION - "Your Recommendation" (Hero Card)
+    # ========================================
+    
+    # Determine confidence badge
+    if confidence_pct >= 90:
+        confidence_label = "Strong"
+        confidence_color = "#22c55e"  # Green
+    elif confidence_pct >= 70:
+        confidence_label = "Moderate"
+        confidence_color = "#f59e0b"  # Amber
+    else:
+        confidence_label = "Building"
+        confidence_color = "#ef4444"  # Red
+    
+    # Extract recommendation text (clean)
+    if recommendation and "recommend" in recommendation.lower():
+        rec_text = recommendation.split("recommend")[-1].strip().rstrip(".")
+    elif recommendation:
+        rec_text = recommendation
+    else:
+        rec_text = "Your Guided Care Plan"
+    
+    st.markdown(f"""
+    <div style="
+        background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%);
+        border: 1px solid #bfdbfe;
+        border-radius: 12px;
+        padding: 32px;
+        margin: 24px 0 40px 0;
+        text-align: center;
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.08);
+    ">
+        <div style="font-size: 14px; color: #64748b; font-weight: 500; letter-spacing: 0.5px; margin-bottom: 12px;">
+            YOUR CARE RECOMMENDATION
+        </div>
+        <div style="font-size: 28px; font-weight: 600; color: #1e293b; margin-bottom: 16px; line-height: 1.3;">
+            {H(rec_text)}
+        </div>
+        <div style="display: flex; align-items: center; justify-content: center; gap: 24px; flex-wrap: wrap; margin-bottom: 16px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 13px; color: #64748b;">Confidence:</span>
+                <span style="
+                    background: {confidence_color}15;
+                    color: {confidence_color};
+                    padding: 4px 12px;
+                    border-radius: 12px;
+                    font-weight: 600;
+                    font-size: 14px;
+                ">{confidence_pct}% • {confidence_label}</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 13px; color: #64748b;">Score:</span>
+                <span style="
+                    background: #f1f5f9;
+                    color: #475569;
+                    padding: 4px 12px;
+                    border-radius: 12px;
+                    font-weight: 600;
+                    font-size: 14px;
+                ">{tier_score} points</span>
+            </div>
+        </div>
+        <div style="
+            background: white;
+            border-left: 3px solid #3b82f6;
+            padding: 10px 16px;
+            border-radius: 6px;
+            display: inline-block;
+            margin-top: 8px;
+        ">
+            <span style="font-size: 13px; color: #64748b;">✓ Your care recommendation has been saved</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # ========================================
+    # 2. DETAILS SECTION - "Why You Got This Recommendation"
+    # ========================================
+    
+    st.markdown("### 🔍 Why You Got This Recommendation")
+    
     summary_data = outcomes.get("summary", {})
     points = summary_data.get("points", [])
     
     if points:
-        # Use the detailed summary points from the derive() function
-        items = "".join(f"<li>{H(p)}</li>" for p in points)
-        st.markdown(f"<ul>{items}</ul>", unsafe_allow_html=True)
+        # Use detailed summary points from derive() function
+        # Group them visually with icons
+        _render_recommendation_details(points)
     else:
-        # Fallback to basic summary if no points available
+        # Fallback to basic summary
         _render_results_summary(mod, config)
     
-    # Render confidence improvement guidance
-    _render_confidence_improvement(outcomes, config, mod)
+    st.markdown("<div style='margin: 40px 0;'></div>", unsafe_allow_html=True)
+    
+    # ========================================
+    # 3. INSIGHTS SECTION - "Improve Your Confidence"
+    # ========================================
+    
+    if confidence_pct < 100:
+        _render_confidence_improvement(outcomes, config, mod)
+        st.markdown("<div style='margin: 40px 0;'></div>", unsafe_allow_html=True)
+    
+    # ========================================
+    # 4. REASSURANCE SECTION
+    # ========================================
+    
+    st.markdown("""
+    <div style="
+        background: #fefce8;
+        border-left: 3px solid #facc15;
+        padding: 16px 20px;
+        border-radius: 6px;
+        margin: 32px 0;
+    ">
+        <p style="margin: 0; font-size: 14px; color: #713f12; font-style: italic; line-height: 1.6;">
+            💡 <strong>Your care plan can evolve as your needs change.</strong> 
+            You can retake the assessment anytime to get an updated recommendation.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # ========================================
+    # 5. NEXT ACTIONS SECTION - "What Happens Next"
+    # ========================================
+    
+    st.markdown("### 🎯 What Happens Next")
+    
+    st.markdown("""
+    <p style="font-size: 14px; color: #64748b; margin-bottom: 20px;">
+        Now that you have your care recommendation, here's what you can do:
+    </p>
+    """, unsafe_allow_html=True)
     
     _render_results_ctas_once(config)
 
@@ -969,6 +1088,105 @@ def _render_results_summary(state: Dict[str, Any], config: ModuleConfig) -> None
 
     items = "".join(f"<li>{H(b)}</li>" for b in bullets)
     st.markdown(f"<ul>{items}</ul>", unsafe_allow_html=True)
+
+
+def _render_recommendation_details(points: List[str]) -> None:
+    """Render recommendation details in a clean, icon-based grid.
+    
+    Groups summary points by category with visual icons.
+    """
+    # Categorize points by keyword detection
+    categories = {
+        "cognitive": {"icon": "🧠", "label": "Cognitive Health", "points": []},
+        "medication": {"icon": "💊", "label": "Medications", "points": []},
+        "mobility": {"icon": "🦽", "label": "Mobility & Safety", "points": []},
+        "health": {"icon": "❤️", "label": "Health Conditions", "points": []},
+        "daily": {"icon": "🏠", "label": "Daily Living", "points": []},
+        "social": {"icon": "👥", "label": "Social & Support", "points": []},
+    }
+    
+    # Categorize each point
+    for point in points:
+        point_lower = point.lower()
+        categorized = False
+        
+        # Cognitive
+        if any(word in point_lower for word in ["memory", "cognitive", "confusion", "dementia", "alzheimer"]):
+            categories["cognitive"]["points"].append(point)
+            categorized = True
+        
+        # Medication
+        if any(word in point_lower for word in ["medication", "prescription", "med", "drug"]):
+            categories["medication"]["points"].append(point)
+            categorized = True
+        
+        # Mobility
+        if any(word in point_lower for word in ["mobility", "fall", "walk", "wheelchair", "transfer", "balance"]):
+            categories["mobility"]["points"].append(point)
+            categorized = True
+        
+        # Health conditions
+        if any(word in point_lower for word in ["chronic", "condition", "disease", "illness", "diabetes", "heart"]):
+            categories["health"]["points"].append(point)
+            categorized = True
+        
+        # Daily living
+        if any(word in point_lower for word in ["adl", "bathing", "dressing", "eating", "toileting", "grooming", "hygiene"]):
+            categories["daily"]["points"].append(point)
+            categorized = True
+        
+        # Social
+        if any(word in point_lower for word in ["social", "isolation", "alone", "caregiver", "family", "support"]):
+            categories["social"]["points"].append(point)
+            categorized = True
+        
+        # If not categorized, add to daily living as default
+        if not categorized:
+            categories["daily"]["points"].append(point)
+    
+    # Render only categories that have points
+    active_categories = [cat for cat in categories.values() if cat["points"]]
+    
+    if not active_categories:
+        return
+    
+    # Determine grid columns based on count
+    num_cols = min(len(active_categories), 3)
+    cols = st.columns(num_cols)
+    
+    for idx, category in enumerate(active_categories):
+        with cols[idx % num_cols]:
+            st.markdown(f"""
+            <div style="
+                background: white;
+                border: 1px solid #e2e8f0;
+                border-radius: 8px;
+                padding: 16px;
+                margin-bottom: 16px;
+                min-height: 120px;
+            ">
+                <div style="
+                    font-size: 24px;
+                    margin-bottom: 8px;
+                ">{category["icon"]}</div>
+                <div style="
+                    font-size: 12px;
+                    font-weight: 600;
+                    color: #64748b;
+                    letter-spacing: 0.5px;
+                    margin-bottom: 12px;
+                ">{category["label"].upper()}</div>
+                <div style="font-size: 13px; color: #475569; line-height: 1.5;">
+                    {"<br>".join([f"• {H(p)}" for p in category["points"]])}
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+    
+    # Add collapsible "View More Details" if there are many points
+    if len(points) > 6:
+        with st.expander("📋 View Full Details", expanded=False):
+            items = "".join(f"<li style='margin-bottom: 8px;'>{H(p)}</li>" for p in points)
+            st.markdown(f"<ul style='line-height: 1.6;'>{items}</ul>", unsafe_allow_html=True)
 
 
 def _render_results_ctas_once(config: ModuleConfig) -> None:
