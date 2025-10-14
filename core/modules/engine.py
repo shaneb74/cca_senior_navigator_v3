@@ -605,8 +605,11 @@ def _get_recommendation(mod: Dict[str, Any], config: ModuleConfig) -> Optional[s
     # GCP v4 uses "tier" field (new system)
     tier = outcomes.get("tier")
     if tier:
+        # Special handling for independent tier - more helpful message
+        if tier.lower() == "independent":
+            return "Good for now! If things change, consider In-Home Care."
+        
         mapping = {
-            "independent": "Independent / In-Home Care",
             "in_home": "In-Home Care with Support",
             "assisted_living": "Assisted Living",
             "memory_care": "Memory Care",
