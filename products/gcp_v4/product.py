@@ -7,12 +7,13 @@ the CareRecommendation contract to MCIP for consumption by other products.
 Uses Navi as the single intelligence layer for guidance and progress.
 """
 
-import streamlit as st
 from datetime import datetime
+import streamlit as st
 from core.mcip import MCIP, CareRecommendation
 from core.modules.engine import run_module
 from core.modules.schema import ModuleConfig
 from core.navi import render_navi_panel
+from layout import render_shell_start, render_shell_end
 
 
 def render():
@@ -29,42 +30,47 @@ def render():
     # Load module config
     config = _load_module_config()
     
-    # Render Navi panel (THE single intelligence layer)
-    # Provides module-level guidance, progress, contextual help
-    render_navi_panel(
-        location="product",
-        product_key="gcp_v4",
-        module_config=config
-    )
+    render_shell_start("", active_route="gcp_v4")
     
-    # Run module engine (handles all rendering and navigation)
-    # The engine stores state in st.session_state[config.state_key]
-    # and outcomes in st.session_state[f"{config.state_key}._outcomes"]
-    module_state = run_module(config)
-    
-    # Check if module has computed outcomes (means we're on results step)
-    outcome_key = f"{config.state_key}._outcomes"
-    outcome = st.session_state.get(outcome_key)
-    
-    # If outcome exists and we haven't published yet, publish to MCIP
-    if outcome and not _already_published():
-        _publish_to_mcip(outcome, module_state)
-        _mark_published()
+    try:
+        # Render Navi panel (THE single intelligence layer)
+        # Provides module-level guidance, progress, contextual help
+        render_navi_panel(
+            location="product",
+            product_key="gcp_v4",
+            module_config=config
+        )
         
-        # Show completion message (engine already rendered results step)
-        st.success("✅ Your care recommendation has been saved!")
+        # Run module engine (handles all rendering and navigation)
+        # The engine stores state in st.session_state[config.state_key]
+        # and outcomes in st.session_state[f"{config.state_key}._outcomes"]
+        module_state = run_module(config)
         
-        # Add next steps buttons
-        st.markdown("---")
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("💰 Calculate Costs", type="primary", use_container_width=True, key="gcp_next_cost"):
-                from core.nav import route_to
-                route_to("cost_v2")
-        with col2:
-            if st.button("🏠 Return to Hub", use_container_width=True, key="gcp_next_hub"):
-                from core.nav import route_to
-                route_to("hub_concierge")
+        # Check if module has computed outcomes (means we're on results step)
+        outcome_key = f"{config.state_key}._outcomes"
+        outcome = st.session_state.get(outcome_key)
+        
+        # If outcome exists and we haven't published yet, publish to MCIP
+        if outcome and not _already_published():
+            _publish_to_mcip(outcome, module_state)
+            _mark_published()
+            
+            # Show completion message (engine already rendered results step)
+            st.success("✅ Your care recommendation has been saved!")
+            
+            # Add next steps buttons
+            st.markdown("---")
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("💰 Calculate Costs", type="primary", use_container_width=True, key="gcp_next_cost"):
+                    from core.nav import route_to
+                    route_to("cost_v2")
+            with col2:
+                if st.button("🏠 Return to Hub", use_container_width=True, key="gcp_next_hub"):
+                    from core.nav import route_to
+                    route_to("hub_concierge")
+    finally:
+        render_shell_end()
 
 
 def _load_module_config() -> ModuleConfig:

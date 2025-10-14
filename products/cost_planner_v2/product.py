@@ -13,6 +13,7 @@ Uses Navi as the single intelligence layer for guidance and progress.
 import streamlit as st
 from core.mcip import MCIP
 from core.navi import render_navi_panel
+from layout import render_shell_start, render_shell_end
 
 
 def render():
@@ -25,6 +26,8 @@ def render():
     4. Publish to MCIP when complete
     5. Show completion screen
     """
+    
+    render_shell_start("", active_route="cost_v2")
     
     # STEP 1: Check prerequisites via MCIP
     # This demonstrates clean boundaries - we read from MCIP, not from gcp state
@@ -39,12 +42,14 @@ def render():
             module_config=None  # No module config for gate screen
         )
         _render_gcp_gate()
+        render_shell_end()
         return
     
     # STEP 2: Gate passed - run product logic
     # Pass recommendation to hub (no direct state access)
     from products.cost_planner_v2.hub import render_module_hub
     render_module_hub(recommendation)
+    render_shell_end()
 
 
 def _render_gcp_gate():

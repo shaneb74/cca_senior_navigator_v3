@@ -23,15 +23,6 @@ def render(ctx=None) -> None:
     # Initialize MCIP
     MCIP.initialize()
     
-    # Render Navi panel (THE single intelligence layer)
-    # Replaces: Hub Guide + MCIP journey status
-    navi_ctx = render_navi_panel(location="hub", hub_key="concierge")
-    
-    # Extract data from Navi context
-    next_action = navi_ctx.next_action
-    person_name = navi_ctx.user_name or ""
-    person = person_name if person_name else "you"
-    
     # Show save confirmation if returning
     # Handle save messages from legacy products (backwards compatibility)
     save_msg = st.session_state.pop("_show_save_message", None)
@@ -50,6 +41,13 @@ def render(ctx=None) -> None:
             st.success(f"✅ {product_name} complete! You can review your results anytime.")
         else:
             st.info(f"💾 Progress saved! You're {prog:.0f}% through the {product_name} (step {step} of {total}). Click Continue below to pick up where you left off.")
+    
+    # Get MCIP data for tiles
+    progress = MCIP.get_journey_progress()
+    next_action = MCIP.get_recommended_next_action()
+    
+    person_name = st.session_state.get("person_name", "").strip()
+    person = person_name if person_name else "you"
     
     # Build hub order from MCIP
     hub_order = {
@@ -79,18 +77,24 @@ def render(ctx=None) -> None:
         chips.append({"label": f"For {person}", "variant": "muted"})
     chips.append({"label": "Advisor & AI blended"})
     
-    # Render dashboard (Navi panel already shown above - single intelligence layer)
+    # Render dashboard body HTML (title + tiles + services)
     body_html = render_dashboard_body(
         title="Concierge Care Hub",
         subtitle="Finish the essentials, then unlock curated next steps with your advisor.",
         chips=chips,
-        hub_guide_block=None,  # Deprecated - Navi is the single intelligence layer now
+        hub_guide_block=None,  # Navi will be rendered as Streamlit components below
         hub_order=hub_order,
         cards=cards,
         additional_services=additional,
     )
     
+    # Render page with dashboard body
     render_page(body_html=body_html, active_route="hub_concierge")
+    
+    # Render Navi panel using Streamlit components
+    # NOTE: Currently renders AFTER tiles due to render_page writing body_html first
+    # TODO: Inject Navi into hub_guide_block HTML for proper placement (title → Navi → tiles)
+    render_navi_panel(location="hub", hub_key="concierge")
 
 
 def _get_hub_reason() -> str:
