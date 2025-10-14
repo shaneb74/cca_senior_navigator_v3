@@ -38,11 +38,6 @@
           "key": "about",
           "label": "About Us",
           "module": "pages._stubs:render_about"
-        },
-        {
-          "key": "debug_gcp",
-          "label": "\ud83d\udd0d Debug GCP",
-          "module": "pages.debug_gcp:render"
         }
       ]
     },
@@ -73,11 +68,7 @@
         {
           "key": "hub_professional",
           "label": "Professional",
-          "module": "hubs.professional:render",
-          "roles": [
-            "pro",
-            "admin"
-          ]
+          "module": "hubs.professional:render"
         }
       ]
     },
