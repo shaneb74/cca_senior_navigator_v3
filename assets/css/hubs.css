@@ -85,6 +85,11 @@
   gap: 0;
 }
 
+/* Override .stack gap that layout.py adds to main container */
+.sn-hub main.stack {
+  gap: 0 !important;
+}
+
 /* Dashboard head - hide since Navi replaces it */
 .sn-hub .dashboard-head {
   display: none;
