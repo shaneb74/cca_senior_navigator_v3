@@ -75,13 +75,22 @@ _cleanup_legacy_gcp_state()
 # SESSION PERSISTENCE - Load state from disk
 # ====================================================================
 
-# Get or generate session ID (browser-specific)
+# Get or generate session ID (browser-specific, stable across navigation)
 if 'session_id' not in st.session_state:
-    # Try to get from query params (if user bookmarked a session)
-    session_id_from_url = st.query_params.get('sid')
-    if session_id_from_url:
-        st.session_state['session_id'] = session_id_from_url
-    else:
+    # Use Streamlit's internal session ID for stability
+    # This persists across page navigation (query param changes)
+    try:
+        from streamlit.runtime.scriptrunner import get_script_run_ctx
+        ctx = get_script_run_ctx()
+        if ctx and ctx.session_id:
+            # Use Streamlit's session ID (stable for browser session)
+            st.session_state['session_id'] = ctx.session_id
+        else:
+            # Fallback: generate UUID
+            from core.session_store import generate_session_id
+            st.session_state['session_id'] = generate_session_id()
+    except ImportError:
+        # Fallback for older Streamlit versions
         from core.session_store import generate_session_id
         st.session_state['session_id'] = generate_session_id()
 
