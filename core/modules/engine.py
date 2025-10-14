@@ -924,13 +924,14 @@ def _render_results_view(mod: Dict[str, Any], config: ModuleConfig) -> None:
     else:
         rec_text = "Your Guided Care Plan"
     
+    # Add CSS classes for spacing control
     st.markdown(f"""
-    <div style="
+    <div class="gcp-rec-card" style="
         background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%);
         border: 1px solid #bfdbfe;
         border-radius: 12px;
         padding: 32px;
-        margin: 24px 0 40px 0;
+        margin: 14px 0 20px 0;
         text-align: center;
         box-shadow: 0 2px 8px rgba(59, 130, 246, 0.08);
     ">
@@ -940,7 +941,7 @@ def _render_results_view(mod: Dict[str, Any], config: ModuleConfig) -> None:
         <div style="font-size: 28px; font-weight: 600; color: #1e293b; margin-bottom: 16px; line-height: 1.3;">
             {H(rec_text)}
         </div>
-        <div style="display: flex; align-items: center; justify-content: center; gap: 24px; flex-wrap: wrap; margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; justify-content: center; gap: 24px; flex-wrap: wrap;">
             <div style="display: flex; align-items: center; gap: 8px;">
                 <span style="font-size: 13px; color: #64748b;">Confidence:</span>
                 <span style="
@@ -952,33 +953,36 @@ def _render_results_view(mod: Dict[str, Any], config: ModuleConfig) -> None:
                     font-size: 14px;
                 ">{confidence_pct}% • {confidence_label}</span>
             </div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 13px; color: #64748b;">Score:</span>
-                <span style="
-                    background: #f1f5f9;
-                    color: #475569;
-                    padding: 4px 12px;
-                    border-radius: 12px;
-                    font-weight: 600;
-                    font-size: 14px;
-                ">{tier_score} points</span>
-            </div>
-        </div>
-        <div style="
-            background: white;
-            border-left: 3px solid #3b82f6;
-            padding: 10px 16px;
-            border-radius: 6px;
-            display: inline-block;
-            margin-top: 8px;
-        ">
-            <span style="font-size: 13px; color: #64748b;">✓ Your care recommendation has been saved</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
     
     # ========================================
-    # 2. DETAILS SECTION - "Why You Got This Recommendation"
+    # 2. REASSURANCE SECTION (moved up - directly under recommendation)
+    # ========================================
+    
+    st.markdown("""
+    <div class="gcp-reassure" style="
+        background: #fff8e1;
+        border: 1px solid #fde68a;
+        border-radius: 10px;
+        padding: 10px 12px;
+        margin: 12px 0 24px 0;
+        color: #92400e;
+        display: flex;
+        gap: 0.6rem;
+        align-items: flex-start;
+    ">
+        <span style="font-size: 1.1rem;">💬</span>
+        <span style="font-size: 14px; line-height: 1.6;">
+            Your care plan can evolve as your needs change. 
+            You can retake the assessment anytime to get an updated recommendation.
+        </span>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # ========================================
+    # 3. DETAILS SECTION - "Why You Got This Recommendation"
     # ========================================
     
     st.markdown("### 🔍 Why You Got This Recommendation")
@@ -997,7 +1001,7 @@ def _render_results_view(mod: Dict[str, Any], config: ModuleConfig) -> None:
     st.markdown("<div style='margin: 40px 0;'></div>", unsafe_allow_html=True)
     
     # ========================================
-    # 3. INSIGHTS SECTION - "Improve Your Confidence"
+    # 4. INSIGHTS SECTION - "Improve Your Confidence"
     # ========================================
     
     if confidence_pct < 100:
@@ -1005,34 +1009,20 @@ def _render_results_view(mod: Dict[str, Any], config: ModuleConfig) -> None:
         st.markdown("<div style='margin: 40px 0;'></div>", unsafe_allow_html=True)
     
     # ========================================
-    # 4. REASSURANCE SECTION
-    # ========================================
-    
-    st.markdown("""
-    <div style="
-        background: #fefce8;
-        border-left: 3px solid #facc15;
-        padding: 16px 20px;
-        border-radius: 6px;
-        margin: 32px 0;
-    ">
-        <p style="margin: 0; font-size: 14px; color: #713f12; font-style: italic; line-height: 1.6;">
-            💡 <strong>Your care plan can evolve as your needs change.</strong> 
-            You can retake the assessment anytime to get an updated recommendation.
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # ========================================
     # 5. NEXT ACTIONS SECTION - "What Happens Next"
     # ========================================
     
-    st.markdown("### 🎯 What Happens Next")
-    
     st.markdown("""
-    <p style="font-size: 14px; color: #64748b; margin-bottom: 20px;">
-        Now that you have your care recommendation, here's what you can do:
-    </p>
+    <div class="gcp-next">
+        <div class="gcp-next__title" style="font-weight: 700; margin: 10px 0 6px; color: #0f172a; font-size: 1.05rem;">
+            What Happens Next
+        </div>
+        <p style="font-size: 14px; color: #64748b; margin-bottom: 20px; line-height: 1.6;">
+            Now that you have a recommendation, the next step is the Cost Planner. 
+            You'll get a quick estimate of monthly care costs, adjusted for your ZIP code 
+            and any care needs in your plan.
+        </p>
+    </div>
     """, unsafe_allow_html=True)
     
     _render_results_ctas_once(config)

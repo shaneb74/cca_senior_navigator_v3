@@ -306,3 +306,38 @@ button[type="primary"] {
 button[type="primary"]:hover {
   color: #fff !important;
 }
+
+/* ===== GCP Results Page Spacing & Styling ===== */
+/* Tighten stack between Navi and Recommendation card */
+.sn-app .navi-panel {
+  margin-bottom: 14px !important;
+}
+
+.sn-app .gcp-rec-card {
+  margin-top: 14px !important;
+}
+
+/* Reassurance bar (yellow) */
+.sn-app .gcp-reassure {
+  margin: 12px 0 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fff8e1;
+  border: 1px solid #fde68a;
+  color: #92400e;
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+}
+
+.sn-app .gcp-reassure__icon {
+  font-size: 1.1rem;
+}
+
+/* What Happens Next section */
+.sn-app .gcp-next__title {
+  font-weight: 700;
+  margin: 10px 0 6px;
+  color: #0f172a;
+  font-size: 1.05rem;
+}
