@@ -748,45 +748,10 @@ def _render_results_summary(state: Dict[str, Any], config: ModuleConfig) -> None
 
 
 def _render_results_ctas_once(config: ModuleConfig) -> None:
-    """Render three action buttons on results page."""
-    st.markdown('<div class="sn-app mod-actions">', unsafe_allow_html=True)
-    
-    # Three action buttons
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        if st.button("← Back to Hub", key="_results_hub", use_container_width=True):
-            st.query_params.clear()
-            st.query_params["page"] = "hub_concierge"
-            _rerun_app()
-    
-    with col2:
-        if st.button("Continue to Cost Planner →", key="_results_cost", type="primary", use_container_width=True):
-            st.query_params.clear()
-            st.query_params["page"] = "cost_v2"
-            _rerun_app()
-    
-    with col3:
-        if st.button("🔄 Restart", key="_results_restart", use_container_width=True):
-            # Clear module state to restart
-            if config.state_key in st.session_state:
-                st.session_state[config.state_key] = {}
-            st.session_state[f"{config.state_key}._step"] = 0
-            st.session_state.pop(f"{config.state_key}._outcomes", None)
-            
-            # Clear tile state to restart from intro
-            tiles = st.session_state.get("tiles", {})
-            if config.product in tiles:
-                tile_state = tiles[config.product]
-                tile_state.pop("last_step", None)  # Clear saved step
-                tile_state["progress"] = 0
-                tile_state["status"] = "new"
-            
-            # Clear handoff
-            if "handoff" in st.session_state and config.state_key in st.session_state["handoff"]:
-                del st.session_state["handoff"][config.state_key]
-            _rerun_app()
-    
-    st.markdown('</div>', unsafe_allow_html=True)
+    """Render action buttons on results page."""
+    # Removed the three-button row (Back to Hub, Continue to Cost Planner, Restart)
+    # User can navigate using the tile buttons below the recommendation
+    pass
 
 
 def _effect_triggered(values: Sequence[str], triggers: Sequence[str]) -> bool:
