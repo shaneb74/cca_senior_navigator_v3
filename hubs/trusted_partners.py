@@ -155,8 +155,26 @@ class TrustedPartnersHub(BaseHub):
 
 
 def render() -> None:
-    # Render Navi panel (NEW: Direct Streamlit rendering under page title)
-    render_navi_panel(location="hub", hub_key="trusted_partners")
-    
+    # Build dashboard data
     hub = TrustedPartnersHub()
-    hub.render()
+    dashboard_data = hub.build_dashboard()
+    
+    # Use callback pattern to render Navi AFTER header
+    def render_content():
+        # Render Navi panel (after header, before hub content)
+        render_navi_panel(location="hub", hub_key="trusted_partners")
+        
+        # Render hub body HTML
+        from core.base_hub import render_dashboard_body
+        body_html = render_dashboard_body(
+            title="Trusted Partners Hub",
+            subtitle="Discover verified providers your advisor trusts",
+            chips=dashboard_data.get("chips", []),
+            hub_guide_block=dashboard_data.get("callout"),
+            cards=dashboard_data.get("cards", []),
+            additional_services=dashboard_data.get("additional_services"),
+        )
+        st.markdown(body_html, unsafe_allow_html=True)
+    
+    from layout import render_page
+    render_page(content=render_content, active_route="hub_trusted")

@@ -16,9 +16,6 @@ def render(ctx=None) -> None:
     # Use person's name if available, otherwise use neutral "you"
     person = person_name if person_name else "you"
 
-    # Render Navi panel (NEW: Direct Streamlit rendering under page title)
-    render_navi_panel(location="hub", hub_key="waiting_room")
-
     # Pull state safely with fallbacks
     appt = st.session_state.get("appointment", {}) or {}
     appointment_summary = appt.get("summary", "No appointment scheduled")
@@ -87,13 +84,20 @@ def render(ctx=None) -> None:
     guide = compute_hub_guide("waiting_room")
     additional = get_additional_services("waiting_room")
 
-    body_html = render_dashboard_body(
-        title="Waiting Room",
-        subtitle="Your plan is active. Keep it fresh and share updates with your advisor.",
-        chips=[{"label": "In service"}, {"label": f"For {person}", "variant": "muted"}],
-        hub_guide_block=guide,
-        cards=cards,
-        additional_services=additional,
-    )
+    # Use callback pattern to render Navi AFTER header
+    def render_content():
+        # Render Navi panel (after header, before hub content)
+        render_navi_panel(location="hub", hub_key="waiting_room")
+        
+        # Render hub body HTML
+        body_html = render_dashboard_body(
+            title="Waiting Room",
+            subtitle="Your plan is active. Keep it fresh and share updates with your advisor.",
+            chips=[{"label": "In service"}, {"label": f"For {person}", "variant": "muted"}],
+            hub_guide_block=guide,
+            cards=cards,
+            additional_services=additional,
+        )
+        st.markdown(body_html, unsafe_allow_html=True)
 
-    render_page(body_html=body_html, active_route="hub_waiting")
+    render_page(content=render_content, active_route="hub_waiting")

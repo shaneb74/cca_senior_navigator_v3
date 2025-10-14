@@ -51,8 +51,6 @@ def render(ctx=None) -> None:
     person_name = st.session_state.get("person_name", "").strip()
     learning_progress = st.session_state.get("learning_progress", 0)
     
-    # Render Navi panel (NEW: Direct Streamlit rendering under page title)
-    render_navi_panel(location="hub", hub_key="learning")
     completed_resources = st.session_state.get("completed_resources", [])
 
     modules_viewed = len(completed_resources)
@@ -121,17 +119,24 @@ def render(ctx=None) -> None:
 
     cards = [_card_to_tile(card, (idx + 1) * 10) for idx, card in enumerate(raw_cards)]
 
-    body_html = render_dashboard_body(
-        title="Learning & Resources Hub",
-        subtitle=f"Keep {person_name}'s circle aligned with quick, shareable lessons.",
-        chips=[
-            {"label": "Learning journey"},
-            {"label": "Self-paced resources", "variant": "muted"},
-            {"label": "Advisor curated"},
-        ],
-        hub_guide_block=compute_hub_guide("learning"),
-        cards=cards,
-        additional_services=get_additional_services("learning"),
-    )
+    # Use callback pattern to render Navi AFTER header
+    def render_content():
+        # Render Navi panel (after header, before hub content)
+        render_navi_panel(location="hub", hub_key="learning")
+        
+        # Render hub body HTML
+        body_html = render_dashboard_body(
+            title="Learning & Resources Hub",
+            subtitle=f"Keep {person_name}'s circle aligned with quick, shareable lessons.",
+            chips=[
+                {"label": "Learning journey"},
+                {"label": "Self-paced resources", "variant": "muted"},
+                {"label": "Advisor curated"},
+            ],
+            hub_guide_block=compute_hub_guide("learning"),
+            cards=cards,
+            additional_services=get_additional_services("learning"),
+        )
+        st.markdown(body_html, unsafe_allow_html=True)
 
-    render_page(body_html=body_html, active_route="hub_learning")
+    render_page(content=render_content, active_route="hub_learning")

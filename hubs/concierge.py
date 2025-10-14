@@ -55,9 +55,6 @@ def render(ctx=None) -> None:
     person_name = st.session_state.get("person_name", "").strip()
     person = person_name if person_name else "you"
     
-    # Render Navi panel (NEW: Direct Streamlit rendering under page title)
-    render_navi_panel(location="hub", hub_key="concierge")
-    
     # Build hub order from MCIP
     hub_order = {
         "hub_id": "concierge",
@@ -88,19 +85,26 @@ def render(ctx=None) -> None:
     
     alert_html = _build_saved_progress_alert(save_msg)
 
-    body_html = render_dashboard_body(
-        title="Concierge Care Hub",
-        subtitle="Finish the essentials, then unlock curated next steps with your advisor.",
-        chips=chips,
-        hub_guide_block=None,  # NEW: Navi now rendered directly via Streamlit
-        hub_order=hub_order,
-        cards=cards,
-        additional_services=additional,
-    )
-
-    full_html = (alert_html or "") + body_html
-
-    render_page(body_html=full_html, active_route="hub_concierge", show_footer=False)
+    # Use callback pattern to render Navi AFTER header but BEFORE body
+    def render_content():
+        # Render Navi panel (after header, before hub content)
+        render_navi_panel(location="hub", hub_key="concierge")
+        
+        # Render hub body HTML
+        body_html = render_dashboard_body(
+            title="Concierge Care Hub",
+            subtitle="Finish the essentials, then unlock curated next steps with your advisor.",
+            chips=chips,
+            hub_guide_block=None,  # NEW: Navi now rendered directly via Streamlit
+            hub_order=hub_order,
+            cards=cards,
+            additional_services=additional,
+        )
+        
+        full_html = (alert_html or "") + body_html
+        st.markdown(full_html, unsafe_allow_html=True)
+    
+    render_page(content=render_content, active_route="hub_concierge", show_footer=False)
 
 
 def _get_hub_reason() -> str:
