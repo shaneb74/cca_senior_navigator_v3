@@ -7,15 +7,26 @@ import streamlit as st
 # Registry records
 PRODUCTS = {
     "gcp": {"hub": "concierge", "title": "Guided Care Plan", "route": "/product/gcp"},
+    "gcp_v4": {"hub": "concierge", "title": "Guided Care Plan", "route": "/product/gcp_v4"},
     "cost_planner": {
         "hub": "concierge",
         "title": "Cost Planner",
         "route": "/products/cost_planner",
     },
+    "cost_v2": {
+        "hub": "concierge",
+        "title": "Cost Planner",
+        "route": "/products/cost_planner_v2",
+    },
     "pfma": {
         "hub": "concierge",
         "title": "Plan with My Advisor",
         "route": "/products/pfma",
+    },
+    "pfma_v2": {
+        "hub": "concierge",
+        "title": "Plan with My Advisor",
+        "route": "/products/pfma_v2",
     },
 }
 

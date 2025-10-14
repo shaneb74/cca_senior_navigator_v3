@@ -264,7 +264,7 @@ class BaseTile:
             return "Start"
         if value >= 100:
             return "Open"
-        return "Continue"
+        return "Resume progress"
 
     def _pills(self) -> str:
         pills: List[Any] = []

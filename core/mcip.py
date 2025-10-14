@@ -382,6 +382,33 @@ class MCIP:
         cls.initialize()
         journey = st.session_state[cls.STATE_KEY]["journey"]
         completed = journey["completed_products"]
+        tiles = st.session_state.get("tiles", {})
+
+        def _get_tile(*keys: str) -> Dict[str, Any]:
+            for key in keys:
+                tile = tiles.get(key)
+                if isinstance(tile, dict):
+                    return tile
+            return {}
+
+        def _tile_has_progress(tile: Dict[str, Any]) -> bool:
+            if not tile:
+                return False
+            try:
+                if float(tile.get("progress", 0) or 0) > 0:
+                    return True
+            except Exception:
+                pass
+            try:
+                if int(tile.get("last_step", 0) or 0) > 0:
+                    return True
+            except Exception:
+                pass
+            return False
+
+        gcp_tile = _get_tile("gcp_v4", "gcp")
+        cost_tile = _get_tile("cost_v2", "cost_planner", "cost")
+        pfma_tile = _get_tile("pfma_v2", "pfma")
         
         # Complete - All done!
         if "gcp" in completed and "cost_planner" in completed and "pfma" in completed:
@@ -394,6 +421,13 @@ class MCIP:
         
         # Nearly there - Just PFMA left
         if "gcp" in completed and "cost_planner" in completed:
+            if _tile_has_progress(pfma_tile) and "pfma" not in completed:
+                return {
+                    "action": "📅 Resume Plan with My Advisor",
+                    "reason": "Pick up where you left off to finish scheduling with your advisor.",
+                    "route": "pfma_v2",
+                    "status": "in_progress",
+                }
             return {
                 "action": "📅 Schedule Your Advisor Appointment",
                 "reason": "Meet with an advisor to finalize your plan and answer questions.",
@@ -403,11 +437,27 @@ class MCIP:
         
         # In progress - GCP done, Cost Planner next
         if "gcp" in completed:
+            if _tile_has_progress(cost_tile) and "cost_planner" not in completed:
+                return {
+                    "action": "💰 Resume Your Cost Planner",
+                    "reason": "Continue estimating monthly costs with your saved answers.",
+                    "route": "cost_v2",
+                    "status": "in_progress",
+                }
             return {
                 "action": "💰 Calculate Your Care Costs",
                 "reason": "Understand the financial side of your care plan.",
                 "route": "cost_v2",
                 "status": "in_progress"
+            }
+        
+        # Guided Care Plan started but not finished
+        if _tile_has_progress(gcp_tile):
+            return {
+                "action": "🧭 Resume Your Guided Care Plan",
+                "reason": "Pick up where you left off. We saved your progress.",
+                "route": "gcp_v4",
+                "status": "in_progress",
             }
         
         # Getting started - Start with GCP
