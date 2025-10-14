@@ -560,230 +560,167 @@ def render_navi_panel_v2(
     secondary_action: Optional[dict] = None,
     progress: Optional[dict] = None
 ) -> None:
-    """Render refined Navi panel with structured layout.
+    """Render refined Navi panel with structured layout using Streamlit native components."""
+    from core.nav import route_to
     
-    This is the V2 design based on visual audit recommendations.
-    
-    Layout order (top → bottom):
-    1. Header row: Navi eyebrow + progress badge
-    2. Title (personalized greeting)
-    3. Reason text (why this matters)
-    4. Encouragement banner (status-specific)
-    5. Context boost (achievement chips)
-    6. Action row (primary + secondary buttons)
-    
-    Args:
-        title: Short personalized headline (e.g., "Hey Sarah—let's keep going.")
-        reason: One sentence explaining why the next step matters
-        encouragement: Dict with 'icon', 'text', and 'status' (getting_started|in_progress|nearly_there|complete)
-        context_chips: List of dicts with 'icon', 'label', 'value', 'sublabel' (optional)
-        primary_action: Dict with 'label' and 'callback' or 'route'
-        secondary_action: Optional dict with 'label' and 'callback' or 'route'
-        progress: Optional dict with 'current' and 'total' for step badge
-    
-    Example:
-        render_navi_panel_v2(
-            title="Hey Sarah—let's keep going.",
-            reason="This will help match the right support for your situation.",
-            encouragement={'icon': '💪', 'text': "You're making great progress—keep going!", 'status': 'in_progress'},
-            context_chips=[
-                {'icon': '🧭', 'label': 'Care', 'value': 'Memory Care', 'sublabel': '85%'},
-                {'icon': '💰', 'label': 'Cost', 'value': '$4,500', 'sublabel': '30 mo'},
-                {'icon': '📅', 'label': 'Appt', 'value': 'Not scheduled'}
-            ],
-            primary_action={'label': 'Continue to Cost Planner', 'route': 'cost_v2'},
-            secondary_action={'label': 'Ask Navi →', 'route': 'faq'},
-            progress={'current': 2, 'total': 3}
-        )
-    """
-    # Color palette (semantic from audit)
-    primary_blue = "#0066cc"
-    info_bg = "#eff6ff"
-    success_accent = "#22c55e"
-    
-    # Status-specific background colors
-    status_colors = {
-        'getting_started': '#f0f9ff',  # Very light blue
-        'in_progress': '#eff6ff',       # Light blue
-        'nearly_there': '#fef3c7',      # Light amber
-        'complete': '#f0fdf4'           # Light green
+    # Inject CSS for Navi panel V2
+    navi_css = """
+    <style>
+    .navi-panel-v2 {
+        background: linear-gradient(135deg, #0066cc 0%, #0066ccdd 100%);
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 24px;
+        box-shadow: 0 4px 12px rgba(0, 102, 204, 0.15);
     }
-    status_bg = status_colors.get(encouragement.get('status', 'in_progress'), info_bg)
+    .navi-panel-v2__inner {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+    }
+    .navi-panel-v2__header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+    .navi-panel-v2__eyebrow {
+        font-size: 14px;
+        font-weight: 500;
+        color: #64748b;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+    }
+    .navi-panel-v2__progress {
+        font-size: 12px;
+        font-weight: 500;
+        padding: 6px 12px;
+        background: rgba(0, 102, 204, 0.1);
+        border-radius: 16px;
+        color: #0066cc;
+    }
+    .navi-panel-v2__title {
+        font-size: 20px;
+        font-weight: 600;
+        color: #0f172a;
+        margin-bottom: 8px;
+        line-height: 1.3;
+    }
+    .navi-panel-v2__reason {
+        font-size: 16px;
+        color: #475569;
+        margin-bottom: 16px;
+        line-height: 1.5;
+    }
+    .navi-panel-v2__encouragement {
+        padding: 12px 16px;
+        border-radius: 6px;
+        margin-bottom: 16px;
+        border-left: 3px solid #0066cc;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        color: #1e293b;
+    }
+    .navi-panel-v2__encouragement--getting_started { background: #f0f9ff; }
+    .navi-panel-v2__encouragement--in_progress { background: #eff6ff; }
+    .navi-panel-v2__encouragement--nearly_there { background: #fef3c7; }
+    .navi-panel-v2__encouragement--complete { background: #f0fdf4; }
+    .navi-panel-v2__chips-label {
+        font-size: 14px;
+        font-weight: 500;
+        color: #475569;
+        margin-bottom: 8px;
+    }
+    .navi-panel-v2__chips {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+    }
+    .navi-panel-v2__chip {
+        flex: 1;
+        min-width: 140px;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 12px;
+    }
+    .navi-panel-v2__chip-label {
+        font-size: 12px;
+        color: #64748b;
+        font-weight: 500;
+        margin-bottom: 4px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .navi-panel-v2__chip-value {
+        font-size: 14px;
+        color: #0f172a;
+        font-weight: 600;
+    }
+    .navi-panel-v2__chip-sublabel {
+        font-size: 12px;
+        color: #64748b;
+        margin-top: 2px;
+    }
+    </style>
+    """
+    st.markdown(navi_css, unsafe_allow_html=True)
+    st.markdown(navi_css, unsafe_allow_html=True)
     
-    # 1. Header row: Navi eyebrow + progress badge
-    progress_html = ""
+    # Build HTML components
+    progress_badge = ""
     if progress and progress.get('current') is not None and progress.get('total'):
-        progress_html = f'''
-            <div style="
-                font-size: 12px;
-                font-weight: 500;
-                padding: 6px 12px;
-                background: rgba(0, 102, 204, 0.1);
-                border-radius: 16px;
-                color: {primary_blue};
-                white-space: nowrap;
-            ">
-                Step {progress['current']}/{progress['total']}
-            </div>
-        '''
+        progress_badge = f'<div class="navi-panel-v2__progress">Step {progress["current"]}/{progress["total"]}</div>'
     
-    header_html = f'''
-        <div style="
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-        ">
-            <div style="
-                font-size: 14px;
-                font-weight: 500;
-                color: #64748b;
-                letter-spacing: 0.05em;
-                text-transform: uppercase;
-            ">
-                🤖 Navi
-            </div>
-            {progress_html}
-        </div>
-    '''
-    
-    # 2. Title (personalized greeting)
-    title_html = f'''
-        <div style="
-            font-size: 20px;
-            font-weight: 600;
-            color: #0f172a;
-            margin-bottom: 8px;
-            line-height: 1.3;
-        ">
-            {title}
-        </div>
-    '''
-    
-    # 3. Reason text
-    reason_html = f'''
-        <div style="
-            font-size: 16px;
-            color: #475569;
-            margin-bottom: 16px;
-            line-height: 1.5;
-        ">
-            {reason}
-        </div>
-    '''
-    
-    # 4. Encouragement banner
-    encouragement_html = f'''
-        <div style="
-            background: {status_bg};
-            border-left: 3px solid {primary_blue};
-            padding: 12px 16px;
-            border-radius: 6px;
-            margin-bottom: 16px;
-        ">
-            <div style="
-                font-size: 14px;
-                color: #1e293b;
-                display: flex;
-                align-items: center;
-                gap: 8px;
-            ">
-                <span style="font-size: 18px;">{encouragement.get('icon', '💪')}</span>
-                <span>{encouragement.get('text', '')}</span>
-            </div>
-        </div>
-    '''
-    
-    # 5. Context boost (achievement chips)
+    # Build context chips
     chips_html = ""
     if context_chips:
         chip_items = []
         for chip in context_chips:
             sublabel_html = ""
             if chip.get('sublabel'):
-                sublabel_html = f'''
-                    <div style="
-                        font-size: 12px;
-                        color: #64748b;
-                        margin-top: 2px;
-                    ">
-                        {chip['sublabel']}
-                    </div>
-                '''
+                sublabel_html = f'<div class="navi-panel-v2__chip-sublabel">{chip["sublabel"]}</div>'
             
             chip_items.append(f'''
-                <div style="
-                    flex: 1;
-                    min-width: 140px;
-                    background: white;
-                    border: 1px solid #e2e8f0;
-                    border-radius: 8px;
-                    padding: 12px;
-                ">
-                    <div style="
-                        font-size: 12px;
-                        color: #64748b;
-                        font-weight: 500;
-                        margin-bottom: 4px;
-                        display: flex;
-                        align-items: center;
-                        gap: 4px;
-                    ">
-                        <span>{chip.get('icon', '')}</span>
-                        <span>{chip.get('label', '')}</span>
+                <div class="navi-panel-v2__chip">
+                    <div class="navi-panel-v2__chip-label">
+                        <span>{chip.get("icon", "")}</span>
+                        <span>{chip.get("label", "")}</span>
                     </div>
-                    <div style="
-                        font-size: 14px;
-                        color: #0f172a;
-                        font-weight: 600;
-                    ">
-                        {chip.get('value', 'Not set')}
-                    </div>
+                    <div class="navi-panel-v2__chip-value">{chip.get("value", "Not set")}</div>
                     {sublabel_html}
                 </div>
             ''')
         
         chips_html = f'''
-            <div style="margin-bottom: 16px;">
-                <div style="
-                    font-size: 14px;
-                    font-weight: 500;
-                    color: #475569;
-                    margin-bottom: 8px;
-                ">
-                    What I know so far:
-                </div>
-                <div style="
-                    display: flex;
-                    gap: 12px;
-                    flex-wrap: wrap;
-                ">
-                    {''.join(chip_items)}
-                </div>
-            </div>
+            <div class="navi-panel-v2__chips-label">What I know so far:</div>
+            <div class="navi-panel-v2__chips">{''.join(chip_items)}</div>
         '''
     
-    # Render main panel container
+    # Get encouragement status
+    status = encouragement.get('status', 'in_progress')
+    
+    # Build complete panel HTML
     panel_html = f'''
-        <div style="
-            background: linear-gradient(135deg, {primary_blue} 0%, {primary_blue}dd 100%);
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 24px;
-            box-shadow: 0 4px 12px rgba(0, 102, 204, 0.15);
-        ">
-            <div style="
-                background: white;
-                border-radius: 8px;
-                padding: 20px;
-            ">
-                {header_html}
-                {title_html}
-                {reason_html}
-                {encouragement_html}
-                {chips_html}
+    <div class="navi-panel-v2">
+        <div class="navi-panel-v2__inner">
+            <div class="navi-panel-v2__header">
+                <div class="navi-panel-v2__eyebrow">🤖 Navi</div>
+                {progress_badge}
             </div>
+            <div class="navi-panel-v2__title">{title}</div>
+            <div class="navi-panel-v2__reason">{reason}</div>
+            <div class="navi-panel-v2__encouragement navi-panel-v2__encouragement--{status}">
+                <span style="font-size: 18px;">{encouragement.get('icon', '💪')}</span>
+                <span>{encouragement.get('text', '')}</span>
+            </div>
+            {chips_html}
         </div>
+    </div>
     '''
     
     st.markdown(panel_html, unsafe_allow_html=True)
