@@ -50,6 +50,8 @@ def render():
         _render_triage_step()
     elif current_step == "modules":
         _render_modules_step()
+    elif current_step == "module_active":
+        _render_active_module()
     elif current_step == "expert_review":
         _render_expert_review_step()
     elif current_step == "exit":
@@ -70,14 +72,8 @@ def _render_intro_step():
 
 def _render_auth_step():
     """Step 2: Authentication gate."""
-    # Placeholder for auth implementation
-    st.title("🔐 Sign In Required")
-    st.info("Authentication flow coming in Sprint 1B")
-    
-    # For now, skip to GCP gate
-    if st.button("Continue (skip auth for now)", type="primary"):
-        st.session_state.cost_v2_step = "gcp_gate"
-        st.rerun()
+    from products.cost_planner_v2 import auth
+    auth.render()
 
 
 def _render_gcp_gate_step():
@@ -103,31 +99,40 @@ def _render_gcp_gate_step():
 
 def _render_triage_step():
     """Step 4: Status triage (existing vs planning)."""
-    # Placeholder for triage implementation (Sprint 2)
-    st.title("🎯 Your Status")
-    st.info("Triage flow coming in Sprint 2")
-    
-    # For now, skip to modules
-    if st.button("Continue to Financial Modules", type="primary"):
-        st.session_state.cost_v2_step = "modules"
-        st.rerun()
+    from products.cost_planner_v2 import triage
+    triage.render()
 
 
 def _render_modules_step():
     """Step 5: Financial modules hub."""
+    from products.cost_planner_v2 import hub
+    hub.render()
+
+
+def _render_active_module():
+    """Render currently active financial module."""
+    module_key = st.session_state.get("cost_v2_current_module")
     
-    # Get recommendation from MCIP
-    recommendation = MCIP.get_care_recommendation()
-    
-    if not recommendation:
-        # Should not reach here - go back to GCP gate
-        st.session_state.cost_v2_step = "gcp_gate"
+    if not module_key:
+        # No module selected - go back to hub
+        st.session_state.cost_v2_step = "modules"
         st.rerun()
         return
     
-    # Render module hub
-    from products.cost_planner_v2.hub import render_module_hub
-    render_module_hub(recommendation)
+    # Import and render the appropriate module
+    if module_key == "income_assets":
+        from products.cost_planner_v2.modules import income_assets
+        income_assets.render()
+    elif module_key == "monthly_costs":
+        from products.cost_planner_v2.modules import monthly_costs
+        monthly_costs.render()
+    elif module_key == "coverage":
+        from products.cost_planner_v2.modules import coverage
+        coverage.render()
+    else:
+        st.error(f"Unknown module: {module_key}")
+        st.session_state.cost_v2_step = "modules"
+        st.rerun()
 
 
 def _render_expert_review_step():

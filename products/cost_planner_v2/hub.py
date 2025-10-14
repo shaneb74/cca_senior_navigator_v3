@@ -15,73 +15,127 @@ from core.mcip import MCIP, CareRecommendation
 from core.navi import render_navi_panel
 
 
-def render_module_hub(recommendation: CareRecommendation):
-    """Render module hub with tier-appropriate modules.
+def render():
+    """Render module hub with financial assessment modules."""
     
-    This demonstrates:
-    - Navi guidance for multi-module workflow
-    - Reading recommendation from MCIP (passed from product.py)
-    - Filtering modules based on care tier
-    - Showing care context to user
-    - Orchestrating multiple modules
-    - Publishing aggregated output to MCIP
+    # Get context from MCIP
+    recommendation = MCIP.get_care_recommendation()
+    triage = st.session_state.get("cost_v2_triage", {})
     
-    Args:
-        recommendation: Care recommendation from MCIP
-    """
+    if not recommendation:
+        st.error("❌ No care recommendation found. Please complete Guided Care Plan first.")
+        if st.button("← Back"):
+            st.session_state.cost_v2_step = "gcp_gate"
+            st.rerun()
+        return
     
-    # Render Navi panel (single intelligence layer)
-    # Shows module hub progress and guidance
+    # Render Navi panel for guidance
     render_navi_panel(
         location="product",
         product_key="cost_v2",
-        module_config=None  # Module hub (not single module)
+        module_config=None
     )
     
-    st.title("💰 Financial Planning")
+    st.title("💰 Financial Assessment")
     
-    # Show care context (connects GCP → Cost Planner)
-    _render_care_context(recommendation)
+    # Show context
+    tier = recommendation.tier.replace("_", " ").title()
+    st.info(f"📋 **Care Recommendation:** {tier}")
     
-    st.markdown("---")
-    
-    # For Phase 1: Simplified implementation
-    # Just show placeholder modules and publish directly
-    # Full module hub will come in Phase 2
-    
-    st.markdown("### 📋 Financial Assessment Modules")
-    
-    st.info("""
-    **Phase 1 Simplified Implementation**
-    
-    In the full implementation, you'll complete 6 financial modules:
-    1. Base Care Costs
-    2. Care Hours Calculator (in-home only)
-    3. Additional Services
-    4. Veteran Benefits
-    5. Insurance & Medicare
-    6. Facility Selection (facility-based only)
-    
-    For now, we'll use sample data to demonstrate MCIP publishing.
-    """)
-    
-    # Generate sample financial data based on tier
-    financial_data = _generate_sample_financial_data(recommendation)
-    
-    # Show preview of financial summary
-    _render_financial_preview(financial_data, recommendation)
+    if triage:
+        status_display = "Planning Ahead" if triage.get("status") == "planning" else "Existing Customer"
+        st.caption(f"🎯 **Status:** {status_display}")
     
     st.markdown("---")
     
-    # Completion button
-    if st.button("📊 Publish Financial Profile to MCIP", type="primary", key="publish_financial"):
-        _publish_to_mcip(financial_data, recommendation)
-        st.success("✅ Financial profile published!")
-        st.rerun()
+    # Module progress tracking
+    if "cost_v2_modules" not in st.session_state:
+        st.session_state.cost_v2_modules = {
+            "income_assets": {"status": "not_started", "progress": 0, "data": None},
+            "monthly_costs": {"status": "not_started", "progress": 0, "data": None},
+            "coverage": {"status": "not_started", "progress": 0, "data": None}
+        }
     
-    # Check if already published
-    if _already_published():
-        _render_completion_screen()
+    modules_state = st.session_state.cost_v2_modules
+    
+    # Calculate overall progress
+    total_modules = len(modules_state)
+    completed = sum(1 for m in modules_state.values() if m["status"] == "completed")
+    overall_progress = int((completed / total_modules) * 100)
+    
+    # Show overall progress
+    st.progress(overall_progress / 100, text=f"Overall Progress: {completed}/{total_modules} modules complete")
+    
+    st.markdown("---")
+    
+    # Module tiles
+    st.markdown("### � Financial Assessment Modules")
+    
+    # Module 1: Income & Assets
+    _render_module_tile(
+        module_key="income_assets",
+        title="💵 Income & Assets",
+        description="Sources of income and available assets for care costs",
+        icon="💵",
+        estimated_time="3-5 min"
+    )
+    
+    st.markdown("")
+    
+    # Module 2: Monthly Costs
+    _render_module_tile(
+        module_key="monthly_costs",
+        title="💰 Monthly Costs",
+        description="Detailed breakdown of care costs and additional services",
+        icon="💰",
+        estimated_time="4-6 min"
+    )
+    
+    st.markdown("")
+    
+    # Module 3: Coverage
+    _render_module_tile(
+        module_key="coverage",
+        title="🏥 Coverage & Benefits",
+        description="Insurance, VA benefits, and other coverage sources",
+        icon="🏥",
+        estimated_time="5-7 min"
+    )
+    
+    st.markdown("---")
+    
+    # Summary and next steps
+    if completed == total_modules:
+        st.success("### ✅ All Modules Complete!")
+        st.markdown("You've completed the financial assessment. Review your summary below.")
+        
+        # Show summary
+        _render_summary()
+        
+        st.markdown("---")
+        
+        # Publish to MCIP
+        if not _already_published():
+            if st.button("📊 Publish Financial Profile to MCIP", type="primary", key="publish_financial"):
+                _publish_to_mcip()
+                st.success("✅ Financial profile published!")
+                st.rerun()
+        else:
+            # Already published - show next steps
+            col1, col2 = st.columns([1, 1])
+            
+            with col1:
+                if st.button("Continue to Expert Review →", type="primary", use_container_width=True):
+                    st.session_state.cost_v2_step = "expert_review"
+                    st.rerun()
+            
+            with col2:
+                if st.button("🏠 Return to Hub", use_container_width=True):
+                    from core.nav import route_to
+                    route_to("hub_concierge")
+    
+    else:
+        st.info(f"💡 Complete all {total_modules} modules to proceed to expert review.")
 
 
 def _render_care_context(recommendation: CareRecommendation):
@@ -406,3 +460,175 @@ def _render_completion_screen():
                 "generated_at": financial.generated_at,
                 "product_complete": MCIP.is_product_complete("cost_planner")
             })
+
+
+def _render_module_tile(
+    module_key: str,
+    title: str,
+    description: str,
+    icon: str,
+    estimated_time: str
+):
+    """Render a single module tile.
+    
+    Args:
+        module_key: Module identifier
+        title: Module title
+        description: Module description
+        icon: Emoji icon
+        estimated_time: Estimated completion time
+    """
+    modules_state = st.session_state.cost_v2_modules
+    module = modules_state[module_key]
+    
+    status = module["status"]
+    progress = module["progress"]
+    
+    # Container
+    with st.container():
+        col1, col2, col3 = st.columns([1, 3, 1])
+        
+        with col1:
+            st.markdown(f"<div style='font-size: 48px; text-align: center;'>{icon}</div>", unsafe_allow_html=True)
+        
+        with col2:
+            st.markdown(f"**{title}**")
+            st.caption(description)
+            st.caption(f"⏱️ {estimated_time}")
+        
+        with col3:
+            if status == "completed":
+                if st.button("✏️ Edit", key=f"{module_key}_edit", use_container_width=True):
+                    _start_module(module_key)
+            else:
+                if st.button("▶️ Start", key=f"{module_key}_start", type="primary" if status == "not_started" else "secondary", use_container_width=True):
+                    _start_module(module_key)
+        
+        # Show progress bar if in progress
+        if status == "in_progress" or status == "completed":
+            st.progress(progress / 100)
+        
+        # Show summary if completed
+        if status == "completed" and module["data"]:
+            with st.expander("📋 View Summary"):
+                data = module["data"]
+                for key, value in data.items():
+                    if key.startswith("total_") or key.startswith("monthly_") or key.endswith("_cost") or key.endswith("_assets") or key.endswith("_coverage"):
+                        if isinstance(value, (int, float)):
+                            st.metric(key.replace("_", " ").title(), f"${value:,.0f}")
+
+
+def _start_module(module_key: str):
+    """Start a financial assessment module.
+    
+    Args:
+        module_key: Module identifier
+    """
+    # Set current module
+    st.session_state.cost_v2_current_module = module_key
+    
+    # Mark as in progress
+    st.session_state.cost_v2_modules[module_key]["status"] = "in_progress"
+    
+    # Navigate to module
+    st.session_state.cost_v2_step = "module_active"
+    st.rerun()
+
+
+def _render_summary():
+    """Render summary of all completed modules."""
+    modules_state = st.session_state.cost_v2_modules
+    
+    st.markdown("### 📊 Financial Summary")
+    
+    # Income & Assets
+    if modules_state["income_assets"]["data"]:
+        data = modules_state["income_assets"]["data"]
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.metric("Monthly Income", f"${data.get('total_monthly_income', 0):,.0f}")
+        with col2:
+            st.metric("Liquid Assets", f"${data.get('liquid_assets', 0):,.0f}")
+        with col3:
+            st.metric("Total Assets", f"${data.get('total_assets', 0):,.0f}")
+    
+    # Monthly Costs
+    if modules_state["monthly_costs"]["data"]:
+        data = modules_state["monthly_costs"]["data"]
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.metric("Base Care Cost", f"${data.get('base_care_cost', 0):,.0f}")
+        with col2:
+            st.metric("Additional Services", f"${data.get('additional_services_cost', 0):,.0f}")
+        with col3:
+            st.metric("Total Monthly Cost", f"${data.get('total_monthly_cost', 0):,.0f}")
+    
+    # Coverage
+    if modules_state["coverage"]["data"]:
+        data = modules_state["coverage"]["data"]
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.metric("Total Coverage", f"${data.get('total_coverage', 0):,.0f}")
+        with col2:
+            # Calculate gap
+            monthly_cost = modules_state["monthly_costs"]["data"].get("total_monthly_cost", 0)
+            coverage = data.get("total_coverage", 0)
+            gap = monthly_cost - coverage
+            
+            if gap > 0:
+                st.metric("Monthly Gap", f"${gap:,.0f}", 
+                         delta=f"-${gap:,.0f}",
+                         delta_color="inverse")
+            else:
+                st.metric("Monthly Surplus", f"${abs(gap):,.0f}", 
+                         delta=f"+${abs(gap):,.0f}")
+
+
+def _publish_to_mcip():
+    """Aggregate module data and publish to MCIP."""
+    modules_state = st.session_state.cost_v2_modules
+    
+    # Get all module data
+    income_data = modules_state["income_assets"]["data"]
+    costs_data = modules_state["monthly_costs"]["data"]
+    coverage_data = modules_state["coverage"]["data"]
+    
+    # Calculate summary values
+    total_monthly_cost = costs_data.get("total_monthly_cost", 0)
+    total_coverage = coverage_data.get("total_coverage", 0)
+    monthly_income = income_data.get("total_monthly_income", 0)
+    total_assets = income_data.get("total_assets", 0)
+    
+    funding_gap = total_monthly_cost - total_coverage - monthly_income
+    
+    # Calculate runway
+    if funding_gap > 0 and total_assets > 0:
+        runway_months = int(total_assets / funding_gap)
+    else:
+        runway_months = 999  # Essentially unlimited
+    
+    # Build FinancialProfile contract
+    from datetime import datetime
+    from core.mcip import FinancialProfile
+    
+    financial_profile = FinancialProfile(
+        estimated_monthly_cost=total_monthly_cost,
+        coverage_percentage=int((total_coverage / total_monthly_cost * 100)) if total_monthly_cost > 0 else 0,
+        gap_amount=funding_gap,
+        runway_months=runway_months,
+        confidence=0.85,  # High confidence from detailed modules
+        generated_at=datetime.utcnow().isoformat() + "Z",
+        status="complete"
+    )
+    
+    # Publish to MCIP
+    MCIP.publish_financial_profile(financial_profile)
+    
+    # Mark product complete
+    MCIP.mark_product_complete("cost_v2")
+    
+    # Mark as published
+    st.session_state["cost_planner_v2_published"] = True

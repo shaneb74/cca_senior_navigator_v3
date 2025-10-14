@@ -212,11 +212,9 @@ def _render_quick_estimate_results():
     
     with col1:
         if st.button("🔐 Sign In / Create Account", type="primary", use_container_width=True, key="quick_estimate_auth"):
-            # Trigger auth flow
-            # For now, show a placeholder message
-            st.info("🚧 Authentication flow coming in Sprint 1B. For now, returning to hub.")
-            from core.nav import route_to
-            route_to("hub_concierge")
+            # Go to auth step
+            st.session_state.cost_v2_step = "auth"
+            st.rerun()
     
     with col2:
         if st.button("🏠 Return to Hub", use_container_width=True, key="quick_estimate_hub"):
