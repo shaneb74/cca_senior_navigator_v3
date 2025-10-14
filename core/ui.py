@@ -563,100 +563,100 @@ def render_navi_panel_v2(
     """Render refined Navi panel with structured layout using Streamlit native components."""
     from core.nav import route_to
     
-    # Inject CSS for Navi panel V2 (white card with subtle elevation)
+    # Inject CSS for Navi panel V2 (matches product tile styling)
     navi_css = """
     <style>
     .navi-panel-v2 {
         max-width: 1120px;
         margin: 0 auto 24px auto;
         background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-left: 3px solid #0066cc;
-        border-radius: 16px;
-        box-shadow: 0 1px 3px rgba(15,23,42,.08);
-        padding: 18px 20px;
+        border: 1px solid #e6edf5;
+        border-radius: 20px;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+        padding: 32px;
+        transition: box-shadow 0.16s ease;
     }
     .navi-panel-v2__header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 12px;
+        margin-bottom: 16px;
     }
     .navi-panel-v2__eyebrow {
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 800;
-        color: #1e40af;
+        color: #2563eb;
         letter-spacing: 0.08em;
         text-transform: uppercase;
     }
     .navi-panel-v2__progress {
         font-size: 11px;
         font-weight: 600;
-        padding: 4px 10px;
-        background: rgba(0, 102, 204, 0.08);
-        border: 1px solid rgba(0, 102, 204, 0.15);
+        padding: 6px 12px;
+        background: rgba(37, 99, 235, 0.08);
+        border: 1px solid rgba(37, 99, 235, 0.15);
         border-radius: 12px;
-        color: #0066cc;
+        color: #2563eb;
     }
     .navi-panel-v2__title {
-        font-size: 18px;
-        font-weight: 800;
+        font-size: 22px;
+        font-weight: 700;
         color: #0f172a;
-        margin: 0 0 6px 0;
+        margin: 0 0 8px 0;
         line-height: 1.3;
     }
     .navi-panel-v2__reason {
-        font-size: 15px;
+        font-size: 16px;
         color: #475569;
-        margin: 0 0 14px 0;
+        margin: 0 0 20px 0;
         line-height: 1.5;
     }
     .navi-panel-v2__encouragement {
-        padding: 10px 14px;
-        border-radius: 8px;
-        margin: 0 0 14px 0;
+        padding: 12px 16px;
+        border-radius: 10px;
+        margin: 0 0 20px 0;
         display: flex;
         align-items: center;
-        gap: 8px;
-        font-size: 14px;
+        gap: 10px;
+        font-size: 15px;
         color: #1e293b;
-        border-left: 2px solid #0066cc;
+        line-height: 1.4;
     }
-    .navi-panel-v2__encouragement--getting_started { background: #f0f9ff; }
-    .navi-panel-v2__encouragement--in_progress { background: #eff6ff; }
-    .navi-panel-v2__encouragement--nearly_there { background: #fef3c7; border-left-color: #f59e0b; }
-    .navi-panel-v2__encouragement--complete { background: #f0fdf4; border-left-color: #22c55e; }
+    .navi-panel-v2__encouragement--getting_started { background: #eff6ff; border: 1px solid #dbeafe; }
+    .navi-panel-v2__encouragement--in_progress { background: #eff6ff; border: 1px solid #dbeafe; }
+    .navi-panel-v2__encouragement--nearly_there { background: #fef3c7; border: 1px solid #fde68a; }
+    .navi-panel-v2__encouragement--complete { background: #f0fdf4; border: 1px solid #bbf7d0; }
     .navi-panel-v2__chips-label {
         font-size: 13px;
         font-weight: 600;
         color: #64748b;
-        margin: 0 0 8px 0;
+        margin: 0 0 12px 0;
     }
     .navi-panel-v2__chips {
         display: flex;
-        gap: 10px;
+        gap: 12px;
         flex-wrap: wrap;
     }
     .navi-panel-v2__chip {
         flex: 1;
-        min-width: 130px;
-        background: #ffffff;
+        min-width: 140px;
+        background: #f8fafc;
         border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 10px 12px;
+        border-radius: 10px;
+        padding: 12px 14px;
         box-shadow: 0 1px 2px rgba(15,23,42,.04);
     }
     .navi-panel-v2__chip-label {
         font-size: 11px;
         color: #64748b;
         font-weight: 600;
-        margin-bottom: 4px;
+        margin-bottom: 6px;
         display: flex;
         align-items: center;
         gap: 4px;
     }
     .navi-panel-v2__chip-value {
-        font-size: 14px;
+        font-size: 15px;
         color: #0f172a;
         font-weight: 700;
     }
