@@ -380,7 +380,8 @@ class MCIP:
                     "memory_care": "Memory Care"
                 }
                 tier_label = tier_map.get(rec.tier, rec.tier.replace("_", " ").title())
-                confidence_pct = int(rec.tier_score) if rec.tier_score else int(rec.confidence * 100)
+                # Use confidence (0-1 decimal) not tier_score (raw score 0-100)
+                confidence_pct = int(rec.confidence * 100)
                 
                 return {
                     "title": "Guided Care Plan",
