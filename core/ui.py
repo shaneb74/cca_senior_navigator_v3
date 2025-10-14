@@ -563,14 +563,13 @@ def render_navi_panel_v2(
     """Render refined Navi panel with structured layout using Streamlit native components."""
     from core.nav import route_to
     
-    # Inject CSS for Navi panel V2 (matches hub-guide styling)
+    # Inject CSS for Navi panel V2 (matches page secondary background)
     navi_css = """
     <style>
     .navi-panel-v2 {
         max-width: 1120px;
         margin: 0 auto 24px auto;
-        background: rgba(255,255,255,0.75);
-        backdrop-filter: blur(8px);
+        background: rgba(241, 245, 249, 0.6);
         border: 1px solid #dbe4f2;
         border-left: 3px solid #0066cc;
         border-radius: 16px;
