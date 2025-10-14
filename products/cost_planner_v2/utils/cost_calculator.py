@@ -58,13 +58,106 @@ class CostCalculator:
         return cls._base_costs
     
     @classmethod
+    def calculate_quick_estimate_with_breakdown(
+        cls,
+        care_tier: str,
+        zip_code: Optional[str] = None
+    ) -> CostEstimate:
+        """Calculate quick estimate with line-item breakdown for intro page.
+        
+        Implements spec requirements:
+        - Base cost for care tier
+        - Regional adjustment (ZIP→ZIP3→state→default precedence)
+        - Cognitive-related add-on (+20% if memory_support flag present)
+        - Mobility-related add-on (+15% if mobility_limited flag present)
+        - High-acuity add-on (+25% if care_tier is memory_care_high_acuity)
+        
+        Args:
+            care_tier: Care tier (no_care_needed, in_home_care, assisted_living, memory_care, memory_care_high_acuity)
+            zip_code: Optional ZIP code for regional adjustment
+            
+        Returns:
+            CostEstimate with detailed breakdown
+        """
+        from core.mcip import MCIP
+        
+        base_costs = cls._load_base_costs()
+        
+        # Get base cost for tier
+        tier_config = base_costs.get("care_tiers", {}).get(care_tier, {})
+        monthly_base = tier_config.get("monthly_base", 4000)
+        
+        # Get regional multiplier (ZIP→ZIP3→state→default)
+        regional = RegionalDataProvider.get_multiplier(zip_code=zip_code)
+        
+        # Initialize breakdown
+        breakdown = {
+            "base_cost": monthly_base
+        }
+        
+        # Apply regional adjustment
+        regional_adjustment = monthly_base * (regional.multiplier - 1.0)
+        if abs(regional_adjustment) > 0.01:  # Only show if non-zero
+            breakdown["regional_adjustment"] = regional_adjustment
+        
+        # Start with base + regional
+        running_total = monthly_base * regional.multiplier
+        
+        # Check for condition-based add-ons from MCIP/GCP flags
+        gcp_rec = MCIP.get_care_recommendation()
+        flags = []
+        if gcp_rec and hasattr(gcp_rec, 'flags'):
+            flags = [f.get('id') if isinstance(f, dict) else f for f in gcp_rec.flags]
+        
+        # Cognitive-related add-on (+20%)
+        # Triggered by: memory_support flag
+        if "memory_support" in flags:
+            cognitive_addon = running_total * 0.20
+            breakdown["cognitive_addon"] = cognitive_addon
+            running_total += cognitive_addon
+        
+        # Mobility-related add-on (+15%)
+        # Triggered by: mobility_limited flag
+        if "mobility_limited" in flags:
+            mobility_addon = running_total * 0.15
+            breakdown["mobility_addon"] = mobility_addon
+            running_total += mobility_addon
+        
+        # High-acuity add-on (+25%)
+        # Always applied for memory_care_high_acuity tier
+        if care_tier == "memory_care_high_acuity":
+            high_acuity_addon = running_total * 0.25
+            breakdown["high_acuity_addon"] = high_acuity_addon
+            running_total += high_acuity_addon
+        
+        # Final monthly adjusted
+        monthly_adjusted = running_total
+        
+        # Calculate projections
+        annual = monthly_adjusted * 12
+        three_year = annual * 3
+        five_year = annual * 5
+        
+        return CostEstimate(
+            monthly_base=monthly_base,
+            monthly_adjusted=monthly_adjusted,
+            annual=annual,
+            three_year=three_year,
+            five_year=five_year,
+            multiplier=regional.multiplier,
+            region_name=regional.region_name,
+            care_tier=care_tier,
+            breakdown=breakdown
+        )
+    
+    @classmethod
     def calculate_quick_estimate(
         cls,
         care_tier: str,
         zip_code: Optional[str] = None,
         state: Optional[str] = None
     ) -> CostEstimate:
-        """Calculate quick estimate for intro page.
+        """Calculate quick estimate for intro page (LEGACY - use calculate_quick_estimate_with_breakdown).
         
         Uses base cost + regional multiplier only.
         No additional services or detailed breakdown.
@@ -72,7 +165,7 @@ class CostCalculator:
         Args:
             care_tier: Care tier (no_care_needed, in_home_care, assisted_living, memory_care, memory_care_high_acuity)
             zip_code: Optional ZIP code for regional adjustment
-            state: Optional state code for regional adjustment
+            state: Optional state code for regional adjustment (ignored - uses ZIP precedence)
             
         Returns:
             CostEstimate with basic calculations
@@ -83,8 +176,8 @@ class CostCalculator:
         tier_config = base_costs.get("care_tiers", {}).get(care_tier, {})
         monthly_base = tier_config.get("monthly_base", 4000)
         
-        # Get regional multiplier
-        regional = RegionalDataProvider.get_multiplier(zip_code=zip_code, state=state)
+        # Get regional multiplier (ZIP precedence, state ignored)
+        regional = RegionalDataProvider.get_multiplier(zip_code=zip_code)
         
         # Calculate adjusted costs
         monthly_adjusted = monthly_base * regional.multiplier
