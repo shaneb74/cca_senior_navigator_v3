@@ -491,6 +491,47 @@
   box-shadow: 0 10px 22px rgba(37, 99, 235, 0.08);
 }
 
+/* ===== COMPLETION BADGE ===== */
+
+.tile-completion-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 64px;
+  height: 64px;
+  z-index: 10;
+  animation: completion-badge-entrance 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  filter: drop-shadow(0 4px 12px rgba(34, 197, 94, 0.3));
+}
+
+.tile-completion-badge img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+@keyframes completion-badge-entrance {
+  0% {
+    transform: scale(0) rotate(-180deg);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.1) rotate(10deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+/* Completed tile subtle glow effect */
+.tile--done .dashboard-card,
+.ptile.tile--done {
+  border-color: rgba(34, 197, 94, 0.15);
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.02) 0%, rgba(255, 255, 255, 1) 100%);
+}
+
 /* ===== PRODUCT TILE RESPONSIVE ADJUSTMENTS ===== */
 
 @media (max-width: 900px) {
