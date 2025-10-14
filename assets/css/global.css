@@ -307,14 +307,16 @@ button[type="primary"]:hover {
   color: #fff !important;
 }
 
-/* ===== GCP Results Page Spacing & Styling ===== */
-/* Tighten stack between Navi and Recommendation card */
+/* ===== Navi Panel Spacing (Global) ===== */
+/* Consistent 12px spacing between Navi and content across all pages */
 .sn-app .navi-panel {
-  margin-bottom: 14px !important;
+  margin-bottom: 12px !important;
 }
 
+/* First content element after Navi should touch (no gap) */
+.sn-app .page-banner:first-of-type,
 .sn-app .gcp-rec-card {
-  margin-top: 14px !important;
+  margin-top: 0 !important;
 }
 
 /* Reassurance bar (yellow) */
