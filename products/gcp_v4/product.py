@@ -8,7 +8,7 @@ the CareRecommendation contract to MCIP for consumption by other products.
 import streamlit as st
 from datetime import datetime
 from core.mcip import MCIP, CareRecommendation
-from core.modules.engine import run_module_engine
+from core.modules.engine import run_module
 from core.modules.schema import ModuleConfig
 
 
@@ -26,17 +26,33 @@ def render():
     config = _load_module_config()
     
     # Run module engine (handles all rendering and navigation)
-    module_state = run_module_engine(config, "gcp_v4")
+    # The engine stores state in st.session_state[config.state_key]
+    # and outcomes in st.session_state[f"{config.state_key}._outcomes"]
+    module_state = run_module(config)
     
-    # Check if module is complete
-    if module_state and module_state.get("status") == "complete":
-        # Publish to MCIP (only once per completion)
-        if not _already_published(module_state):
-            _publish_to_mcip(module_state)
-            _mark_published(module_state)
+    # Check if module has computed outcomes (means we're on results step)
+    outcome_key = f"{config.state_key}._outcomes"
+    outcome = st.session_state.get(outcome_key)
+    
+    # If outcome exists and we haven't published yet, publish to MCIP
+    if outcome and not _already_published():
+        _publish_to_mcip(outcome, module_state)
+        _mark_published()
         
-        # Show completion screen
-        _render_completion_screen()
+        # Show completion message (engine already rendered results step)
+        st.success("✅ Your care recommendation has been saved!")
+        
+        # Add next steps buttons
+        st.markdown("---")
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("💰 Calculate Costs", type="primary", use_container_width=True, key="gcp_next_cost"):
+                from core.nav import route_to
+                route_to("cost_v2")
+        with col2:
+            if st.button("🏠 Return to Hub", use_container_width=True, key="gcp_next_hub"):
+                from core.nav import route_to
+                route_to("hub_concierge")
 
 
 def _load_module_config() -> ModuleConfig:
@@ -49,52 +65,61 @@ def _load_module_config() -> ModuleConfig:
     return config.get_config()
 
 
-def _already_published(module_state: dict) -> bool:
+def _already_published() -> bool:
     """Check if recommendation already published to MCIP.
-    
-    Args:
-        module_state: Module state dict
     
     Returns:
         True if already published
     """
-    # Check if we've marked this session as published
     return st.session_state.get("gcp_v4_published", False)
 
 
-def _mark_published(module_state: dict) -> None:
-    """Mark recommendation as published.
-    
-    Args:
-        module_state: Module state dict
-    """
+def _mark_published() -> None:
+    """Mark recommendation as published."""
     st.session_state["gcp_v4_published"] = True
 
 
-def _publish_to_mcip(module_state: dict) -> None:
+def _publish_to_mcip(outcome, module_state: dict) -> None:
     """Compute recommendation and publish to MCIP.
     
     Args:
-        module_state: Completed module state with answers and outcome
+        outcome: OutcomeContract or dict from logic.py
+        module_state: Module state with answers
     """
     
-    # Get outcome from module (computed by logic.py)
-    outcome = module_state.get("outcome", {})
+    # Extract outcome data (handle both OutcomeContract and dict)
+    if hasattr(outcome, "__dict__"):
+        # It's an OutcomeContract object
+        outcome_data = {
+            "tier": getattr(outcome, "tier", None),
+            "tier_score": getattr(outcome, "tier_score", 0.0),
+            "tier_rankings": getattr(outcome, "tier_rankings", []),
+            "confidence": getattr(outcome, "confidence", 0.0),
+            "flags": getattr(outcome, "flags", []),
+            "rationale": getattr(outcome, "rationale", []),
+            "suggested_next_product": getattr(outcome, "suggested_next_product", "cost_planner")
+        }
+    elif isinstance(outcome, dict):
+        outcome_data = outcome
+    else:
+        st.error("❌ Unable to generate recommendation - invalid outcome format")
+        return
     
-    if not outcome:
-        st.error("❌ Unable to generate recommendation - no outcome from module")
+    # Validate required fields
+    if not outcome_data.get("tier"):
+        st.error("❌ Unable to generate recommendation - missing tier")
         return
     
     # Build CareRecommendation contract
     try:
         recommendation = CareRecommendation(
             # Core recommendation
-            tier=outcome["tier"],
-            tier_score=float(outcome["tier_score"]),
-            tier_rankings=outcome["tier_rankings"],
-            confidence=float(outcome["confidence"]),
-            flags=outcome.get("flags", []),
-            rationale=outcome.get("rationale", []),
+            tier=outcome_data["tier"],
+            tier_score=float(outcome_data.get("tier_score", 0.0)),
+            tier_rankings=outcome_data.get("tier_rankings", []),
+            confidence=float(outcome_data.get("confidence", 0.0)),
+            flags=outcome_data.get("flags", []),
+            rationale=outcome_data.get("rationale", []),
             
             # Provenance
             generated_at=datetime.utcnow().isoformat() + "Z",
@@ -104,10 +129,10 @@ def _publish_to_mcip(module_state: dict) -> None:
             
             # Next step
             next_step={
-                "product": outcome.get("suggested_next_product", "cost_planner"),
-                "route": "cost" if outcome.get("suggested_next_product") == "cost_planner" else "gcp",
-                "label": "See Cost Estimate" if outcome.get("suggested_next_product") == "cost_planner" else "Complete Assessment",
-                "reason": _build_next_step_reason(outcome)
+                "product": outcome_data.get("suggested_next_product", "cost_planner"),
+                "route": "cost_v2" if outcome_data.get("suggested_next_product") == "cost_planner" else "gcp_v4",
+                "label": "Calculate Costs" if outcome_data.get("suggested_next_product") == "cost_planner" else "Complete Assessment",
+                "reason": _build_next_step_reason(outcome_data)
             },
             
             # Status
@@ -121,8 +146,6 @@ def _publish_to_mcip(module_state: dict) -> None:
         
         # Mark GCP as complete in journey
         MCIP.mark_product_complete("gcp")
-        
-        st.success("✅ Recommendation published to care intelligence system")
         
     except Exception as e:
         st.error(f"❌ Error publishing recommendation: {e}")
@@ -157,88 +180,3 @@ def _build_next_step_reason(outcome: dict) -> str:
         return f"Calculate financial impact of {tier} care"
     else:
         return "Complete your care assessment for a personalized recommendation"
-
-
-def _render_completion_screen() -> None:
-    """Render completion screen after recommendation published."""
-    
-    # Get recommendation from MCIP
-    recommendation = MCIP.get_care_recommendation()
-    
-    if not recommendation:
-        st.info("🔄 Generating your personalized care recommendation...")
-        return
-    
-    st.success("✅ **Your Guided Care Plan is Complete!**")
-    
-    st.markdown("---")
-    
-    # Show recommendation
-    tier_label = recommendation.tier.replace("_", " ").title()
-    st.markdown(f"### 🎯 Recommended Care Level: **{tier_label}**")
-    
-    # Show confidence
-    confidence_pct = int(recommendation.confidence * 100)
-    st.progress(recommendation.confidence)
-    st.caption(f"Confidence: {confidence_pct}% (based on your answers)")
-    
-    st.markdown("---")
-    
-    # Show rationale
-    if recommendation.rationale:
-        st.markdown("### 📋 Key Factors in Your Recommendation")
-        for idx, reason in enumerate(recommendation.rationale[:5], 1):
-            st.markdown(f"{idx}. {reason}")
-        
-        st.markdown("---")
-    
-    # Show flags with CTAs
-    if recommendation.flags:
-        st.markdown("### ⚠️ Important Considerations")
-        
-        # Sort flags by priority
-        sorted_flags = sorted(recommendation.flags, key=lambda f: f.get("priority", 99))
-        
-        for flag in sorted_flags:
-            tone_emoji = {"info": "ℹ️", "warning": "⚠️", "critical": "🚨"}
-            emoji = tone_emoji.get(flag.get("tone"), "ℹ️")
-            
-            with st.expander(f"{emoji} {flag['label']}"):
-                st.markdown(flag["description"])
-                
-                if flag.get("cta"):
-                    col1, col2 = st.columns([3, 1])
-                    with col2:
-                        if st.button(flag["cta"]["label"], key=f"flag_{flag['id']}", use_container_width=True):
-                            from core.nav import route_to
-                            route_to(flag["cta"]["route"])
-        
-        st.markdown("---")
-    
-    # Next steps
-    st.markdown("### 🚀 Next Steps")
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        if st.button("💰 Calculate Monthly Costs", type="primary", use_container_width=True, key="next_cost"):
-            from core.nav import route_to
-            route_to("cost")
-    
-    with col2:
-        if st.button("🏠 Return to Hub", use_container_width=True, key="next_hub"):
-            from core.nav import route_to
-            route_to("hub_concierge")
-    
-    # Debug info (if enabled)
-    if st.session_state.get("debug_mode"):
-        with st.expander("🔧 Debug Info"):
-            st.json({
-                "tier": recommendation.tier,
-                "tier_score": recommendation.tier_score,
-                "confidence": recommendation.confidence,
-                "tier_rankings": recommendation.tier_rankings,
-                "flags": [f["id"] for f in recommendation.flags],
-                "version": recommendation.version,
-                "generated_at": recommendation.generated_at
-            })
