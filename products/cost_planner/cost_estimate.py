@@ -38,19 +38,18 @@ CARE_TYPE_COSTS = {
     "memory_care_high": {
         "label": "Memory Care (High Acuity)",
         "base_cost": 10500,
-        "description": "Intensive memory care with skilled nursing support",
+        "description": "Intensive memory care with 24/7 monitoring and medical support",
     },
 }
 
 
 # Map GCP care recommendation tiers to cost planner care types
 TIER_TO_CARE_TYPE = {
-    "Independent / In-Home": "no_care",
+    "No Care Needed": "no_care",
     "In-Home Care": "in_home",
     "Assisted Living": "assisted_living",
     "Memory Care": "memory_care",
-    "High-Acuity Memory Care": "memory_care_high",
-    "Skilled Nursing": "memory_care_high",  # Same tier
+    "Memory Care — High Acuity": "memory_care_high",
 }
 
 

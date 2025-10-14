@@ -147,7 +147,7 @@
         "Everything saves automatically.",
         "Takes about 2 minutes."
       ],
-      "navi_says": "I'll use your answers to recommend Independent Living, In-Home Care, Assisted Living, or Memory Care. Ready?"
+      "navi_says": "I'll use your answers to recommend In-Home Care, Assisted Living, or Memory Care. Ready?"
     },
     "cost_start": {
       "context": "User about to start Cost Planner",

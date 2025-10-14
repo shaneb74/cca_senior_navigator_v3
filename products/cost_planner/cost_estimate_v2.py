@@ -54,12 +54,11 @@ def get_gcp_flags() -> Dict[str, Any]:
 
 # Map GCP care recommendation tiers to cost planner care types
 TIER_TO_CARE_TYPE = {
-    "Independent / In-Home": "no_care",
+    "No Care Needed": "no_care",
     "In-Home Care": "in_home_care",
     "Assisted Living": "assisted_living",
     "Memory Care": "memory_care",
-    "High-Acuity Memory Care": "memory_care_high_acuity",
-    "Skilled Nursing": "memory_care_high_acuity",
+    "Memory Care — High Acuity": "memory_care_high_acuity",
 }
 
 
