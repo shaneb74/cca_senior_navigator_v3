@@ -3,6 +3,8 @@ GCP v4 Product Router - Guided Care Plan with MCIP Integration
 
 Runs the care_recommendation module using the module engine, then publishes
 the CareRecommendation contract to MCIP for consumption by other products.
+
+Uses Navi as the single intelligence layer for guidance and progress.
 """
 
 import streamlit as st
@@ -10,20 +12,30 @@ from datetime import datetime
 from core.mcip import MCIP, CareRecommendation
 from core.modules.engine import run_module
 from core.modules.schema import ModuleConfig
+from core.navi import render_navi_panel
 
 
 def render():
     """Render GCP v4 product.
     
     Flow:
-    1. Run care_recommendation module via module engine
-    2. Module engine handles all UI, navigation, progress
-    3. When complete, publish CareRecommendation to MCIP
-    4. Show completion screen with recommendation
+    1. Render Navi panel (single intelligence layer)
+    2. Run care_recommendation module via module engine
+    3. Module engine handles all UI and navigation
+    4. When complete, publish CareRecommendation to MCIP
+    5. Show completion screen with recommendation
     """
     
     # Load module config
     config = _load_module_config()
+    
+    # Render Navi panel (THE single intelligence layer)
+    # Provides module-level guidance, progress, contextual help
+    render_navi_panel(
+        location="product",
+        product_key="gcp_v4",
+        module_config=config
+    )
     
     # Run module engine (handles all rendering and navigation)
     # The engine stores state in st.session_state[config.state_key]

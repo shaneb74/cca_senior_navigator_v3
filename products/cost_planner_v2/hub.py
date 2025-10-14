@@ -5,17 +5,21 @@ Orchestrates financial modules with tier-based filtering.
 Demonstrates how products can use different internal architectures
 (module hub vs single module vs custom workflow) while following
 the universal product interface.
+
+Uses Navi as the single intelligence layer for guidance and progress.
 """
 
 import streamlit as st
 from typing import List, Dict, Optional
 from core.mcip import MCIP, CareRecommendation
+from core.navi import render_navi_panel
 
 
 def render_module_hub(recommendation: CareRecommendation):
     """Render module hub with tier-appropriate modules.
     
     This demonstrates:
+    - Navi guidance for multi-module workflow
     - Reading recommendation from MCIP (passed from product.py)
     - Filtering modules based on care tier
     - Showing care context to user
@@ -25,6 +29,14 @@ def render_module_hub(recommendation: CareRecommendation):
     Args:
         recommendation: Care recommendation from MCIP
     """
+    
+    # Render Navi panel (single intelligence layer)
+    # Shows module hub progress and guidance
+    render_navi_panel(
+        location="product",
+        product_key="cost_v2",
+        module_config=None  # Module hub (not single module)
+    )
     
     st.title("💰 Financial Planning")
     

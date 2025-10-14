@@ -6,10 +6,13 @@ Demonstrates universal product interface:
 - Show friendly gate if prerequisites missing
 - Orchestrate modules when prerequisites met
 - Publish output to MCIP when complete
+
+Uses Navi as the single intelligence layer for guidance and progress.
 """
 
 import streamlit as st
 from core.mcip import MCIP
+from core.navi import render_navi_panel
 
 
 def render():
@@ -17,7 +20,7 @@ def render():
     
     Universal Product Interface Implementation:
     1. Check prerequisites via MCIP
-    2. Show gate if prerequisites missing
+    2. Show gate if prerequisites missing (with Navi guidance)
     3. Run product logic (module hub) when gate passes
     4. Publish to MCIP when complete
     5. Show completion screen
@@ -29,6 +32,12 @@ def render():
     
     if not recommendation:
         # Gate: Prerequisites not met
+        # Render Navi for gate screen (shows journey status and next action)
+        render_navi_panel(
+            location="product",
+            product_key="cost_v2",
+            module_config=None  # No module config for gate screen
+        )
         _render_gcp_gate()
         return
     
