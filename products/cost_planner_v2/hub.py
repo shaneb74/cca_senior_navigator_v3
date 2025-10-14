@@ -22,12 +22,9 @@ def render():
     recommendation = MCIP.get_care_recommendation()
     triage = st.session_state.get("cost_v2_triage", {})
     
+    # Optional: Show info if no GCP recommendation (use general estimates)
     if not recommendation:
-        st.error("❌ No care recommendation found. Please complete Guided Care Plan first.")
-        if st.button("← Back"):
-            st.session_state.cost_v2_step = "gcp_gate"
-            st.rerun()
-        return
+        st.info("ℹ️ You're using general cost estimates. Complete the Guided Care Plan for personalized recommendations.")
     
     # Render Navi panel for guidance
     render_navi_panel(
@@ -39,8 +36,11 @@ def render():
     st.title("💰 Financial Assessment")
     
     # Show context
-    tier = recommendation.tier.replace("_", " ").title()
-    st.info(f"📋 **Care Recommendation:** {tier}")
+    if recommendation:
+        tier = recommendation.tier.replace("_", " ").title()
+        st.success(f"✅ **Care Recommendation:** {tier}")
+    else:
+        st.warning("⚠️ **Using General Estimates** - No personalized care assessment")
     
     if triage:
         status_display = "Planning Ahead" if triage.get("status") == "planning" else "Existing Customer"

@@ -29,8 +29,8 @@ def render():
         st.info("You're signed in and ready to create your detailed financial plan.")
         
         if st.button("Continue to Financial Assessment →", type="primary", use_container_width=True):
-            # Move to GCP gate (next step)
-            st.session_state.cost_v2_step = "gcp_gate"
+            # Move to triage (next step)
+            st.session_state.cost_v2_step = "triage"
             st.rerun()
         return
     
@@ -92,7 +92,7 @@ def render():
         if st.button("Continue as Guest", use_container_width=True, key="cost_v2_guest"):
             # Set guest flag and continue
             st.session_state.cost_v2_guest_mode = True
-            st.session_state.cost_v2_step = "gcp_gate"
+            st.session_state.cost_v2_step = "triage"
             st.info("ℹ️ Proceeding in guest mode. Sign in anytime to save your work.")
             st.rerun()
     
