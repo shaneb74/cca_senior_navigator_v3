@@ -568,7 +568,7 @@ def render_navi_panel_v2(
     <style>
     .navi-panel-v2 {
         max-width: 1120px;
-        margin: 0 auto 24px auto;
+        margin: 0 auto 20px auto;
         background: #ffffff;
         border: 1px solid #e6edf5;
         border-radius: 20px;
