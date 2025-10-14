@@ -430,18 +430,65 @@ def render_navi_panel(
             else:
                 current_step_def = module_config.steps[ctx.module_step]
                 
-                # Use embedded guidance if available
+                # Use embedded navi_guidance if available
                 if hasattr(current_step_def, 'navi_guidance') and current_step_def.navi_guidance:
                     guidance = current_step_def.navi_guidance
+                    
+                    # Build message from guidance
+                    main_text = None
+                    subtext = None
+                    
+                    # Priority order for main message:
+                    # 1. section_purpose (what this section does)
+                    # 2. encouragement (friendly motivational text)
+                    # 3. Fallback to title
+                    if guidance.get('section_purpose'):
+                        main_text = f"🤖 Navi: {guidance['section_purpose']}"
+                    elif guidance.get('encouragement'):
+                        main_text = f"🤖 Navi: {guidance['encouragement']}"
+                    else:
+                        main_text = f"🤖 Navi: {current_step_def.title}"
+                    
+                    # Priority order for subtext:
+                    # 1. why_this_matters (educational/contextual)
+                    # 2. what_happens_next (preview)
+                    # 3. time_estimate (for intro/info pages)
+                    # 4. context_note (additional details)
+                    if guidance.get('why_this_matters'):
+                        subtext = f"💡 {guidance['why_this_matters']}"
+                    elif guidance.get('what_happens_next'):
+                        subtext = guidance['what_happens_next']
+                    elif guidance.get('time_estimate'):
+                        subtext = f"⏱️ {guidance['time_estimate']}"
+                    elif guidance.get('context_note'):
+                        subtext = guidance['context_note']
+                    
+                    # Render with extracted guidance
                     render_navi_guide_bar(
-                        text=guidance.get('text', ''),
-                        subtext=guidance.get('subtext'),
-                        icon=guidance.get('icon', '🤖'),
+                        text=main_text,
+                        subtext=subtext,
+                        icon=guidance.get('icon', '�'),
                         show_progress=True,
                         current_step=ctx.module_step + 1,
                         total_steps=ctx.module_total,
                         color=guidance.get('color', '#0066cc')
                     )
+                    
+                    # Show encouragement or support message as additional info
+                    if guidance.get('encouragement') and guidance.get('section_purpose'):
+                        # If we used section_purpose as main, show encouragement below
+                        st.info(f"💬 {guidance['encouragement']}")
+                    elif guidance.get('support_message'):
+                        # Show support message for sensitive topics
+                        st.info(f"💙 {guidance['support_message']}")
+                    
+                    # Show red flags warning if present (for clinicians/caregivers)
+                    if guidance.get('red_flags'):
+                        with st.expander("⚠️ Important Considerations"):
+                            st.warning("**Watch for these combinations:**")
+                            for flag in guidance['red_flags']:
+                                st.markdown(f"- {flag}")
+                    
                 else:
                     # Fallback to generic progress
                     render_navi_guide_bar(

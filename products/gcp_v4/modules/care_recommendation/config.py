@@ -59,6 +59,7 @@ def _convert_section_to_step(section: Dict[str, Any]) -> StepDef:
     section_id = section["id"]
     title = section.get("title", "")
     description = section.get("description", "")
+    navi_guidance = section.get("navi_guidance")  # Extract Navi guidance
     
     # Handle info sections (intro pages)
     if section_type == "info":
@@ -73,6 +74,7 @@ def _convert_section_to_step(section: Dict[str, Any]) -> StepDef:
             show_progress=False,
             show_bottom_bar=True,
             summary_keys=None,
+            navi_guidance=navi_guidance,  # Pass guidance to StepDef
         )
     
     # Handle results section
@@ -88,6 +90,7 @@ def _convert_section_to_step(section: Dict[str, Any]) -> StepDef:
             show_progress=True,
             show_bottom_bar=True,
             summary_keys=None,
+            navi_guidance=navi_guidance,  # Pass guidance to StepDef
         )
     
     # Handle question sections
@@ -105,6 +108,7 @@ def _convert_section_to_step(section: Dict[str, Any]) -> StepDef:
         show_progress=True,
         show_bottom_bar=True,
         summary_keys=None,
+        navi_guidance=navi_guidance,  # Pass guidance to StepDef
     )
 
 
