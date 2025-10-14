@@ -21,6 +21,10 @@
         "be_honest": "Honest answers lead to better recommendations",
         "cant_decide": "If you're unsure, choose the option that best describes the current situation",
         "can_pause": "You can pause anytime - your progress is automatically saved"
+      },
+      "intro_message": {
+        "text": "🤖 Navi: Let's find the senior care option that fits best.",
+        "subtext": "You'll answer a few quick questions about daily needs, safety, and cognition. It takes about two minutes, and you can pause anytime—the plan saves automatically."
       }
     }
   },
@@ -30,33 +34,24 @@
       "title": "Welcome to the Guided Care Plan",
       "type": "info",
       "content": [
-        "This personalized assessment will help us recommend the best senior care option based on your unique needs. It takes about 2 minutes to complete, and your progress is automatically saved.",
-        "",
-        "**What to expect:**",
-        "• 15-20 questions about daily living, health, and support needs",
-        "• Questions cover mobility, medications, memory, and care requirements",
-        "• A personalized care recommendation at the end",
-        "• Unlock detailed cost estimates after completion",
+        "This quick check helps us recommend the best senior care setting for your situation.",
+        "It takes about two minutes and you can pause anytime—your progress is saved automatically.",
         "",
         "**What we'll ask about:**",
-        "• **About You** – Age, living situation, and location",
-        "• **Medication & Mobility** – Health needs, fall history, and chronic conditions",
-        "• **Cognition & Mental Health** – Memory, mood, and behavioral concerns",
-        "• **Daily Living** – Activities of daily living (ADLs) and current support",
-        "",
-        "**Your honest answers help us determine whether Independent Living, In-Home Care, Assisted Living, or Memory Care is the best fit.**",
-        "",
-        "You can pause anytime and return later – your progress will be saved automatically."
+        "• Daily living and support needs",
+        "• Medications, mobility, and fall safety",
+        "• Memory, mood, and behavior changes",
+        "• Who provides help today"
       ],
       "actions": [
         { "label": "Get Started", "action": "next" },
         { "label": "Back to Concierge Hub", "action": "route", "value": "hub_concierge" }
       ],
       "navi_guidance": {
-        "section_purpose": "Welcome and set expectations",
-        "what_happens_next": "You'll answer questions about daily needs, health, and support",
-        "time_estimate": "Takes about 2 minutes",
-        "encouragement": "Let's find the right care option together!"
+        "section_purpose": "Set expectations for the guided plan.",
+        "what_happens_next": "Answer a short series of questions about daily needs, safety, and cognition.",
+        "time_estimate": "About two minutes.",
+        "encouragement": "Thanks for sharing these details—it helps me guide you to the right support."
       }
     },
     {
