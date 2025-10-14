@@ -1,15 +1,16 @@
 """
 Cost Planner v2 Product Router
 
-Mandatory workflow (non-negotiable):
+Workflow:
 1. Intro/Quick Estimate (unauthenticated)
-2. Auth Gate
-3. Status Triage (existing customer vs planning)
-4. Financial Modules
-5. Expert Advisor Review (MUST BE LAST)
-6. Return to Hub/PFMA
+2. Auth Gate (sign in or continue as guest)
+3. Triage (existing customer vs planning)
+4. Financial Modules (income, costs, coverage)
+5. Expert Advisor Review
+6. Exit
 
-Uses Navi as the single intelligence layer for guidance and progress.
+Note: GCP (Guided Care Plan) is recommended but NOT required.
+Users can complete Cost Planner with general estimates.
 """
 
 import streamlit as st
@@ -19,16 +20,18 @@ from layout import render_shell_start, render_shell_end
 
 
 def render():
-    """Render Cost Planner v2 with mandatory workflow steps.
+    """Render Cost Planner v2 workflow.
     
-    Step routing implementation:
+    Step routing:
     - Step 1: Intro (unauthenticated quick estimate)
-    - Step 2: Auth Gate (if not authenticated)
-    - Step 3: GCP Gate (if no care recommendation)
-    - Step 4: Triage (existing vs planning)
-    - Step 5: Modules (financial assessment)
-    - Step 6: Expert Review (MUST BE LAST)
-    - Step 7: Exit
+    - Step 2: Auth (sign in or guest mode)
+    - Step 3: Triage (existing vs planning)
+    - Step 4: Modules (financial assessment)
+    - Step 5: Expert Review
+    - Step 6: Exit
+    
+    Note: GCP gate removed from workflow. GCP is recommended
+    but accessed separately via navigation, not forced in flow.
     """
     
     render_shell_start("", active_route="cost_v2")
@@ -44,8 +47,6 @@ def render():
         _render_intro_step()
     elif current_step == "auth":
         _render_auth_step()
-    elif current_step == "gcp_gate":
-        _render_gcp_gate_step()
     elif current_step == "triage":
         _render_triage_step()
     elif current_step == "modules":
@@ -76,26 +77,14 @@ def _render_auth_step():
     auth.render()
 
 
-def _render_gcp_gate_step():
-    """Step 3: GCP recommendation screen (optional but recommended)."""
-    
-    # Show GCP recommendation screen with Navi guidance
-    render_navi_panel(
-        location="product",
-        product_key="cost_v2",
-        module_config=None
-    )
-    _render_gcp_gate()
-
-
 def _render_triage_step():
-    """Step 4: Status triage (existing vs planning)."""
+    """Step 3: Status triage (existing vs planning)."""
     from products.cost_planner_v2 import triage
     triage.render()
 
 
 def _render_modules_step():
-    """Step 5: Financial modules hub."""
+    """Step 4: Financial modules hub."""
     from products.cost_planner_v2 import hub
     hub.render()
 
@@ -127,9 +116,15 @@ def _render_active_module():
 
 
 def _render_expert_review_step():
-    """Step 6: Expert Advisor Review (MUST BE LAST before exit)."""
+    """Step 5: Expert Advisor Review."""
     from products.cost_planner_v2 import expert_review
     expert_review.render()
+
+
+def _render_exit_step():
+    """Step 6: Exit with summary and next actions."""
+    from products.cost_planner_v2 import exit
+    exit.render()
 
 
 def _render_exit_step():

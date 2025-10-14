@@ -134,7 +134,7 @@ def render():
     
     with col1:
         if st.button("← Back", key="triage_back"):
-            st.session_state.cost_v2_step = "gcp_gate"
+            st.session_state.cost_v2_step = "auth"
             st.rerun()
     
     with col2:
