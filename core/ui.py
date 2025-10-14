@@ -275,3 +275,81 @@ def render_hub_tile(
 
     # Close the card-actions div and tile
     st.markdown("</div></article>", unsafe_allow_html=True)
+
+
+def render_mcip_journey_status() -> None:
+    """Render MCIP journey status banner showing progress and next action.
+    
+    Shows user-friendly guidance like:
+    - "Hey there! Let's create your care plan 🧭"
+    - "Great job! 1/3 complete. Next: Calculate costs 💰"
+    - "Almost done! 2/3 complete. Next: Schedule appointment 📅"
+    - "🎉 Journey complete! All 3 products done."
+    """
+    from core.mcip import MCIP
+    from core.state import get_user_ctx
+    
+    # Get user context for personalization
+    ctx = get_user_ctx()
+    user_name = ctx.get("auth", {}).get("name", "")
+    greeting = f"Hey {user_name}! " if user_name else "Hey there! "
+    
+    # Get journey data
+    progress = MCIP.get_journey_progress()
+    next_action = MCIP.get_recommended_next_action()
+    
+    completed = progress["completed_count"]
+    total = 3  # GCP, Cost Planner, PFMA
+    
+    # Status-based styling
+    status = next_action["status"]
+    if status == "complete":
+        bg_color = "#10b981"  # Green
+        icon = "🎉"
+        message = next_action["action"]
+        submessage = next_action["reason"]
+    elif status == "nearly_there":
+        bg_color = "#f59e0b"  # Amber
+        icon = "📅"
+        message = f"{completed}/{total} complete. {next_action['action']}"
+        submessage = next_action["reason"]
+    elif status == "in_progress":
+        bg_color = "#3b82f6"  # Blue
+        icon = "💰"
+        message = f"{greeting}{completed}/{total} complete. {next_action['action']}"
+        submessage = next_action["reason"]
+    else:  # getting_started
+        bg_color = "#8b5cf6"  # Purple
+        icon = "🧭"
+        message = f"{greeting}{next_action['action']}"
+        submessage = next_action["reason"]
+    
+    # Render banner
+    st.markdown(f"""
+        <div style="
+            background: linear-gradient(135deg, {bg_color} 0%, {bg_color}dd 100%);
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin: 20px 0;
+            color: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        ">
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <div style="font-size: 32px;">{icon}</div>
+                <div style="flex: 1;">
+                    <div style="font-size: 18px; font-weight: 600; margin-bottom: 4px;">
+                        {message}
+                    </div>
+                    <div style="font-size: 14px; opacity: 0.9;">
+                        {submessage}
+                    </div>
+                </div>
+                {f'<div style="font-size: 14px; font-weight: 500; padding: 8px 16px; background: rgba(255,255,255,0.2); border-radius: 20px;">{completed}/{total}</div>' if status != "complete" else ''}
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    # Optional: Click to navigate
+    if status != "complete" and next_action.get("route"):
+        if st.button(f"→ {next_action['action']}", key=f"mcip_nav_{next_action['route']}", use_container_width=True):
+            route_to(next_action["route"])
