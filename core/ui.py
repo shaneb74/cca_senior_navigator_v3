@@ -525,21 +525,16 @@ def render_navi_guide_bar(
     # Build progress indicator if needed
     progress_html = ""
     if show_progress and current_step is not None and total_steps is not None:
-        progress_html = f"""
-            <div style="
-                font-size: 12px;
-                font-weight: 500;
-                padding: 4px 12px;
-                background: rgba(255,255,255,0.2);
-                border-radius: 12px;
-                white-space: nowrap;
-            ">
-                {current_step}/{total_steps}
-            </div>
-        """
+        # Build progress badge inline to avoid escaping issues
+        progress_badge = f'<div style="font-size: 12px; font-weight: 500; padding: 4px 12px; background: rgba(255,255,255,0.2); border-radius: 12px; white-space: nowrap;">{current_step}/{total_steps}</div>'
+    else:
+        progress_badge = ""
     
-    # Render compact guide bar
-    st.markdown(f"""
+    # Build subtext HTML if provided
+    subtext_html = f'<div style="font-size: 12px; opacity: 0.9;">{subtext}</div>' if subtext else ''
+    
+    # Render compact guide bar (all as one HTML block to avoid escaping)
+    html = f"""
         <div style="
             background: linear-gradient(135deg, {color} 0%, {color}dd 100%);
             padding: 12px 20px;
@@ -558,10 +553,12 @@ def render_navi_guide_bar(
                 <div style="font-size: 14px; font-weight: 600; margin-bottom: 2px;">
                     {text}
                 </div>
-                {f'<div style="font-size: 12px; opacity: 0.9;">{subtext}</div>' if subtext else ''}
+                {subtext_html}
             </div>
-            {progress_html}
+            {progress_badge}
         </div>
-    """, unsafe_allow_html=True)
+    """
+    
+    st.markdown(html, unsafe_allow_html=True)
 
 
