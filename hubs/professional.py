@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from html import escape as html_escape
 from typing import Dict, List
 
 import streamlit as st
@@ -34,6 +35,40 @@ def _to_tile(card: Dict[str, any], order: int) -> ProductTileHub:
         secondary_label=secondary.get("label") if secondary.get("route") else None,
         secondary_route=f"?go={secondary.get('route')}" if secondary.get("route") else None,
         order=order,
+    )
+
+
+def _build_mcip_panel(
+    *,
+    pending_actions: int,
+    new_referrals: int,
+    cases_needing_updates: int,
+    last_login: str,
+) -> str:
+    metrics = [
+        ("Pending", f"{pending_actions}", False),
+        ("New referrals", f"{new_referrals}", True),
+        ("Updates needed", f"{cases_needing_updates}", False),
+    ]
+    chips_html = []
+    for label, value, muted in metrics:
+        classes = "dashboard-chip"
+        if muted:
+            classes += " is-muted"
+        chips_html.append(
+            f'<span class="{classes}">{html_escape(label)}: {html_escape(value)}</span>'
+        )
+
+    chips_block = "".join(chips_html)
+    last_login_text = html_escape(last_login)
+
+    return (
+        '<section class="hub-guide hub-guide--order">'
+        '<div class="mcip-msg">Caseload snapshot</div>'
+        f'<div class="hub-guide__actions">{chips_block}</div>'
+        f'<div class="mcip-sub">Last login: {last_login_text}</div>'
+        '<div class="mcip-extra">Metrics refresh as referrals and case notes update. Open the dashboard tile to triage priorities.</div>'
+        "</section>"
     )
 
 
@@ -144,15 +179,17 @@ def render(ctx=None) -> None:
 
     cards = [_to_tile(card, (idx + 1) * 10) for idx, card in enumerate(raw_cards)]
 
+    mcip_panel = _build_mcip_panel(
+        pending_actions=pending_actions,
+        new_referrals=new_referrals,
+        cases_needing_updates=cases_needing_updates,
+        last_login=last_login,
+    )
+
     body_html = render_dashboard_body(
         title="Professional Hub",
         subtitle="Comprehensive tools for discharge planners, nurses, physicians, social workers, and geriatric care managers.",
-        chips=[
-            {"label": f"Pending: {pending_actions}"},
-            {"label": f"New referrals: {new_referrals}", "variant": "muted"},
-            {"label": f"Updates needed: {cases_needing_updates}"},
-            {"label": f"Last login: {last_login}", "variant": "muted"},
-        ],
+        hub_guide_block=mcip_panel,
         cards=cards,
     )
 

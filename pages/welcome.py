@@ -126,7 +126,6 @@ def _inject_welcome_css() -> None:
 
         /* Professional Login section */
         .professional-login{
-          margin-top:60px;
           padding:40px;
           background:#fff;
           border:1px solid #e6edf5;
@@ -152,7 +151,18 @@ def _inject_welcome_css() -> None:
           font-weight:500;
         }
         .professional-login__button .btn{
-          display:inline-block;
+          display:inline-flex;
+          align-items:center;
+          justify-content:center;
+          height:auto;
+          padding:12px 32px;
+          border-radius:12px;
+          background:#111827;
+          color:#fff;
+          text-decoration:none;
+          font-weight:700;
+          font-size:1rem;
+          transition:all 0.2s ease;
         }
 
         .welcome-context-sentinel,
@@ -478,6 +488,17 @@ def _welcome_body() -> str:
                   </article>
                 </div>
               </section>
+
+              <section class="container section">
+                <div class="professional-login">
+                  <h2 class="professional-login__title">Professional Login</h2>
+                  <p class="professional-login__message">Login here to access your personalized dashboards.</p>
+                  <p class="professional-login__roles">Discharge Planners • Nurses • Physicians • Social Workers • Geriatric Care Managers</p>
+                  <div class="professional-login__button">
+                    <a href="?page=hub_professional" class="btn btn--primary">🔐 For Professionals</a>
+                  </div>
+                </div>
+              </section>
             </main>
             """
     )
@@ -499,50 +520,6 @@ def render(ctx: Optional[dict] = None) -> None:
     
     _inject_welcome_css()
     render_page(body_html=_welcome_body(), active_route="welcome")
-    
-    # Professional Login Section - positioned above footer
-    # Button is HTML inside the box, not a separate Streamlit widget
-    st.markdown("""
-        <div class="container" style="max-width:1240px;margin:60px auto 60px;padding:0 24px;">
-            <div style="
-                padding:40px;
-                background:#fff;
-                border:1px solid #e6edf5;
-                border-radius:20px;
-                box-shadow:0 18px 42px rgba(15,23,42,.12);
-                text-align:center;
-            ">
-                <h2 style="
-                    font-size:1.5rem;
-                    font-weight:700;
-                    color:var(--ink);
-                    margin:0 0 12px;
-                ">Professional Login</h2>
-                <p style="
-                    font-size:1.05rem;
-                    color:var(--ink-600);
-                    margin:0 0 20px;
-                ">Login here to access your personalized dashboards.</p>
-                <p style="
-                    font-size:0.95rem;
-                    color:var(--ink-500);
-                    margin:0 0 24px;
-                    font-weight:500;
-                ">Discharge Planners • Nurses • Physicians • Social Workers • Geriatric Care Managers</p>
-                <a href="?page=hub_professional" class="btn btn--primary" style="
-                    display:inline-block;
-                    padding:12px 32px;
-                    border-radius:12px;
-                    background:#111827;
-                    color:#fff;
-                    text-decoration:none;
-                    font-weight:700;
-                    font-size:1rem;
-                    transition:all 0.2s ease;
-                ">🔐 For Professionals</a>
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
 
 
 __all__ = ["render", "render_welcome_card"]

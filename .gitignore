@@ -6,14 +6,12 @@ __pycache__/
 .venv/
 .DS_Store
 .streamlit/secrets.toml
+
 # quarantine old code
-_backup/
-archive/
-_backup/
-archive/
-
-
 _backup/
 archive/
 *.zip
 *.docx
+
+# development utilities
+dev_tools/
