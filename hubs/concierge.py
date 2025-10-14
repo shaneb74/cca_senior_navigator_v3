@@ -10,7 +10,6 @@ import streamlit as st
 from core.mcip import MCIP
 from core.additional_services import get_additional_services
 from core.base_hub import render_dashboard_body
-from core.hub_guide import compute_hub_guide
 from core.product_tile import ProductTileHub
 from core.ui import render_mcip_journey_status
 from layout import render_page
@@ -73,8 +72,7 @@ def render(ctx=None) -> None:
         _build_faq_tile(),
     ]
     
-    # Hub guide and additional services
-    guide = compute_hub_guide("concierge", hub_order=hub_order, mode="auto")
+    # Get additional services (filters based on GCP completion)
     additional = get_additional_services("concierge")
     
     # Build chips
@@ -83,12 +81,12 @@ def render(ctx=None) -> None:
         chips.append({"label": f"For {person}", "variant": "muted"})
     chips.append({"label": "Advisor & AI blended"})
     
-    # Render dashboard
+    # Render dashboard (Navi journey status already shown above)
     body_html = render_dashboard_body(
         title="Concierge Care Hub",
         subtitle="Finish the essentials, then unlock curated next steps with your advisor.",
         chips=chips,
-        hub_guide_block=guide,
+        hub_guide_block=None,  # Deprecated - using render_mcip_journey_status() instead
         hub_order=hub_order,
         cards=cards,
         additional_services=additional,
