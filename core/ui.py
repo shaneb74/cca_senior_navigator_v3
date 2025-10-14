@@ -690,48 +690,20 @@ def render_navi_panel_v2(
     # Get encouragement status
     status = encouragement.get('status', 'in_progress')
     
+    # Build action buttons HTML
+    actions_html = ""
+    if secondary_action:
+        primary_href = f"?route={primary_action.get('route', '')}" if primary_action.get('route') else "#"
+        secondary_href = f"?route={secondary_action.get('route', '')}" if secondary_action.get('route') else "#"
+        actions_html = f'<div style="display: flex; gap: 12px; margin-top: 18px;"><a class="dashboard-cta dashboard-cta--primary" href="{primary_href}" style="flex: 2;">{primary_action["label"]}</a><a class="dashboard-cta dashboard-cta--ghost" href="{secondary_href}" style="flex: 1;">{secondary_action["label"]}</a></div>'
+    else:
+        primary_href = f"?route={primary_action.get('route', '')}" if primary_action.get('route') else "#"
+        actions_html = f'<div style="margin-top: 18px;"><a class="dashboard-cta dashboard-cta--primary" href="{primary_href}" style="width: 100%; text-align: center;">{primary_action["label"]}</a></div>'
+    
     # Build complete panel HTML (flat structure, no inner wrapper)
-    panel_html = f'<div class="navi-panel-v2"><div class="navi-panel-v2__header"><div class="navi-panel-v2__eyebrow">🤖 Navi</div>{progress_badge}</div><div class="navi-panel-v2__title">{title}</div><div class="navi-panel-v2__reason">{reason}</div><div class="navi-panel-v2__encouragement navi-panel-v2__encouragement--{status}"><span style="font-size: 18px;">{encouragement.get("icon", "💪")}</span><span>{encouragement.get("text", "")}</span></div>{chips_html}</div>'
+    panel_html = f'<div class="navi-panel-v2"><div class="navi-panel-v2__header"><div class="navi-panel-v2__eyebrow">🤖 Navi</div>{progress_badge}</div><div class="navi-panel-v2__title">{title}</div><div class="navi-panel-v2__reason">{reason}</div><div class="navi-panel-v2__encouragement navi-panel-v2__encouragement--{status}"><span style="font-size: 18px;">{encouragement.get("icon", "💪")}</span><span>{encouragement.get("text", "")}</span></div>{chips_html}{actions_html}</div>'
     
     st.markdown(panel_html, unsafe_allow_html=True)
-    
-    # 6. Action row (render as Streamlit buttons for interactivity)
-    if secondary_action:
-        col1, col2 = st.columns([2, 1])
-        with col1:
-            if st.button(
-                primary_action['label'],
-                type="primary",
-                use_container_width=True,
-                key=f"navi_primary_{primary_action.get('route', 'action')}"
-            ):
-                if primary_action.get('callback'):
-                    primary_action['callback']()
-                elif primary_action.get('route'):
-                    route_to(primary_action['route'])
-        
-        with col2:
-            if st.button(
-                secondary_action['label'],
-                use_container_width=True,
-                key=f"navi_secondary_{secondary_action.get('route', 'action')}"
-            ):
-                if secondary_action.get('callback'):
-                    secondary_action['callback']()
-                elif secondary_action.get('route'):
-                    route_to(secondary_action['route'])
-    else:
-        # No secondary action - render primary button full width
-        if st.button(
-            primary_action['label'],
-            type="primary",
-            use_container_width=True,
-            key=f"navi_primary_{primary_action.get('route', 'action')}"
-        ):
-            if primary_action.get('callback'):
-                primary_action['callback']()
-            elif primary_action.get('route'):
-                route_to(primary_action['route'])
 
 
 
