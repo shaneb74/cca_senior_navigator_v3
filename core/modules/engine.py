@@ -76,7 +76,7 @@ def run_module(config: ModuleConfig) -> Dict[str, Any]:
     
     # Render header with actual progress
     # Note: Progress bar also disabled since Navi panel shows progress (X/Y steps)
-    _render_header(step_index, total_steps, title, step.subtitle, progress, progress_total, show_step_dots, step.id == config.steps[0].id)
+    _render_header(step_index, total_steps, title, step.subtitle, progress, progress_total, show_step_dots, step.id == config.steps[0].id, config)
 
     # Render content array (for info-type pages)
     if step.content:
@@ -122,7 +122,7 @@ def run_module(config: ModuleConfig) -> Dict[str, Any]:
     return state
 
 
-def _render_header(step_index: int, total: int, title: str, subtitle: str | None, progress: float, progress_total: int, show_step_dots: bool = True, is_intro: bool = False) -> None:
+def _render_header(step_index: int, total: int, title: str, subtitle: str | None, progress: float, progress_total: int, show_step_dots: bool = True, is_intro: bool = False, config: ModuleConfig | None = None) -> None:
     """Render module header without progress bar (Navi panel handles progress)."""
     from html import escape as _escape
     
@@ -148,24 +148,40 @@ def _render_header(step_index: int, total: int, title: str, subtitle: str | None
                 formatted_lines.append("<br/>")
         subtitle_html = f"<div class='lead'>{''.join(formatted_lines)}</div>"
     
-    # Back button - on intro page, go to hub; otherwise use browser back
-    if is_intro:
-        back_html = '<a class="mod-back" href="?page=hub_concierge">← Back</a>'
-    else:
-        back_html = '<a class="mod-back" href="javascript:history.back()">← Back</a>'
+    # Render back button as Streamlit button (not HTML link) for proper state management
+    col1, col2 = st.columns([1, 10])
+    with col1:
+        if is_intro:
+            # On intro page, back goes to hub
+            if st.button("← Back", key="_mod_back_to_hub", use_container_width=True):
+                st.session_state["page"] = "hub_concierge"
+                st.rerun()
+        else:
+            # On regular pages, back goes to previous step
+            if step_index > 0 and config:
+                if st.button("← Back", key="_mod_back_prev", use_container_width=True):
+                    prev_index = max(0, step_index - 1)
+                    st.session_state[f"{config.state_key}._step"] = prev_index
+                    
+                    # Update tile state for resume functionality
+                    tiles = st.session_state.setdefault("tiles", {})
+                    tile_state = tiles.setdefault(config.product, {})
+                    tile_state["last_step"] = prev_index
+                    
+                    st.rerun()
     
-    st.markdown(
-        f"""
-        <div class="mod-head">
-          <div class="mod-head-row">
-            {back_html}
-            <h2 class="h2">{_escape(title)}</h2>
-          </div>
-          {subtitle_html}
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    with col2:
+        st.markdown(
+            f"""
+            <div class="mod-head">
+              <div class="mod-head-row">
+                <h2 class="h2">{_escape(title)}</h2>
+              </div>
+              {subtitle_html}
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
 
 def _substitute_title(title: str, state: Mapping[str, Any]) -> str:
