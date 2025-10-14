@@ -11,7 +11,7 @@ from typing import Optional
 import streamlit as st
 
 from core.mcip import MCIP
-from core.navi import NaviOrchestrator
+from core.navi import NaviOrchestrator, render_navi_panel
 from core.additional_services import get_additional_services
 from core.base_hub import render_dashboard_body
 from core.product_tile import ProductTileHub
@@ -51,11 +51,12 @@ def render(ctx=None) -> None:
     # Get MCIP data for tiles
     progress = MCIP.get_journey_progress()
     next_action = MCIP.get_recommended_next_action()
-    navi_ctx = NaviOrchestrator.get_context(location="hub", hub_key="concierge")
-    navi_panel_html = _build_navi_guide_block(navi_ctx)
     
     person_name = st.session_state.get("person_name", "").strip()
     person = person_name if person_name else "you"
+    
+    # Render Navi panel (NEW: Direct Streamlit rendering under page title)
+    render_navi_panel(location="hub", hub_key="concierge")
     
     # Build hub order from MCIP
     hub_order = {
@@ -91,7 +92,7 @@ def render(ctx=None) -> None:
         title="Concierge Care Hub",
         subtitle="Finish the essentials, then unlock curated next steps with your advisor.",
         chips=chips,
-        hub_guide_block=navi_panel_html,
+        hub_guide_block=None,  # NEW: Navi now rendered directly via Streamlit
         hub_order=hub_order,
         cards=cards,
         additional_services=additional,

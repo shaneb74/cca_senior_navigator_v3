@@ -7,6 +7,7 @@ import streamlit as st
 from core.additional_services import get_additional_services
 from core.base_hub import render_dashboard_body
 from core.hub_guide import compute_hub_guide
+from core.navi import render_navi_panel
 from core.product_tile import ProductTileHub
 from layout import render_page
 
@@ -49,6 +50,9 @@ def _card_to_tile(card: Dict[str, any], order: int) -> ProductTileHub:
 def render(ctx=None) -> None:
     person_name = st.session_state.get("person_name", "").strip()
     learning_progress = st.session_state.get("learning_progress", 0)
+    
+    # Render Navi panel (NEW: Direct Streamlit rendering under page title)
+    render_navi_panel(location="hub", hub_key="learning")
     completed_resources = st.session_state.get("completed_resources", [])
 
     modules_viewed = len(completed_resources)

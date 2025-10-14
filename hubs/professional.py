@@ -6,6 +6,7 @@ from typing import Dict, List
 import streamlit as st
 
 from core.base_hub import render_dashboard_body
+from core.navi import render_navi_panel
 from core.product_tile import ProductTileHub
 from core.state import is_professional, switch_to_professional
 from layout import render_page
@@ -88,6 +89,9 @@ def render(ctx=None) -> None:
     # Once navigation and rendering are confirmed stable, role-based
     # authentication will be re-enabled.
     # ============================================================
+
+    # Render Navi panel (NEW: Direct Streamlit rendering under page title)
+    render_navi_panel(location="hub", hub_key="professional")
 
     # MCIP panel data
     pending_actions = 7
