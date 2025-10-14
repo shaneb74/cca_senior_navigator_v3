@@ -247,7 +247,7 @@ Priority-based selection in `get_suggested_questions()`:
 
 ### High Priority
 1. **Verify logic.py compliance** with module.json authority
-   - Currently wraps GCP v3 logic
+   - Self-contained scoring engine reading from module.json
    - May not respect declarative flags from module.json
    - Need to audit flag extraction in `_extract_flag_ids()`
 

@@ -777,7 +777,9 @@ def test_gcp_publishes_to_mcip():
 
 ## Summary
 
-**GCP v4 = GCP v3 + MCIP Publishing Layer**
+**GCP v4 = Self-Contained Module + MCIP Publishing Layer**
+
+GCP v4 is a complete rewrite that:
 
 ### What We Keep
 ✅ JSON-driven questions (`module.json`)  
