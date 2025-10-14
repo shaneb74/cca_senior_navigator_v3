@@ -149,28 +149,35 @@ def _render_header(step_index: int, total: int, title: str, subtitle: str | None
         subtitle_html = f"<div class='lead'>{''.join(formatted_lines)}</div>"
     
     # Render back button as Streamlit button (not HTML link) for proper state management
-    col1, col2 = st.columns([1, 10])
-    with col1:
-        if is_intro:
-            # On intro page, back goes to hub
-            if st.button("← Back", key="_mod_back_to_hub", use_container_width=True):
-                st.session_state["page"] = "hub_concierge"
+    # Don't show back button on intro page (redundant with "Back to Hub" action button)
+    if not is_intro and step_index > 0 and config:
+        col1, col2 = st.columns([1, 10])
+        with col1:
+            if st.button("← Back", key="_mod_back_prev", use_container_width=True):
+                prev_index = max(0, step_index - 1)
+                st.session_state[f"{config.state_key}._step"] = prev_index
+                
+                # Update tile state for resume functionality
+                tiles = st.session_state.setdefault("tiles", {})
+                tile_state = tiles.setdefault(config.product, {})
+                tile_state["last_step"] = prev_index
+                
                 st.rerun()
-        else:
-            # On regular pages, back goes to previous step
-            if step_index > 0 and config:
-                if st.button("← Back", key="_mod_back_prev", use_container_width=True):
-                    prev_index = max(0, step_index - 1)
-                    st.session_state[f"{config.state_key}._step"] = prev_index
-                    
-                    # Update tile state for resume functionality
-                    tiles = st.session_state.setdefault("tiles", {})
-                    tile_state = tiles.setdefault(config.product, {})
-                    tile_state["last_step"] = prev_index
-                    
-                    st.rerun()
-    
-    with col2:
+        
+        with col2:
+            st.markdown(
+                f"""
+                <div class="mod-head">
+                  <div class="mod-head-row">
+                    <h2 class="h2">{_escape(title)}</h2>
+                  </div>
+                  {subtitle_html}
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+    else:
+        # No back button on intro page or first question - just show header
         st.markdown(
             f"""
             <div class="mod-head">
