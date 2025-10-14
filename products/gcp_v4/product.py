@@ -68,8 +68,9 @@ def render():
                 st.error(f"❌ Error saving recommendation: {e}")
                 import traceback
                 st.error(traceback.format_exc())
-            
-            # Add next steps buttons
+        
+        # Add next steps buttons (show whenever outcome exists, published or not)
+        if outcome:
             st.markdown("---")
             col1, col2 = st.columns(2)
             with col1:
