@@ -107,11 +107,13 @@ def _get_hub_reason() -> str:
     care_rec = MCIP.get_care_recommendation()
     
     if care_rec and care_rec.tier:
+        # CRITICAL: These are the ONLY 5 allowed tier display names
         tier_map = {
-            "independent": "Independent Living",
+            "no_care_needed": "No Care Needed",
             "in_home": "In-Home Care",
             "assisted_living": "Assisted Living",
-            "memory_care": "Memory Care"
+            "memory_care": "Memory Care",
+            "memory_care_high_acuity": "Memory Care (High Acuity)"
         }
         tier_label = tier_map.get(care_rec.tier, care_rec.tier.replace("_", " ").title())
         return f"Based on your {tier_label} recommendation"

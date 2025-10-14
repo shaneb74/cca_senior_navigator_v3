@@ -54,13 +54,15 @@ def _render_quick_estimate_form():
     st.markdown("#### 📝 Tell us about your needs:")
     
     # Care type selection
+    # CRITICAL: These are the ONLY 5 allowed care types
     care_type = st.selectbox(
         "What type of care are you exploring?",
         options=[
-            "Independent Living",
+            "No Care Needed",
+            "In-Home Care",
             "Assisted Living",
             "Memory Care",
-            "In-Home Care"
+            "Memory Care (High Acuity)"
         ],
         help="Choose the care option that best matches your current needs",
         key="cost_v2_quick_care_type"
@@ -68,10 +70,11 @@ def _render_quick_estimate_form():
     
     # Map display name to internal key
     care_type_map = {
-        "Independent Living": "independent_living",
+        "No Care Needed": "no_care_needed",
+        "In-Home Care": "in_home_care",
         "Assisted Living": "assisted_living",
         "Memory Care": "memory_care",
-        "In-Home Care": "in_home_care"
+        "Memory Care (High Acuity)": "memory_care_high_acuity"
     }
     care_tier = care_type_map[care_type]
     

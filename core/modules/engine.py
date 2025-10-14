@@ -661,19 +661,14 @@ def _get_recommendation(mod: Dict[str, Any], config: ModuleConfig) -> Optional[s
         # Otherwise, normalize the recommendation key for backward compatibility
         rec_key = recommendation.lower().replace(" ", "_").replace("/", "_").replace("-", "_")
         
+        # CRITICAL: Map recommendation to display name - ONLY 5 allowed tiers
         mapping = {
-            "independent___in_home": "Independent / In-Home",
-            "independent_in_home": "Independent / In-Home",
+            "no_care_needed": "No Care Needed",
             "in_home": "In-Home Care",
             "in_home_care": "In-Home Care",
-            "in_home_with_support": "In-Home with Support",
             "assisted_living": "Assisted Living",
             "memory_care": "Memory Care",
             "memory_care_high_acuity": "Memory Care (High Acuity)",
-            "high_acuity_memory_care": "High-Acuity Memory Care",  # Handle both orderings
-            "memory_care_override": "Memory Care",
-            "skilled_nursing": "Skilled Nursing",
-            "no_care_needed": "Independent / In-Home",
         }
         
         pretty = mapping.get(rec_key)
@@ -693,9 +688,10 @@ def _get_recommendation(mod: Dict[str, Any], config: ModuleConfig) -> Optional[s
     tier = str(mod.get("care_tier_label") or mod.get("care_tier") or "").strip()
     if not tier:
         return None
+    # CRITICAL: Map tier to display name - ONLY 5 allowed tiers
     mapping = {
-        "stay_home": "Stay Home",
-        "in_home": "In Home",
+        "no_care_needed": "No Care Needed",
+        "in_home": "In-Home Care",
         "assisted_living": "Assisted Living",
         "memory_care": "Memory Care",
         "memory_care_high_acuity": "Memory Care (High Acuity)",
@@ -755,11 +751,13 @@ def _render_confidence_improvement(outcomes: Dict[str, Any], config: ModuleConfi
     completeness_pct = int(completeness * 100)
     
     # Determine tier boundaries for clarity assessment
+    # CRITICAL: These are the ONLY 5 allowed tiers
     tier_thresholds = {
-        "independent": (0, 8),
+        "no_care_needed": (0, 8),
         "in_home": (9, 16),
         "assisted_living": (17, 24),
-        "memory_care": (25, 100),
+        "memory_care": (25, 39),
+        "memory_care_high_acuity": (40, 100),
     }
     
     boundary_clarity = 100  # Default

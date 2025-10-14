@@ -373,11 +373,13 @@ class MCIP:
         if product_key in ["gcp", "gcp_v4"]:
             rec = cls.get_care_recommendation()
             if rec and rec.tier:
+                # CRITICAL: These are the ONLY 5 allowed tier display names
                 tier_map = {
-                    "independent": "Independent Living",
+                    "no_care_needed": "No Care Needed",
                     "in_home": "In-Home Care",
                     "assisted_living": "Assisted Living",
-                    "memory_care": "Memory Care"
+                    "memory_care": "Memory Care",
+                    "memory_care_high_acuity": "Memory Care (High Acuity)"
                 }
                 tier_label = tier_map.get(rec.tier, rec.tier.replace("_", " ").title())
                 # Use confidence (0-1 decimal) not tier_score (raw score 0-100)
