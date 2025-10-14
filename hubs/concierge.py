@@ -5,10 +5,12 @@ Concierge Hub - Navi-Powered Polymorphic Display
 This hub uses Navi as the single intelligence layer.
 Navi orchestrates journey coordination, Additional Services, and Q&A.
 """
+import html
+
 import streamlit as st
 
 from core.mcip import MCIP
-from core.navi import render_navi_panel, NaviOrchestrator
+from core.navi import NaviOrchestrator
 from core.additional_services import get_additional_services
 from core.base_hub import render_dashboard_body
 from core.product_tile import ProductTileHub
@@ -45,6 +47,8 @@ def render(ctx=None) -> None:
     # Get MCIP data for tiles
     progress = MCIP.get_journey_progress()
     next_action = MCIP.get_recommended_next_action()
+    navi_ctx = NaviOrchestrator.get_context(location="hub", hub_key="concierge")
+    navi_panel_html = _build_navi_guide_block(navi_ctx)
     
     person_name = st.session_state.get("person_name", "").strip()
     person = person_name if person_name else "you"
@@ -77,28 +81,21 @@ def render(ctx=None) -> None:
         chips.append({"label": f"For {person}", "variant": "muted"})
     chips.append({"label": "Advisor & AI blended"})
     
-    # Render page frame (header)
-    render_page(body_html=None, active_route="hub_concierge", show_footer=False)
-    
-    # Now render content in correct order using Streamlit components
-    # 1. Title and subtitle
-    st.markdown('<div class="container"><h1 class="dashboard-title">Concierge Care Hub</h1></div>', unsafe_allow_html=True)
-    st.markdown('<div class="container"><p class="dashboard-subtitle">Finish the essentials, then unlock curated next steps with your advisor.</p></div>', unsafe_allow_html=True)
-    
-    # 2. Navi panel (THE correct placement - after title, before tiles)
-    render_navi_panel(location="hub", hub_key="concierge")
-    
-    # 3. Tiles and services (render as HTML)
+    alert_html = _build_saved_progress_alert(save_msg)
+
     body_html = render_dashboard_body(
-        title="",  # Already rendered above
-        subtitle=None,
+        title="Concierge Care Hub",
+        subtitle="Finish the essentials, then unlock curated next steps with your advisor.",
         chips=chips,
-        hub_guide_block=None,  # Navi rendered above as Streamlit components
+        hub_guide_block=navi_panel_html,
         hub_order=hub_order,
         cards=cards,
         additional_services=additional,
     )
-    st.markdown(body_html, unsafe_allow_html=True)
+
+    full_html = (alert_html or "") + body_html
+
+    render_page(body_html=full_html, active_route="hub_concierge", show_footer=False)
 
 
 def _get_hub_reason() -> str:
@@ -334,4 +331,3 @@ def _build_faq_tile() -> ProductTileHub:
         order=40,
         is_next_step=False,
     )
-
