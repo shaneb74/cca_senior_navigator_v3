@@ -77,24 +77,28 @@ def render(ctx=None) -> None:
         chips.append({"label": f"For {person}", "variant": "muted"})
     chips.append({"label": "Advisor & AI blended"})
     
-    # Render dashboard body HTML (title + tiles + services)
+    # Render page frame (header)
+    render_page(body_html=None, active_route="hub_concierge", show_footer=False)
+    
+    # Now render content in correct order using Streamlit components
+    # 1. Title and subtitle
+    st.markdown('<div class="container"><h1 class="dashboard-title">Concierge Care Hub</h1></div>', unsafe_allow_html=True)
+    st.markdown('<div class="container"><p class="dashboard-subtitle">Finish the essentials, then unlock curated next steps with your advisor.</p></div>', unsafe_allow_html=True)
+    
+    # 2. Navi panel (THE correct placement - after title, before tiles)
+    render_navi_panel(location="hub", hub_key="concierge")
+    
+    # 3. Tiles and services (render as HTML)
     body_html = render_dashboard_body(
-        title="Concierge Care Hub",
-        subtitle="Finish the essentials, then unlock curated next steps with your advisor.",
+        title="",  # Already rendered above
+        subtitle=None,
         chips=chips,
-        hub_guide_block=None,  # Navi will be rendered as Streamlit components below
+        hub_guide_block=None,  # Navi rendered above as Streamlit components
         hub_order=hub_order,
         cards=cards,
         additional_services=additional,
     )
-    
-    # Render page with dashboard body
-    render_page(body_html=body_html, active_route="hub_concierge")
-    
-    # Render Navi panel using Streamlit components
-    # NOTE: Currently renders AFTER tiles due to render_page writing body_html first
-    # TODO: Inject Navi into hub_guide_block HTML for proper placement (title → Navi → tiles)
-    render_navi_panel(location="hub", hub_key="concierge")
+    st.markdown(body_html, unsafe_allow_html=True)
 
 
 def _get_hub_reason() -> str:
