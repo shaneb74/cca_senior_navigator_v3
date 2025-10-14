@@ -119,6 +119,12 @@
           "hidden": true
         },
         {
+          "key": "pfma_v2",
+          "label": "Plan with My Advisor v2",
+          "module": "products.pfma_v2.product:render",
+          "hidden": true
+        },
+        {
           "key": "faqs",
           "label": "FAQs",
           "module": "pages._stubs:render_faqs",
