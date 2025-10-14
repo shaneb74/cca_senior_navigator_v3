@@ -691,6 +691,193 @@ def _get_recommendation(mod: Dict[str, Any], config: ModuleConfig) -> Optional[s
     return f"Based on your answers, we recommend {pretty}."
 
 
+def _render_confidence_improvement(outcomes: Dict[str, Any], config: ModuleConfig, state: Dict[str, Any]) -> None:
+    """Render confidence improvement guidance on results page.
+    
+    Shows users:
+    1. Current confidence score and breakdown
+    2. What's affecting their confidence
+    3. How to improve it (answer missed questions / boundary info)
+    4. Button to go back and improve
+    
+    Args:
+        outcomes: Outcome data with confidence and scoring details
+        config: Module configuration
+        state: Module state with user answers
+    """
+    confidence = outcomes.get("confidence", 1.0)
+    confidence_pct = int(confidence * 100)
+    
+    # Only show improvement guidance if confidence < 100%
+    if confidence_pct >= 100:
+        return
+    
+    # Get scoring details if available
+    tier_score = outcomes.get("tier_score", 0)
+    tier = outcomes.get("tier", "")
+    
+    # Calculate what's affecting confidence
+    # Get unanswered questions
+    answered_count = 0
+    total_count = 0
+    unanswered_questions = []
+    
+    for step in config.steps:
+        if not step.fields:  # Skip intro/results pages
+            continue
+        for field in step.fields:
+            if field.required:
+                total_count += 1
+                value = state.get(field.key)
+                if value is not None and value != "" and value != []:
+                    answered_count += 1
+                else:
+                    unanswered_questions.append({
+                        'label': field.label,
+                        'step_id': step.id,
+                        'step_title': step.title
+                    })
+    
+    completeness = answered_count / total_count if total_count > 0 else 1.0
+    completeness_pct = int(completeness * 100)
+    
+    # Determine tier boundaries for clarity assessment
+    tier_thresholds = {
+        "independent": (0, 8),
+        "in_home": (9, 16),
+        "assisted_living": (17, 24),
+        "memory_care": (25, 100),
+    }
+    
+    boundary_clarity = 100  # Default
+    if tier in tier_thresholds:
+        min_score, max_score = tier_thresholds[tier]
+        distance_from_min = tier_score - min_score
+        distance_from_max = max_score - tier_score
+        distance_from_boundary = min(distance_from_min, distance_from_max)
+        boundary_clarity = min(int((distance_from_boundary / 3.0) * 100), 100)
+    
+    # Build improvement message
+    st.markdown("---")
+    st.markdown("### 💡 Improve Your Recommendation Confidence")
+    
+    # Show confidence breakdown
+    col1, col2 = st.columns(2)
+    with col1:
+        completeness_color = "#22c55e" if completeness_pct >= 90 else "#f59e0b" if completeness_pct >= 70 else "#ef4444"
+        st.markdown(f"""
+        <div style="
+            background: {completeness_color}15;
+            border-left: 3px solid {completeness_color};
+            padding: 12px 16px;
+            border-radius: 6px;
+        ">
+            <div style="font-size: 12px; color: #64748b; font-weight: 500; margin-bottom: 4px;">
+                QUESTION COMPLETENESS
+            </div>
+            <div style="font-size: 24px; font-weight: 600; color: {completeness_color};">
+                {completeness_pct}%
+            </div>
+            <div style="font-size: 12px; color: #64748b; margin-top: 4px;">
+                {answered_count} of {total_count} answered
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col2:
+        clarity_color = "#22c55e" if boundary_clarity >= 90 else "#f59e0b" if boundary_clarity >= 70 else "#ef4444"
+        st.markdown(f"""
+        <div style="
+            background: {clarity_color}15;
+            border-left: 3px solid {clarity_color};
+            padding: 12px 16px;
+            border-radius: 6px;
+        ">
+            <div style="font-size: 12px; color: #64748b; font-weight: 500; margin-bottom: 4px;">
+                RECOMMENDATION CLARITY
+            </div>
+            <div style="font-size: 24px; font-weight: 600; color: {clarity_color};">
+                {boundary_clarity}%
+            </div>
+            <div style="font-size: 12px; color: #64748b; margin-top: 4px;">
+                {tier_score:.1f} points in {tier.replace('_', ' ').title()}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    st.markdown("<br/>", unsafe_allow_html=True)
+    
+    # Build actionable suggestions
+    suggestions = []
+    
+    if completeness_pct < 100:
+        missed_count = total_count - answered_count
+        suggestions.append({
+            'icon': '📝',
+            'title': f'Answer {missed_count} missed question{"s" if missed_count != 1 else ""}',
+            'description': 'Complete all required questions to increase confidence by up to 30%.',
+            'impact': 'High Impact'
+        })
+    
+    if boundary_clarity < 100:
+        suggestions.append({
+            'icon': '🎯',
+            'title': 'Your score is near a tier boundary',
+            'description': f'Answering more questions accurately could strengthen your {tier.replace("_", " ").title()} recommendation or reveal if another tier is a better fit.',
+            'impact': 'Medium Impact'
+        })
+    
+    if suggestions:
+        st.markdown("**How to improve:**")
+        for sug in suggestions:
+            impact_color = "#22c55e" if sug['impact'] == 'High Impact' else "#f59e0b"
+            st.markdown(f"""
+            <div style="
+                background: white;
+                border: 1px solid #e2e8f0;
+                border-radius: 8px;
+                padding: 16px;
+                margin-bottom: 12px;
+            ">
+                <div style="display: flex; align-items: start; gap: 12px;">
+                    <div style="font-size: 24px; flex-shrink: 0;">
+                        {sug['icon']}
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="font-size: 14px; font-weight: 600; color: #0f172a; margin-bottom: 4px;">
+                            {sug['title']}
+                        </div>
+                        <div style="font-size: 13px; color: #475569; margin-bottom: 8px;">
+                            {sug['description']}
+                        </div>
+                        <div style="
+                            display: inline-block;
+                            font-size: 11px;
+                            font-weight: 500;
+                            color: {impact_color};
+                            background: {impact_color}15;
+                            padding: 4px 8px;
+                            border-radius: 4px;
+                        ">
+                            {sug['impact']}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # Show "Review Answers" button if there are unanswered questions
+        if unanswered_questions:
+            col1, col2, col3 = st.columns([2, 1, 2])
+            with col2:
+                if st.button("📝 Review & Improve", type="primary", use_container_width=True, key="improve_confidence"):
+                    # Reset to first question step (skip intro)
+                    question_steps = [i for i, s in enumerate(config.steps) if s.fields]
+                    if question_steps:
+                        st.session_state[f"{config.state_key}._step"] = question_steps[0]
+                        st.rerun()
+
+
 def _render_results_view(mod: Dict[str, Any], config: ModuleConfig) -> None:
     # Get recommendation from outcomes
     recommendation = _get_recommendation(mod, config)
@@ -714,6 +901,9 @@ def _render_results_view(mod: Dict[str, Any], config: ModuleConfig) -> None:
     else:
         # Fallback to basic summary if no points available
         _render_results_summary(mod, config)
+    
+    # Render confidence improvement guidance
+    _render_confidence_improvement(outcomes, config, mod)
     
     _render_results_ctas_once(config)
 
