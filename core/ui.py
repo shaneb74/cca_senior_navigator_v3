@@ -487,3 +487,81 @@ def _render_celebration_effect() -> None:
         <div class="confetti" style="left: 80%;"></div>
     """, unsafe_allow_html=True)
 
+
+def render_navi_guide_bar(
+    text: str,
+    subtext: Optional[str] = None,
+    icon: str = "🤖",
+    show_progress: bool = False,
+    current_step: Optional[int] = None,
+    total_steps: Optional[int] = None,
+    color: str = "#8b5cf6"
+) -> None:
+    """Render persistent Navi guide bar at top of page.
+    
+    Navi is not a side quest - she's your digital planning partner.
+    She sits at the top of EVERY module, EVERY question, providing
+    contextual guidance and encouragement.
+    
+    Args:
+        text: Main message from Navi (required)
+        subtext: Additional context/explanation (optional)
+        icon: Emoji icon (default: 🤖)
+        show_progress: Whether to show progress indicator
+        current_step: Current step number (for progress)
+        total_steps: Total steps (for progress)
+        color: Primary color for gradient (default: purple)
+    
+    Example:
+        render_navi_guide_bar(
+            text="Let's talk about mobility...",
+            subtext="I'm asking this to understand your daily movement needs.",
+            icon="🚶",
+            show_progress=True,
+            current_step=2,
+            total_steps=5
+        )
+    """
+    # Build progress indicator if needed
+    progress_html = ""
+    if show_progress and current_step is not None and total_steps is not None:
+        progress_html = f"""
+            <div style="
+                font-size: 12px;
+                font-weight: 500;
+                padding: 4px 12px;
+                background: rgba(255,255,255,0.2);
+                border-radius: 12px;
+                white-space: nowrap;
+            ">
+                {current_step}/{total_steps}
+            </div>
+        """
+    
+    # Render compact guide bar
+    st.markdown(f"""
+        <div style="
+            background: linear-gradient(135deg, {color} 0%, {color}dd 100%);
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        ">
+            <div style="font-size: 24px; flex-shrink: 0;">
+                {icon}
+            </div>
+            <div style="flex: 1; min-width: 0;">
+                <div style="font-size: 14px; font-weight: 600; margin-bottom: 2px;">
+                    {text}
+                </div>
+                {f'<div style="font-size: 12px; opacity: 0.9;">{subtext}</div>' if subtext else ''}
+            </div>
+            {progress_html}
+        </div>
+    """, unsafe_allow_html=True)
+
+
