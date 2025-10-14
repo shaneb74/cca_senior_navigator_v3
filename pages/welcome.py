@@ -62,9 +62,14 @@ def _inject_welcome_css() -> None:
         .welcome-header__inner{display:flex;align-items:center;justify-content:space-between;gap:24px;}
         .welcome-auth{margin-left:auto;display:flex;align-items:center;}
 
-        /* spacing tightened - reduced bottom padding to bring sections closer */
-        .section-hero{padding:56px 0 4px;}
-        .hero-grid{display:grid;grid-template-columns:1.3fr .7fr;gap:12px;align-items:center;}
+        /* hero spacing: provide breathing room now that the global container is flush */
+        .section-hero{padding:24px 0 16px;}
+        .hero-grid{
+          display:grid;
+          grid-template-columns:minmax(0,1.25fr) minmax(0,0.75fr);
+          gap:36px;
+          align-items:center;
+        }
 
         .hero-eyebrow{font-weight:700;color:var(--brand-700);letter-spacing:.04em;margin-bottom:.75rem;}
 
@@ -85,7 +90,11 @@ def _inject_welcome_css() -> None:
           font-size:1.26rem;
           line-height:1.55;
           font-weight:500;
-          max-width:44ch;
+          max-width:60ch;
+          width:100%;
+          text-wrap:balance;
+          text-align:left;
+          hyphens:auto;
           margin:0 0 24px;
         }
 
@@ -174,7 +183,7 @@ def _inject_welcome_css() -> None:
           }
           div[data-testid="stVerticalBlock"]:has(.welcome-context-sentinel){
             background:#fff;
-            padding:72px 0;
+            padding:40px 0;
           }
           div[data-testid="stVerticalBlock"]:has(.welcome-context-sentinel) > div[data-testid="stHorizontalBlock"]{
             max-width:880px;
@@ -206,11 +215,17 @@ def _inject_welcome_css() -> None:
         @supports(selector(div:has(.welcome-context-sentinel))){
           @media(max-width:1024px){
             div[data-testid="stVerticalBlock"]:has(.welcome-context-sentinel){
-              padding:48px 0;
+              padding:32px 0;
             }
             div[data-testid="stVerticalBlock"]:has(.welcome-context-sentinel) > div[data-testid="stHorizontalBlock"]{
               flex-direction:column;
               gap:28px;
+            }
+            div[data-testid="stVerticalBlock"]:has(.welcome-context-sentinel) > div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:first-child{
+              order:2;
+            }
+            div[data-testid="stVerticalBlock"]:has(.welcome-context-sentinel) > div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:last-child{
+              order:1;
             }
           }
         }
@@ -436,7 +451,8 @@ def _welcome_body() -> str:
                     <p class="hero-eyebrow">Concierge Care Advisors</p>
                     <h1 class="hero-title">Care decisions are hard. You don't have to make them alone.</h1>
                     <p class="hero-sub">
-                      Get personalized guidance from a trusted advisor who helps your family explore senior living options with clarity, care, and confidence—always at no cost.
+                      Get personalized guidance from a trusted advisor.
+                      We help your family explore senior living options with clarity, care, and confidence—always at no cost.
                     </p>
                     <div class="cta-row">
                       <a href="?page=someone_else" class="btn btn--primary wl-btn">Start Now</a>

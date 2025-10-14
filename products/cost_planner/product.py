@@ -169,7 +169,7 @@ def _render_quick_estimate_header() -> None:
     # Display recommendation summary prominently
     st.markdown(
         f"""
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+        <div style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 32%, #111827 100%); 
                     padding: 24px; border-radius: 12px; color: white; margin-bottom: 24px;">
             <h3 style="color: white; margin: 0 0 12px 0;">Your Care Recommendation</h3>
             <p style="font-size: 1.3em; font-weight: 600; margin: 0;">
