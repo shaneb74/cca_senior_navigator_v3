@@ -745,7 +745,10 @@ def render_logout():
 
 
 def render_export_results():
-    """Export/share journey results - shows summary of all completed products."""
+    """Export/share journey results - shows summary of all completed products.
+    
+    Powered by Navi, your AI guide through the senior care journey.
+    """
     from core.mcip import MCIP
     from core.state import get_user_ctx
     import json
@@ -765,14 +768,15 @@ def render_export_results():
     ctx = get_user_ctx()
     user_name = ctx.get("auth", {}).get("name", "Your")
     
-    # Get MCIP data
+    # Get data from Navi (MCIP)
     care_rec = MCIP.get_care_recommendation()
     financial = MCIP.get_financial_profile()
     appointment = MCIP.get_advisor_appointment()
     progress = MCIP.get_journey_progress()
     
-    st.title("📤 Export Your Results")
+    st.title("📤 Export Your Journey")
     st.markdown(f"### {user_name} Senior Care Journey Summary")
+    st.markdown("*Powered by 🤖 Navi - Your AI Care Navigator*")
     
     # Journey progress
     completed = progress["completed_count"]
@@ -791,7 +795,7 @@ def render_export_results():
             "memory_care": "Memory Care"
         }
         tier_label = tier_map.get(care_rec.tier, care_rec.tier)
-        st.markdown(f"**Recommended:** {tier_label}")
+        st.markdown(f"**Navi's Recommendation:** {tier_label}")
         st.markdown(f"**Confidence:** {int(care_rec.tier_score)}%")
         if care_rec.rationale:
             st.markdown("**Key Factors:**")
@@ -824,6 +828,7 @@ def render_export_results():
         # Export as JSON
         export_data = {
             "generated_at": datetime.utcnow().isoformat() + "Z",
+            "generated_by": "Navi - AI Care Navigator",
             "user_name": user_name,
             "progress": progress,
             "care_recommendation": care_rec.__dict__ if care_rec else None,
@@ -843,12 +848,13 @@ def render_export_results():
         # Copy to clipboard (via text area)
         summary_text = f"""
 SENIOR CARE JOURNEY SUMMARY
+Powered by Navi - AI Care Navigator
 Generated: {datetime.now().strftime('%B %d, %Y')}
 
 Progress: {completed}/3 Products Completed
 """
         if care_rec:
-            summary_text += f"\nCARE RECOMMENDATION:\n- {tier_label} ({int(care_rec.tier_score)}% confidence)\n"
+            summary_text += f"\nNAVI'S CARE RECOMMENDATION:\n- {tier_label} ({int(care_rec.tier_score)}% confidence)\n"
         if financial:
             summary_text += f"\nFINANCIAL PROFILE:\n- Monthly Cost: ${financial.estimated_monthly_cost:,.0f}\n- Runway: {financial.runway_months} months\n"
         if appointment and appointment.scheduled:
@@ -864,6 +870,9 @@ Progress: {completed}/3 Products Completed
             st.info("Email feature coming soon! Use the Copy or Download options for now.")
     
     st.markdown("---")
+    
+    # Footer message from Navi
+    st.info("🤖 **Navi here!** Your progress is always saved. Come back anytime to continue your journey or update your plan.")
     
     # Back to hub
     from core.nav import route_to

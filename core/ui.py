@@ -278,8 +278,9 @@ def render_hub_tile(
 
 
 def render_mcip_journey_status() -> None:
-    """Render MCIP journey status banner showing progress and next action.
+    """Render Navi journey status banner showing progress and next action.
     
+    Navi is your AI guide through the senior care journey.
     Shows user-friendly guidance like:
     - "Hey there! Let's create your care plan 🧭"
     - "Great job! 1/3 complete. Next: Calculate costs 💰"
@@ -299,7 +300,7 @@ def render_mcip_journey_status() -> None:
     user_name = ctx.get("auth", {}).get("name", "")
     greeting = f"Hey {user_name}! " if user_name else "Hey there! "
     
-    # Get journey data
+    # Get journey data from Navi
     progress = MCIP.get_journey_progress()
     next_action = MCIP.get_recommended_next_action()
     
@@ -315,27 +316,27 @@ def render_mcip_journey_status() -> None:
     if status == "complete":
         bg_color = "#10b981"  # Green
         icon = "🎉"
-        message = next_action["action"]
+        message = "🤖 Navi says: " + next_action["action"]
         submessage = next_action["reason"]
         # Add confetti celebration on complete
         _render_celebration_effect()
     elif status == "nearly_there":
         bg_color = "#f59e0b"  # Amber
         icon = "📅"
-        message = f"{completed}/{total} complete. {next_action['action']}"
+        message = f"🤖 Navi: {completed}/{total} complete. {next_action['action']}"
         submessage = next_action["reason"]
     elif status == "in_progress":
         bg_color = "#3b82f6"  # Blue
         icon = "💰"
-        message = f"{greeting}{completed}/{total} complete. {next_action['action']}"
+        message = f"🤖 Navi: {greeting}{completed}/{total} complete. {next_action['action']}"
         submessage = next_action["reason"]
     else:  # getting_started
         bg_color = "#8b5cf6"  # Purple
         icon = "🧭"
-        message = f"{greeting}{next_action['action']}"
+        message = f"🤖 Navi: {greeting}{next_action['action']}"
         submessage = next_action["reason"]
     
-    # Render banner
+    # Render banner with Navi branding
     st.markdown(f"""
         <div style="
             background: linear-gradient(135deg, {bg_color} 0%, {bg_color}dd 100%);
@@ -344,6 +345,7 @@ def render_mcip_journey_status() -> None:
             margin: 20px 0;
             color: white;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-left: 4px solid rgba(255,255,255,0.4);
         ">
             <div style="display: flex; align-items: center; gap: 16px;">
                 <div style="font-size: 32px;">{icon}</div>
