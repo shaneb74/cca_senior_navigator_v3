@@ -238,6 +238,20 @@
           "ui": { "widget": "chip", "orientation": "vertical" }
         },
         {
+          "id": "mood",
+          "type": "string",
+          "select": "single",
+          "label": "Overall, how would you describe this person's mood these days?",
+          "required": true,
+          "options": [
+            { "label": "Great – always positive", "value": "great", "score": 0 },
+            { "label": "Mostly good", "value": "mostly_good", "score": 1, "flags": ["moderate_risk"] },
+            { "label": "Okay – ups and downs", "value": "okay", "score": 1, "flags": ["moderate_risk"] },
+            { "label": "Low – feeling down a lot", "value": "low", "score": 2, "flags": ["high_risk", "mental_health_concern"] }
+          ],
+          "ui": { "widget": "chip", "orientation": "vertical" }
+        },
+        {
           "id": "behaviors",
           "type": "string",
           "select": "multi",
@@ -261,20 +275,6 @@
             "orientation": "vertical"
           },
           "visible_if": { "key": "memory_changes", "in": ["moderate", "severe"] }
-        },
-        {
-          "id": "mood",
-          "type": "string",
-          "select": "single",
-          "label": "Overall, how would you describe this person's mood these days?",
-          "required": true,
-          "options": [
-            { "label": "Great – always positive", "value": "great", "score": 0 },
-            { "label": "Mostly good", "value": "mostly_good", "score": 1, "flags": ["moderate_risk"] },
-            { "label": "Okay – ups and downs", "value": "okay", "score": 1, "flags": ["moderate_risk"] },
-            { "label": "Low – feeling down a lot", "value": "low", "score": 2, "flags": ["high_risk", "mental_health_concern"] }
-          ],
-          "ui": { "widget": "chip", "orientation": "vertical" }
         }
       ]
     },

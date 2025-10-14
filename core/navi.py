@@ -526,12 +526,15 @@ def render_navi_panel(
                     elif guidance.get('context_note'):
                         subtext = guidance['context_note']
                     
+                    # Check if this is the results step
+                    is_results = module_config.results_step_id and current_step_def.id == module_config.results_step_id
+                    
                     # Render with extracted guidance
                     render_navi_guide_bar(
                         text=main_text,
                         subtext=subtext,
-                        icon=guidance.get('icon', '�'),
-                        show_progress=True,
+                        icon=guidance.get('icon', '🧭'),
+                        show_progress=(not is_results),  # Hide progress on results page
                         current_step=ctx.module_step + 1,
                         total_steps=ctx.module_total,
                         color=guidance.get('color', '#0066cc')
@@ -554,11 +557,14 @@ def render_navi_panel(
                     
                 else:
                     # Fallback to generic progress
+                    # Check if this is the results step
+                    is_results = module_config.results_step_id and current_step_def.id == module_config.results_step_id
+                    
                     render_navi_guide_bar(
                         text=f"🤖 Navi: {current_step_def.title}",
                         subtext="I'm here to help you through each step.",
                         icon="🧭",
-                        show_progress=True,
+                        show_progress=(not is_results),  # Hide progress on results page
                         current_step=ctx.module_step + 1,
                         total_steps=ctx.module_total,
                         color="#0066cc"
