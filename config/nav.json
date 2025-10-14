@@ -107,6 +107,12 @@
           "hidden": true
         },
         {
+          "key": "cost_v2",
+          "label": "Cost Planner v2",
+          "module": "products.cost_planner_v2.product:render",
+          "hidden": true
+        },
+        {
           "key": "pfma",
           "label": "Plan with My Advisor",
           "module": "products.pfma:render",
