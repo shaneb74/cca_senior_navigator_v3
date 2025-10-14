@@ -315,6 +315,18 @@ class ProductTileHub(BaseTile):
             lock_label = f"Locked: {self.lock_msg}" if self.lock_msg else "Locked"
             lock_icon = f'<span class="icon-lock" aria-label="{html_escape(lock_label)}"></span>'
             out.append(lock_icon)
+        
+        # Add completion badge for done tiles (not FAQ)
+        is_complete = float(self.progress or 0) >= 100
+        is_faq = getattr(self, "key", "") == "faqs"
+        if is_complete and not is_faq:
+            done_url, _ = _resolve_img("static/images/done.png")
+            if done_url:
+                out.append(
+                    f'<div class="tile-completion-badge" aria-label="Complete">'
+                    f'<img src="{done_url}" alt="Complete" />'
+                    '</div>'
+                )
 
         out.append('<div class="ptile__head">')
         logo_src, logo_path = _resolve_img(getattr(self, "image_square", None))

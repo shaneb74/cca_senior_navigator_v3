@@ -268,7 +268,7 @@ def _build_cost_planner_tile(hub_order: dict, ordered_index: dict, next_action: 
 
 
 def _build_navi_guide_block(ctx) -> str:
-    """Compose Navi insight block to match hub styling."""
+    """Compose Navi insight block with gamified encouragement."""
     next_action = NaviOrchestrator.get_next_action(ctx) or {}
     summary = NaviOrchestrator.get_context_summary(ctx)
     reason = next_action.get("reason", "")
@@ -278,15 +278,33 @@ def _build_navi_guide_block(ctx) -> str:
         action_route = f"?page={action_route}"
 
     status = next_action.get("status", "")
-    status_labels = {
-        "getting_started": "Getting started",
-        "in_progress": "In progress",
-        "nearly_there": "Nearly there",
-        "complete": "Journey complete",
+    
+    # Gamified encouragement messages based on progress
+    encouragement_messages = {
+        "getting_started": {
+            "emoji": "🚀",
+            "message": "Let's get started! Every journey begins with a single step.",
+            "eyebrow": "Getting started"
+        },
+        "in_progress": {
+            "emoji": "💪",
+            "message": "You're making great progress! Keep up the momentum.",
+            "eyebrow": "In progress"
+        },
+        "nearly_there": {
+            "emoji": "🎯",
+            "message": "Almost there! Just one more step to complete your journey.",
+            "eyebrow": "Nearly there"
+        },
+        "complete": {
+            "emoji": "🎉",
+            "message": "Amazing work! You've completed all the essentials. Your advisor is ready to help you take the next steps.",
+            "eyebrow": "Journey complete"
+        }
     }
-    eyebrow = "🤖 Navi Insight"
-    if status in status_labels:
-        eyebrow += f" · {status_labels[status]}"
+    
+    encouragement = encouragement_messages.get(status, encouragement_messages["getting_started"])
+    eyebrow = f"🤖 Navi Insight · {encouragement['eyebrow']}"
 
     boost_items = NaviOrchestrator.get_context_boost(ctx) or []
     boost_html = ""
@@ -297,24 +315,24 @@ def _build_navi_guide_block(ctx) -> str:
             'font-size:0.95rem;line-height:1.55;">' + items + "</ul>"
         )
 
+    # Add encouragement banner between summary and reason
+    encouragement_html = (
+        '<div style="margin:12px 0;padding:14px 18px;background:linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%);'
+        'border:1px solid #bfdbfe;border-radius:12px;display:flex;align-items:center;gap:12px;">'
+        f'<span style="font-size:1.75rem;line-height:1;">{encouragement["emoji"]}</span>'
+        f'<span style="color:var(--ink-600);font-size:0.95rem;font-weight:500;line-height:1.5;">{html.escape(encouragement["message"])}</span>'
+        '</div>'
+    )
+
     completed_products = ctx.progress.get("completed_products", []) if ctx.progress else []
-    suggested = NaviOrchestrator.get_suggested_questions(ctx.flags or {}, completed_products)[:3]
+    
+    # Don't show quick questions until PFMA is complete (keeping users focused)
+    suggested = []
     questions_html = ""
-    if suggested:
-        chips = "".join(
-            f'<span class="dashboard-chip">{html.escape(q)}</span>' for q in suggested
-        )
-        questions_html = (
-            '<div style="margin-top:18px;">'
-            '<div style="font-size:0.9rem;font-weight:600;color:var(--ink-500);margin-bottom:8px;">'
-            'Quick questions from Navi</div>'
-            f'<div class="dashboard-breadcrumbs">{chips}</div>'
-            '</div>'
-        )
 
     actions_html = (
         f'<a class="btn btn--primary" href="{action_route}">{html.escape(action_label)}</a>'
-        '<a class="btn btn--secondary" href="?page=faq">Ask Navi →</a>'
+        '<a class="btn btn--secondary" href="?page=faqs">Ask Navi →</a>'
     )
 
     reason_html = html.escape(reason) if reason else ""
@@ -323,6 +341,7 @@ def _build_navi_guide_block(ctx) -> str:
         '<section class="hub-guide hub-guide--full">'
         f'<div class="hub-guide__eyebrow">{eyebrow}</div>'
         f'<h2 class="hub-guide__title">{html.escape(summary)}</h2>'
+        + encouragement_html
         + (f'<p class="hub-guide__text">{reason_html}</p>' if reason_html else "")
         + boost_html
         + f'<div class="hub-guide__actions">{actions_html}</div>'
