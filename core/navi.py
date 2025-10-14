@@ -376,31 +376,52 @@ def render_navi_panel(
     elif location == "product":
         # Product/module-level guidance
         # Check if module has embedded guidance
-        if module_config and ctx.module_step is not None:
-            current_step_def = module_config.steps[ctx.module_step]
-            
-            # Use embedded guidance if available
-            if hasattr(current_step_def, 'navi_guidance') and current_step_def.navi_guidance:
-                guidance = current_step_def.navi_guidance
+        if module_config and ctx.module_step is not None and ctx.module_total:
+            # Bounds check to prevent IndexError
+            if ctx.module_step < 0 or ctx.module_step >= ctx.module_total:
+                # Module step out of bounds - show generic message
                 render_navi_guide_bar(
-                    text=guidance.get('text', ''),
-                    subtext=guidance.get('subtext'),
-                    icon=guidance.get('icon', '🤖'),
-                    show_progress=True,
-                    current_step=ctx.module_step + 1,
-                    total_steps=ctx.module_total,
-                    color=guidance.get('color', '#8b5cf6')
+                    text="🤖 Navi: Let's work through this together",
+                    subtext="I'm here to guide you step by step.",
+                    icon="🧭",
+                    show_progress=False,
+                    color="#0066cc"
                 )
             else:
-                # Fallback to generic progress
-                render_navi_guide_bar(
-                    text=f"🤖 Navi: {current_step_def.title}",
-                    subtext="I'm here to help you through each step.",
-                    icon="🧭",
-                    show_progress=True,
-                    current_step=ctx.module_step + 1,
-                    total_steps=ctx.module_total
-                )
+                current_step_def = module_config.steps[ctx.module_step]
+                
+                # Use embedded guidance if available
+                if hasattr(current_step_def, 'navi_guidance') and current_step_def.navi_guidance:
+                    guidance = current_step_def.navi_guidance
+                    render_navi_guide_bar(
+                        text=guidance.get('text', ''),
+                        subtext=guidance.get('subtext'),
+                        icon=guidance.get('icon', '🤖'),
+                        show_progress=True,
+                        current_step=ctx.module_step + 1,
+                        total_steps=ctx.module_total,
+                        color=guidance.get('color', '#0066cc')
+                    )
+                else:
+                    # Fallback to generic progress
+                    render_navi_guide_bar(
+                        text=f"🤖 Navi: {current_step_def.title}",
+                        subtext="I'm here to help you through each step.",
+                        icon="🧭",
+                        show_progress=True,
+                        current_step=ctx.module_step + 1,
+                        total_steps=ctx.module_total,
+                        color="#0066cc"
+                    )
+        else:
+            # No module config or step info - show simple guidance
+            render_navi_guide_bar(
+                text="🤖 Navi: I'm here to help",
+                subtext="Let's work through this together.",
+                icon="🧭",
+                show_progress=False,
+                color="#0066cc"
+            )
     
     return ctx
 
