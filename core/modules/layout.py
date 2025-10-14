@@ -41,7 +41,7 @@ def header(step_index: int, total: int, title: str, subtitle: str | None = None)
     )
 
 
-def actions(next_label: str = "Continue", skip_label: str | None = "Skip", show_save_exit: bool = True, is_intro: bool = False) -> tuple[bool, bool, bool]:
+def actions(next_label: str = "Continue", skip_label: str | None = "Skip", show_save_exit: bool = True, is_intro: bool = False, show_back: bool = False, step_index: int = 0, config = None) -> tuple[bool, bool, bool, bool]:
     """Render module action buttons with proper styling wrapper.
     
     Args:
@@ -49,9 +49,12 @@ def actions(next_label: str = "Continue", skip_label: str | None = "Skip", show_
         skip_label: Label for skip button (None to hide)
         show_save_exit: Whether to show Save & Continue Later button
         is_intro: If True, hide Save & Continue Later (nothing to save yet)
+        show_back: If True, show Back button above Save & Continue Later
+        step_index: Current step index (for back button navigation)
+        config: Module config (for back button state management)
     
     Returns:
-        (next_clicked, skip_clicked, save_exit_clicked)
+        (next_clicked, skip_clicked, save_exit_clicked, back_clicked)
     """
     st.markdown('<div class="sn-app mod-actions">', unsafe_allow_html=True)
     
@@ -64,6 +67,19 @@ def actions(next_label: str = "Continue", skip_label: str | None = "Skip", show_
         use_container_width=True,
         help=None
     )
+    
+    # Back button - appears above Save & Continue Later
+    back_clicked = False
+    if show_back:
+        st.markdown('<div style="margin-top: 12px;">', unsafe_allow_html=True)
+        back_clicked = st.button(
+            "← Back to Previous Question",
+            key="_mod_back_prev",
+            type="secondary",
+            use_container_width=True,
+            help=None
+        )
+        st.markdown('</div>', unsafe_allow_html=True)
     
     # Secondary action (Save & Continue Later) - smaller, below Continue, muted
     save_exit_clicked = False
@@ -83,7 +99,7 @@ def actions(next_label: str = "Continue", skip_label: str | None = "Skip", show_
     # Note: Skip functionality removed - can be re-added if needed
     
     st.markdown('</div>', unsafe_allow_html=True)
-    return next_clicked, skip_clicked, save_exit_clicked
+    return next_clicked, skip_clicked, save_exit_clicked, back_clicked
 
 
 def bottom_summary(items: Dict[str, str]) -> None:
