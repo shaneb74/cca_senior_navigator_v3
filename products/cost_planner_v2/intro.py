@@ -208,22 +208,56 @@ def _render_quick_estimate_results():
     else:
         st.markdown(f"**+ Regional Adjustment (ZIP {data['zip_code'] or 'N/A'}):** National Average (no adjustment)")
     
-    # Cognitive-related adjustment (if applicable)
-    if "cognitive_addon" in breakdown and breakdown["cognitive_addon"] > 0:
-        st.markdown(f"**+ Cognitive-related Adjustment:** +20% (${breakdown['cognitive_addon']:,.0f})")
+    # CARE MULTIPLIERS (show only if present)
     
-    # Mobility-related adjustment (if applicable)
-    if "mobility_addon" in breakdown and breakdown["mobility_addon"] > 0:
-        st.markdown(f"**+ Mobility-related Adjustment:** +15% (${breakdown['mobility_addon']:,.0f})")
+    # Severe cognitive impairment (+20%)
+    if "severe_cognitive_addon" in breakdown and breakdown["severe_cognitive_addon"] > 0:
+        st.markdown(f"**+ Severe Cognitive Impairment:** +20% (${breakdown['severe_cognitive_addon']:,.0f})")
+        st.caption("   ↳ Specialized memory care for Alzheimer's/dementia")
     
-    # High-acuity adjustment (if applicable - always for Memory Care High Acuity)
-    if "high_acuity_addon" in breakdown and breakdown["high_acuity_addon"] > 0:
-        st.markdown(f"**+ High-Acuity Adjustment:** +25% (${breakdown['high_acuity_addon']:,.0f})")
+    # Serious mobility/transferring (+15%)
+    if "mobility_transferring_addon" in breakdown and breakdown["mobility_transferring_addon"] > 0:
+        st.markdown(f"**+ Mobility/Transferring Support:** +15% (${breakdown['mobility_transferring_addon']:,.0f})")
+        st.caption("   ↳ Wheelchair/bedbound care with lifting assistance")
     
-    # Show note if no add-ons
-    has_addons = any(key in breakdown for key in ["cognitive_addon", "mobility_addon", "high_acuity_addon"])
-    if not has_addons:
-        st.caption("ℹ️ No additional care adjustments applied for your area.")
+    # High-level ADL support (+10%)
+    if "high_adl_support_addon" in breakdown and breakdown["high_adl_support_addon"] > 0:
+        st.markdown(f"**+ Extensive ADL Assistance:** +10% (${breakdown['high_adl_support_addon']:,.0f})")
+        st.caption("   ↳ Help with bathing, dressing, eating, toileting")
+    
+    # Complex medication management (+8%)
+    if "medication_management_addon" in breakdown and breakdown["medication_management_addon"] > 0:
+        st.markdown(f"**+ Medication Management:** +8% (${breakdown['medication_management_addon']:,.0f})")
+        st.caption("   ↳ Complex prescriptions requiring professional oversight")
+    
+    # Behavioral/psychiatric care (+12%)
+    if "behavioral_care_addon" in breakdown and breakdown["behavioral_care_addon"] > 0:
+        st.markdown(f"**+ Behavioral/Psychiatric Care:** +12% (${breakdown['behavioral_care_addon']:,.0f})")
+        st.caption("   ↳ Wandering, aggression, specialized behavioral support")
+    
+    # Fall risk/safety monitoring (+8%)
+    if "fall_risk_monitoring_addon" in breakdown and breakdown["fall_risk_monitoring_addon"] > 0:
+        st.markdown(f"**+ Fall Risk Monitoring:** +8% (${breakdown['fall_risk_monitoring_addon']:,.0f})")
+        st.caption("   ↳ Enhanced supervision and safety measures")
+    
+    # Multiple chronic conditions (+10%)
+    if "chronic_conditions_addon" in breakdown and breakdown["chronic_conditions_addon"] > 0:
+        st.markdown(f"**+ Chronic Conditions Management:** +10% (${breakdown['chronic_conditions_addon']:,.0f})")
+        st.caption("   ↳ Coordinated care for multiple health conditions")
+    
+    # High-acuity intensive care (+25%)
+    if "high_acuity_intensive_addon" in breakdown and breakdown["high_acuity_intensive_addon"] > 0:
+        st.markdown(f"**+ High-Acuity Intensive Care:** +25% (${breakdown['high_acuity_intensive_addon']:,.0f})")
+        st.caption("   ↳ 24/7 skilled nursing and advanced medical support")
+    
+    # Show note if no care multipliers applied
+    has_care_addons = any(key in breakdown for key in [
+        "severe_cognitive_addon", "mobility_transferring_addon", "high_adl_support_addon",
+        "medication_management_addon", "behavioral_care_addon", "fall_risk_monitoring_addon",
+        "chronic_conditions_addon", "high_acuity_intensive_addon"
+    ])
+    if not has_care_addons:
+        st.caption("ℹ️ No additional care adjustments applied based on your assessment.")
     
     st.markdown("---")
     
