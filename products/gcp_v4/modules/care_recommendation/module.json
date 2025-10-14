@@ -380,13 +380,13 @@
     },
     {
       "id": "results",
-      "title": "Your Guided Care Plan Summary",
+      "title": "",
       "type": "results",
       "navi_guidance": {
-        "section_purpose": "Present personalized care recommendation with confidence score",
+        "section_purpose": "Great job! Based on your answers, here's what I recommend.",
         "what_you_see": "Care tier (Independent, In-Home, Assisted Living, or Memory Care), rationale, and risk flags",
         "next_steps": "Review recommendation → Calculate costs → Talk to advisor",
-        "encouragement": "Great job! Based on your answers, here's what we recommend",
+        "encouragement": "",
         "confidence_explanation": "Confidence score shows how complete your assessment was. Higher is better.",
         "what_to_do_with_this": "Use this recommendation to explore costs, find facilities, and discuss options with family"
       },
