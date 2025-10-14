@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence
 import streamlit as st
 
 from core.events import log_event
+from core.nav import PRODUCTS
 
 from . import components as components
 from .layout import actions, bottom_summary, header
@@ -101,7 +102,7 @@ def run_module(config: ModuleConfig) -> Dict[str, Any]:
     # Render actions - get save_exit button state
     # Detect if this is the intro page (first step) - nothing to save yet
     is_intro_page = (step.id == config.steps[0].id)
-    next_clicked, skip_clicked, save_exit_clicked, back_clicked = actions(
+    next_clicked, skip_clicked, save_exit_clicked, back_clicked, back_to_hub_clicked = actions(
         step.next_label, 
         step.skip_label, 
         is_intro=is_intro_page,
@@ -122,9 +123,14 @@ def run_module(config: ModuleConfig) -> Dict[str, Any]:
         
         st.rerun()
     
+    # Handle Back to Hub
+    if back_to_hub_clicked:
+        _handle_save_exit(config, state, step_index, total_steps, reason="back_to_hub")
+        return state
+    
     # Handle Save & Continue Later
     if save_exit_clicked:
-        _handle_save_exit(config, state, step_index, total_steps)
+        _handle_save_exit(config, state, step_index, total_steps, reason="save_exit")
         return state
     
     if next_clicked and missing:
@@ -341,11 +347,37 @@ def _handle_nav(
     _rerun_app()
 
 
+def _hub_route_for_product(product_key: str) -> str:
+    """Resolve hub route key for a given product key."""
+    fallback_map = {
+        "gcp_v4": "gcp",
+        "cost_v2": "cost_planner",
+        "pfma_v2": "pfma",
+    }
+    candidates = [product_key]
+    mapped = fallback_map.get(product_key)
+    if mapped:
+        candidates.append(mapped)
+    if "_" in product_key:
+        base_key = product_key.split("_", 1)[0]
+        candidates.append(base_key)
+    for key in candidates:
+        if not key:
+            continue
+        info = PRODUCTS.get(key)
+        if not info:
+            continue
+        hub_id = info.get("hub") or "concierge"
+        return hub_id if hub_id.startswith("hub_") else f"hub_{hub_id}"
+    return "hub_concierge"
+
+
 def _handle_save_exit(
     config: ModuleConfig,
     state: Dict[str, Any],
     step_index: int,
     total_steps: int,
+    reason: str = "save_exit",
 ) -> None:
     """Handle Save & Continue Later button - saves progress and returns to hub."""
     # Progress is already auto-saved in state
@@ -358,33 +390,39 @@ def _handle_save_exit(
     # Store exit info for hub message
     state["last_exit_step"] = step_index
     state["last_exit_time"] = time.strftime("%Y-%m-%d %H:%M:%S")
+    state["last_exit_reason"] = reason
     
     # Update tile state with current step for resume functionality
     tiles = st.session_state.setdefault("tiles", {})
     tile_state = tiles.setdefault(config.product, {})
     tile_state["last_step"] = step_index
     
+    hub_route = _hub_route_for_product(config.product)
+
     # Set a session flag to show completion message
     st.session_state["_show_save_message"] = {
         "product": config.product,
         "progress": progress_pct,
         "step": completed_progress_steps + 1,
         "total": len(progress_steps),
+        "reason": reason,
+        "hub_route": hub_route,
     }
     
-    _emit(
-        "product.saved_exit",
-        {
-            "product": config.product,
-            "state_key": config.state_key,
-            "progress": progress_pct,
-            "step_index": step_index,
-        },
-    )
+    event_name = "product.saved_exit" if reason == "save_exit" else "product.back_to_hub"
+    payload = {
+        "product": config.product,
+        "state_key": config.state_key,
+        "progress": progress_pct,
+        "step_index": step_index,
+        "hub_route": hub_route,
+        "reason": reason,
+    }
+    _emit(event_name, payload)
     
     # Navigate to concierge hub
     st.query_params.clear()
-    st.query_params["page"] = "hub_concierge"
+    st.query_params["page"] = hub_route
     _rerun_app()
 
 

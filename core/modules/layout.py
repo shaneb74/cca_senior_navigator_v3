@@ -41,7 +41,7 @@ def header(step_index: int, total: int, title: str, subtitle: str | None = None)
     )
 
 
-def actions(next_label: str = "Continue", skip_label: str | None = "Skip", show_save_exit: bool = True, is_intro: bool = False, show_back: bool = False, step_index: int = 0, config = None) -> tuple[bool, bool, bool, bool]:
+def actions(next_label: str = "Continue", skip_label: str | None = "Skip", show_save_exit: bool = True, is_intro: bool = False, show_back: bool = False, step_index: int = 0, config = None) -> tuple[bool, bool, bool, bool, bool]:
     """Render module action buttons with proper styling wrapper.
     
     Args:
@@ -54,7 +54,7 @@ def actions(next_label: str = "Continue", skip_label: str | None = "Skip", show_
         config: Module config (for back button state management)
     
     Returns:
-        (next_clicked, skip_clicked, save_exit_clicked, back_clicked)
+        (next_clicked, skip_clicked, save_exit_clicked, back_clicked, back_to_hub_clicked)
     """
     st.markdown('<div class="sn-app mod-actions">', unsafe_allow_html=True)
     
@@ -94,12 +94,23 @@ def actions(next_label: str = "Continue", skip_label: str | None = "Skip", show_
         )
         st.markdown('</div>', unsafe_allow_html=True)
     
+    # Back to hub button - always available to exit module
+    st.markdown('<div class="mod-back-hub-wrapper">', unsafe_allow_html=True)
+    back_to_hub_clicked = st.button(
+        "← Back to Hub",
+        key="_mod_back_hub",
+        type="secondary",
+        use_container_width=True,
+        help=None
+    )
+    st.markdown('</div>', unsafe_allow_html=True)
+    
     # Skip button (if needed) - removed from primary row
     skip_clicked = False
     # Note: Skip functionality removed - can be re-added if needed
     
     st.markdown('</div>', unsafe_allow_html=True)
-    return next_clicked, skip_clicked, save_exit_clicked, back_clicked
+    return next_clicked, skip_clicked, save_exit_clicked, back_clicked, back_to_hub_clicked
 
 
 def bottom_summary(items: Dict[str, str]) -> None:
