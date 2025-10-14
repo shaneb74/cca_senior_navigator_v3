@@ -29,7 +29,14 @@ def get_all_flags() -> Dict[str, bool]:
     try:
         care_rec = MCIP.get_care_recommendation()
         if care_rec and hasattr(care_rec, 'flags') and care_rec.flags:
-            flags.update(care_rec.flags)
+            # Handle both dict and list of dicts
+            if isinstance(care_rec.flags, dict):
+                flags.update(care_rec.flags)
+            elif isinstance(care_rec.flags, list):
+                # Merge list of dicts into single dict
+                for flag_dict in care_rec.flags:
+                    if isinstance(flag_dict, dict):
+                        flags.update(flag_dict)
     except:
         pass
     
@@ -37,7 +44,14 @@ def get_all_flags() -> Dict[str, bool]:
     try:
         financial = MCIP.get_financial_profile()
         if financial and hasattr(financial, 'flags') and financial.flags:
-            flags.update(financial.flags)
+            # Handle both dict and list of dicts
+            if isinstance(financial.flags, dict):
+                flags.update(financial.flags)
+            elif isinstance(financial.flags, list):
+                # Merge list of dicts into single dict
+                for flag_dict in financial.flags:
+                    if isinstance(flag_dict, dict):
+                        flags.update(flag_dict)
     except:
         pass
     
@@ -45,7 +59,14 @@ def get_all_flags() -> Dict[str, bool]:
     try:
         appointment = MCIP.get_advisor_appointment()
         if appointment and hasattr(appointment, 'flags') and appointment.flags:
-            flags.update(appointment.flags)
+            # Handle both dict and list of dicts
+            if isinstance(appointment.flags, dict):
+                flags.update(appointment.flags)
+            elif isinstance(appointment.flags, list):
+                # Merge list of dicts into single dict
+                for flag_dict in appointment.flags:
+                    if isinstance(flag_dict, dict):
+                        flags.update(flag_dict)
     except:
         pass
     
