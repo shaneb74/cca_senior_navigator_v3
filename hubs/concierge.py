@@ -6,6 +6,7 @@ This hub uses Navi as the single intelligence layer.
 Navi orchestrates journey coordination, Additional Services, and Q&A.
 """
 import html
+from typing import Optional
 
 import streamlit as st
 
@@ -233,6 +234,108 @@ def _build_cost_planner_tile(hub_order: dict, ordered_index: dict, next_action: 
         recommended_order=ordered_index.get("cost_v2", 2),
         recommended_reason=_get_hub_reason(),
         is_next_step=is_next,
+    )
+
+
+def _build_navi_guide_block(ctx) -> str:
+    """Compose Navi insight block to match hub styling."""
+    next_action = NaviOrchestrator.get_next_action(ctx) or {}
+    summary = NaviOrchestrator.get_context_summary(ctx)
+    reason = next_action.get("reason", "")
+    action_label = next_action.get("action", "Continue your journey")
+    action_route = next_action.get("route", "gcp_v4") or "gcp_v4"
+    if not action_route.startswith("?page="):
+        action_route = f"?page={action_route}"
+
+    status = next_action.get("status", "")
+    status_labels = {
+        "getting_started": "Getting started",
+        "in_progress": "In progress",
+        "nearly_there": "Nearly there",
+        "complete": "Journey complete",
+    }
+    eyebrow = "🤖 Navi Insight"
+    if status in status_labels:
+        eyebrow += f" · {status_labels[status]}"
+
+    boost_items = NaviOrchestrator.get_context_boost(ctx) or []
+    boost_html = ""
+    if boost_items:
+        items = "".join(f"<li>{html.escape(item)}</li>" for item in boost_items)
+        boost_html = (
+            '<ul style="margin:0.75rem 0 0;padding-left:1.2rem;color:var(--ink-600);'
+            'font-size:0.95rem;line-height:1.55;">' + items + "</ul>"
+        )
+
+    completed_products = ctx.progress.get("completed_products", []) if ctx.progress else []
+    suggested = NaviOrchestrator.get_suggested_questions(ctx.flags or {}, completed_products)[:3]
+    questions_html = ""
+    if suggested:
+        chips = "".join(
+            f'<span class="dashboard-chip">{html.escape(q)}</span>' for q in suggested
+        )
+        questions_html = (
+            '<div style="margin-top:18px;">'
+            '<div style="font-size:0.9rem;font-weight:600;color:var(--ink-500);margin-bottom:8px;">'
+            'Quick questions from Navi</div>'
+            f'<div class="dashboard-breadcrumbs">{chips}</div>'
+            '</div>'
+        )
+
+    actions_html = (
+        f'<a class="btn btn--primary" href="{action_route}">{html.escape(action_label)}</a>'
+        '<a class="btn btn--secondary" href="?page=faq">Ask Navi →</a>'
+    )
+
+    reason_html = html.escape(reason) if reason else ""
+
+    return (
+        '<section class="hub-guide hub-guide--full">'
+        f'<div class="hub-guide__eyebrow">{eyebrow}</div>'
+        f'<h2 class="hub-guide__title">{html.escape(summary)}</h2>'
+        + (f'<p class="hub-guide__text">{reason_html}</p>' if reason_html else "")
+        + boost_html
+        + f'<div class="hub-guide__actions">{actions_html}</div>'
+        + questions_html
+        + '</section>'
+    )
+
+
+def _build_saved_progress_alert(save_msg: Optional[dict]) -> str:
+    if not save_msg:
+        return ""
+    product_name = {
+        "gcp": "Guided Care Plan",
+        "cost": "Cost Planner",
+        "pfma": "Plan with My Advisor"
+    }.get(save_msg.get("product", ""), "questionnaire")
+
+    prog = save_msg.get("progress", 0)
+    if prog >= 100:
+        message = f"✅ {product_name} complete! You can review your results anytime."
+        style = {
+            "bg": "#ecfdf5",
+            "border": "#bbf7d0",
+            "color": "#047857"
+        }
+    else:
+        step = save_msg.get("step", 0)
+        total = save_msg.get("total", 0)
+        message = (
+            "💾 Progress saved! You're "
+            f"{prog:.0f}% through the {product_name} (step {step} of {total}). "
+            "Click Continue below to pick up where you left off."
+        )
+        style = {
+            "bg": "#eff6ff",
+            "border": "#bfdbfe",
+            "color": "#1d4ed8"
+        }
+
+    return (
+        '<div style="margin-bottom:20px;padding:16px 20px;border-radius:14px;'
+        f'background:{style["bg"]};border:1px solid {style["border"]};color:{style["color"]};"'
+        f'>{html.escape(message)}</div>'
     )
 
 

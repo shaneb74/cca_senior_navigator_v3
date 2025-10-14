@@ -153,8 +153,8 @@ File: `products/gcp_v4/modules/care_recommendation/logic.py`
 - Change tier mappings arbitrarily
 - Ignore scoring weights
 
-**Current Issue:**
-The logic.py currently wraps GCP v3 logic which may not respect module.json flags. This needs verification/correction.
+**Current Implementation:**
+The logic.py is now self-contained and reads scoring directly from module.json. It respects all flags set by the module engine.
 
 ### 5. MCIP Publication
 
