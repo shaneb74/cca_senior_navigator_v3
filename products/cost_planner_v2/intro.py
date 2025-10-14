@@ -1,20 +1,28 @@
 """
-Cost Planner v2 - Intro Page
+Cost Planner v2 - Intro Page (Quick Estimate)
 
-Quick estimate calculator (unauthenticated).
+Unauthenticated quick estimate calculator.
 Allows anonymous users to get a ballpark cost estimate before creating an account.
+
+Spec:
+- ZIP only (no State field)
+- 5 care types only: No Care Recommended, In-Home Care, Assisted Living, Memory Care, Memory Care (High Acuity)
+- Seed with GCP recommendation when available
+- Line-item breakdown: base cost, regional %, condition add-ons, total
+- Reassurance copy + CTA to Full Assessment
 
 Workflow:
 1. Welcome message
-2. Quick estimate form (care type + location)
-3. Show estimate
-4. Gate: "Sign in to get detailed breakdown"
-5. Auth → Triage
+2. Quick estimate form (care type + ZIP)
+3. Show line-item breakdown
+4. Reassurance copy
+5. CTA → Full Assessment (authentication)
 """
 
 import streamlit as st
-from typing import Optional
+from typing import Optional, Dict, Any
 from products.cost_planner_v2.utils import CostCalculator
+from core.mcip import MCIP
 
 
 def render():
@@ -28,7 +36,8 @@ def render():
     
     This quick calculator gives you ballpark costs based on:
     - ✅ Type of care needed
-    - ✅ Your location (regional cost differences)
+    - ✅ Your location (ZIP code)
+    - ✅ Your specific care needs (if you've completed the Guided Care Plan)
     
     💡 **Sign in later** to get a detailed financial plan with personalized recommendations.
     """)
@@ -49,86 +58,96 @@ def render():
 
 
 def _render_quick_estimate_form():
-    """Render quick estimate input form."""
+    """Render quick estimate input form.
+    
+    Spec:
+    - ZIP only (no State field)
+    - 5 care types only
+    - Seed with GCP recommendation if available
+    """
     
     st.markdown("#### 📝 Tell us about your needs:")
     
-    # Care type selection
     # CRITICAL: These are the ONLY 5 allowed care types
-    care_type = st.selectbox(
-        "What type of care are you exploring?",
-        options=[
-            "No Care Needed",
-            "In-Home Care",
-            "Assisted Living",
-            "Memory Care",
-            "Memory Care (High Acuity)"
-        ],
-        help="Choose the care option that best matches your current needs",
-        key="cost_v2_quick_care_type"
-    )
+    ALLOWED_CARE_TYPES = [
+        "No Care Recommended",
+        "In-Home Care",
+        "Assisted Living",
+        "Memory Care",
+        "Memory Care (High Acuity)"
+    ]
     
     # Map display name to internal key
     care_type_map = {
-        "No Care Needed": "no_care_needed",
+        "No Care Recommended": "no_care_needed",
         "In-Home Care": "in_home_care",
         "Assisted Living": "assisted_living",
         "Memory Care": "memory_care",
         "Memory Care (High Acuity)": "memory_care_high_acuity"
     }
+    
+    # Reverse map for seeding from GCP
+    tier_to_display = {v: k for k, v in care_type_map.items()}
+    
+    # Check if we have a GCP recommendation to seed the selector
+    default_index = 1  # Default to "In-Home Care"
+    gcp_rec = MCIP.get_care_recommendation()
+    if gcp_rec and gcp_rec.tier:
+        # Map GCP tier to display name
+        gcp_display = tier_to_display.get(gcp_rec.tier)
+        if gcp_display and gcp_display in ALLOWED_CARE_TYPES:
+            default_index = ALLOWED_CARE_TYPES.index(gcp_display)
+            st.caption(f"💡 Based on your Guided Care Plan, we've pre-selected: **{gcp_display}**")
+    
+    # Care type selection
+    care_type = st.selectbox(
+        "What type of care are you exploring?",
+        options=ALLOWED_CARE_TYPES,
+        index=default_index,
+        help="Choose the care option that best matches your current needs. Switch to preview costs for different scenarios.",
+        key="cost_v2_quick_care_type"
+    )
+    
     care_tier = care_type_map[care_type]
     
-    # Location input
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        zip_code = st.text_input(
-            "ZIP Code (optional)",
-            max_chars=5,
-            placeholder="90210",
-            help="Enter your ZIP code for regional cost adjustment",
-            key="cost_v2_quick_zip"
-        )
-    
-    with col2:
-        state = st.text_input(
-            "State (optional)",
-            max_chars=2,
-            placeholder="CA",
-            help="2-letter state code (e.g., CA, NY, FL)",
-            key="cost_v2_quick_state"
-        ).upper()
+    # ZIP code input (ZIP only - no State field per spec)
+    zip_code = st.text_input(
+        "ZIP Code",
+        max_chars=5,
+        placeholder="90210",
+        help="Enter your 5-digit ZIP code for regional cost adjustment",
+        key="cost_v2_quick_zip"
+    )
     
     # Calculate button
     if st.button("🔍 Calculate Quick Estimate", type="primary", use_container_width=True):
-        _calculate_quick_estimate(care_tier, zip_code or None, state or None)
+        _calculate_quick_estimate(care_tier, zip_code or None)
 
 
-def _calculate_quick_estimate(care_tier: str, zip_code: Optional[str], state: Optional[str]):
-    """Calculate and store quick estimate."""
+def _calculate_quick_estimate(care_tier: str, zip_code: Optional[str]):
+    """Calculate and store quick estimate.
     
-    # Validate inputs
-    if zip_code and len(zip_code) < 5:
+    Args:
+        care_tier: Internal tier key (e.g., "memory_care")
+        zip_code: 5-digit ZIP code (optional)
+    """
+    
+    # Validate ZIP code
+    if zip_code and len(zip_code) != 5:
         st.error("Please enter a valid 5-digit ZIP code, or leave it blank.")
         return
     
-    if state and len(state) != 2:
-        st.error("Please enter a 2-letter state code (e.g., CA, NY, FL), or leave it blank.")
-        return
-    
-    # Calculate estimate
+    # Calculate estimate with line-item breakdown
     try:
-        estimate = CostCalculator.calculate_quick_estimate(
+        estimate = CostCalculator.calculate_quick_estimate_with_breakdown(
             care_tier=care_tier,
-            zip_code=zip_code,
-            state=state
+            zip_code=zip_code
         )
         
         st.session_state.cost_v2_quick_estimate = {
             "estimate": estimate,
             "care_tier": care_tier,
-            "zip_code": zip_code,
-            "state": state
+            "zip_code": zip_code
         }
         
         st.rerun()
@@ -138,84 +157,132 @@ def _calculate_quick_estimate(care_tier: str, zip_code: Optional[str], state: Op
 
 
 def _render_quick_estimate_results():
-    """Render quick estimate results."""
+    """Render quick estimate results with line-item breakdown.
+    
+    Spec:
+    - Show line-item breakdown: base cost, regional %, condition add-ons, total
+    - Reassurance copy
+    - CTA to Full Assessment
+    """
     
     data = st.session_state.cost_v2_quick_estimate
     estimate = data["estimate"]
     
-    st.success("### ✅ Your Quick Estimate")
+    st.success("### ✅ Your Quick Cost Estimate")
     
     # Show care type and location
-    care_type_display = estimate.care_tier.replace("_", " ").title()
-    location_display = estimate.region_name
+    care_type_display_map = {
+        "no_care_needed": "No Care Recommended",
+        "in_home_care": "In-Home Care",
+        "assisted_living": "Assisted Living",
+        "memory_care": "Memory Care",
+        "memory_care_high_acuity": "Memory Care (High Acuity)"
+    }
+    care_type_display = care_type_display_map.get(estimate.care_tier, estimate.care_tier.replace("_", " ").title())
     
     st.markdown(f"""
     **Care Type:** {care_type_display}  
-    **Location:** {location_display}
+    **Location:** {estimate.region_name}
     """)
-    
-    if estimate.multiplier != 1.0:
-        multiplier_pct = int((estimate.multiplier - 1.0) * 100)
-        if multiplier_pct > 0:
-            st.caption(f"ℹ️ Costs in {estimate.region_name} are about {multiplier_pct}% above the national average.")
-        else:
-            st.caption(f"ℹ️ Costs in {estimate.region_name} are about {abs(multiplier_pct)}% below the national average.")
     
     st.markdown("---")
     
-    # Show cost estimates
-    col1, col2, col3 = st.columns(3)
+    # LINE-ITEM BREAKDOWN (per spec)
+    st.markdown("#### 📊 Cost Breakdown")
+    
+    # Use breakdown dict from estimate
+    breakdown = estimate.breakdown
+    
+    # Base cost
+    base_cost = breakdown.get("base_cost", 0)
+    st.markdown(f"**Base Cost ({care_type_display}):** ${base_cost:,.0f} / month")
+    
+    # Regional adjustment
+    if estimate.multiplier != 1.0:
+        regional_pct = int((estimate.multiplier - 1.0) * 100)
+        regional_amount = breakdown.get("regional_adjustment", 0)
+        if regional_pct > 0:
+            st.markdown(f"**+ Regional Adjustment (ZIP {data['zip_code'] or 'N/A'}):** +{regional_pct}% (${regional_amount:,.0f})")
+        else:
+            st.markdown(f"**+ Regional Adjustment (ZIP {data['zip_code'] or 'N/A'}):** {regional_pct}% (${regional_amount:,.0f})")
+    else:
+        st.markdown(f"**+ Regional Adjustment (ZIP {data['zip_code'] or 'N/A'}):** National Average (no adjustment)")
+    
+    # Cognitive-related adjustment (if applicable)
+    if "cognitive_addon" in breakdown and breakdown["cognitive_addon"] > 0:
+        st.markdown(f"**+ Cognitive-related Adjustment:** +20% (${breakdown['cognitive_addon']:,.0f})")
+    
+    # Mobility-related adjustment (if applicable)
+    if "mobility_addon" in breakdown and breakdown["mobility_addon"] > 0:
+        st.markdown(f"**+ Mobility-related Adjustment:** +15% (${breakdown['mobility_addon']:,.0f})")
+    
+    # High-acuity adjustment (if applicable - always for Memory Care High Acuity)
+    if "high_acuity_addon" in breakdown and breakdown["high_acuity_addon"] > 0:
+        st.markdown(f"**+ High-Acuity Adjustment:** +25% (${breakdown['high_acuity_addon']:,.0f})")
+    
+    # Show note if no add-ons
+    has_addons = any(key in breakdown for key in ["cognitive_addon", "mobility_addon", "high_acuity_addon"])
+    if not has_addons:
+        st.caption("ℹ️ No additional care adjustments applied for your area.")
+    
+    st.markdown("---")
+    
+    # ADJUSTED TOTAL
+    st.markdown(f"### **= Adjusted Total: ${estimate.monthly_adjusted:,.0f} / month**")
+    
+    st.markdown("---")
+    
+    # Annual and 3-year projections
+    col1, col2 = st.columns(2)
     
     with col1:
-        st.metric(
-            label="Monthly Cost",
-            value=f"${estimate.monthly_adjusted:,.0f}",
-            help="Estimated monthly cost for base care"
-        )
-    
-    with col2:
         st.metric(
             label="Annual Cost",
             value=f"${estimate.annual:,.0f}",
             help="Estimated annual cost (monthly × 12)"
         )
     
-    with col3:
+    with col2:
         st.metric(
             label="3-Year Projection",
             value=f"${estimate.three_year:,.0f}",
             help="Estimated 3-year cost (annual × 3)"
         )
     
-    # Important notes
+    st.markdown("---")
+    
+    # REASSURANCE COPY (per spec)
     st.info("""
-    **💡 This is a quick estimate only.** Actual costs vary based on:
-    - Specific facility or care provider
-    - Level of care needed (ADLs, medication management, etc.)
-    - Additional services (therapy, transportation, activities)
-    - Insurance and benefits (Medicare, VA, long-term care insurance)
+    **We know these numbers can feel overwhelming. Don't worry — we'll help you plan how to cover these costs.**
+    
+    Our detailed Financial Assessment will show you:
+    - ✅ All available funding sources (Medicare, VA benefits, insurance, etc.)
+    - ✅ Gap analysis: what's covered vs. what you'll pay out-of-pocket
+    - ✅ Strategies to reduce costs and maximize benefits
+    - ✅ Facility comparison with real pricing data
     """)
     
     st.markdown("---")
     
-    # Call to action: Sign in for detailed plan
-    st.markdown("### 🎯 Want a Detailed Financial Plan?")
+    # CTA TO FULL ASSESSMENT (per spec)
+    st.markdown("### 🎯 Continue to Full Assessment")
     
     st.markdown("""
-    **Sign in to unlock:**
-    - ✅ Personalized care assessment (Guided Care Plan)
-    - ✅ Detailed cost breakdown with all services
-    - ✅ Funding sources and gap analysis
-    - ✅ Expert financial review
-    - ✅ Facility comparison tool
-    - ✅ Medicare and VA benefits calculator
+    **Ready to get your personalized financial plan?**
+    
+    The Full Assessment will help you:
+    - Understand exactly what care costs in your specific situation
+    - Identify all funding sources you qualify for
+    - Create a step-by-step plan to cover the costs
+    - Get expert guidance on next steps
     """)
     
-    col1, col2 = st.columns([1, 1])
+    col1, col2 = st.columns([2, 1])
     
     with col1:
-        if st.button("🔐 Sign In / Create Account", type="primary", use_container_width=True, key="quick_estimate_auth"):
-            # Go to auth step
+        if st.button("➡️ Continue to Full Assessment", type="primary", use_container_width=True, key="continue_full_assessment"):
+            # Start authentication flow (if not logged in) then go to Full Assessment
+            # For now, go to auth gate
             st.session_state.cost_v2_step = "auth"
             st.rerun()
     
