@@ -196,7 +196,7 @@ def render(ctx=None) -> None:
         body_html = render_dashboard_body(
             title=None,
             subtitle=None,
-            hub_guide_block=mcip_panel,
+            hub_guide_block=None,  # Navi replaces MCIP panel
             cards=cards,
         )
         st.markdown(body_html, unsafe_allow_html=True)

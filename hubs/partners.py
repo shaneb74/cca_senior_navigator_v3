@@ -164,7 +164,7 @@ def page_partners() -> None:
         body_html = render_dashboard_body(
             title=None,
             chips=None,
-            hub_guide_block=guide_html,
+            hub_guide_block=None,  # Navi replaces hub guide
             cards=tiles if tiles else None,
             cards_html=cards_html,
         )
