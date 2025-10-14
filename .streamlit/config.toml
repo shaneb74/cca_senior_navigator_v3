@@ -2,7 +2,7 @@
 base = "light"
 primaryColor = "#111827"            # dark gray/black for selection (matches module design)
 backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#F1F5F9"
+secondaryBackgroundColor = "#FFFFFF"
 textColor = "#0d1f4b"
 font = "sans serif"
 

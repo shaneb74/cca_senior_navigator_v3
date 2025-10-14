@@ -71,9 +71,9 @@
   color: var(--ink);
 }
 
-/* Hub shell - simplified with no gradient, consistent spacing */
+/* Hub shell - clean white background with subtle card elevation */
 .sn-hub.dashboard-shell {
-  background: transparent;
+  background: #ffffff;
   padding: 32px 0 48px;
 }
 

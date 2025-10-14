@@ -72,16 +72,6 @@ p {
 /* Remove Streamlit's default top padding so the header can sit flush */
 section.main > div.block-container {
   padding-top: 0 !important;
-  background: #F1F5F9 !important;
-}
-
-/* Force consistent background color for entire page */
-section.main {
-  background: #F1F5F9 !important;
-}
-
-.stApp {
-  background: #F1F5F9 !important;
 }
 
 /* Remove Streamlit's default vertical gap between header shell and first section */

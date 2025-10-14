@@ -563,14 +563,14 @@ def render_navi_panel_v2(
     """Render refined Navi panel with structured layout using Streamlit native components."""
     from core.nav import route_to
     
-    # Inject CSS for Navi panel V2 (white container like product tiles)
+    # Inject CSS for Navi panel V2 (white card with subtle elevation)
     navi_css = """
     <style>
     .navi-panel-v2 {
         max-width: 1120px;
         margin: 0 auto 24px auto;
         background: #ffffff;
-        border: 1px solid #dbe4f2;
+        border: 1px solid #e2e8f0;
         border-left: 3px solid #0066cc;
         border-radius: 16px;
         box-shadow: 0 1px 3px rgba(15,23,42,.08);
