@@ -1,50 +1,41 @@
 """
-GCP v4 logic adapter - Wraps existing GCP v3 scoring logic for MCIP integration.
+GCP v4 Care Recommendation Logic - Self-contained scoring engine.
 
-This module adapts the proven GCP v3 scoring engine to return CareRecommendation-compatible
-output while preserving all existing scoring logic, overrides, and domain calculations.
+This module respects module.json as the authoritative source of truth:
+- Reads scores directly from option.score values in module.json
+- Uses flags already set by module engine from option.flags
+- Calculates tier based on total score thresholds
+- Returns MCIP-compatible CareRecommendation dict
 """
 
+import json
+from pathlib import Path
 from typing import Dict, Any, List, Tuple
 from .flags import build_flags
 
 
-# Import the proven v3 scoring logic
-import sys
-from pathlib import Path
-
-# Add parent gcp module to path to import v3 logic
-gcp_v3_path = Path(__file__).parent.parent.parent.parent / "gcp" / "modules" / "care_recommendation"
-sys.path.insert(0, str(gcp_v3_path))
-
-try:
-    from logic import derive_outcome as derive_outcome_v3
-finally:
-    sys.path.pop(0)
-
-
-# Tier name mapping for MCIP
-TIER_NAME_MAPPING = {
-    "Independent / In-Home": "independent",
-    "In-Home Care": "in_home",
-    "Assisted Living": "assisted_living",
-    "Memory Care": "memory_care",
-    "High-Acuity Memory Care": "memory_care"
+# Tier thresholds based on total score
+TIER_THRESHOLDS = {
+    "independent": (0, 8),      # 0-8 points: can live independently or with minimal help
+    "in_home": (9, 16),          # 9-16 points: needs regular in-home support
+    "assisted_living": (17, 24), # 17-24 points: needs assisted living environment
+    "memory_care": (25, 100),    # 25+ points: needs memory care or skilled nursing
 }
 
 
 def derive_outcome(answers: Dict[str, Any], config: Dict[str, Any] = None) -> Dict[str, Any]:
-    """Compute care recommendation using GCP v3 logic, output MCIP-compatible format.
+    """Compute care recommendation from answers and module.json scoring.
     
     This function:
-    1. Calls the proven GCP v3 scoring engine
-    2. Transforms OutcomeContract to CareRecommendation-compatible dict
-    3. Maps tier names to MCIP tier keys
-    4. Converts flags to structured format with CTAs
+    1. Loads module.json to get scoring rules
+    2. Calculates total score from user answers
+    3. Determines tier based on score thresholds
+    4. Builds rationale from high-scoring areas
+    5. Reads flags already set by module engine
     
     Args:
-        answers: User responses from module.json questions
-        config: Optional configuration (passed to v3 logic)
+        answers: User responses from module engine (already includes flags)
+        config: Optional configuration (not currently used)
     
     Returns:
         Dict matching CareRecommendation dataclass schema:
@@ -57,31 +48,27 @@ def derive_outcome(answers: Dict[str, Any], config: Dict[str, Any] = None) -> Di
         - suggested_next_product: str
     """
     
-    # Call GCP v3 scoring engine
-    outcome = derive_outcome_v3(answers, config or {})
+    # Load module.json to get scoring rules
+    module_data = _load_module_json()
     
-    # Extract data from OutcomeContract
-    recommendation = outcome.recommendation
-    confidence = outcome.confidence
-    flags_dict = outcome.flags
-    domain_scores = outcome.domain_scores
-    summary = outcome.summary
+    # Calculate total score from answers
+    total_score, scoring_details = _calculate_score(answers, module_data)
     
-    # Map tier name to MCIP tier key
-    tier = TIER_NAME_MAPPING.get(recommendation, "in_home")
+    # Determine tier from score
+    tier = _determine_tier(total_score)
     
-    # Get tier score from summary
-    tier_score = summary.get("total_score", 0.0)
+    # Build tier rankings (all tiers with calculated scores)
+    tier_rankings = _build_tier_rankings(total_score, tier)
     
-    # Build tier rankings (all tiers with their scores)
-    # For v4, we'll use domain scores as proxy since v3 doesn't rank all tiers
-    tier_rankings = _build_tier_rankings(tier, tier_score, domain_scores)
+    # Calculate confidence based on completeness and score clarity
+    confidence = _calculate_confidence(answers, scoring_details, total_score)
     
-    # Build rationale from summary points
-    rationale = _build_rationale(summary, domain_scores, answers)
+    # Build rationale from high-scoring areas
+    rationale = _build_rationale(scoring_details, tier, total_score)
     
-    # Convert flags to structured format
-    flag_ids = _extract_flag_ids(flags_dict, answers, summary)
+    # Extract flag IDs from answers (module engine already set these)
+    # The flags are stored in the answers dict under a "flags" key if present
+    flag_ids = answers.get("_flags", []) if "_flags" in answers else _extract_flags_from_answers(answers, module_data)
     flags = build_flags(flag_ids)
     
     # Determine suggested next product
@@ -89,7 +76,7 @@ def derive_outcome(answers: Dict[str, Any], config: Dict[str, Any] = None) -> Di
     
     return {
         "tier": tier,
-        "tier_score": round(tier_score, 1),
+        "tier_score": round(total_score, 1),
         "tier_rankings": tier_rankings,
         "confidence": round(confidence, 2),
         "flags": flags,
@@ -98,41 +85,131 @@ def derive_outcome(answers: Dict[str, Any], config: Dict[str, Any] = None) -> Di
     }
 
 
-def _build_tier_rankings(winning_tier: str, winning_score: float, domain_scores: Dict) -> List[Tuple[str, float]]:
-    """Build tier rankings with all tiers scored.
-    
-    Since v3 logic doesn't score all tiers, we approximate based on domain scores
-    and the winning tier. This provides context for why other tiers weren't recommended.
-    
-    Args:
-        winning_tier: The recommended tier
-        winning_score: Score for recommended tier
-        domain_scores: Domain-level scores from v3
+def _load_module_json() -> Dict[str, Any]:
+    """Load module.json from disk.
     
     Returns:
-        List of (tier_name, score) tuples sorted by score
+        Module configuration dict
     """
-    # Create scores for all tiers
-    all_tiers = ["independent", "in_home", "assisted_living", "memory_care"]
+    path = Path(__file__).with_name("module.json")
+    with path.open() as fh:
+        return json.load(fh)
+
+
+def _calculate_score(answers: Dict[str, Any], module_data: Dict[str, Any]) -> Tuple[float, Dict[str, Any]]:
+    """Calculate total score from user answers using module.json scoring.
     
-    # Start with winning tier
-    rankings = [(winning_tier, winning_score)]
+    Args:
+        answers: User responses
+        module_data: Loaded module.json
     
-    # Approximate other tier scores based on domain scores
-    # This is a simplified heuristic for display purposes
-    for tier in all_tiers:
-        if tier != winning_tier:
-            # Lower tiers get progressively lower scores
-            if tier == "independent":
-                score = winning_score * 0.3
-            elif tier == "in_home":
-                score = winning_score * 0.5 if winning_tier in ["assisted_living", "memory_care"] else winning_score * 0.7
-            elif tier == "assisted_living":
-                score = winning_score * 0.7 if winning_tier == "memory_care" else winning_score * 0.5
-            else:  # memory_care
-                score = winning_score * 0.8 if winning_tier == "assisted_living" else winning_score * 0.4
+    Returns:
+        Tuple of (total_score, scoring_details)
+        scoring_details contains breakdown by question/section
+    """
+    total_score = 0.0
+    scoring_details = {
+        "by_section": {},
+        "by_question": {},
+        "answer_count": 0,
+        "total_questions": 0
+    }
+    
+    # Iterate through sections in module.json
+    for section in module_data.get("sections", []):
+        if section.get("type") != "questions":
+            continue
             
-            rankings.append((tier, round(score, 1)))
+        section_id = section["id"]
+        section_score = 0.0
+        section_details = []
+        
+        # Iterate through questions in section
+        for question in section.get("questions", []):
+            question_id = question["id"]
+            scoring_details["total_questions"] += 1
+            
+            # Get user's answer
+            user_answer = answers.get(question_id)
+            if user_answer is None:
+                continue
+                
+            scoring_details["answer_count"] += 1
+            
+            # Handle multi-select questions (list of values)
+            if isinstance(user_answer, list):
+                question_score = 0.0
+                for option in question.get("options", []):
+                    if option.get("value") in user_answer:
+                        option_score = option.get("score", 0)
+                        question_score += option_score
+                        section_details.append({
+                            "question": question.get("label", question_id),
+                            "answer": option.get("label"),
+                            "score": option_score
+                        })
+            else:
+                # Single-select question
+                question_score = 0.0
+                for option in question.get("options", []):
+                    if option.get("value") == user_answer:
+                        question_score = option.get("score", 0)
+                        section_details.append({
+                            "question": question.get("label", question_id),
+                            "answer": option.get("label"),
+                            "score": question_score
+                        })
+                        break
+            
+            scoring_details["by_question"][question_id] = question_score
+            section_score += question_score
+        
+        scoring_details["by_section"][section_id] = {
+            "score": section_score,
+            "details": section_details
+        }
+        total_score += section_score
+    
+    return total_score, scoring_details
+
+
+def _determine_tier(total_score: float) -> str:
+    """Determine care tier from total score.
+    
+    Args:
+        total_score: Total points from all questions
+    
+    Returns:
+        Tier name (independent | in_home | assisted_living | memory_care)
+    """
+    for tier, (min_score, max_score) in TIER_THRESHOLDS.items():
+        if min_score <= total_score <= max_score:
+            return tier
+    
+    # Default to memory_care if score exceeds all thresholds
+    return "memory_care"
+
+
+def _build_tier_rankings(total_score: float, winning_tier: str) -> List[Tuple[str, float]]:
+    """Build tier rankings showing all tiers with their distance from user's score.
+    
+    Args:
+        total_score: User's total score
+        winning_tier: The recommended tier
+    
+    Returns:
+        List of (tier_name, score) tuples sorted by score descending
+    """
+    rankings = []
+    
+    for tier, (min_score, max_score) in TIER_THRESHOLDS.items():
+        if tier == winning_tier:
+            # Winning tier gets the actual score
+            rankings.append((tier, total_score))
+        else:
+            # Other tiers get the midpoint of their range as a reference
+            midpoint = (min_score + max_score) / 2
+            rankings.append((tier, round(midpoint, 1)))
     
     # Sort by score descending
     rankings.sort(key=lambda x: x[1], reverse=True)
@@ -140,77 +217,131 @@ def _build_tier_rankings(winning_tier: str, winning_score: float, domain_scores:
     return rankings
 
 
-def _build_rationale(summary: Dict, domain_scores: Dict, answers: Dict) -> List[str]:
-    """Build human-readable rationale from scoring summary.
+def _calculate_confidence(answers: Dict[str, Any], scoring_details: Dict[str, Any], total_score: float) -> float:
+    """Calculate confidence in the recommendation.
+    
+    Based on:
+    - Completeness (answered questions / total questions)
+    - Score clarity (how far from tier boundaries)
     
     Args:
-        summary: Summary dict from v3 outcome
-        domain_scores: Domain scores from v3
-        answers: User answers
+        answers: User responses
+        scoring_details: Scoring breakdown
+        total_score: Total calculated score
     
     Returns:
-        List of rationale strings (key drivers of recommendation)
+        Confidence score between 0 and 1
+    """
+    # Base confidence from completeness
+    answered = scoring_details["answer_count"]
+    total = scoring_details["total_questions"]
+    completeness = answered / total if total > 0 else 0.0
+    
+    # Adjust for score clarity (distance from boundaries)
+    tier = _determine_tier(total_score)
+    min_score, max_score = TIER_THRESHOLDS[tier]
+    
+    # Distance from nearest boundary
+    distance_from_min = total_score - min_score
+    distance_from_max = max_score - total_score
+    distance_from_boundary = min(distance_from_min, distance_from_max)
+    
+    # Normalize distance (3+ points from boundary = full confidence)
+    boundary_confidence = min(distance_from_boundary / 3.0, 1.0)
+    
+    # Combined confidence (weighted average)
+    confidence = (completeness * 0.6) + (boundary_confidence * 0.4)
+    
+    return max(0.5, confidence)  # Minimum 50% confidence
+
+
+def _build_rationale(scoring_details: Dict[str, Any], tier: str, total_score: float) -> List[str]:
+    """Build human-readable rationale for the recommendation.
+    
+    Args:
+        scoring_details: Scoring breakdown by section/question
+        tier: Recommended tier
+        total_score: Total score
+    
+    Returns:
+        List of rationale strings
     """
     rationale = []
     
-    # Start with summary points if available
-    if "points" in summary and isinstance(summary["points"], list):
-        rationale.extend(summary["points"][:5])  # Top 5 points
+    # Start with overall recommendation
+    tier_labels = {
+        "independent": "Independent Living or In-Home Support",
+        "in_home": "In-Home Care",
+        "assisted_living": "Assisted Living",
+        "memory_care": "Memory Care or Skilled Nursing"
+    }
+    rationale.append(f"Based on {int(total_score)} points, we recommend: {tier_labels.get(tier, tier)}")
     
-    # Add high-scoring domains
-    sorted_domains = sorted(domain_scores.items(), key=lambda x: x[1], reverse=True)
-    for domain, score in sorted_domains[:3]:  # Top 3 domains
-        if score > 5:  # Only significant domains
-            domain_label = domain.replace("_", " ").title()
-            rationale.append(f"{domain_label}: {score} points")
+    # Add top scoring sections
+    sorted_sections = sorted(
+        scoring_details["by_section"].items(),
+        key=lambda x: x[1]["score"],
+        reverse=True
+    )
     
-    # Add override reason if present
-    if "override_reason" in summary and summary["override_reason"]:
-        rationale.insert(0, summary["override_reason"])
+    for section_id, section_data in sorted_sections[:3]:  # Top 3 sections
+        score = section_data["score"]
+        if score > 0:
+            section_label = section_id.replace("_", " ").title()
+            rationale.append(f"{section_label}: {int(score)} points")
+            
+            # Add top detail from this section
+            if section_data["details"]:
+                top_detail = max(section_data["details"], key=lambda x: x["score"])
+                if top_detail["score"] > 0:
+                    rationale.append(f"  • {top_detail['answer']}")
     
     return rationale[:6]  # Keep top 6 items
 
 
-def _extract_flag_ids(flags_dict: Dict, answers: Dict, summary: Dict) -> List[str]:
-    """Extract flag IDs from v3 flags dict and answers.
+def _extract_flags_from_answers(answers: Dict[str, Any], module_data: Dict[str, Any]) -> List[str]:
+    """Extract flag IDs from answers by matching against module.json options.
+    
+    Note: The module engine should have already set these flags, but this
+    provides a fallback in case flags weren't captured properly.
     
     Args:
-        flags_dict: Flags from v3 outcome
-        answers: User answers
-        summary: Summary from v3 outcome
+        answers: User responses
+        module_data: Loaded module.json
     
     Returns:
         List of flag IDs
     """
-    flag_ids = []
+    flag_ids = set()
     
-    # Extract from v3 flags dict
-    for key, value in flags_dict.items():
-        if value is True:
-            # Map v3 flag keys to v4 flag IDs
-            if "fall" in key.lower():
-                flag_ids.append("falls_risk")
-            elif "memory" in key.lower() or "cognitive" in key.lower():
-                flag_ids.append("memory_support")
-            elif "behavior" in key.lower():
-                flag_ids.append("behavioral_concerns")
-            elif "medication" in key.lower() or "med" in key.lower():
-                flag_ids.append("medication_management")
-            elif "isolation" in key.lower() or "alone" in key.lower():
-                flag_ids.append("isolation_risk")
-            elif "adl" in key.lower():
-                flag_ids.append("adl_support_high")
-            elif "mobility" in key.lower():
-                flag_ids.append("mobility_limited")
-            elif "chronic" in key.lower() or "health" in key.lower():
-                flag_ids.append("chronic_conditions")
-            elif "safety" in key.lower():
-                flag_ids.append("safety_concerns")
-            elif "caregiver" in key.lower():
-                flag_ids.append("caregiver_stress")
+    # Iterate through sections and questions
+    for section in module_data.get("sections", []):
+        if section.get("type") != "questions":
+            continue
+            
+        for question in section.get("questions", []):
+            question_id = question["id"]
+            user_answer = answers.get(question_id)
+            
+            if user_answer is None:
+                continue
+            
+            # Handle multi-select (list)
+            if isinstance(user_answer, list):
+                for option in question.get("options", []):
+                    if option.get("value") in user_answer:
+                        flags = option.get("flags", [])
+                        flag_ids.update(flags)
+            else:
+                # Single-select
+                for option in question.get("options", []):
+                    if option.get("value") == user_answer:
+                        flags = option.get("flags", [])
+                        flag_ids.update(flags)
+                        break
     
-    # Deduplicate
-    return list(set(flag_ids))
+    return list(flag_ids)
+
 
 
 def _determine_next_product(tier: str, confidence: float) -> str:
