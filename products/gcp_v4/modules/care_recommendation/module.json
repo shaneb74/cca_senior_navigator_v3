@@ -4,6 +4,7 @@
     "name": "Guided Care Plan",
     "version": "v2025.10",
     "description": "Collects lifestyle, safety, and cognition data to determine an initial care recommendation.",
+    "results_step_id": "results",
     "display": {
       "title": "Find the Right Senior Care",
       "subtitle": "We'll match you to the best living options based on daily needs, safety, cognition, and more. Takes two minutes.",
