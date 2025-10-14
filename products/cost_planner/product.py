@@ -9,6 +9,7 @@ import streamlit as st
 import importlib
 
 from core.modules.engine import run_module
+from core.nav import route_to
 from products.cost_planner import auth
 from products.cost_planner.base_module_config import get_base_config
 from products.cost_planner.cost_estimate_v2 import (
@@ -614,10 +615,7 @@ def _render_module_dashboard_custom(config, step, step_index: int):
     col1, col2 = st.columns(2)
     with col1:
         if st.button("← Back to Hub", key="back_to_hub_modules", use_container_width=True):
-            # Navigate back to Concierge Hub
-            st.query_params.clear()
-            st.query_params["page"] = "concierge"
-            st.rerun()
+            route_to("hub_concierge")
     with col2:
         if st.button("Continue to Expert Review →", key="continue_to_expert_review", use_container_width=True, type="primary"):
             # Navigate to Expert Review page
@@ -865,15 +863,11 @@ def _render_module_dashboard_content(context: dict) -> None:
     col1, col2, col3 = st.columns(3)
     with col1:
         if st.button("🏠 Return to Hub", key="return_to_hub_dashboard", use_container_width=True):
-            st.query_params.clear()
-            st.query_params["page"] = "concierge"
-            st.rerun()
+            route_to("hub_concierge")
     with col2:
         if st.button("💾 Save & Exit", key="save_exit_dashboard", use_container_width=True):
             st.success("✅ Progress saved!")
-            st.query_params.clear()
-            st.query_params["page"] = "concierge"
-            st.rerun()
+            route_to("hub_concierge")
     with col3:
         # Allow continuing to Expert Review regardless of completion
         if st.button("Continue to Expert Review →", key="continue_expert_review", type="primary", use_container_width=True):
@@ -933,9 +927,7 @@ def _render_expert_review() -> None:
     col1, col2, col3 = st.columns(3)
     with col1:
         if st.button("🏠 Return to Hub", key="return_hub_review", use_container_width=True):
-            st.query_params.clear()
-            st.query_params["page"] = "concierge"
-            st.rerun()
+            route_to("hub_concierge")
     with col2:
         if st.button("← Back to Modules", key="back_modules_review", use_container_width=True):
             st.query_params["cost_module"] = "base"
@@ -1085,18 +1077,14 @@ def _render_financial_timeline() -> None:
     col1, col2, col3 = st.columns(3)
     with col1:
         if st.button("🏠 Return to Hub", key="return_hub_timeline", use_container_width=True):
-            st.query_params.clear()
-            st.query_params["page"] = "concierge"
-            st.rerun()
+            route_to("hub_concierge")
     with col2:
         if st.button("← Back to Expert Review", key="back_review_timeline", use_container_width=True):
             st.query_params["cost_module"] = "expert_review"
             st.rerun()
     with col3:
         if st.button("🦆 Talk to an Advisor →", key="pfma_timeline", type="primary", use_container_width=True):
-            st.query_params.clear()
-            st.query_params["page"] = "pfma"
-            st.rerun()
+            route_to("pfma")
 
 
 def _render_sub_module(module_key: str) -> None:

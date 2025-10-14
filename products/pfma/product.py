@@ -134,11 +134,16 @@ def _render_appointment_booking():
     pfma = st.session_state["pfma"]
     appointment = pfma.get("appointment", {})
     
+    # Ensure stored method matches available options
+    current_method = appointment.get("method", "Phone Call")
+    if current_method not in {"Phone Call", "Video Call"}:
+        current_method = "Phone Call"
+    
     # Contact method
     contact_method = st.radio(
         "How would you like to connect?",
-        ["Phone Call", "Video Call", "In-Person Meeting"],
-        index=["Phone Call", "Video Call", "In-Person Meeting"].index(appointment.get("method", "Phone Call"))
+        ["Phone Call", "Video Call"],
+        index=["Phone Call", "Video Call"].index(current_method)
     )
     
     # Time preference
@@ -151,12 +156,8 @@ def _render_appointment_booking():
     )
     
     # Contact info
-    if contact_method in ["Phone Call", "Video Call"]:
-        phone = st.text_input("Phone Number", value=appointment.get("phone", ""))
-        email = st.text_input("Email Address", value=appointment.get("email", ""))
-    else:
-        email = st.text_input("Email Address", value=appointment.get("email", ""))
-        phone = None
+    phone = st.text_input("Phone Number", value=appointment.get("phone", ""))
+    email = st.text_input("Email Address", value=appointment.get("email", ""))
     
     # Special requests
     notes = st.text_area(
