@@ -57,6 +57,13 @@ def _cleanup_legacy_gcp_state() -> None:
 inject_css()
 ensure_session()
 _cleanup_legacy_gcp_state()
+
+# Initialize MCIP v2 (The Conductor)
+from core.mcip import MCIP
+from core.mcip_events import register_default_listeners
+MCIP.initialize()
+register_default_listeners()
+
 ctx = get_user_ctx()
 PAGES = load_nav(ctx)
 route = current_route("welcome", PAGES)
