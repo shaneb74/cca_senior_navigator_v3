@@ -10,6 +10,18 @@
       "estimated_time": "≈2 min",
       "autosave": true,
       "progress_weight": 1.0
+    },
+    "navi_guidance": {
+      "purpose": "Help users understand their care needs through a structured assessment",
+      "outcome": "Personalized care tier recommendation with confidence score and risk flags",
+      "next_step": "Cost Planner to estimate financial impact",
+      "encouragement": "This assessment helps us match you to the right level of care. Take your time and answer as accurately as you can.",
+      "context_tips": {
+        "who_is_this_for": "Answer for the person who needs care (yourself, parent, spouse, etc.)",
+        "be_honest": "Honest answers lead to better recommendations",
+        "cant_decide": "If you're unsure, choose the option that best describes the current situation",
+        "can_pause": "You can pause anytime - your progress is automatically saved"
+      }
     }
   },
   "sections": [
@@ -24,12 +36,24 @@
       "actions": [
         { "label": "Start", "action": "next" },
         { "label": "Back to Concierge Hub", "action": "route", "value": "hub_concierge" }
-      ]
+      ],
+      "navi_guidance": {
+        "section_purpose": "Welcome and set expectations",
+        "what_happens_next": "You'll answer 15-20 questions about daily needs, safety, and cognitive health",
+        "time_estimate": "Takes about 2 minutes",
+        "encouragement": "Let's find the right care option together!"
+      }
     },
     {
       "id": "about_you",
       "title": "About You",
       "description": "Tell us about the person's current situation.",
+      "navi_guidance": {
+        "section_purpose": "Understand demographics and living context",
+        "why_this_matters": "Age and living situation help us understand support networks and care accessibility",
+        "red_flags": ["Living alone + very isolated", "Living alone + 85+"],
+        "encouragement": "These basic details help us tailor our recommendation"
+      },
       "questions": [
         {
           "id": "age_range",
@@ -43,7 +67,11 @@
             { "label": "75–84", "value": "75_84" },
             { "label": "85+", "value": "85_plus" }
           ],
-          "ui": { "widget": "chip", "orientation": "horizontal" }
+          "ui": { "widget": "chip", "orientation": "horizontal" },
+          "navi_guidance": {
+            "why_asked": "Age influences care needs and options",
+            "tip": "Higher age groups often need more support"
+          }
         },
         {
           "id": "living_situation",
@@ -78,6 +106,12 @@
       "id": "medication_mobility",
       "title": "Medication & Mobility",
       "description": "Help us understand health and mobility needs.",
+      "navi_guidance": {
+        "section_purpose": "Assess physical health, medication needs, and fall risks",
+        "why_this_matters": "Medication complexity and mobility limitations are key indicators for care level",
+        "red_flags": ["Complex medications + multiple falls", "Bedbound + no support"],
+        "encouragement": "These questions help us understand physical care needs"
+      },
       "questions": [
         {
           "id": "meds_complexity",
@@ -164,6 +198,13 @@
       "id": "cognition_mental_health",
       "title": "Cognition & Mental Health",
       "description": "Help us understand cognitive and emotional well-being.",
+      "navi_guidance": {
+        "section_purpose": "Evaluate cognitive function and mental health status",
+        "why_this_matters": "Memory issues and mood changes determine if specialized care (like Memory Care) is needed",
+        "red_flags": ["Severe memory + wandering", "Severe memory + aggression", "Low mood + isolation"],
+        "encouragement": "These are sensitive topics - answer honestly to get the right care recommendation",
+        "support_message": "Remember: Cognitive decline is common and there are specialized care options designed to help"
+      },
       "questions": [
         {
           "id": "memory_changes",
@@ -224,6 +265,13 @@
       "id": "daily_living",
       "title": "Daily Living",
       "description": "Understand the person's daily support needs.",
+      "navi_guidance": {
+        "section_purpose": "Determine level of assistance needed for daily activities (ADLs and IADLs)",
+        "why_this_matters": "The amount of help needed with daily tasks is the primary driver of care recommendations",
+        "red_flags": ["Needs help with 3+ ADLs", "24/7 support + no regular caregiver", "Full support + family caregiver stress"],
+        "encouragement": "Almost done! These final questions about daily activities are crucial for your recommendation",
+        "context_note": "ADLs = bathing, dressing, eating, toileting. IADLs = cooking, finances, transportation"
+      },
       "questions": [
         {
           "id": "help_overall",
@@ -317,6 +365,14 @@
       "id": "results",
       "title": "Your Guided Care Plan Summary",
       "type": "results",
+      "navi_guidance": {
+        "section_purpose": "Present personalized care recommendation with confidence score",
+        "what_you_see": "Care tier (Independent, In-Home, Assisted Living, or Memory Care), rationale, and risk flags",
+        "next_steps": "Review recommendation → Calculate costs → Talk to advisor",
+        "encouragement": "Great job! Based on your answers, here's what we recommend",
+        "confidence_explanation": "Confidence score shows how complete your assessment was. Higher is better.",
+        "what_to_do_with_this": "Use this recommendation to explore costs, find facilities, and discuss options with family"
+      },
       "outputs": {
         "summary_text": "Based on your responses, we recommend {{tier}} care.",
         "points": [
