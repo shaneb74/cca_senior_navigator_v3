@@ -8,6 +8,7 @@ import streamlit as st
 
 from core.base_hub import render_dashboard_body
 from core.hub_guide import compute_hub_guide, partners_intel_from_state
+from core.navi import render_navi_panel
 from core.product_tile import ProductTileHub, tile_requirements_satisfied
 from layout import render_page
 
@@ -126,6 +127,9 @@ def _partner_to_tile(
 
 
 def page_partners() -> None:
+    # Render Navi panel (NEW: Direct Streamlit rendering under page title)
+    render_navi_panel(location="hub", hub_key="partners")
+    
     partners: List[Dict[str, Any]] = _load_json(PARTNERS_FILE)
     categories_data: List[Dict[str, Any]] = _load_json(CATEGORIES_FILE)
     categories = {entry["id"]: entry for entry in categories_data}

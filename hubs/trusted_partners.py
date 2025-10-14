@@ -6,6 +6,7 @@ import streamlit as st
 
 from core.additional_services import get_additional_services
 from core.base_hub import BaseHub, status_label
+from core.navi import render_navi_panel
 
 
 class TrustedPartnersHub(BaseHub):
@@ -154,5 +155,8 @@ class TrustedPartnersHub(BaseHub):
 
 
 def render() -> None:
+    # Render Navi panel (NEW: Direct Streamlit rendering under page title)
+    render_navi_panel(location="hub", hub_key="trusted_partners")
+    
     hub = TrustedPartnersHub()
     hub.render()

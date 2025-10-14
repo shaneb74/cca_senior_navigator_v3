@@ -4,6 +4,7 @@ import streamlit as st
 from core.additional_services import get_additional_services
 from core.base_hub import render_dashboard_body
 from core.hub_guide import compute_hub_guide
+from core.navi import render_navi_panel
 from core.product_tile import ProductTileHub
 from layout import render_page
 
@@ -14,6 +15,9 @@ def render(ctx=None) -> None:
     person_name = st.session_state.get("person_name", "").strip()
     # Use person's name if available, otherwise use neutral "you"
     person = person_name if person_name else "you"
+
+    # Render Navi panel (NEW: Direct Streamlit rendering under page title)
+    render_navi_panel(location="hub", hub_key="waiting_room")
 
     # Pull state safely with fallbacks
     appt = st.session_state.get("appointment", {}) or {}
