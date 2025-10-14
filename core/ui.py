@@ -563,20 +563,17 @@ def render_navi_panel_v2(
     """Render refined Navi panel with structured layout using Streamlit native components."""
     from core.nav import route_to
     
-    # Inject CSS for Navi panel V2
+    # Inject CSS for Navi panel V2 (matches hub-guide styling)
     navi_css = """
     <style>
     .navi-panel-v2 {
-        background: linear-gradient(135deg, #0066cc 0%, #0066ccdd 100%);
-        padding: 20px;
-        border-radius: 12px;
-        margin-bottom: 24px;
-        box-shadow: 0 4px 12px rgba(0, 102, 204, 0.15);
-    }
-    .navi-panel-v2__inner {
-        background: white;
-        border-radius: 8px;
-        padding: 20px;
+        background: linear-gradient(180deg, rgba(230,238,255,.65) 0%, rgba(247,249,252,.98) 48%, #fff 100%);
+        border: 1px solid #dbe4f2;
+        border-left: 3px solid #0066cc;
+        border-radius: 16px;
+        box-shadow: 0 1px 3px rgba(15,23,42,.08);
+        padding: 18px 20px;
+        margin: 0 0 24px 0;
     }
     .navi-panel-v2__header {
         display: flex;
@@ -585,72 +582,73 @@ def render_navi_panel_v2(
         margin-bottom: 12px;
     }
     .navi-panel-v2__eyebrow {
-        font-size: 14px;
-        font-weight: 500;
-        color: #64748b;
-        letter-spacing: 0.05em;
+        font-size: 12px;
+        font-weight: 800;
+        color: #1e40af;
+        letter-spacing: 0.08em;
         text-transform: uppercase;
     }
     .navi-panel-v2__progress {
-        font-size: 12px;
-        font-weight: 500;
-        padding: 6px 12px;
-        background: rgba(0, 102, 204, 0.1);
-        border-radius: 16px;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 4px 10px;
+        background: rgba(0, 102, 204, 0.08);
+        border: 1px solid rgba(0, 102, 204, 0.15);
+        border-radius: 12px;
         color: #0066cc;
     }
     .navi-panel-v2__title {
-        font-size: 20px;
-        font-weight: 600;
+        font-size: 18px;
+        font-weight: 800;
         color: #0f172a;
-        margin-bottom: 8px;
+        margin: 0 0 6px 0;
         line-height: 1.3;
     }
     .navi-panel-v2__reason {
-        font-size: 16px;
+        font-size: 15px;
         color: #475569;
-        margin-bottom: 16px;
+        margin: 0 0 14px 0;
         line-height: 1.5;
     }
     .navi-panel-v2__encouragement {
-        padding: 12px 16px;
-        border-radius: 6px;
-        margin-bottom: 16px;
-        border-left: 3px solid #0066cc;
+        padding: 10px 14px;
+        border-radius: 8px;
+        margin: 0 0 14px 0;
         display: flex;
         align-items: center;
         gap: 8px;
         font-size: 14px;
         color: #1e293b;
+        border-left: 2px solid #0066cc;
     }
     .navi-panel-v2__encouragement--getting_started { background: #f0f9ff; }
     .navi-panel-v2__encouragement--in_progress { background: #eff6ff; }
-    .navi-panel-v2__encouragement--nearly_there { background: #fef3c7; }
-    .navi-panel-v2__encouragement--complete { background: #f0fdf4; }
+    .navi-panel-v2__encouragement--nearly_there { background: #fef3c7; border-left-color: #f59e0b; }
+    .navi-panel-v2__encouragement--complete { background: #f0fdf4; border-left-color: #22c55e; }
     .navi-panel-v2__chips-label {
-        font-size: 14px;
-        font-weight: 500;
-        color: #475569;
-        margin-bottom: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #64748b;
+        margin: 0 0 8px 0;
     }
     .navi-panel-v2__chips {
         display: flex;
-        gap: 12px;
+        gap: 10px;
         flex-wrap: wrap;
-        margin-bottom: 16px;
     }
     .navi-panel-v2__chip {
         flex: 1;
-        min-width: 140px;
-        background: white;
+        min-width: 130px;
+        background: #ffffff;
         border: 1px solid #e2e8f0;
         border-radius: 8px;
-        padding: 12px;
+        padding: 10px 12px;
+        box-shadow: 0 1px 2px rgba(15,23,42,.04);
     }
     .navi-panel-v2__chip-label {
-        font-size: 12px;
+        font-size: 11px;
         color: #64748b;
-        font-weight: 500;
+        font-weight: 600;
         margin-bottom: 4px;
         display: flex;
         align-items: center;
@@ -659,10 +657,10 @@ def render_navi_panel_v2(
     .navi-panel-v2__chip-value {
         font-size: 14px;
         color: #0f172a;
-        font-weight: 600;
+        font-weight: 700;
     }
     .navi-panel-v2__chip-sublabel {
-        font-size: 12px;
+        font-size: 11px;
         color: #64748b;
         margin-top: 2px;
     }
@@ -691,8 +689,8 @@ def render_navi_panel_v2(
     # Get encouragement status
     status = encouragement.get('status', 'in_progress')
     
-    # Build complete panel HTML (single line to avoid whitespace issues)
-    panel_html = f'<div class="navi-panel-v2"><div class="navi-panel-v2__inner"><div class="navi-panel-v2__header"><div class="navi-panel-v2__eyebrow">🤖 Navi</div>{progress_badge}</div><div class="navi-panel-v2__title">{title}</div><div class="navi-panel-v2__reason">{reason}</div><div class="navi-panel-v2__encouragement navi-panel-v2__encouragement--{status}"><span style="font-size: 18px;">{encouragement.get("icon", "💪")}</span><span>{encouragement.get("text", "")}</span></div>{chips_html}</div></div>'
+    # Build complete panel HTML (flat structure, no inner wrapper)
+    panel_html = f'<div class="navi-panel-v2"><div class="navi-panel-v2__header"><div class="navi-panel-v2__eyebrow">🤖 Navi</div>{progress_badge}</div><div class="navi-panel-v2__title">{title}</div><div class="navi-panel-v2__reason">{reason}</div><div class="navi-panel-v2__encouragement navi-panel-v2__encouragement--{status}"><span style="font-size: 18px;">{encouragement.get("icon", "💪")}</span><span>{encouragement.get("text", "")}</span></div>{chips_html}</div>'
     
     st.markdown(panel_html, unsafe_allow_html=True)
     
