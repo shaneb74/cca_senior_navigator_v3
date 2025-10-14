@@ -137,33 +137,14 @@ def _render_active_module():
 
 def _render_expert_review_step():
     """Step 6: Expert Advisor Review (MUST BE LAST before exit)."""
-    # Placeholder for expert review implementation (Sprint 4)
-    st.title("👔 Expert Advisor Review")
-    st.info("Expert Review coming in Sprint 4")
-    
-    # For now, skip to exit
-    if st.button("Continue to Summary", type="primary"):
-        st.session_state.cost_v2_step = "exit"
-        st.rerun()
+    from products.cost_planner_v2 import expert_review
+    expert_review.render()
 
 
 def _render_exit_step():
     """Step 7: Exit with summary and next actions."""
-    # Placeholder for exit implementation
-    st.title("✅ Financial Plan Complete")
-    st.success("Your financial profile has been published to your Master Care Intelligence Panel.")
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        if st.button("🏠 Return to Hub", type="primary", use_container_width=True):
-            from core.nav import route_to
-            route_to("hub_concierge")
-    
-    with col2:
-        if st.button("📊 View PFMA", use_container_width=True):
-            from core.nav import route_to
-            route_to("pfma")
+    from products.cost_planner_v2 import exit
+    exit.render()
 
 
 def _render_gcp_gate():
