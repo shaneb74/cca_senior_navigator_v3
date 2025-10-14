@@ -1,13 +1,34 @@
 from textwrap import dedent
 
+import streamlit as st
+
+from core.state import authenticate_user
+from core.nav import route_to
 from core.ui import img_src
 from layout import render_page
 
 
-def _login_markup() -> str:
+def render():
+    """Render login page - simple auth toggle (no real authentication)."""
+    
+    # Check if form was submitted
+    if st.query_params.get("action") == "login":
+        # Get form data from session state (set by JavaScript)
+        name = st.session_state.get("_login_name", "Sarah")
+        email = st.session_state.get("_login_email", "sarah@example.com")
+        
+        # Toggle auth on
+        authenticate_user(name=name, email=email)
+        
+        # Clear query params and redirect to hub
+        st.query_params.clear()
+        route_to("hub_concierge")
+        st.rerun()
+    
+    # Show form UI
     logo = img_src("static/images/logos/cca_logo.png")
-
-    return dedent(
+    
+    body_html = dedent(
         f"""
         <style>
         .login-bg{{
@@ -65,32 +86,41 @@ def _login_markup() -> str:
               <h1>Welcome back to Senior Navigator</h1>
               <p>Log in to pick up where you left off.</p>
             </div>
-            <form class="login-form">
+            <div class="login-form">
+              <div class="login-field">
+                <label for="login-name">Name<span style="color:#dc2626;">*</span></label>
+                <div class="login-input">
+                  <input id="login-name" type="text" placeholder="Your name" value="Sarah" />
+                </div>
+              </div>
               <div class="login-field">
                 <label for="login-email">Email<span style="color:#dc2626;">*</span></label>
                 <div class="login-input">
-                  <input id="login-email" type="email" placeholder="Provide your email" required />
+                  <input id="login-email" type="email" placeholder="Your email" value="sarah@example.com" />
                   <svg viewBox="0 0 24 24"><path d="M12 12.713 3 6.75V18q0 .825.587 1.413Q4.175 20 5 20h14q.825 0 1.412-.587Q21 18.825 21 18V6.75Zm0-1.963L20.85 6H3.15Z"/></svg>
                 </div>
               </div>
-              <div class="login-field">
-                <label for="login-password">Password<span style="color:#dc2626;">*</span></label>
-                <div class="login-input">
-                  <input id="login-password" type="password" placeholder="Provide your password" required />
-                  <svg viewBox="0 0 24 24"><path d="M17 10h-1V7.5q0-1.875-1.312-3.188Q13.375 3 11.5 3T8.312 4.312Q7 5.625 7 7.5V10H6q-.825 0-1.412.588Q4 11.175 4 12v7q0 .825.588 1.413Q5.175 21 6 21h11q.825 0 1.413-.587Q19 19.825 19 19v-7q0-.825-.587-1.412Q17.825 10 17 10Zm-5.5-5q.65 0 1.075.425Q13 5.85 13 6.5V10H10V6.5q0-.65.425-1.075Q10.85 5 11.5 5Z"/></svg>
-                </div>
+              <div style="padding:8px;background:#eff6ff;border-radius:8px;font-size:0.9rem;color:#1e40af;">
+                💡 <strong>Demo Mode:</strong> Just click "Log in" to toggle authentication. No password needed!
               </div>
-              <div class="login-actions">
-                <button type="submit" class="login-primary">Log in</button>
-                <button type="button" class="login-secondary">I forgot password</button>
-              </div>
-            </form>
-            <div style="font-size:0.95rem;color:#4b5563;">Need an account? <a href="?page=signup" style="color:#2563eb;font-weight:600;text-decoration:none;">Sign up</a></div>
+            </div>
           </div>
         </section>
         """
     )
+    
+    render_page(body_html=body_html, active_route="login", show_header=False, show_footer=False)
+    
+    # Add Streamlit login button below
+    st.markdown("---")
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        if st.button("🔐 Log in (Toggle Auth On)", use_container_width=True, type="primary"):
+            # Get values from form (use defaults)
+            authenticate_user(name="Sarah", email="sarah@example.com")
+            st.success("✅ Logged in as Sarah!")
+            st.info("Redirecting to Concierge Hub...")
+            st.balloons()
+            route_to("hub_concierge")
+            st.rerun()
 
-
-def render():
-    render_page(body_html=_login_markup(), active_route="login", show_header=False, show_footer=False)

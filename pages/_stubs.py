@@ -717,6 +717,33 @@ def render_signup():
     return
 
 
+def render_logout():
+    """Logout page - toggles auth off."""
+    import streamlit as st
+    from core.state import logout_user
+    from core.nav import route_to
+    
+    # Toggle auth off
+    logout_user()
+    
+    st.title("👋 Logged Out")
+    st.success("You've been logged out successfully!")
+    st.info("Your progress is saved. Log back in anytime to continue.")
+    
+    st.markdown("---")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("← Back to Welcome", use_container_width=True):
+            route_to("welcome")
+            st.rerun()
+    
+    with col2:
+        if st.button("🔐 Log Back In", use_container_width=True, type="primary"):
+            route_to("login")
+            st.rerun()
+
+
 def render_export_results():
     """Export/share journey results - shows summary of all completed products."""
     from core.mcip import MCIP

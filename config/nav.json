@@ -52,6 +52,12 @@
           "hidden": true
         },
         {
+          "key": "logout",
+          "label": "Log out",
+          "module": "pages._stubs:render_logout",
+          "hidden": true
+        },
+        {
           "key": "export_results",
           "label": "Export Results",
           "module": "pages._stubs:render_export_results",

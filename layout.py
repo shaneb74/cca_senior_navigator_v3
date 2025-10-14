@@ -84,37 +84,38 @@ RESPONSIVE_CSS = dedent(
 
 
 def _build_header(active_route: Optional[str] = None) -> str:
+    from core.state import is_authenticated, get_user_name
+    
     logo_url = safe_img_src("cca_logo.png")
     brand_html = ""
     if logo_url:
         brand_html = f'<img src="{logo_url}" alt="Concierge Care Advisors" class="brand-logo" />'
     current = active_route or _current_page()
     
-    # ============================================================
-    # AUTHENTICATION DISABLED FOR DEVELOPMENT TESTING
-    # ============================================================
-    # Role-based navigation links temporarily disabled
-    # Professional link is now always visible for testing purposes
-    # ============================================================
-    
-    # Build navigation links - Professional link always visible for testing
+    # Build navigation links
     nav_links = [
         _nav_link("Welcome", "welcome", current),
         _nav_link("Concierge", "hub_concierge", current),
         _nav_link("Waiting Room", "hub_waiting", current),
         _nav_link("Learning", "hub_learning", current),
         _nav_link("Trusted Partners", "hub_trusted", current),
-        _nav_link("Professional", "hub_professional", current),  # Always visible - auth disabled
+        _nav_link("Professional", "hub_professional", current),
     ]
     
     links = "".join(nav_links)
     
-    # ============================================================
-    # Login/Logout buttons disabled for development testing
-    # Using standard login button regardless of role
-    # ============================================================
-    # Standard login button (role-based switching disabled)
-    auth_button = '<a href="?page=login" class="btn btn--secondary" style="height:32px;padding:0 12px">Log in or sign up</a>'
+    # Auth button - toggles between login and logout
+    if is_authenticated():
+        user_name = get_user_name()
+        display_name = user_name if user_name else "User"
+        auth_button = f'''
+            <div style="display:flex;align-items:center;gap:8px;">
+                <span style="font-size:0.9rem;color:var(--ink-600);">👋 {display_name}</span>
+                <a href="?page=logout" class="btn btn--secondary" style="height:32px;padding:0 12px">Log out</a>
+            </div>
+        '''
+    else:
+        auth_button = '<a href="?page=login" class="btn btn--secondary" style="height:32px;padding:0 12px">Log in</a>'
     
     return dedent(
         f"""
