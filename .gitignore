@@ -7,6 +7,11 @@ __pycache__/
 .DS_Store
 .streamlit/secrets.toml
 
+# Session and user data (local persistence)
+.cache/
+data/users/
+*.lock
+
 # quarantine old code
 _backup/
 archive/
