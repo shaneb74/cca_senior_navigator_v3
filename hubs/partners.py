@@ -127,9 +127,6 @@ def _partner_to_tile(
 
 
 def page_partners() -> None:
-    # Render Navi panel (NEW: Direct Streamlit rendering under page title)
-    render_navi_panel(location="hub", hub_key="partners")
-    
     partners: List[Dict[str, Any]] = _load_json(PARTNERS_FILE)
     categories_data: List[Dict[str, Any]] = _load_json(CATEGORIES_FILE)
     categories = {entry["id"]: entry for entry in categories_data}
@@ -158,18 +155,25 @@ def page_partners() -> None:
     if not tiles:
         cards_html = '<div class="dashboard-grid"><div class="dashboard-empty">No partners match your filters yet.</div></div>'
 
-    body_html = render_dashboard_body(
-        title="Trusted Partners",
-        chips=[
-            {"label": "Partner marketplace"},
-            {"label": "Advisor aligned", "variant": "muted"},
-        ],
-        hub_guide_block=guide_html,
-        cards=tiles if tiles else None,
-        cards_html=cards_html,
-    )
+    # Use callback pattern to render Navi AFTER header
+    def render_content():
+        # Render Navi panel (after header, before hub content)
+        render_navi_panel(location="hub", hub_key="partners")
+        
+        # Render hub body HTML
+        body_html = render_dashboard_body(
+            title="Trusted Partners",
+            chips=[
+                {"label": "Partner marketplace"},
+                {"label": "Advisor aligned", "variant": "muted"},
+            ],
+            hub_guide_block=guide_html,
+            cards=tiles if tiles else None,
+            cards_html=cards_html,
+        )
+        st.markdown(body_html, unsafe_allow_html=True)
 
-    render_page(body_html=body_html, active_route="hub_trusted")
+    render_page(content=render_content, active_route="hub_trusted")
 
 
 render = page_partners

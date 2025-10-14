@@ -90,9 +90,6 @@ def render(ctx=None) -> None:
     # authentication will be re-enabled.
     # ============================================================
 
-    # Render Navi panel (NEW: Direct Streamlit rendering under page title)
-    render_navi_panel(location="hub", hub_key="professional")
-
     # MCIP panel data
     pending_actions = 7
     new_referrals = 3
@@ -190,11 +187,18 @@ def render(ctx=None) -> None:
         last_login=last_login,
     )
 
-    body_html = render_dashboard_body(
-        title="Professional Hub",
-        subtitle="Comprehensive tools for discharge planners, nurses, physicians, social workers, and geriatric care managers.",
-        hub_guide_block=mcip_panel,
-        cards=cards,
-    )
+    # Use callback pattern to render Navi AFTER header
+    def render_content():
+        # Render Navi panel (after header, before hub content)
+        render_navi_panel(location="hub", hub_key="professional")
+        
+        # Render hub body HTML
+        body_html = render_dashboard_body(
+            title="Professional Hub",
+            subtitle="Comprehensive tools for discharge planners, nurses, physicians, social workers, and geriatric care managers.",
+            hub_guide_block=mcip_panel,
+            cards=cards,
+        )
+        st.markdown(body_html, unsafe_allow_html=True)
 
-    render_page(body_html=body_html, active_route="hub_professional")
+    render_page(content=render_content, active_route="hub_professional")
