@@ -6,8 +6,9 @@ from typing import Dict, Optional, Sequence
 
 import streamlit as st
 
+from core.mcip import MCIP
 from core.nav import route_to
-from core.state import is_professional, switch_to_member, switch_to_professional
+from core.state import is_authenticated, is_professional, switch_to_member, switch_to_professional
 from core.ui import img_src
 from layout import render_page, static_url
 
@@ -395,11 +396,20 @@ def render_welcome_card(
 
         # Handle form submission - allow navigation with or without a name
         if submitted:
-            # Only store name if provided (not empty or whitespace)
+            # Store relationship context
+            if safe_active == "someone":
+                st.session_state["planning_for_relationship"] = "someone_else"
+            elif safe_active == "self":
+                st.session_state["planning_for_relationship"] = "self"
+            
+            # Store name if provided (not empty or whitespace)
             if name_value and name_value.strip():
+                st.session_state["planning_for_name"] = name_value.strip()
+                # Keep legacy person_name for backward compatibility
                 st.session_state["person_name"] = name_value.strip()
             else:
-                # Clear person_name if it exists, allowing generic terms to be used
+                # Clear names if exists, allowing generic terms to be used
+                st.session_state.pop("planning_for_name", None)
                 st.session_state.pop("person_name", None)
             
             # Navigate regardless of whether name was provided
@@ -437,10 +447,26 @@ def render_welcome_card(
             )
 
 
-def _welcome_body() -> str:
+def _welcome_body(
+    primary_label: str = "Start Now",
+    primary_route: str = "someone_else",
+    show_secondary: bool = True,
+) -> str:
+    """Generate welcome page body with dynamic CTA buttons.
+    
+    Args:
+        primary_label: Text for primary button
+        primary_route: Route for primary button (page name or route key)
+        show_secondary: Whether to show the "Log in" button
+    """
     hero_url = static_url("hero.png")
     family_main = static_url("welcome_someone_else.png")
     self_main = static_url("welcome_self.png")
+    
+    # Build CTA buttons
+    cta_html = f'<a href="?page={primary_route}" class="btn btn--primary wl-btn">{html.escape(primary_label)}</a>'
+    if show_secondary:
+        cta_html += '\n                      <a href="?page=login" class="btn btn--secondary">Log in</a>'
 
     return _clean_html(
         f"""
@@ -455,8 +481,7 @@ def _welcome_body() -> str:
                       We help your family explore senior living options with clarity, care, and confidence—always at no cost.
                     </p>
                     <div class="cta-row">
-                      <a href="?page=someone_else" class="btn btn--primary wl-btn">Start Now</a>
-                      <a href="?page=login" class="btn btn--secondary">Log in</a>
+                      {cta_html}
                     </div>
                   </div>
                   <div class="welcome-hero-media">
@@ -521,6 +546,7 @@ def _welcome_body() -> str:
 
 
 def render(ctx: Optional[dict] = None) -> None:
+    """Render welcome page with adaptive behavior based on auth state."""
     # ============================================================
     # AUTHENTICATION DISABLED FOR DEVELOPMENT TESTING
     # ============================================================
@@ -535,7 +561,41 @@ def render(ctx: Optional[dict] = None) -> None:
     # ============================================================
     
     _inject_welcome_css()
-    render_page(body_html=_welcome_body(), active_route="welcome")
+    
+    # Determine button state based on authentication and planning context
+    authenticated = is_authenticated()
+    has_planning_context = (
+        st.session_state.get("planning_for_name") 
+        or st.session_state.get("person_name")
+    )
+    
+    # Button configuration based on state
+    if not authenticated:
+        # State: Not logged in
+        primary_label = "Start Now"
+        primary_route = "someone_else"
+        show_secondary = True
+    elif authenticated and not has_planning_context:
+        # State: Logged in, no planning context
+        primary_label = "Start Planning"
+        primary_route = "someone_else"
+        show_secondary = False
+    else:
+        # State: Logged in, planning context known
+        # Use Navi's recommendation for next action
+        next_action = MCIP.get_recommended_next_action()
+        primary_label = "Continue where you left off"
+        primary_route = next_action.get("route", "hub_concierge")
+        show_secondary = False
+    
+    render_page(
+        body_html=_welcome_body(
+            primary_label=primary_label,
+            primary_route=primary_route,
+            show_secondary=show_secondary,
+        ),
+        active_route="welcome"
+    )
 
 
 __all__ = ["render", "render_welcome_card"]
