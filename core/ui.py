@@ -281,11 +281,13 @@ def render_mcip_journey_status() -> None:
     """Render Navi journey status banner showing progress and next action.
     
     Navi is your AI guide through the senior care journey.
-    Shows user-friendly guidance like:
-    - "Hey there! Let's create your care plan 🧭"
-    - "Great job! 1/3 complete. Next: Calculate costs 💰"
-    - "Almost done! 2/3 complete. Next: Schedule appointment 📅"
-    - "🎉 Journey complete! All 3 products done."
+    Now powered by structured dialogue system from navi_dialogue.json.
+    
+    Shows contextual guidance based on journey phase:
+    - getting_started: Welcome and first product intro
+    - in_progress: Celebration + next product guidance
+    - nearly_there: Almost done + final product
+    - complete: Celebration + export/share
     
     Includes gamification:
     - Achievement badges for each completed product
@@ -293,14 +295,10 @@ def render_mcip_journey_status() -> None:
     - "Share My Results" button when complete
     """
     from core.mcip import MCIP
-    from core.state import get_user_ctx
+    from core.state import get_user_ctx, is_authenticated, get_user_name
+    from core.navi_dialogue import NaviDialogue
     
-    # Get user context for personalization
-    ctx = get_user_ctx()
-    user_name = ctx.get("auth", {}).get("name", "")
-    greeting = f"Hey {user_name}! " if user_name else "Hey there! "
-    
-    # Get journey data from Navi
+    # Get journey data
     progress = MCIP.get_journey_progress()
     next_action = MCIP.get_recommended_next_action()
     
@@ -308,33 +306,69 @@ def render_mcip_journey_status() -> None:
     completed_products = progress["completed_products"]
     total = 3  # GCP, Cost Planner, PFMA
     
+    # Build context for Navi dialogue
+    context = {
+        "name": get_user_name() or "there",
+    }
+    
+    # Add contract data to context if available
+    try:
+        care_rec = MCIP.get_care_recommendation()
+        if care_rec:
+            context["tier"] = care_rec.recommended_tier
+            context["confidence"] = int(care_rec.confidence_score * 100)
+    except:
+        pass
+    
+    try:
+        financial = MCIP.get_financial_profile()
+        if financial:
+            context["monthly_cost"] = f"${financial.monthly_cost:,.0f}"
+            context["runway_months"] = financial.runway_months
+    except:
+        pass
+    
+    # Map MCIP status to dialogue phase
+    status = next_action["status"]
+    phase_map = {
+        "complete": "complete",
+        "nearly_there": "nearly_there",
+        "in_progress": "in_progress",
+        "getting_started": "getting_started"
+    }
+    phase = phase_map.get(status, "getting_started")
+    
+    # Get Navi's message from dialogue system
+    navi_message = NaviDialogue.get_journey_message(phase, is_authenticated(), context)
+    
+    # Extract message components
+    icon = navi_message.get("icon", "🤖")
+    main_text = navi_message.get("text", "")
+    subtext = navi_message.get("subtext", "")
+    cta_text = navi_message.get("cta", "")
+    
+    # Prefix Navi branding to main text
+    if not main_text.startswith("🤖"):
+        if status == "complete":
+            main_text = f"🤖 Navi says: {main_text}"
+        else:
+            main_text = f"🤖 Navi: {main_text}"
+    
     # Achievement badges for completed products
     badges_html = _render_achievement_badges(completed_products)
     
     # Status-based styling
-    status = next_action["status"]
+    color_map = {
+        "complete": "#10b981",       # Green
+        "nearly_there": "#f59e0b",   # Amber
+        "in_progress": "#3b82f6",    # Blue
+        "getting_started": "#8b5cf6" # Purple
+    }
+    bg_color = color_map.get(status, "#8b5cf6")
+    
+    # Add confetti on complete
     if status == "complete":
-        bg_color = "#10b981"  # Green
-        icon = "🎉"
-        message = "🤖 Navi says: " + next_action["action"]
-        submessage = next_action["reason"]
-        # Add confetti celebration on complete
         _render_celebration_effect()
-    elif status == "nearly_there":
-        bg_color = "#f59e0b"  # Amber
-        icon = "📅"
-        message = f"🤖 Navi: {completed}/{total} complete. {next_action['action']}"
-        submessage = next_action["reason"]
-    elif status == "in_progress":
-        bg_color = "#3b82f6"  # Blue
-        icon = "💰"
-        message = f"🤖 Navi: {greeting}{completed}/{total} complete. {next_action['action']}"
-        submessage = next_action["reason"]
-    else:  # getting_started
-        bg_color = "#8b5cf6"  # Purple
-        icon = "🧭"
-        message = f"🤖 Navi: {greeting}{next_action['action']}"
-        submessage = next_action["reason"]
     
     # Render banner with Navi branding
     st.markdown(f"""
@@ -351,10 +385,10 @@ def render_mcip_journey_status() -> None:
                 <div style="font-size: 32px;">{icon}</div>
                 <div style="flex: 1;">
                     <div style="font-size: 18px; font-weight: 600; margin-bottom: 4px;">
-                        {message}
+                        {main_text}
                     </div>
                     <div style="font-size: 14px; opacity: 0.9;">
-                        {submessage}
+                        {subtext}
                     </div>
                     {badges_html}
                 </div>
