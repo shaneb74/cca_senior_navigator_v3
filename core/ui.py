@@ -789,21 +789,20 @@ def render_navi_panel_v2(
     st.markdown(panel_html, unsafe_allow_html=True)
     
     # 6. Action row (render as Streamlit buttons for interactivity)
-    col1, col2 = st.columns([2, 1] if secondary_action else [1])
-    
-    with col1:
-        if st.button(
-            primary_action['label'],
-            type="primary",
-            use_container_width=True,
-            key=f"navi_primary_{primary_action.get('route', 'action')}"
-        ):
-            if primary_action.get('callback'):
-                primary_action['callback']()
-            elif primary_action.get('route'):
-                route_to(primary_action['route'])
-    
     if secondary_action:
+        col1, col2 = st.columns([2, 1])
+        with col1:
+            if st.button(
+                primary_action['label'],
+                type="primary",
+                use_container_width=True,
+                key=f"navi_primary_{primary_action.get('route', 'action')}"
+            ):
+                if primary_action.get('callback'):
+                    primary_action['callback']()
+                elif primary_action.get('route'):
+                    route_to(primary_action['route'])
+        
         with col2:
             if st.button(
                 secondary_action['label'],
@@ -814,5 +813,18 @@ def render_navi_panel_v2(
                     secondary_action['callback']()
                 elif secondary_action.get('route'):
                     route_to(secondary_action['route'])
+    else:
+        # No secondary action - render primary button full width
+        if st.button(
+            primary_action['label'],
+            type="primary",
+            use_container_width=True,
+            key=f"navi_primary_{primary_action.get('route', 'action')}"
+        ):
+            if primary_action.get('callback'):
+                primary_action['callback']()
+            elif primary_action.get('route'):
+                route_to(primary_action['route'])
+
 
 
