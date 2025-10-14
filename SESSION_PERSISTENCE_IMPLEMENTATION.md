@@ -8,6 +8,11 @@
 
 Implemented robust session and user data persistence using file-based storage with atomic writes, file locking, and graceful error handling. This ensures user progress and state are preserved across browser sessions, app restarts, and potential crashes.
 
+### Quick Links
+- **Clear Data:** See [CLEAR_DATA_GUIDE.md](./CLEAR_DATA_GUIDE.md) for commands to clear sessions/users
+- **Testing:** See [SESSION_PERSISTENCE_TESTING_GUIDE.md](./SESSION_PERSISTENCE_TESTING_GUIDE.md) for test scenarios
+- **Management:** Use `clear_data.py` script for inspection and cleanup
+
 ## Architecture
 
 ### Two-Tier Storage
