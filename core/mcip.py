@@ -304,6 +304,168 @@ class MCIP:
             "unlocked_products": journey["unlocked_products"]
         }
     
+    @classmethod
+    def get_recommended_next_action(cls) -> Dict[str, str]:
+        """Get user-friendly guidance for what to do next.
+        
+        Returns MCIP's recommendation with:
+        - action: What to do ("Complete your care plan", "Calculate costs", etc.)
+        - reason: Why they should do it
+        - route: Where to navigate
+        - status: Journey phase (getting_started | in_progress | nearly_there | complete)
+        
+        Returns:
+            Dict with action, reason, route, status
+        """
+        cls.initialize()
+        journey = st.session_state[cls.STATE_KEY]["journey"]
+        completed = journey["completed_products"]
+        
+        # Complete - All done!
+        if "gcp" in completed and "cost_planner" in completed and "pfma" in completed:
+            return {
+                "action": "🎉 Journey Complete!",
+                "reason": "You've completed your care plan, cost analysis, and scheduled your advisor appointment.",
+                "route": "hub_concierge",
+                "status": "complete"
+            }
+        
+        # Nearly there - Just PFMA left
+        if "gcp" in completed and "cost_planner" in completed:
+            return {
+                "action": "📅 Schedule Your Advisor Appointment",
+                "reason": "Meet with an advisor to finalize your plan and answer questions.",
+                "route": "pfma_v2",
+                "status": "nearly_there"
+            }
+        
+        # In progress - GCP done, Cost Planner next
+        if "gcp" in completed:
+            return {
+                "action": "💰 Calculate Your Care Costs",
+                "reason": "Understand the financial side of your care plan.",
+                "route": "cost_v2",
+                "status": "in_progress"
+            }
+        
+        # Getting started - Start with GCP
+        return {
+            "action": "🧭 Create Your Guided Care Plan",
+            "reason": "Get a personalized care recommendation based on your needs.",
+            "route": "gcp_v4",
+            "status": "getting_started"
+        }
+    
+    @classmethod
+    def get_product_summary(cls, product_key: str) -> Optional[Dict[str, Any]]:
+        """Get summary info for a product tile.
+        
+        Pulls relevant data from MCIP contracts to show on product tiles.
+        
+        Args:
+            product_key: "gcp", "cost_planner", or "pfma"
+        
+        Returns:
+            Dict with title, status, summary_line, icon, or None if not available
+        """
+        cls.initialize()
+        
+        if product_key in ["gcp", "gcp_v4"]:
+            rec = cls.get_care_recommendation()
+            if rec and rec.tier:
+                tier_map = {
+                    "independent": "Independent Living",
+                    "in_home": "In-Home Care",
+                    "assisted_living": "Assisted Living",
+                    "memory_care": "Memory Care"
+                }
+                tier_label = tier_map.get(rec.tier, rec.tier.replace("_", " ").title())
+                confidence_pct = int(rec.tier_score) if rec.tier_score else int(rec.confidence * 100)
+                
+                return {
+                    "title": "Guided Care Plan",
+                    "status": "complete",
+                    "summary_line": f"✅ {tier_label} ({confidence_pct}% confidence)",
+                    "icon": "🧭",
+                    "route": "gcp_v4"
+                }
+            else:
+                return {
+                    "title": "Guided Care Plan",
+                    "status": "not_started",
+                    "summary_line": "Get your personalized care recommendation",
+                    "icon": "🧭",
+                    "route": "gcp_v4"
+                }
+        
+        elif product_key in ["cost_planner", "cost_v2"]:
+            profile = cls.get_financial_profile()
+            if profile:
+                cost_str = f"${profile.estimated_monthly_cost:,.0f}/month"
+                runway_str = f"{profile.runway_months} month runway" if profile.runway_months > 0 else "Review needed"
+                
+                return {
+                    "title": "Cost Planner",
+                    "status": "complete",
+                    "summary_line": f"✅ {cost_str} ({runway_str})",
+                    "icon": "💰",
+                    "route": "cost_v2"
+                }
+            else:
+                # Check if GCP is complete
+                rec = cls.get_care_recommendation()
+                if rec and rec.tier:
+                    return {
+                        "title": "Cost Planner",
+                        "status": "unlocked",
+                        "summary_line": "Calculate your care costs",
+                        "icon": "💰",
+                        "route": "cost_v2"
+                    }
+                else:
+                    return {
+                        "title": "Cost Planner",
+                        "status": "locked",
+                        "summary_line": "Complete Guided Care Plan first",
+                        "icon": "🔒",
+                        "route": None
+                    }
+        
+        elif product_key in ["pfma", "pfma_v2"]:
+            appt = cls.get_advisor_appointment()
+            if appt and appt.scheduled:
+                type_map = {"phone": "Phone", "video": "Video", "in_person": "In-Person"}
+                type_label = type_map.get(appt.type, appt.type.title())
+                
+                return {
+                    "title": "Plan with My Advisor",
+                    "status": "complete",
+                    "summary_line": f"✅ {type_label} Appt - {appt.date}",
+                    "icon": "📅",
+                    "route": "pfma_v2"
+                }
+            else:
+                # Check if Cost Planner is complete
+                profile = cls.get_financial_profile()
+                if profile:
+                    return {
+                        "title": "Plan with My Advisor",
+                        "status": "unlocked",
+                        "summary_line": "Schedule your advisor appointment",
+                        "icon": "📅",
+                        "route": "pfma_v2"
+                    }
+                else:
+                    return {
+                        "title": "Plan with My Advisor",
+                        "status": "locked",
+                        "summary_line": "Complete Cost Planner first",
+                        "icon": "🔒",
+                        "route": None
+                    }
+        
+        return None
+    
     # =========================================================================
     # INTERNAL HELPERS
     # =========================================================================
