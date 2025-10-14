@@ -89,11 +89,11 @@ def render(ctx=None) -> None:
         # Render Navi panel (after header, before hub content)
         render_navi_panel(location="hub", hub_key="waiting_room")
         
-        # Render hub body HTML
+        # Render hub body HTML WITHOUT title/subtitle/chips (Navi replaces them)
         body_html = render_dashboard_body(
-            title="Waiting Room",
-            subtitle="Your plan is active. Keep it fresh and share updates with your advisor.",
-            chips=[{"label": "In service"}, {"label": f"For {person}", "variant": "muted"}],
+            title=None,
+            subtitle=None,
+            chips=None,
             hub_guide_block=guide,
             cards=cards,
             additional_services=additional,

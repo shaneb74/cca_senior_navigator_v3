@@ -160,13 +160,10 @@ def page_partners() -> None:
         # Render Navi panel (after header, before hub content)
         render_navi_panel(location="hub", hub_key="partners")
         
-        # Render hub body HTML
+        # Render hub body HTML WITHOUT title/chips (Navi replaces them)
         body_html = render_dashboard_body(
-            title="Trusted Partners",
-            chips=[
-                {"label": "Partner marketplace"},
-                {"label": "Advisor aligned", "variant": "muted"},
-            ],
+            title=None,
+            chips=None,
             hub_guide_block=guide_html,
             cards=tiles if tiles else None,
             cards_html=cards_html,

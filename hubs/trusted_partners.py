@@ -164,12 +164,12 @@ def render() -> None:
         # Render Navi panel (after header, before hub content)
         render_navi_panel(location="hub", hub_key="trusted_partners")
         
-        # Render hub body HTML
+        # Render hub body HTML WITHOUT title/subtitle/chips (Navi replaces them)
         from core.base_hub import render_dashboard_body
         body_html = render_dashboard_body(
-            title="Trusted Partners Hub",
-            subtitle="Discover verified providers your advisor trusts",
-            chips=dashboard_data.get("chips", []),
+            title=None,
+            subtitle=None,
+            chips=None,
             hub_guide_block=dashboard_data.get("callout"),
             cards=dashboard_data.get("cards", []),
             additional_services=dashboard_data.get("additional_services"),
