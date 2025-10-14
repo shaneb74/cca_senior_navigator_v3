@@ -16,6 +16,8 @@ import streamlit as st
 import random
 from typing import List, Dict, Set, Any
 
+from core.nav import route_to
+
 
 # ==============================================================================
 # QUESTION DATABASE - Flag-Tagged Questions
@@ -526,11 +528,9 @@ def render():
     
     st.divider()
     
-    # Back to hub
+    # Back to hub - use canonical hub route (same as other products)
     if st.button("← Back to Hub", key="back_to_hub", use_container_width=True):
-        st.query_params.clear()
-        st.query_params["page"] = "concierge"
-        st.rerun()
+        route_to("hub_concierge")
 
 
 def _ask_question(question: str):
