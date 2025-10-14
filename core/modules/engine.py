@@ -70,9 +70,12 @@ def run_module(config: ModuleConfig) -> Dict[str, Any]:
     # NAVI PERSISTENT GUIDE BAR
     # Inject Navi's contextual guidance at the top of every module
     # ========================================================================
-    _render_navi_guide_bar(config, step, state, step_index, progress_total)
+    # DISABLED: Now using main Navi panel (blue box) which shows step progress
+    # The purple box was duplicate - main Navi panel at page top handles all guidance
+    # _render_navi_guide_bar(config, step, state, step_index, progress_total)
     
     # Render header with actual progress
+    # Note: Progress bar also disabled since Navi panel shows progress (X/Y steps)
     _render_header(step_index, total_steps, title, step.subtitle, progress, progress_total, show_step_dots, step.id == config.steps[0].id)
 
     new_values = _render_fields(step, state)
@@ -116,13 +119,10 @@ def run_module(config: ModuleConfig) -> Dict[str, Any]:
 
 
 def _render_header(step_index: int, total: int, title: str, subtitle: str | None, progress: float, progress_total: int, show_step_dots: bool = True, is_intro: bool = False) -> None:
-    """Render module header with progress bar based on actual progress."""
+    """Render module header without progress bar (Navi panel handles progress)."""
     from html import escape as _escape
     
-    # Calculate progress percentage (0-100)
-    progress_pct = progress * 100
-    
-    # Dot-style tracker removed - only showing horizontal blue progress bar
+    # Progress bar removed - Navi panel at top now shows step progress (X/Y)
     
     subtitle_html = ""
     if subtitle:
@@ -144,25 +144,6 @@ def _render_header(step_index: int, total: int, title: str, subtitle: str | None
                 formatted_lines.append("<br/>")
         subtitle_html = f"<div class='lead'>{''.join(formatted_lines)}</div>"
     
-    # Blue progress bar using segmented rail
-    segments = []
-    for i in range(progress_total):
-        current_progress = progress * progress_total  # Convert 0-1 to 0-progress_total
-        if current_progress >= i + 1:
-            fill_pct = 100  # Fully filled
-        elif current_progress > i:
-            fill_pct = int((current_progress - i) * 100)  # Partial fill
-        else:
-            fill_pct = 0  # Empty
-        
-        segments.append(
-            f'<div class="mod-rail-segment">'
-            f'<div class="mod-rail-segment__fill" style="width: {fill_pct}%"></div>'
-            f'</div>'
-        )
-    
-    progress_bar_html = f'<div class="mod-rail-container">{"".join(segments)}</div>'
-    
     # Back button - on intro page, go to hub; otherwise use browser back
     if is_intro:
         back_html = '<a class="mod-back" href="?page=hub_concierge">← Back</a>'
@@ -172,7 +153,6 @@ def _render_header(step_index: int, total: int, title: str, subtitle: str | None
     st.markdown(
         f"""
         <div class="mod-head">
-          {progress_bar_html}
           <div class="mod-head-row">
             {back_html}
             <h2 class="h2">{_escape(title)}</h2>
@@ -392,7 +372,19 @@ def _ensure_outcomes(config: ModuleConfig, answers: Dict[str, Any]) -> None:
             if isinstance(result, OutcomeContract):
                 outcome = result
             elif isinstance(result, dict):
-                outcome = OutcomeContract(**result)
+                # Don't wrap in OutcomeContract - store dict directly
+                # This allows product-specific schemas (e.g., GCP's tier/tier_score)
+                st.session_state[outcome_key] = result
+                
+                # Still handle legacy handoff for backward compatibility
+                handoff = st.session_state.setdefault("handoff", {})
+                handoff[state_key] = result
+                
+                _emit(
+                    "module.outcomes.ready",
+                    {"state_key": state_key, "outcome": str(result.get("tier") or result.get("recommendation", ""))}
+                )
+                return  # Early return - we're done
         except Exception as e:
             import traceback
             st.error(f"❌ Error computing outcomes: {type(e).__name__}: {str(e)}")
@@ -609,8 +601,21 @@ def _get_recommendation(mod: Dict[str, Any], config: ModuleConfig) -> Optional[s
     # Try to get from outcomes first (preferred)
     outcome_key = f"{config.state_key}._outcomes"
     outcomes = st.session_state.get(outcome_key, {})
-    recommendation = outcomes.get("recommendation")
     
+    # GCP v4 uses "tier" field (new system)
+    tier = outcomes.get("tier")
+    if tier:
+        mapping = {
+            "independent": "Independent / In-Home Care",
+            "in_home": "In-Home Care with Support",
+            "assisted_living": "Assisted Living",
+            "memory_care": "Memory Care",
+        }
+        pretty = mapping.get(tier.lower(), tier.replace("_", " ").title())
+        return f"Based on your answers, we recommend {pretty}."
+    
+    # Legacy modules use "recommendation" field
+    recommendation = outcomes.get("recommendation")
     if recommendation:
         # If the recommendation is already properly formatted (contains capitals or special chars),
         # use it as-is (this is the case for new logic_v3 output)
@@ -757,7 +762,7 @@ def _render_results_ctas_once(config: ModuleConfig) -> None:
     with col2:
         if st.button("Continue to Cost Planner →", key="_results_cost", type="primary", use_container_width=True):
             st.query_params.clear()
-            st.query_params["page"] = "cost"
+            st.query_params["page"] = "cost_v2"
             _rerun_app()
     
     with col3:
@@ -868,15 +873,15 @@ def _render_navi_guide_bar(
             try:
                 care_rec = MCIP.get_care_recommendation()
                 if care_rec:
-                    context["tier"] = care_rec.recommended_tier
-                    context["confidence"] = int(care_rec.confidence_score * 100)
+                    context["tier"] = care_rec.tier
+                    context["confidence"] = int(care_rec.confidence * 100)
             except:
                 pass
             
             try:
                 financial = MCIP.get_financial_profile()
                 if financial:
-                    context["monthly_cost"] = f"${financial.monthly_cost:,.0f}"
+                    context["monthly_cost"] = f"${financial.estimated_monthly_cost:,.0f}"
                     context["runway_months"] = financial.runway_months
             except:
                 pass

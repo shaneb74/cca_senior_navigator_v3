@@ -51,12 +51,23 @@ def render():
         outcome = st.session_state.get(outcome_key)
         
         # If outcome exists and we haven't published yet, publish to MCIP
+        # NOTE: The outcome may be wrapped in OutcomeContract format, but our
+        # derive_outcome() returns GCP-specific fields (tier, tier_score, etc)
+        # We need to call derive_outcome directly to get the proper format
         if outcome and not _already_published():
-            _publish_to_mcip(outcome, module_state)
-            _mark_published()
-            
-            # Show completion message (engine already rendered results step)
-            st.success("✅ Your care recommendation has been saved!")
+            # Re-compute outcome directly to get proper GCP format
+            try:
+                from products.gcp_v4.modules.care_recommendation.logic import derive_outcome
+                gcp_outcome = derive_outcome(module_state)
+                _publish_to_mcip(gcp_outcome, module_state)
+                _mark_published()
+                
+                # Show completion message (engine already rendered results step)
+                st.success("✅ Your care recommendation has been saved!")
+            except Exception as e:
+                st.error(f"❌ Error saving recommendation: {e}")
+                import traceback
+                st.error(traceback.format_exc())
             
             # Add next steps buttons
             st.markdown("---")

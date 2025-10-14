@@ -291,7 +291,7 @@ class NaviOrchestrator:
         
         elif completed == 1:
             if ctx.care_recommendation:
-                tier = ctx.care_recommendation.recommended_tier
+                tier = ctx.care_recommendation.tier
                 return f"Great progress! You've chosen {tier}. Now let's figure out the costs."
             else:
                 return "Great progress! 1/3 complete. Keep going!"
@@ -315,12 +315,12 @@ class NaviOrchestrator:
         boost = []
         
         if ctx.care_recommendation:
-            tier = ctx.care_recommendation.recommended_tier
-            confidence = int(ctx.care_recommendation.confidence_score * 100)
+            tier = ctx.care_recommendation.tier
+            confidence = int(ctx.care_recommendation.confidence * 100)
             boost.append(f"✅ Care Plan: {tier} ({confidence}% confidence)")
         
         if ctx.financial_profile:
-            monthly = ctx.financial_profile.monthly_cost
+            monthly = ctx.financial_profile.estimated_monthly_cost
             runway = ctx.financial_profile.runway_months
             boost.append(f"✅ Cost Estimate: ${monthly:,.0f}/month ({runway} month runway)")
         

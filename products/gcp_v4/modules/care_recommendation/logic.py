@@ -23,7 +23,7 @@ TIER_THRESHOLDS = {
 }
 
 
-def derive_outcome(answers: Dict[str, Any], config: Dict[str, Any] = None) -> Dict[str, Any]:
+def derive_outcome(answers: Dict[str, Any], context: Dict[str, Any] = None, config: Dict[str, Any] = None) -> Dict[str, Any]:
     """Compute care recommendation from answers and module.json scoring.
     
     This function:
@@ -35,6 +35,7 @@ def derive_outcome(answers: Dict[str, Any], config: Dict[str, Any] = None) -> Di
     
     Args:
         answers: User responses from module engine (already includes flags)
+        context: Context dict from module engine (product, version, person_name, etc.)
         config: Optional configuration (not currently used)
     
     Returns:
@@ -68,7 +69,9 @@ def derive_outcome(answers: Dict[str, Any], config: Dict[str, Any] = None) -> Di
     
     # Extract flag IDs from answers (module engine already set these)
     # The flags are stored in the answers dict under a "flags" key if present
-    flag_ids = answers.get("_flags", []) if "_flags" in answers else _extract_flags_from_answers(answers, module_data)
+    flag_ids = _extract_flags_from_state(answers)
+    if not flag_ids:
+        flag_ids = _extract_flags_from_answers(answers, module_data)
     flags = build_flags(flag_ids)
     
     # Determine suggested next product
@@ -111,13 +114,15 @@ def _calculate_score(answers: Dict[str, Any], module_data: Dict[str, Any]) -> Tu
     scoring_details = {
         "by_section": {},
         "by_question": {},
-        "answer_count": 0,
-        "total_questions": 0
+        "required_answered": 0,
+        "required_total": 0,
+        "optional_answered": 0
     }
     
     # Iterate through sections in module.json
     for section in module_data.get("sections", []):
-        if section.get("type") != "questions":
+        section_type = section.get("type", "questions")
+        if section_type not in ["questions", None]:
             continue
             
         section_id = section["id"]
@@ -127,15 +132,22 @@ def _calculate_score(answers: Dict[str, Any], module_data: Dict[str, Any]) -> Tu
         # Iterate through questions in section
         for question in section.get("questions", []):
             question_id = question["id"]
-            scoring_details["total_questions"] += 1
+            required = bool(question.get("required", False))
             
-            # Get user's answer
             user_answer = answers.get(question_id)
-            if user_answer is None:
-                continue
-                
-            scoring_details["answer_count"] += 1
+            answered = _has_answer(user_answer)
             
+            if required:
+                scoring_details["required_total"] += 1
+                if answered:
+                    scoring_details["required_answered"] += 1
+            elif answered:
+                scoring_details["optional_answered"] += 1
+
+            if not answered:
+                scoring_details["by_question"][question_id] = 0.0
+                continue
+
             # Handle multi-select questions (list of values)
             if isinstance(user_answer, list):
                 question_score = 0.0
@@ -170,7 +182,21 @@ def _calculate_score(answers: Dict[str, Any], module_data: Dict[str, Any]) -> Tu
         }
         total_score += section_score
     
+    scoring_details["answer_count"] = scoring_details["required_answered"]
+    scoring_details["total_questions"] = scoring_details["required_total"]
+    
     return total_score, scoring_details
+
+
+def _has_answer(value: Any) -> bool:
+    """Determine if a field has a meaningful answer."""
+    if value is None:
+        return False
+    if isinstance(value, str):
+        return value.strip() != ""
+    if isinstance(value, (list, tuple, set)):
+        return any(str(v).strip() != "" for v in value)
+    return True
 
 
 def _determine_tier(total_score: float) -> str:
@@ -233,9 +259,9 @@ def _calculate_confidence(answers: Dict[str, Any], scoring_details: Dict[str, An
         Confidence score between 0 and 1
     """
     # Base confidence from completeness
-    answered = scoring_details["answer_count"]
-    total = scoring_details["total_questions"]
-    completeness = answered / total if total > 0 else 0.0
+    required_answered = scoring_details.get("required_answered", 0)
+    required_total = scoring_details.get("required_total", 0)
+    completeness = required_answered / required_total if required_total > 0 else 1.0
     
     # Adjust for score clarity (distance from boundaries)
     tier = _determine_tier(total_score)
@@ -299,6 +325,31 @@ def _build_rationale(scoring_details: Dict[str, Any], tier: str, total_score: fl
     return rationale[:6]  # Keep top 6 items
 
 
+def _extract_flags_from_state(answers: Dict[str, Any]) -> List[str]:
+    """Extract flag IDs from the module state flags dictionary."""
+    flag_ids: List[str] = []
+    flags_map = answers.get("flags")
+    if isinstance(flags_map, dict):
+        for flag_key, value in flags_map.items():
+            if flag_key.endswith("_message"):
+                continue
+            if bool(value):
+                flag_ids.append(str(flag_key))
+
+    raw_flags = answers.get("_flags")
+    if isinstance(raw_flags, (list, tuple, set)):
+        flag_ids.extend(str(flag) for flag in raw_flags if flag)
+
+    # Deduplicate while preserving order
+    seen: set[str] = set()
+    ordered_flags: List[str] = []
+    for flag in flag_ids:
+        if flag not in seen:
+            seen.add(flag)
+            ordered_flags.append(flag)
+    return ordered_flags
+
+
 def _extract_flags_from_answers(answers: Dict[str, Any], module_data: Dict[str, Any]) -> List[str]:
     """Extract flag IDs from answers by matching against module.json options.
     
@@ -316,7 +367,8 @@ def _extract_flags_from_answers(answers: Dict[str, Any], module_data: Dict[str, 
     
     # Iterate through sections and questions
     for section in module_data.get("sections", []):
-        if section.get("type") != "questions":
+        section_type = section.get("type", "questions")
+        if section_type not in ["questions", None]:
             continue
             
         for question in section.get("questions", []):
