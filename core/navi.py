@@ -142,33 +142,61 @@ class NaviOrchestrator:
     
     @staticmethod
     def get_suggested_questions(flags: Dict[str, bool], completed_products: List[str]) -> List[str]:
-        """Get 3 dynamic question chips based on flags and progress.
+        """Get 3 suggested questions based on current flags and progress.
+        
+        Maps GCP module flags to relevant FAQ questions.
         
         Args:
-            flags: Current flag set
+            flags: Current flag set (from get_all_flags()) - uses GCP module flag names
             completed_products: List of completed product keys
         
         Returns:
-            List of 3 suggested questions
+            List of 3 question strings
         """
         questions = []
         
-        # Flag-based questions
-        if flags.get("veteran"):
-            questions.append("Can I use VA benefits for senior care?")
+        # SAFETY & MOBILITY FLAGS (Priority 1 - most urgent)
+        if flags.get("falls_multiple") or flags.get("high_safety_concern"):
+            questions.append("How can I reduce fall risk at home?")
         
-        if flags.get("fall_risk"):
-            questions.append("What services help prevent falls at home?")
+        if flags.get("moderate_mobility") or flags.get("high_mobility_dependence"):
+            questions.append("What mobility aids and modifications can help at home?")
         
-        if flags.get("memory_concerns"):
-            questions.append("What's the difference between Assisted Living and Memory Care?")
+        # COGNITIVE FLAGS (Priority 1 - urgent)
+        if flags.get("severe_cognitive_risk") or flags.get("moderate_cognitive_decline"):
+            questions.append("What's the difference between Memory Care and Assisted Living?")
         
-        if flags.get("financial_strain"):
-            questions.append("What if I can't afford the recommended care level?")
+        if flags.get("moderate_safety_concern") and (flags.get("moderate_cognitive_decline") or flags.get("severe_cognitive_risk")):
+            questions.append("What specialized care is available for dementia or Alzheimer's?")
+        
+        # VETERAN FLAGS (Priority 2 - important benefits)
+        if flags.get("veteran_aanda_risk"):
+            questions.append("Am I eligible for VA Aid & Attendance benefits?")
+        
+        # DEPENDENCE & CARE FLAGS (Priority 2)
+        if flags.get("moderate_dependence") or flags.get("high_dependence"):
+            if not any(q in questions for q in ["What's the difference between Memory Care and Assisted Living?"]):
+                questions.append("What level of in-home care or facility care do I need?")
+        
+        # MEDICATION & CHRONIC CONDITIONS
+        if flags.get("chronic_present"):
+            questions.append("Who can help manage medications safely?")
+        
+        # MENTAL HEALTH FLAGS
+        if flags.get("mental_health_concern") or flags.get("high_risk"):
+            questions.append("How do I find emotional support and mental health services?")
+        
+        # ISOLATION & ACCESS FLAGS
+        if flags.get("geo_isolated") or flags.get("very_low_access"):
+            questions.append("What services are available in remote or rural areas?")
+        
+        # SUPPORT FLAGS
+        if flags.get("no_support") or flags.get("limited_support"):
+            questions.append("How do I find and hire reliable caregivers?")
         
         # Progress-based questions
-        if "gcp" in completed_products:
-            if "cost_planner" not in completed_products:
+        if "gcp" in completed_products or "gcp_v4" in completed_products:
+            if "cost_planner" not in completed_products and "cost_v2" not in completed_products:
                 questions.append("How much will my recommended care level cost?")
             else:
                 questions.append("When should I start looking for facilities?")
@@ -195,30 +223,42 @@ class NaviOrchestrator:
     def get_additional_services(flags: Dict[str, bool]) -> List[str]:
         """Get recommended Additional Services based on flags.
         
-        Maps flags → service tags → partner keys.
+        Maps GCP module flags → service tags → partner keys.
         
         Args:
-            flags: Current flag set
+            flags: Current flag set (uses GCP module flag names)
         
         Returns:
             List of recommended service keys in priority order
         """
         services = []
         
-        # Map flags to service keys
+        # Map GCP module flags to service keys
         # These should match keys in config/partners.json
         
-        if flags.get("veteran"):
+        # Veteran benefits
+        if flags.get("veteran_aanda_risk"):
             services.append("veterans_benefits")
         
-        if flags.get("fall_risk") or flags.get("mobility_concerns"):
+        # Mobility & fall prevention
+        if flags.get("falls_multiple") or flags.get("high_safety_concern") or flags.get("moderate_mobility") or flags.get("high_mobility_dependence"):
             services.append("omcare")
         
-        if flags.get("memory_concerns") or flags.get("cognitive_decline"):
+        # Memory care & cognitive support
+        if flags.get("moderate_cognitive_decline") or flags.get("severe_cognitive_risk") or flags.get("moderate_safety_concern"):
             services.append("memory_care_specialists")
         
-        if flags.get("financial_strain") or flags.get("low_runway"):
+        # Financial planning (if financial flags exist from cost planner)
+        if flags.get("financial_strain") or flags.get("low_runway") or flags.get("financial_gap"):
             services.append("financial_planning")
+        
+        # Mental health support
+        if flags.get("mental_health_concern") or flags.get("high_risk"):
+            services.append("mental_health_services")
+        
+        # Home modifications for dependence
+        if flags.get("moderate_dependence") or flags.get("high_dependence"):
+            services.append("home_modifications")
         
         # Always show SeniorLife AI as an option
         if "senior_life_ai" not in services:
