@@ -567,13 +567,14 @@ def render_navi_panel_v2(
     navi_css = """
     <style>
     .navi-panel-v2 {
+        max-width: 1120px;
+        margin: 0 auto 24px auto;
         background: linear-gradient(180deg, rgba(230,238,255,.65) 0%, rgba(247,249,252,.98) 48%, #fff 100%);
         border: 1px solid #dbe4f2;
         border-left: 3px solid #0066cc;
         border-radius: 16px;
         box-shadow: 0 1px 3px rgba(15,23,42,.08);
         padding: 18px 20px;
-        margin: 0 0 24px 0;
     }
     .navi-panel-v2__header {
         display: flex;

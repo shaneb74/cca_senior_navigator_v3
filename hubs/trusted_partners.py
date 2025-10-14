@@ -170,7 +170,7 @@ def render() -> None:
             title=None,
             subtitle=None,
             chips=None,
-            hub_guide_block=dashboard_data.get("callout"),
+            hub_guide_block=None,  # Navi replaces hub guide/callout
             cards=dashboard_data.get("cards", []),
             additional_services=dashboard_data.get("additional_services"),
         )

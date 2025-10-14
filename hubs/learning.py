@@ -129,7 +129,7 @@ def render(ctx=None) -> None:
             title=None,
             subtitle=None,
             chips=None,
-            hub_guide_block=compute_hub_guide("learning"),
+            hub_guide_block=None,  # Navi replaces hub guide
             cards=cards,
             additional_services=get_additional_services("learning"),
         )
