@@ -109,25 +109,62 @@ class CostCalculator:
         if gcp_rec and hasattr(gcp_rec, 'flags'):
             flags = [f.get('id') if isinstance(f, dict) else f for f in gcp_rec.flags]
         
-        # Cognitive-related add-on (+20%)
-        # Triggered by: memory_support flag
+        # CARE MULTIPLIERS (applied cumulatively to running total)
+        
+        # 1. Severe Cognitive Impairment (+20%)
+        # Triggered by: memory_support flag (Alzheimer's/dementia requiring specialized care)
         if "memory_support" in flags:
             cognitive_addon = running_total * 0.20
-            breakdown["cognitive_addon"] = cognitive_addon
+            breakdown["severe_cognitive_addon"] = cognitive_addon
             running_total += cognitive_addon
         
-        # Mobility-related add-on (+15%)
-        # Triggered by: mobility_limited flag
+        # 2. Serious Mobility/Transferring Issues (+15%)
+        # Triggered by: mobility_limited flag (wheelchair/bedbound requiring lifting assistance)
         if "mobility_limited" in flags:
             mobility_addon = running_total * 0.15
-            breakdown["mobility_addon"] = mobility_addon
+            breakdown["mobility_transferring_addon"] = mobility_addon
             running_total += mobility_addon
         
-        # High-acuity add-on (+25%)
-        # Always applied for memory_care_high_acuity tier
+        # 3. High-Level ADL Support (+10%)
+        # Triggered by: adl_support_high flag (extensive help with bathing, dressing, eating, toileting)
+        if "adl_support_high" in flags:
+            adl_addon = running_total * 0.10
+            breakdown["high_adl_support_addon"] = adl_addon
+            running_total += adl_addon
+        
+        # 4. Complex Medication Management (+8%)
+        # Triggered by: medication_management flag (multiple prescriptions requiring professional oversight)
+        if "medication_management" in flags:
+            med_addon = running_total * 0.08
+            breakdown["medication_management_addon"] = med_addon
+            running_total += med_addon
+        
+        # 5. Behavioral/Psychiatric Care (+12%)
+        # Triggered by: behavioral_concerns flag (wandering, aggression, requires specialized behavioral support)
+        if "behavioral_concerns" in flags:
+            behavioral_addon = running_total * 0.12
+            breakdown["behavioral_care_addon"] = behavioral_addon
+            running_total += behavioral_addon
+        
+        # 6. Fall Risk/Safety Monitoring (+8%)
+        # Triggered by: falls_risk flag (2+ falls/year requiring enhanced supervision and safety measures)
+        if "falls_risk" in flags:
+            falls_addon = running_total * 0.08
+            breakdown["fall_risk_monitoring_addon"] = falls_addon
+            running_total += falls_addon
+        
+        # 7. Multiple Chronic Conditions (+10%)
+        # Triggered by: chronic_conditions flag (multiple health conditions requiring coordinated medical care)
+        if "chronic_conditions" in flags:
+            chronic_addon = running_total * 0.10
+            breakdown["chronic_conditions_addon"] = chronic_addon
+            running_total += chronic_addon
+        
+        # 8. High-Acuity Care (+25%)
+        # Always applied for memory_care_high_acuity tier (intensive 24/7 skilled care)
         if care_tier == "memory_care_high_acuity":
             high_acuity_addon = running_total * 0.25
-            breakdown["high_acuity_addon"] = high_acuity_addon
+            breakdown["high_acuity_intensive_addon"] = high_acuity_addon
             running_total += high_acuity_addon
         
         # Final monthly adjusted

@@ -31,12 +31,77 @@ class RegionalDataProvider:
     
     @classmethod
     def _load_config(cls) -> Dict[str, Any]:
-        """Load regional config once and cache."""
+        """Load regional config once and cache.
+        
+        Transforms array-based config into lookup dicts for fast access.
+        """
         if cls._config is None:
             config_path = os.path.join(os.getcwd(), cls._config_path)
             if os.path.exists(config_path):
                 with open(config_path, 'r') as f:
-                    cls._config = json.load(f)
+                    raw_config = json.load(f)
+                
+                # Transform array-based structure into lookup dicts
+                cls._config = {
+                    "zip_multipliers": {},
+                    "zip3_multipliers": {},
+                    "state_multipliers": {},
+                    "default_multiplier": raw_config.get("zip_multipliers", {}).get("default", 1.0)
+                }
+                
+                # Process WA-specific ZIPs first (higher precedence)
+                zip_data = raw_config.get("zip_multipliers", {})
+                for entry in zip_data.get("by_zip_wa", []):
+                    zip_code = entry["zip"]
+                    cls._config["zip_multipliers"][zip_code] = {
+                        "multiplier": entry["multiplier"],
+                        "name": entry.get("notes", zip_code)
+                    }
+                
+                # Process general ZIPs
+                for entry in zip_data.get("by_zip", []):
+                    zip_code = entry["zip"]
+                    # Don't overwrite WA-specific entries
+                    if zip_code not in cls._config["zip_multipliers"]:
+                        cls._config["zip_multipliers"][zip_code] = {
+                            "multiplier": entry["multiplier"],
+                            "name": entry.get("notes", zip_code)
+                        }
+                
+                # Process WA-specific ZIP3s
+                for entry in zip_data.get("by_zip3_wa", []):
+                    zip3 = entry["zip3"]
+                    cls._config["zip3_multipliers"][zip3] = {
+                        "multiplier": entry["multiplier"],
+                        "name": entry.get("notes", f"Region {zip3}")
+                    }
+                
+                # Process general ZIP3s
+                for entry in zip_data.get("by_zip3", []):
+                    zip3 = entry["zip3"]
+                    # Don't overwrite WA-specific entries
+                    if zip3 not in cls._config["zip3_multipliers"]:
+                        cls._config["zip3_multipliers"][zip3] = {
+                            "multiplier": entry["multiplier"],
+                            "name": entry.get("notes", f"Region {zip3}")
+                        }
+                
+                # Process states (WA and general combined)
+                for entry in zip_data.get("by_state_wa", []):
+                    state = entry["state"]
+                    cls._config["state_multipliers"][state] = {
+                        "multiplier": entry["multiplier"],
+                        "name": state
+                    }
+                
+                for entry in zip_data.get("by_state", []):
+                    state = entry["state"]
+                    # Don't overwrite WA-specific entry
+                    if state not in cls._config["state_multipliers"]:
+                        cls._config["state_multipliers"][state] = {
+                            "multiplier": entry["multiplier"],
+                            "name": state
+                        }
             else:
                 # Fallback to empty config
                 cls._config = {
