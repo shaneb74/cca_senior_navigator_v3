@@ -315,24 +315,48 @@ def render_navi_panel(
     """
     from core.ui import render_navi_guide_bar
     from core.nav import route_to
+    from core.navi_dialogue import NaviDialogue
     
     # Get complete context
     ctx = NaviOrchestrator.get_context(location, hub_key, product_key, module_config)
     
     # Get guidance text based on location
     if location == "hub":
-        # Hub-level guidance
+        # Hub-level guidance - use dialogue system
         summary = NaviOrchestrator.get_context_summary(ctx)
         next_action = ctx.next_action
         
-        # Render main panel
+        # Determine journey phase
+        completed_count = ctx.progress.get('completed_count', 0)
+        if completed_count == 0:
+            phase = "getting_started"
+        elif completed_count == 3:
+            phase = "complete"
+        elif completed_count == 2:
+            phase = "nearly_there"
+        else:
+            phase = "in_progress"
+        
+        # Get contextual message from dialogue system
+        journey_msg = NaviDialogue.get_journey_message(
+            phase=phase,
+            is_authenticated=ctx.is_authenticated,
+            context={
+                'name': ctx.user_name,
+                'tier': ctx.care_recommendation.tier if ctx.care_recommendation else None,
+                'completed_count': completed_count
+            }
+        )
+        
+        # Render main panel with dialogue
         render_navi_guide_bar(
-            text=f"🤖 Navi: {next_action['action']}",
-            subtext=next_action['reason'],
-            icon=next_action.get('icon', '🧭'),
+            text=journey_msg['text'],
+            subtext=journey_msg.get('subtext'),
+            icon=journey_msg.get('icon', '🧭'),
             show_progress=True,
-            current_step=ctx.progress['completed_count'],
-            total_steps=3
+            current_step=completed_count,
+            total_steps=3,
+            color="#0066cc"  # CCA blue gradient
         )
         
         # Context boost (what we know)
