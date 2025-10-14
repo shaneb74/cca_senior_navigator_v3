@@ -100,6 +100,9 @@ class MCIP:
                     st.session_state[cls.STATE_KEY]["financial_profile"] = contracts["financial_profile"]
                 if "advisor_appointment" in contracts:
                     st.session_state[cls.STATE_KEY]["advisor_appointment"] = contracts["advisor_appointment"]
+                if "journey" in contracts:
+                    # Restore journey state (unlocked products, completed products)
+                    st.session_state[cls.STATE_KEY]["journey"] = contracts["journey"]
         else:
             # Merge with existing state (fill in missing keys)
             existing = st.session_state[cls.STATE_KEY]
@@ -253,12 +256,16 @@ class MCIP:
         
         This allows session_store to persist contracts separately from
         the full MCIP state structure (which is reconstructed on load).
+        
+        Also saves journey state (unlocked_products, completed_products)
+        so progress is preserved across sessions.
         """
         if cls.STATE_KEY in st.session_state:
             st.session_state["mcip_contracts"] = {
                 "care_recommendation": st.session_state[cls.STATE_KEY].get("care_recommendation"),
                 "financial_profile": st.session_state[cls.STATE_KEY].get("financial_profile"),
                 "advisor_appointment": st.session_state[cls.STATE_KEY].get("advisor_appointment"),
+                "journey": st.session_state[cls.STATE_KEY].get("journey"),  # Persist journey state
             }
     
     @classmethod
@@ -295,6 +302,9 @@ class MCIP:
         
         if product_key not in journey["completed_products"]:
             journey["completed_products"].append(product_key)
+        
+        # Save journey state for persistence
+        cls._save_contracts_for_persistence()
         
         cls._fire_event("mcip.product.completed", {"product": product_key})
     
@@ -575,6 +585,9 @@ class MCIP:
         
         # Set recommended next from recommendation
         journey["recommended_next"] = recommendation.next_step.get("product", "cost_planner")
+        
+        # Save journey state for persistence (already called in publish_care_recommendation, but ensure it's saved)
+        cls._save_contracts_for_persistence()
     
     @classmethod
     def _default_care_recommendation(cls) -> Dict[str, Any]:
