@@ -38,6 +38,18 @@
           "key": "about",
           "label": "About Us",
           "module": "pages._stubs:render_about"
+        },
+        {
+          "key": "login",
+          "label": "Log in",
+          "module": "pages.login:render",
+          "hidden": true
+        },
+        {
+          "key": "signup",
+          "label": "Sign up",
+          "module": "pages.signup:render",
+          "hidden": true
         }
       ]
     },

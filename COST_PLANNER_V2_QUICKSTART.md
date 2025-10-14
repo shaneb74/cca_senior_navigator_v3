@@ -205,8 +205,27 @@ def render(module: Optional[str] = None):
 ```python
 import streamlit as st
 from core.modules.hub import ModuleHub
+from core.nav import route_to
+from products.cost_planner_v2.auth import is_authenticated
 
 def render_module_hub():
+    # Check authentication first
+    if not is_authenticated():
+        st.warning("🔒 **Sign in Required**")
+        st.markdown("To access financial assessment, please sign in.")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("← Back to Hub", use_container_width=True):
+                route_to("hub_concierge")
+        with col2:
+            if st.button("Sign In →", type="primary", use_container_width=True):
+                route_to("login")
+        
+        if st.button("Create Free Account", use_container_width=True):
+            route_to("signup")
+        return
+    
     modules = [
         {
             "id": "income",

@@ -139,9 +139,15 @@ def render(module: Optional[str] = None) -> None:
 ```python
 def render_module_hub() -> None:
     """Module selection dashboard using ModuleHub component."""
+    # Check authentication (route to login/signup if needed)
     # Define modules with visibility/lock logic
     # Create ModuleHub instance
     # Render with navigation
+    
+    # Note: Login and signup pages exist at:
+    # - ?page=login (pages/login.py)
+    # - ?page=signup (pages/signup.py)
+    # Use route_to("login") or route_to("signup") to navigate
 ```
 
 #### `products/cost_planner_v2/profile.py`

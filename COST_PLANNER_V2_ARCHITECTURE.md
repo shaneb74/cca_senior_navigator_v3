@@ -524,10 +524,40 @@ import streamlit as st
 from core.modules.hub import ModuleHub
 from core.nav import route_to
 from products.cost_planner_v2.profile import get_user_profile
+from products.cost_planner_v2.auth import is_authenticated
 
 
 def render_module_hub() -> None:
     """Render the Cost Planner module selection dashboard."""
+    
+    # Check authentication - required for financial modules
+    if not is_authenticated():
+        st.warning("🔒 **Sign in Required**")
+        st.markdown(
+            """
+            To access your personalized financial assessment, please sign in or create a free account.
+            
+            **Benefits of signing in:**
+            - Securely save your financial information
+            - Resume your assessment anytime
+            - Access detailed benefit eligibility tools
+            - Receive personalized recommendations
+            """
+        )
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("← Back to Hub", use_container_width=True):
+                route_to("hub_concierge")
+        with col2:
+            if st.button("Sign In →", type="primary", use_container_width=True):
+                route_to("login")
+        
+        st.markdown("---")
+        st.caption("Don't have an account?")
+        if st.button("Create Free Account", use_container_width=True):
+            route_to("signup")
+        return
+    
     st.markdown("### 💰 Cost Planner")
     st.caption("Complete your financial assessment to get personalized cost estimates.")
     
@@ -744,7 +774,10 @@ else:
 
 ## Open Questions
 
-1. **Authentication Strategy**: Keep mock auth or implement real OAuth?
+1. ~~**Authentication Strategy**: Keep mock auth or implement real OAuth?~~ 
+   - ✅ **RESOLVED**: Real login/signup pages now exist at `?page=login` and `?page=signup`
+   - Use `route_to("login")` and `route_to("signup")` for navigation
+   - Auth state still uses mock/dev mode but UI points to real pages
 2. **State Migration**: Should v1 state be migrated to v2 format?
 3. **Module Order**: Enforce order or allow free navigation?
 4. **Partial Saves**: Auto-save on each answer or on Continue?
