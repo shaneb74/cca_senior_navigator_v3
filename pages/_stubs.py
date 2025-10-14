@@ -715,3 +715,130 @@ def render_faqs():
 def render_signup():
     # intentionally disabled (will be rebuilt as its own page)
     return
+
+
+def render_export_results():
+    """Export/share journey results - shows summary of all completed products."""
+    from core.mcip import MCIP
+    from core.state import get_user_ctx
+    import json
+    from datetime import datetime
+    
+    st.markdown(
+        """<style>
+        .main .block-container {
+            background: var(--bg);
+            min-height: 80vh;
+        }
+        </style>""",
+        unsafe_allow_html=True,
+    )
+    
+    # Get user context
+    ctx = get_user_ctx()
+    user_name = ctx.get("auth", {}).get("name", "Your")
+    
+    # Get MCIP data
+    care_rec = MCIP.get_care_recommendation()
+    financial = MCIP.get_financial_profile()
+    appointment = MCIP.get_advisor_appointment()
+    progress = MCIP.get_journey_progress()
+    
+    st.title("📤 Export Your Results")
+    st.markdown(f"### {user_name} Senior Care Journey Summary")
+    
+    # Journey progress
+    completed = progress["completed_count"]
+    st.progress(completed / 3.0)
+    st.markdown(f"**{completed}/3 Products Completed**")
+    
+    st.markdown("---")
+    
+    # Care Recommendation
+    if care_rec:
+        st.markdown("### 🧭 Guided Care Plan")
+        tier_map = {
+            "independent": "Independent Living",
+            "in_home": "In-Home Care", 
+            "assisted_living": "Assisted Living",
+            "memory_care": "Memory Care"
+        }
+        tier_label = tier_map.get(care_rec.tier, care_rec.tier)
+        st.markdown(f"**Recommended:** {tier_label}")
+        st.markdown(f"**Confidence:** {int(care_rec.tier_score)}%")
+        if care_rec.rationale:
+            st.markdown("**Key Factors:**")
+            for reason in care_rec.rationale[:3]:
+                st.markdown(f"- {reason}")
+    
+    # Financial Profile
+    if financial:
+        st.markdown("### 💰 Cost Planner")
+        st.markdown(f"**Estimated Monthly Cost:** ${financial.estimated_monthly_cost:,.0f}")
+        st.markdown(f"**Runway:** {financial.runway_months} months")
+        if financial.gap_amount > 0:
+            st.markdown(f"**Monthly Gap:** ${financial.gap_amount:,.0f}")
+    
+    # Appointment
+    if appointment and appointment.scheduled:
+        st.markdown("### 📅 Plan with My Advisor")
+        st.markdown(f"**Type:** {appointment.type.title()}")
+        st.markdown(f"**Date:** {appointment.date} at {appointment.time}")
+        st.markdown(f"**Confirmation:** {appointment.confirmation_id}")
+    
+    st.markdown("---")
+    
+    # Export options
+    st.markdown("### Export Options")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        # Export as JSON
+        export_data = {
+            "generated_at": datetime.utcnow().isoformat() + "Z",
+            "user_name": user_name,
+            "progress": progress,
+            "care_recommendation": care_rec.__dict__ if care_rec else None,
+            "financial_profile": financial.__dict__ if financial else None,
+            "advisor_appointment": appointment.__dict__ if appointment else None
+        }
+        
+        json_str = json.dumps(export_data, indent=2)
+        st.download_button(
+            label="📄 Download JSON",
+            data=json_str,
+            file_name=f"care_journey_{datetime.now().strftime('%Y%m%d')}.json",
+            mime="application/json"
+        )
+    
+    with col2:
+        # Copy to clipboard (via text area)
+        summary_text = f"""
+SENIOR CARE JOURNEY SUMMARY
+Generated: {datetime.now().strftime('%B %d, %Y')}
+
+Progress: {completed}/3 Products Completed
+"""
+        if care_rec:
+            summary_text += f"\nCARE RECOMMENDATION:\n- {tier_label} ({int(care_rec.tier_score)}% confidence)\n"
+        if financial:
+            summary_text += f"\nFINANCIAL PROFILE:\n- Monthly Cost: ${financial.estimated_monthly_cost:,.0f}\n- Runway: {financial.runway_months} months\n"
+        if appointment and appointment.scheduled:
+            summary_text += f"\nADVISOR APPOINTMENT:\n- {appointment.type.title()} - {appointment.date} at {appointment.time}\n"
+        
+        if st.button("📋 Copy Summary", use_container_width=True):
+            st.code(summary_text, language=None)
+            st.success("Summary displayed above - copy from the text box!")
+    
+    with col3:
+        # Email results (placeholder)
+        if st.button("📧 Email Results", use_container_width=True):
+            st.info("Email feature coming soon! Use the Copy or Download options for now.")
+    
+    st.markdown("---")
+    
+    # Back to hub
+    from core.nav import route_to
+    if st.button("← Back to Concierge Hub", use_container_width=True):
+        route_to("hub_concierge")

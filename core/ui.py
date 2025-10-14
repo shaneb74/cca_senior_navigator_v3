@@ -285,6 +285,11 @@ def render_mcip_journey_status() -> None:
     - "Great job! 1/3 complete. Next: Calculate costs 💰"
     - "Almost done! 2/3 complete. Next: Schedule appointment 📅"
     - "🎉 Journey complete! All 3 products done."
+    
+    Includes gamification:
+    - Achievement badges for each completed product
+    - Visual celebrations on completion
+    - "Share My Results" button when complete
     """
     from core.mcip import MCIP
     from core.state import get_user_ctx
@@ -299,7 +304,11 @@ def render_mcip_journey_status() -> None:
     next_action = MCIP.get_recommended_next_action()
     
     completed = progress["completed_count"]
+    completed_products = progress["completed_products"]
     total = 3  # GCP, Cost Planner, PFMA
+    
+    # Achievement badges for completed products
+    badges_html = _render_achievement_badges(completed_products)
     
     # Status-based styling
     status = next_action["status"]
@@ -308,6 +317,8 @@ def render_mcip_journey_status() -> None:
         icon = "🎉"
         message = next_action["action"]
         submessage = next_action["reason"]
+        # Add confetti celebration on complete
+        _render_celebration_effect()
     elif status == "nearly_there":
         bg_color = "#f59e0b"  # Amber
         icon = "📅"
@@ -343,13 +354,100 @@ def render_mcip_journey_status() -> None:
                     <div style="font-size: 14px; opacity: 0.9;">
                         {submessage}
                     </div>
+                    {badges_html}
                 </div>
                 {f'<div style="font-size: 14px; font-weight: 500; padding: 8px 16px; background: rgba(255,255,255,0.2); border-radius: 20px;">{completed}/{total}</div>' if status != "complete" else ''}
             </div>
         </div>
     """, unsafe_allow_html=True)
     
-    # Optional: Click to navigate
-    if status != "complete" and next_action.get("route"):
-        if st.button(f"→ {next_action['action']}", key=f"mcip_nav_{next_action['route']}", use_container_width=True):
-            route_to(next_action["route"])
+    # Action buttons
+    col1, col2 = st.columns([3, 1])
+    
+    with col1:
+        # Navigate to next action
+        if status != "complete" and next_action.get("route"):
+            if st.button(f"→ {next_action['action']}", key=f"mcip_nav_{next_action['route']}", use_container_width=True):
+                route_to(next_action["route"])
+    
+    with col2:
+        # Share/Export results (always available if any progress)
+        if completed > 0:
+            if st.button("📤 Share My Results", key="mcip_share_results", use_container_width=True):
+                route_to("export_results")
+
+
+def _render_achievement_badges(completed_products: list) -> str:
+    """Render achievement badges for completed products.
+    
+    Args:
+        completed_products: List of completed product keys
+    
+    Returns:
+        HTML string with badges
+    """
+    badges = {
+        "gcp": {"emoji": "🧭", "title": "Care Navigator", "color": "#8b5cf6"},
+        "cost_planner": {"emoji": "💰", "title": "Financial Planner", "color": "#3b82f6"},
+        "pfma": {"emoji": "📅", "title": "Appointment Setter", "color": "#f59e0b"}
+    }
+    
+    if not completed_products:
+        return ""
+    
+    badges_html = '<div style="display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap;">'
+    
+    for product_key in completed_products:
+        badge = badges.get(product_key)
+        if badge:
+            badges_html += f"""
+                <div style="
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 6px;
+                    padding: 6px 12px;
+                    background: rgba(255,255,255,0.25);
+                    border-radius: 20px;
+                    font-size: 13px;
+                    font-weight: 500;
+                    backdrop-filter: blur(10px);
+                ">
+                    <span style="font-size: 16px;">{badge['emoji']}</span>
+                    <span>✓ {badge['title']}</span>
+                </div>
+            """
+    
+    badges_html += '</div>'
+    return badges_html
+
+
+def _render_celebration_effect() -> None:
+    """Render confetti/celebration effect when journey is complete.
+    
+    Uses CSS animation for visual dopamine hit.
+    """
+    st.markdown("""
+        <style>
+        @keyframes confetti {
+            0% { transform: translateY(-100%) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background: #f59e0b;
+            animation: confetti 3s ease-in-out infinite;
+            z-index: 9999;
+            pointer-events: none;
+        }
+        .confetti:nth-child(2n) { background: #10b981; animation-delay: 0.3s; }
+        .confetti:nth-child(3n) { background: #3b82f6; animation-delay: 0.6s; }
+        .confetti:nth-child(4n) { background: #8b5cf6; animation-delay: 0.9s; }
+        </style>
+        <div class="confetti" style="left: 20%;"></div>
+        <div class="confetti" style="left: 40%;"></div>
+        <div class="confetti" style="left: 60%;"></div>
+        <div class="confetti" style="left: 80%;"></div>
+    """, unsafe_allow_html=True)
+

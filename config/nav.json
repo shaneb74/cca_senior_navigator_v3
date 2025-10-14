@@ -50,6 +50,12 @@
           "label": "Sign up",
           "module": "pages.signup:render",
           "hidden": true
+        },
+        {
+          "key": "export_results",
+          "label": "Export Results",
+          "module": "pages._stubs:render_export_results",
+          "hidden": true
         }
       ]
     },
