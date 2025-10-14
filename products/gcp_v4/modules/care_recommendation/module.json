@@ -41,7 +41,14 @@
         "• Daily living and support needs",
         "• Medications, mobility, and fall safety",
         "• Memory, mood, and behavior changes",
-        "• Who provides help today"
+        "• Who provides help today",
+        "",
+        "**Based on your answers, we'll recommend one of five care options:**",
+        "• No Care Needed",
+        "• In-Home Care",
+        "• Assisted Living",
+        "• Memory Care",
+        "• Memory Care (High Acuity)"
       ],
       "actions": [
         { "label": "Get Started", "action": "next" },

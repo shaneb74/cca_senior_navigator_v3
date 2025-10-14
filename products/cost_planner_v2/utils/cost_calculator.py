@@ -44,13 +44,15 @@ class CostCalculator:
                 with open(config_path, 'r') as f:
                     cls._base_costs = json.load(f)
             else:
-                # Fallback to minimal config
+                # Fallback to minimal config with all 5 tiers
+                # CRITICAL: These are the ONLY 5 allowed care tiers
                 cls._base_costs = {
                     "care_tiers": {
-                        "independent_living": {"monthly_base": 2500},
+                        "no_care_needed": {"monthly_base": 500},
+                        "in_home_care": {"monthly_base": 3500},
                         "assisted_living": {"monthly_base": 4500},
                         "memory_care": {"monthly_base": 6500},
-                        "in_home_care": {"monthly_base": 3500}
+                        "memory_care_high_acuity": {"monthly_base": 9000}
                     }
                 }
         return cls._base_costs
@@ -68,7 +70,7 @@ class CostCalculator:
         No additional services or detailed breakdown.
         
         Args:
-            care_tier: Care tier (independent_living, assisted_living, memory_care, in_home_care)
+            care_tier: Care tier (no_care_needed, in_home_care, assisted_living, memory_care, memory_care_high_acuity)
             zip_code: Optional ZIP code for regional adjustment
             state: Optional state code for regional adjustment
             

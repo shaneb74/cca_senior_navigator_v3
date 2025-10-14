@@ -15,12 +15,17 @@ from .flags import build_flags
 
 
 # Tier thresholds based on total score
+# CRITICAL: These are the ONLY 5 allowed tier values
 TIER_THRESHOLDS = {
-    "independent": (0, 8),      # 0-8 points: can live independently or with minimal help
-    "in_home": (9, 16),          # 9-16 points: needs regular in-home support
-    "assisted_living": (17, 24), # 17-24 points: needs assisted living environment
-    "memory_care": (25, 100),    # 25+ points: needs memory care or skilled nursing
+    "no_care_needed": (0, 8),           # 0-8 points: no formal care needed
+    "in_home": (9, 16),                  # 9-16 points: needs regular in-home support
+    "assisted_living": (17, 24),         # 17-24 points: needs assisted living environment
+    "memory_care": (25, 39),             # 25-39 points: needs memory care
+    "memory_care_high_acuity": (40, 100) # 40+ points: needs intensive memory care
 }
+
+# Valid tier values - used for validation
+VALID_TIERS = set(TIER_THRESHOLDS.keys())
 
 
 def derive_outcome(answers: Dict[str, Any], context: Dict[str, Any] = None, config: Dict[str, Any] = None) -> Dict[str, Any]:
@@ -206,14 +211,27 @@ def _determine_tier(total_score: float) -> str:
         total_score: Total points from all questions
     
     Returns:
-        Tier name (independent | in_home | assisted_living | memory_care)
-    """
-    for tier, (min_score, max_score) in TIER_THRESHOLDS.items():
-        if min_score <= total_score <= max_score:
-            return tier
+        Tier name (no_care_needed | in_home | assisted_living | memory_care | memory_care_high_acuity)
     
-    # Default to memory_care if score exceeds all thresholds
-    return "memory_care"
+    Raises:
+        ValueError: If determined tier is not in VALID_TIERS
+    """
+    tier = None
+    
+    for tier_name, (min_score, max_score) in TIER_THRESHOLDS.items():
+        if min_score <= total_score <= max_score:
+            tier = tier_name
+            break
+    
+    # Default to highest tier if score exceeds all thresholds
+    if tier is None:
+        tier = "memory_care_high_acuity"
+    
+    # CRITICAL VALIDATION: Ensure only allowed tiers can be returned
+    if tier not in VALID_TIERS:
+        raise ValueError(f"Invalid tier '{tier}' - must be one of {VALID_TIERS}")
+    
+    return tier
 
 
 def _build_tier_rankings(total_score: float, winning_tier: str) -> List[Tuple[str, float]]:
@@ -295,11 +313,13 @@ def _build_rationale(scoring_details: Dict[str, Any], tier: str, total_score: fl
     rationale = []
     
     # Start with overall recommendation
+    # CRITICAL: These are the ONLY 5 allowed tier display names
     tier_labels = {
-        "independent": "Independent Living or In-Home Support",
+        "no_care_needed": "No Care Needed",
         "in_home": "In-Home Care",
         "assisted_living": "Assisted Living",
-        "memory_care": "Memory Care or Skilled Nursing"
+        "memory_care": "Memory Care",
+        "memory_care_high_acuity": "Memory Care (High Acuity)"
     }
     rationale.append(f"Based on {int(total_score)} points, we recommend: {tier_labels.get(tier, tier)}")
     
@@ -321,6 +341,10 @@ def _build_rationale(scoring_details: Dict[str, Any], tier: str, total_score: fl
                 top_detail = max(section_data["details"], key=lambda x: x["score"])
                 if top_detail["score"] > 0:
                     rationale.append(f"  • {top_detail['answer']}")
+    
+    # Add special message for "No Care Needed" tier
+    if tier == "no_care_needed":
+        rationale.append("✓ No formal care is needed at this time. If circumstances change, return to update your assessment.")
     
     return rationale[:6]  # Keep top 6 items
 
