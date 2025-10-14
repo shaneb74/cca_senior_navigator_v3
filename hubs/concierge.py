@@ -164,10 +164,17 @@ def render(ctx=None) -> None:
         ProductTileHub(
             key="faqs",
             title="FAQs & Answers",
-            desc="Ask the Senior Navigator AI",
-            blurb="Instant, tailored assistance.",
+            desc="Answers in plain language, available whenever you are.",
+            blurb=(
+                "Search our advisor-reviewed knowledge base or ask Senior Navigator AI for tailored guidance, "
+                "resources, and next steps you can share with family."
+            ),
             badge_text="AI AGENT",
             image_square="faq.png",
+            meta_lines=[
+                "Advisor curated responses",
+                "Available 24/7",
+            ],
             primary_label="Open",
             primary_route="?page=faqs",
             progress=0,
