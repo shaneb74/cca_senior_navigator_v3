@@ -108,12 +108,12 @@ def _build_header(active_route: Optional[str] = None) -> str:
     if is_authenticated():
         user_name = get_user_name()
         display_name = user_name if user_name else "User"
-        auth_button = f'''
-            <div style="display:flex;align-items:center;gap:8px;">
-                <span style="font-size:0.9rem;color:var(--ink-600);">👋 {display_name}</span>
-                <a href="?page=logout" class="btn btn--secondary" style="height:32px;padding:0 12px">Log out</a>
-            </div>
-        '''
+        auth_button = (
+            f'<div class="header-auth">'
+            f'<span class="header-auth__greeting">👋 {display_name}</span>'
+            f'<a href="?page=logout" class="btn btn--secondary header-auth__logout">Log out</a>'
+            f'</div>'
+        )
     else:
         auth_button = '<a href="?page=login" class="btn btn--secondary" style="height:32px;padding:0 12px">Log in</a>'
     

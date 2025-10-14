@@ -499,9 +499,8 @@ def render_navi_guide_bar(
 ) -> None:
     """Render persistent Navi guide bar at top of page.
     
-    Navi is not a side quest - she's your digital planning partner.
-    She sits at the top of EVERY module, EVERY question, providing
-    contextual guidance and encouragement.
+    DEPRECATED: Use render_navi_panel_v2() for hub pages.
+    This legacy function remains for product/module pages.
     
     Args:
         text: Main message from Navi (required)
@@ -511,16 +510,6 @@ def render_navi_guide_bar(
         current_step: Current step number (for progress)
         total_steps: Total steps (for progress)
         color: Primary color for gradient (default: purple)
-    
-    Example:
-        render_navi_guide_bar(
-            text="Let's talk about mobility...",
-            subtext="I'm asking this to understand your daily movement needs.",
-            icon="🚶",
-            show_progress=True,
-            current_step=2,
-            total_steps=5
-        )
     """
     # Build progress indicator if needed
     progress_html = ""
@@ -560,5 +549,270 @@ def render_navi_guide_bar(
     """
     
     st.markdown(html, unsafe_allow_html=True)
+
+
+def render_navi_panel_v2(
+    title: str,
+    reason: str,
+    encouragement: dict,
+    context_chips: list[dict],
+    primary_action: dict,
+    secondary_action: Optional[dict] = None,
+    progress: Optional[dict] = None
+) -> None:
+    """Render refined Navi panel with structured layout.
+    
+    This is the V2 design based on visual audit recommendations.
+    
+    Layout order (top → bottom):
+    1. Header row: Navi eyebrow + progress badge
+    2. Title (personalized greeting)
+    3. Reason text (why this matters)
+    4. Encouragement banner (status-specific)
+    5. Context boost (achievement chips)
+    6. Action row (primary + secondary buttons)
+    
+    Args:
+        title: Short personalized headline (e.g., "Hey Sarah—let's keep going.")
+        reason: One sentence explaining why the next step matters
+        encouragement: Dict with 'icon', 'text', and 'status' (getting_started|in_progress|nearly_there|complete)
+        context_chips: List of dicts with 'icon', 'label', 'value', 'sublabel' (optional)
+        primary_action: Dict with 'label' and 'callback' or 'route'
+        secondary_action: Optional dict with 'label' and 'callback' or 'route'
+        progress: Optional dict with 'current' and 'total' for step badge
+    
+    Example:
+        render_navi_panel_v2(
+            title="Hey Sarah—let's keep going.",
+            reason="This will help match the right support for your situation.",
+            encouragement={'icon': '💪', 'text': "You're making great progress—keep going!", 'status': 'in_progress'},
+            context_chips=[
+                {'icon': '🧭', 'label': 'Care', 'value': 'Memory Care', 'sublabel': '85%'},
+                {'icon': '💰', 'label': 'Cost', 'value': '$4,500', 'sublabel': '30 mo'},
+                {'icon': '📅', 'label': 'Appt', 'value': 'Not scheduled'}
+            ],
+            primary_action={'label': 'Continue to Cost Planner', 'route': 'cost_v2'},
+            secondary_action={'label': 'Ask Navi →', 'route': 'faq'},
+            progress={'current': 2, 'total': 3}
+        )
+    """
+    # Color palette (semantic from audit)
+    primary_blue = "#0066cc"
+    info_bg = "#eff6ff"
+    success_accent = "#22c55e"
+    
+    # Status-specific background colors
+    status_colors = {
+        'getting_started': '#f0f9ff',  # Very light blue
+        'in_progress': '#eff6ff',       # Light blue
+        'nearly_there': '#fef3c7',      # Light amber
+        'complete': '#f0fdf4'           # Light green
+    }
+    status_bg = status_colors.get(encouragement.get('status', 'in_progress'), info_bg)
+    
+    # 1. Header row: Navi eyebrow + progress badge
+    progress_html = ""
+    if progress and progress.get('current') is not None and progress.get('total'):
+        progress_html = f'''
+            <div style="
+                font-size: 12px;
+                font-weight: 500;
+                padding: 6px 12px;
+                background: rgba(0, 102, 204, 0.1);
+                border-radius: 16px;
+                color: {primary_blue};
+                white-space: nowrap;
+            ">
+                Step {progress['current']}/{progress['total']}
+            </div>
+        '''
+    
+    header_html = f'''
+        <div style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        ">
+            <div style="
+                font-size: 14px;
+                font-weight: 500;
+                color: #64748b;
+                letter-spacing: 0.05em;
+                text-transform: uppercase;
+            ">
+                🤖 Navi
+            </div>
+            {progress_html}
+        </div>
+    '''
+    
+    # 2. Title (personalized greeting)
+    title_html = f'''
+        <div style="
+            font-size: 20px;
+            font-weight: 600;
+            color: #0f172a;
+            margin-bottom: 8px;
+            line-height: 1.3;
+        ">
+            {title}
+        </div>
+    '''
+    
+    # 3. Reason text
+    reason_html = f'''
+        <div style="
+            font-size: 16px;
+            color: #475569;
+            margin-bottom: 16px;
+            line-height: 1.5;
+        ">
+            {reason}
+        </div>
+    '''
+    
+    # 4. Encouragement banner
+    encouragement_html = f'''
+        <div style="
+            background: {status_bg};
+            border-left: 3px solid {primary_blue};
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+        ">
+            <div style="
+                font-size: 14px;
+                color: #1e293b;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            ">
+                <span style="font-size: 18px;">{encouragement.get('icon', '💪')}</span>
+                <span>{encouragement.get('text', '')}</span>
+            </div>
+        </div>
+    '''
+    
+    # 5. Context boost (achievement chips)
+    chips_html = ""
+    if context_chips:
+        chip_items = []
+        for chip in context_chips:
+            sublabel_html = ""
+            if chip.get('sublabel'):
+                sublabel_html = f'''
+                    <div style="
+                        font-size: 12px;
+                        color: #64748b;
+                        margin-top: 2px;
+                    ">
+                        {chip['sublabel']}
+                    </div>
+                '''
+            
+            chip_items.append(f'''
+                <div style="
+                    flex: 1;
+                    min-width: 140px;
+                    background: white;
+                    border: 1px solid #e2e8f0;
+                    border-radius: 8px;
+                    padding: 12px;
+                ">
+                    <div style="
+                        font-size: 12px;
+                        color: #64748b;
+                        font-weight: 500;
+                        margin-bottom: 4px;
+                        display: flex;
+                        align-items: center;
+                        gap: 4px;
+                    ">
+                        <span>{chip.get('icon', '')}</span>
+                        <span>{chip.get('label', '')}</span>
+                    </div>
+                    <div style="
+                        font-size: 14px;
+                        color: #0f172a;
+                        font-weight: 600;
+                    ">
+                        {chip.get('value', 'Not set')}
+                    </div>
+                    {sublabel_html}
+                </div>
+            ''')
+        
+        chips_html = f'''
+            <div style="margin-bottom: 16px;">
+                <div style="
+                    font-size: 14px;
+                    font-weight: 500;
+                    color: #475569;
+                    margin-bottom: 8px;
+                ">
+                    What I know so far:
+                </div>
+                <div style="
+                    display: flex;
+                    gap: 12px;
+                    flex-wrap: wrap;
+                ">
+                    {''.join(chip_items)}
+                </div>
+            </div>
+        '''
+    
+    # Render main panel container
+    panel_html = f'''
+        <div style="
+            background: linear-gradient(135deg, {primary_blue} 0%, {primary_blue}dd 100%);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 12px rgba(0, 102, 204, 0.15);
+        ">
+            <div style="
+                background: white;
+                border-radius: 8px;
+                padding: 20px;
+            ">
+                {header_html}
+                {title_html}
+                {reason_html}
+                {encouragement_html}
+                {chips_html}
+            </div>
+        </div>
+    '''
+    
+    st.markdown(panel_html, unsafe_allow_html=True)
+    
+    # 6. Action row (render as Streamlit buttons for interactivity)
+    col1, col2 = st.columns([2, 1] if secondary_action else [1])
+    
+    with col1:
+        if st.button(
+            primary_action['label'],
+            type="primary",
+            use_container_width=True,
+            key=f"navi_primary_{primary_action.get('route', 'action')}"
+        ):
+            if primary_action.get('callback'):
+                primary_action['callback']()
+            elif primary_action.get('route'):
+                route_to(primary_action['route'])
+    
+    if secondary_action:
+        with col2:
+            if st.button(
+                secondary_action['label'],
+                use_container_width=True,
+                key=f"navi_secondary_{secondary_action.get('route', 'action')}"
+            ):
+                if secondary_action.get('callback'):
+                    secondary_action['callback']()
+                elif secondary_action.get('route'):
+                    route_to(secondary_action['route'])
 
 
