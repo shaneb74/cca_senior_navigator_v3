@@ -366,14 +366,19 @@
   }
 }
 
-/* BaseHub shell spacing (moved from inline Python) */
+/* BaseHub shell spacing - eliminate all padding */
 .sn-hub div.block-container {
-  padding-top: 1.2rem;
+  padding-top: 0 !important;
 }
 
 .sn-hub .dashboard-head {
   padding: 0;
   margin: 0;
+}
+
+/* Remove any Streamlit default spacing before dashboard grid */
+.sn-hub div[data-testid="stVerticalBlock"] {
+  gap: 0 !important;
 }
 
 /* --- Hub grid authority (robust for Streamlit wrappers) --- */
@@ -382,6 +387,8 @@
   grid-template-columns:repeat(12,1fr);
   gap:var(--space-6, 1.5rem);
   box-sizing:border-box;
+  margin-top: 0 !important;
+  padding-top: 0 !important;
 }
 
 /* Primary: current Streamlit wrapper */
