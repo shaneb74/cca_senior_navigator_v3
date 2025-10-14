@@ -69,6 +69,7 @@ def _convert_section_to_step(section: Dict[str, Any]) -> StepDef:
             subtitle=description,
             icon=None,
             fields=[],  # No fields for info pages
+            content=section.get("content"),  # Pass content array for rendering
             next_label="Start" if section_id == "intro" else "Continue",
             skip_label=None,
             show_progress=False,

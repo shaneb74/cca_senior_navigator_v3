@@ -78,6 +78,10 @@ def run_module(config: ModuleConfig) -> Dict[str, Any]:
     # Note: Progress bar also disabled since Navi panel shows progress (X/Y steps)
     _render_header(step_index, total_steps, title, step.subtitle, progress, progress_total, show_step_dots, step.id == config.steps[0].id)
 
+    # Render content array (for info-type pages)
+    if step.content:
+        _render_content(step.content)
+
     new_values = _render_fields(step, state)
     if new_values:
         state.update(new_values)
@@ -182,6 +186,22 @@ def _substitute_title(title: str, state: Mapping[str, Any]) -> str:
         name = "This Person"
     
     return title.replace("{{name}}", name)
+
+
+def _render_content(content: list[str]) -> None:
+    """Render content array for info-type pages.
+    
+    Args:
+        content: List of content lines with markdown support.
+                 Empty strings create spacing.
+    """
+    for line in content:
+        if line.strip():
+            # Render non-empty lines with markdown
+            st.markdown(line)
+        else:
+            # Empty lines add spacing
+            st.markdown("<br/>", unsafe_allow_html=True)
 
 
 def _render_fields(step: StepDef, state: Mapping[str, Any]) -> Dict[str, Any]:

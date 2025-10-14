@@ -197,6 +197,7 @@ class StepDef:
     subtitle: Optional[str] = None
     icon: Optional[str] = None
     fields: List[FieldDef] = field(default_factory=list)
+    content: Optional[List[str]] = None  # NEW: Content array for info-type pages
     next_label: str = "Continue"
     skip_label: Optional[str] = None
     show_progress: bool = True

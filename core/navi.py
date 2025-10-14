@@ -354,7 +354,7 @@ def render_navi_panel(
     Returns:
         NaviContext for downstream use
     """
-    from core.ui import render_navi_guide_bar
+    from core.ui import render_navi_guide_bar, render_navi_panel_v2
     from core.nav import route_to
     from core.navi_dialogue import NaviDialogue
     
@@ -363,12 +363,10 @@ def render_navi_panel(
     
     # Get guidance text based on location
     if location == "hub":
-        # Hub-level guidance - use dialogue system
-        summary = NaviOrchestrator.get_context_summary(ctx)
-        next_action = ctx.next_action
+        # Hub-level guidance - use NEW V2 panel design
+        completed_count = ctx.progress.get('completed_count', 0)
         
         # Determine journey phase
-        completed_count = ctx.progress.get('completed_count', 0)
         if completed_count == 0:
             phase = "getting_started"
         elif completed_count == 3:
@@ -389,30 +387,94 @@ def render_navi_panel(
             }
         )
         
-        # Render main panel with dialogue
-        render_navi_guide_bar(
-            text=journey_msg['text'],
-            subtext=journey_msg.get('subtext'),
-            icon=journey_msg.get('icon', '🧭'),
-            show_progress=True,
-            current_step=completed_count,
-            total_steps=3,
-            color="#0066cc"  # CCA blue gradient
-        )
+        # Build title (personalized)
+        if ctx.user_name:
+            title = f"Hey {ctx.user_name}—let's keep going." if completed_count > 0 else f"Hey {ctx.user_name}—let's get started."
+        else:
+            title = "Let's keep going." if completed_count > 0 else "Let's get started."
         
-        # Context boost (what we know)
-        boost = NaviOrchestrator.get_context_boost(ctx)
-        if boost:
-            st.markdown("**🤖 Here's what I know so far:**")
-            for item in boost:
-                st.markdown(f"- {item}")
+        # Build reason text from next action
+        next_action = ctx.next_action
+        reason = next_action.get('reason', 'This will help us find the right support for your situation.')
         
-        # CTA to FAQs for questions (don't show question chips in Navi - keep focused on mission)
+        # Build encouragement banner
+        encouragement_icons = {
+            'getting_started': '🚀',
+            'in_progress': '💪',
+            'nearly_there': '🎯',
+            'complete': '🎉'
+        }
+        encouragement = {
+            'icon': encouragement_icons.get(phase, '💪'),
+            'text': journey_msg['text'],
+            'status': phase
+        }
+        
+        # Build context chips (achievement cards)
+        context_chips = []
+        
+        if ctx.care_recommendation:
+            tier = ctx.care_recommendation.tier
+            confidence = int(ctx.care_recommendation.confidence * 100)
+            context_chips.append({
+                'icon': '🧭',
+                'label': 'Care',
+                'value': tier,
+                'sublabel': f'{confidence}%'
+            })
+        
+        if ctx.financial_profile:
+            monthly = ctx.financial_profile.estimated_monthly_cost
+            runway = ctx.financial_profile.runway_months
+            context_chips.append({
+                'icon': '💰',
+                'label': 'Cost',
+                'value': f'${monthly:,.0f}',
+                'sublabel': f'{runway} mo'
+            })
+        
+        if ctx.advisor_appointment:
+            advisor_type = getattr(ctx.advisor_appointment, 'advisor_type', 'Financial Advisor')
+            context_chips.append({
+                'icon': '📅',
+                'label': 'Appt',
+                'value': 'Scheduled',
+                'sublabel': advisor_type
+            })
+        else:
+            context_chips.append({
+                'icon': '📅',
+                'label': 'Appt',
+                'value': 'Not scheduled'
+            })
+        
+        # Build primary action
+        primary_label = next_action.get('label', 'Continue')
+        primary_route = next_action.get('action_key', 'hub_concierge')
+        primary_action = {
+            'label': primary_label,
+            'route': primary_route
+        }
+        
+        # Build secondary action (Ask Navi → FAQ)
         num_suggested = len(NaviOrchestrator.get_suggested_questions(ctx.flags, ctx.progress['completed_products']))
+        secondary_action = None
         if num_suggested > 0:
-            st.markdown(f"**💬 Have questions?** I have {num_suggested} personalized answers ready for you.")
-            if st.button("Ask Navi →", key="navi_faq_cta", type="secondary", use_container_width=True):
-                route_to("faq")
+            secondary_action = {
+                'label': 'Ask Navi →',
+                'route': 'faq'
+            }
+        
+        # Render V2 panel
+        render_navi_panel_v2(
+            title=title,
+            reason=reason,
+            encouragement=encouragement,
+            context_chips=context_chips,
+            primary_action=primary_action,
+            secondary_action=secondary_action,
+            progress={'current': completed_count, 'total': 3}
+        )
     
     elif location == "product":
         # Product/module-level guidance
