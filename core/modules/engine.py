@@ -804,8 +804,8 @@ def _render_navi_guide_bar(
 ) -> None:
     """Render Navi's persistent guide bar at top of module.
     
-    Navi sits at the top of EVERY module, providing contextual guidance
-    about what the user is doing and why we're asking each question.
+    PRIORITY: Use step.navi_guidance if embedded in module JSON.
+    FALLBACK: Use navi_dialogue.json for legacy modules.
     
     Args:
         config: Module configuration
@@ -815,70 +815,88 @@ def _render_navi_guide_bar(
         progress_total: Total progress-eligible steps
     """
     try:
-        from core.navi_dialogue import NaviDialogue
         from core.ui import render_navi_guide_bar
         from core.mcip import MCIP
         
-        # Map product key to dialogue key
-        product_to_dialogue = {
-            "gcp_v4": "gcp",
-            "cost_v2": "cost_planner",
-            "pfma_v2": "pfma"
-        }
-        
-        dialogue_product = product_to_dialogue.get(config.product, config.product)
-        
-        # Determine module key from step
-        # First step = intro, last step = complete, others = step ID or generic
-        is_first_step = (step_index == 0)
-        is_last_step = (step_index == len(config.steps) - 1)
-        is_results = config.results_step_id and step.id == config.results_step_id
-        
-        if is_first_step:
-            module_key = "intro"
-        elif is_results or is_last_step:
-            module_key = "complete"
+        # Check if step has embedded navi_guidance (new system)
+        if step.navi_guidance:
+            message = step.navi_guidance
+        # Check if module has intro/outro guidance
+        elif step_index == 0 and config.navi_intro:
+            message = config.navi_intro
+        elif (step_index == len(config.steps) - 1 or 
+              (config.results_step_id and step.id == config.results_step_id)) and config.navi_outro:
+            message = config.navi_outro
         else:
-            # Try to use step ID as module key, fallback to intro
-            module_key = step.id if step.id else "intro"
-        
-        # Build context from state and MCIP
-        context = {}
-        
-        # Try to add care recommendation context
-        try:
-            care_rec = MCIP.get_care_recommendation()
-            if care_rec:
-                context["tier"] = care_rec.recommended_tier
-                context["confidence"] = int(care_rec.confidence_score * 100)
-        except:
-            pass
-        
-        # Try to add financial context
-        try:
-            financial = MCIP.get_financial_profile()
-            if financial:
-                context["monthly_cost"] = f"${financial.monthly_cost:,.0f}"
-                context["runway_months"] = financial.runway_months
-        except:
-            pass
-        
-        # Get module message
-        message = NaviDialogue.get_module_message(dialogue_product, module_key, context)
-        
-        if message:
-            # Calculate current progress step (only count steps with show_progress=True)
-            progress_steps = [s for s in config.steps if s.show_progress]
-            current_progress = sum(1 for s in progress_steps if config.steps.index(s) < step_index) + (1 if step.show_progress else 0)
+            # Fallback to dialogue JSON (legacy system)
+            from core.navi_dialogue import NaviDialogue
             
-            render_navi_guide_bar(
-                text=message.get("text", ""),
-                subtext=message.get("subtext"),
-                icon=message.get("icon", "🤖"),
-                show_progress=(progress_total > 0 and not is_first_step and not is_results),
-                current_step=current_progress if current_progress > 0 else None,
-                total_steps=progress_total if progress_total > 0 else None
-            )
+            # Map product key to dialogue key
+            product_to_dialogue = {
+                "gcp_v4": "gcp",
+                "cost_v2": "cost_planner",
+                "pfma_v2": "pfma"
+            }
+            
+            dialogue_product = product_to_dialogue.get(config.product, config.product)
+            
+            # Determine module key from step
+            is_first_step = (step_index == 0)
+            is_last_step = (step_index == len(config.steps) - 1)
+            is_results = config.results_step_id and step.id == config.results_step_id
+            
+            if is_first_step:
+                module_key = "intro"
+            elif is_results or is_last_step:
+                module_key = "complete"
+            else:
+                module_key = step.id if step.id else "intro"
+            
+            # Build context from MCIP
+            context = {}
+            try:
+                care_rec = MCIP.get_care_recommendation()
+                if care_rec:
+                    context["tier"] = care_rec.recommended_tier
+                    context["confidence"] = int(care_rec.confidence_score * 100)
+            except:
+                pass
+            
+            try:
+                financial = MCIP.get_financial_profile()
+                if financial:
+                    context["monthly_cost"] = f"${financial.monthly_cost:,.0f}"
+                    context["runway_months"] = financial.runway_months
+            except:
+                pass
+            
+            # Get message from dialogue JSON
+            message = NaviDialogue.get_module_message(dialogue_product, module_key, context)
+        
+        if not message:
+            return
+        
+        # Calculate current progress step
+        progress_steps = [s for s in config.steps if s.show_progress]
+        current_progress = sum(1 for s in progress_steps if config.steps.index(s) < step_index) + (1 if step.show_progress else 0)
+        
+        # Determine if we should show progress
+        is_first_step = (step_index == 0)
+        is_results = config.results_step_id and step.id == config.results_step_id
+        show_progress_bar = (progress_total > 0 and not is_first_step and not is_results)
+        
+        # Get color from message or use default
+        color = message.get("color", "#8b5cf6")
+        
+        render_navi_guide_bar(
+            text=message.get("text", ""),
+            subtext=message.get("subtext"),
+            icon=message.get("icon", "🤖"),
+            show_progress=show_progress_bar,
+            current_step=current_progress if current_progress > 0 else None,
+            total_steps=progress_total if progress_total > 0 else None,
+            color=color
+        )
     except Exception as e:
         # Silently fail if Navi can't render (don't break module flow)
         import sys

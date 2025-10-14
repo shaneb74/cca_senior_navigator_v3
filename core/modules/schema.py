@@ -187,6 +187,7 @@ class FieldDef:
     ask_if_missing: bool = False
     ui: Optional[Dict[str, Any]] = None
     effects: Optional[List[Dict[str, Any]]] = None
+    guidance: Optional[Dict[str, str]] = None  # NEW: Navi guidance tooltip
 
 
 @dataclass
@@ -201,6 +202,7 @@ class StepDef:
     show_progress: bool = True
     show_bottom_bar: bool = True
     summary_keys: Optional[List[str]] = None
+    navi_guidance: Optional[Dict[str, str]] = None  # NEW: Navi section guidance
 
 
 @dataclass
@@ -214,6 +216,8 @@ class ModuleConfig:
     theme_variant: Optional[str] = None
     outcomes_compute: Optional[str] = None
     results_step_id: Optional[str] = None
+    navi_intro: Optional[Dict[str, str]] = None  # NEW: Navi module intro
+    navi_outro: Optional[Dict[str, str]] = None  # NEW: Navi module outro
 
 
 @dataclass
