@@ -23,6 +23,11 @@ def run_module(config: ModuleConfig) -> Dict[str, Any]:
 
     total_steps = len(config.steps)
     
+    # Validate module configuration
+    if total_steps == 0:
+        st.error("⚠️ Module configuration error: No steps defined.")
+        st.stop()
+    
     # Check tile state for last saved step (resume functionality)
     tiles = st.session_state.setdefault("tiles", {})
     tile_state = tiles.setdefault(config.product, {})
@@ -34,8 +39,14 @@ def run_module(config: ModuleConfig) -> Dict[str, Any]:
     else:
         step_index = int(st.session_state.get(f"{state_key}._step", 0))
     
-    # Clamp to valid range
+    # Clamp to valid range with additional safety check
     step_index = max(0, min(step_index, total_steps - 1))
+    
+    # Final bounds validation before array access
+    if step_index < 0 or step_index >= total_steps:
+        st.error(f"⚠️ Invalid step index: {step_index} (total steps: {total_steps}). Resetting to step 0.")
+        step_index = 0
+        st.session_state[f"{state_key}._step"] = 0
     
     # Store step index for internal navigation
     st.session_state[f"{state_key}._step"] = step_index
