@@ -7,6 +7,8 @@ Universal Product Pattern Implementation:
 3. Run product logic (multi-step appointment booking flow)
 4. Publish AdvisorAppointment to MCIP when complete
 5. Mark product complete in journey
+
+Uses Navi as the single intelligence layer for guidance and progress.
 """
 
 from datetime import datetime, timedelta
@@ -15,6 +17,7 @@ import streamlit as st
 
 from core.mcip import MCIP, AdvisorAppointment
 from core.nav import route_to
+from core.navi import render_navi_panel
 
 
 def render():
@@ -22,21 +25,29 @@ def render():
     
     # Step 1: Check prerequisites via MCIP
     if not _check_prerequisites():
+        # Render Navi for gate screen
+        render_navi_panel(
+            location="product",
+            product_key="pfma_v2",
+            module_config=None
+        )
         _render_gate()
         return
     
     # Step 2: Initialize PFMA state
     _initialize_state()
     
-    # Step 3: Show MCIP context at top
-    _render_mcip_context()
+    # Step 3: Render Navi panel (single intelligence layer)
+    # Replaces: Hub Guide, MCIP context display, duck progress
+    render_navi_panel(
+        location="product",
+        product_key="pfma_v2",
+        module_config=None  # PFMA uses custom step flow, not module engine
+    )
     
     # Step 4: Get current step and route
     pfma = st.session_state["pfma_v2"]
     step = pfma.get("step", 0)
-    
-    # Show duck progress in sidebar
-    _render_duck_progress_sidebar()
     
     # Route to appropriate step
     if step == 0:

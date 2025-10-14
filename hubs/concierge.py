@@ -1,40 +1,38 @@
 # hubs/concierge.py
 """
-Concierge Hub - MCIP-Powered Polymorphic Display
+Concierge Hub - Navi-Powered Polymorphic Display
 
-This hub is product-agnostic and reads everything from MCIP.
-All product state, progress, summaries, and recommendations come from MCIP contracts.
+This hub uses Navi as the single intelligence layer.
+Navi orchestrates journey coordination, Additional Services, and Q&A.
 """
 import streamlit as st
 
 from core.mcip import MCIP
+from core.navi import render_navi_panel, NaviOrchestrator
 from core.additional_services import get_additional_services
 from core.base_hub import render_dashboard_body
 from core.product_tile import ProductTileHub
-from core.ui import render_mcip_journey_status
 from layout import render_page
 
 __all__ = ["render"]
 
 
 def render(ctx=None) -> None:
-    """Render the Concierge Hub with MCIP orchestration."""
+    """Render the Concierge Hub with Navi orchestration."""
     
     # Initialize MCIP
     MCIP.initialize()
     
-    # Get journey state
-    progress = MCIP.get_journey_progress()
-    next_action = MCIP.get_recommended_next_action()
-    completed_products = progress["completed_products"]
+    # Render Navi panel (THE single intelligence layer)
+    # Replaces: Hub Guide + MCIP journey status
+    navi_ctx = render_navi_panel(location="hub", hub_key="concierge")
     
-    # Person name for personalization
-    person_name = st.session_state.get("person_name", "").strip()
+    # Extract data from Navi context
+    next_action = navi_ctx.next_action
+    person_name = navi_ctx.user_name or ""
     person = person_name if person_name else "you"
     
-    # Show MCIP journey status banner at top
-    render_mcip_journey_status()
-    
+    # Show save confirmation if returning
     # Handle save messages from legacy products (backwards compatibility)
     save_msg = st.session_state.pop("_show_save_message", None)
     if save_msg:
