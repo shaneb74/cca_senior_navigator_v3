@@ -90,12 +90,12 @@ def render(ctx=None) -> None:
         # Render Navi panel (after header, before hub content)
         render_navi_panel(location="hub", hub_key="concierge")
         
-        # Render hub body HTML
+        # Render hub body HTML WITHOUT title/subtitle/chips (Navi replaces them)
         body_html = render_dashboard_body(
-            title="Concierge Care Hub",
-            subtitle="Finish the essentials, then unlock curated next steps with your advisor.",
-            chips=chips,
-            hub_guide_block=None,  # NEW: Navi now rendered directly via Streamlit
+            title=None,  # Skip title - Navi provides context
+            subtitle=None,  # Skip subtitle - Navi provides context
+            chips=None,  # Skip chips - Navi provides status
+            hub_guide_block=None,
             hub_order=hub_order,
             cards=cards,
             additional_services=additional,

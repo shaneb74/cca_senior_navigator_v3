@@ -124,15 +124,11 @@ def render(ctx=None) -> None:
         # Render Navi panel (after header, before hub content)
         render_navi_panel(location="hub", hub_key="learning")
         
-        # Render hub body HTML
+        # Render hub body HTML WITHOUT title/subtitle/chips (Navi replaces them)
         body_html = render_dashboard_body(
-            title="Learning & Resources Hub",
-            subtitle=f"Keep {person_name}'s circle aligned with quick, shareable lessons.",
-            chips=[
-                {"label": "Learning journey"},
-                {"label": "Self-paced resources", "variant": "muted"},
-                {"label": "Advisor curated"},
-            ],
+            title=None,
+            subtitle=None,
+            chips=None,
             hub_guide_block=compute_hub_guide("learning"),
             cards=cards,
             additional_services=get_additional_services("learning"),

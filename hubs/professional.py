@@ -192,10 +192,10 @@ def render(ctx=None) -> None:
         # Render Navi panel (after header, before hub content)
         render_navi_panel(location="hub", hub_key="professional")
         
-        # Render hub body HTML
+        # Render hub body HTML WITHOUT title/subtitle (Navi replaces them)
         body_html = render_dashboard_body(
-            title="Professional Hub",
-            subtitle="Comprehensive tools for discharge planners, nurses, physicians, social workers, and geriatric care managers.",
+            title=None,
+            subtitle=None,
             hub_guide_block=mcip_panel,
             cards=cards,
         )
