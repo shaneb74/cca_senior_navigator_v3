@@ -101,7 +101,26 @@ def run_module(config: ModuleConfig) -> Dict[str, Any]:
     # Render actions - get save_exit button state
     # Detect if this is the intro page (first step) - nothing to save yet
     is_intro_page = (step.id == config.steps[0].id)
-    next_clicked, skip_clicked, save_exit_clicked = actions(step.next_label, step.skip_label, is_intro=is_intro_page)
+    next_clicked, skip_clicked, save_exit_clicked, back_clicked = actions(
+        step.next_label, 
+        step.skip_label, 
+        is_intro=is_intro_page,
+        show_back=(not is_intro_page and step_index > 0),
+        step_index=step_index,
+        config=config
+    )
+    
+    # Handle Back button
+    if back_clicked:
+        prev_index = max(0, step_index - 1)
+        st.session_state[f"{config.state_key}._step"] = prev_index
+        
+        # Update tile state for resume functionality
+        tiles = st.session_state.setdefault("tiles", {})
+        tile_state = tiles.setdefault(config.product, {})
+        tile_state["last_step"] = prev_index
+        
+        st.rerun()
     
     # Handle Save & Continue Later
     if save_exit_clicked:
@@ -148,47 +167,18 @@ def _render_header(step_index: int, total: int, title: str, subtitle: str | None
                 formatted_lines.append("<br/>")
         subtitle_html = f"<div class='lead'>{''.join(formatted_lines)}</div>"
     
-    # Render back button as Streamlit button (not HTML link) for proper state management
-    # Don't show back button on intro page (redundant with "Back to Hub" action button)
-    if not is_intro and step_index > 0 and config:
-        col1, col2 = st.columns([1, 10])
-        with col1:
-            if st.button("← Back", key="_mod_back_prev", use_container_width=True):
-                prev_index = max(0, step_index - 1)
-                st.session_state[f"{config.state_key}._step"] = prev_index
-                
-                # Update tile state for resume functionality
-                tiles = st.session_state.setdefault("tiles", {})
-                tile_state = tiles.setdefault(config.product, {})
-                tile_state["last_step"] = prev_index
-                
-                st.rerun()
-        
-        with col2:
-            st.markdown(
-                f"""
-                <div class="mod-head">
-                  <div class="mod-head-row">
-                    <h2 class="h2">{_escape(title)}</h2>
-                  </div>
-                  {subtitle_html}
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-    else:
-        # No back button on intro page or first question - just show header
-        st.markdown(
-            f"""
-            <div class="mod-head">
-              <div class="mod-head-row">
-                <h2 class="h2">{_escape(title)}</h2>
-              </div>
-              {subtitle_html}
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+    # Header without back button (back button moved to actions section)
+    st.markdown(
+        f"""
+        <div class="mod-head">
+          <div class="mod-head-row">
+            <h2 class="h2">{_escape(title)}</h2>
+          </div>
+          {subtitle_html}
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def _substitute_title(title: str, state: Mapping[str, Any]) -> str:
