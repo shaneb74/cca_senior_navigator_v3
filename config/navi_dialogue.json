@@ -266,5 +266,98 @@
       "specific_question": "User asks: 'How much will Assisted Living cost?' Context: {care_tier: 'assisted_living', cost_planner_complete: false}. Response: Acknowledge the question, give a brief general answer, then guide them to Cost Planner for personalized estimate.",
       "stuck_user": "User asks: 'I don't understand this question.' Context: {current_product: 'gcp', module: 'daily_living'}. Response: Provide gentle clarification, give an example, reassure them there are no wrong answers."
     }
+  },
+  "module_guidance": {
+    "gcp": {
+      "intro": {
+        "text": "Let's figure out what level of care is right for you.",
+        "subtext": "I'll ask about daily activities, health, and preferences. This takes about 2 minutes.",
+        "icon": "🧭"
+      },
+      "mobility": {
+        "text": "Let's talk about mobility...",
+        "subtext": "I'm asking this to understand your daily movement needs. Be honest - there's no wrong answer!",
+        "icon": "🚶"
+      },
+      "cognitive": {
+        "text": "Now let's talk about cognitive health...",
+        "subtext": "This helps me understand if memory support or mental health assistance might be helpful.",
+        "icon": "🧠"
+      },
+      "medical": {
+        "text": "Let's review medical needs...",
+        "subtext": "Understanding your health conditions helps me recommend the right level of care.",
+        "icon": "💊"
+      },
+      "social": {
+        "text": "Let's talk about social and emotional needs...",
+        "subtext": "Connection and engagement are so important! This helps me understand your social preferences.",
+        "icon": "👥"
+      },
+      "living": {
+        "text": "Finally, let's talk about living preferences...",
+        "subtext": "Where and how you want to live matters. This helps me match you to the right environment.",
+        "icon": "🏠"
+      },
+      "complete": {
+        "text": "🎉 Care Plan Complete! You're doing great.",
+        "subtext": "Next: Let's calculate costs so you know what to expect. 💰",
+        "icon": "✅"
+      }
+    },
+    "cost_planner": {
+      "intro": {
+        "text": "Let's figure out the financial side of {tier}.",
+        "subtext": "I'll ask about income, assets, and expenses. This helps estimate your monthly costs and how long your money will last.",
+        "icon": "💰"
+      },
+      "income": {
+        "text": "Let's start with income...",
+        "subtext": "I need to know your reliable monthly income. This includes Social Security, pensions, investments, etc.",
+        "icon": "💵"
+      },
+      "assets": {
+        "text": "Now let's talk about assets...",
+        "subtext": "Understanding your savings and property helps me calculate your financial runway.",
+        "icon": "🏦"
+      },
+      "expenses": {
+        "text": "Finally, current expenses...",
+        "subtext": "Knowing what you spend now helps me show you the real cost difference.",
+        "icon": "📊"
+      },
+      "complete": {
+        "text": "💰 Cost Estimate Complete! You're almost done.",
+        "subtext": "Next: Let's schedule your advisor appointment. 📅",
+        "icon": "✅"
+      }
+    },
+    "pfma": {
+      "intro": {
+        "text": "Time to schedule your advisor appointment!",
+        "subtext": "I'll connect you with an expert who can answer questions and help you move forward.",
+        "icon": "📅"
+      },
+      "select_advisor": {
+        "text": "Choose your advisor type...",
+        "subtext": "Different advisors specialize in different things. Pick the one that fits your needs best!",
+        "icon": "👤"
+      },
+      "choose_time": {
+        "text": "Pick a time that works for you...",
+        "subtext": "Your advisor will call you at the time you choose. Make sure you have 30-45 minutes free.",
+        "icon": "⏰"
+      },
+      "confirm": {
+        "text": "Almost there! Just confirm your details...",
+        "subtext": "Double-check everything is correct before we book your appointment.",
+        "icon": "✅"
+      },
+      "complete": {
+        "text": "🎉 Congratulations! You did it!",
+        "subtext": "Your advisor will call you at the scheduled time. You've completed your entire journey!",
+        "icon": "🎉"
+      }
+    }
   }
 }

@@ -55,6 +55,12 @@ def run_module(config: ModuleConfig) -> Dict[str, Any]:
     # Check if current step should show progress indicators
     show_step_dots = step.show_progress
     
+    # ========================================================================
+    # NAVI PERSISTENT GUIDE BAR
+    # Inject Navi's contextual guidance at the top of every module
+    # ========================================================================
+    _render_navi_guide_bar(config, step, state, step_index, progress_total)
+    
     # Render header with actual progress
     _render_header(step_index, total_steps, title, step.subtitle, progress, progress_total, show_step_dots, step.id == config.steps[0].id)
 
@@ -787,6 +793,96 @@ def _rerun_app() -> None:
         legacy_rerun()
         return
     raise RuntimeError("Streamlit rerun is unavailable in this environment.")
+
+
+def _render_navi_guide_bar(
+    config: ModuleConfig,
+    step: StepDef,
+    state: Dict[str, Any],
+    step_index: int,
+    progress_total: int
+) -> None:
+    """Render Navi's persistent guide bar at top of module.
+    
+    Navi sits at the top of EVERY module, providing contextual guidance
+    about what the user is doing and why we're asking each question.
+    
+    Args:
+        config: Module configuration
+        step: Current step definition
+        state: Module state
+        step_index: Current step index
+        progress_total: Total progress-eligible steps
+    """
+    try:
+        from core.navi_dialogue import NaviDialogue
+        from core.ui import render_navi_guide_bar
+        from core.mcip import MCIP
+        
+        # Map product key to dialogue key
+        product_to_dialogue = {
+            "gcp_v4": "gcp",
+            "cost_v2": "cost_planner",
+            "pfma_v2": "pfma"
+        }
+        
+        dialogue_product = product_to_dialogue.get(config.product, config.product)
+        
+        # Determine module key from step
+        # First step = intro, last step = complete, others = step ID or generic
+        is_first_step = (step_index == 0)
+        is_last_step = (step_index == len(config.steps) - 1)
+        is_results = config.results_step_id and step.id == config.results_step_id
+        
+        if is_first_step:
+            module_key = "intro"
+        elif is_results or is_last_step:
+            module_key = "complete"
+        else:
+            # Try to use step ID as module key, fallback to intro
+            module_key = step.id if step.id else "intro"
+        
+        # Build context from state and MCIP
+        context = {}
+        
+        # Try to add care recommendation context
+        try:
+            care_rec = MCIP.get_care_recommendation()
+            if care_rec:
+                context["tier"] = care_rec.recommended_tier
+                context["confidence"] = int(care_rec.confidence_score * 100)
+        except:
+            pass
+        
+        # Try to add financial context
+        try:
+            financial = MCIP.get_financial_profile()
+            if financial:
+                context["monthly_cost"] = f"${financial.monthly_cost:,.0f}"
+                context["runway_months"] = financial.runway_months
+        except:
+            pass
+        
+        # Get module message
+        message = NaviDialogue.get_module_message(dialogue_product, module_key, context)
+        
+        if message:
+            # Calculate current progress step (only count steps with show_progress=True)
+            progress_steps = [s for s in config.steps if s.show_progress]
+            current_progress = sum(1 for s in progress_steps if config.steps.index(s) < step_index) + (1 if step.show_progress else 0)
+            
+            render_navi_guide_bar(
+                text=message.get("text", ""),
+                subtext=message.get("subtext"),
+                icon=message.get("icon", "🤖"),
+                show_progress=(progress_total > 0 and not is_first_step and not is_results),
+                current_step=current_progress if current_progress > 0 else None,
+                total_steps=progress_total if progress_total > 0 else None
+            )
+    except Exception as e:
+        # Silently fail if Navi can't render (don't break module flow)
+        import sys
+        print(f"[WARN] Navi guide bar failed: {e}", file=sys.stderr)
 
 
 __all__ = ["run_module"]

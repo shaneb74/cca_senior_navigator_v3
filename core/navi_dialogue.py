@@ -178,6 +178,33 @@ class NaviDialogue:
         return random.choice(tips) if tips else ""
     
     @classmethod
+    def get_module_message(
+        cls,
+        product_key: str,
+        module_key: str,
+        context: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, str]:
+        """Get Navi's guidance message for a specific module.
+        
+        Args:
+            product_key: Product key (gcp, cost_planner, pfma)
+            module_key: Module key (intro, mobility, income, select_advisor, etc.)
+            context: Context for formatting
+        
+        Returns:
+            Dict with text, subtext, icon
+        """
+        dialogue = cls.load_dialogue()
+        module_guidance = dialogue.get("module_guidance", {})
+        product_modules = module_guidance.get(product_key, {})
+        message = product_modules.get(module_key, {})
+        
+        if context:
+            message = cls._format_message(message, context)
+        
+        return message
+    
+    @classmethod
     def _format_message(cls, message: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
         """Format all strings in message dict with context."""
         formatted = {}
@@ -366,3 +393,53 @@ def show_navi_micro_moment(moment_type: str, context: Optional[Dict[str, Any]] =
     message = NaviDialogue.get_micro_moment(moment_type, context)
     if message:
         st.success(f"🤖 {message}")
+
+
+def show_navi_module_guide(
+    product_key: str,
+    module_key: str,
+    context: Optional[Dict[str, Any]] = None,
+    show_progress: bool = False,
+    current_step: Optional[int] = None,
+    total_steps: Optional[int] = None
+) -> None:
+    """Show Navi's persistent guide bar for current module.
+    
+    This is the key integration point - call this at the top of EVERY module
+    to give users contextual guidance about what they're doing and why.
+    
+    Args:
+        product_key: Product key (gcp, cost_planner, pfma)
+        module_key: Module key (intro, mobility, income, select_advisor, etc.)
+        context: Context for formatting (name, tier, costs, etc.)
+        show_progress: Whether to show progress indicator
+        current_step: Current step number
+        total_steps: Total steps
+    
+    Example:
+        # At top of GCP mobility module
+        show_navi_module_guide("gcp", "mobility", show_progress=True, current_step=1, total_steps=5)
+        
+        # At top of Cost Planner income step
+        show_navi_module_guide("cost_planner", "income", context={"tier": "Assisted Living"})
+    """
+    if not HAS_STREAMLIT:
+        return
+    
+    from core.ui import render_navi_guide_bar
+    
+    # Get module message
+    message = NaviDialogue.get_module_message(product_key, module_key, context)
+    
+    if not message:
+        return
+    
+    # Render guide bar
+    render_navi_guide_bar(
+        text=message.get("text", ""),
+        subtext=message.get("subtext"),
+        icon=message.get("icon", "🤖"),
+        show_progress=show_progress,
+        current_step=current_step,
+        total_steps=total_steps
+    )
