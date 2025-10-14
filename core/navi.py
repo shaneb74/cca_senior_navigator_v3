@@ -202,20 +202,21 @@ class NaviOrchestrator:
                 questions.append("When should I start looking for facilities?")
         
         # Default starter questions (if we don't have 3 yet)
-        default_questions = [
-            "What level of care is right for me?",
-            "How do I pay for senior care?",
-            "What's the difference between Independent and Assisted Living?",
-            "How do I choose the right facility?",
-            "What questions should I ask during facility tours?"
-        ]
-        
-        # Add defaults until we have 3
-        for q in default_questions:
-            if q not in questions:
-                questions.append(q)
-            if len(questions) >= 3:
-                break
+        # DISABLED until PFMA module is complete - keep users focused on primary flow
+        # default_questions = [
+        #     "What level of care is right for me?",
+        #     "How do I pay for senior care?",
+        #     "What's the difference between Independent and Assisted Living?",
+        #     "How do I choose the right facility?",
+        #     "What questions should I ask during facility tours?"
+        # ]
+        # 
+        # # Add defaults until we have 3
+        # for q in default_questions:
+        #     if q not in questions:
+        #         questions.append(q)
+        #     if len(questions) >= 3:
+        #         break
         
         return questions[:3]
     
