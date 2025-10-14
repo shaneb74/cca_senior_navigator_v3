@@ -120,6 +120,7 @@ def _convert_question_to_field(question: Dict[str, Any]) -> FieldDef:
     question_id = question["id"]
     question_type = question.get("type", "string")
     select_type = question.get("select", "single")
+    ui_config = question.get("ui", {})
     
     # Build effects from option flags
     effects = _build_effects_from_options(question.get("options", []))
@@ -130,7 +131,7 @@ def _convert_question_to_field(question: Dict[str, Any]) -> FieldDef:
     return FieldDef(
         key=question_id,
         label=question.get("label", ""),
-        type=_convert_type(question_type, select_type),
+        type=_convert_type(question_type, select_type, ui_config),
         help=question.get("help"),
         required=question.get("required", False),
         options=question.get("options", []),
@@ -149,24 +150,44 @@ def _convert_question_to_field(question: Dict[str, Any]) -> FieldDef:
     )
 
 
-def _convert_type(question_type: str, select_type: str) -> str:
+def _convert_type(question_type: str, select_type: str, ui: Dict[str, Any] = None) -> str:
     """Convert module.json type to FieldDef type.
     
     Args:
         question_type: Type from module.json ("string", "number", etc.)
         select_type: Select type ("single", "multi")
+        ui: UI configuration dict with widget preference
     
     Returns:
-        FieldDef type string
+        FieldDef type string matching component renderer names
     """
+    # Check if UI specifies a widget type
+    widget = (ui or {}).get("widget", "")
+    
+    # Multi-select types
     if question_type == "string" and select_type == "multi":
+        if widget == "multi_chip":
+            return "chip_multi"
         return "multiselect"
+    
+    # Single-select types - use UI widget to determine renderer
     elif question_type == "string" and select_type == "single":
-        return "select"
+        if widget == "chip":
+            return "pill"  # Chip widget uses pill renderer
+        elif widget == "dropdown":
+            return "dropdown"
+        else:
+            return "radio"  # Default to radio for single-select
+    
+    # Number types
     elif question_type == "number":
         return "number"
+    
+    # Boolean types
     elif question_type == "boolean":
-        return "boolean"
+        return "yesno"
+    
+    # Default to text
     else:
         return "text"
 

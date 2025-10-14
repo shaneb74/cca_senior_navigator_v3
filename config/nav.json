@@ -102,6 +102,12 @@
       "items": [
         {
           "key": "gcp",
+          "label": "Guided Care Plan (legacy)",
+          "module": "products.gcp_v4.product:render",
+          "hidden": true
+        },
+        {
+          "key": "gcp_v4",
           "label": "Guided Care Plan",
           "module": "products.gcp_v4.product:render",
           "hidden": true

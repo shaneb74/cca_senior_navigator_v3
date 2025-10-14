@@ -32,8 +32,11 @@ def render(ctx=None) -> None:
     if save_msg:
         product_name = {
             "gcp": "Guided Care Plan",
+            "gcp_v4": "Guided Care Plan",
             "cost": "Cost Planner",
-            "pfma": "Plan with My Advisor"
+            "cost_v2": "Cost Planner",
+            "pfma": "Plan with My Advisor",
+            "pfma_v2": "Plan with My Advisor"
         }.get(save_msg.get("product", ""), "questionnaire")
         
         prog = save_msg.get("progress", 0)
@@ -116,6 +119,33 @@ def _get_hub_reason() -> str:
     return "Complete your care plan to personalize your journey"
 
 
+def _get_product_progress(product_key: str) -> float:
+    """Get latest progress percentage for a product from session state."""
+    candidates = []
+    tiles = st.session_state.get("tiles", {})
+    if isinstance(tiles, dict):
+        candidates.append(tiles.get(product_key, {}))
+    candidates.append(st.session_state.get(product_key, {}))
+
+    if product_key == "gcp_v4":
+        candidates.extend([
+            st.session_state.get("gcp", {}),
+            st.session_state.get("gcp_care_recommendation", {}),
+        ])
+    elif product_key == "cost_v2":
+        candidates.append(st.session_state.get("cost", {}))
+    elif product_key == "pfma_v2":
+        candidates.append(st.session_state.get("pfma", {}))
+
+    for source in candidates:
+        if isinstance(source, dict) and "progress" in source:
+            try:
+                return float(source.get("progress", 0))
+            except Exception:
+                continue
+    return 0.0
+
+
 def _build_gcp_tile(hub_order: dict, ordered_index: dict, next_action: dict) -> ProductTileHub:
     """Build GCP tile dynamically from MCIP."""
     summary = MCIP.get_product_summary("gcp_v4")
@@ -129,8 +159,9 @@ def _build_gcp_tile(hub_order: dict, ordered_index: dict, next_action: dict) -> 
         }
     
     # Determine states
+    prog = _get_product_progress("gcp_v4")
     is_complete = (summary["status"] == "complete")
-    is_in_progress = st.session_state.get("gcp", {}).get("progress", 0) > 0
+    is_in_progress = not is_complete and prog > 0
     is_next = (next_action.get("route") == "gcp_v4")
     
     # Build description
@@ -140,7 +171,6 @@ def _build_gcp_tile(hub_order: dict, ordered_index: dict, next_action: dict) -> 
         status_text = summary["summary_line"]
         progress = 100
     elif is_in_progress:
-        prog = st.session_state.get("gcp", {}).get("progress", 0)
         desc = f"Resume questionnaire ({prog:.0f}% complete)"
         desc_html = None
         status_text = None
@@ -186,9 +216,10 @@ def _build_cost_planner_tile(hub_order: dict, ordered_index: dict, next_action: 
         }
     
     # Determine states
+    cost_prog = _get_product_progress("cost_v2")
     is_complete = (summary["status"] == "complete")
     is_locked = (summary["status"] == "locked")
-    is_in_progress = st.session_state.get("cost", {}).get("progress", 0) > 0
+    is_in_progress = not is_complete and not is_locked and cost_prog > 0
     is_next = (next_action.get("route") == "cost_v2")
     
     # Build description and progress
@@ -197,9 +228,8 @@ def _build_cost_planner_tile(hub_order: dict, ordered_index: dict, next_action: 
         progress = 100
         status_text = "✓ Complete"
     elif is_in_progress:
-        prog = st.session_state.get("cost", {}).get("progress", 0)
-        desc = f"Resume planner ({prog:.0f}% complete)"
-        progress = prog
+        desc = f"Resume planner ({cost_prog:.0f}% complete)"
+        progress = cost_prog
         status_text = None
     elif is_locked:
         desc = summary["summary_line"]
@@ -306,8 +336,11 @@ def _build_saved_progress_alert(save_msg: Optional[dict]) -> str:
         return ""
     product_name = {
         "gcp": "Guided Care Plan",
+        "gcp_v4": "Guided Care Plan",
         "cost": "Cost Planner",
-        "pfma": "Plan with My Advisor"
+        "cost_v2": "Cost Planner",
+        "pfma": "Plan with My Advisor",
+        "pfma_v2": "Plan with My Advisor"
     }.get(save_msg.get("product", ""), "questionnaire")
 
     prog = save_msg.get("progress", 0)
@@ -351,9 +384,10 @@ def _build_pfma_tile(hub_order: dict, ordered_index: dict, next_action: dict) ->
         }
     
     # Determine states
+    pfma_prog = _get_product_progress("pfma_v2")
     is_complete = (summary["status"] == "complete")
     is_locked = (summary["status"] == "locked")
-    is_in_progress = st.session_state.get("pfma", {}).get("progress", 0) > 0
+    is_in_progress = not is_complete and not is_locked and pfma_prog > 0
     is_next = (next_action.get("route") == "pfma_v2")
     
     # Build description and progress
@@ -364,9 +398,8 @@ def _build_pfma_tile(hub_order: dict, ordered_index: dict, next_action: dict) ->
         meta_lines = ["✅ 🦆🦆🦆🦆 All Ducks in a Row!"]
         badges = [{"label": "🦆🦆🦆🦆 Earned", "tone": "success"}]
     elif is_in_progress:
-        prog = st.session_state.get("pfma", {}).get("progress", 0)
-        desc = f"Resume appointment booking ({prog:.0f}% complete)"
-        progress = prog
+        desc = f"Resume appointment booking ({pfma_prog:.0f}% complete)"
+        progress = pfma_prog
         status_text = None
         meta_lines = ["≈5–8 min • Ducks in a Row"]
         badges = []

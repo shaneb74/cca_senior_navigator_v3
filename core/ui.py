@@ -315,15 +315,15 @@ def render_mcip_journey_status() -> None:
     try:
         care_rec = MCIP.get_care_recommendation()
         if care_rec:
-            context["tier"] = care_rec.recommended_tier
-            context["confidence"] = int(care_rec.confidence_score * 100)
+            context["tier"] = care_rec.tier
+            context["confidence"] = int(care_rec.confidence * 100)
     except:
         pass
     
     try:
         financial = MCIP.get_financial_profile()
         if financial:
-            context["monthly_cost"] = f"${financial.monthly_cost:,.0f}"
+            context["monthly_cost"] = f"${financial.estimated_monthly_cost:,.0f}"
             context["runway_months"] = financial.runway_months
     except:
         pass
