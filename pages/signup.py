@@ -1,7 +1,8 @@
 from textwrap import dedent
 
+import streamlit as st
+
 from core.ui import img_src
-from layout import render_page
 
 
 def _signup_markup() -> str:
@@ -171,4 +172,5 @@ def _signup_markup() -> str:
 
 
 def render():
-    render_page(body_html=_signup_markup(), active_route="signup", show_header=False, show_footer=False)
+    # Signup page has its own custom layout, no header/footer
+    st.markdown(_signup_markup(), unsafe_allow_html=True)
