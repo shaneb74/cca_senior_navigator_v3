@@ -190,7 +190,7 @@ def render_header_simple(active_route: Optional[str] = None) -> None:
         <header class="sn-header">
           <div class="sn-header__inner">
             <a href="?page=welcome" class="sn-header__brand" style="display: flex !important; align-items: center; gap: 12px;">
-              <img src="{logo_url}" alt="CCA Logo" class="sn-header__logo" style="height: 48px; width: auto; display: block;" />
+              <img src="{logo_url}" alt="CCA Logo" class="sn-header__logo" style="height: 48px !important; width: auto !important; display: block !important; visibility: visible !important; opacity: 1 !important;" />
               <span class="sn-header__brand-text" style="font-size: 1.25rem; font-weight: 700; color: #1e3a8a; display: inline-block;">Senior Navigator</span>
             </a>
             <nav class="sn-header__nav">
