@@ -10,7 +10,7 @@ import streamlit as st
 from ui.product_shell import product_shell_start, product_shell_end
 
 
-def render(product_key: str, product_title: str, product_desc: str):
+def render_coming_soon(product_key: str, product_title: str, product_desc: str):
     """Render the Coming Soon module.
     
     Args:
