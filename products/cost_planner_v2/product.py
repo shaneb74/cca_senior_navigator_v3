@@ -16,7 +16,9 @@ Users can complete Cost Planner with general estimates.
 import streamlit as st
 from core.mcip import MCIP
 from core.navi import render_navi_panel
-from layout import render_shell_start, render_shell_end
+from core.state import get_user_name
+from layout import static_url
+from ui.product_shell import product_shell_start, product_shell_end
 
 
 def render():
@@ -34,7 +36,7 @@ def render():
     but accessed separately via navigation, not forced in flow.
     """
     
-    render_shell_start("", active_route="cost_v2")
+    product_shell_start()
     
     # Initialize step state
     if "cost_v2_step" not in st.session_state:
@@ -62,7 +64,7 @@ def render():
         st.session_state.cost_v2_step = "intro"
         st.rerun()
     
-    render_shell_end()
+    product_shell_end()
 
 
 def _render_intro_step():

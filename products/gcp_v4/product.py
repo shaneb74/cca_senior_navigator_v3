@@ -13,7 +13,7 @@ from core.mcip import MCIP, CareRecommendation
 from core.modules.engine import run_module
 from core.modules.schema import ModuleConfig
 from core.navi import render_navi_panel
-from layout import render_shell_start, render_shell_end
+from ui.product_shell import product_shell_start, product_shell_end
 
 
 def render():
@@ -30,7 +30,7 @@ def render():
     # Load module config
     config = _load_module_config()
     
-    render_shell_start("", active_route="gcp_v4")
+    product_shell_start()
     
     try:
         # Render Navi panel (THE single intelligence layer)
@@ -82,7 +82,7 @@ def render():
                     from core.nav import route_to
                     route_to("hub_concierge")
     finally:
-        render_shell_end()
+        product_shell_end()
 
 
 def _load_module_config() -> ModuleConfig:
