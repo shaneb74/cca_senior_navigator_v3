@@ -176,5 +176,10 @@ def render() -> None:
         )
         st.markdown(body_html, unsafe_allow_html=True)
     
-    from layout import render_page
-    render_page(content=render_content, active_route="hub_trusted")
+    from ui.header_simple import render_header_simple
+    from ui.footer_simple import render_footer_simple
+    
+    # Render with simple header/footer
+    render_header_simple(active_route="hub_trusted_partners")
+    render_content()
+    render_footer_simple()

@@ -15,7 +15,8 @@ from core.navi import NaviOrchestrator, render_navi_panel
 from core.additional_services import get_additional_services
 from core.base_hub import render_dashboard_body
 from core.product_tile import ProductTileHub
-from layout import render_page
+from ui.header_simple import render_header_simple
+from ui.footer_simple import render_footer_simple
 
 __all__ = ["render"]
 
@@ -104,7 +105,10 @@ def render(ctx=None) -> None:
         full_html = (alert_html or "") + body_html
         st.markdown(full_html, unsafe_allow_html=True)
     
-    render_page(content=render_content, active_route="hub_concierge", show_footer=False)
+    # Render with simple header/footer (no layout.py)
+    render_header_simple(active_route="hub_concierge")
+    render_content()
+    render_footer_simple()
 
 
 def _get_hub_reason() -> str:

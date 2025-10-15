@@ -9,7 +9,8 @@ from core.base_hub import render_dashboard_body
 from core.navi import render_navi_panel
 from core.product_tile import ProductTileHub
 from core.state import is_professional, switch_to_professional
-from layout import render_page
+from ui.header_simple import render_header_simple
+from ui.footer_simple import render_footer_simple
 
 __all__ = ["render"]
 
@@ -201,4 +202,7 @@ def render(ctx=None) -> None:
         )
         st.markdown(body_html, unsafe_allow_html=True)
 
-    render_page(content=render_content, active_route="hub_professional")
+    # Render with simple header/footer
+    render_header_simple(active_route="hub_professional")
+    render_content()
+    render_footer_simple()
