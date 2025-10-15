@@ -164,6 +164,18 @@
           "label": "Find DME",
           "module": "products.dme:render",
           "hidden": true
+        },
+        {
+          "key": "med_manage",
+          "label": "Medication Management",
+          "module": "products.med_manage:render",
+          "hidden": true
+        },
+        {
+          "key": "predictive_health",
+          "label": "Predictive Health Analytics",
+          "module": "products.predictive_health:render",
+          "hidden": true
         }
       ]
     }
