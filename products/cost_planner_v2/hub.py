@@ -53,7 +53,8 @@ def render():
         st.session_state.cost_v2_modules = {
             "income_assets": {"status": "not_started", "progress": 0, "data": None},
             "monthly_costs": {"status": "not_started", "progress": 0, "data": None},
-            "coverage": {"status": "not_started", "progress": 0, "data": None}
+            "coverage": {"status": "not_started", "progress": 0, "data": None},
+            "monthly_expenses": {"status": "not_started", "progress": 0, "data": None}
         }
     
     modules_state = st.session_state.cost_v2_modules
@@ -100,6 +101,17 @@ def render():
         description="Insurance, VA benefits, and other coverage sources",
         icon="🏥",
         estimated_time="5-7 min"
+    )
+    
+    st.markdown("")
+    
+    # Module 4: Monthly Expenses (NEW)
+    _render_module_tile(
+        module_key="monthly_expenses",
+        title="💳 Monthly Expenses",
+        description="Current household expenses and budget",
+        icon="💳",
+        estimated_time="3-4 min"
     )
     
     st.markdown("---")

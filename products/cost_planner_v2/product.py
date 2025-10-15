@@ -107,20 +107,28 @@ def _render_active_module():
         st.rerun()
         return
     
-    # Import and render the appropriate module
-    if module_key == "income_assets":
-        from products.cost_planner_v2.modules import income_assets
-        income_assets.render()
-    elif module_key == "monthly_costs":
-        from products.cost_planner_v2.modules import monthly_costs
-        monthly_costs.render()
-    elif module_key == "coverage":
-        from products.cost_planner_v2.modules import coverage
-        coverage.render()
+    # Check if using dynamic renderer
+    from products.cost_planner_v2 import module_renderer
+    module_def = module_renderer.get_module_definition(module_key)
+    
+    if module_def:
+        # Use dynamic JSON-driven renderer
+        module_renderer.render_module(module_key)
     else:
-        st.error(f"Unknown module: {module_key}")
-        st.session_state.cost_v2_step = "modules"
-        st.rerun()
+        # Fall back to hardcoded modules
+        if module_key == "income_assets":
+            from products.cost_planner_v2.modules import income_assets
+            income_assets.render()
+        elif module_key == "monthly_costs":
+            from products.cost_planner_v2.modules import monthly_costs
+            monthly_costs.render()
+        elif module_key == "coverage":
+            from products.cost_planner_v2.modules import coverage
+            coverage.render()
+        else:
+            st.error(f"Unknown module: {module_key}")
+            st.session_state.cost_v2_step = "modules"
+            st.rerun()
 
 
 def _render_expert_review_step():

@@ -20,28 +20,43 @@ def render():
     - Gap analysis with visual indicators
     - Runway projection
     - Advisor notes section (optional)
-    - Actions: Download PDF, Schedule Advisor, Continue
+    - Actions: Review Modules, Finalize & Continue, Return to Hub
     """
     
-    st.markdown("# 📋 Your Complete Financial Plan")
+    st.markdown("# 📋 Expert Advisor Review")
     
     # Get all module data
     modules = st.session_state.get("cost_v2_modules", {})
     
-    # Verify all modules complete
+    # Check if required modules are complete (Income & Assets is required)
     income_data = modules.get("income_assets", {}).get("data", {})
-    costs_data = modules.get("monthly_costs", {}).get("data", {})
-    coverage_data = modules.get("coverage", {}).get("data", {})
     
-    if not all([income_data, costs_data, coverage_data]):
-        st.error("⚠️ Not all financial modules are complete. Please complete all modules first.")
-        if st.button("← Back to Modules"):
+    if not income_data:
+        st.error("⚠️ **Income & Assets module is required.** Please complete it before accessing Expert Review.")
+        if st.button("← Back to Financial Modules"):
             st.session_state.cost_v2_step = "modules"
             st.rerun()
         return
     
+    # Get other module data (may be incomplete)
+    costs_data = modules.get("monthly_costs", {}).get("data", {})
+    coverage_data = modules.get("coverage", {}).get("data", {})
+    
+    # Show warning if other modules incomplete
+    if not costs_data or not coverage_data:
+        st.warning("""
+        ⚠️ **Some modules are incomplete.** 
+        
+        For the most accurate financial plan, we recommend completing all modules:
+        - Income & Assets ✅
+        - Monthly Costs """ + ("✅" if costs_data else "❌") + """
+        - Coverage & Benefits """ + ("✅" if coverage_data else "❌") + """
+        
+        You can continue with Expert Review, but estimates may be less accurate.
+        """)
+    
     # Get care recommendation from MCIP (if available)
-    from core.state import MCIP
+    from core.mcip import MCIP
     recommendation = MCIP.get_care_recommendation()
     
     # Show care context
@@ -413,26 +428,17 @@ def _render_actions():
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        if st.button("📄 Download PDF Summary", use_container_width=True):
-            st.info("📄 PDF generation coming soon!")
-            # TODO: Implement PDF generation
-    
-    with col2:
-        if st.button("📅 Schedule Advisor Meeting", use_container_width=True):
-            # Route to PFMA (Plan with My Advisor)
-            st.session_state.cost_v2_step = "exit"
-            st.session_state.cost_v2_schedule_advisor = True
+        if st.button("� Review Modules", use_container_width=True, key="review_modules"):
+            st.session_state.cost_v2_step = "modules"
             st.rerun()
     
-    with col3:
-        if st.button("✅ Complete Financial Plan", use_container_width=True, type="primary"):
+    with col2:
+        if st.button("✅ Finalize & Continue", use_container_width=True, type="primary", key="finalize_continue"):
             # Mark plan complete and go to exit
             st.session_state.cost_v2_step = "exit"
             st.rerun()
     
-    st.markdown("---")
-    
-    # Back button
-    if st.button("← Back to Modules"):
-        st.session_state.cost_v2_step = "modules"
-        st.rerun()
+    with col3:
+        if st.button("🏠 Return to Hub", use_container_width=True, key="return_hub"):
+            from core.nav import route_to
+            route_to("hub_concierge")
