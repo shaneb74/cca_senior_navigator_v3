@@ -74,7 +74,16 @@
 /* Hub shell - clean white background with minimal spacing */
 .sn-hub.dashboard-shell {
   background: #ffffff;
-  padding: 32px 0 48px;
+  padding: 20px 0 48px;
+}
+
+/* Reduce gap between Navi panel and hub content */
+div[data-testid="stVerticalBlock"] > div:has(.navi-panel-v2) {
+  margin-bottom: 0 !important;
+}
+
+div[data-testid="stVerticalBlock"] > div:has(.navi-panel-v2) + div:has(.sn-hub.dashboard-shell) {
+  margin-top: 0 !important;
 }
 
 .sn-hub .dashboard-shell__inner {

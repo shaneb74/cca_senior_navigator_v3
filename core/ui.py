@@ -568,7 +568,7 @@ def render_navi_panel_v2(
     <style>
     .navi-panel-v2 {
         max-width: 1120px;
-        margin: 0 auto 20px auto;
+        margin: 0 auto;
         background: #ffffff;
         border: 1px solid #e6edf5;
         border-radius: 20px;
@@ -704,6 +704,5 @@ def render_navi_panel_v2(
     panel_html = f'<div class="navi-panel-v2"><div class="navi-panel-v2__header"><div class="navi-panel-v2__eyebrow">🤖 Navi</div>{progress_badge}</div><div class="navi-panel-v2__title">{title}</div><div class="navi-panel-v2__reason">{reason}</div><div class="navi-panel-v2__encouragement navi-panel-v2__encouragement--{status}"><span style="font-size: 18px;">{encouragement.get("icon", "💪")}</span><span>{encouragement.get("text", "")}</span></div>{chips_html}{actions_html}</div>'
     
     st.markdown(panel_html, unsafe_allow_html=True)
-
 
 
