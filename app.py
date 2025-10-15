@@ -19,9 +19,6 @@ from core.session_store import (
     cleanup_old_sessions,
 )
 
-# Development utilities
-from products.cost_planner.dev_unlock import show_dev_controls
-
 st.set_page_config(page_title="Senior Navigator", page_icon="🧭", layout="wide")
 
 
@@ -145,9 +142,6 @@ LAYOUT_CHROME_ROUTES = {
 uses_layout_frame = route in LAYOUT_CHROME_ROUTES
 
 reset_global_frame()
-
-# Show development controls in sidebar
-show_dev_controls()
 
 if not uses_layout_frame:
     page_container_open()
