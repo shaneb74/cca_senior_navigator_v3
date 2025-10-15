@@ -1,11 +1,14 @@
 # hubs/waiting_room.py
+import html
 import streamlit as st
 
 from core.additional_services import get_additional_services
 from core.base_hub import render_dashboard_body
 from core.hub_guide import compute_hub_guide
+from core.navi import render_navi_panel
 from core.product_tile import ProductTileHub
-from layout import render_page
+from ui.header_simple import render_header_simple
+from ui.footer_simple import render_footer_simple
 
 __all__ = ["render"]
 
@@ -83,13 +86,23 @@ def render(ctx=None) -> None:
     guide = compute_hub_guide("waiting_room")
     additional = get_additional_services("waiting_room")
 
-    body_html = render_dashboard_body(
-        title="Waiting Room",
-        subtitle="Your plan is active. Keep it fresh and share updates with your advisor.",
-        chips=[{"label": "In service"}, {"label": f"For {person}", "variant": "muted"}],
-        hub_guide_block=guide,
-        cards=cards,
-        additional_services=additional,
-    )
+    # Use callback pattern to render Navi AFTER header
+    def render_content():
+        # Render Navi panel (after header, before hub content)
+        render_navi_panel(location="hub", hub_key="waiting_room")
+        
+        # Render hub body HTML WITHOUT title/subtitle/chips (Navi replaces them)
+        body_html = render_dashboard_body(
+            title=None,
+            subtitle=None,
+            chips=None,
+            hub_guide_block=None,  # Navi replaces hub guide
+            cards=cards,
+            additional_services=additional,  # Include in HTML for proper layout
+        )
+        st.markdown(body_html, unsafe_allow_html=True)
 
-    render_page(body_html=body_html, active_route="hub_waiting")
+    # Render with simple header/footer
+    render_header_simple(active_route="hub_waiting")
+    render_content()
+    render_footer_simple()

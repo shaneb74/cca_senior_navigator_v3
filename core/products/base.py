@@ -11,7 +11,7 @@ from core.forms import progress_rail, progress_steps
 from core.modules.base import load_module_manifest, render_module_inputs
 from core.products.contract import set_module_outcome, set_outcome, set_progress
 from core.nav import route_to
-from layout import render_shell_end, render_shell_start
+from ui.product_layout import render_product_start, render_product_end
 
 
 @dataclass

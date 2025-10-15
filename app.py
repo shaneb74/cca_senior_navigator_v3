@@ -6,8 +6,18 @@ from core.state import ensure_session, get_user_ctx
 from core.ui import page_container_close, page_container_open
 from layout import reset_global_frame
 
-# Development utilities
-from products.cost_planner.dev_unlock import show_dev_controls
+# Session persistence
+from core.session_store import (
+    get_or_create_user_id,
+    load_session,
+    save_session,
+    load_user,
+    save_user,
+    extract_session_state,
+    extract_user_state,
+    merge_into_state,
+    cleanup_old_sessions,
+)
 
 st.set_page_config(page_title="Senior Navigator", page_icon="🧭", layout="wide")
 
@@ -57,6 +67,77 @@ def _cleanup_legacy_gcp_state() -> None:
 inject_css()
 ensure_session()
 _cleanup_legacy_gcp_state()
+
+# ====================================================================
+# DEV MODE & FLAG VALIDATION
+# ====================================================================
+
+# Enable dev mode based on URL query param (?dev=true)
+if "dev" in st.query_params and st.query_params["dev"].lower() in ("true", "1", "yes"):
+    st.session_state["dev_mode"] = True
+    
+    # Run flag validation on first load in dev mode
+    if "flag_validation_run" not in st.session_state:
+        from core.validators import check_flags_at_startup
+        check_flags_at_startup(verbose=True)  # Print validation summary to console
+        st.session_state["flag_validation_run"] = True
+else:
+    st.session_state["dev_mode"] = False
+
+# ====================================================================
+# SESSION PERSISTENCE - Load state from disk
+# ====================================================================
+
+# Get or generate session ID (browser-specific, stable across navigation)
+if 'session_id' not in st.session_state:
+    # Use Streamlit's internal session ID for stability
+    # This persists across page navigation (query param changes)
+    try:
+        from streamlit.runtime.scriptrunner import get_script_run_ctx
+        ctx = get_script_run_ctx()
+        if ctx and ctx.session_id:
+            # Use Streamlit's session ID (stable for browser session)
+            st.session_state['session_id'] = ctx.session_id
+        else:
+            # Fallback: generate UUID
+            from core.session_store import generate_session_id
+            st.session_state['session_id'] = generate_session_id()
+    except ImportError:
+        # Fallback for older Streamlit versions
+        from core.session_store import generate_session_id
+        st.session_state['session_id'] = generate_session_id()
+
+session_id = st.session_state['session_id']
+
+# Get or create user ID (persistent across sessions if authenticated)
+uid = get_or_create_user_id(st.session_state)
+
+# Load persisted data on first run
+if 'persistence_loaded' not in st.session_state:
+    # Load session data (browser-specific, temporary)
+    session_data = load_session(session_id)
+    merge_into_state(st.session_state, session_data)
+    
+    # Load user data (persistent, cross-device)
+    user_data = load_user(uid)
+    merge_into_state(st.session_state, user_data)
+    
+    st.session_state['persistence_loaded'] = True
+    log_event("session.loaded", {"session_id": session_id, "uid": uid})
+
+# Cleanup old session files periodically (1% chance per page load)
+import random
+if random.random() < 0.01:
+    deleted = cleanup_old_sessions(max_age_days=7)
+    if deleted > 0:
+        log_event("session.cleanup", {"deleted": deleted})
+
+# Initialize MCIP v2 (The Conductor)
+from core.mcip import MCIP
+from core.mcip_events import register_default_listeners
+MCIP.initialize()
+register_default_listeners()
+
 ctx = get_user_ctx()
 PAGES = load_nav(ctx)
 route = current_route("welcome", PAGES)
@@ -78,9 +159,6 @@ uses_layout_frame = route in LAYOUT_CHROME_ROUTES
 
 reset_global_frame()
 
-# Show development controls in sidebar
-show_dev_controls()
-
 if not uses_layout_frame:
     page_container_open()
 
@@ -89,3 +167,17 @@ PAGES[route]["render"]()
 
 if not uses_layout_frame:
     page_container_close()
+
+# ====================================================================
+# SESSION PERSISTENCE - Save state to disk after page render
+# ====================================================================
+
+# Save session data (browser-specific, temporary)
+session_state_to_save = extract_session_state(st.session_state)
+if session_state_to_save:
+    save_session(session_id, session_state_to_save)
+
+# Save user data (persistent, cross-device)
+user_state_to_save = extract_user_state(st.session_state)
+if user_state_to_save:
+    save_user(uid, user_state_to_save)

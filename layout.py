@@ -6,6 +6,7 @@ from typing import Any, Callable, Optional
 
 import streamlit as st
 
+from core.state import is_professional, switch_to_member
 from core.ui import safe_img_src
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -83,21 +84,39 @@ RESPONSIVE_CSS = dedent(
 
 
 def _build_header(active_route: Optional[str] = None) -> str:
+    from core.state import is_authenticated, get_user_name
+    
     logo_url = safe_img_src("cca_logo.png")
     brand_html = ""
     if logo_url:
         brand_html = f'<img src="{logo_url}" alt="Concierge Care Advisors" class="brand-logo" />'
     current = active_route or _current_page()
-    links = "".join(
-        [
-            _nav_link("Welcome", "welcome", current),
-            _nav_link("Concierge", "hub_concierge", current),
-            _nav_link("Waiting Room", "hub_waiting", current),
-            _nav_link("Learning", "hub_learning", current),
-            _nav_link("Trusted Partners", "hub_trusted", current),
-            _nav_link("Professional", "hub_professional", current),
-        ]
-    )
+    
+    # Build navigation links
+    nav_links = [
+        _nav_link("Welcome", "welcome", current),
+        _nav_link("Concierge", "hub_concierge", current),
+        _nav_link("Waiting Room", "hub_waiting", current),
+        _nav_link("Learning", "hub_learning", current),
+        _nav_link("Trusted Partners", "hub_trusted", current),
+        _nav_link("Professional", "hub_professional", current),
+    ]
+    
+    links = "".join(nav_links)
+    
+    # Auth button - toggles between login and logout
+    if is_authenticated():
+        user_name = get_user_name()
+        display_name = user_name if user_name else "User"
+        auth_button = (
+            f'<div class="header-auth">'
+            f'<span class="header-auth__greeting">👋 {display_name}</span>'
+            f'<a href="?page=logout" class="btn btn--secondary header-auth__logout">Log out</a>'
+            f'</div>'
+        )
+    else:
+        auth_button = '<a href="?page=login" class="btn btn--secondary" style="height:32px;padding:0 12px">Log in</a>'
+    
     return dedent(
         f"""
         <header class="header sn-global-header" id="sn-global-header">
@@ -109,7 +128,7 @@ def _build_header(active_route: Optional[str] = None) -> str:
         </div>
         <nav class="nav cluster global-nav">
         {links}
-        <a href="?page=login" class="btn btn--secondary" style="height:32px;padding:0 12px">Log in or sign up</a>
+        {auth_button}
         </nav>
         </div>
         </header>
