@@ -10,9 +10,50 @@ Regional multipliers from RegionalDataProvider
 
 import json
 import os
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List, Tuple
 from dataclasses import dataclass
 from .regional_data import RegionalDataProvider
+
+
+# COST ADJUSTMENTS MAPPING
+# Maps GCP flags to cost adjustment percentages and rationale
+COST_ADJUSTMENTS = {
+    "memory_support": {
+        "percentage": 0.20,
+        "label": "Severe Cognitive Impairment",
+        "rationale": "Alzheimer's/dementia requiring specialized memory care and trained staff"
+    },
+    "mobility_limited": {
+        "percentage": 0.15,
+        "label": "Serious Mobility/Transferring Issues",
+        "rationale": "Wheelchair/bedbound requiring lifting assistance and adaptive equipment"
+    },
+    "adl_support_high": {
+        "percentage": 0.10,
+        "label": "High-Level ADL Support",
+        "rationale": "Extensive help with bathing, dressing, eating, toileting"
+    },
+    "medication_management": {
+        "percentage": 0.08,
+        "label": "Complex Medication Management",
+        "rationale": "Multiple prescriptions requiring professional oversight and administration"
+    },
+    "behavioral_concerns": {
+        "percentage": 0.12,
+        "label": "Behavioral/Psychiatric Care",
+        "rationale": "Wandering, aggression requiring specialized behavioral support"
+    },
+    "falls_risk": {
+        "percentage": 0.08,
+        "label": "Fall Risk/Safety Monitoring",
+        "rationale": "2+ falls/year requiring enhanced supervision and safety measures"
+    },
+    "chronic_conditions": {
+        "percentage": 0.10,
+        "label": "Multiple Chronic Conditions",
+        "rationale": "Multiple health conditions requiring coordinated medical care"
+    }
+}
 
 
 @dataclass
@@ -56,6 +97,50 @@ class CostCalculator:
                     }
                 }
         return cls._base_costs
+    
+    @classmethod
+    def get_active_adjustments(cls, flags: List[str], care_tier: str, base_amount: float) -> List[Dict[str, Any]]:
+        """Get list of active cost adjustments for display in UI table.
+        
+        Args:
+            flags: List of GCP flag IDs from MCIP
+            care_tier: Care tier (for high-acuity check)
+            base_amount: Starting amount (base + regional) before adjustments
+            
+        Returns:
+            List of dicts with: flag_id, label, percentage, amount, rationale
+        """
+        active = []
+        running_total = base_amount
+        
+        # Check each flag-based adjustment (cumulative application order)
+        for flag_id in ["memory_support", "mobility_limited", "adl_support_high", 
+                       "medication_management", "behavioral_concerns", "falls_risk", 
+                       "chronic_conditions"]:
+            if flag_id in flags and flag_id in COST_ADJUSTMENTS:
+                adjustment = COST_ADJUSTMENTS[flag_id]
+                amount = running_total * adjustment["percentage"]
+                active.append({
+                    "flag_id": flag_id,
+                    "label": adjustment["label"],
+                    "percentage": adjustment["percentage"] * 100,  # Convert to percentage for display
+                    "amount": amount,
+                    "rationale": adjustment["rationale"]
+                })
+                running_total += amount  # Cumulative
+        
+        # High-acuity tier adjustment (always applied for memory_care_high_acuity)
+        if care_tier == "memory_care_high_acuity":
+            amount = running_total * 0.25
+            active.append({
+                "flag_id": "high_acuity_tier",
+                "label": "High-Acuity Intensive Care",
+                "percentage": 25.0,
+                "amount": amount,
+                "rationale": "Intensive 24/7 skilled care for advanced dementia or medical complexity"
+            })
+        
+        return active
     
     @classmethod
     def calculate_quick_estimate_with_breakdown(

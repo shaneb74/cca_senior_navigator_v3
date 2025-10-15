@@ -573,6 +573,33 @@ def switch_user(state: Dict[str, Any], new_uid: str) -> None:
 # PUBLIC API
 # ====================================================================
 
+def safe_rerun():
+    """
+    Save session state before rerunning to prevent data loss.
+    
+    ALWAYS use this instead of st.rerun() to ensure persistence works correctly.
+    
+    Streamlit's st.rerun() clears session_state changes made during the render,
+    so we must save to disk before rerunning.
+    """
+    import streamlit as st
+    
+    # Save user data (persistent across sessions)
+    uid = get_or_create_user_id(st.session_state)
+    user_data = extract_user_state(st.session_state)
+    if user_data:
+        save_user(uid, user_data)
+    
+    # Save session data (browser-specific, temporary)
+    if 'session_id' in st.session_state:
+        session_data = extract_session_state(st.session_state)
+        if session_data:
+            save_session(st.session_state['session_id'], session_data)
+    
+    # Now safe to rerun
+    st.rerun()
+
+
 __all__ = [
     # Session operations
     'generate_session_id',
@@ -595,4 +622,7 @@ __all__ = [
     # Identity
     'get_or_create_user_id',
     'switch_user',
+    
+    # Rerun helper
+    'safe_rerun',
 ]

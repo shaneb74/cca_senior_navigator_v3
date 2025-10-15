@@ -1,4 +1,5 @@
 # hubs/waiting_room.py
+import html
 import streamlit as st
 
 from core.additional_services import get_additional_services
@@ -97,7 +98,7 @@ def render(ctx=None) -> None:
             chips=None,
             hub_guide_block=None,  # Navi replaces hub guide
             cards=cards,
-            additional_services=additional,
+            additional_services=additional,  # Include in HTML for proper layout
         )
         st.markdown(body_html, unsafe_allow_html=True)
 

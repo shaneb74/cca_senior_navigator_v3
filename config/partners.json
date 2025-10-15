@@ -3,6 +3,7 @@
     "id": "hpone",
     "name": "HealthPlanOne",
     "category": "health_plan",
+    "visible": false,
     "states": [
       "US"
     ],
@@ -16,9 +17,9 @@
       "Health Plans"
     ],
     "unlock_requires": [
-      "gcp:>=50"
+      "flag:__never_show__"
     ],
-    "lock_msg": "Get at least halfway through your Guided Care Plan to see tailored plan options.",
+    "lock_msg": "This partner is currently disabled.",
     "primary_cta": {
       "label": "Connect",
       "route": "/partner/connect?id=hpone"
@@ -33,6 +34,7 @@
     "id": "omcare",
     "name": "Omcare",
     "category": "medication",
+    "visible": false,
     "states": [
       "US"
     ],
@@ -47,7 +49,7 @@
     ],
     "unlock_requires": [
       "gcp:complete",
-      "flag:meds_management_needed"
+      "flag:moderate_dependence|high_dependence|chronic_present|geo_isolated|moderate_cognitive_decline|severe_cognitive_risk|no_support|high_mobility_dependence|mild_cognitive_decline|moderate_mobility|limited_support"
     ],
     "lock_msg": "Your plan must indicate medication management needs to unlock Omcare.",
     "primary_cta": {
@@ -58,12 +60,103 @@
       "label": "Learn more",
       "route": "https://omcare.com/"
     },
-    "rating": 4.7
+    "rating": 4.7,
+    "connection": {
+      "type": "lead_capture",
+      "inline": true,
+      "title": "Connect with Omcare",
+      "description": "Share your information and we'll coordinate a personalized medication management demo tailored to your needs.",
+      "fields": [
+        {
+          "id": "name",
+          "type": "text",
+          "label": "Full Name",
+          "required": true,
+          "placeholder": "John Doe"
+        },
+        {
+          "id": "email",
+          "type": "email",
+          "label": "Email Address",
+          "required": true,
+          "placeholder": "john@example.com"
+        },
+        {
+          "id": "phone",
+          "type": "tel",
+          "label": "Phone Number",
+          "required": true,
+          "placeholder": "(555) 123-4567"
+        },
+        {
+          "id": "best_time",
+          "type": "select",
+          "label": "Best Time to Call",
+          "required": false,
+          "options": ["Morning (8am-12pm)", "Afternoon (12pm-5pm)", "Evening (5pm-8pm)"]
+        },
+        {
+          "id": "medication_count",
+          "type": "select",
+          "label": "How many medications do you take daily?",
+          "required": false,
+          "options": ["1-3", "4-6", "7-10", "More than 10"]
+        },
+        {
+          "id": "message",
+          "type": "textarea",
+          "label": "Tell us about your medication management needs",
+          "required": false,
+          "placeholder": "Any specific concerns, challenges with medication adherence, or questions for our team..."
+        }
+      ],
+      "submit": {
+        "webhook": "https://omcare.com/api/leads",
+        "method": "POST",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "payload_template": {
+          "lead_source": "Senior Navigator",
+          "timestamp": "${timestamp}",
+          "contact": {
+            "name": "${fields.name}",
+            "email": "${fields.email}",
+            "phone": "${fields.phone}",
+            "preferred_contact_time": "${fields.best_time}"
+          },
+          "medication_info": {
+            "daily_medication_count": "${fields.medication_count}",
+            "notes": "${fields.message}"
+          },
+          "care_context": {
+            "gcp_completed": true,
+            "care_flags": "${context.flags}",
+            "care_tier": "${context.care_tier}"
+          }
+        }
+      },
+      "confirmation": {
+        "title": "Thank you for your interest in Omcare!",
+        "message": "We've received your information and will reach out within 24-48 hours to schedule your personalized demo.",
+        "next_steps": [
+          "An Omcare representative will contact you at your preferred time",
+          "They'll discuss your specific medication management needs",
+          "You'll receive a customized demo of our automated dispensing system",
+          "We'll answer any questions about insurance, costs, and setup"
+        ],
+        "cta": {
+          "label": "Return to Concierge",
+          "action": "close"
+        }
+      }
+    }
   },
   {
     "id": "seniorlife_ai",
     "name": "SeniorLife.AI",
     "category": "mobility_ai",
+    "visible": false,
     "states": [
       "US"
     ],
@@ -77,9 +170,10 @@
       "Wellness"
     ],
     "unlock_requires": [
-      "gcp:>=50"
+      "gcp:complete",
+      "flag:falls_multiple|moderate_safety_concern|high_safety_concern|mild_cognitive_decline|moderate_cognitive_decline|severe_cognitive_risk|mental_health_concern"
     ],
-    "lock_msg": "Reach 50% progress in your Guided Care Plan to personalize AI insights.",
+    "lock_msg": "Complete your Guided Care Plan to see if AI-powered monitoring is recommended.",
     "primary_cta": {
       "label": "Connect",
       "route": "/partner/connect?id=seniorlife_ai"
@@ -94,6 +188,7 @@
     "id": "lantern",
     "name": "Lantern",
     "category": "specialty_care",
+    "visible": false,
     "states": [
       "US"
     ],
@@ -107,9 +202,9 @@
       "Network"
     ],
     "unlock_requires": [
-      "gcp:>=50"
+      "flag:__never_show__"
     ],
-    "lock_msg": "Reach at least halfway through your plan to view specialty care options.",
+    "lock_msg": "This partner is currently disabled.",
     "primary_cta": {
       "label": "Connect",
       "route": "/partner/connect?id=lantern"
@@ -124,6 +219,7 @@
     "id": "ncoa",
     "name": "National Council on Aging (NCOA)",
     "category": "benefits_education",
+    "visible": false,
     "states": [
       "US"
     ],
@@ -135,6 +231,10 @@
       "Assisted Living",
       "Benefits"
     ],
+    "unlock_requires": [
+      "flag:__never_show__"
+    ],
+    "lock_msg": "This partner is currently disabled.",
     "primary_cta": {
       "label": "Read article",
       "route": "https://www.ncoa.org/article/does-medicaid-pay-for-assisted-living/"
@@ -144,6 +244,7 @@
     "id": "home_instead",
     "name": "Home Instead",
     "category": "home_care",
+    "visible": false,
     "states": [
       "US"
     ],
@@ -156,6 +257,10 @@
       "Respite",
       "Companionship"
     ],
+    "unlock_requires": [
+      "flag:__never_show__"
+    ],
+    "lock_msg": "This partner is currently disabled.",
     "primary_cta": {
       "label": "Connect",
       "route": "/partner/connect?id=home_instead"

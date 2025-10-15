@@ -8,6 +8,7 @@ from typing import Optional
 import streamlit as st
 
 from core.nav import route_to
+from core.session_store import safe_rerun
 
 from .nav import PRODUCTS
 
@@ -256,7 +257,7 @@ def render_hub_tile(
                     if "Start over" in secondary_label and "Guided Care Plan" in title:
                         st.session_state["gcp_answers"] = {}
                         st.session_state["gcp_section"] = 0
-                        st.rerun()
+                        safe_rerun()
     else:
         # Single button layout - full width
         if st.button(primary_label, key=primary_key, use_container_width=True):
@@ -558,7 +559,8 @@ def render_navi_panel_v2(
     context_chips: list[dict],
     primary_action: dict,
     secondary_action: Optional[dict] = None,
-    progress: Optional[dict] = None
+    progress: Optional[dict] = None,
+    alert_html: Optional[str] = None
 ) -> None:
     """Render refined Navi panel with structured layout using Streamlit native components."""
     from core.nav import route_to
@@ -690,18 +692,20 @@ def render_navi_panel_v2(
     # Get encouragement status
     status = encouragement.get('status', 'in_progress')
     
-    # Build action buttons HTML
+    # Build action buttons HTML with correct routing parameter (?page=)
     actions_html = ""
     if secondary_action:
-        primary_href = f"?route={primary_action.get('route', '')}" if primary_action.get('route') else "#"
-        secondary_href = f"?route={secondary_action.get('route', '')}" if secondary_action.get('route') else "#"
+        primary_href = f"?page={primary_action.get('route', '')}" if primary_action.get('route') else "#"
+        secondary_href = f"?page={secondary_action.get('route', '')}" if secondary_action.get('route') else "#"
         actions_html = f'<div style="display: flex; gap: 12px; margin-top: 18px;"><a class="dashboard-cta dashboard-cta--primary" href="{primary_href}" style="flex: 2;">{primary_action["label"]}</a><a class="dashboard-cta dashboard-cta--ghost" href="{secondary_href}" style="flex: 1;">{secondary_action["label"]}</a></div>'
     else:
-        primary_href = f"?route={primary_action.get('route', '')}" if primary_action.get('route') else "#"
+        primary_href = f"?page={primary_action.get('route', '')}" if primary_action.get('route') else "#"
         actions_html = f'<div style="margin-top: 18px;"><a class="dashboard-cta dashboard-cta--primary" href="{primary_href}" style="width: 100%; text-align: center;">{primary_action["label"]}</a></div>'
     
     # Build complete panel HTML (flat structure, no inner wrapper)
-    panel_html = f'<div class="navi-panel-v2"><div class="navi-panel-v2__header"><div class="navi-panel-v2__eyebrow">🤖 Navi</div>{progress_badge}</div><div class="navi-panel-v2__title">{title}</div><div class="navi-panel-v2__reason">{reason}</div><div class="navi-panel-v2__encouragement navi-panel-v2__encouragement--{status}"><span style="font-size: 18px;">{encouragement.get("icon", "💪")}</span><span>{encouragement.get("text", "")}</span></div>{chips_html}{actions_html}</div>'
+    # Include alert if provided (appears before title)
+    alert_section = alert_html if alert_html else ""
+    panel_html = f'<div class="navi-panel-v2"><div class="navi-panel-v2__header"><div class="navi-panel-v2__eyebrow">🤖 Navi</div>{progress_badge}</div>{alert_section}<div class="navi-panel-v2__title">{title}</div><div class="navi-panel-v2__reason">{reason}</div><div class="navi-panel-v2__encouragement navi-panel-v2__encouragement--{status}"><span style="font-size: 18px;">{encouragement.get("icon", "💪")}</span><span>{encouragement.get("text", "")}</span></div>{chips_html}{actions_html}</div>'
     
     st.markdown(panel_html, unsafe_allow_html=True)
 

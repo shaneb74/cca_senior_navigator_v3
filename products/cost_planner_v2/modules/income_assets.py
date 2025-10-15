@@ -46,6 +46,7 @@ def render():
     col1, col2 = st.columns(2)
     
     with col1:
+        st.markdown("**Social Security Benefits**")
         ss_income = st.number_input(
             "Social Security Benefits ($/month)",
             min_value=0,
@@ -53,10 +54,12 @@ def render():
             step=100,
             value=st.session_state.cost_v2_income_assets["monthly_income_ss"],
             help="Monthly Social Security income",
-            key="income_ss"
+            key="income_ss",
+            label_visibility="collapsed"
         )
     
     with col2:
+        st.markdown("**Pension Income**")
         pension_income = st.number_input(
             "Pension Income ($/month)",
             min_value=0,
@@ -64,9 +67,11 @@ def render():
             step=100,
             value=st.session_state.cost_v2_income_assets["monthly_income_pension"],
             help="Monthly pension or annuity income",
-            key="income_pension"
+            key="income_pension",
+            label_visibility="collapsed"
         )
     
+    st.markdown("**Other Income** (investment, rental, part-time work)")
     other_income = st.number_input(
         "Other Income ($/month)",
         min_value=0,
@@ -74,7 +79,8 @@ def render():
         step=100,
         value=st.session_state.cost_v2_income_assets["monthly_income_other"],
         help="Investment income, rental income, part-time work, etc.",
-        key="income_other"
+        key="income_other",
+        label_visibility="collapsed"
     )
     
     total_monthly_income = ss_income + pension_income + other_income
@@ -91,6 +97,7 @@ def render():
     col1, col2 = st.columns(2)
     
     with col1:
+        st.markdown("**Liquid Assets** (checking, savings, CDs)")
         liquid_assets = st.number_input(
             "Liquid Assets (checking, savings, CDs)",
             min_value=0,
@@ -98,9 +105,11 @@ def render():
             step=1000,
             value=st.session_state.cost_v2_income_assets["liquid_assets"],
             help="Easily accessible cash and savings",
-            key="liquid_assets"
+            key="liquid_assets",
+            label_visibility="collapsed"
         )
         
+        st.markdown("**Property Value** (excluding primary residence)")
         property_value = st.number_input(
             "Property Value (excluding primary residence)",
             min_value=0,
@@ -108,10 +117,12 @@ def render():
             step=10000,
             value=st.session_state.cost_v2_income_assets["property_value"],
             help="Investment properties, vacation homes, land",
-            key="property_value"
+            key="property_value",
+            label_visibility="collapsed"
         )
     
     with col2:
+        st.markdown("**Retirement Accounts** (401k, IRA, etc.)")
         retirement_accounts = st.number_input(
             "Retirement Accounts (401k, IRA, etc.)",
             min_value=0,
@@ -119,9 +130,11 @@ def render():
             step=1000,
             value=st.session_state.cost_v2_income_assets["retirement_accounts"],
             help="Value of retirement accounts available for withdrawal",
-            key="retirement_accounts"
+            key="retirement_accounts",
+            label_visibility="collapsed"
         )
         
+        st.markdown("**Other Assets** (investments, bonds, etc.)")
         other_assets = st.number_input(
             "Other Assets (investments, bonds, etc.)",
             min_value=0,
@@ -129,7 +142,8 @@ def render():
             step=1000,
             value=st.session_state.cost_v2_income_assets["other_assets"],
             help="Stocks, bonds, mutual funds, other investments",
-            key="other_assets"
+            key="other_assets",
+            label_visibility="collapsed"
         )
     
     total_assets = liquid_assets + property_value + retirement_accounts + other_assets
@@ -163,14 +177,19 @@ def render():
     st.markdown("---")
     
     # Navigation
-    col1, col2 = st.columns([1, 2])
+    col1, col2, col3 = st.columns([1, 1, 2])
     
     with col1:
-        if st.button("← Back to Hub", key="income_back"):
+        if st.button("🏠 Back to Hub", key="income_hub"):
+            from core.nav import route_to
+            route_to("hub_concierge")
+    
+    with col2:
+        if st.button("← Back to Modules", key="income_back"):
             st.session_state.cost_v2_step = "modules"
             st.rerun()
     
-    with col2:
+    with col3:
         if st.button("Save & Continue →", type="primary", use_container_width=True, key="income_save"):
             # Save data to module state
             data = {

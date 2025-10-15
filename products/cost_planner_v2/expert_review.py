@@ -20,28 +20,43 @@ def render():
     - Gap analysis with visual indicators
     - Runway projection
     - Advisor notes section (optional)
-    - Actions: Download PDF, Schedule Advisor, Continue
+    - Actions: Review Modules, Finalize & Continue, Return to Hub
     """
     
-    st.markdown("# 📋 Your Complete Financial Plan")
+    st.markdown("# 📋 Expert Advisor Review")
     
     # Get all module data
     modules = st.session_state.get("cost_v2_modules", {})
     
-    # Verify all modules complete
+    # Check if required modules are complete (Income & Assets is required)
     income_data = modules.get("income_assets", {}).get("data", {})
-    costs_data = modules.get("monthly_costs", {}).get("data", {})
-    coverage_data = modules.get("coverage", {}).get("data", {})
     
-    if not all([income_data, costs_data, coverage_data]):
-        st.error("⚠️ Not all financial modules are complete. Please complete all modules first.")
-        if st.button("← Back to Modules"):
+    if not income_data:
+        st.error("⚠️ **Income & Assets module is required.** Please complete it before accessing Expert Review.")
+        if st.button("← Back to Financial Modules"):
             st.session_state.cost_v2_step = "modules"
             st.rerun()
         return
     
+    # Get other module data (may be incomplete)
+    costs_data = modules.get("monthly_costs", {}).get("data", {})
+    coverage_data = modules.get("coverage", {}).get("data", {})
+    
+    # Show warning if other modules incomplete
+    if not costs_data or not coverage_data:
+        st.warning("""
+        ⚠️ **Some modules are incomplete.** 
+        
+        For the most accurate financial plan, we recommend completing all modules:
+        - Income & Assets ✅
+        - Monthly Costs """ + ("✅" if costs_data else "❌") + """
+        - Coverage & Benefits """ + ("✅" if coverage_data else "❌") + """
+        
+        You can continue with Expert Review, but estimates may be less accurate.
+        """)
+    
     # Get care recommendation from MCIP (if available)
-    from core.state import MCIP
+    from core.mcip import MCIP
     recommendation = MCIP.get_care_recommendation()
     
     # Show care context
@@ -268,6 +283,9 @@ def _render_monthly_costs_detail(costs_data: Dict):
         else:
             st.success(f"📍 Regional adjustment: {pct_diff}% lower than national average")
     
+    # Cost adjustments table (flag-based add-ons)
+    _render_cost_adjustments_table()
+    
     # Additional services
     if additional_services > 0:
         st.markdown(f"**Additional Services:** ${additional_services:,.0f}/month")
@@ -278,6 +296,140 @@ def _render_monthly_costs_detail(costs_data: Dict):
     
     st.markdown(f"### **Total Monthly Cost: ${total_cost:,.0f}**")
     st.markdown(f"**Annual Cost: ${total_cost * 12:,.0f}**")
+
+
+def _render_cost_adjustments_table():
+    """Render cost adjustments table showing flag-based add-ons.
+    
+    Displays:
+    - Condition label
+    - Add-on percentage
+    - Monthly increase amount
+    - Rationale
+    """
+    from core.mcip import MCIP
+    from products.cost_planner_v2.utils.cost_calculator import CostCalculator
+    
+    # Get GCP flags
+    recommendation = MCIP.get_care_recommendation()
+    if not recommendation or not recommendation.flags:
+        return  # No flags, no adjustments
+    
+    flags = [f.get('id') if isinstance(f, dict) else f for f in recommendation.flags]
+    care_tier = recommendation.tier
+    
+    # Get base cost (before adjustments)
+    modules = st.session_state.get("cost_v2_modules", {})
+    costs_data = modules.get("monthly_costs", {}).get("data", {})
+    base_cost = costs_data.get("base_care_cost", 0)
+    
+    # Get regional multiplier
+    regional_multiplier = costs_data.get("regional_multiplier", 1.0)
+    base_with_regional = base_cost * regional_multiplier
+    
+    # Get active adjustments
+    adjustments = CostCalculator.get_active_adjustments(flags, care_tier, base_with_regional)
+    
+    if not adjustments:
+        return  # No adjustments applied
+    
+    st.markdown("---")
+    st.markdown("### 💡 Care Complexity Adjustments")
+    st.caption("Based on your Guided Care Plan, these factors increase the cost of care:")
+    
+    # Build table HTML
+    table_html = """
+    <style>
+    .cost-adjustments-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 16px 0;
+        font-size: 14px;
+    }
+    .cost-adjustments-table th {
+        background: #f1f5f9;
+        color: #0f172a;
+        font-weight: 700;
+        padding: 12px;
+        text-align: left;
+        border-bottom: 2px solid #cbd5e1;
+    }
+    .cost-adjustments-table td {
+        padding: 12px;
+        border-bottom: 1px solid #e2e8f0;
+        vertical-align: top;
+    }
+    .cost-adjustments-table tr:hover {
+        background: #f8fafc;
+    }
+    .adjustment-label {
+        font-weight: 600;
+        color: #0f172a;
+    }
+    .adjustment-percentage {
+        color: #dc2626;
+        font-weight: 600;
+    }
+    .adjustment-amount {
+        color: #0f172a;
+        font-weight: 600;
+    }
+    .adjustment-rationale {
+        color: #64748b;
+        font-size: 13px;
+        line-height: 1.5;
+    }
+    </style>
+    <table class="cost-adjustments-table">
+        <thead>
+            <tr>
+                <th>Condition</th>
+                <th style="text-align: right;">Add-On %</th>
+                <th style="text-align: right;">Monthly Increase</th>
+                <th>Rationale</th>
+            </tr>
+        </thead>
+        <tbody>
+    """
+    
+    total_increase = 0
+    for adj in adjustments:
+        table_html += f"""
+            <tr>
+                <td class="adjustment-label">{adj['label']}</td>
+                <td class="adjustment-percentage" style="text-align: right;">+{adj['percentage']:.0f}%</td>
+                <td class="adjustment-amount" style="text-align: right;">${adj['amount']:,.0f}</td>
+                <td class="adjustment-rationale">{adj['rationale']}</td>
+            </tr>
+        """
+        total_increase += adj['amount']
+    
+    # Add total row
+    table_html += f"""
+        </tbody>
+        <tfoot>
+            <tr style="font-weight: 700; background: #fef3c7; border-top: 2px solid #fde68a;">
+                <td>Total Adjustments</td>
+                <td></td>
+                <td style="text-align: right; color: #dc2626;">+${total_increase:,.0f}/mo</td>
+                <td style="color: #78350f;">Cumulative impact from all conditions</td>
+            </tr>
+        </tfoot>
+    </table>
+    """
+    
+    st.markdown(table_html, unsafe_allow_html=True)
+    
+    # Show explanation
+    st.info("""
+    **Why these adjustments?** 
+    
+    Care costs increase with complexity. Each condition requires additional staff time, specialized training, 
+    or enhanced safety measures. These percentages reflect real-world care cost data and are applied 
+    cumulatively (each builds on the previous adjustment).
+    """)
+    
+    st.markdown("---")
 
 
 def _render_coverage_detail(coverage_data: Dict):
@@ -413,26 +565,17 @@ def _render_actions():
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        if st.button("📄 Download PDF Summary", use_container_width=True):
-            st.info("📄 PDF generation coming soon!")
-            # TODO: Implement PDF generation
-    
-    with col2:
-        if st.button("📅 Schedule Advisor Meeting", use_container_width=True):
-            # Route to PFMA (Plan with My Advisor)
-            st.session_state.cost_v2_step = "exit"
-            st.session_state.cost_v2_schedule_advisor = True
+        if st.button("� Review Modules", use_container_width=True, key="review_modules"):
+            st.session_state.cost_v2_step = "modules"
             st.rerun()
     
-    with col3:
-        if st.button("✅ Complete Financial Plan", use_container_width=True, type="primary"):
+    with col2:
+        if st.button("✅ Finalize & Continue", use_container_width=True, type="primary", key="finalize_continue"):
             # Mark plan complete and go to exit
             st.session_state.cost_v2_step = "exit"
             st.rerun()
     
-    st.markdown("---")
-    
-    # Back button
-    if st.button("← Back to Modules"):
-        st.session_state.cost_v2_step = "modules"
-        st.rerun()
+    with col3:
+        if st.button("🏠 Return to Hub", use_container_width=True, key="return_hub"):
+            from core.nav import route_to
+            route_to("hub_concierge")
