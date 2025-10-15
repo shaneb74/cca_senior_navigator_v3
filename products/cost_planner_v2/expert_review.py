@@ -28,36 +28,110 @@ def render():
     # Get all module data
     modules = st.session_state.get("cost_v2_modules", {})
     
-    # Check if required modules are complete (Income & Assets is required)
-    income_data = modules.get("income_assets", {}).get("data", {})
+    # Check if required modules are complete (Income & Assets are required)
+    income_data = modules.get("income", {}).get("data", {})
+    assets_data = modules.get("assets", {}).get("data", {})
     
-    if not income_data:
-        st.error("⚠️ **Income & Assets module is required.** Please complete it before accessing Expert Review.")
+    if not income_data or not assets_data:
+        st.error("⚠️ **Income & Assets modules are required.** Please complete them before accessing Expert Review.")
         if st.button("← Back to Financial Modules"):
             st.session_state.cost_v2_step = "modules"
             st.rerun()
         return
     
-    # Get other module data (may be incomplete)
-    costs_data = modules.get("monthly_costs", {}).get("data", {})
-    coverage_data = modules.get("coverage", {}).get("data", {})
+    # Get optional module data
+    va_data = modules.get("va_benefits", {}).get("data", {})
+    insurance_data = modules.get("health_insurance", {}).get("data", {})
+    life_insurance_data = modules.get("life_insurance", {}).get("data", {})
+    medicaid_data = modules.get("medicaid_navigation", {}).get("data", {})
     
-    # Show warning if other modules incomplete
-    if not costs_data or not coverage_data:
-        st.warning("""
-        ⚠️ **Some modules are incomplete.** 
-        
-        For the most accurate financial plan, we recommend completing all modules:
-        - Income & Assets ✅
-        - Monthly Costs """ + ("✅" if costs_data else "❌") + """
-        - Coverage & Benefits """ + ("✅" if coverage_data else "❌") + """
-        
-        You can continue with Expert Review, but estimates may be less accurate.
-        """)
+    # Aggregate new 6-module data into old 3-module format for backward compatibility
+    # This allows the rest of the file to work without major rewrites
+    aggregated_income_assets = {
+        # Income fields
+        "total_monthly_income": (
+            income_data.get("ss_monthly", 0) +
+            income_data.get("pension_monthly", 0) +
+            income_data.get("employment_monthly", 0) +
+            income_data.get("investment_monthly", 0) +
+            income_data.get("other_monthly", 0) +
+            (va_data.get("va_disability_monthly", 0) if va_data else 0) +
+            (va_data.get("aid_attendance_monthly", 0) if va_data else 0)
+        ),
+        # Asset fields
+        "total_assets": (
+            assets_data.get("checking_savings", 0) +
+            assets_data.get("cds_money_market", 0) +
+            assets_data.get("ira_traditional", 0) +
+            assets_data.get("ira_roth", 0) +
+            assets_data.get("k401_403b", 0) +
+            assets_data.get("other_retirement", 0) +
+            assets_data.get("stocks_bonds", 0) +
+            assets_data.get("mutual_funds", 0) +
+            assets_data.get("investment_property", 0) +
+            assets_data.get("business_value", 0) +
+            assets_data.get("other_assets_value", 0)
+        ),
+        # Keep original data for detailed views
+        "_income_data": income_data,
+        "_assets_data": assets_data,
+        "_va_data": va_data
+    }
     
-    # Get care recommendation from MCIP (if available)
+    # Monthly costs - use MCIP financial profile if available
     from core.mcip import MCIP
+    estimated_monthly_cost = 0
     recommendation = MCIP.get_care_recommendation()
+    
+    # Try to get cost from financial profile first
+    financial_profile = MCIP.get_financial_profile()
+    if financial_profile and hasattr(financial_profile, 'estimated_monthly_cost'):
+        estimated_monthly_cost = financial_profile.estimated_monthly_cost
+    elif recommendation:
+        # Fallback: use tier-based defaults if no financial profile yet
+        tier_defaults = {
+            'independent': 2500,
+            'in_home': 4500,
+            'assisted_living': 5000,
+            'memory_care': 7000,
+            'memory_care_high_acuity': 9000
+        }
+        estimated_monthly_cost = tier_defaults.get(recommendation.tier, 5000)
+    
+    aggregated_costs = {
+        "total_monthly_cost": estimated_monthly_cost,
+        "_source": "mcip" if estimated_monthly_cost > 0 else "estimated"
+    }
+    
+    # Coverage - aggregate from insurance modules
+    aggregated_coverage = {
+        "total_coverage": (
+            (insurance_data.get("ltc_daily_benefit", 0) * 30 if insurance_data and insurance_data.get("has_ltc_insurance") else 0) +
+            (life_insurance_data.get("monthly_benefit", 0) if life_insurance_data else 0)
+        ),
+        "has_medicare": insurance_data.get("has_medicare", False) if insurance_data else False,
+        "has_ltc_insurance": insurance_data.get("has_ltc_insurance", False) if insurance_data else False,
+        "_insurance_data": insurance_data,
+        "_life_insurance_data": life_insurance_data,
+        "_medicaid_data": medicaid_data
+    }
+    
+    # Show warning if optional modules incomplete
+    optional_count = sum([bool(va_data), bool(insurance_data), bool(life_insurance_data), bool(medicaid_data)])
+    if optional_count < 4:
+        st.warning(f"""
+        ⚠️ **Some optional modules are incomplete ({optional_count}/4 completed).** 
+        
+        For the most comprehensive financial plan, consider completing:
+        - Income ✅
+        - Assets ✅
+        - VA Benefits """ + ("✅" if va_data else "❌") + """
+        - Health Insurance """ + ("✅" if insurance_data else "❌") + """
+        - Life Insurance """ + ("✅" if life_insurance_data else "❌") + """
+        - Medicaid Navigation """ + ("✅" if medicaid_data else "❌") + """
+        
+        You can continue with Expert Review, but estimates may be less comprehensive.
+        """)
     
     # Show care context
     if recommendation:
@@ -65,8 +139,8 @@ def render():
     
     st.markdown("---")
     
-    # Summary sections
-    _render_executive_summary(income_data, costs_data, coverage_data)
+    # Summary sections - use aggregated data
+    _render_executive_summary(aggregated_income_assets, aggregated_costs, aggregated_coverage)
     
     st.markdown("---")
     
@@ -79,16 +153,16 @@ def render():
     ])
     
     with tab1:
-        _render_financial_overview(income_data, costs_data, coverage_data)
+        _render_financial_overview(aggregated_income_assets, aggregated_costs, aggregated_coverage)
     
     with tab2:
-        _render_monthly_costs_detail(costs_data)
+        _render_monthly_costs_detail(aggregated_costs)
     
     with tab3:
-        _render_coverage_detail(coverage_data)
+        _render_coverage_detail(aggregated_coverage)
     
     with tab4:
-        _render_projections(income_data, costs_data, coverage_data)
+        _render_projections(aggregated_income_assets, aggregated_costs, aggregated_coverage)
     
     st.markdown("---")
     
@@ -470,9 +544,9 @@ def _render_coverage_detail(coverage_data: Dict):
 
 
 def _render_projections(income_data: Dict, costs_data: Dict, coverage_data: Dict):
-    """Render long-term financial projections."""
+    """Render long-term financial projections with detailed timeline."""
     
-    st.markdown("### Long-Term Projections")
+    st.markdown("### 📈 Financial Timeline & Asset Runway")
     
     total_monthly_income = income_data.get("total_monthly_income", 0)
     total_assets = income_data.get("total_assets", 0)
@@ -481,57 +555,203 @@ def _render_projections(income_data: Dict, costs_data: Dict, coverage_data: Dict
     
     monthly_gap = total_monthly_cost - total_coverage - total_monthly_income
     
-    # Annual projection
-    annual_cost = total_monthly_cost * 12
-    annual_coverage = total_coverage * 12
-    annual_income = total_monthly_income * 12
-    annual_gap = monthly_gap * 12
-    
-    st.markdown("#### 1-Year Projection")
-    col1, col2, col3 = st.columns(3)
+    # Show key metrics at the top
+    st.markdown("#### Key Financial Metrics")
+    col1, col2, col3, col4 = st.columns(4)
     with col1:
-        st.metric("Annual Costs", f"${annual_cost:,.0f}")
+        st.metric("Monthly Care Cost", f"${total_monthly_cost:,.0f}")
     with col2:
-        st.metric("Annual Coverage + Income", f"${annual_coverage + annual_income:,.0f}")
+        st.metric("Monthly Coverage + Income", f"${total_coverage + total_monthly_income:,.0f}")
     with col3:
-        if annual_gap > 0:
-            st.metric("Annual Gap", f"${annual_gap:,.0f}", delta=f"-${annual_gap:,.0f}", delta_color="inverse")
+        if monthly_gap > 0:
+            st.metric("Monthly Gap", f"${monthly_gap:,.0f}", delta=f"-${monthly_gap:,.0f}", delta_color="inverse")
         else:
-            st.metric("Annual Surplus", f"${abs(annual_gap):,.0f}", delta=f"+${abs(annual_gap):,.0f}")
+            st.metric("Monthly Surplus", f"${abs(monthly_gap):,.0f}", delta=f"+${abs(monthly_gap):,.0f}")
+    with col4:
+        st.metric("Available Assets", f"${total_assets:,.0f}")
     
-    # 3-year projection (with inflation)
-    st.markdown("#### 3-Year Projection (3% annual inflation)")
-    three_year_cost = annual_cost * 3 * 1.03
-    three_year_gap = annual_gap * 3 * 1.03 if annual_gap > 0 else 0
+    st.markdown("---")
     
-    col1, col2 = st.columns(2)
-    with col1:
-        st.metric("3-Year Total Costs", f"${three_year_cost:,.0f}")
-    with col2:
-        if three_year_gap > 0:
-            st.metric("3-Year Gap from Assets", f"${three_year_gap:,.0f}")
-            remaining = total_assets - three_year_gap
-            if remaining > 0:
-                st.success(f"Remaining assets after 3 years: ${remaining:,.0f}")
+    # Calculate asset runway with 3% annual inflation
+    if monthly_gap > 0 and total_assets > 0:
+        st.markdown("#### 📊 Asset Runway Timeline (30-Year Projection)")
+        st.markdown("""
+        This timeline shows how long your assets will last to cover the monthly gap between 
+        care costs and your income/coverage. **Includes 3% annual inflation on care costs.**
+        """)
+        
+        # Calculate year-by-year projections with inflation
+        inflation_rate = 0.03  # 3% annual inflation
+        remaining_assets = total_assets
+        years_data = []
+        assets_depleted_year = None
+        
+        for year in range(1, 31):  # Cap at 30 years
+            # Calculate inflated monthly gap for this year
+            inflation_multiplier = (1 + inflation_rate) ** year
+            inflated_monthly_gap = monthly_gap * inflation_multiplier
+            annual_gap = inflated_monthly_gap * 12
+            
+            # Calculate remaining assets
+            remaining_assets -= annual_gap
+            
+            years_data.append({
+                "year": year,
+                "annual_cost": total_monthly_cost * 12 * inflation_multiplier,
+                "annual_gap": annual_gap,
+                "remaining_assets": max(0, remaining_assets)
+            })
+            
+            # Track when assets are depleted
+            if remaining_assets <= 0 and assets_depleted_year is None:
+                assets_depleted_year = year
+                break
+        
+        # Display runway summary
+        if assets_depleted_year:
+            st.error(f"""
+            ### ⚠️ Asset Runway: {assets_depleted_year} Year{'s' if assets_depleted_year > 1 else ''}
+            
+            Based on current care costs, income, and coverage, your assets will be depleted in **Year {assets_depleted_year}**.
+            """)
+        else:
+            st.success(f"""
+            ### ✅ Asset Runway: 30+ Years
+            
+            Your assets are projected to last **beyond 30 years** at current care costs with 3% annual inflation.
+            """)
+        
+        # Create timeline table
+        st.markdown("#### Year-by-Year Financial Timeline")
+        
+        # Show first 10 years or until depletion
+        display_years = min(len(years_data), 10) if not assets_depleted_year else min(len(years_data), assets_depleted_year + 2)
+        
+        timeline_html = """
+        <table style="width:100%; border-collapse: collapse; margin-top: 1rem;">
+            <thead style="background-color: #f0f2f6;">
+                <tr>
+                    <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Year</th>
+                    <th style="padding: 12px; text-align: right; border: 1px solid #ddd;">Annual Care Cost</th>
+                    <th style="padding: 12px; text-align: right; border: 1px solid #ddd;">Gap from Assets</th>
+                    <th style="padding: 12px; text-align: right; border: 1px solid #ddd;">Remaining Assets</th>
+                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+        """
+        
+        for i, data in enumerate(years_data[:display_years]):
+            year = data["year"]
+            annual_cost = data["annual_cost"]
+            annual_gap = data["annual_gap"]
+            remaining = data["remaining_assets"]
+            
+            # Status indicator
+            if remaining <= 0:
+                status = "🔴 Depleted"
+                row_color = "#ffebee"
+            elif remaining < annual_gap * 2:
+                status = "🟡 Critical"
+                row_color = "#fff9e6"
             else:
-                st.error(f"⚠️ Assets insufficient for 3 years (shortfall: ${abs(remaining):,.0f})")
+                status = "🟢 Covered"
+                row_color = "#e8f5e9" if i % 2 == 0 else "#ffffff"
+            
+            timeline_html += f"""
+            <tr style="background-color: {row_color};">
+                <td style="padding: 10px; border: 1px solid #ddd;"><strong>Year {year}</strong></td>
+                <td style="padding: 10px; text-align: right; border: 1px solid #ddd;">${annual_cost:,.0f}</td>
+                <td style="padding: 10px; text-align: right; border: 1px solid #ddd; color: #d32f2f;">${annual_gap:,.0f}</td>
+                <td style="padding: 10px; text-align: right; border: 1px solid #ddd;"><strong>${remaining:,.0f}</strong></td>
+                <td style="padding: 10px; text-align: center; border: 1px solid #ddd;">{status}</td>
+            </tr>
+            """
+        
+        timeline_html += """
+            </tbody>
+        </table>
+        """
+        
+        st.markdown(timeline_html, unsafe_allow_html=True)
+        
+        if len(years_data) > display_years:
+            with st.expander(f"📋 View Full {len(years_data)}-Year Timeline"):
+                full_timeline_html = """
+                <table style="width:100%; border-collapse: collapse;">
+                    <thead style="background-color: #f0f2f6;">
+                        <tr>
+                            <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Year</th>
+                            <th style="padding: 12px; text-align: right; border: 1px solid #ddd;">Annual Care Cost</th>
+                            <th style="padding: 12px; text-align: right; border: 1px solid #ddd;">Gap from Assets</th>
+                            <th style="padding: 12px; text-align: right; border: 1px solid #ddd;">Remaining Assets</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                """
+                
+                for data in years_data:
+                    full_timeline_html += f"""
+                    <tr>
+                        <td style="padding: 8px; border: 1px solid #ddd;">Year {data['year']}</td>
+                        <td style="padding: 8px; text-align: right; border: 1px solid #ddd;">${data['annual_cost']:,.0f}</td>
+                        <td style="padding: 8px; text-align: right; border: 1px solid #ddd; color: #d32f2f;">${data['annual_gap']:,.0f}</td>
+                        <td style="padding: 8px; text-align: right; border: 1px solid #ddd;">${data['remaining_assets']:,.0f}</td>
+                    </tr>
+                    """
+                
+                full_timeline_html += """
+                    </tbody>
+                </table>
+                """
+                st.markdown(full_timeline_html, unsafe_allow_html=True)
+        
+        # Add recommendations
+        st.markdown("---")
+        st.markdown("#### 💡 Planning Recommendations")
+        
+        if assets_depleted_year and assets_depleted_year <= 5:
+            st.error("""
+            **🚨 Immediate Action Needed**
+            - Consider Medicaid planning and asset protection strategies
+            - Explore additional insurance coverage options
+            - Review care level alternatives that may reduce costs
+            - Consult with a financial advisor and elder law attorney
+            """)
+        elif assets_depleted_year and assets_depleted_year <= 10:
+            st.warning("""
+            **⚠️ Plan Ahead**
+            - Begin exploring long-term financing options
+            - Consider annuity products to extend runway
+            - Investigate VA benefits if eligible
+            - Review insurance coverage adequacy
+            """)
+        else:
+            st.info("""
+            **✅ Strong Financial Position**
+            - Continue monitoring costs and adjusting plans as needed
+            - Consider setting aside additional reserves for unexpected costs
+            - Keep insurance policies current and adequate
+            - Review this plan annually as health needs change
+            """)
     
-    # 5-year projection
-    st.markdown("#### 5-Year Projection (5% total inflation)")
-    five_year_cost = annual_cost * 5 * 1.05
-    five_year_gap = annual_gap * 5 * 1.05 if annual_gap > 0 else 0
+    elif monthly_gap <= 0:
+        st.success("""
+        ### ✅ Fully Covered Care Costs
+        
+        Your monthly income and coverage **fully cover** your care costs with no asset depletion needed!
+        Your assets will remain intact and may continue to grow.
+        """)
+        
+        surplus = abs(monthly_gap) * 12
+        st.metric("Annual Surplus", f"${surplus:,.0f}", delta=f"+${surplus:,.0f}")
     
-    col1, col2 = st.columns(2)
-    with col1:
-        st.metric("5-Year Total Costs", f"${five_year_cost:,.0f}")
-    with col2:
-        if five_year_gap > 0:
-            st.metric("5-Year Gap from Assets", f"${five_year_gap:,.0f}")
-            remaining = total_assets - five_year_gap
-            if remaining > 0:
-                st.success(f"Remaining assets after 5 years: ${remaining:,.0f}")
-            else:
-                st.error(f"⚠️ Assets insufficient for 5 years (shortfall: ${abs(remaining):,.0f})")
+    else:
+        st.warning("""
+        ### ⚠️ Insufficient Data
+        
+        Please complete all financial modules to calculate an accurate asset runway timeline.
+        """)
 
 
 def _render_advisor_notes():
