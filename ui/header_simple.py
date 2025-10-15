@@ -201,9 +201,7 @@ def render_header_simple(active_route: Optional[str] = None) -> None:
         """
     )
     
-    # Use st.html() for raw HTML rendering (more reliable than st.markdown with unsafe_allow_html)
-    st.html(css)
-    st.html(html)
+    st.markdown(css + html, unsafe_allow_html=True)
 
 
 __all__ = ["render_header_simple"]
