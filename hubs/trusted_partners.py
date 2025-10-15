@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import html
 from typing import Dict
 
 import streamlit as st
 
 from core.additional_services import get_additional_services
 from core.base_hub import BaseHub, status_label
+from core.navi import render_navi_panel
 
 
 class TrustedPartnersHub(BaseHub):
@@ -154,5 +156,31 @@ class TrustedPartnersHub(BaseHub):
 
 
 def render() -> None:
+    # Build dashboard data
     hub = TrustedPartnersHub()
-    hub.render()
+    dashboard_data = hub.build_dashboard()
+    
+    # Use callback pattern to render Navi AFTER header
+    def render_content():
+        # Render Navi panel (after header, before hub content)
+        render_navi_panel(location="hub", hub_key="trusted_partners")
+        
+        # Render hub body HTML WITHOUT title/subtitle/chips (Navi replaces them)
+        from core.base_hub import render_dashboard_body
+        body_html = render_dashboard_body(
+            title=None,
+            subtitle=None,
+            chips=None,
+            hub_guide_block=None,  # Navi replaces hub guide/callout
+            cards=dashboard_data.get("cards", []),
+            additional_services=dashboard_data.get("additional_services"),  # Include in HTML
+        )
+        st.markdown(body_html, unsafe_allow_html=True)
+    
+    from ui.header_simple import render_header_simple
+    from ui.footer_simple import render_footer_simple
+    
+    # Render with simple header/footer
+    render_header_simple(active_route="hub_trusted")
+    render_content()
+    render_footer_simple()

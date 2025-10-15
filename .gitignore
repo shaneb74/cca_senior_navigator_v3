@@ -6,14 +6,17 @@ __pycache__/
 .venv/
 .DS_Store
 .streamlit/secrets.toml
+
+# Session and user data (local persistence)
+.cache/
+data/users/
+*.lock
+
 # quarantine old code
-_backup/
-archive/
-_backup/
-archive/
-
-
 _backup/
 archive/
 *.zip
 *.docx
+
+# development utilities
+dev_tools/

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import html
 from typing import Dict, List
 
 import streamlit as st
@@ -7,8 +8,10 @@ import streamlit as st
 from core.additional_services import get_additional_services
 from core.base_hub import render_dashboard_body
 from core.hub_guide import compute_hub_guide
+from core.navi import render_navi_panel
 from core.product_tile import ProductTileHub
-from layout import render_page
+from ui.header_simple import render_header_simple
+from ui.footer_simple import render_footer_simple
 
 __all__ = ["render"]
 
@@ -49,6 +52,7 @@ def _card_to_tile(card: Dict[str, any], order: int) -> ProductTileHub:
 def render(ctx=None) -> None:
     person_name = st.session_state.get("person_name", "").strip()
     learning_progress = st.session_state.get("learning_progress", 0)
+    
     completed_resources = st.session_state.get("completed_resources", [])
 
     modules_viewed = len(completed_resources)
@@ -117,17 +121,25 @@ def render(ctx=None) -> None:
 
     cards = [_card_to_tile(card, (idx + 1) * 10) for idx, card in enumerate(raw_cards)]
 
-    body_html = render_dashboard_body(
-        title="Learning & Resources Hub",
-        subtitle=f"Keep {person_name}'s circle aligned with quick, shareable lessons.",
-        chips=[
-            {"label": "Learning journey"},
-            {"label": "Self-paced resources", "variant": "muted"},
-            {"label": "Advisor curated"},
-        ],
-        hub_guide_block=compute_hub_guide("learning"),
-        cards=cards,
-        additional_services=get_additional_services("learning"),
-    )
+    additional = get_additional_services("learning")
 
-    render_page(body_html=body_html, active_route="hub_learning")
+    # Use callback pattern to render Navi AFTER header
+    def render_content():
+        # Render Navi panel (after header, before hub content)
+        render_navi_panel(location="hub", hub_key="learning")
+        
+        # Render hub body HTML WITHOUT title/subtitle/chips (Navi replaces them)
+        body_html = render_dashboard_body(
+            title=None,
+            subtitle=None,
+            chips=None,
+            hub_guide_block=None,  # Navi replaces hub guide
+            cards=cards,
+            additional_services=additional,  # Include in HTML for proper layout
+        )
+        st.markdown(body_html, unsafe_allow_html=True)
+
+    # Render with simple header/footer
+    render_header_simple(active_route="hub_learning")
+    render_content()
+    render_footer_simple()

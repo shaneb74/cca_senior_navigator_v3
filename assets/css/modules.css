@@ -277,9 +277,12 @@ div[data-testid="stRadio"] label:has(input:checked) p {
   margin-top: 8px;
 }
 
-/* Style selected items as pills */
-.mod-multi-pills div[data-testid="stMultiSelect"] span[data-baseweb="tag"] {
+/* Style selected items as pills - BLACK CHIPS */
+.sn-app .mod-multi-pills div[data-testid="stMultiSelect"] span[data-baseweb="tag"],
+.sn-app .mod-field.mod-multi-pills div[data-testid="stMultiSelect"] span[data-baseweb="tag"],
+div.mod-multi-pills div[data-testid="stMultiSelect"] span[data-baseweb="tag"] {
   background: #111827 !important;
+  background-color: #111827 !important;
   color: #ffffff !important;
   border-radius: 999px !important;
   padding: 6px 12px !important;
@@ -287,14 +290,113 @@ div[data-testid="stRadio"] label:has(input:checked) p {
   border: none !important;
 }
 
+/* Force black background on the tag's direct children too */
+.sn-app .mod-multi-pills div[data-testid="stMultiSelect"] span[data-baseweb="tag"] > span,
+.sn-app .mod-field.mod-multi-pills div[data-testid="stMultiSelect"] span[data-baseweb="tag"] > span {
+  color: #ffffff !important;
+}
+
+/* NUCLEAR OVERRIDE: All tags in ANY module field should be black */
+.sn-app .mod-field span[data-baseweb="tag"],
+.sn-app div[data-testid="stMultiSelect"] span[data-baseweb="tag"] {
+  background: #111827 !important;
+  background-color: #111827 !important;
+  color: #ffffff !important;
+}
+
 /* ===================================================================
    MODULE LAYOUT & TYPOGRAPHY
    =================================================================== */
 
-.sn-app .mod-wrap { 
-  max-width: 920px; 
-  margin: 0 auto; 
-  padding: 8px 12px 40px; 
+.sn-app .mod-wrap {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 8px 12px 40px;
+  color: var(--module-text-primary);
+  font-size: var(--text-body);
+  line-height: var(--leading-relaxed);
+  letter-spacing: var(--tracking-normal);
+}
+
+.sn-app .mod-wrap p,
+.sn-app .mod-wrap ul,
+.sn-app .mod-wrap ol {
+  margin: 0 0 1rem;
+  color: inherit;
+  font-size: inherit;
+  line-height: var(--leading-relaxed);
+}
+
+.sn-app .mod-wrap > p:first-of-type {
+  font-size: var(--text-body-lg);
+  color: var(--module-text-secondary);
+}
+
+.sn-app .mod-wrap p + ul {
+  margin-top: -0.25rem;
+}
+
+.sn-app .mod-wrap p + p {
+  margin-top: 1.1rem;
+}
+
+.sn-app .mod-wrap ul,
+.sn-app .mod-wrap ol {
+  padding-left: 1.25rem;
+}
+
+.sn-app .mod-wrap li {
+  margin: 0 0 0.6rem;
+  line-height: var(--leading-relaxed);
+}
+
+.sn-app .mod-wrap li::marker {
+  color: var(--module-text-muted);
+  font-size: 1.1em;
+}
+
+.sn-app .mod-wrap h1,
+.sn-app .mod-wrap h2,
+.sn-app .mod-wrap h3,
+.sn-app .mod-wrap h4 {
+  color: var(--module-text-primary);
+  margin: 0 0 0.85rem;
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-tight);
+  text-wrap: balance;
+  max-width: 64ch;
+}
+
+.sn-app .mod-wrap h1 {
+  font-size: clamp(2.2rem, 3vw, 2.6rem);
+  font-weight: var(--font-extrabold);
+}
+
+.sn-app .mod-wrap h2 {
+  font-size: clamp(1.8rem, 2.5vw, 2.2rem);
+  font-weight: var(--font-bold);
+}
+
+.sn-app .mod-wrap h3 {
+  font-size: clamp(1.45rem, 2vw, 1.75rem);
+  font-weight: var(--font-semibold);
+}
+
+.sn-app .mod-wrap h4 {
+  font-size: clamp(1.2rem, 1.5vw, 1.35rem);
+  font-weight: var(--font-semibold);
+  color: var(--module-text-secondary);
+}
+
+.sn-app .mod-wrap small {
+  font-size: var(--text-body-sm);
+  color: var(--module-text-secondary);
+  line-height: var(--leading-normal);
+}
+
+.sn-app .mod-wrap strong {
+  font-weight: var(--font-semibold);
+  color: var(--module-text-primary);
 }
 
 @media (min-width: 960px){ 
@@ -304,6 +406,52 @@ div[data-testid="stRadio"] label:has(input:checked) p {
 }
 
 /* Module header section */
+.sn-app .mod-head {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.sn-app .mod-head-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.sn-app .mod-head-row .h2 {
+  margin: 0;
+  font-size: clamp(2rem, 3.4vw, 2.6rem);
+  font-weight: var(--font-extrabold);
+  line-height: var(--leading-snug);
+  letter-spacing: -0.02em;
+  color: var(--module-text-primary);
+  font-feature-settings: "ss01", "liga";
+}
+
+.sn-app .mod-head .lead {
+  font-size: var(--text-body-lg);
+  line-height: var(--leading-relaxed);
+  color: var(--module-text-secondary);
+  max-width: 64ch;
+  text-wrap: balance;
+}
+
+.sn-app .mod-back {
+  color: var(--module-text-muted);
+  font-size: var(--text-body-sm);
+  font-weight: var(--font-semibold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.sn-app .mod-back:hover,
+.sn-app .mod-back:focus-visible {
+  color: var(--module-text-secondary);
+}
+
 .sn-app .mod-top { 
   display: flex; 
   align-items: center; 
@@ -313,8 +461,12 @@ div[data-testid="stRadio"] label:has(input:checked) p {
 }
 
 .sn-app .mod-top .mod-context { 
-  color: var(--module-text-secondary); 
-  font-size: 0.9rem; 
+  color: var(--module-text-muted);
+  font-size: var(--text-body-sm);
+  font-weight: var(--font-semibold);
+  line-height: var(--leading-normal);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
 }
 
 /* Question field container */
@@ -325,19 +477,40 @@ div[data-testid="stRadio"] label:has(input:checked) p {
 
 /* Question label - bold and prominent */
 .sn-app .mod-label { 
-  font-weight: 700; 
-  font-size: 20px;  /* Increased from 16px to 20px for better prominence */
-  color: var(--module-text-primary); 
-  margin: 0 0 12px; 
-  line-height: 1.5;
+  font-weight: var(--font-semibold);
+  font-size: var(--text-h3);
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-tight);
+  color: var(--module-text-primary);
+  margin: 0 0 14px;
+  text-wrap: balance;
+  max-width: 62ch;
+  font-feature-settings: "ss01", "liga";
+}
+
+.sn-app .mod-label span {
+  display: inline-flex;
+  gap: 0.4rem;
 }
 
 /* Help text - subtle gray */
 .sn-app .mod-help { 
-  color: var(--module-text-secondary); 
-  font-size: 15px;  /* Increased from 14px for better readability */
-  line-height: 1.6;
-  margin-bottom: 10px; 
+  color: var(--module-text-secondary);
+  font-size: var(--text-body);
+  line-height: var(--leading-relaxed);
+  font-weight: var(--font-regular);
+  margin: 0 0 12px;
+  max-width: 64ch;
+}
+
+.sn-app .mod-help strong {
+  color: var(--module-text-primary);
+  font-weight: var(--font-semibold);
+}
+
+.sn-app .mod-help em {
+  font-style: normal;
+  color: var(--module-text-muted);
 }
 
 /* Title with optional icon */
@@ -388,8 +561,15 @@ div[data-testid="stRadio"] label:has(input:checked) p {
   border-radius: 12px;
   padding: 12px 16px;
   margin: 12px 0 20px;
-  font-size: 14px;
-  line-height: 1.5;
+  font-size: var(--text-body);
+  line-height: var(--leading-relaxed);
+  font-weight: var(--font-regular);
+  max-width: 60ch;
+}
+
+.sn-app .mod-note strong {
+  color: var(--module-text-primary);
+  font-weight: var(--font-semibold);
 }
 
 /* Developer info / debug summary - bottom of page */
@@ -399,7 +579,8 @@ div[data-testid="stRadio"] label:has(input:checked) p {
   background: #f9fafb;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
-  font-size: 12px;
+  font-size: var(--text-caption);
+  line-height: var(--leading-normal);
   color: var(--module-text-muted);
 }
 
@@ -411,7 +592,7 @@ div[data-testid="stRadio"] label:has(input:checked) p {
 }
 
 .sn-app .mod-bottom .meta {
-  font-weight: 600;
+  font-weight: var(--font-semibold);
   color: var(--module-text-secondary);
   min-width: 120px;
 }
@@ -576,35 +757,55 @@ div[data-testid="stRadio"] label:has(input:checked) p {
    MODULE ACTION BUTTONS (Continue, Back, Save & Exit)
    =================================================================== */
 
-/* Primary action (Continue) - Black button */
+/* Primary action (Continue) - BLUE button */
 .sn-app .mod-actions .stButton > button:first-child,
 .sn-app .mod-actions .stButton:first-child > button,
 .sn-app .mod-actions .stButton:first-child > button[class^="css-"],
 .sn-app .mod-actions .stButton:first-child > button[class*=" css-"]{
-  background: #111827 !important;
+  background: #2563eb !important;
   color: #ffffff !important;
-  border: 1px solid #111827 !important;
+  border: 1px solid #2563eb !important;
   height: 46px !important;
   border-radius: 12px !important;
   padding: 0 24px !important;
   font-weight: 700 !important;
   font-size: 15px !important;
-  box-shadow: 0 2px 8px rgba(17, 24, 39, 0.15) !important;
+  line-height: var(--leading-normal) !important;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15) !important;
   transition: all 0.18s ease !important;
 }
 
 .sn-app .mod-actions .stButton:first-child > button:hover:not(:disabled){
-  background: #1f2937 !important;
+  background: #1d4ed8 !important;
   color: #ffffff !important;
-  box-shadow: 0 4px 12px rgba(17, 24, 39, 0.25) !important;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25) !important;
   transform: translateY(-1px) !important;
 }
 
-/* Secondary actions (Back, Save & Exit) - Gray outline buttons */
+/* Secondary actions (Back, Save & Exit) - Light gray buttons */
 .sn-app .mod-actions .stButton:not(:first-child) > button,
 .sn-app .mod-actions .stButton:not(:first-child) > button[class^="css-"],
 .sn-app .mod-actions .stButton:not(:first-child) > button[class*=" css-"]{
-  background: #ffffff !important;
+  background: #f3f4f6 !important;
+  color: #374151 !important;
+  border: 1px solid #d1d5db !important;
+  height: 46px !important;
+  border-radius: 12px !important;
+  padding: 0 24px !important;
+  font-weight: 600 !important;
+  font-size: 15px !important;
+  line-height: var(--leading-normal) !important;
+  box-shadow: none !important;
+  transition: all 0.18s ease !important;
+}
+
+/* Results page: buttons inside columns (col1, col3 get gray; col2 stays black) */
+.sn-app .mod-actions [data-testid="column"]:first-child .stButton > button,
+.sn-app .mod-actions [data-testid="column"]:first-child button[data-testid*="baseButton"],
+.sn-app .mod-actions [data-testid="column"]:last-child .stButton > button,
+.sn-app .mod-actions [data-testid="column"]:last-child button[data-testid*="baseButton"] {
+  background: #f3f4f6 !important;
+  background-color: #f3f4f6 !important;
   color: #374151 !important;
   border: 1px solid #d1d5db !important;
   height: 46px !important;
@@ -617,7 +818,19 @@ div[data-testid="stRadio"] label:has(input:checked) p {
 }
 
 .sn-app .mod-actions .stButton:not(:first-child) > button:hover:not(:disabled){
-  background: #f9fafb !important;
+  background: #e5e7eb !important;
+  color: #111827 !important;
+  border-color: #9ca3af !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Results page hover states */
+.sn-app .mod-actions [data-testid="column"]:first-child .stButton > button:hover:not(:disabled),
+.sn-app .mod-actions [data-testid="column"]:first-child button[data-testid*="baseButton"]:hover:not(:disabled),
+.sn-app .mod-actions [data-testid="column"]:last-child .stButton > button:hover:not(:disabled),
+.sn-app .mod-actions [data-testid="column"]:last-child button[data-testid*="baseButton"]:hover:not(:disabled) {
+  background: #e5e7eb !important;
+  background-color: #e5e7eb !important;
   color: #111827 !important;
   border-color: #9ca3af !important;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08) !important;
@@ -726,23 +939,31 @@ div[data-testid="stVerticalBlock"]:has(.chip-wrap.is-active) .stButton > button{
 /* ===================================================================
    SAVE & CONTINUE LATER BUTTON STYLING
    =================================================================== */
-/* Style Streamlit secondary buttons in mod-actions to match btn--secondary */
-/* Updated: White text on blue background for prominence */
+/* Style Streamlit secondary buttons in mod-actions to match light gray */
+/* Updated: Light gray background for secondary actions */
 .sn-app .mod-actions button[kind="secondary"],
 .sn-app .mod-actions .stButton > button[kind="secondary"],
-.sn-app .mod-actions div[data-testid="stButton"] > button[kind="secondary"] {
-  background: var(--brand-600, #2563eb) !important;
-  color: #ffffff !important;
-  border: 1px solid var(--brand-700, #1d4ed8) !important;
-  font-weight: 700 !important;
+.sn-app .mod-actions div[data-testid="stButton"] > button[kind="secondary"],
+.sn-app .mod-actions button[data-testid*="BaseButton-secondary"] {
+  background: #f3f4f6 !important;
+  background-color: #f3f4f6 !important;
+  color: #374151 !important;
+  border: 1px solid #d1d5db !important;
+  font-weight: 600 !important;
+  height: 46px !important;
+  border-radius: 12px !important;
+  padding: 0 24px !important;
+  box-shadow: none !important;
+  transition: all 0.18s ease !important;
 }
 
 .sn-app .mod-actions button[kind="secondary"]:hover:not(:disabled),
 .sn-app .mod-actions .stButton > button[kind="secondary"]:hover:not(:disabled),
-.sn-app .mod-actions div[data-testid="stButton"] > button[kind="secondary"]:hover:not(:disabled) {
-  background: var(--brand-700, #1d4ed8) !important;
-  color: #ffffff !important;
-  box-shadow: var(--focus-ring, 0 0 0 3px rgba(37, 99, 235, 0.2)) !important;
-  border-color: var(--brand-700, #1d4ed8) !important;
+.sn-app .mod-actions div[data-testid="stButton"] > button[kind="secondary"]:hover:not(:disabled),
+.sn-app .mod-actions button[data-testid*="BaseButton-secondary"]:hover:not(:disabled) {
+  background: #e5e7eb !important;
+  background-color: #e5e7eb !important;
+  color: #111827 !important;
+  border-color: #9ca3af !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08) !important;
 }
-

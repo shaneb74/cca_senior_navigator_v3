@@ -3,7 +3,13 @@ from copy import deepcopy
 import streamlit as st
 
 DEFAULT_CTX = {
-    "auth": {"is_authenticated": False, "user_id": None, "role": "guest"},
+    "auth": {
+        "is_authenticated": False,
+        "user_id": None,
+        "role": "guest",
+        "name": None,
+        "email": None
+    },
     "flags": {},
 }
 
@@ -11,10 +17,58 @@ DEFAULT_CTX = {
 def ensure_session():
     if "ctx" not in st.session_state:
         st.session_state.ctx = deepcopy(DEFAULT_CTX)
+    # Initialize user role (member vs professional mode)
+    if "user_role" not in st.session_state:
+        st.session_state.user_role = "member"
 
 
 def get_user_ctx():
     return st.session_state.ctx
+
+
+def is_authenticated() -> bool:
+    """Check if user is authenticated (toggle state)."""
+    ensure_session()
+    return st.session_state.ctx["auth"]["is_authenticated"]
+
+
+def authenticate_user(name: str = "Sarah", email: str = "sarah@example.com") -> None:
+    """Toggle auth on - simulate login (no real auth required)."""
+    ensure_session()
+    st.session_state.ctx["auth"] = {
+        "is_authenticated": True,
+        "user_id": "demo_user_123",
+        "role": "member",
+        "name": name,
+        "email": email
+    }
+
+
+def logout_user() -> None:
+    """Toggle auth off - simulate logout."""
+    ensure_session()
+    st.session_state.ctx["auth"] = deepcopy(DEFAULT_CTX["auth"])
+
+
+def get_user_name() -> str:
+    """Get authenticated user's name, or empty string."""
+    ensure_session()
+    return st.session_state.ctx["auth"].get("name", "") or ""
+
+
+def is_professional() -> bool:
+    """Check if user is in professional mode."""
+    return st.session_state.get("user_role") == "professional"
+
+
+def switch_to_professional():
+    """Switch to professional mode."""
+    st.session_state.user_role = "professional"
+
+
+def switch_to_member():
+    """Switch to member mode (default)."""
+    st.session_state.user_role = "member"
 
 
 def set_module_status(module_key: str, status: str):

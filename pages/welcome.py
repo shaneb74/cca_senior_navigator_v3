@@ -6,9 +6,13 @@ from typing import Dict, Optional, Sequence
 
 import streamlit as st
 
+from core.mcip import MCIP
 from core.nav import route_to
+from core.state import is_authenticated, is_professional, switch_to_member, switch_to_professional
 from core.ui import img_src
-from layout import render_page, static_url
+from layout import static_url  # Keep static_url for now
+from ui.header_simple import render_header_simple
+from ui.footer_simple import render_footer_simple
 
 _CSS_FLAG = "_welcome_css_main"
 
@@ -61,50 +65,64 @@ def _inject_welcome_css() -> None:
         .welcome-header__inner{display:flex;align-items:center;justify-content:space-between;gap:24px;}
         .welcome-auth{margin-left:auto;display:flex;align-items:center;}
 
-        /* spacing tightened */
-        .section-hero{padding:56px 0 28px;}
-        .hero-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:32px;align-items:center;}
+        /* hero spacing: provide breathing room now that the global container is flush */
+        .section-hero{padding:24px 0 16px;}
+        .hero-grid{
+          display:grid;
+          grid-template-columns:minmax(0,1.25fr) minmax(0,0.75fr);
+          gap:36px;
+          align-items:center;
+        }
 
         .hero-eyebrow{font-weight:700;color:var(--brand-700);letter-spacing:.04em;margin-bottom:.75rem;}
 
-        /* headline refined */
+        /* headline refined - increased by 20% more */
         .hero-title{
           font-weight:700;
           color:var(--ink);
-          font-size:clamp(2.6rem,4.2vw,3.6rem);
-          line-height:1.06;
+          font-size:clamp(3.4rem,5.4vw,4.6rem);
+          line-height:1.04;
           letter-spacing:-.01em;
           margin:0 0 16px;
           text-wrap:balance;
         }
 
-        /* subhead a touch bolder & tighter */
+        /* subhead 20% larger */
         .hero-sub{
           color:var(--ink-600);
-          font-size:1.05rem;
+          font-size:1.26rem;
           line-height:1.55;
           font-weight:500;
-          max-width:44ch;
+          max-width:60ch;
+          width:100%;
+          text-wrap:balance;
+          text-align:left;
+          hyphens:auto;
           margin:0 0 24px;
         }
 
         .cta-row{display:flex;gap:14px;flex-wrap:wrap;}
         .cta-row .btn--primary{background:linear-gradient(90deg,#2563eb,#3b82f6);border-color:#2563eb;}
-        .welcome-hero-media{position:relative;display:flex;justify-content:flex-end;padding-right:2%;}
+        .welcome-hero-media{position:relative;display:flex;justify-content:flex-end;padding-right:2%;transform:scale(1.05);transform-origin:center right;}
         .welcome-hero-frame{position:relative;background:#fff;border-radius:24px;padding:14px;border:1px solid #e8eff8;box-shadow:0 26px 60px rgba(15,23,42,.18);transform:rotate(-2.2deg);}
         .welcome-hero-frame::after{content:"";position:absolute;inset:12px;border:1px solid rgba(15,23,42,.07);border-radius:18px;}
         .welcome-hero-photo{border-radius:18px;overflow:hidden;}
         .welcome-hero-photo img{display:block;border-radius:18px;}
 
-        /* section header: sentence case, closer to content */
-        .section--tight{padding:18px 0 6px;}
+        /* section header: tightened spacing dramatically */
+        .section--tight{padding:4px 0 2px;}
         .welcome-section-title{
           text-transform:none;
           letter-spacing:.02em;
           font-size:1.35rem;
-          margin:0;
+          margin:0 0 12px;
           color:var(--ink);
           font-weight:800;
+        }
+
+        /* Remove top padding from cards section to bring closer to title */
+        .section--tight + .section{
+          padding-top:0 !important;
         }
 
         .cards-2{display:grid;gap:32px;grid-template-columns:1fr 1fr;}
@@ -118,6 +136,47 @@ def _inject_welcome_css() -> None:
         .welcome-card .dashboard-description{color:var(--ink-500);margin-bottom:20px;line-height:1.55;}
         .welcome-card .card-actions{display:flex;justify-content:flex-end;}
 
+        /* Professional Login section */
+        .professional-login{
+          padding:40px;
+          background:#fff;
+          border:1px solid #e6edf5;
+          border-radius:20px;
+          box-shadow:0 18px 42px rgba(15,23,42,.12);
+          text-align:center;
+        }
+        .professional-login__title{
+          font-size:1.5rem;
+          font-weight:700;
+          color:var(--ink);
+          margin:0 0 12px;
+        }
+        .professional-login__message{
+          font-size:1.05rem;
+          color:var(--ink-600);
+          margin:0 0 20px;
+        }
+        .professional-login__roles{
+          font-size:0.95rem;
+          color:var(--ink-500);
+          margin:0 0 28px;
+          font-weight:500;
+        }
+        .professional-login__button .btn{
+          display:inline-flex;
+          align-items:center;
+          justify-content:center;
+          height:auto;
+          padding:12px 32px;
+          border-radius:12px;
+          background:#111827;
+          color:#fff;
+          text-decoration:none;
+          font-weight:700;
+          font-size:1rem;
+          transition:all 0.2s ease;
+        }
+
         .welcome-context-sentinel,
         .context-card-sentinel{display:none;}
         @supports(selector(div:has(.welcome-context-sentinel))){
@@ -127,7 +186,7 @@ def _inject_welcome_css() -> None:
           }
           div[data-testid="stVerticalBlock"]:has(.welcome-context-sentinel){
             background:#fff;
-            padding:72px 0;
+            padding:40px 0;
           }
           div[data-testid="stVerticalBlock"]:has(.welcome-context-sentinel) > div[data-testid="stHorizontalBlock"]{
             max-width:880px;
@@ -159,11 +218,17 @@ def _inject_welcome_css() -> None:
         @supports(selector(div:has(.welcome-context-sentinel))){
           @media(max-width:1024px){
             div[data-testid="stVerticalBlock"]:has(.welcome-context-sentinel){
-              padding:48px 0;
+              padding:32px 0;
             }
             div[data-testid="stVerticalBlock"]:has(.welcome-context-sentinel) > div[data-testid="stHorizontalBlock"]{
               flex-direction:column;
               gap:28px;
+            }
+            div[data-testid="stVerticalBlock"]:has(.welcome-context-sentinel) > div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:first-child{
+              order:2;
+            }
+            div[data-testid="stVerticalBlock"]:has(.welcome-context-sentinel) > div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:last-child{
+              order:1;
             }
           }
         }
@@ -331,8 +396,25 @@ def render_welcome_card(
                 st.markdown("</div>", unsafe_allow_html=True)
             st.markdown("</div>", unsafe_allow_html=True)
 
-        if submitted and name_value.strip():
-            st.session_state["person_name"] = name_value.strip()
+        # Handle form submission - allow navigation with or without a name
+        if submitted:
+            # Store relationship context
+            if safe_active == "someone":
+                st.session_state["planning_for_relationship"] = "someone_else"
+            elif safe_active == "self":
+                st.session_state["planning_for_relationship"] = "self"
+            
+            # Store name if provided (not empty or whitespace)
+            if name_value and name_value.strip():
+                st.session_state["planning_for_name"] = name_value.strip()
+                # Keep legacy person_name for backward compatibility
+                st.session_state["person_name"] = name_value.strip()
+            else:
+                # Clear names if exists, allowing generic terms to be used
+                st.session_state.pop("planning_for_name", None)
+                st.session_state.pop("person_name", None)
+            
+            # Navigate regardless of whether name was provided
             if submit_route:
                 _go_to(None, submit_route)
 
@@ -367,10 +449,26 @@ def render_welcome_card(
             )
 
 
-def _welcome_body() -> str:
+def _welcome_body(
+    primary_label: str = "Start Now",
+    primary_route: str = "someone_else",
+    show_secondary: bool = True,
+) -> str:
+    """Generate welcome page body with dynamic CTA buttons.
+    
+    Args:
+        primary_label: Text for primary button
+        primary_route: Route for primary button (page name or route key)
+        show_secondary: Whether to show the "Log in" button
+    """
     hero_url = static_url("hero.png")
     family_main = static_url("welcome_someone_else.png")
     self_main = static_url("welcome_self.png")
+    
+    # Build CTA buttons
+    cta_html = f'<a href="?page={primary_route}" class="btn btn--primary wl-btn">{html.escape(primary_label)}</a>'
+    if show_secondary:
+        cta_html += '\n                      <a href="?page=login" class="btn btn--secondary">Log in</a>'
 
     return _clean_html(
         f"""
@@ -379,14 +477,13 @@ def _welcome_body() -> str:
                 <div class="hero-grid">
                   <div>
                     <p class="hero-eyebrow">Concierge Care Advisors</p>
-                    <h1 class="hero-title">Care decisions are hard. You don’t have to make them alone.</h1>
+                    <h1 class="hero-title">Care decisions are hard. You don't have to make them alone.</h1>
                     <p class="hero-sub">
-                      Talk with a no-cost advisor who helps your family navigate senior living
-                      choices clearly, confidently, and compassionately.
+                      Get personalized guidance from a trusted advisor.
+                      We help your family explore senior living options with clarity, care, and confidence—always at no cost.
                     </p>
                     <div class="cta-row">
-                      <a href="?page=someone_else" class="btn btn--primary wl-btn">Start Now</a>
-                      <a href="?page=login" class="btn btn--secondary">Log in</a>
+                      {cta_html}
                     </div>
                   </div>
                   <div class="welcome-hero-media">
@@ -434,14 +531,77 @@ def _welcome_body() -> str:
                   </article>
                 </div>
               </section>
+
+              <section class="container section">
+                <div class="professional-login">
+                  <h2 class="professional-login__title">Professional Login</h2>
+                  <p class="professional-login__message">Login here to access your personalized dashboards.</p>
+                  <p class="professional-login__roles">Discharge Planners • Nurses • Physicians • Social Workers • Geriatric Care Managers</p>
+                  <div class="professional-login__button">
+                    <a href="?page=hub_professional" class="btn btn--primary">🔐 For Professionals</a>
+                  </div>
+                </div>
+              </section>
             </main>
             """
     )
 
 
 def render(ctx: Optional[dict] = None) -> None:
+    """Render welcome page with adaptive behavior based on auth state."""
+    # ============================================================
+    # AUTHENTICATION DISABLED FOR DEVELOPMENT TESTING
+    # ============================================================
+    # Logout handler temporarily disabled - role switching removed
+    # The following code is intentionally commented out:
+    #
+    # if st.query_params.get("logout") == "1":
+    #     switch_to_member()
+    #     st.query_params.clear()
+    #     st.query_params["page"] = "welcome"
+    #     st.rerun()
+    # ============================================================
+    
     _inject_welcome_css()
-    render_page(body_html=_welcome_body(), active_route="welcome")
+    
+    # Determine button state based on authentication and planning context
+    authenticated = is_authenticated()
+    has_planning_context = (
+        st.session_state.get("planning_for_name") 
+        or st.session_state.get("person_name")
+    )
+    
+    # Button configuration based on state
+    if not authenticated:
+        # State: Not logged in
+        primary_label = "Start Now"
+        primary_route = "someone_else"
+        show_secondary = True
+    elif authenticated and not has_planning_context:
+        # State: Logged in, no planning context
+        primary_label = "Start Planning"
+        primary_route = "someone_else"
+        show_secondary = False
+    else:
+        # State: Logged in, planning context known
+        # Use Navi's recommendation for next action
+        next_action = MCIP.get_recommended_next_action()
+        primary_label = "Continue where you left off"
+        primary_route = next_action.get("route", "hub_concierge")
+        show_secondary = False
+    
+    # Render with simple header/footer (no layout.py wrapper)
+    render_header_simple(active_route="welcome")
+    
+    # Render body HTML directly
+    body_html = _welcome_body(
+        primary_label=primary_label,
+        primary_route=primary_route,
+        show_secondary=show_secondary,
+    )
+    st.markdown(body_html, unsafe_allow_html=True)
+    
+    render_footer_simple()
 
 
 __all__ = ["render", "render_welcome_card"]

@@ -41,7 +41,7 @@ def header(step_index: int, total: int, title: str, subtitle: str | None = None)
     )
 
 
-def actions(next_label: str = "Continue", skip_label: str | None = "Skip", show_save_exit: bool = True, is_intro: bool = False) -> tuple[bool, bool, bool]:
+def actions(next_label: str = "Continue", skip_label: str | None = "Skip", show_save_exit: bool = True, is_intro: bool = False, show_back: bool = False, step_index: int = 0, config = None) -> tuple[bool, bool, bool, bool, bool]:
     """Render module action buttons with proper styling wrapper.
     
     Args:
@@ -49,35 +49,68 @@ def actions(next_label: str = "Continue", skip_label: str | None = "Skip", show_
         skip_label: Label for skip button (None to hide)
         show_save_exit: Whether to show Save & Continue Later button
         is_intro: If True, hide Save & Continue Later (nothing to save yet)
+        show_back: If True, show Back button above Save & Continue Later
+        step_index: Current step index (for back button navigation)
+        config: Module config (for back button state management)
     
     Returns:
-        (next_clicked, skip_clicked, save_exit_clicked)
+        (next_clicked, skip_clicked, save_exit_clicked, back_clicked, back_to_hub_clicked)
     """
     st.markdown('<div class="sn-app mod-actions">', unsafe_allow_html=True)
     
-    # Primary action row (Continue / Skip)
-    cols = st.columns(2) if skip_label else [st.container()]
-    with cols[0]:
-        next_clicked = st.button(next_label, key="_mod_next", type="primary")
-    skip_clicked = False
-    if skip_label:
-        with cols[1]:
-            skip_clicked = st.button(skip_label, key="_mod_skip")
+    # Primary action - full width Continue button using native st.button
+    # This ensures proper click handling while applying CSS classes
+    next_clicked = st.button(
+        next_label, 
+        key="_mod_next", 
+        type="primary", 
+        use_container_width=True,
+        help=None
+    )
     
-    # Secondary action (Save & Continue Later) - hide on intro page
+    # Back button - appears above Save & Continue Later
+    back_clicked = False
+    if show_back:
+        st.markdown('<div style="margin-top: 12px;">', unsafe_allow_html=True)
+        back_clicked = st.button(
+            "← Back to Previous Question",
+            key="_mod_back_prev",
+            type="secondary",
+            use_container_width=True,
+            help=None
+        )
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Secondary action (Save & Continue Later) - smaller, below Continue, muted
     save_exit_clicked = False
     if show_save_exit and not is_intro:
-        st.markdown('<div style="margin-top: 0.75rem;">', unsafe_allow_html=True)
+        st.markdown('<div class="mod-save-exit-wrapper">', unsafe_allow_html=True)
         save_exit_clicked = st.button(
             "💾 Save & Continue Later",
             key="_mod_save_exit",
             type="secondary",
-            use_container_width=True
+            use_container_width=False,
+            help=None
         )
         st.markdown('</div>', unsafe_allow_html=True)
     
+    # Back to hub button - always available to exit module
+    st.markdown('<div class="mod-back-hub-wrapper">', unsafe_allow_html=True)
+    back_to_hub_clicked = st.button(
+        "← Back to Hub",
+        key="_mod_back_hub",
+        type="secondary",
+        use_container_width=True,
+        help=None
+    )
     st.markdown('</div>', unsafe_allow_html=True)
-    return next_clicked, skip_clicked, save_exit_clicked
+    
+    # Skip button (if needed) - removed from primary row
+    skip_clicked = False
+    # Note: Skip functionality removed - can be re-added if needed
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    return next_clicked, skip_clicked, save_exit_clicked, back_clicked, back_to_hub_clicked
 
 
 def bottom_summary(items: Dict[str, str]) -> None:

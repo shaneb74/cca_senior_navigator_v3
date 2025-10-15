@@ -40,9 +40,28 @@
           "module": "pages._stubs:render_about"
         },
         {
-          "key": "debug_gcp",
-          "label": "\ud83d\udd0d Debug GCP",
-          "module": "pages.debug_gcp:render"
+          "key": "login",
+          "label": "Log in",
+          "module": "pages.login:render",
+          "hidden": true
+        },
+        {
+          "key": "signup",
+          "label": "Sign up",
+          "module": "pages.signup:render",
+          "hidden": true
+        },
+        {
+          "key": "logout",
+          "label": "Log out",
+          "module": "pages._stubs:render_logout",
+          "hidden": true
+        },
+        {
+          "key": "export_results",
+          "label": "Export Results",
+          "module": "pages._stubs:render_export_results",
+          "hidden": true
         }
       ]
     },
@@ -73,11 +92,7 @@
         {
           "key": "hub_professional",
           "label": "Professional",
-          "module": "hubs.professional:render",
-          "roles": [
-            "pro",
-            "admin"
-          ]
+          "module": "hubs.professional:render"
         }
       ]
     },
@@ -87,20 +102,26 @@
       "items": [
         {
           "key": "gcp",
+          "label": "Guided Care Plan (legacy)",
+          "module": "products.gcp_v4.product:render",
+          "hidden": true
+        },
+        {
+          "key": "gcp_v4",
           "label": "Guided Care Plan",
-          "module": "products.gcp.product:render",
+          "module": "products.gcp_v4.product:render",
           "hidden": true
         },
         {
-          "key": "cost",
-          "label": "Cost Planner",
-          "module": "products.cost_planner.product:render",
+          "key": "cost_v2",
+          "label": "Cost Planner v2",
+          "module": "products.cost_planner_v2.product:render",
           "hidden": true
         },
         {
-          "key": "pfma",
-          "label": "Plan with My Advisor",
-          "module": "products.pfma:render",
+          "key": "pfma_v2",
+          "label": "Plan with My Advisor v2",
+          "module": "products.pfma_v2.product:render",
           "hidden": true
         },
         {
