@@ -19,8 +19,7 @@ def render_header_simple(active_route: Optional[str] = None) -> None:
     Args:
         active_route: Current page route (e.g., 'welcome', 'hub_concierge')
     """
-    # For now, use text-only brand - the full logo is too large for header
-    # logo_url = img_src("static/images/logos/cca_logo.png")
+    logo_url = img_src("static/images/logos/cca_logo.png")
     
     # Define navigation items
     nav_items = [
@@ -183,7 +182,8 @@ def render_header_simple(active_route: Optional[str] = None) -> None:
         f"""
         <header class="sn-header">
           <div class="sn-header__inner">
-            <a href="?page=welcome" class="sn-header__brand" style="display: flex !important; align-items: center;">
+            <a href="?page=welcome" class="sn-header__brand" style="display: flex !important; align-items: center; gap: 12px;">
+              <img src="{logo_url}" alt="CCA Logo" class="sn-header__logo" style="height: 48px; width: auto; display: block;" />
               <span class="sn-header__brand-text" style="font-size: 1.25rem; font-weight: 700; color: #1e3a8a; display: inline-block;">Senior Navigator</span>
             </a>
             <nav class="sn-header__nav">
