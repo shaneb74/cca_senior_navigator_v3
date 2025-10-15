@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import html
 from typing import Dict, List
 
 import streamlit as st
@@ -120,6 +121,8 @@ def render(ctx=None) -> None:
 
     cards = [_card_to_tile(card, (idx + 1) * 10) for idx, card in enumerate(raw_cards)]
 
+    additional = get_additional_services("learning")
+
     # Use callback pattern to render Navi AFTER header
     def render_content():
         # Render Navi panel (after header, before hub content)
@@ -132,7 +135,7 @@ def render(ctx=None) -> None:
             chips=None,
             hub_guide_block=None,  # Navi replaces hub guide
             cards=cards,
-            additional_services=get_additional_services("learning"),
+            additional_services=additional,  # Include in HTML for proper layout
         )
         st.markdown(body_html, unsafe_allow_html=True)
 

@@ -19,9 +19,6 @@ from core.session_store import (
     cleanup_old_sessions,
 )
 
-# Development utilities
-from products.cost_planner.dev_unlock import show_dev_controls
-
 st.set_page_config(page_title="Senior Navigator", page_icon="🧭", layout="wide")
 
 
@@ -70,6 +67,22 @@ def _cleanup_legacy_gcp_state() -> None:
 inject_css()
 ensure_session()
 _cleanup_legacy_gcp_state()
+
+# ====================================================================
+# DEV MODE & FLAG VALIDATION
+# ====================================================================
+
+# Enable dev mode based on URL query param (?dev=true)
+if "dev" in st.query_params and st.query_params["dev"].lower() in ("true", "1", "yes"):
+    st.session_state["dev_mode"] = True
+    
+    # Run flag validation on first load in dev mode
+    if "flag_validation_run" not in st.session_state:
+        from core.validators import check_flags_at_startup
+        check_flags_at_startup(verbose=True)  # Print validation summary to console
+        st.session_state["flag_validation_run"] = True
+else:
+    st.session_state["dev_mode"] = False
 
 # ====================================================================
 # SESSION PERSISTENCE - Load state from disk
@@ -145,9 +158,6 @@ LAYOUT_CHROME_ROUTES = {
 uses_layout_frame = route in LAYOUT_CHROME_ROUTES
 
 reset_global_frame()
-
-# Show development controls in sidebar
-show_dev_controls()
 
 if not uses_layout_frame:
     page_container_open()
