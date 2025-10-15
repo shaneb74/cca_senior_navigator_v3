@@ -79,7 +79,7 @@ def render_header_simple(active_route: Optional[str] = None) -> None:
         
         /* Brand/logo section */
         .sn-header__brand {
-          display: flex;
+          display: flex !important;
           align-items: center;
           gap: 0;
           text-decoration: none;
@@ -93,11 +93,13 @@ def render_header_simple(active_route: Optional[str] = None) -> None:
         }
         
         .sn-header__brand-text {
-          font-size: 1.125rem;
-          font-weight: 700;
+          font-size: 1.25rem !important;
+          font-weight: 700 !important;
           line-height: 1.2;
-          color: #1e3a8a;
+          color: #1e3a8a !important;
           letter-spacing: -0.01em;
+          display: inline-block !important;
+          visibility: visible !important;
         }
         
         /* Navigation links */
@@ -181,8 +183,8 @@ def render_header_simple(active_route: Optional[str] = None) -> None:
         f"""
         <header class="sn-header">
           <div class="sn-header__inner">
-            <a href="?page=welcome" class="sn-header__brand">
-              <span class="sn-header__brand-text">Senior Navigator</span>
+            <a href="?page=welcome" class="sn-header__brand" style="display: flex !important; align-items: center;">
+              <span class="sn-header__brand-text" style="font-size: 1.25rem; font-weight: 700; color: #1e3a8a; display: inline-block;">Senior Navigator</span>
             </a>
             <nav class="sn-header__nav">
               {nav_html}
