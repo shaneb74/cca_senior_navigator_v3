@@ -59,6 +59,7 @@ def render():
         col1, col2 = st.columns([2, 1])
         
         with col1:
+            st.markdown("**Monthly Benefit Amount** ($)")
             ltc_benefit = st.number_input(
                 "Monthly Benefit Amount ($)",
                 min_value=0,
@@ -66,7 +67,8 @@ def render():
                 step=100,
                 value=st.session_state.cost_v2_coverage.get("ltc_monthly_benefit", 0),
                 help="How much does your policy pay per month?",
-                key="ltc_benefit"
+                key="ltc_benefit",
+                label_visibility="collapsed"
             )
         
         with col2:
@@ -150,6 +152,7 @@ def render():
         )
         
         if medicare_applies != "No":
+            st.markdown("**Estimated Monthly Medicare Contribution** ($)")
             medicare_coverage = st.number_input(
                 "Estimated monthly Medicare contribution ($)",
                 min_value=0,
@@ -157,7 +160,8 @@ def render():
                 step=100,
                 value=st.session_state.cost_v2_coverage.get("medicare_coverage", 0),
                 help="Estimate how much Medicare pays toward your care",
-                key="medicare_amount"
+                key="medicare_amount",
+                label_visibility="collapsed"
             )
     
     st.markdown("---")
@@ -192,6 +196,7 @@ def render():
         )
         
         if medicaid_status == "Currently enrolled":
+            st.markdown("**Monthly Medicaid Coverage** ($)")
             medicaid_coverage = st.number_input(
                 "Monthly Medicaid coverage ($)",
                 min_value=0,
@@ -199,7 +204,8 @@ def render():
                 step=100,
                 value=st.session_state.cost_v2_coverage.get("medicaid_coverage", 0),
                 help="How much does Medicaid pay toward your care?",
-                key="medicaid_amount"
+                key="medicaid_amount",
+                label_visibility="collapsed"
             )
     
     st.markdown("---")
@@ -207,6 +213,7 @@ def render():
     # Other Coverage
     st.markdown("## 💳 Other Coverage")
     
+    st.markdown("**Other Insurance or Assistance** ($/month)")
     other_coverage = st.number_input(
         "Other insurance or assistance ($/month)",
         min_value=0,
@@ -214,7 +221,8 @@ def render():
         step=100,
         value=st.session_state.cost_v2_coverage.get("other_coverage", 0),
         help="Private insurance, family assistance, etc.",
-        key="other_coverage"
+        key="other_coverage",
+        label_visibility="collapsed"
     )
     
     st.markdown("---")
@@ -288,14 +296,19 @@ def render():
     st.markdown("---")
     
     # Navigation
-    col1, col2 = st.columns([1, 2])
+    col1, col2, col3 = st.columns([1, 1, 2])
     
     with col1:
-        if st.button("← Back to Hub", key="coverage_back"):
+        if st.button("🏠 Back to Hub", key="coverage_hub"):
+            from core.nav import route_to
+            route_to("hub_concierge")
+    
+    with col2:
+        if st.button("← Back to Modules", key="coverage_back"):
             st.session_state.cost_v2_step = "modules"
             st.rerun()
     
-    with col2:
+    with col3:
         if st.button("Save & Continue →", type="primary", use_container_width=True, key="coverage_save"):
             # Save data
             data = {

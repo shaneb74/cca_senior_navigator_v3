@@ -68,13 +68,15 @@ def render():
     col1, col2 = st.columns([2, 1])
     
     with col1:
+        st.markdown("**ZIP Code** (for regional cost adjustment)")
         zip_code = st.text_input(
             "ZIP Code",
             value=st.session_state.cost_v2_monthly_costs.get("zip_code", ""),
             max_chars=5,
             placeholder="90210",
             help="Enter ZIP code for regional cost adjustment",
-            key="monthly_zip"
+            key="monthly_zip",
+            label_visibility="collapsed"
         )
     
     # Calculate regional multiplier
@@ -101,6 +103,7 @@ def render():
     if tier == "in_home":
         st.markdown("## ⏰ Care Hours")
         
+        st.markdown("**Weekly Care Hours** (0-168 hours)")
         care_hours = st.slider(
             "Weekly Care Hours",
             min_value=0,
@@ -108,7 +111,8 @@ def render():
             value=st.session_state.cost_v2_monthly_costs.get("care_hours_per_week", 20),
             step=1,
             help="Number of hours of professional care per week",
-            key="care_hours"
+            key="care_hours",
+            label_visibility="collapsed"
         )
         
         hourly_rate = 25 * regional.multiplier
@@ -194,14 +198,19 @@ def render():
     st.markdown("---")
     
     # Navigation
-    col1, col2 = st.columns([1, 2])
+    col1, col2, col3 = st.columns([1, 1, 2])
     
     with col1:
-        if st.button("← Back to Hub", key="monthly_back"):
+        if st.button("🏠 Back to Hub", key="monthly_hub"):
+            from core.nav import route_to
+            route_to("hub_concierge")
+    
+    with col2:
+        if st.button("← Back to Modules", key="monthly_back"):
             st.session_state.cost_v2_step = "modules"
             st.rerun()
     
-    with col2:
+    with col3:
         if st.button("Save & Continue →", type="primary", use_container_width=True, key="monthly_save"):
             # Save data
             data = {
