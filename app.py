@@ -69,6 +69,22 @@ ensure_session()
 _cleanup_legacy_gcp_state()
 
 # ====================================================================
+# DEV MODE & FLAG VALIDATION
+# ====================================================================
+
+# Enable dev mode based on URL query param (?dev=true)
+if "dev" in st.query_params and st.query_params["dev"].lower() in ("true", "1", "yes"):
+    st.session_state["dev_mode"] = True
+    
+    # Run flag validation on first load in dev mode
+    if "flag_validation_run" not in st.session_state:
+        from core.validators import check_flags_at_startup
+        check_flags_at_startup(verbose=True)  # Print validation summary to console
+        st.session_state["flag_validation_run"] = True
+else:
+    st.session_state["dev_mode"] = False
+
+# ====================================================================
 # SESSION PERSISTENCE - Load state from disk
 # ====================================================================
 

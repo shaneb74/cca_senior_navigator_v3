@@ -1,31 +1,46 @@
 """
-Flag definitions for GCP v4 care recommendation module.
+Flag metadata for GCP v4 care recommendation module.
 
-Flags represent risk factors or support needs that route to specific resources.
-Each flag includes metadata for rendering in MCIP panels and action cards.
+IMPORTANT: This module does NOT define flags. It only provides display metadata
+for flags that are centrally defined in core/flags.py FLAG_REGISTRY.
+
+The central FLAG_REGISTRY is the single source of truth for flag IDs.
+This module adds UI-specific metadata (labels, descriptions, CTAs) for display.
 """
 
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 
-FLAGS_SCHEMA = {
-    "falls_risk": {
-        "id": "falls_risk",
-        "label": "High Fall Risk",
-        "description": "2+ falls in the past year or significant mobility challenges requiring safety interventions",
+# Display metadata for flags (UI layer only)
+# These IDs must match core/flags.py FLAG_REGISTRY
+# This is NOT where flags are created - it's where we define how to display them
+FLAG_DISPLAY_METADATA = {
+    # COGNITIVE FLAGS
+    "mild_cognitive_decline": {
+        "label": "Mild Memory Changes",
+        "description": "Occasional forgetfulness that may benefit from monitoring",
+        "tone": "info",
+        "priority": 3,
+        "cta": {
+            "label": "Learn About Memory Support",
+            "route": "learning",
+            "filter": "memory_care"
+        }
+    },
+    "moderate_cognitive_decline": {
+        "label": "Moderate Memory Concerns",
+        "description": "Noticeable memory or thinking difficulties requiring support",
         "tone": "warning",
         "priority": 1,
         "cta": {
-            "label": "See Fall Prevention Resources",
-            "route": "learning",
-            "filter": "fall_prevention"
+            "label": "Find Memory Care Resources",
+            "route": "partners",
+            "filter": "memory_care"
         }
     },
-    
-    "memory_support": {
-        "id": "memory_support",
-        "label": "Memory Care Needed",
-        "description": "Alzheimer's or dementia diagnosis requiring specialized memory care environment",
+    "severe_cognitive_risk": {
+        "label": "Severe Memory Impairment",
+        "description": "Alzheimer's, dementia, or severe cognitive issues requiring specialized care",
         "tone": "critical",
         "priority": 0,
         "cta": {
@@ -35,49 +50,69 @@ FLAGS_SCHEMA = {
         }
     },
     
-    "behavioral_concerns": {
-        "id": "behavioral_concerns",
-        "label": "Behavioral Support Required",
-        "description": "Wandering, aggression, or other behaviors requiring specialized behavioral care",
-        "tone": "critical",
-        "priority": 0,
-        "cta": {
-            "label": "Find Specialized Facilities",
-            "route": "partners",
-            "filter": "behavioral_support"
-        }
-    },
-    
-    "medication_management": {
-        "id": "medication_management",
-        "label": "Medication Management Needed",
-        "description": "Complex medication regimen requiring professional oversight and administration",
+    # FALL & SAFETY FLAGS
+    "moderate_safety_concern": {
+        "label": "Safety Monitoring Needed",
+        "description": "One fall or safety concerns that warrant attention",
         "tone": "warning",
         "priority": 2,
         "cta": {
-            "label": "Learn About Med Management",
+            "label": "See Safety Resources",
             "route": "learning",
-            "filter": "medication"
+            "filter": "safety"
+        }
+    },
+    "high_safety_concern": {
+        "label": "High Safety Risk",
+        "description": "Multiple falls or significant safety risks requiring intervention",
+        "tone": "critical",
+        "priority": 1,
+        "cta": {
+            "label": "Get Fall Prevention Help",
+            "route": "learning",
+            "filter": "fall_prevention"
+        }
+    },
+    "falls_multiple": {
+        "label": "Multiple Falls",
+        "description": "Multiple falls in the past year requiring immediate safety measures",
+        "tone": "critical",
+        "priority": 0,
+        "cta": {
+            "label": "Find Fall Prevention Services",
+            "route": "partners",
+            "filter": "fall_prevention"
         }
     },
     
-    "isolation_risk": {
-        "id": "isolation_risk",
-        "label": "Social Isolation Risk",
-        "description": "Living alone with limited social interaction, increasing health risks",
+    # MOBILITY FLAGS
+    "moderate_mobility": {
+        "label": "Mobility Assistance Needed",
+        "description": "Uses cane or walker, may need accessibility modifications",
         "tone": "info",
         "priority": 3,
         "cta": {
-            "label": "Explore Social Programs",
+            "label": "Learn About Mobility Support",
             "route": "learning",
-            "filter": "social_engagement"
+            "filter": "mobility_support"
+        }
+    },
+    "high_mobility_dependence": {
+        "label": "Limited Mobility",
+        "description": "Wheelchair or bedbound status requiring accessible environment",
+        "tone": "warning",
+        "priority": 1,
+        "cta": {
+            "label": "Find Accessible Facilities",
+            "route": "partners",
+            "filter": "wheelchair_accessible"
         }
     },
     
-    "adl_support_high": {
-        "id": "adl_support_high",
-        "label": "Extensive ADL Support",
-        "description": "Needs help with multiple activities of daily living (bathing, dressing, eating, etc.)",
+    # ADL & DEPENDENCE FLAGS
+    "moderate_dependence": {
+        "label": "Regular Assistance Needed",
+        "description": "Needs regular help with daily activities",
         "tone": "warning",
         "priority": 2,
         "cta": {
@@ -86,25 +121,69 @@ FLAGS_SCHEMA = {
             "filter": "daily_living_support"
         }
     },
-    
-    "mobility_limited": {
-        "id": "mobility_limited",
-        "label": "Limited Mobility",
-        "description": "Wheelchair or bedbound status requiring accessible environment",
-        "tone": "warning",
-        "priority": 2,
+    "high_dependence": {
+        "label": "Extensive Care Needed",
+        "description": "Needs extensive full-time support with activities of daily living",
+        "tone": "critical",
+        "priority": 1,
         "cta": {
-            "label": "Find Accessible Facilities",
+            "label": "Find Full-Time Care",
             "route": "partners",
-            "filter": "wheelchair_accessible"
+            "filter": "assisted_living"
+        }
+    },
+    "veteran_aanda_risk": {
+        "label": "Veteran A&A Eligible",
+        "description": "May qualify for VA Aid & Attendance benefits",
+        "tone": "info",
+        "priority": 3,
+        "cta": {
+            "label": "Learn About VA Benefits",
+            "route": "learning",
+            "filter": "veteran_benefits"
         }
     },
     
-    "chronic_conditions": {
-        "id": "chronic_conditions",
-        "label": "Multiple Chronic Conditions",
-        "description": "Multiple health conditions requiring coordinated medical oversight",
+    # MENTAL HEALTH FLAGS
+    "moderate_risk": {
+        "label": "Emotional Support Helpful",
+        "description": "Emotional ups and downs that could benefit from support",
+        "tone": "info",
+        "priority": 3,
+        "cta": {
+            "label": "Explore Wellness Resources",
+            "route": "learning",
+            "filter": "mental_health"
+        }
+    },
+    "high_risk": {
+        "label": "Mental Health Concern",
+        "description": "Significant emotional distress requiring professional support",
         "tone": "warning",
+        "priority": 1,
+        "cta": {
+            "label": "Find Counseling Services",
+            "route": "partners",
+            "filter": "mental_health"
+        }
+    },
+    "mental_health_concern": {
+        "label": "Mental Health Support Needed",
+        "description": "Mental health issues requiring professional attention",
+        "tone": "warning",
+        "priority": 1,
+        "cta": {
+            "label": "Connect with Mental Health Professionals",
+            "route": "partners",
+            "filter": "mental_health"
+        }
+    },
+    
+    # HEALTH FLAGS
+    "chronic_present": {
+        "label": "Chronic Conditions",
+        "description": "One or more chronic health conditions requiring management",
+        "tone": "info",
         "priority": 2,
         "cta": {
             "label": "Learn About Health Management",
@@ -113,60 +192,108 @@ FLAGS_SCHEMA = {
         }
     },
     
-    "safety_concerns": {
-        "id": "safety_concerns",
-        "label": "Safety Concerns",
-        "description": "Living situation poses safety risks requiring environmental modifications or supervision",
+    # SUPPORT SYSTEM FLAGS
+    "no_support": {
+        "label": "No Caregiver Support",
+        "description": "No regular caregiver available, increasing care needs",
         "tone": "warning",
         "priority": 1,
         "cta": {
-            "label": "See Safety Resources",
-            "route": "learning",
-            "filter": "safety"
+            "label": "Find Caregiver Resources",
+            "route": "partners",
+            "filter": "caregiver_support"
         }
     },
-    
-    "caregiver_stress": {
-        "id": "caregiver_stress",
-        "label": "Caregiver Burden",
-        "description": "Primary caregiver experiencing high stress or burnout",
+    "limited_support": {
+        "label": "Limited Caregiver Availability",
+        "description": "Limited caregiver support may not be sufficient",
         "tone": "info",
-        "priority": 3,
+        "priority": 2,
         "cta": {
-            "label": "Caregiver Support Resources",
+            "label": "Explore Support Options",
             "route": "learning",
             "filter": "caregiver_support"
         }
-    }
+    },
+    
+    # GEOGRAPHIC FLAGS
+    "low_access": {
+        "label": "Limited Service Access",
+        "description": "Somewhat isolated location with limited healthcare access",
+        "tone": "info",
+        "priority": 3,
+        "cta": {
+            "label": "See Available Services",
+            "route": "partners",
+            "filter": "home_care"
+        }
+    },
+    "very_low_access": {
+        "label": "Very Limited Access",
+        "description": "Isolated location with minimal healthcare and service access",
+        "tone": "warning",
+        "priority": 2,
+        "cta": {
+            "label": "Find Remote Care Options",
+            "route": "partners",
+            "filter": "telehealth"
+        }
+    },
+    "geo_isolated": {
+        "label": "Geographic Isolation",
+        "description": "Remote location requiring special care arrangements",
+        "tone": "warning",
+        "priority": 1,
+        "cta": {
+            "label": "Explore Rural Care Solutions",
+            "route": "partners",
+            "filter": "rural_care"
+        }
+    },
 }
 
 
 def build_flag(flag_id: str) -> Dict[str, Any]:
-    """Build a flag object from schema.
+    """Build a flag object with display metadata.
+    
+    IMPORTANT: This does NOT create flags. It only adds display metadata
+    to flags that are already defined in core/flags.py FLAG_REGISTRY.
     
     Args:
-        flag_id: Flag identifier (e.g., "falls_risk")
+        flag_id: Flag identifier from FLAG_REGISTRY (e.g., "falls_multiple")
     
     Returns:
-        Flag dict with all metadata for rendering
+        Flag dict with display metadata for UI rendering
     """
-    return FLAGS_SCHEMA.get(flag_id, {
-        "id": flag_id,
-        "label": flag_id.replace("_", " ").title(),
-        "description": f"Flag: {flag_id}",
-        "tone": "info",
-        "priority": 99,
-        "cta": None
-    })
+    metadata = FLAG_DISPLAY_METADATA.get(flag_id)
+    
+    if metadata:
+        # Return flag with full metadata
+        return {
+            "id": flag_id,
+            **metadata
+        }
+    else:
+        # Fallback for flags without display metadata (minimal info)
+        # This should only happen if a flag is added to FLAG_REGISTRY
+        # but display metadata hasn't been added yet
+        return {
+            "id": flag_id,
+            "label": flag_id.replace("_", " ").title(),
+            "description": f"Care need: {flag_id}",
+            "tone": "info",
+            "priority": 99,
+            "cta": None
+        }
 
 
 def build_flags(flag_ids: list) -> list:
-    """Build multiple flag objects from IDs.
+    """Build multiple flag objects with display metadata.
     
     Args:
-        flag_ids: List of flag identifiers
+        flag_ids: List of flag identifiers from FLAG_REGISTRY
     
     Returns:
-        List of flag dicts
+        List of flag dicts with display metadata
     """
     return [build_flag(flag_id) for flag_id in flag_ids]

@@ -99,7 +99,7 @@ def render(ctx=None) -> None:
             hub_guide_block=None,
             hub_order=hub_order,
             cards=cards,
-            additional_services=additional,
+            additional_services=additional,  # Include in HTML for proper layout
         )
         
         full_html = (alert_html or "") + body_html
@@ -175,8 +175,23 @@ def _build_gcp_tile(hub_order: dict, ordered_index: dict, next_action: dict) -> 
     is_in_progress = not is_complete and prog > 0
     is_next = (next_action.get("route") == "gcp_v4")
     
+    # DEV MODE: Check for flag validation issues
+    dev_warning = None
+    if st.session_state.get("dev_mode", False):
+        from core.validators import validate_module_flags
+        module_path = "products/gcp_v4/modules/care_recommendation/module.json"
+        is_valid, flags_used, invalid_flags = validate_module_flags(module_path, "GCP Care Recommendation")
+        if not is_valid:
+            dev_warning = f"⚠️ DEV: Module uses {len(invalid_flags)} undefined flag(s): {', '.join(invalid_flags[:3])}"
+    
     # Build description
-    if is_complete:
+    if dev_warning:
+        # Show dev warning prominently
+        desc = None
+        desc_html = f'<span class="text-warning">{dev_warning}</span>'
+        status_text = None
+        progress = prog if is_in_progress else 0
+    elif is_complete:
         desc = None
         desc_html = f'<span class="tile-recommendation">{summary["summary_line"]}</span>'
         status_text = summary["summary_line"]
@@ -497,3 +512,5 @@ def _build_faq_tile() -> ProductTileHub:
         order=40,
         is_next_step=False,
     )
+
+

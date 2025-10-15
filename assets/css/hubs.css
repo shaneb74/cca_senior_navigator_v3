@@ -445,3 +445,49 @@ div[data-testid="stVerticalBlock"] > div:has(.navi-panel-v2) + div:has(.sn-hub.d
     grid-column:span 12;
   }
 }
+
+/* ===== NAVI RECOMMENDED SERVICE TILES ===== */
+/* Gradient overlay for Navi-recommended additional services (flag-triggered only) */
+.dashboard-additional__card.service-tile-personalized {
+  position: relative;
+  overflow: hidden;
+}
+
+.dashboard-additional__card.service-tile-personalized::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(37, 99, 235, 0.04) 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Ensure card content appears above gradient */
+.dashboard-additional__card > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Navi Recommended label (only for flag-triggered services) */
+.personalized-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+  margin-bottom: 4px;
+  background: rgba(59, 130, 246, 0.12);
+  color: #1e40af;
+}
+
+.personalized-label svg,
+.personalized-label .icon {
+  width: 14px;
+  height: 14px;
+}
