@@ -71,7 +71,7 @@ def render(module: Optional[str] = None) -> None:
                 st.query_params["page"] = "gcp"
                 st.rerun()
             
-            render_shell_end()
+            product_shell_end()
             return
     
     # Determine which module to render
@@ -90,7 +90,7 @@ def render(module: Optional[str] = None) -> None:
         # Render specific calculation module
         _render_sub_module(target_module)
     
-    render_shell_end()
+    product_shell_end()
 
 
 def _render_base_module() -> None:
