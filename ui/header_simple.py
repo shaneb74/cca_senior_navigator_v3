@@ -19,7 +19,8 @@ def render_header_simple(active_route: Optional[str] = None) -> None:
     Args:
         active_route: Current page route (e.g., 'welcome', 'hub_concierge')
     """
-    logo_url = img_src("static/images/logos/cca_logo.png")
+    # For now, use text-only brand - the full logo is too large for header
+    # logo_url = img_src("static/images/logos/cca_logo.png")
     
     # Define navigation items
     nav_items = [
@@ -80,7 +81,7 @@ def render_header_simple(active_route: Optional[str] = None) -> None:
         .sn-header__brand {
           display: flex;
           align-items: center;
-          gap: 12px;
+          gap: 0;
           text-decoration: none;
           color: var(--ink, #0f172a);
         }
@@ -92,10 +93,15 @@ def render_header_simple(active_route: Optional[str] = None) -> None:
         }
         
         .sn-header__brand-text {
-          font-size: 1.125rem;
+          font-size: 1.25rem;
           font-weight: 700;
           line-height: 1;
-          color: var(--ink, #0f172a);
+          color: #1e3a8a;
+          letter-spacing: -0.01em;
+        }
+        
+        .sn-header__brand-text span {
+          color: #2563eb;
         }
         
         /* Navigation links */
@@ -180,8 +186,7 @@ def render_header_simple(active_route: Optional[str] = None) -> None:
         <header class="sn-header">
           <div class="sn-header__inner">
             <a href="?page=welcome" class="sn-header__brand">
-              <img src="{logo_url}" alt="CCA Logo" class="sn-header__logo" />
-              <span class="sn-header__brand-text">Senior Navigator</span>
+              <span class="sn-header__brand-text">CONCIERGE CARE <span>SENIOR NAVIGATOR</span></span>
             </a>
             <nav class="sn-header__nav">
               {nav_html}
