@@ -20,6 +20,7 @@ from products.cost_planner.cost_estimate_v2 import (
     render_cost_breakdown,
 )
 from ui.product_shell import product_shell_start, product_shell_end
+from core.navi import render_navi_panel
 
 
 def render(module: Optional[str] = None) -> None:
@@ -33,6 +34,12 @@ def render(module: Optional[str] = None) -> None:
                 If None, checks query params for 'cost_module'
     """
     product_shell_start()
+    
+    # Render Navi panel for guidance
+    render_navi_panel(
+        location="product",
+        product_key="cost_planner"
+    )
     
     # Show mock authentication controls in sidebar (dev mode)
     auth.mock_login_button()

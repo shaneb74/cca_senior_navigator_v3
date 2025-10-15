@@ -38,6 +38,12 @@ def render():
     
     product_shell_start()
     
+    # Render Navi panel for guidance
+    render_navi_panel(
+        location="product",
+        product_key="cost_planner_v2"
+    )
+    
     # Initialize step state
     if "cost_v2_step" not in st.session_state:
         st.session_state.cost_v2_step = "intro"
