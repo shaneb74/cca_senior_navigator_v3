@@ -411,7 +411,7 @@ class MCIP:
         pfma_tile = _get_tile("pfma_v2", "pfma")
         
         # Complete - All done!
-        if "gcp" in completed and "cost_planner" in completed and "pfma" in completed:
+        if "gcp" in completed and "cost_planner" in completed and "pfma_v2" in completed:
             return {
                 "action": "🎉 Journey Complete!",
                 "reason": "You've completed your care plan, cost analysis, and scheduled your advisor appointment.",
@@ -421,7 +421,7 @@ class MCIP:
         
         # Nearly there - Just PFMA left
         if "gcp" in completed and "cost_planner" in completed:
-            if _tile_has_progress(pfma_tile) and "pfma" not in completed:
+            if _tile_has_progress(pfma_tile) and "pfma_v2" not in completed:
                 return {
                     "action": "📅 Resume Plan with My Advisor",
                     "reason": "Pick up where you left off to finish scheduling with your advisor.",
@@ -516,16 +516,32 @@ class MCIP:
         elif product_key in ["cost_planner", "cost_v2"]:
             profile = cls.get_financial_profile()
             if profile:
-                cost_str = f"${profile.estimated_monthly_cost:,.0f}/month"
-                runway_str = f"{profile.runway_months} month runway" if profile.runway_months > 0 else "Review needed"
+                # Get the detailed summary message from session state if available
+                financial_data = st.session_state.get("financial_assessment_complete", {})
+                timeline = financial_data.get("timeline", {})
+                summary_message = timeline.get("summary_message")
                 
-                return {
-                    "title": "Cost Planner",
-                    "status": "complete",
-                    "summary_line": f"✅ {cost_str} ({runway_str})",
-                    "icon": "💰",
-                    "route": "cost_v2"
-                }
+                if summary_message:
+                    # Use the detailed, user-friendly message
+                    return {
+                        "title": "Cost Planner",
+                        "status": "complete",
+                        "summary_line": f"✅ {summary_message}",
+                        "icon": "💰",
+                        "route": "cost_v2"
+                    }
+                else:
+                    # Fallback to old format
+                    cost_str = f"${profile.estimated_monthly_cost:,.0f}/month"
+                    runway_str = f"{profile.runway_months} month runway" if profile.runway_months > 0 else "Review needed"
+                    
+                    return {
+                        "title": "Cost Planner",
+                        "status": "complete",
+                        "summary_line": f"✅ {cost_str} ({runway_str})",
+                        "icon": "💰",
+                        "route": "cost_v2"
+                    }
             else:
                 # Check if GCP is complete
                 rec = cls.get_care_recommendation()

@@ -107,28 +107,34 @@ def _render_active_module():
         st.rerun()
         return
     
-    # Check if using dynamic renderer
-    from products.cost_planner_v2 import module_renderer
-    module_def = module_renderer.get_module_definition(module_key)
-    
-    if module_def:
-        # Use dynamic JSON-driven renderer
-        module_renderer.render_module(module_key)
-    else:
-        # Fall back to hardcoded modules
-        if module_key == "income_assets":
-            from products.cost_planner_v2.modules import income_assets
-            income_assets.render()
-        elif module_key == "monthly_costs":
-            from products.cost_planner_v2.modules import monthly_costs
-            monthly_costs.render()
-        elif module_key == "coverage":
-            from products.cost_planner_v2.modules import coverage
-            coverage.render()
+    # Import the specific module renderer based on key
+    try:
+        if module_key == "income":
+            from products.cost_planner_v2.modules import income
+            income.render()
+        elif module_key == "assets":
+            from products.cost_planner_v2.modules import assets
+            assets.render()
+        elif module_key == "va_benefits":
+            from products.cost_planner_v2.modules import va_benefits
+            va_benefits.render()
+        elif module_key == "health_insurance":
+            from products.cost_planner_v2.modules import health_insurance
+            health_insurance.render()
+        elif module_key == "life_insurance":
+            from products.cost_planner_v2.modules import life_insurance
+            life_insurance.render()
+        elif module_key == "medicaid_navigation":
+            from products.cost_planner_v2.modules import medicaid_navigation
+            medicaid_navigation.render()
         else:
             st.error(f"Unknown module: {module_key}")
             st.session_state.cost_v2_step = "modules"
             st.rerun()
+    except Exception as e:
+        st.error(f"Error loading module '{module_key}': {e}")
+        st.session_state.cost_v2_step = "modules"
+        st.rerun()
 
 
 def _render_expert_review_step():

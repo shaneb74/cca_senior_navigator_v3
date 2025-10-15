@@ -62,10 +62,10 @@ def _render_advisor_handoff():
     
     with col1:
         if st.button("📅 Schedule Advisor Meeting Now", type="primary", use_container_width=True):
-            # Route to PFMA (Plan with My Advisor)
+            # Route to PFMA V2 (Plan with My Advisor)
             from core.nav import route_to
             st.session_state.cost_planner_v2_complete = True
-            route_to("pfma")
+            route_to("pfma_v2")
     
     with col2:
         if st.button("Maybe Later", use_container_width=True):
@@ -193,7 +193,7 @@ def _render_next_actions():
         if st.button("Schedule Meeting", key="schedule_pfma", use_container_width=True, type="primary"):
             from core.nav import route_to
             st.session_state.cost_planner_v2_complete = True
-            route_to("pfma")
+            route_to("pfma_v2")
     
     with col2:
         st.markdown("#### 📄 Download Plan")

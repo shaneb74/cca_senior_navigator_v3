@@ -321,9 +321,19 @@ class NaviOrchestrator:
             boost.append(f"✅ Care Plan: {tier} ({confidence}% confidence)")
         
         if ctx.financial_profile:
-            monthly = ctx.financial_profile.estimated_monthly_cost
-            runway = ctx.financial_profile.runway_months
-            boost.append(f"✅ Cost Estimate: ${monthly:,.0f}/month ({runway} month runway)")
+            # Get the detailed summary message from session state if available
+            financial_data = st.session_state.get("financial_assessment_complete", {})
+            timeline = financial_data.get("timeline", {})
+            summary_message = timeline.get("summary_message")
+            
+            if summary_message:
+                # Use the user-friendly message
+                boost.append(f"✅ {summary_message}")
+            else:
+                # Fallback to technical format
+                monthly = ctx.financial_profile.estimated_monthly_cost
+                runway = ctx.financial_profile.runway_months
+                boost.append(f"✅ Cost Estimate: ${monthly:,.0f}/month ({runway} month runway)")
         
         if ctx.advisor_appointment:
             advisor_type = getattr(ctx.advisor_appointment, 'advisor_type', 'Financial Advisor')
