@@ -3,8 +3,9 @@ import streamlit as st
 from core.mcip import MCIP
 from core.nav import route_to
 from core.state import is_authenticated
-from layout import render_page
 from pages.welcome import render_welcome_card
+from ui.header_simple import render_header_simple
+from ui.footer_simple import render_footer_simple
 
 
 def _page_content(ctx=None):
@@ -31,4 +32,7 @@ def _page_content(ctx=None):
 
 
 def render(ctx=None):
-    render_page(_page_content, ctx, active_route="self")
+    # Render with simple header/footer
+    render_header_simple(active_route="self")
+    _page_content(ctx)
+    render_footer_simple()

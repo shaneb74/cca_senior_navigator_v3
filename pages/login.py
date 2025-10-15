@@ -5,7 +5,6 @@ import streamlit as st
 from core.state import authenticate_user
 from core.nav import route_to
 from core.ui import img_src
-from layout import render_page
 
 
 def render():
@@ -109,7 +108,8 @@ def render():
         """
     )
     
-    render_page(body_html=body_html, active_route="login", show_header=False, show_footer=False)
+    # Login page has its own custom layout, no header/footer
+    st.markdown(body_html, unsafe_allow_html=True)
     
     # Add Streamlit login button below
     st.markdown("---")
