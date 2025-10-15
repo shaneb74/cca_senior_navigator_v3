@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import html
 from typing import Dict
 
 import streamlit as st
@@ -172,7 +173,7 @@ def render() -> None:
             chips=None,
             hub_guide_block=None,  # Navi replaces hub guide/callout
             cards=dashboard_data.get("cards", []),
-            additional_services=dashboard_data.get("additional_services"),
+            additional_services=dashboard_data.get("additional_services"),  # Include in HTML
         )
         st.markdown(body_html, unsafe_allow_html=True)
     

@@ -10,6 +10,7 @@ import streamlit as st
 
 from core.events import log_event
 from core.nav import PRODUCTS
+from core.session_store import safe_rerun
 
 from . import components as components
 from .layout import actions, bottom_summary, header
@@ -121,7 +122,7 @@ def run_module(config: ModuleConfig) -> Dict[str, Any]:
         tile_state = tiles.setdefault(config.product, {})
         tile_state["last_step"] = prev_index
         
-        st.rerun()
+        safe_rerun()
     
     # Handle Back to Hub
     if back_to_hub_clicked:

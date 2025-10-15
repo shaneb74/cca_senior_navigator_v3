@@ -397,6 +397,25 @@ def render_navi_panel(
         next_action = ctx.next_action
         reason = next_action.get('reason', 'This will help us find the right support for your situation.')
         
+        # Build incomplete GCP alert if applicable
+        alert_html = ""
+        tiles = st.session_state.get("tiles", {})
+        gcp_tile = tiles.get("gcp_v4") or tiles.get("gcp", {})
+        gcp_progress = float(gcp_tile.get("progress", 0))
+        
+        # Show alert if GCP is started but not complete (progress > 0 but < 100)
+        if 0 < gcp_progress < 100:
+            alert_html = f"""
+            <div style="background: #fef3c7; border: 1px solid #fde68a; border-radius: 12px; padding: 16px; margin-bottom: 20px; display: flex; align-items: start; gap: 12px;">
+                <span style="font-size: 20px;">⚠️</span>
+                <div style="flex: 1;">
+                    <div style="font-weight: 700; color: #78350f; margin-bottom: 4px;">Your Care Plan is {int(gcp_progress)}% complete.</div>
+                    <div style="font-size: 14px; color: #92400e;">Finish it to unlock Cost Planner and personalized recommendations.</div>
+                    <a href="?route=gcp_v4" style="display: inline-flex; align-items: center; justify-content: center; height: 36px; padding: 0 16px; margin-top: 8px; border-radius: 8px; background: #fbbf24; color: #78350f; font-weight: 700; font-size: 14px; text-decoration: none; border: 1px solid #f59e0b;">Resume Care Plan</a>
+                </div>
+            </div>
+            """
+        
         # Build encouragement banner
         encouragement_icons = {
             'getting_started': '🚀',
@@ -449,8 +468,8 @@ def render_navi_panel(
             })
         
         # Build primary action
-        primary_label = next_action.get('label', 'Continue')
-        primary_route = next_action.get('action_key', 'hub_concierge')
+        primary_label = next_action.get('action', 'Continue')  # MCIP returns 'action', not 'label'
+        primary_route = next_action.get('route', 'hub_concierge')  # MCIP returns 'route', not 'action_key'
         primary_action = {
             'label': primary_label,
             'route': primary_route
@@ -473,7 +492,8 @@ def render_navi_panel(
             context_chips=context_chips,
             primary_action=primary_action,
             secondary_action=secondary_action,
-            progress={'current': completed_count, 'total': 3}
+            progress={'current': completed_count, 'total': 3},
+            alert_html=alert_html  # Pass alert to panel renderer
         )
     
     elif location == "product":

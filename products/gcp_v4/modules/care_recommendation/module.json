@@ -140,8 +140,8 @@
           "options": [
             { "label": "None", "value": "none", "score": 0 },
             { "label": "Simple – a few meds, easy to manage", "value": "simple", "score": 1 },
-            { "label": "Moderate – daily meds, some complexity", "value": "moderate", "score": 2 },
-            { "label": "Complex – many meds or caregiver-managed", "value": "complex", "score": 3 }
+            { "label": "Moderate – daily meds, some complexity", "value": "moderate", "score": 2, "flags": ["moderate_dependence"] },
+            { "label": "Complex – many meds or caregiver-managed", "value": "complex", "score": 3, "flags": ["moderate_dependence", "chronic_present"] }
           ],
           "ui": { "widget": "chip", "orientation": "vertical" }
         },
