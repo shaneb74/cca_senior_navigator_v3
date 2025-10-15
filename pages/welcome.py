@@ -10,7 +10,9 @@ from core.mcip import MCIP
 from core.nav import route_to
 from core.state import is_authenticated, is_professional, switch_to_member, switch_to_professional
 from core.ui import img_src
-from layout import render_page, static_url
+from layout import static_url  # Keep static_url for now
+from ui.header_simple import render_header_simple
+from ui.footer_simple import render_footer_simple
 
 _CSS_FLAG = "_welcome_css_main"
 
@@ -588,14 +590,18 @@ def render(ctx: Optional[dict] = None) -> None:
         primary_route = next_action.get("route", "hub_concierge")
         show_secondary = False
     
-    render_page(
-        body_html=_welcome_body(
-            primary_label=primary_label,
-            primary_route=primary_route,
-            show_secondary=show_secondary,
-        ),
-        active_route="welcome"
+    # Render with simple header/footer (no layout.py wrapper)
+    render_header_simple(active_route="welcome")
+    
+    # Render body HTML directly
+    body_html = _welcome_body(
+        primary_label=primary_label,
+        primary_route=primary_route,
+        show_secondary=show_secondary,
     )
+    st.markdown(body_html, unsafe_allow_html=True)
+    
+    render_footer_simple()
 
 
 __all__ = ["render", "render_welcome_card"]
