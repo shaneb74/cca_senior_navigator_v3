@@ -172,7 +172,7 @@ def page_partners() -> None:
         st.markdown(body_html, unsafe_allow_html=True)
 
     # Render with simple header/footer
-    render_header_simple(active_route="hub_trusted_partners")
+    render_header_simple(active_route="hub_trusted")
     render_content()
     render_footer_simple()
 

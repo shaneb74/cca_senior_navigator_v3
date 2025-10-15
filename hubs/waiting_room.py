@@ -102,6 +102,6 @@ def render(ctx=None) -> None:
         st.markdown(body_html, unsafe_allow_html=True)
 
     # Render with simple header/footer
-    render_header_simple(active_route="hub_waiting_room")
+    render_header_simple(active_route="hub_waiting")
     render_content()
     render_footer_simple()

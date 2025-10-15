@@ -28,13 +28,13 @@ def render_header_simple(active_route: Optional[str] = None) -> None:
     else:
         print(f"[HEADER DEBUG] Logo URL length: {len(logo_url)} chars", file=sys.stderr)
     
-    # Define navigation items
+    # Define navigation items (use exact keys from nav.json)
     nav_items = [
         {"label": "Welcome", "route": "welcome"},
         {"label": "Concierge", "route": "hub_concierge"},
-        {"label": "Waiting Room", "route": "hub_waiting_room"},
+        {"label": "Waiting Room", "route": "hub_waiting"},
         {"label": "Learning", "route": "hub_learning"},
-        {"label": "Trusted Partners", "route": "hub_trusted_partners"},
+        {"label": "Trusted Partners", "route": "hub_trusted"},
         {"label": "Professional", "route": "hub_professional"},
         {"label": "About Us", "route": "about"},
     ]
