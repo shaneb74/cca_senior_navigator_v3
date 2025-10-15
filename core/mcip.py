@@ -108,6 +108,7 @@ class MCIP:
         # This ensures that completion state persists even if mcip state exists
         # but has stale/incomplete data (e.g., after navigating between pages)
         if "mcip_contracts" in st.session_state:
+            import copy
             contracts = st.session_state["mcip_contracts"]
             if "care_recommendation" in contracts and contracts["care_recommendation"]:
                 st.session_state[cls.STATE_KEY]["care_recommendation"] = contracts["care_recommendation"]
@@ -117,8 +118,9 @@ class MCIP:
                 st.session_state[cls.STATE_KEY]["advisor_appointment"] = contracts["advisor_appointment"]
             if "journey" in contracts and contracts["journey"]:
                 # CRITICAL: Always restore journey state from contracts
-                # This preserves completed_products and unlocked_products across page navigations
-                st.session_state[cls.STATE_KEY]["journey"] = contracts["journey"]
+                # Use deepcopy to avoid shared references between mcip and mcip_contracts
+                # This ensures modifying mcip["journey"] doesn't corrupt mcip_contracts["journey"]
+                st.session_state[cls.STATE_KEY]["journey"] = copy.deepcopy(contracts["journey"])
     
     # =========================================================================
     # CARE RECOMMENDATION (Published by GCP)
