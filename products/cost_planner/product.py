@@ -19,7 +19,7 @@ from products.cost_planner.cost_estimate_v2 import (
     calculate_cost_estimate,
     render_cost_breakdown,
 )
-from layout import render_shell_end, render_shell_start
+from ui.product_shell import product_shell_start, product_shell_end
 
 
 def render(module: Optional[str] = None) -> None:
@@ -32,7 +32,7 @@ def render(module: Optional[str] = None) -> None:
         module: Optional module key to render directly
                 If None, checks query params for 'cost_module'
     """
-    render_shell_start("", active_route="cost")
+    product_shell_start()
     
     # Show mock authentication controls in sidebar (dev mode)
     auth.mock_login_button()
