@@ -27,6 +27,7 @@ def render_header_simple(active_route: Optional[str] = None) -> None:
         {"label": "Concierge", "route": "hub_concierge"},
         {"label": "Waiting Room", "route": "hub_waiting"},
         {"label": "Learning", "route": "hub_learning"},
+        {"label": "Resources", "route": "hub_resources"},
         {"label": "Trusted Partners", "route": "hub_trusted"},
         {"label": "Professional", "route": "hub_professional"},
         {"label": "About Us", "route": "about"},
