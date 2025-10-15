@@ -10,7 +10,8 @@ from core.base_hub import render_dashboard_body
 from core.hub_guide import compute_hub_guide, partners_intel_from_state
 from core.navi import render_navi_panel
 from core.product_tile import ProductTileHub, tile_requirements_satisfied
-from layout import render_page
+from ui.header_simple import render_header_simple
+from ui.footer_simple import render_footer_simple
 
 DATA_DIR = Path(__file__).resolve().parents[1] / "config"
 PARTNERS_FILE = DATA_DIR / "partners.json"
@@ -170,7 +171,10 @@ def page_partners() -> None:
         )
         st.markdown(body_html, unsafe_allow_html=True)
 
-    render_page(content=render_content, active_route="hub_trusted")
+    # Render with simple header/footer
+    render_header_simple(active_route="hub_trusted_partners")
+    render_content()
+    render_footer_simple()
 
 
 render = page_partners
