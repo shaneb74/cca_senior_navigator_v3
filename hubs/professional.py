@@ -152,7 +152,7 @@ def render(ctx=None) -> None:
             ],
         },
         {
-            "title": "Health Assessment Access",
+            "title": "Recidivism Assessment / Solutions",
             "subtitle": "View assessments and flags",
             "badges": [],
             "description": "Open assessment summaries and recidivism-risk flags for your clients.",
