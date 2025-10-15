@@ -1,7 +1,6 @@
 """Simple header component - no layout.py, no session state manipulation."""
 from __future__ import annotations
 
-import sys
 from textwrap import dedent
 from typing import Optional
 
@@ -21,12 +20,6 @@ def render_header_simple(active_route: Optional[str] = None) -> None:
         active_route: Current page route (e.g., 'welcome', 'hub_concierge')
     """
     logo_url = img_src("static/images/logos/cca_logo.png")
-    
-    # Debug: Print logo URL to terminal
-    if not logo_url:
-        print("[HEADER DEBUG] Logo URL is empty!", file=sys.stderr)
-    else:
-        print(f"[HEADER DEBUG] Logo URL length: {len(logo_url)} chars", file=sys.stderr)
     
     # Define navigation items (use exact keys from nav.json)
     nav_items = [

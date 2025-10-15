@@ -116,12 +116,7 @@ def _render_base_module() -> None:
     state_key = config.state_key
     step_index = int(st.session_state.get(f"{state_key}._step", 0))
     
-    # DEBUG: Show current step info
-    st.sidebar.write(f"🔍 Debug: step_index={step_index}")
-    if step_index < len(config.steps):
-        st.sidebar.write(f"🔍 Debug: step.id={config.steps[step_index].id}")
-    
-    # DEBUG: Reset button if on wrong step
+    # Reset button if on wrong step
     if step_index >= len(config.steps):
         st.sidebar.error(f"⚠️ Step index {step_index} exceeds config steps ({len(config.steps)})")
         if st.sidebar.button("🔄 Reset to Intro"):
@@ -133,27 +128,22 @@ def _render_base_module() -> None:
         step = config.steps[step_index]
         
         if step.id == "quick_estimate":
-            st.sidebar.success("✅ Using CUSTOM rendering for quick_estimate")
             # Custom rendering for quick estimate with dynamic button behavior
             _render_quick_estimate_custom(config, step, step_index)
             return
         elif step.id == "auth_gate":
-            st.sidebar.success("✅ Using CUSTOM rendering for auth_gate")
             # Custom rendering for auth gate
             _render_auth_gate_custom(config, step, step_index)
             return
         elif step.id == "profile_flags":
-            st.sidebar.success("✅ Using CUSTOM rendering for profile_flags")
             # Custom rendering for profile flags to avoid the phantom page
             _render_profile_flags_custom(config, step, step_index)
             return
         elif step.id == "module_dashboard":
-            st.sidebar.success("✅ Using CUSTOM rendering for module_dashboard")
             # Custom rendering for module dashboard
             _render_module_dashboard_custom(config, step, step_index)
             return
         elif step.id == "intro":
-            st.sidebar.success("✅ Using STANDARD rendering for intro")
             # Intro step uses standard module engine (just shows text + continue button)
             context = run_module(config)
             return
@@ -307,16 +297,8 @@ def _render_quick_estimate_custom(config, step, step_index: int) -> None:
             is_auth = auth.is_authenticated()
             target_step = 3 if is_auth else 2
             
-            # DEBUG: Log what's happening
-            st.sidebar.write(f"🔍 Button clicked! Auth={is_auth}, target_step={target_step}")
-            
             # Set the step
             st.session_state[f"{state_key}._step"] = target_step
-            
-            # DEBUG: Verify it was set
-            actual_step = st.session_state.get(f"{state_key}._step", "NOT SET")
-            st.sidebar.write(f"🔍 Step set to: {actual_step}")
-            
             st.rerun()
     
     # Save & Continue Later button
@@ -508,10 +490,6 @@ def _render_profile_flags_custom(config, step, step_index: int):
         if state_key not in st.session_state:
             st.session_state[state_key] = {}
         st.session_state[state_key]["profile"] = new_profile
-        
-        # Debug logging
-        st.sidebar.success(f"✅ Profile saved: {new_profile}")
-        st.sidebar.info(f"🔄 Advancing from step {step_index} to {step_index + 1}")
         
         # Advance to next step
         st.session_state[f"{state_key}._step"] = step_index + 1
