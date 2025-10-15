@@ -90,19 +90,6 @@ class MCIP:
         if cls.STATE_KEY not in st.session_state:
             # Fresh initialization
             st.session_state[cls.STATE_KEY] = default_state
-            
-            # Restore contracts from persistence if available
-            if "mcip_contracts" in st.session_state:
-                contracts = st.session_state["mcip_contracts"]
-                if "care_recommendation" in contracts:
-                    st.session_state[cls.STATE_KEY]["care_recommendation"] = contracts["care_recommendation"]
-                if "financial_profile" in contracts:
-                    st.session_state[cls.STATE_KEY]["financial_profile"] = contracts["financial_profile"]
-                if "advisor_appointment" in contracts:
-                    st.session_state[cls.STATE_KEY]["advisor_appointment"] = contracts["advisor_appointment"]
-                if "journey" in contracts:
-                    # Restore journey state (unlocked products, completed products)
-                    st.session_state[cls.STATE_KEY]["journey"] = contracts["journey"]
         else:
             # Merge with existing state (fill in missing keys)
             existing = st.session_state[cls.STATE_KEY]
@@ -116,6 +103,22 @@ class MCIP:
                     for journey_key, journey_default in default_state["journey"].items():
                         if journey_key not in existing[key]:
                             existing[key][journey_key] = journey_default
+        
+        # CRITICAL FIX: Always restore from mcip_contracts if available
+        # This ensures that completion state persists even if mcip state exists
+        # but has stale/incomplete data (e.g., after navigating between pages)
+        if "mcip_contracts" in st.session_state:
+            contracts = st.session_state["mcip_contracts"]
+            if "care_recommendation" in contracts and contracts["care_recommendation"]:
+                st.session_state[cls.STATE_KEY]["care_recommendation"] = contracts["care_recommendation"]
+            if "financial_profile" in contracts and contracts["financial_profile"]:
+                st.session_state[cls.STATE_KEY]["financial_profile"] = contracts["financial_profile"]
+            if "advisor_appointment" in contracts and contracts["advisor_appointment"]:
+                st.session_state[cls.STATE_KEY]["advisor_appointment"] = contracts["advisor_appointment"]
+            if "journey" in contracts and contracts["journey"]:
+                # CRITICAL: Always restore journey state from contracts
+                # This preserves completed_products and unlocked_products across page navigations
+                st.session_state[cls.STATE_KEY]["journey"] = contracts["journey"]
     
     # =========================================================================
     # CARE RECOMMENDATION (Published by GCP)
