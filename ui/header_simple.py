@@ -93,15 +93,11 @@ def render_header_simple(active_route: Optional[str] = None) -> None:
         }
         
         .sn-header__brand-text {
-          font-size: 1.25rem;
+          font-size: 1.125rem;
           font-weight: 700;
-          line-height: 1;
+          line-height: 1.2;
           color: #1e3a8a;
           letter-spacing: -0.01em;
-        }
-        
-        .sn-header__brand-text span {
-          color: #2563eb;
         }
         
         /* Navigation links */
@@ -138,15 +134,15 @@ def render_header_simple(active_route: Optional[str] = None) -> None:
         
         .nav-link--login {
           margin-left: 8px;
-          background: linear-gradient(90deg, #2563eb, #3b82f6);
-          color: #ffffff;
+          background: linear-gradient(90deg, #2563eb, #3b82f6) !important;
+          color: #ffffff !important;
           font-weight: 700;
           border: none;
         }
         
         .nav-link--login:hover {
-          background: linear-gradient(90deg, #1d4ed8, #2563eb);
-          color: #ffffff;
+          background: linear-gradient(90deg, #1d4ed8, #2563eb) !important;
+          color: #ffffff !important;
         }
         
         /* Mobile responsive */
@@ -186,7 +182,7 @@ def render_header_simple(active_route: Optional[str] = None) -> None:
         <header class="sn-header">
           <div class="sn-header__inner">
             <a href="?page=welcome" class="sn-header__brand">
-              <span class="sn-header__brand-text">CONCIERGE CARE <span>SENIOR NAVIGATOR</span></span>
+              <span class="sn-header__brand-text">Senior Navigator</span>
             </a>
             <nav class="sn-header__nav">
               {nav_html}
