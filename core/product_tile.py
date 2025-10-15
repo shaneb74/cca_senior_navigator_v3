@@ -59,11 +59,13 @@ def _get_progress(state: Mapping[str, Any], key: str) -> float:
 def _evaluate_requirement(req: str, state: Mapping[str, Any]) -> bool:
     """
     Supported patterns:
-      'gcp:complete'           -> progress == 100
+      'gcp:complete'           -> MCIP.is_product_complete("gcp") OR progress == 100
       'cost:>=50'              -> progress >= 50
-      'pfma:scheduled'         -> state['pfma']['appointment'] == 'scheduled'
+      'pfma:scheduled'         -> MCIP appointment OR state['pfma']['appointment']
       'care_tier:in_home|al|mc|mc_ha'
       'auth:required'          -> state['auth']['is_authenticated'] is True
+    
+    NOTE: Checks MCIP first for modern products, falls back to legacy session state.
     """
     if ":" not in req:
         return False
@@ -72,17 +74,55 @@ def _evaluate_requirement(req: str, state: Mapping[str, Any]) -> bool:
     key = key.strip()
     spec = spec.strip()
 
-    if key in ("gcp", "cost", "pfma"):
-        prog = _get_progress(state, key)
+    # Check product completion/progress
+    if key in ("gcp", "cost", "pfma", "cost_planner", "pfma_v2", "cost_v2"):
+        # Map keys to MCIP product IDs
+        product_map = {
+            "gcp": "gcp",
+            "cost": "cost_planner",
+            "cost_planner": "cost_planner",
+            "cost_v2": "cost_planner",
+            "pfma": "pfma_v2",
+            "pfma_v2": "pfma_v2"
+        }
+        
         if spec == "complete":
-            return prog >= 100
-        if spec.startswith(">="):
+            # FIRST: Check MCIP (authoritative source for modern products)
             try:
-                return prog >= float(spec[2:].strip())
+                from core.mcip import MCIP
+                product_id = product_map.get(key, key)
+                if MCIP.is_product_complete(product_id):
+                    return True
+            except Exception:
+                pass  # Fall back to legacy check
+            
+            # FALLBACK: Check legacy session state (for old products or during migration)
+            prog = _get_progress(state, key)
+            return prog >= 100
+        
+        if spec.startswith(">="):
+            # Partial progress checks (MCIP doesn't track these, use legacy state)
+            prog = _get_progress(state, key)
+            try:
+                threshold = float(spec[2:].strip())
+                return prog >= threshold
             except Exception:
                 return False
+        
         if spec == "scheduled":
+            # FIRST: Check MCIP appointment
+            if key in ("pfma", "pfma_v2"):
+                try:
+                    from core.mcip import MCIP
+                    appt = MCIP.get_advisor_appointment()
+                    if appt and appt.scheduled:
+                        return True
+                except Exception:
+                    pass
+            
+            # FALLBACK: Check legacy session state
             return state.get(key, {}).get("appointment") == "scheduled"
+        
         return False
 
     if key == "care_tier":
