@@ -1,6 +1,8 @@
 """Simple header component - no layout.py, no session state manipulation."""
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from textwrap import dedent
 from typing import Optional
 
@@ -21,8 +23,20 @@ def render_header_simple(active_route: Optional[str] = None) -> None:
     """
     logo_url = img_src("static/images/logos/cca_logo.png")
     
+    # Load UI configuration for nav visibility
+    ui_config_path = Path(__file__).parent.parent / "config" / "ui_config.json"
+    nav_visibility = {}
+    try:
+        with open(ui_config_path, "r", encoding="utf-8") as f:
+            ui_config = json.load(f)
+            nav_visibility = ui_config.get("header", {}).get("nav_items", {})
+    except (FileNotFoundError, json.JSONDecodeError):
+        # If config doesn't exist or is invalid, show all items by default
+        pass
+    
     # Define navigation items (use exact keys from nav.json)
-    nav_items = [
+    # Visibility controlled by config/ui_config.json
+    all_nav_items = [
         {"label": "Welcome", "route": "welcome"},
         {"label": "Concierge", "route": "hub_concierge"},
         {"label": "Waiting Room", "route": "hub_waiting"},
@@ -31,6 +45,12 @@ def render_header_simple(active_route: Optional[str] = None) -> None:
         {"label": "Trusted Partners", "route": "hub_trusted"},
         {"label": "Professional", "route": "hub_professional"},
         {"label": "About Us", "route": "about"},
+    ]
+    
+    # Filter based on visibility config (default to visible if not specified)
+    nav_items = [
+        item for item in all_nav_items
+        if nav_visibility.get(item["route"], {}).get("visible", True)
     ]
     
     # Build nav links HTML
