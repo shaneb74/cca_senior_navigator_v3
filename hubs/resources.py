@@ -53,22 +53,22 @@ def render(ctx=None) -> None:
     # Build hub order
     hub_order = {
         "hub_id": "resources",
-        "ordered_products": ["fall_risk", "disease_mgmt", "home_safety", "home_health", "dme", "med_manage", "predictive_health"],
+        "ordered_products": ["med_manage", "predictive_health", "fall_risk", "disease_mgmt", "home_safety", "home_health", "dme"],
         "reason": "Explore helpful resources and tools",
         "total": 7,
-        "next_step": "fall_risk",
+        "next_step": "med_manage",
     }
     hub_order["next_route"] = f"?page={hub_order['next_step']}"
     
     # Build product tiles
     cards = [
+        _build_med_manage_tile(),
+        _build_predictive_health_tile(),
         _build_fall_risk_tile(),
         _build_disease_mgmt_tile(),
         _build_home_safety_tile(),
         _build_home_health_tile(),
         _build_dme_tile(),
-        _build_med_manage_tile(),
-        _build_predictive_health_tile(),
     ]
     
     # Get additional services
@@ -158,7 +158,7 @@ def _build_fall_risk_tile() -> ProductTileHub:
         primary_route="?page=fall_risk",
         progress=0,
         variant="teal",
-        order=10,
+        order=30,
         visible=True,
         locked=False,
     )
@@ -177,7 +177,7 @@ def _build_disease_mgmt_tile() -> ProductTileHub:
         primary_route="?page=disease_mgmt",
         progress=0,
         variant="teal",
-        order=20,
+        order=40,
         visible=True,
         locked=False,
     )
@@ -196,7 +196,7 @@ def _build_home_safety_tile() -> ProductTileHub:
         primary_route="?page=home_safety",
         progress=0,
         variant="teal",
-        order=30,
+        order=50,
         visible=True,
         locked=False,
     )
@@ -215,7 +215,7 @@ def _build_home_health_tile() -> ProductTileHub:
         primary_route="?page=home_health",
         progress=0,
         variant="teal",
-        order=40,
+        order=60,
         visible=True,
         locked=False,
     )
@@ -234,7 +234,7 @@ def _build_dme_tile() -> ProductTileHub:
         primary_route="?page=dme",
         progress=0,
         variant="teal",
-        order=50,
+        order=70,
         visible=True,
         locked=False,
     )
@@ -253,7 +253,7 @@ def _build_med_manage_tile() -> ProductTileHub:
         primary_route="?page=med_manage",
         progress=0,
         variant="teal",
-        order=60,
+        order=10,
         visible=True,
         locked=False,
     )
@@ -272,7 +272,7 @@ def _build_predictive_health_tile() -> ProductTileHub:
         primary_route="?page=predictive_health",
         progress=0,
         variant="teal",
-        order=70,
+        order=20,
         visible=True,
         locked=False,
     )
