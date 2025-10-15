@@ -19,7 +19,7 @@ def render_header_simple(active_route: Optional[str] = None) -> None:
     Args:
         active_route: Current page route (e.g., 'welcome', 'hub_concierge')
     """
-    logo_url = img_src("static/images/cca_logo.png")
+    logo_url = img_src("static/images/logos/cca_logo.png")
     
     # Define navigation items
     nav_items = [
@@ -132,13 +132,14 @@ def render_header_simple(active_route: Optional[str] = None) -> None:
         
         .nav-link--login {
           margin-left: 8px;
-          background: #111827;
+          background: linear-gradient(90deg, #2563eb, #3b82f6);
           color: #ffffff;
           font-weight: 700;
+          border: none;
         }
         
         .nav-link--login:hover {
-          background: #1f2937;
+          background: linear-gradient(90deg, #1d4ed8, #2563eb);
           color: #ffffff;
         }
         
