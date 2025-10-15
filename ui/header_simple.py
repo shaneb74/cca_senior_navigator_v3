@@ -185,6 +185,39 @@ def render_header_simple(active_route: Optional[str] = None) -> None:
         """
     )
     
+    # JavaScript to handle navigation without page refresh
+    nav_script = dedent(
+        """
+        <script>
+        // Handle navigation clicks without page refresh
+        document.addEventListener('DOMContentLoaded', function() {
+            const navLinks = document.querySelectorAll('.nav-link');
+            
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const url = new URL(this.href);
+                    const page = url.searchParams.get('page');
+                    
+                    if (page) {
+                        // Update URL without reload
+                        const newUrl = new URL(window.location);
+                        newUrl.searchParams.set('page', page);
+                        window.history.pushState({}, '', newUrl);
+                        
+                        // Trigger Streamlit to detect the change
+                        window.parent.postMessage({
+                            type: 'streamlit:setQueryParams',
+                            queryParams: {page: page}
+                        }, '*');
+                    }
+                });
+            });
+        });
+        </script>
+        """
+    )
+    
     html = dedent(
         f"""
         <header class="sn-header">
@@ -198,6 +231,7 @@ def render_header_simple(active_route: Optional[str] = None) -> None:
             </nav>
           </div>
         </header>
+        {nav_script}
         """
     )
     
