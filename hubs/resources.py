@@ -35,7 +35,9 @@ def render(ctx=None) -> None:
             "disease_mgmt": "Disease Management Program",
             "home_safety": "Home Safety Check",
             "home_health": "Find Home Health",
-            "dme": "Find DME"
+            "dme": "Find DME",
+            "med_manage": "Medication Management",
+            "predictive_health": "Predictive Health Analytics"
         }.get(save_msg.get("product", ""), "resource")
         
         prog = save_msg.get("progress", 0)
@@ -51,9 +53,9 @@ def render(ctx=None) -> None:
     # Build hub order
     hub_order = {
         "hub_id": "resources",
-        "ordered_products": ["fall_risk", "disease_mgmt", "home_safety", "home_health", "dme"],
+        "ordered_products": ["fall_risk", "disease_mgmt", "home_safety", "home_health", "dme", "med_manage", "predictive_health"],
         "reason": "Explore helpful resources and tools",
-        "total": 5,
+        "total": 7,
         "next_step": "fall_risk",
     }
     hub_order["next_route"] = f"?page={hub_order['next_step']}"
@@ -65,6 +67,8 @@ def render(ctx=None) -> None:
         _build_home_safety_tile(),
         _build_home_health_tile(),
         _build_dme_tile(),
+        _build_med_manage_tile(),
+        _build_predictive_health_tile(),
     ]
     
     # Get additional services
@@ -113,7 +117,9 @@ def _build_saved_progress_alert(save_msg: Optional[dict]) -> str:
         "disease_mgmt": "Disease Management Program",
         "home_safety": "Home Safety Check",
         "home_health": "Find Home Health",
-        "dme": "Find DME"
+        "dme": "Find DME",
+        "med_manage": "Medication Management",
+        "predictive_health": "Predictive Health Analytics"
     }.get(save_msg.get("product", ""), "resource")
 
     prog = save_msg.get("progress", 0)
@@ -229,6 +235,44 @@ def _build_dme_tile() -> ProductTileHub:
         progress=0,
         variant="teal",
         order=50,
+        visible=True,
+        locked=False,
+    )
+
+
+def _build_med_manage_tile() -> ProductTileHub:
+    """Build Medication Management tile."""
+    return ProductTileHub(
+        key="med_manage",
+        title="Medication Management",
+        desc="Connected support for safe and reliable medication routines.",
+        blurb="Smart medication management made simple. Ensure medications are taken correctly and on time with connected support powered by Omcare. Remote dispensing and monitoring tools help promote safety, independence, and peace of mind — especially for those managing complex medication schedules. Easily track doses, manage reminders, and stay connected to care support teams.",
+        image_square="med_manage.png",
+        meta_lines=["≈5 min • Auto-saves"],
+        primary_label="Start",
+        primary_route="?page=med_manage",
+        progress=0,
+        variant="teal",
+        order=60,
+        visible=True,
+        locked=False,
+    )
+
+
+def _build_predictive_health_tile() -> ProductTileHub:
+    """Build Predictive Health Analytics tile."""
+    return ProductTileHub(
+        key="predictive_health",
+        title="Predictive Health Analytics",
+        desc="AI-powered insights for cognitive and mobility health.",
+        blurb="Smarter insights for safer living. Predictive Health Analytics, powered by Senior Life AI, uses advanced technology to detect early signs of cognitive decline and fall risk. It analyzes changes in mobility, speech, and other daily patterns to help you and your loved ones take proactive steps toward well-being. Stay ahead of potential risks with continuous insight and guidance.",
+        image_square="predictive_health.png",
+        meta_lines=["≈6 min • Auto-saves"],
+        primary_label="Start",
+        primary_route="?page=predictive_health",
+        progress=0,
+        variant="teal",
+        order=70,
         visible=True,
         locked=False,
     )
