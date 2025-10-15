@@ -74,7 +74,7 @@
 /* Hub shell - clean white background with minimal spacing */
 .sn-hub.dashboard-shell {
   background: #ffffff;
-  padding: 20px 0 48px;
+  padding: 10px 0 48px;
 }
 
 /* Reduce gap between Navi panel and hub content */

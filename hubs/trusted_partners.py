@@ -180,6 +180,6 @@ def render() -> None:
     from ui.footer_simple import render_footer_simple
     
     # Render with simple header/footer
-    render_header_simple(active_route="hub_trusted_partners")
+    render_header_simple(active_route="hub_trusted")
     render_content()
     render_footer_simple()
