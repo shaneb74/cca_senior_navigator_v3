@@ -33,9 +33,9 @@ def _to_tile(card: Dict[str, any], order: int) -> ProductTileHub:
         badges=card.get("badges", []),
         meta_lines=meta,
         primary_label=primary.get("label"),
-        primary_route=f"?go={primary.get('route')}" if primary.get("route") else "#",
+        primary_route=f"?page={primary.get('route')}" if primary.get("route") else "#",
         secondary_label=secondary.get("label") if secondary.get("route") else None,
-        secondary_route=f"?go={secondary.get('route')}" if secondary.get("route") else None,
+        secondary_route=f"?page={secondary.get('route')}" if secondary.get("route") else None,
         order=order,
     )
 

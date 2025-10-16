@@ -21,9 +21,9 @@ def _legacy_actions_to_routes(actions: List[Dict[str, str]]) -> Dict[str, str]:
     secondary = actions[1] if len(actions) > 1 else {}
     return {
         "primary_label": primary.get("label"),
-        "primary_route": f"?go={primary.get('route')}" if primary.get("route") else None,
+        "primary_route": f"?page={primary.get('route')}" if primary.get("route") else None,
         "secondary_label": secondary.get("label") if secondary.get("route") else None,
-        "secondary_route": f"?go={secondary.get('route')}" if secondary.get("route") else None,
+        "secondary_route": f"?page={secondary.get('route')}" if secondary.get("route") else None,
     }
 
 
