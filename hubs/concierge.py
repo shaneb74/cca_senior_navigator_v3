@@ -215,8 +215,10 @@ def _build_gcp_tile(hub_order: dict, ordered_index: dict, next_action: dict) -> 
         blurb="Answer a few short questions about your daily needs, health, and safety. We'll create a personal care plan to help you take the next step with confidence. Everything saves automatically, and it only takes about 2 minutes.",
         image_square="gcp.png",
         meta_lines=["≈2 min • Auto-saves"],
-        primary_route=f"?page={summary['route']}",
-        primary_label="Restart" if is_complete else None,  # Override button text when complete
+        primary_route=f"?page={summary['route']}" if not is_complete else None,
+        primary_label=None if is_complete else None,  # No primary button when complete
+        secondary_route=f"?page={summary['route']}" if is_complete else None,  # Restart uses secondary (ghost) button
+        secondary_label="↻ Restart" if is_complete else None,  # Ghost button styling for restart
         progress=progress,
         status_text=status_text,
         variant="brand",
