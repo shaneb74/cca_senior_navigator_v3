@@ -297,13 +297,8 @@ def _inject_welcome_css() -> None:
 
 
 def _go_to(page_path: Optional[str], fallback_route: Optional[str]) -> None:
-    switch_fn = getattr(st, "switch_page", None)
-    if page_path and callable(switch_fn):
-        try:
-            switch_fn(page_path)
-            return
-        except Exception:
-            pass
+    # Always use route_to() for consistent navigation behavior
+    # This ensures UID is preserved and navigation stays in same tab
     if fallback_route:
         try:
             route_to(fallback_route)
