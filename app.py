@@ -19,7 +19,12 @@ from core.session_store import (
     cleanup_old_sessions,
 )
 
-st.set_page_config(page_title="Senior Navigator", page_icon="🧭", layout="wide")
+st.set_page_config(
+    page_title="Senior Navigator",
+    page_icon="🧭",
+    layout="wide",
+    initial_sidebar_state="collapsed"  # Hide the sidebar navigation
+)
 
 
 def _sanitize_query_params_for_welcome(current_route: str) -> None:
