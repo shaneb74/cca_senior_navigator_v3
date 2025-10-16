@@ -110,19 +110,6 @@ def render():
     
     st.title("💰 Financial Assessment")
     
-    # Get care recommendation for context
-    recommendation = MCIP.get_care_recommendation()
-    
-    # Show care context banner
-    if recommendation:
-        tier = recommendation.tier.replace("_", " ").title()
-        st.markdown(f"""
-        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 12px 16px; margin-bottom: 20px;">
-            <div style="color: #15803d; font-weight: 600;">✅ Care Recommendation: {tier}</div>
-            <div style="color: #166534; font-size: 14px; margin-top: 4px;">Status: Planning Ahead</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
     st.markdown("---")
     
     # Module progress tracking - initialize from config
@@ -502,7 +489,7 @@ def _render_module_tile(
     estimated_time: str,
     required: bool = False
 ):
-    """Render a single module tile.
+    """Render a single module tile with product tile aesthetic.
     
     Args:
         module_key: Module identifier
@@ -518,45 +505,104 @@ def _render_module_tile(
     status = module["status"]
     progress = module["progress"]
     
-    # Container
-    with st.container():
-        col1, col2, col3 = st.columns([1, 3, 1])
-        
-        with col1:
-            st.markdown(f"<div style='font-size: 48px; text-align: center;'>{icon}</div>", unsafe_allow_html=True)
-        
+    # Status indicator styles
+    status_colors = {
+        "not_started": "#94a3b8",  # gray
+        "in_progress": "#f59e0b",  # amber
+        "completed": "#10b981"     # green
+    }
+    
+    status_labels = {
+        "not_started": "Not Started",
+        "in_progress": "In Progress",
+        "completed": "Completed"
+    }
+    
+    # Build required badge
+    required_badge = ""
+    if required:
+        required_badge = '<span style="background: #fee2e2; color: #991b1b; padding: 3px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; margin-left: 10px;">REQUIRED</span>'
+    
+    # Build tile HTML with Navi-inspired styling
+    tile_html = f"""
+    <div style="
+        background: white;
+        border: 1px solid #e6edf5;
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 16px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        transition: all 0.2s ease;
+    ">
+        <div style="display: flex; gap: 20px; align-items: flex-start;">
+            <!-- Icon -->
+            <div style="font-size: 48px; line-height: 1; flex-shrink: 0;">
+                {icon}
+            </div>
+            
+            <!-- Content -->
+            <div style="flex: 1; min-width: 0;">
+                <!-- Title + Badge + Status -->
+                <div style="display: flex; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+                    <h4 style="margin: 0; font-size: 20px; font-weight: 600; color: #1e293b;">
+                        {title}
+                    </h4>
+                    {required_badge}
+                    <span style="
+                        background: {status_colors[status]};
+                        color: white;
+                        padding: 3px 10px;
+                        border-radius: 6px;
+                        font-size: 11px;
+                        font-weight: 600;
+                        text-transform: uppercase;
+                        letter-spacing: 0.5px;
+                    ">
+                        {status_labels[status]}
+                    </span>
+                </div>
+                
+                <!-- Description -->
+                <p style="margin: 0 0 12px 0; color: #475569; font-size: 15px; line-height: 1.5;">
+                    {description}
+                </p>
+                
+                <!-- Time estimate -->
+                <div style="color: #64748b; font-size: 14px;">
+                    ⏱️ {estimated_time}
+                </div>
+            </div>
+        </div>
+    </div>
+    """
+    
+    st.markdown(tile_html, unsafe_allow_html=True)
+    
+    # Action buttons below tile
+    col1, col2, col3 = st.columns([2, 2, 1])
+    
+    with col1:
+        if status == "completed":
+            if st.button("✏️ Edit Module", key=f"{module_key}_edit", use_container_width=True):
+                _start_module(module_key)
+        else:
+            button_label = "▶️ Start Module" if status == "not_started" else "▶️ Continue"
+            if st.button(button_label, key=f"{module_key}_start", type="primary", use_container_width=True):
+                _start_module(module_key)
+    
+    # Show progress if in progress or completed
+    if status == "in_progress" or status == "completed":
         with col2:
-            # Add required badge if applicable
-            title_text = f"**{title}**"
-            if required:
-                title_text += " 🔴"
-            st.markdown(title_text)
-            st.caption(description)
-            time_text = f"⏱️ {estimated_time}"
-            if required:
-                time_text += " • **Required**"
-            st.caption(time_text)
-        
-        with col3:
-            if status == "completed":
-                if st.button("✏️ Edit", key=f"{module_key}_edit", use_container_width=True):
-                    _start_module(module_key)
-            else:
-                if st.button("▶️ Start", key=f"{module_key}_start", type="primary" if status == "not_started" else "secondary", use_container_width=True):
-                    _start_module(module_key)
-        
-        # Show progress bar if in progress
-        if status == "in_progress" or status == "completed":
-            st.progress(progress / 100)
-        
-        # Show summary if completed
-        if status == "completed" and module["data"]:
-            with st.expander("📋 View Summary"):
-                data = module["data"]
-                for key, value in data.items():
-                    if key.startswith("total_") or key.startswith("monthly_") or key.endswith("_cost") or key.endswith("_assets") or key.endswith("_coverage") or key.endswith("_income") or key.endswith("_benefit") or key.endswith("_premium"):
-                        if isinstance(value, (int, float)):
-                            st.metric(key.replace("_", " ").title(), f"${value:,.0f}")
+            st.progress(progress / 100, text=f"{progress}% Complete")
+    
+    # Show summary if completed
+    if status == "completed" and module["data"]:
+        with st.expander("📋 View Module Summary"):
+            data = module["data"]
+            for key, value in data.items():
+                if key.startswith("total_") or key.startswith("monthly_") or key.endswith("_cost") or key.endswith("_assets") or key.endswith("_coverage") or key.endswith("_income") or key.endswith("_benefit") or key.endswith("_premium"):
+                    if isinstance(value, (int, float)):
+                        st.metric(key.replace("_", " ").title(), f"${value:,.0f}")
 
 
 def _start_module(module_key: str):

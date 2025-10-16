@@ -184,6 +184,26 @@ def _render_navi_with_context(current_step: str):
             variant="module"
         )
     
+    elif current_step == "modules":
+        # Financial Assessment hub - explain module purpose
+        title = "Let's work through these financial modules together"
+        reason = "Completing them will help us figure out how to pay for the care that was recommended."
+        encouragement = {
+            "icon": "💪",
+            "status": "info",
+            "text": "Each module takes just a few minutes and helps build your complete financial picture."
+        }
+        
+        # Render Navi panel V2 with financial guidance
+        render_navi_panel_v2(
+            title=title,
+            reason=reason,
+            encouragement=encouragement,
+            context_chips=[],
+            primary_action={'label': 'Continue', 'action': None},
+            variant="module"
+        )
+    
     else:
         # For other steps, use default Navi guidance
         render_navi_panel(
