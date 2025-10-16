@@ -25,6 +25,15 @@ def run_module(config: ModuleConfig) -> Dict[str, Any]:
     state_exists_before = state_key in st.session_state
     state_value_before = st.session_state.get(state_key, "NOT_FOUND")
     
+    # Check if we need to restore state from tile_state (session expired but tile persists)
+    tiles = st.session_state.setdefault("tiles", {})
+    tile_state = tiles.setdefault(config.product, {})
+    
+    # If state doesn't exist but tile has saved_state, restore it
+    if state_key not in st.session_state and "saved_state" in tile_state:
+        st.write("🔄 DEBUG: Restoring state from tile_state")
+        st.session_state[state_key] = tile_state["saved_state"].copy()
+    
     st.session_state.setdefault(state_key, {})
     state = st.session_state[state_key]
     
@@ -104,6 +113,10 @@ def run_module(config: ModuleConfig) -> Dict[str, Any]:
     new_values = _render_fields(step, state)
     if new_values:
         state.update(new_values)
+        # Save state to tile_state for persistence across sessions
+        tiles = st.session_state.setdefault("tiles", {})
+        tile_state = tiles.setdefault(config.product, {})
+        tile_state["saved_state"] = state.copy()
 
     is_results = config.results_step_id and step.id == config.results_step_id
     
