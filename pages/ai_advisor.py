@@ -524,7 +524,7 @@ def render():
 /* Message bubbles */
 .faq-message {
     margin-bottom: var(--space-5);
-    animation: fadeInUp 0.3s ease;
+    animation: fadeInDown 0.3s ease;
 }
 
 .faq-message--user {
@@ -602,10 +602,10 @@ def render():
 }
 
 /* Animations */
-@keyframes fadeInUp {
+@keyframes fadeInDown {
     from {
         opacity: 0;
-        transform: translateY(10px);
+        transform: translateY(-10px);
     }
     to {
         opacity: 1;
@@ -748,8 +748,9 @@ def render():
 </div>
         """, unsafe_allow_html=True)
     else:
-        # Render messages
-        for role, message in thread:
+        # Render messages in reverse chronological order (newest first)
+        # This keeps new answers at the top, just below the section title
+        for role, message in reversed(thread):
             if role == "user":
                 _render_message_bubble("user", message)
             else:
