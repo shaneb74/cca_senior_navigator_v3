@@ -56,6 +56,57 @@ COST_ADJUSTMENTS = {
 }
 
 
+# FLAG MAPPING: GCP flags → Cost Planner flags
+# Maps the flags from care recommendation to cost adjustment flags
+FLAG_MAPPINGS = {
+    # Cognitive/Memory flags
+    "severe_cognitive_risk": "memory_support",
+    "moderate_cognitive_decline": "memory_support",
+    
+    # Mobility flags
+    "high_mobility_dependence": "mobility_limited",
+    
+    # ADL/Dependence flags
+    "high_dependence": "adl_support_high",
+    "moderate_dependence": "adl_support_high",  # Treat moderate as high for cost purposes
+    
+    # Behavioral flags
+    "mental_health_concern": "behavioral_concerns",
+    "high_risk": "behavioral_concerns",
+    "moderate_risk": "behavioral_concerns",
+    
+    # Fall/Safety flags
+    "falls_multiple": "falls_risk",
+    "high_safety_concern": "falls_risk",
+    "moderate_safety_concern": "safety_concerns",
+    
+    # Chronic conditions
+    "chronic_present": "chronic_conditions",
+}
+
+
+def _normalize_flags(gcp_flags: List[str]) -> List[str]:
+    """Normalize GCP flags to cost planner flag names.
+    
+    Args:
+        gcp_flags: List of flag IDs from GCP care recommendation
+        
+    Returns:
+        List of normalized cost planner flag IDs
+    """
+    normalized = set()
+    
+    for flag in gcp_flags:
+        # Direct match (cost planner flags)
+        if flag in COST_ADJUSTMENTS:
+            normalized.add(flag)
+        # Mapped GCP flag
+        elif flag in FLAG_MAPPINGS:
+            normalized.add(FLAG_MAPPINGS[flag])
+    
+    return list(normalized)
+
+
 @dataclass
 class CostEstimate:
     """Single cost estimate result."""
@@ -192,7 +243,20 @@ class CostCalculator:
         gcp_rec = MCIP.get_care_recommendation()
         flags = []
         if gcp_rec and hasattr(gcp_rec, 'flags'):
-            flags = [f.get('id') if isinstance(f, dict) else f for f in gcp_rec.flags]
+            # Extract flag IDs from flag objects
+            raw_flags = [f.get('id') if isinstance(f, dict) else f for f in gcp_rec.flags]
+            # Normalize GCP flags to cost planner flags
+            flags = _normalize_flags(raw_flags)
+        
+        # Check for medication complexity from GCP state
+        # If meds_complexity is "moderate" or "complex", add medication_management flag
+        if gcp_rec:
+            import streamlit as st
+            gcp_state = st.session_state.get('gcp_care_recommendation', {})
+            meds_complexity = gcp_state.get('meds_complexity')
+            if meds_complexity in ['moderate', 'complex']:
+                if 'medication_management' not in flags:
+                    flags.append('medication_management')
         
         # CARE MULTIPLIERS (applied cumulatively to running total)
         

@@ -31,16 +31,8 @@ def render():
     st.title("💰 Cost Planner")
     st.markdown("### Get a Quick Cost Estimate")
     
-    st.info("""
-    **See what senior care costs in your area** — in less than 30 seconds.
-    
-    This quick calculator gives you ballpark costs based on:
-    - ✅ Type of care needed
-    - ✅ Your location (ZIP code)
-    - ✅ Your specific care needs (if you've completed the Guided Care Plan)
-    
-    💡 **Sign in later** to get a detailed financial plan with personalized recommendations.
-    """)
+    # Simplified intro - Navi handles the guidance
+    st.markdown("See what senior care costs in your area based on your needs and location.")
     
     st.markdown("---")
     
@@ -168,7 +160,7 @@ def _render_quick_estimate_results():
     data = st.session_state.cost_v2_quick_estimate
     estimate = data["estimate"]
     
-    st.success("### ✅ Your Quick Cost Estimate")
+    st.markdown("### 📊 Your Quick Cost Estimate")
     
     # Show care type and location
     care_type_display_map = {
@@ -285,38 +277,14 @@ def _render_quick_estimate_results():
     
     st.markdown("---")
     
-    # REASSURANCE COPY (per spec)
-    st.info("""
-    **We know these numbers can feel overwhelming. Don't worry — we'll help you plan how to cover these costs.**
-    
-    Our detailed Financial Assessment will show you:
-    - ✅ All available funding sources (Medicare, VA benefits, insurance, etc.)
-    - ✅ Gap analysis: what's covered vs. what you'll pay out-of-pocket
-    - ✅ Strategies to reduce costs and maximize benefits
-    - ✅ Facility comparison with real pricing data
-    """)
-    
-    st.markdown("---")
-    
-    # CTA TO FULL ASSESSMENT (per spec)
-    st.markdown("### 🎯 Continue to Full Assessment")
-    
-    st.markdown("""
-    **Ready to get your personalized financial plan?**
-    
-    The Full Assessment will help you:
-    - Understand exactly what care costs in your specific situation
-    - Identify all funding sources you qualify for
-    - Create a step-by-step plan to cover the costs
-    - Get expert guidance on next steps
-    """)
+    # Simplified CTA - let Navi handle the messaging
+    st.markdown("### Ready for Your Full Financial Plan?")
     
     col1, col2 = st.columns([2, 1])
     
     with col1:
         if st.button("➡️ Continue to Full Assessment", type="primary", use_container_width=True, key="continue_full_assessment"):
             # Start authentication flow (if not logged in) then go to Full Assessment
-            # For now, go to auth gate
             st.session_state.cost_v2_step = "auth"
             st.rerun()
     
