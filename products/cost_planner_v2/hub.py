@@ -143,7 +143,7 @@ def render():
     for module in visible_modules:
         _render_module_tile(
             module_key=module.get("key"),
-            title=f"{module.get('icon', '📄')} {module.get('title', 'Module')}",
+            title=module.get('title', 'Module'),
             description=module.get("description", ""),
             icon=module.get("icon", "📄"),
             estimated_time=module.get("estimated_time", "3-5 min"),
@@ -523,6 +523,12 @@ def _render_module_tile(
     if required:
         required_badge = '<span style="background: #fee2e2; color: #991b1b; padding: 3px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; margin-left: 10px;">REQUIRED</span>'
     
+    # Escape any HTML in user-provided strings
+    import html
+    safe_title = html.escape(title)
+    safe_description = html.escape(description)
+    safe_time = html.escape(estimated_time)
+    
     # Build tile HTML with Navi-inspired styling (no HTML comments to avoid rendering issues)
     tile_html = f"""
 <div style="background: white; border: 1px solid #e6edf5; border-radius: 16px; padding: 24px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);">
@@ -533,7 +539,7 @@ def _render_module_tile(
         <div style="flex: 1; min-width: 0;">
             <div style="display: flex; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
                 <h4 style="margin: 0; font-size: 20px; font-weight: 600; color: #1e293b;">
-                    {title}
+                    {safe_title}
                 </h4>
                 {required_badge}
                 <span style="background: {status_colors[status]}; color: white; padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
@@ -541,10 +547,10 @@ def _render_module_tile(
                 </span>
             </div>
             <p style="margin: 0 0 12px 0; color: #475569; font-size: 15px; line-height: 1.5;">
-                {description}
+                {safe_description}
             </p>
             <div style="color: #64748b; font-size: 14px;">
-                ⏱️ {estimated_time}
+                ⏱️ {safe_time}
             </div>
         </div>
     </div>
