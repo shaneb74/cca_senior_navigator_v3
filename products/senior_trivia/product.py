@@ -228,6 +228,7 @@ def _award_and_persist_badge(module_key: str, badge_name: str, badge_level: str,
     """Award and persist a badge to the user's trivia progress.
     
     Stores badges in product_tiles_v2 for cross-session persistence.
+    Also updates the legacy "tiles" structure for MCIP/Navi compatibility.
     
     Args:
         module_key: Module identifier
@@ -241,17 +242,17 @@ def _award_and_persist_badge(module_key: str, badge_name: str, badge_level: str,
     if "product_tiles_v2" not in st.session_state:
         st.session_state["product_tiles_v2"] = {}
     
-    tiles = st.session_state["product_tiles_v2"]
+    tiles_v2 = st.session_state["product_tiles_v2"]
     
     # Initialize senior_trivia_hub tile state if not exists
-    if "senior_trivia_hub" not in tiles:
-        tiles["senior_trivia_hub"] = {
+    if "senior_trivia_hub" not in tiles_v2:
+        tiles_v2["senior_trivia_hub"] = {
             "badges_earned": {},  # {module_key: {name, level, score}}
             "total_points": 0,
             "modules_completed": []
         }
     
-    progress = tiles["senior_trivia_hub"]
+    progress = tiles_v2["senior_trivia_hub"]
     
     # Check if badge already exists or is an upgrade
     existing_badge = progress["badges_earned"].get(module_key)
@@ -283,12 +284,27 @@ def _award_and_persist_badge(module_key: str, badge_name: str, badge_level: str,
             float(b.get("score", 0)) for b in progress["badges_earned"].values()
         )
         
+        # Update legacy tiles structure for MCIP/Navi compatibility
+        tiles_legacy = st.session_state.setdefault("tiles", {})
+        trivia_hub_tile = tiles_legacy.setdefault("senior_trivia", {})
+        
+        # Calculate aggregate progress (quizzes completed / total quizzes)
+        total_quizzes = 5  # truths_myths, music_trivia, medicare_quiz, healthy_habits, community_challenge
+        completed_count = len(progress["badges_earned"])
+        progress_pct = int((completed_count / total_quizzes) * 100)
+        
+        trivia_hub_tile["progress"] = progress_pct
+        trivia_hub_tile["status"] = "done" if progress_pct >= 100 else ("doing" if progress_pct > 0 else "new")
+        trivia_hub_tile["badges_earned"] = progress["badges_earned"].copy()
+        trivia_hub_tile["last_updated"] = st.session_state.get("_timestamp", "")
+        
         # Emit telemetry
         log_event("trivia_badge_awarded", {
             "module_id": module_key,
             "badge": badge_name,
             "level": badge_level,
-            "is_upgrade": is_upgrade
+            "is_upgrade": is_upgrade,
+            "total_progress": progress_pct
         })
         
         # Show success message
