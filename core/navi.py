@@ -23,6 +23,27 @@ from core.flags import get_all_flags
 from core.state import is_authenticated, get_user_name
 
 
+def _get_tier_display_name(tier: str) -> str:
+    """Convert internal tier name to user-friendly display name.
+    
+    Args:
+        tier: Internal tier name (e.g., 'assisted_living', 'no_care_needed')
+    
+    Returns:
+        User-friendly display name (e.g., 'Assisted Living', 'No Care Recommended')
+    """
+    tier_map = {
+        "no_care_needed": "No Care Recommended",
+        "independent": "Independent Living",
+        "in_home": "In-Home Care",
+        "in_home_care": "In-Home Care",
+        "assisted_living": "Assisted Living",
+        "memory_care": "Memory Care",
+        "memory_care_high_acuity": "Memory Care (High Acuity)"
+    }
+    return tier_map.get(tier, tier.replace("_", " ").title())
+
+
 @dataclass
 class NaviContext:
     """Complete context for Navi's intelligence.
@@ -292,7 +313,7 @@ class NaviOrchestrator:
         
         elif completed == 1:
             if ctx.care_recommendation:
-                tier = ctx.care_recommendation.tier
+                tier = _get_tier_display_name(ctx.care_recommendation.tier)
                 return f"Great progress! You've chosen {tier}. Now let's figure out the costs."
             else:
                 return "Great progress! 1/3 complete. Keep going!"
@@ -316,7 +337,7 @@ class NaviOrchestrator:
         boost = []
         
         if ctx.care_recommendation:
-            tier = ctx.care_recommendation.tier
+            tier = _get_tier_display_name(ctx.care_recommendation.tier)
             confidence = int(ctx.care_recommendation.confidence * 100)
             boost.append(f"✅ Care Plan: {tier} ({confidence}% confidence)")
         
@@ -443,7 +464,7 @@ def render_navi_panel(
         context_chips = []
         
         if ctx.care_recommendation:
-            tier = ctx.care_recommendation.tier
+            tier = _get_tier_display_name(ctx.care_recommendation.tier)
             confidence = int(ctx.care_recommendation.confidence * 100)
             context_chips.append({
                 'icon': '🧭',
