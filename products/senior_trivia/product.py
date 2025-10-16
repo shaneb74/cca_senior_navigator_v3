@@ -172,21 +172,8 @@ def _render_trivia_results(module_key: str, config: ModuleConfig, module_state: 
             # Emit telemetry
             log_event("trivia_retry", {"module_id": module_key})
             
-            # Clear module state and restart
-            state_key = config.state_key
-            if state_key in st.session_state:
-                del st.session_state[state_key]
-            if f"{state_key}._step" in st.session_state:
-                del st.session_state[f"{state_key}._step"]
-            if f"{state_key}._outcomes" in st.session_state:
-                del st.session_state[f"{state_key}._outcomes"]
-            
-            # Clear tile state (use unique product key per module)
-            tiles = st.session_state.get("product_tiles_v2", {})
-            product_key = f"senior_trivia_{module_key}"
-            if product_key in tiles:
-                tiles[product_key].pop("saved_state", None)
-                tiles[product_key].pop("last_step", None)
+            # Clear module state to restart fresh
+            _clear_module_state(module_key)
             
             st.rerun()
     
@@ -313,6 +300,34 @@ def _award_and_persist_badge(module_key: str, badge_name: str, badge_level: str,
             st.success(f"🎉 You earned the **{badge_name}** badge!")
 
 
+def _clear_module_state(module_key: str):
+    """Clear all state for a specific trivia module to allow fresh start.
+    
+    Args:
+        module_key: Module identifier (e.g., "truths_myths")
+    """
+    # Build state key (matches ModuleConfig.state_key pattern)
+    state_key = f"senior_trivia_{module_key}"
+    
+    # Clear module engine state
+    keys_to_clear = [
+        state_key,
+        f"{state_key}._step",
+        f"{state_key}._outcomes",
+        f"{state_key}._timestamp"
+    ]
+    
+    for key in keys_to_clear:
+        st.session_state.pop(key, None)
+    
+    # Clear tile state for this specific module
+    tiles = st.session_state.get("product_tiles_v2", {})
+    product_key = f"senior_trivia_{module_key}"
+    if product_key in tiles:
+        tiles[product_key].pop("saved_state", None)
+        tiles[product_key].pop("last_step", None)
+
+
 def _render_module_hub():
     """Render the trivia module selection hub with earned badges."""
     st.markdown("## 🎯 Senior Trivia & Brain Games")
@@ -393,6 +408,10 @@ def _render_module_hub():
             with col2:
                 button_label = "Play Again" if badge_info else "Play"
                 if st.button(button_label, key=f"play_{module['key']}", use_container_width=True):
+                    # Clear any existing state for this module before starting/restarting
+                    _clear_module_state(module['key'])
+                    
+                    # Set current module and restart
                     st.session_state["senior_trivia_current_module"] = module['key']
                     st.rerun()
             st.markdown("---")
