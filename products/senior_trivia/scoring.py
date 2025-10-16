@@ -7,18 +7,18 @@ Computes scores, badges, and outcomes based on correct answers.
 from typing import Dict, Any
 
 
-def compute_trivia_outcome(module_state: Dict[str, Any], config: Any) -> Dict[str, Any]:
+def compute_trivia_outcome(answers: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
     """Compute trivia outcome based on answers.
     
     Args:
-        module_state: Module state with answers
-        config: Module configuration
+        answers: User answers dict {question_id: value}
+        context: Context dict with config and other metadata
     
     Returns:
         Outcome dict with scores, badge, and summary
     """
-    # Extract answers
-    answers = module_state.get("answers", {})
+    # Get config from context
+    config = context.get("config")
     
     # Get all questions from config steps
     all_questions = []
