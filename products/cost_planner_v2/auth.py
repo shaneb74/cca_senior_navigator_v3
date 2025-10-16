@@ -2,7 +2,7 @@
 Cost Planner v2 - Authentication Step
 
 Simple authentication integration using core.state toggle system.
-Users can continue as guest or sign in for full functionality.
+Sign-in is required to access Financial Assessment (no guest mode in MVP).
 """
 
 import streamlit as st
@@ -13,88 +13,55 @@ def render():
     """Render authentication step.
     
     For MVP, we use the existing toggle authentication system.
-    Users can:
-    1. Continue as guest (proceed with limited features)
-    2. Sign in (toggle auth on)
+    Users must sign in to continue - no guest access.
+    
+    Workflow:
+    1. Auto-skip if already authenticated (seamless experience)
+    2. Sign in required to proceed to Financial Assessment
     
     Future: Replace with real OAuth/email authentication.
     """
     
-    st.title("🔐 Sign In to Save Your Progress")
-    
-    # Check if already authenticated
+    # AUTO-ADVANCE: If already authenticated, skip this step
     if is_authenticated():
-        name = get_user_name()
-        st.success(f"✅ Welcome back, {name}!")
-        st.info("You're signed in and ready to create your detailed financial plan.")
-        
-        if st.button("Continue to Financial Assessment →", type="primary", use_container_width=True):
-            # Move to triage (next step)
-            st.session_state.cost_v2_step = "triage"
-            st.rerun()
+        # User is logged in - go directly to next step
+        st.session_state.cost_v2_step = "triage"
+        st.rerun()
         return
     
-    # Not authenticated - show options
-    st.info("""
-    ### Why sign in?
+    # Not authenticated - show sign-in only (no guest mode in MVP)
+    st.title("🔐 Sign In to Continue")
     
-    - 💾 **Save your progress** - Pick up where you left off
-    - 📊 **Get personalized recommendations** - Based on your care plan
-    - 🔒 **Keep your data secure** - All information is private
-    - 📧 **Receive expert guidance** - Get advisor support
-    - 📱 **Access anywhere** - View your plan on any device
+    # Clear explanation of requirement
+    st.markdown("""
+    Create an account or sign in to access the Financial Assessment.
     """)
     
     st.markdown("---")
     
-    col1, col2 = st.columns([1, 1])
+    st.markdown("### 📧 Sign In")
     
-    with col1:
-        st.markdown("### 📧 Sign In")
-        
-        # Simple demo authentication (toggle-based)
-        st.markdown("**For MVP Demo:**")
-        
-        name_input = st.text_input(
-            "Your Name",
-            value="Sarah",
-            help="Enter your name for personalized experience",
-            key="cost_v2_auth_name"
-        )
-        
-        email_input = st.text_input(
-            "Email Address",
-            value="sarah@example.com",
-            help="We'll send updates and cost estimates here",
-            key="cost_v2_auth_email"
-        )
-        
-        if st.button("🔐 Sign In", type="primary", use_container_width=True, key="cost_v2_signin"):
-            # Toggle authentication on
-            authenticate_user(name=name_input, email=email_input)
-            st.success(f"✅ Welcome, {name_input}!")
-            st.rerun()
+    st.markdown("**For MVP Demo:**")
     
-    with col2:
-        st.markdown("### 🌐 Continue as Guest")
-        
-        st.warning("""
-        **Guest Mode Limitations:**
-        
-        - ⚠️ Progress won't be saved
-        - ⚠️ Can't access full financial breakdown
-        - ⚠️ No advisor review available
-        - ⚠️ Results will be lost on page refresh
-        """)
-        
-        st.markdown("You can sign in later to unlock all features.")
-        
-        if st.button("Continue as Guest", use_container_width=True, key="cost_v2_guest"):
-            # Set guest flag and continue
-            st.session_state.cost_v2_guest_mode = True
-            st.session_state.cost_v2_step = "triage"
-            st.info("ℹ️ Proceeding in guest mode. Sign in anytime to save your work.")
-            st.rerun()
+    name_input = st.text_input(
+        "Your Name",
+        value="Sarah",
+        help="Enter your name for personalized experience",
+        key="cost_v2_auth_name"
+    )
+    
+    email_input = st.text_input(
+        "Email Address",
+        value="sarah@example.com",
+        help="We'll send updates and cost estimates here",
+        key="cost_v2_auth_email"
+    )
+    
+    if st.button("🔐 Sign In", type="primary", use_container_width=True, key="cost_v2_signin"):
+        # Toggle authentication on
+        authenticate_user(name=name_input, email=email_input)
+        st.success(f"✅ Welcome, {name_input}!")
+        st.rerun()
     
     st.markdown("---")
     
@@ -102,16 +69,3 @@ def render():
     if st.button("← Back to Quick Estimate", key="auth_back"):
         st.session_state.cost_v2_step = "intro"
         st.rerun()
-    
-    # Future auth methods placeholder
-    with st.expander("🚀 Coming Soon: More Sign-In Options"):
-        st.markdown("""
-        We're adding more authentication methods:
-        
-        - 🔗 **Google Sign-In** - Use your Google account
-        - 🔗 **Facebook Sign-In** - Use your Facebook account
-        - 📱 **Phone/SMS** - Sign in with your mobile number
-        - 🔐 **Magic Link** - Passwordless email authentication
-        
-        For now, use the simple email sign-in above.
-        """)

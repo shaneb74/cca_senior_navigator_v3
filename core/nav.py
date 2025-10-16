@@ -64,11 +64,34 @@ def load_nav(ctx: dict) -> Dict[str, dict]:
     return pages
 
 
-def route_to(key: str):
-    st.query_params.update({"page": key})
+def route_to(key: str) -> None:
+    """Navigate to a page by updating query params and triggering rerun.
+    
+    Preserves UID in query params to maintain session across navigation.
+    
+    Args:
+        key: Page key from nav.json (e.g., "hub_concierge")
+    """
+    # Preserve UID when updating page
+    current_uid = st.query_params.get("uid")
+    st.query_params["page"] = key
+    if current_uid:
+        st.query_params["uid"] = current_uid
+    
     st.rerun()
 
 
+
 def current_route(default: str, pages: Dict[str, dict]) -> str:
+    """Get current route from query params.
+    
+    Args:
+        default: Default page key if none set
+        pages: Available pages dict
+        
+    Returns:
+        Current page key or default
+    """
+    # Use query params for navigation (works with href links from tiles)
     r = st.query_params.get("page", default)
     return r if r in pages else default
