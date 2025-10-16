@@ -14,7 +14,6 @@ import json
 import os
 from typing import List, Dict, Optional
 from core.mcip import MCIP, CareRecommendation
-from core.navi import render_navi_panel
 
 
 def _load_module_config() -> Dict:
@@ -51,12 +50,7 @@ def render():
     if not recommendation:
         st.info("ℹ️ You're using general cost estimates. Complete the Guided Care Plan for personalized recommendations.")
     
-    # Render Navi panel for guidance
-    render_navi_panel(
-        location="product",
-        product_key="cost_v2",
-        module_config=None
-    )
+    # Navi panel is rendered by product.py - don't duplicate it here
     
     st.title("💰 Financial Assessment")
     
