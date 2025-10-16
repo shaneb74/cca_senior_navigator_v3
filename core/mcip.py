@@ -108,20 +108,40 @@ class MCIP:
         # This ensures that completion state persists even if mcip state exists
         # but has stale/incomplete data (e.g., after navigating between pages)
         # IMPORTANT: Use deepcopy for ALL nested dicts/lists to prevent shared references
+        restored_from_contracts = False
         if "mcip_contracts" in st.session_state:
             import copy
             contracts = st.session_state["mcip_contracts"]
+            
             if "care_recommendation" in contracts and contracts["care_recommendation"]:
                 st.session_state[cls.STATE_KEY]["care_recommendation"] = copy.deepcopy(contracts["care_recommendation"])
+            
             if "financial_profile" in contracts and contracts["financial_profile"]:
                 st.session_state[cls.STATE_KEY]["financial_profile"] = copy.deepcopy(contracts["financial_profile"])
+            
             if "advisor_appointment" in contracts and contracts["advisor_appointment"]:
                 st.session_state[cls.STATE_KEY]["advisor_appointment"] = copy.deepcopy(contracts["advisor_appointment"])
+            
             if "journey" in contracts and contracts["journey"]:
                 # CRITICAL: Always restore journey state from contracts
                 # Use deepcopy to avoid shared references between mcip and mcip_contracts
                 # This ensures modifying mcip["journey"] doesn't corrupt mcip_contracts["journey"]
                 st.session_state[cls.STATE_KEY]["journey"] = copy.deepcopy(contracts["journey"])
+            
+            restored_from_contracts = True
+        else:
+                # Preserve existing journey data when no contracts found
+                existing_journey = st.session_state[cls.STATE_KEY].get("journey", {})
+                existing_unlocked = existing_journey.get("unlocked_products", [])
+                existing_completed = existing_journey.get("completed_products", [])
+                should_preserve = len(existing_unlocked) > 1 or len(existing_completed) > 0
+        
+        # CRITICAL FIX: Only save contracts if we created fresh state (NOT if we restored)
+        # If we restored from contracts, those contracts are already the source of truth
+        # Saving here would be redundant and could overwrite in-memory updates
+        if not restored_from_contracts:
+            cls._save_contracts_for_persistence()
+
     
     # =========================================================================
     # CARE RECOMMENDATION (Published by GCP)
@@ -150,6 +170,8 @@ class MCIP:
         Args:
             recommendation: CareRecommendation dataclass
         """
+        print(f"\n{'='*80}")
+        print(f"[MCIP] publish_care_recommendation() called")
         cls.initialize()
         
         # Store recommendation
@@ -271,12 +293,19 @@ class MCIP:
         """
         if cls.STATE_KEY in st.session_state:
             import copy
-            st.session_state["mcip_contracts"] = {
+            contracts = {
                 "care_recommendation": copy.deepcopy(st.session_state[cls.STATE_KEY].get("care_recommendation")),
                 "financial_profile": copy.deepcopy(st.session_state[cls.STATE_KEY].get("financial_profile")),
                 "advisor_appointment": copy.deepcopy(st.session_state[cls.STATE_KEY].get("advisor_appointment")),
                 "journey": copy.deepcopy(st.session_state[cls.STATE_KEY].get("journey")),  # CRITICAL: deepcopy to prevent shared reference
             }
+            st.session_state["mcip_contracts"] = contracts
+            
+            # DEBUG: Print to console to verify save is happening
+            print(f"[MCIP DEBUG] _save_contracts_for_persistence() called")
+            print(f"[MCIP DEBUG] care_recommendation status: {contracts.get('care_recommendation', {}).get('status')}")
+            print(f"[MCIP DEBUG] journey completed: {contracts.get('journey', {}).get('completed_products')}")
+            print(f"[MCIP DEBUG] mcip_contracts in session_state: {'mcip_contracts' in st.session_state}")
     
     @classmethod
     def get_unlocked_products(cls) -> List[str]:
@@ -553,9 +582,13 @@ class MCIP:
                         "route": "cost_v2"
                     }
             else:
-                # Check if GCP is complete
+                # Check if product is unlocked (either via GCP completion OR via direct access)
+                unlocked_products = cls.get_unlocked_products()
+                is_unlocked = ("cost_planner" in unlocked_products or "cost_v2" in unlocked_products)
+                
+                # Also check if GCP is complete (legacy check)
                 rec = cls.get_care_recommendation()
-                if rec and rec.tier:
+                if is_unlocked or (rec and rec.tier):
                     return {
                         "title": "Cost Planner",
                         "status": "unlocked",
@@ -586,9 +619,13 @@ class MCIP:
                     "route": "pfma_v2"
                 }
             else:
-                # Check if Cost Planner is complete
+                # Check if product is unlocked (either via Cost Planner completion OR via direct access)
+                unlocked_products = cls.get_unlocked_products()
+                is_unlocked = ("pfma" in unlocked_products or "pfma_v2" in unlocked_products)
+                
+                # Also check if Cost Planner is complete (legacy check)
                 profile = cls.get_financial_profile()
-                if profile:
+                if is_unlocked or profile:
                     return {
                         "title": "Plan with My Advisor",
                         "status": "unlocked",

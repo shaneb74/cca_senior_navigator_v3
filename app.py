@@ -110,7 +110,22 @@ if 'session_id' not in st.session_state:
 session_id = st.session_state['session_id']
 
 # Get or create user ID (persistent across sessions if authenticated)
-uid = get_or_create_user_id(st.session_state)
+# CRITICAL FIX: Check query params for uid first (preserves across href navigation)
+uid_from_url = st.query_params.get('uid')
+if uid_from_url:
+    # Restore UID from query params (href navigation)
+    if uid_from_url.startswith('anon_'):
+        st.session_state['anonymous_uid'] = uid_from_url
+    else:
+        if 'auth' not in st.session_state:
+            st.session_state['auth'] = {}
+        st.session_state['auth']['user_id'] = uid_from_url
+        st.session_state['auth']['is_authenticated'] = True
+    uid = uid_from_url
+else:
+    uid = get_or_create_user_id(st.session_state)
+    # Add UID to query params for href persistence
+    st.query_params['uid'] = uid
 
 # Load persisted data on first run
 if 'persistence_loaded' not in st.session_state:
@@ -163,6 +178,7 @@ if not uses_layout_frame:
     page_container_open()
 
 log_event("nav.page_change", {"to": route})
+
 PAGES[route]["render"]()
 
 if not uses_layout_frame:
@@ -181,3 +197,4 @@ if session_state_to_save:
 user_state_to_save = extract_user_state(st.session_state)
 if user_state_to_save:
     save_user(uid, user_state_to_save)
+

@@ -491,7 +491,7 @@ def render_navi_panel(
         if num_suggested > 0:
             secondary_action = {
                 'label': 'Ask Navi →',
-                'route': 'faq'
+                'route': 'faqs'  # Fixed: correct page key
             }
         
         # Render V2 panel

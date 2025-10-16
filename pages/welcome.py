@@ -10,6 +10,7 @@ from core.mcip import MCIP
 from core.nav import route_to
 from core.state import is_authenticated, is_professional, switch_to_member, switch_to_professional
 from core.ui import img_src
+from core.url_helpers import add_uid_to_href
 from layout import static_url  # Keep static_url for now
 from ui.header_simple import render_header_simple
 from ui.footer_simple import render_footer_simple
@@ -353,19 +354,21 @@ def render_welcome_card(
         
         # Build aria-current attribute separately to avoid quote nesting issues
         aria_attr = 'aria-current="page"' if key == safe_active else ''
+        href_with_uid = add_uid_to_href(f"?page={route}")
         pill_links.append(
-            f"<a href='?page={route}' class='{classes}' data-pill='{key}' {aria_attr}>{icon}<span>{html.escape(cfg['label'])}</span></a>"
+            f"<a href='{href_with_uid}' class='{classes}' data-pill='{key}' {aria_attr}>{icon}<span>{html.escape(cfg['label'])}</span></a>"
         )
 
     with left_col:
         st.markdown('<span class="context-card-sentinel"></span>', unsafe_allow_html=True)
 
+        back_href = add_uid_to_href("?page=welcome")
         st.markdown(
             _clean_html(
                 f"""
                 <div class="context-top">
                   <div class="context-pill-group">{''.join(pill_links)}</div>
-                  <a class="context-close" href="?page=welcome" aria-label="Back to welcome">×</a>
+                  <a class="context-close" href="{back_href}" aria-label="Back to welcome">×</a>
                 </div>
                 """
             ),
@@ -465,10 +468,12 @@ def _welcome_body(
     family_main = static_url("welcome_someone_else.png")
     self_main = static_url("welcome_self.png")
     
-    # Build CTA buttons
-    cta_html = f'<a href="?page={primary_route}" class="btn btn--primary wl-btn">{html.escape(primary_label)}</a>'
+    # Build CTA buttons with UID preservation
+    primary_href = add_uid_to_href(f"?page={primary_route}")
+    cta_html = f'<a href="{primary_href}" class="btn btn--primary wl-btn">{html.escape(primary_label)}</a>'
     if show_secondary:
-        cta_html += '\n                      <a href="?page=login" class="btn btn--secondary">Log in</a>'
+        login_href = add_uid_to_href("?page=login")
+        cta_html += f'\n                      <a href="{login_href}" class="btn btn--secondary">Log in</a>'
 
     return _clean_html(
         f"""
@@ -512,7 +517,7 @@ def _welcome_body(
                       Helping you make confident care decisions for someone you love.
                     </p>
                     <div class="card-actions">
-                      <a href="?page=someone_else" class="btn btn--primary">For someone</a>
+                      <a href="{add_uid_to_href('?page=someone_else')}" class="btn btn--primary">For someone</a>
                     </div>
                   </article>
 
@@ -526,7 +531,7 @@ def _welcome_body(
                       Plan for your own future care with trusted guidance and peace of mind.
                     </p>
                     <div class="card-actions">
-                      <a href="?page=self" class="btn btn--primary">For myself</a>
+                      <a href="{add_uid_to_href('?page=self')}" class="btn btn--primary">For myself</a>
                     </div>
                   </article>
                 </div>
@@ -538,7 +543,7 @@ def _welcome_body(
                   <p class="professional-login__message">Login here to access your personalized dashboards.</p>
                   <p class="professional-login__roles">Discharge Planners • Nurses • Physicians • Social Workers • Geriatric Care Managers</p>
                   <div class="professional-login__button">
-                    <a href="?page=hub_professional" class="btn btn--primary">🔐 For Professionals</a>
+                    <a href="{add_uid_to_href('?page=hub_professional')}" class="btn btn--primary">🔐 For Professionals</a>
                   </div>
                 </div>
               </section>
