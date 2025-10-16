@@ -29,12 +29,6 @@
           "hidden": true
         },
         {
-          "key": "debug_mcip_state",
-          "label": "Debug MCIP",
-          "module": "pages.debug_mcip_state:render",
-          "hidden": false
-        },
-        {
           "key": "welcome_contextual",
           "label": "Contextual Welcome",
           "module": "pages._stubs:render_welcome_contextual",
