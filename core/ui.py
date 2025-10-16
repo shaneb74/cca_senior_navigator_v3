@@ -619,19 +619,25 @@ def render_navi_panel_v2(
         margin: 0 0 8px 0;
         line-height: 1.3;
     }
+    /* Module variant: larger, bolder title */
+    .navi-panel-v2--module .navi-panel-v2__title {
+        font-size: 28px;
+        font-weight: 700;
+        margin: 0 0 12px 0;
+    }
     .navi-panel-v2__reason {
         font-size: 16px;
         color: #475569;
         margin: 0 0 20px 0;
         line-height: 1.5;
     }
-    /* Module variant: make recommendation text MUCH larger and prominent */
+    /* Module variant: make reason text larger and more readable */
     .navi-panel-v2--module .navi-panel-v2__reason {
-        font-size: 32px;
-        font-weight: 700;
-        color: #0f172a;
-        margin: 16px 0 24px 0;
-        line-height: 1.2;
+        font-size: 18px;
+        font-weight: 500;
+        color: #1e293b;
+        margin: 0 0 20px 0;
+        line-height: 1.6;
     }
     .navi-panel-v2__encouragement {
         padding: 12px 16px;
@@ -648,10 +654,11 @@ def render_navi_panel_v2(
     .navi-panel-v2__encouragement--in_progress { background: #eff6ff; border: 1px solid #dbeafe; }
     .navi-panel-v2__encouragement--nearly_there { background: #fef3c7; border: 1px solid #fde68a; }
     .navi-panel-v2__encouragement--complete { background: #f0fdf4; border: 1px solid #bbf7d0; }
-    /* Module variant: make encouragement more prominent */
+    /* Module variant: make encouragement more prominent and readable */
     .navi-panel-v2--module .navi-panel-v2__encouragement {
-        font-size: 16px;
-        padding: 14px 18px;
+        font-size: 17px;
+        padding: 16px 20px;
+        font-weight: 500;
     }
     .navi-panel-v2__chips-label {
         font-size: 13px;
