@@ -308,6 +308,17 @@ div.mod-multi-pills div[data-testid="stMultiSelect"] span[data-baseweb="tag"] {
    MODULE LAYOUT & TYPOGRAPHY
    =================================================================== */
 
+/* Module container - centered, narrow like Hub */
+.sn-app .module-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 32px 24px 60px;
+  color: var(--module-text-primary);
+  font-size: var(--text-body);
+  line-height: var(--leading-relaxed);
+  letter-spacing: var(--tracking-normal);
+}
+
 .sn-app .mod-wrap {
   max-width: 920px;
   margin: 0 auto;
@@ -469,10 +480,15 @@ div.mod-multi-pills div[data-testid="stMultiSelect"] span[data-baseweb="tag"] {
   text-transform: uppercase;
 }
 
-/* Question field container */
+/* Question field container - white card styling */
 .sn-app .mod-field { 
   position: relative; 
-  margin: 20px 0 24px; 
+  margin: 24px 0; 
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
 /* Question label - bold and prominent */
@@ -543,14 +559,30 @@ div.mod-multi-pills div[data-testid="stMultiSelect"] span[data-baseweb="tag"] {
   display: inline-flex; 
 }
 
-/* Action button container */
+/* Action button container - simplified layout */
 .sn-app .mod-actions { 
   display: flex; 
-  gap: 12px; 
-  flex-wrap: wrap; 
-  margin-top: 28px; 
-  padding-top: 20px;
-  border-top: 1px solid #e5e7eb;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px; 
+  margin-top: 32px; 
+  padding-top: 0;
+  border-top: none;
+}
+
+/* Primary Continue button - centered, max 400px */
+.sn-app .mod-actions > div:first-child {
+  width: 100%;
+  max-width: 400px;
+}
+
+/* Secondary actions wrapper - small centered links */
+.sn-app .mod-save-exit-wrapper,
+.sn-app .mod-back-hub-wrapper,
+.sn-app .mod-back-prev-wrapper {
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
 }
 
 /* Info note boxes */
@@ -757,49 +789,69 @@ div.mod-multi-pills div[data-testid="stMultiSelect"] span[data-baseweb="tag"] {
    MODULE ACTION BUTTONS (Continue, Back, Save & Exit)
    =================================================================== */
 
-/* Primary action (Continue) - BLUE button */
+/* Primary action (Continue) - BLUE button, centered, max 400px */
 .sn-app .mod-actions .stButton > button:first-child,
 .sn-app .mod-actions .stButton:first-child > button,
 .sn-app .mod-actions .stButton:first-child > button[class^="css-"],
-.sn-app .mod-actions .stButton:first-child > button[class*=" css-"]{
+.sn-app .mod-actions .stButton:first-child > button[class*=" css-"],
+.sn-app .mod-actions > div:first-child .stButton > button{
   background: #2563eb !important;
   color: #ffffff !important;
   border: 1px solid #2563eb !important;
-  height: 46px !important;
+  height: 48px !important;
   border-radius: 12px !important;
-  padding: 0 24px !important;
+  padding: 0 32px !important;
   font-weight: 700 !important;
-  font-size: 15px !important;
+  font-size: 16px !important;
   line-height: var(--leading-normal) !important;
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15) !important;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2) !important;
   transition: all 0.18s ease !important;
+  width: 100% !important;
 }
 
-.sn-app .mod-actions .stButton:first-child > button:hover:not(:disabled){
+.sn-app .mod-actions .stButton:first-child > button:hover:not(:disabled),
+.sn-app .mod-actions > div:first-child .stButton > button:hover:not(:disabled){
   background: #1d4ed8 !important;
   color: #ffffff !important;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25) !important;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3) !important;
   transform: translateY(-1px) !important;
 }
 
-/* Secondary actions (Back, Save & Exit) - Light gray buttons */
-.sn-app .mod-actions .stButton:not(:first-child) > button,
-.sn-app .mod-actions .stButton:not(:first-child) > button[class^="css-"],
-.sn-app .mod-actions .stButton:not(:first-child) > button[class*=" css-"]{
-  background: #f3f4f6 !important;
-  color: #374151 !important;
-  border: 1px solid #d1d5db !important;
-  height: 46px !important;
-  border-radius: 12px !important;
-  padding: 0 24px !important;
-  font-weight: 600 !important;
-  font-size: 15px !important;
+/* Secondary actions (Back, Save & Exit) - Small text links, not buttons */
+.sn-app .mod-save-exit-wrapper .stButton > button,
+.sn-app .mod-back-hub-wrapper .stButton > button,
+.sn-app .mod-back-prev-wrapper .stButton > button,
+.sn-app .mod-actions .mod-save-exit-wrapper button,
+.sn-app .mod-actions .mod-back-hub-wrapper button,
+.sn-app .mod-actions .mod-back-prev-wrapper button{
+  background: transparent !important;
+  color: #6b7280 !important;
+  border: none !important;
+  height: auto !important;
+  min-height: auto !important;
+  border-radius: 0 !important;
+  padding: 8px 16px !important;
+  font-weight: 500 !important;
+  font-size: 14px !important;
   line-height: var(--leading-normal) !important;
   box-shadow: none !important;
-  transition: all 0.18s ease !important;
+  transition: color 0.15s ease !important;
+  text-decoration: none !important;
+  width: auto !important;
 }
 
-/* Results page: buttons inside columns (col1, col3 get gray; col2 stays black) */
+.sn-app .mod-save-exit-wrapper .stButton > button:hover:not(:disabled),
+.sn-app .mod-back-hub-wrapper .stButton > button:hover:not(:disabled),
+.sn-app .mod-back-prev-wrapper .stButton > button:hover:not(:disabled){
+  background: transparent !important;
+  color: #111827 !important;
+  border: none !important;
+  box-shadow: none !important;
+  text-decoration: underline !important;
+  transform: none !important;
+}
+
+/* Results page: buttons inside columns */
 .sn-app .mod-actions [data-testid="column"]:first-child .stButton > button,
 .sn-app .mod-actions [data-testid="column"]:first-child button[data-testid*="baseButton"],
 .sn-app .mod-actions [data-testid="column"]:last-child .stButton > button,
@@ -815,13 +867,6 @@ div.mod-multi-pills div[data-testid="stMultiSelect"] span[data-baseweb="tag"] {
   font-size: 15px !important;
   box-shadow: none !important;
   transition: all 0.18s ease !important;
-}
-
-.sn-app .mod-actions .stButton:not(:first-child) > button:hover:not(:disabled){
-  background: #e5e7eb !important;
-  color: #111827 !important;
-  border-color: #9ca3af !important;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08) !important;
 }
 
 /* Results page hover states */
@@ -939,31 +984,33 @@ div[data-testid="stVerticalBlock"]:has(.chip-wrap.is-active) .stButton > button{
 /* ===================================================================
    SAVE & CONTINUE LATER BUTTON STYLING
    =================================================================== */
-/* Style Streamlit secondary buttons in mod-actions to match light gray */
-/* Updated: Light gray background for secondary actions */
+/* Style Streamlit secondary buttons in mod-actions to match text link style */
 .sn-app .mod-actions button[kind="secondary"],
 .sn-app .mod-actions .stButton > button[kind="secondary"],
 .sn-app .mod-actions div[data-testid="stButton"] > button[kind="secondary"],
 .sn-app .mod-actions button[data-testid*="BaseButton-secondary"] {
-  background: #f3f4f6 !important;
-  background-color: #f3f4f6 !important;
-  color: #374151 !important;
-  border: 1px solid #d1d5db !important;
-  font-weight: 600 !important;
-  height: 46px !important;
-  border-radius: 12px !important;
-  padding: 0 24px !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  color: #6b7280 !important;
+  border: none !important;
+  font-weight: 500 !important;
+  height: auto !important;
+  min-height: auto !important;
+  border-radius: 0 !important;
+  padding: 8px 16px !important;
   box-shadow: none !important;
-  transition: all 0.18s ease !important;
+  transition: color 0.15s ease !important;
+  text-decoration: none !important;
 }
 
 .sn-app .mod-actions button[kind="secondary"]:hover:not(:disabled),
 .sn-app .mod-actions .stButton > button[kind="secondary"]:hover:not(:disabled),
 .sn-app .mod-actions div[data-testid="stButton"] > button[kind="secondary"]:hover:not(:disabled),
 .sn-app .mod-actions button[data-testid*="BaseButton-secondary"]:hover:not(:disabled) {
-  background: #e5e7eb !important;
-  background-color: #e5e7eb !important;
+  background: transparent !important;
+  background-color: transparent !important;
   color: #111827 !important;
-  border-color: #9ca3af !important;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08) !important;
+  border: none !important;
+  box-shadow: none !important;
+  text-decoration: underline !important;
 }
