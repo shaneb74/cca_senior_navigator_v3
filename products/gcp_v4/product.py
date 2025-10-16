@@ -34,11 +34,24 @@ def render():
     
     try:
         # Check if we're CURRENTLY VIEWING the results step
-        # (not just if outcome exists - that persists after completion)
+        # Need to check BOTH session state AND tile state (for resume functionality)
         state_key = config.state_key
-        current_step_index = int(st.session_state.get(f"{state_key}._step", 0))
         
-        # Safely get current step (with bounds checking)
+        # Check tile state first (takes priority for resume)
+        tiles = st.session_state.setdefault("tiles", {})
+        tile_state = tiles.setdefault(config.product, {})
+        saved_step = tile_state.get("last_step")
+        
+        # Determine current step index (same logic as run_module)
+        if saved_step is not None and saved_step >= 0:
+            current_step_index = saved_step
+        else:
+            current_step_index = int(st.session_state.get(f"{state_key}._step", 0))
+        
+        # Clamp to valid range
+        current_step_index = max(0, min(current_step_index, len(config.steps) - 1))
+        
+        # Safely get current step
         current_step = None
         if 0 <= current_step_index < len(config.steps):
             current_step = config.steps[current_step_index]
