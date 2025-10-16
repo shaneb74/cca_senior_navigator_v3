@@ -20,12 +20,19 @@ from .schema import FieldDef, ModuleConfig, OutcomeContract, StepDef
 def run_module(config: ModuleConfig) -> Dict[str, Any]:
     """Run a module flow defined by ModuleConfig. Returns updated module state."""
     state_key = config.state_key
+    
+    # DEBUG: Check if state exists BEFORE setdefault
+    state_exists_before = state_key in st.session_state
+    state_value_before = st.session_state.get(state_key, "NOT_FOUND")
+    
     st.session_state.setdefault(state_key, {})
     state = st.session_state[state_key]
     
     # DEBUG: Check state at module entry
     st.write("🔍 DEBUG run_module - state_key:", state_key)
-    st.write("🔍 DEBUG run_module - state size:", len(state))
+    st.write("🔍 DEBUG run_module - state existed before setdefault:", state_exists_before)
+    st.write("🔍 DEBUG run_module - state value before (first 5 keys):", list(state_value_before.keys())[:5] if isinstance(state_value_before, dict) else str(state_value_before))
+    st.write("🔍 DEBUG run_module - state size AFTER setdefault:", len(state))
     st.write("🔍 DEBUG run_module - state keys sample:", list(state.keys())[:10] if state else "EMPTY")
 
     total_steps = len(config.steps)
