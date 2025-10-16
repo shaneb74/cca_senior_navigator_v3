@@ -165,7 +165,7 @@ def _load_module_config(module_key: str) -> ModuleConfig:
         version=module_meta.get("version", "v2025.10"),
         steps=steps,
         state_key=f"trivia_{module_meta.get('id', module_key)}",
-        outcomes_compute=None,  # Trivia scores computed inline
+        outcomes_compute="products.senior_trivia.scoring:compute_trivia_outcome",
         results_step_id=module_meta.get("results_step_id", "results"),
     )
 
