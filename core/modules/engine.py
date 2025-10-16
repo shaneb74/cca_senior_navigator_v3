@@ -973,18 +973,20 @@ def _render_results_view(mod: Dict[str, Any], config: ModuleConfig) -> None:
     
     # Build Navi guidance with recommendation
     navi_title = "Great job! Based on your answers, here's what I recommend:"
-    navi_description = rec_text
+    navi_reason = rec_text
     
-    # Add reassurance message
-    navi_support = "Your care plan can evolve as your needs change. You can retake this assessment anytime to get an updated recommendation."
-    
+    # Add reassurance message as encouragement
     render_navi_panel_v2(
-        variant="module",
         title=navi_title,
-        description=navi_description,
-        support=navi_support,
-        chips=None,
-        actions=None
+        reason=navi_reason,
+        encouragement={
+            'icon': '💬',
+            'text': "Your care plan can evolve as your needs change. You can retake this assessment anytime to get an updated recommendation.",
+            'status': 'complete'
+        },
+        context_chips=[],
+        primary_action={'label': '', 'route': ''},
+        variant="module"
     )
     
     st.markdown("<div style='margin: 32px 0;'></div>", unsafe_allow_html=True)
