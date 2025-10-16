@@ -307,6 +307,195 @@ button[type="primary"]:hover {
   color: #fff !important;
 }
 
+/* ===== Action Button Hierarchy (Primary/Secondary) ===== */
+/* Attribute-based styling for action buttons (Continue, Calculate, Back to Hub, etc.) */
+/* Radio pills are NOT styled with these attributes and remain untouched */
+
+:root {
+  /* Action Button Colors */
+  --btn-primary-bg: #0D1F4B;        /* navy */
+  --btn-primary-text: #FFFFFF;
+  --btn-primary-hover: #0A1738;     /* ~8% darker */
+  --btn-primary-active: #081330;    /* ~12% darker */
+  --btn-secondary-bg: #FFFFFF;      /* white ghost style */
+  --btn-secondary-text: #0D1F4B;    /* navy text */
+  --btn-secondary-border: #D1D5DB;  /* light gray outline (like Log in button) */
+  --btn-secondary-hover: #F9FAFB;   /* very subtle gray on hover */
+  --btn-focus: rgba(13,31,75,.35);  /* focus ring */
+  
+  /* Question Chip Colors (FAQ, AI Advisor) */
+  --chip-bg: #FFFFFF;           /* white background */
+  --chip-bg-hover: #F8F9FB;     /* very subtle gray on hover */
+  --chip-text: #0D1F4B;         /* app navy */
+  --chip-ring: rgba(13,31,75,.35); /* focus ring */
+}
+
+/* Primary Action Buttons (Continue, Calculate, Start Module, etc.) */
+/* Target buttons with data-role attribute OR inside containers with data-role */
+div[data-role="primary"] .stButton > button,
+div[data-role="primary"] .stDownloadButton > button,
+.stButton > button[data-role="primary"],
+.stDownloadButton > button[data-role="primary"] {
+  background: var(--btn-primary-bg) !important;
+  color: var(--btn-primary-text) !important;
+  border: 1px solid transparent !important;
+  border-radius: 10px;
+  height: 46px;
+  padding: 0 16px;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: background-color .12s ease, box-shadow .12s ease;
+}
+
+div[data-role="primary"] .stButton > button:hover:not(:disabled),
+div[data-role="primary"] .stDownloadButton > button:hover:not(:disabled),
+.stButton > button[data-role="primary"]:hover:not(:disabled),
+.stDownloadButton > button[data-role="primary"]:hover:not(:disabled) {
+  background: var(--btn-primary-hover) !important;
+}
+
+div[data-role="primary"] .stButton > button:active,
+div[data-role="primary"] .stDownloadButton > button:active,
+.stButton > button[data-role="primary"]:active,
+.stDownloadButton > button[data-role="primary"]:active {
+  background: var(--btn-primary-active) !important;
+}
+
+div[data-role="primary"] .stButton > button:focus-visible,
+div[data-role="primary"] .stDownloadButton > button:focus-visible,
+.stButton > button[data-role="primary"]:focus-visible,
+.stDownloadButton > button[data-role="primary"]:focus-visible {
+  box-shadow: 0 0 0 3px var(--btn-focus) !important;
+  outline: none !important;
+}
+
+div[data-role="primary"] .stButton > button:disabled,
+div[data-role="primary"] .stDownloadButton > button:disabled,
+.stButton > button[data-role="primary"]:disabled,
+.stDownloadButton > button[data-role="primary"]:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Secondary Action Buttons (Back to Hub, Previous Question, Back) */
+/* Ghost style: white background with navy outline and navy text */
+/* Target buttons with data-role attribute OR inside containers with data-role */
+div[data-role="secondary"] .stButton > button,
+div[data-role="secondary"] .stDownloadButton > button,
+.stButton > button[data-role="secondary"],
+.stDownloadButton > button[data-role="secondary"] {
+  background: var(--btn-secondary-bg) !important;
+  color: var(--btn-secondary-text) !important;
+  border: 1px solid var(--btn-secondary-border) !important;
+  border-radius: 10px;
+  height: 46px;
+  padding: 0 16px;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: background-color .12s ease, border-color .12s ease, box-shadow .12s ease;
+}
+
+div[data-role="secondary"] .stButton > button:hover:not(:disabled),
+div[data-role="secondary"] .stDownloadButton > button:hover:not(:disabled),
+.stButton > button[data-role="secondary"]:hover:not(:disabled),
+.stDownloadButton > button[data-role="secondary"]:hover:not(:disabled) {
+  background: var(--btn-secondary-hover) !important;
+  border-color: var(--btn-secondary-border) !important;
+}
+
+div[data-role="secondary"] .stButton > button:focus-visible,
+div[data-role="secondary"] .stDownloadButton > button:focus-visible,
+.stButton > button[data-role="secondary"]:focus-visible,
+.stDownloadButton > button[data-role="secondary"]:focus-visible {
+  box-shadow: 0 0 0 3px var(--btn-focus) !important;
+  outline: none !important;
+}
+
+div[data-role="secondary"] .stButton > button:disabled,
+div[data-role="secondary"] .stDownloadButton > button:disabled,
+.stButton > button[data-role="secondary"]:disabled,
+.stDownloadButton > button[data-role="secondary"]:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ===== Fix White-on-White Secondary Buttons (FAQ/AI Advisor chips) ===== */
+/* Target Streamlit's secondary buttons that render with white background */
+/* These appear in AI Advisor question chips, FAQs, and similar UI elements */
+/* DO NOT target black/gray radio-style pills used in GCP, Cost Planner, PFMA */
+/* DO NOT target action buttons with data-role attributes */
+
+/* ===== Fix White-on-White Secondary Buttons (FAQ/AI Advisor chips) ===== */
+/* Target Streamlit's secondary buttons that render with white background */
+/* These appear in AI Advisor question chips, FAQs, and similar UI elements */
+/* DO NOT target black/gray radio-style pills used in GCP, Cost Planner, PFMA */
+/* DO NOT target action buttons with data-role attributes */
+
+/* Only apply to white-on-white secondary buttons WITHOUT data-role */
+/* IMPORTANT: This targets FAQ/AI Advisor question chips ONLY */
+/* Module back buttons are styled separately below with ghost style */
+button[kind="secondary"][data-testid="stBaseButton-secondary"]:not([data-role]) {
+  background-color: var(--chip-bg) !important;
+  color: var(--chip-text) !important;
+  border: 1px solid #D1D5DB !important;
+  border-radius: 10px;
+  padding: 10px 14px;
+  transition: background-color .12s ease, box-shadow .12s ease, border-color .12s ease;
+}
+
+/* Hover state */
+button[kind="secondary"][data-testid="stBaseButton-secondary"]:not([data-role]):hover:not(:disabled) {
+  background-color: var(--chip-bg-hover) !important;
+  box-shadow: 0 2px 6px rgba(74, 144, 226, 0.12);
+}
+
+/* Focus visible state - accessibility */
+button[kind="secondary"][data-testid="stBaseButton-secondary"]:not([data-role]):focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 3px var(--chip-ring) !important;
+}
+
+/* Disabled state */
+button[kind="secondary"][data-testid="stBaseButton-secondary"]:not([data-role]):disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+/* Exclude module action buttons (these have specific styling already) */
+.sn-app .mod-actions button[kind="secondary"][data-testid="stBaseButton-secondary"]:not([data-role]) {
+  background-color: initial !important;
+  color: initial !important;
+  border: initial !important;
+  padding: initial !important;
+}
+
+/* ===== Module Navigation Buttons (Previous Question, Back to Hub) ===== */
+/* CRITICAL OVERRIDE: Ghost style for module back buttons */
+/* Must have higher specificity than chip rules above */
+/* Using nested div selectors with data-role for MAXIMUM specificity */
+div.mod-back-hub-wrapper div[data-role="secondary"] .stButton > button[kind="secondary"][data-testid="stBaseButton-secondary"],
+div.mod-back-prev-wrapper div[data-role="secondary"] .stButton > button[kind="secondary"][data-testid="stBaseButton-secondary"],
+div[data-role="secondary"] .stButton > button[kind="secondary"][data-testid="stBaseButton-secondary"] {
+  background: #FFFFFF !important;
+  background-color: #FFFFFF !important;
+  color: #0D1F4B !important;
+  border: 1px solid #D1D5DB !important;
+  height: 46px !important;
+  min-height: 46px !important;
+  border-radius: 10px !important;
+  padding: 0 16px !important;
+  font-weight: 600 !important;
+  font-size: 1rem !important;
+}
+
+div.mod-back-hub-wrapper div[data-role="secondary"] .stButton > button[kind="secondary"][data-testid="stBaseButton-secondary"]:hover:not(:disabled),
+div.mod-back-prev-wrapper div[data-role="secondary"] .stButton > button[kind="secondary"][data-testid="stBaseButton-secondary"]:hover:not(:disabled),
+div[data-role="secondary"] .stButton > button[kind="secondary"][data-testid="stBaseButton-secondary"]:hover:not(:disabled) {
+  background: #F9FAFB !important;
+  background-color: #F9FAFB !important;
+  border-color: #9CA3AF !important;
+}
+
 /* ===== Navi Panel Spacing (Global) ===== */
 /* Consistent 12px spacing between Navi and content across all pages */
 .sn-app .navi-panel {
