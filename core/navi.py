@@ -394,6 +394,76 @@ def render_navi_panel(
     
     # Get guidance text based on location
     if location == "hub":
+        # ============================================================
+        # PROFESSIONAL HUB - DEMO-ONLY SCOPE
+        # ============================================================
+        # Professional-specific Navi that references Professional Hub cards only
+        # This does not affect Member Hub, Cost Planner, FAQs, or any other Navi instances
+        if hub_key == "professional":
+            # Professional-specific content
+            title = "Your professional dashboard"
+            reason = "Manage your caseload, track referrals, and coordinate care for your clients."
+            
+            encouragement = {
+                'icon': '💼',
+                'text': "Everything you need to support your patients and families.",
+                'status': 'professional'
+            }
+            
+            # Professional context chips - showing caseload snapshot
+            context_chips = [
+                {
+                    'icon': '📊',
+                    'label': 'Pending',
+                    'value': '7',
+                    'sublabel': 'actions'
+                },
+                {
+                    'icon': '🆕',
+                    'label': 'Referrals',
+                    'value': '3',
+                    'sublabel': 'today'
+                },
+                {
+                    'icon': '📝',
+                    'label': 'Updates',
+                    'value': '5',
+                    'sublabel': 'needed'
+                }
+            ]
+            
+            # Primary action - Open Dashboard (demo, non-functional)
+            primary_action = {
+                'label': 'Open Dashboard',
+                'route': 'hub_professional'
+            }
+            
+            # Secondary action - CRM Query Engine (demo, non-functional)
+            secondary_action = {
+                'label': 'Open CRM →',
+                'route': 'hub_professional'
+            }
+            
+            # No progress bar for Professional Hub (not journey-based)
+            # No alert HTML for Professional Hub
+            
+            # Render Professional-specific V2 panel
+            render_navi_panel_v2(
+                title=title,
+                reason=reason,
+                encouragement=encouragement,
+                context_chips=context_chips,
+                primary_action=primary_action,
+                secondary_action=secondary_action,
+                progress=None,  # No progress bar for Professional Hub
+                alert_html=""  # No alerts for Professional Hub
+            )
+            
+            return ctx
+        
+        # ============================================================
+        # MEMBER HUB (CONCIERGE) - EXISTING LOGIC UNCHANGED
+        # ============================================================
         # Hub-level guidance - use NEW V2 panel design
         completed_count = ctx.progress.get('completed_count', 0)
         
