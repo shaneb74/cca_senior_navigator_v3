@@ -547,6 +547,7 @@ def _compute_context(config: ModuleConfig) -> Dict[str, Any]:
     profile = st.session_state.get("profile", {})
     auth = st.session_state.get("auth", {})
     return {
+        "config": config,  # Include config for scoring functions
         "product": config.product,
         "version": config.version,
         "person_a_name": state.get("recipient_name") or "this person",
@@ -960,6 +961,9 @@ def _render_results_view(mod: Dict[str, Any], config: ModuleConfig) -> None:
     outcomes = st.session_state.get(outcome_key, {})
     recommendation = _get_recommendation(mod, config)
     confidence = outcomes.get("confidence", 1.0)
+    # Handle None confidence gracefully
+    if confidence is None:
+        confidence = 1.0
     confidence_pct = int(confidence * 100)
     tier = outcomes.get("tier", "")
     tier_score = outcomes.get("tier_score", 0)
