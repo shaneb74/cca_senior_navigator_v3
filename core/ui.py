@@ -625,6 +625,14 @@ def render_navi_panel_v2(
         margin: 0 0 20px 0;
         line-height: 1.5;
     }
+    /* Module variant: make recommendation text MUCH larger and prominent */
+    .navi-panel-v2--module .navi-panel-v2__reason {
+        font-size: 32px;
+        font-weight: 700;
+        color: #0f172a;
+        margin: 16px 0 24px 0;
+        line-height: 1.2;
+    }
     .navi-panel-v2__encouragement {
         padding: 12px 16px;
         border-radius: 10px;

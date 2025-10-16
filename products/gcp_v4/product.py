@@ -33,21 +33,40 @@ def render():
     product_shell_start()
     
     try:
-        # Render Navi panel (THE single intelligence layer)
-        # Provides module-level guidance, progress, contextual help
-        render_navi_panel(
-            location="product",
-            product_key="gcp_v4",
-            module_config=config
+        # Check if we're CURRENTLY VIEWING the results step
+        # (not just if outcome exists - that persists after completion)
+        state_key = config.state_key
+        current_step_index = int(st.session_state.get(f"{state_key}._step", 0))
+        
+        # Safely get current step (with bounds checking)
+        current_step = None
+        if 0 <= current_step_index < len(config.steps):
+            current_step = config.steps[current_step_index]
+        
+        # Check if current step is the results step
+        is_on_results_step = (
+            current_step is not None and 
+            config.results_step_id and 
+            current_step.id == config.results_step_id
         )
+        
+        # Render Navi panel (THE single intelligence layer) UNLESS actively on results step
+        # Provides module-level guidance, progress, contextual help
+        # Results step has its own Navi announcement, so we skip here
+        if not is_on_results_step:
+            render_navi_panel(
+                location="product",
+                product_key="gcp_v4",
+                module_config=config
+            )
         
         # Run module engine (handles all rendering and navigation)
         # The engine stores state in st.session_state[config.state_key]
         # and outcomes in st.session_state[f"{config.state_key}._outcomes"]
         module_state = run_module(config)
         
-        # Check if module has computed outcomes (means we're on results step)
-        outcome_key = f"{config.state_key}._outcomes"
+        # Check if outcome exists for publishing
+        outcome_key = f"{state_key}._outcomes"
         outcome = st.session_state.get(outcome_key)
         
         # If outcome exists and we haven't published yet, publish to MCIP
@@ -61,26 +80,18 @@ def render():
                 gcp_outcome = derive_outcome(module_state)
                 _publish_to_mcip(gcp_outcome, module_state)
                 _mark_published()
-                
-                # Show completion message (engine already rendered results step)
-                st.success("✅ Your care recommendation has been saved!")
             except Exception as e:
                 st.error(f"❌ Error saving recommendation: {e}")
                 import traceback
                 st.error(traceback.format_exc())
         
-        # Add next steps buttons (show whenever outcome exists, published or not)
+        # Add primary next step button (show whenever outcome exists)
+        # This appears BELOW the module's Review/Hub buttons as a prominent CTA
         if outcome:
             st.markdown("---")
-            col1, col2 = st.columns(2)
-            with col1:
-                if st.button("💰 Calculate Costs", type="primary", use_container_width=True, key="gcp_next_cost"):
-                    from core.nav import route_to
-                    route_to("cost_v2")
-            with col2:
-                if st.button("🏠 Return to Hub", use_container_width=True, key="gcp_next_hub"):
-                    from core.nav import route_to
-                    route_to("hub_concierge")
+            if st.button("💰 Calculate Costs", type="primary", use_container_width=True, key="gcp_next_cost"):
+                from core.nav import route_to
+                route_to("cost_v2")
     finally:
         product_shell_end()
 
