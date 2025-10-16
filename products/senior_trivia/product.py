@@ -26,8 +26,8 @@ def render():
     1. Show module selection hub
     2. User selects a trivia game
     3. Run selected module via module engine
-    4. Award points and badges on completion
-    5. Return to module hub or continue to next game
+    4. Custom results page with score, breakdown, badges
+    5. Return to module hub or waiting room
     """
     
     product_shell_start()
@@ -37,29 +37,32 @@ def render():
         module_key = st.session_state.get("senior_trivia_current_module")
         
         if module_key:
-            # Load and run the selected module
+            # Load module config
             config = _load_module_config(module_key)
             
-            # Render Navi panel with module guidance
-            render_navi_panel(
-                location="product",
-                product_key="senior_trivia",
-                module_config=config
-            )
+            # Check if we're on results step
+            state_key = config.state_key
+            current_step_index = st.session_state.get(f"{state_key}._step", 0)
+            current_step = config.steps[current_step_index] if current_step_index < len(config.steps) else None
+            is_results = current_step and config.results_step_id and current_step.id == config.results_step_id
             
-            # Run module engine
+            # Only render Navi panel if NOT on results (results will render its own)
+            if not is_results:
+                render_navi_panel(
+                    location="product",
+                    product_key="senior_trivia",
+                    module_config=config
+                )
+            
+            # Run module engine (will call custom results if on results step)
             module_state = run_module(config)
             
-            # Check if module is complete
-            outcome_key = f"{config.state_key}._outcomes"
-            outcome = st.session_state.get(outcome_key)
-            
-            if outcome:
-                # Award points/badges
-                _award_completion_points(module_key, outcome)
-                
-                # Show completion options
-                _show_completion_actions()
+            # If on results, render custom trivia results page
+            if is_results:
+                outcome_key = f"{state_key}._outcomes"
+                outcome = st.session_state.get(outcome_key)
+                if outcome:
+                    _render_trivia_results(module_key, config, module_state, outcome)
         else:
             # Show module selection hub
             _render_module_hub()
@@ -68,10 +71,232 @@ def render():
         product_shell_end()
 
 
+def _render_trivia_results(module_key: str, config: ModuleConfig, module_state: dict, outcome: dict):
+    """Render custom trivia results page.
+    
+    Args:
+        module_key: Module identifier
+        config: Module configuration
+        module_state: Module state with answers
+        outcome: Outcome dict from scoring function
+    """
+    from core.ui import render_navi_panel_v2
+    from core.events import log_event
+    
+    summary = outcome.get("summary", {})
+    score_pct = summary.get("score_percentage", "0")
+    correct_count = summary.get("correct_count", 0)
+    total_questions = summary.get("total_questions", 0)
+    badge_name = summary.get("badge_name", "")
+    badge_level = summary.get("badge_level", "")
+    question_breakdown = outcome.get("question_breakdown", [])
+    
+    # ========================================
+    # 1. SINGLE NAVI PANEL WITH SCORE
+    # ========================================
+    navi_title = "Quiz Complete!"
+    navi_reason = f"You scored {score_pct}%! {_get_score_encouragement(float(score_pct))}"
+    
+    render_navi_panel_v2(
+        title=navi_title,
+        reason=navi_reason,
+        encouragement={
+            'icon': '👍',
+            'text': "You're doing great—keep going!",
+            'status': 'complete'
+        },
+        context_chips=[],
+        primary_action={'label': '', 'route': ''},
+        variant="module"
+    )
+    
+    st.markdown("<div style='margin: 32px 0;'></div>", unsafe_allow_html=True)
+    
+    # ========================================
+    # 2. SCORE CALLOUT
+    # ========================================
+    st.markdown(f"### You scored {score_pct}%")
+    st.markdown(f"**{correct_count}** out of **{total_questions}** correct • Badge earned: **{badge_name}**")
+    st.markdown("<div style='margin: 24px 0;'></div>", unsafe_allow_html=True)
+    
+    # ========================================
+    # 3. QUESTION BREAKDOWN - "Why You Got This Score"
+    # ========================================
+    with st.expander("🔍 Why You Got This Score", expanded=False):
+        st.markdown("**Question-by-question breakdown** (wrong answers first):")
+        st.markdown("")
+        
+        for idx, q in enumerate(question_breakdown, 1):
+            is_correct = q.get("is_correct", False)
+            icon = "✅" if is_correct else "❌"
+            
+            st.markdown(f"**{idx}. {q.get('question_text', '')}**")
+            st.markdown(f"{icon} Your answer: **{q.get('user_answer', 'Not answered')}**")
+            
+            if not is_correct:
+                st.markdown(f"✔️ Correct answer: **{q.get('correct_answer', 'Unknown')}**")
+            
+            feedback = q.get("feedback", "")
+            if feedback:
+                st.markdown(f"💡 {feedback}")
+            
+            st.markdown("---")
+    
+    st.markdown("<div style='margin: 32px 0;'></div>", unsafe_allow_html=True)
+    
+    # ========================================
+    # 4. AWARD AND PERSIST BADGE
+    # ========================================
+    _award_and_persist_badge(module_key, badge_name, badge_level, score_pct)
+    
+    # ========================================
+    # 5. TELEMETRY
+    # ========================================
+    log_event("trivia_complete", {
+        "module_id": module_key,
+        "score_percent": score_pct,
+        "correct_count": correct_count,
+        "total_questions": total_questions,
+        "badge_level": badge_level
+    })
+    
+    # ========================================
+    # 6. ACTION BUTTONS (no duplicates)
+    # ========================================
+    st.markdown("<div style='margin: 32px 0;'></div>", unsafe_allow_html=True)
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        if st.button("🔄 Try Again", key="retry_quiz", type="primary", use_container_width=True):
+            # Emit telemetry
+            log_event("trivia_retry", {"module_id": module_key})
+            
+            # Clear module state and restart
+            state_key = config.state_key
+            if state_key in st.session_state:
+                del st.session_state[state_key]
+            if f"{state_key}._step" in st.session_state:
+                del st.session_state[f"{state_key}._step"]
+            if f"{state_key}._outcomes" in st.session_state:
+                del st.session_state[f"{state_key}._outcomes"]
+            
+            # Clear tile state
+            tiles = st.session_state.get("tiles", {})
+            if "senior_trivia" in tiles:
+                tiles["senior_trivia"].pop("saved_state", None)
+                tiles["senior_trivia"].pop("last_step", None)
+            
+            st.rerun()
+    
+    with col2:
+        if st.button("🏠 Back to Trivia Hub", key="back_to_trivia_hub", use_container_width=True):
+            st.session_state["senior_trivia_current_module"] = None
+            st.rerun()
+    
+    # Tertiary action - back to waiting room
+    st.markdown("<div style='margin: 16px 0;'></div>", unsafe_allow_html=True)
+    if st.button("← Back to Waiting Room", key="back_to_waiting", use_container_width=False):
+        st.session_state["senior_trivia_current_module"] = None
+        # Clear query params to go back to waiting room
+        st.query_params.clear()
+        st.query_params["page"] = "hub_waiting"
+        st.rerun()
+
+
+def _get_score_encouragement(score: float) -> str:
+    """Get encouraging message based on score.
+    
+    Args:
+        score: Score percentage (0-100)
+    
+    Returns:
+        Encouraging message
+    """
+    if score >= 90:
+        return "Outstanding! You're a trivia master! 🎯"
+    elif score >= 70:
+        return "Great job! You really know your stuff! 🌟"
+    elif score >= 50:
+        return "Nice work! You're learning a lot! 💪"
+    else:
+        return "Thanks for playing! Every question teaches something new! 📚"
+
+
+def _award_and_persist_badge(module_key: str, badge_name: str, badge_level: str, score_pct: str):
+    """Award badge and persist to session state and user profile.
+    
+    Args:
+        module_key: Module identifier
+        badge_name: Badge display name
+        badge_level: Badge level (bronze/silver/gold/platinum)
+        score_pct: Score percentage string
+    """
+    from core.events import log_event
+    
+    # Initialize trivia progress if not exists
+    if "senior_trivia_progress" not in st.session_state:
+        st.session_state["senior_trivia_progress"] = {
+            "badges_earned": {},  # {module_key: {name, level, score}}
+            "total_points": 0,
+            "modules_completed": []
+        }
+    
+    progress = st.session_state["senior_trivia_progress"]
+    
+    # Check if badge already exists or is an upgrade
+    existing_badge = progress["badges_earned"].get(module_key)
+    is_new_badge = existing_badge is None
+    is_upgrade = False
+    
+    if existing_badge:
+        level_hierarchy = ["bronze", "silver", "gold", "platinum"]
+        old_level_idx = level_hierarchy.index(existing_badge.get("level", "bronze"))
+        new_level_idx = level_hierarchy.index(badge_level)
+        is_upgrade = new_level_idx > old_level_idx
+    
+    # Award or upgrade badge
+    if is_new_badge or is_upgrade:
+        progress["badges_earned"][module_key] = {
+            "name": badge_name,
+            "level": badge_level,
+            "score": score_pct
+        }
+        
+        # Add to modules completed if new
+        if module_key not in progress["modules_completed"]:
+            progress["modules_completed"].append(module_key)
+        
+        # Calculate points
+        score_float = float(score_pct)
+        points = int(score_float)  # 1 point per percent
+        progress["total_points"] = sum(
+            float(b.get("score", 0)) for b in progress["badges_earned"].values()
+        )
+        
+        # Emit telemetry
+        log_event("trivia_badge_awarded", {
+            "module_id": module_key,
+            "badge": badge_name,
+            "level": badge_level,
+            "is_upgrade": is_upgrade
+        })
+        
+        # Show success message
+        if is_upgrade:
+            st.success(f"🎉 Badge upgraded to **{badge_name}**!")
+        else:
+            st.success(f"🎉 You earned the **{badge_name}** badge!")
+
+
 def _render_module_hub():
-    """Render the trivia module selection hub."""
+    """Render the trivia module selection hub with earned badges."""
     st.markdown("## 🎯 Senior Trivia & Brain Games")
     st.markdown("Choose a trivia game to play. Each game takes 3-5 minutes and earns you points and badges!")
+    
+    # Get earned badges
+    progress = st.session_state.get("senior_trivia_progress", {})
+    badges_earned = progress.get("badges_earned", {})
     
     # Module cards
     modules = [
@@ -81,15 +306,13 @@ def _render_module_hub():
             "desc": "Test your knowledge about assisted living, memory care, and financial planning",
             "time": "4 min",
             "questions": 8,
-            "badge": "Myth Buster"
         },
         {
             "key": "music_trivia",
             "title": "🎵 Music & Entertainment (1950s-1980s)",
             "desc": "Classic songs, artists, TV shows, and cultural touchstones",
             "time": "5 min",
-            "questions": 10,
-            "badge": "Music Master"
+            "questions": 8,
         },
         {
             "key": "medicare_quiz",
@@ -97,15 +320,13 @@ def _render_module_hub():
             "desc": "Learn about enrollment periods, coverage, and common mistakes",
             "time": "4 min",
             "questions": 8,
-            "badge": "Medicare Pro"
         },
         {
             "key": "healthy_habits",
             "title": "💪 Healthy Habits & Longevity",
             "desc": "Evidence-based tips for mobility, nutrition, and mental well-being",
             "time": "5 min",
-            "questions": 10,
-            "badge": "Wellness Champion"
+            "questions": 8,
         },
         {
             "key": "community_challenge",
@@ -113,19 +334,30 @@ def _render_module_hub():
             "desc": "Play together with family! Fun questions for all generations",
             "time": "4 min",
             "questions": 8,
-            "badge": "Family Fun"
         }
     ]
     
     for module in modules:
+        # Check if badge earned for this module
+        badge_info = badges_earned.get(module["key"])
+        
         with st.container():
             col1, col2 = st.columns([3, 1])
             with col1:
                 st.markdown(f"### {module['title']}")
                 st.markdown(module['desc'])
-                st.markdown(f"⏱️ {module['time']} • {module['questions']} questions • Badge: **{module['badge']}**")
+                
+                # Show badge if earned
+                if badge_info:
+                    badge_name = badge_info.get("name", "")
+                    score = badge_info.get("score", "0")
+                    st.markdown(f"⏱️ {module['time']} • {module['questions']} questions • **{badge_name}** ({score}%)")
+                else:
+                    st.markdown(f"⏱️ {module['time']} • {module['questions']} questions")
+            
             with col2:
-                if st.button("Play", key=f"play_{module['key']}", use_container_width=True):
+                button_label = "Play Again" if badge_info else "Play"
+                if st.button(button_label, key=f"play_{module['key']}", use_container_width=True):
                     st.session_state["senior_trivia_current_module"] = module['key']
                     st.rerun()
             st.markdown("---")
@@ -167,6 +399,7 @@ def _load_module_config(module_key: str) -> ModuleConfig:
         state_key=f"trivia_{module_meta.get('id', module_key)}",
         outcomes_compute="products.senior_trivia.scoring:compute_trivia_outcome",
         results_step_id=module_meta.get("results_step_id", "results"),
+        skip_default_results=True,  # Use custom trivia results renderer
     )
 
 
@@ -308,55 +541,3 @@ def _convert_type(question_type: str, select_type: str, ui: dict = None) -> str:
     # Default to text
     else:
         return "text"
-
-
-def _award_completion_points(module_key: str, outcome: dict):
-    """Award points and badges for completing a trivia module."""
-    # Initialize trivia progress tracker
-    if "senior_trivia_progress" not in st.session_state:
-        st.session_state["senior_trivia_progress"] = {
-            "total_points": 0,
-            "modules_completed": [],
-            "badges_earned": []
-        }
-    
-    progress = st.session_state["senior_trivia_progress"]
-    
-    # Check if already completed
-    if module_key not in progress["modules_completed"]:
-        progress["modules_completed"].append(module_key)
-        
-        # Award points (10 points per correct answer)
-        correct_count = outcome.get("correct_count", 0)
-        points = correct_count * 10
-        progress["total_points"] += points
-        
-        # Award badge
-        badge_names = {
-            "truths_myths": "Myth Buster",
-            "music_trivia": "Music Master",
-            "medicare_quiz": "Medicare Pro",
-            "healthy_habits": "Wellness Champion",
-            "community_challenge": "Family Fun"
-        }
-        badge = badge_names.get(module_key, "Trivia Star")
-        progress["badges_earned"].append(badge)
-        
-        st.success(f"🎉 You earned {points} points and the **{badge}** badge!")
-
-
-def _show_completion_actions():
-    """Show actions after completing a trivia module."""
-    st.markdown("---")
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        if st.button("🔙 Back to Trivia Hub", use_container_width=True):
-            st.session_state["senior_trivia_current_module"] = None
-            st.rerun()
-    
-    with col2:
-        if st.button("🏠 Back to Waiting Room", use_container_width=True):
-            st.session_state["senior_trivia_current_module"] = None
-            # Route back to waiting room hub
-            st.rerun()
