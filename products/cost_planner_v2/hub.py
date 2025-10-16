@@ -512,25 +512,8 @@ def _render_module_tile(
         "completed": "Completed"
     }
     
-    # Use container with custom CSS
-    container_css = """
-    <style>
-    .module-tile {
-        background: white;
-        border: 1px solid #e6edf5;
-        border-radius: 16px;
-        padding: 24px;
-        margin-bottom: 16px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-    }
-    </style>
-    """
-    st.markdown(container_css, unsafe_allow_html=True)
-    
-    # Create tile using columns
+    # Create tile using Streamlit container with border
     with st.container():
-        st.markdown('<div class="module-tile">', unsafe_allow_html=True)
-        
         col_icon, col_content = st.columns([1, 8])
         
         with col_icon:
@@ -549,8 +532,6 @@ def _render_module_tile(
             st.markdown(" ".join(title_parts))
             st.caption(description)
             st.caption(f"⏱️ {estimated_time} • Status: {status_labels[status]}")
-        
-        st.markdown('</div>', unsafe_allow_html=True)
     
     # Action buttons below tile
     col1, col2, col3 = st.columns([2, 2, 1])
