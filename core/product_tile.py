@@ -284,7 +284,7 @@ class BaseTile:
         if self.primary_route:
             href = self.primary_route
         elif self.primary_go:
-            href = f"?go={self.primary_go}"
+            href = f"?page={self.primary_go}"
         else:
             return "#"
         
@@ -296,7 +296,7 @@ class BaseTile:
         if self.secondary_route:
             href = self.secondary_route
         elif self.secondary_go:
-            href = f"?go={self.secondary_go}"
+            href = f"?page={self.secondary_go}"
         else:
             return "#"
         
