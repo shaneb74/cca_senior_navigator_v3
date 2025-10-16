@@ -58,9 +58,18 @@ def render():
     
     product_shell_start()
     
-    # Initialize step state FIRST (needed for Navi context)
+    # Initialize step state - check if user has progressed past intro
     if "cost_v2_step" not in st.session_state:
-        st.session_state.cost_v2_step = "intro"
+        # Check if user has completed intro by checking for modules state
+        if "cost_v2_modules" in st.session_state:
+            # User has been to Financial Assessment - resume there
+            st.session_state.cost_v2_step = "modules"
+        elif "cost_v2_qualifiers" in st.session_state:
+            # User has completed qualifiers - resume at modules
+            st.session_state.cost_v2_step = "modules"
+        else:
+            # First time - start at intro
+            st.session_state.cost_v2_step = "intro"
     
     current_step = st.session_state.cost_v2_step
     
