@@ -459,6 +459,7 @@ class ProductTileHub(BaseTile):
         lock_msg_html = ""
         if self.locked and self.lock_msg:
             lock_msg_html = f'<div class="tile-lock-msg">{html_escape(self.lock_msg)}</div>'
+        
         actions_html = self._actions()
         if actions_html:
             out.append(actions_html)

@@ -1313,7 +1313,8 @@ def _render_results_ctas_once(config: ModuleConfig) -> None:
             help="Return to the main hub"
         ):
             from core.nav import route_to
-            route_to("hub_concierge")
+            hub_route = _hub_route_for_product(config.product)
+            route_to(hub_route)
     
     st.markdown('</div>', unsafe_allow_html=True)
     
