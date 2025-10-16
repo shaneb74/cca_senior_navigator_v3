@@ -199,10 +199,9 @@ def _render_trivia_results(module_key: str, config: ModuleConfig, module_state: 
     st.markdown("<div style='margin: 16px 0;'></div>", unsafe_allow_html=True)
     if st.button("← Back to Waiting Room", key="back_to_waiting", use_container_width=False):
         st.session_state["senior_trivia_current_module"] = None
-        # Clear query params to go back to waiting room
-        st.query_params.clear()
-        st.query_params["page"] = "hub_waiting"
-        st.rerun()
+        # Navigate to waiting room (preserve UID to maintain session)
+        from core.nav import route_to
+        route_to("hub_waiting")
 
 
 def _get_score_encouragement(score: float) -> str:
@@ -323,9 +322,9 @@ def _render_module_hub():
     if st.button("← Back to Waiting Room", key="back_to_waiting_room", use_container_width=False):
         # Clear current module selection
         st.session_state.pop("senior_trivia_current_module", None)
-        # Navigate to waiting room
-        st.query_params.update({"page": "hub_waiting"})
-        st.rerun()
+        # Navigate to waiting room (preserve UID to maintain session)
+        from core.nav import route_to
+        route_to("hub_waiting")
     
     st.markdown("<div style='margin: 24px 0;'></div>", unsafe_allow_html=True)
     
