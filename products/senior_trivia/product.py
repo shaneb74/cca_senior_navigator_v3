@@ -181,11 +181,12 @@ def _render_trivia_results(module_key: str, config: ModuleConfig, module_state: 
             if f"{state_key}._outcomes" in st.session_state:
                 del st.session_state[f"{state_key}._outcomes"]
             
-            # Clear tile state
-            tiles = st.session_state.get("tiles", {})
-            if "senior_trivia" in tiles:
-                tiles["senior_trivia"].pop("saved_state", None)
-                tiles["senior_trivia"].pop("last_step", None)
+            # Clear tile state (use unique product key per module)
+            tiles = st.session_state.get("product_tiles_v2", {})
+            product_key = f"senior_trivia_{module_key}"
+            if product_key in tiles:
+                tiles[product_key].pop("saved_state", None)
+                tiles[product_key].pop("last_step", None)
             
             st.rerun()
     
@@ -224,7 +225,9 @@ def _get_score_encouragement(score: float) -> str:
 
 
 def _award_and_persist_badge(module_key: str, badge_name: str, badge_level: str, score_pct: str):
-    """Award badge and persist to session state and user profile.
+    """Award and persist a badge to the user's trivia progress.
+    
+    Stores badges in product_tiles_v2 for cross-session persistence.
     
     Args:
         module_key: Module identifier
@@ -234,15 +237,21 @@ def _award_and_persist_badge(module_key: str, badge_name: str, badge_level: str,
     """
     from core.events import log_event
     
-    # Initialize trivia progress if not exists
-    if "senior_trivia_progress" not in st.session_state:
-        st.session_state["senior_trivia_progress"] = {
+    # Initialize product_tiles_v2 if not exists
+    if "product_tiles_v2" not in st.session_state:
+        st.session_state["product_tiles_v2"] = {}
+    
+    tiles = st.session_state["product_tiles_v2"]
+    
+    # Initialize senior_trivia_hub tile state if not exists
+    if "senior_trivia_hub" not in tiles:
+        tiles["senior_trivia_hub"] = {
             "badges_earned": {},  # {module_key: {name, level, score}}
             "total_points": 0,
             "modules_completed": []
         }
     
-    progress = st.session_state["senior_trivia_progress"]
+    progress = tiles["senior_trivia_hub"]
     
     # Check if badge already exists or is an upgrade
     existing_badge = progress["badges_earned"].get(module_key)
@@ -304,8 +313,9 @@ def _render_module_hub():
     
     st.markdown("<div style='margin: 24px 0;'></div>", unsafe_allow_html=True)
     
-    # Get earned badges
-    progress = st.session_state.get("senior_trivia_progress", {})
+    # Get earned badges from persisted tile state
+    tiles = st.session_state.get("product_tiles_v2", {})
+    progress = tiles.get("senior_trivia_hub", {})
     badges_earned = progress.get("badges_earned", {})
     
     # Module cards
@@ -403,7 +413,7 @@ def _load_module_config(module_key: str) -> ModuleConfig:
             steps.append(step)
     
     return ModuleConfig(
-        product="senior_trivia",
+        product=f"senior_trivia_{module_key}",  # Unique product key per quiz module
         version=module_meta.get("version", "v2025.10"),
         steps=steps,
         state_key=f"trivia_{module_meta.get('id', module_key)}",
