@@ -15,7 +15,7 @@ def compute_trivia_outcome(answers: Dict[str, Any], context: Dict[str, Any]) -> 
         context: Context dict with config and other metadata
     
     Returns:
-        Outcome dict with scores, badge, and summary
+        Outcome dict with scores, badge, and question breakdown
     """
     # Get config from context
     config = context.get("config")
@@ -26,7 +26,8 @@ def compute_trivia_outcome(answers: Dict[str, Any], context: Dict[str, Any]) -> 
         if step.fields:
             all_questions.extend(step.fields)
     
-    # Count correct answers
+    # Build question breakdown with details
+    question_breakdown = []
     correct_count = 0
     total_questions = len(all_questions)
     
@@ -34,12 +35,37 @@ def compute_trivia_outcome(answers: Dict[str, Any], context: Dict[str, Any]) -> 
         question_id = field.key
         user_answer = answers.get(question_id)
         
-        if user_answer:
-            # Check if answer is correct
-            for option in field.options:
-                if option.get("value") == user_answer and option.get("is_correct"):
+        # Find correct option and user's option
+        correct_option = None
+        user_option = None
+        is_correct = False
+        
+        for option in field.options:
+            if option.get("is_correct"):
+                correct_option = option
+            if option.get("value") == user_answer:
+                user_option = option
+                if option.get("is_correct"):
+                    is_correct = True
                     correct_count += 1
-                    break
+        
+        # Get feedback (prioritize user's choice, fall back to correct)
+        feedback = ""
+        if user_option and user_option.get("feedback"):
+            feedback = user_option.get("feedback")
+        elif correct_option and correct_option.get("feedback"):
+            feedback = correct_option.get("feedback")
+        
+        question_breakdown.append({
+            "question_id": question_id,
+            "question_text": field.label,
+            "user_answer": user_option.get("label") if user_option else "Not answered",
+            "user_answer_value": user_answer,
+            "correct_answer": correct_option.get("label") if correct_option else "Unknown",
+            "correct_answer_value": correct_option.get("value") if correct_option else None,
+            "is_correct": is_correct,
+            "feedback": feedback
+        })
     
     # Calculate score percentage
     score_percentage = (correct_count / total_questions * 100) if total_questions > 0 else 0
@@ -61,6 +87,9 @@ def compute_trivia_outcome(answers: Dict[str, Any], context: Dict[str, Any]) -> 
         badge_name = "Bronze ⭐"
         badge_level = "bronze"
     
+    # Sort question breakdown: wrong answers first, then correct
+    question_breakdown.sort(key=lambda q: (q["is_correct"], q["question_id"]))
+    
     # Build outcome
     return {
         "recommendation": f"You scored {score_percentage:.0f}%! {_get_encouragement(score_percentage)}",
@@ -73,6 +102,7 @@ def compute_trivia_outcome(answers: Dict[str, Any], context: Dict[str, Any]) -> 
             "badge_name": badge_name,
             "badge_level": badge_level,
         },
+        "question_breakdown": question_breakdown,  # NEW: detailed question analysis
         "domain_scores": {
             "accuracy": score_percentage,
         },

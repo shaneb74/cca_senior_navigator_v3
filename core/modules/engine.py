@@ -110,7 +110,11 @@ def run_module(config: ModuleConfig) -> Dict[str, Any]:
     
     if is_results:
         _ensure_outcomes(config, state)
-        _render_results_view(state, config)
+        
+        # Check if product wants to skip default results rendering
+        if not getattr(config, 'skip_default_results', False):
+            _render_results_view(state, config)
+        
         # Close module container
         st.markdown('</div>', unsafe_allow_html=True)
         return state
