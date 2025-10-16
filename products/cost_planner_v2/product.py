@@ -134,14 +134,14 @@ def _render_navi_with_context(current_step: str):
                 "text": "Complete the Guided Care Plan first for personalized recommendations."
             }
         
-        # Render Navi panel V2 with custom message
+        # Render Navi panel V2 with custom message (module variant = blue left border, no button)
         render_navi_panel_v2(
             title=title,
             reason=reason,
             encouragement=encouragement,
             context_chips=[],
             primary_action={'label': 'Continue', 'action': None},
-            variant="hub"
+            variant="module"
         )
     
     else:
