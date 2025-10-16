@@ -157,19 +157,19 @@ def render():
                     estimated_time=module.get("estimated_time", "3-5 min"),
                     required=module.get("required", False)
                 )
-        
-        # Check if there's a second module in this row
-        if i + 1 < len(visible_modules):
-            with col2:
-                module = visible_modules[i + 1]
-                _render_module_tile(
-                    module_key=module.get("key"),
-                    title=module.get('title', 'Module'),
-                    description=module.get("description", ""),
-                    icon=module.get("icon", "📄"),
-                    estimated_time=module.get("estimated_time", "3-5 min"),
-                    required=module.get("required", False)
-                )
+            
+            # Check if there's a second module in this row
+            if i + 1 < len(visible_modules):
+                with col2:
+                    module = visible_modules[i + 1]
+                    _render_module_tile(
+                        module_key=module.get("key"),
+                        title=module.get('title', 'Module'),
+                        description=module.get("description", ""),
+                        icon=module.get("icon", "📄"),
+                        estimated_time=module.get("estimated_time", "3-5 min"),
+                        required=module.get("required", False)
+                    )
             
             st.markdown("")
         
