@@ -707,8 +707,8 @@ def render_about():
 
 def render_faqs():
     """Delegate to the full FAQ/AI Advisor implementation."""
-    from pages import faq
-    faq.render()
+    from pages import ai_advisor
+    ai_advisor.render()
 
 
 # --- DEPRECATED: temporarily disabled during CSS/IA refactor ---
