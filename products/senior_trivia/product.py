@@ -306,8 +306,9 @@ def _clear_module_state(module_key: str):
     Args:
         module_key: Module identifier (e.g., "truths_myths")
     """
-    # Build state key (matches ModuleConfig.state_key pattern)
-    state_key = f"senior_trivia_{module_key}"
+    # Build state key (matches ModuleConfig.state_key pattern: "trivia_{module_id}")
+    # Note: module JSON files have "id" field that matches module_key
+    state_key = f"trivia_{module_key}"
     
     # Clear module engine state
     keys_to_clear = [
@@ -321,6 +322,7 @@ def _clear_module_state(module_key: str):
         st.session_state.pop(key, None)
     
     # Clear tile state for this specific module
+    # Product key uses "senior_trivia_" prefix for tile storage
     tiles = st.session_state.get("product_tiles_v2", {})
     product_key = f"senior_trivia_{module_key}"
     if product_key in tiles:
