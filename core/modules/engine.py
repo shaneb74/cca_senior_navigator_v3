@@ -1091,6 +1091,11 @@ def _render_results_view(mod: Dict[str, Any], config: ModuleConfig) -> None:
     summary_data = outcomes.get("summary", {})
     points = summary_data.get("points", [])
     
+    # DEBUG: Check what data we have
+    # st.write("DEBUG outcomes keys:", list(outcomes.keys()))
+    # st.write("DEBUG mod keys:", list(mod.keys()))
+    # st.write("DEBUG points:", points)
+    
     if points:
         # Use detailed summary points from derive() function
         # Group them visually with icons
