@@ -16,10 +16,13 @@ __all__ = ["render"]
 def _get_trivia_badges():
     """Get list of earned trivia badges for tile display.
     
+    Reads from persisted product_tiles_v2 structure.
+    
     Returns:
         List of badge strings to show on tile
     """
-    progress = st.session_state.get("senior_trivia_progress", {})
+    tiles = st.session_state.get("product_tiles_v2", {})
+    progress = tiles.get("senior_trivia_hub", {})
     badges_earned = progress.get("badges_earned", {})
     
     if not badges_earned:
