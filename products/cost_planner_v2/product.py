@@ -58,14 +58,14 @@ def render():
     
     product_shell_start()
     
-    # Render Navi panel with dynamic guidance based on step and GCP status
-    _render_navi_with_context(current_step)
-    
-    # Initialize step state
+    # Initialize step state FIRST (needed for Navi context)
     if "cost_v2_step" not in st.session_state:
         st.session_state.cost_v2_step = "intro"
     
     current_step = st.session_state.cost_v2_step
+    
+    # Render Navi panel with dynamic guidance based on step and GCP status
+    _render_navi_with_context(current_step)
     
     # Route to appropriate step
     if current_step == "intro":
