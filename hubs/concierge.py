@@ -330,7 +330,7 @@ def _build_navi_guide_block(ctx) -> str:
     }
     
     encouragement = encouragement_messages.get(status, encouragement_messages["getting_started"])
-    eyebrow = f"🤖 Navi Insight · {encouragement['eyebrow']}"
+    eyebrow = f"✨ Navi Insight · {encouragement['eyebrow']}"
 
     boost_items = NaviOrchestrator.get_context_boost(ctx) or []
     boost_html = ""

@@ -364,7 +364,7 @@ def render_navi_panel(
     Returns:
         NaviContext for downstream use
     """
-    from core.ui import render_navi_guide_bar, render_navi_panel_v2
+    from core.ui import render_navi_panel_v2
     from core.nav import route_to
     from core.navi_dialogue import NaviDialogue
     
@@ -507,18 +507,19 @@ def render_navi_panel(
         )
     
     elif location == "product":
-        # Product/module-level guidance
+        # Product/module-level guidance using V2 panel with module variant
         # Check if module has embedded guidance
         if module_config and ctx.module_step is not None and ctx.module_total:
             # Bounds check to prevent IndexError
             if ctx.module_step < 0 or ctx.module_step >= ctx.module_total:
                 # Module step out of bounds - show generic message
-                render_navi_guide_bar(
-                    text="🤖 Navi: Let's work through this together",
-                    subtext="I'm here to guide you step by step.",
-                    icon="🧭",
-                    show_progress=False,
-                    color="#0066cc"
+                render_navi_panel_v2(
+                    title="Let's work through this together",
+                    reason="I'm here to guide you step by step.",
+                    encouragement={'icon': '💪', 'text': "Take your time—we'll get through this.", 'status': 'in_progress'},
+                    context_chips=[],
+                    primary_action={'label': '', 'route': ''},
+                    variant="module"
                 )
             else:
                 current_step_def = module_config.steps[ctx.module_step]
@@ -527,55 +528,57 @@ def render_navi_panel(
                 if hasattr(current_step_def, 'navi_guidance') and current_step_def.navi_guidance:
                     guidance = current_step_def.navi_guidance
                     
-                    # Build message from guidance
-                    main_text = None
-                    subtext = None
-                    
-                    # Priority order for main message:
-                    # 1. section_purpose (what this section does)
-                    # 2. encouragement (friendly motivational text)
-                    # 3. Fallback to title
+                    # Build title from guidance
+                    # Priority order: section_purpose → title
                     if guidance.get('section_purpose'):
-                        main_text = f"🤖 Navi: {guidance['section_purpose']}"
-                    elif guidance.get('encouragement'):
-                        main_text = f"🤖 Navi: {guidance['encouragement']}"
+                        title = guidance['section_purpose']
                     else:
-                        main_text = f"🤖 Navi: {current_step_def.title}"
+                        title = current_step_def.title
                     
-                    # Priority order for subtext:
-                    # 1. why_this_matters (educational/contextual)
-                    # 2. what_happens_next (preview)
-                    # 3. time_estimate (for intro/info pages)
-                    # 4. context_note (additional details)
+                    # Build reason text from guidance
+                    # Priority order: why_this_matters → what_happens_next → context_note
+                    reason = ""
                     if guidance.get('why_this_matters'):
-                        subtext = f"💡 {guidance['why_this_matters']}"
+                        reason = guidance['why_this_matters']
                     elif guidance.get('what_happens_next'):
-                        subtext = guidance['what_happens_next']
-                    elif guidance.get('time_estimate'):
-                        subtext = f"⏱️ {guidance['time_estimate']}"
+                        reason = guidance['what_happens_next']
                     elif guidance.get('context_note'):
-                        subtext = guidance['context_note']
+                        reason = guidance['context_note']
+                    elif guidance.get('time_estimate'):
+                        reason = f"This should take about {guidance['time_estimate']}."
+                    else:
+                        reason = "Let's gather some important information."
+                    
+                    # Build encouragement
+                    encouragement_text = guidance.get('encouragement', "You're making great progress!")
+                    encouragement = {
+                        'icon': guidance.get('icon', '💪'),
+                        'text': encouragement_text,
+                        'status': 'in_progress'
+                    }
                     
                     # Check if this is the results step
                     is_results = module_config.results_step_id and current_step_def.id == module_config.results_step_id
                     
-                    # Render with extracted guidance
-                    render_navi_guide_bar(
-                        text=main_text,
-                        subtext=subtext,
-                        icon=guidance.get('icon', '🧭'),
-                        show_progress=(not is_results),  # Hide progress on results page
-                        current_step=ctx.module_step + 1,
-                        total_steps=ctx.module_total,
-                        color=guidance.get('color', '#0066cc')
+                    # Build progress dict (hide on results page)
+                    progress = None if is_results else {
+                        'current': ctx.module_step + 1,
+                        'total': ctx.module_total
+                    }
+                    
+                    # Render V2 panel with module variant
+                    render_navi_panel_v2(
+                        title=title,
+                        reason=reason,
+                        encouragement=encouragement,
+                        context_chips=[],  # Modules don't show chips (page content is the focus)
+                        primary_action={'label': '', 'route': ''},  # Modules have own CTAs
+                        progress=progress,
+                        variant="module"
                     )
                     
-                    # Show encouragement or support message as additional info
-                    if guidance.get('encouragement') and guidance.get('section_purpose'):
-                        # If we used section_purpose as main, show encouragement below
-                        st.info(f"💬 {guidance['encouragement']}")
-                    elif guidance.get('support_message'):
-                        # Show support message for sensitive topics
+                    # Show support message for sensitive topics
+                    if guidance.get('support_message'):
                         st.info(f"💙 {guidance['support_message']}")
                     
                     # Show red flags warning if present (for clinicians/caregivers)
@@ -590,23 +593,29 @@ def render_navi_panel(
                     # Check if this is the results step
                     is_results = module_config.results_step_id and current_step_def.id == module_config.results_step_id
                     
-                    render_navi_guide_bar(
-                        text=f"🤖 Navi: {current_step_def.title}",
-                        subtext="I'm here to help you through each step.",
-                        icon="🧭",
-                        show_progress=(not is_results),  # Hide progress on results page
-                        current_step=ctx.module_step + 1,
-                        total_steps=ctx.module_total,
-                        color="#0066cc"
+                    progress = None if is_results else {
+                        'current': ctx.module_step + 1,
+                        'total': ctx.module_total
+                    }
+                    
+                    render_navi_panel_v2(
+                        title=current_step_def.title,
+                        reason="I'm here to help you through each step.",
+                        encouragement={'icon': '💪', 'text': "You're doing great—keep going!", 'status': 'in_progress'},
+                        context_chips=[],
+                        primary_action={'label': '', 'route': ''},
+                        progress=progress,
+                        variant="module"
                     )
         else:
             # No module config or step info - show simple guidance
-            render_navi_guide_bar(
-                text="🤖 Navi: I'm here to help",
-                subtext="Let's work through this together.",
-                icon="🧭",
-                show_progress=False,
-                color="#0066cc"
+            render_navi_panel_v2(
+                title="I'm here to help",
+                reason="Let's work through this together.",
+                encouragement={'icon': '💪', 'text': "Take your time—we'll get through this.", 'status': 'in_progress'},
+                context_chips=[],
+                primary_action={'label': '', 'route': ''},
+                variant="module"
             )
     
     return ctx
