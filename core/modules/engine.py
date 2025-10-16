@@ -975,13 +975,35 @@ def _render_results_view(mod: Dict[str, Any], config: ModuleConfig) -> None:
     navi_title = "Great job! Based on your answers, here's what I recommend:"
     navi_reason = rec_text
     
-    # Add reassurance message as encouragement
+    # Calculate question completeness for contextual message
+    answered_count = 0
+    total_count = 0
+    for step in config.steps:
+        if not step.fields:
+            continue
+        for field in step.fields:
+            if field.required:
+                total_count += 1
+                value = mod.get(field.key)
+                if value is not None and value != "" and value != []:
+                    answered_count += 1
+    
+    unanswered_count = total_count - answered_count
+    
+    # Add contextual encouragement message
+    # If questions were skipped, let user know they can get a more reliable recommendation
+    # Otherwise, reassure them the plan can evolve
+    if unanswered_count > 0:
+        encouragement_text = f"You skipped {unanswered_count} question{'s' if unanswered_count > 1 else ''}. I can give a more reliable recommendation with more information—feel free to retake this assessment anytime."
+    else:
+        encouragement_text = "Your care plan can evolve as your needs change. You can retake this assessment anytime to get an updated recommendation."
+    
     render_navi_panel_v2(
         title=navi_title,
         reason=navi_reason,
         encouragement={
             'icon': '💬',
-            'text': "Your care plan can evolve as your needs change. You can retake this assessment anytime to get an updated recommendation.",
+            'text': encouragement_text,
             'status': 'complete'
         },
         context_chips=[],
@@ -1061,61 +1083,7 @@ def _render_results_view(mod: Dict[str, Any], config: ModuleConfig) -> None:
     st.markdown("<div style='margin: 24px 0;'></div>", unsafe_allow_html=True)
     
     # ========================================
-    # 3. QUESTION COMPLETENESS - White Card (Consistent with Theme)
-    # ========================================
-    
-    # Calculate completeness
-    answered_count = 0
-    total_count = 0
-    for step in config.steps:
-        if not step.fields:
-            continue
-        for field in step.fields:
-            if field.required:
-                total_count += 1
-                value = mod.get(field.key)
-                if value is not None and value != "" and value != []:
-                    answered_count += 1
-    
-    completeness = answered_count / total_count if total_count > 0 else 1.0
-    completeness_pct = int(completeness * 100)
-    completeness_color = "#22c55e" if completeness_pct >= 90 else "#f59e0b" if completeness_pct >= 70 else "#3b82f6"
-    
-    st.markdown(f"""
-    <div style="
-        background: white;
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        padding: 24px;
-        margin-bottom: 32px;
-    ">
-        <div style="font-size: 12px; color: #64748b; font-weight: 600; letter-spacing: 0.5px; margin-bottom: 12px;">
-            QUESTION COMPLETENESS
-        </div>
-        <div style="font-size: 28px; font-weight: 600; color: {completeness_color}; margin-bottom: 8px;">
-            {completeness_pct}%
-        </div>
-        <div style="font-size: 14px; color: #64748b; margin-bottom: 16px;">
-            {answered_count} of {total_count} questions answered
-        </div>
-        <div style="
-            background: #f1f5f9;
-            height: 8px;
-            border-radius: 4px;
-            overflow: hidden;
-        ">
-            <div style="
-                background: {completeness_color};
-                height: 100%;
-                width: {completeness_pct}%;
-                transition: width 0.3s ease;
-            "></div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # ========================================
-    # 4. WHY YOU GOT THIS RECOMMENDATION
+    # 3. WHY YOU GOT THIS RECOMMENDATION
     # ========================================
     
     st.markdown("### 🔍 Why You Got This Recommendation")
@@ -1134,7 +1102,7 @@ def _render_results_view(mod: Dict[str, Any], config: ModuleConfig) -> None:
     st.markdown("<div style='margin: 40px 0;'></div>", unsafe_allow_html=True)
     
     # ========================================
-    # 5. NEXT ACTIONS - Simplified CTAs
+    # 4. NEXT ACTIONS - Simplified CTAs
     # ========================================
     
     _render_results_ctas_once(config)
