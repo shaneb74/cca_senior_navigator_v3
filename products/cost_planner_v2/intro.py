@@ -77,23 +77,16 @@ def _render_quick_estimate_form():
     # Reverse map for seeding from GCP
     tier_to_display = {v: k for k, v in care_type_map.items()}
     
-    # Check if we have a GCP recommendation
+    # Check if we have a GCP recommendation (seed selector, but don't show banner)
     default_index = 1  # Default to "In-Home Care"
     gcp_rec = MCIP.get_care_recommendation()
     has_gcp = gcp_rec and gcp_rec.tier
     
     if has_gcp:
-        # Map GCP tier to display name
+        # Map GCP tier to display name and pre-select it
         gcp_display = tier_to_display.get(gcp_rec.tier)
         if gcp_display and gcp_display in ALLOWED_CARE_TYPES:
             default_index = ALLOWED_CARE_TYPES.index(gcp_display)
-            st.info(f"""
-            **💡 Based on your Guided Care Plan**
-            
-            We recommend: **{gcp_display}**
-            
-            You can calculate costs for this recommendation, or explore other care scenarios below.
-            """)
     
     st.markdown("#### 📍 Location")
     
