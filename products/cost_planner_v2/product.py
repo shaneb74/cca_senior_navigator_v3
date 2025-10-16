@@ -118,26 +118,20 @@ def _render_navi_with_context(current_step: str):
     if current_step == "intro":
         if has_gcp:
             recommended_care = tier_display_map.get(gcp_rec.tier, gcp_rec.tier)
-            title = "Let's explore care costs"
-            reason = f"""Based on your Guided Care Plan, I recommend **{recommended_care}**.
-            
-You can calculate costs for this recommendation below, or explore other care scenarios to compare options.
-
-**Why this matters:** Understanding costs early helps you plan ahead and identify funding sources."""
+            title = "Let's look at costs"
+            reason = f"I've pre-selected **{recommended_care}** based on your Guided Care Plan. You can explore other scenarios too."
             encouragement = {
                 "icon": "💡",
                 "status": "info",
-                "text": "Feel free to calculate multiple scenarios. Your GCP recommendation will stay visible so you can always refer back to it."
+                "text": "Compare different care options to see what works for your budget."
             }
         else:
-            title = "Let's get a quick cost estimate"
-            reason = """Enter your ZIP code and select a care type to see ballpark costs in your area.
-            
-**Pro tip:** If you complete the Guided Care Plan first, I can give you a personalized recommendation and more accurate cost estimates based on specific care needs."""
+            title = "Let's get a quick estimate"
+            reason = "Enter your ZIP code and select a care type to see what it costs in your area."
             encouragement = {
                 "icon": "📊",
                 "status": "info",
-                "text": "These are general estimates. For a detailed financial plan with funding sources and strategies, continue to the Full Assessment after calculating."
+                "text": "Complete the Guided Care Plan first for personalized recommendations."
             }
         
         # Render Navi panel V2 with custom message
