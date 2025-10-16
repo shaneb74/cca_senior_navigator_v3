@@ -81,6 +81,20 @@ def render(ctx=None) -> None:
             variant="violet",
             order=40,
         ),
+        ProductTileHub(
+            key="senior_trivia",
+            title="Senior Trivia & Brain Games",
+            desc="Test your knowledge with fun, educational trivia",
+            blurb="Play solo or with family! Topics include senior living myths, music nostalgia, Medicare, healthy habits, and family fun.",
+            primary_label="Play Trivia",
+            primary_go="senior_trivia",
+            secondary_label="View badges",
+            secondary_go="trivia_badges",
+            progress=None,
+            badges=["new", "family_friendly"],
+            variant="teal",
+            order=50,
+        ),
     ]
 
     guide = compute_hub_guide("waiting_room")

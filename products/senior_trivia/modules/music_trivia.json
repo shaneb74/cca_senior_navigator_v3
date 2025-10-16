@@ -1,0 +1,215 @@
+{
+  "module": {
+    "id": "music_trivia",
+    "name": "Music & Entertainment Trivia (1950s-1980s)",
+    "version": "v2025.10",
+    "description": "Test your knowledge of classic music, TV shows, and cultural touchstones from the golden decades.",
+    "results_step_id": "results",
+    "display": {
+      "title": "Music & Entertainment Trivia",
+      "subtitle": "A nostalgic journey through the 1950s-1980s",
+      "estimated_time": "≈5 min",
+      "autosave": true,
+      "progress_weight": 1.0
+    },
+    "navi_guidance": {
+      "purpose": "Bring joy and nostalgia through music and entertainment trivia",
+      "outcome": "Score and instant feedback celebrating cultural memories",
+      "encouragement": "Let's take a trip down memory lane!",
+      "intro_message": {
+        "text": "🎵 Ready for a nostalgic music quiz?",
+        "subtext": "Test your knowledge of classic songs, artists, and shows from the golden decades!"
+      }
+    }
+  },
+  "sections": [
+    {
+      "id": "intro",
+      "title": "Welcome to Music & Entertainment Trivia",
+      "type": "info",
+      "content": [
+        "**Get ready for a nostalgic journey!**",
+        "",
+        "This quiz covers:",
+        "• Classic songs and artists from 1950s-1980s",
+        "• Iconic TV shows and cultural moments",
+        "• Music legends and their hits",
+        "• Entertainment milestones",
+        "",
+        "**What you'll get:**",
+        "• Instant feedback celebrating your memories",
+        "• Fun facts about classic entertainment",
+        "• Your final score and Music Master badge",
+        "• 10 points per correct answer"
+      ],
+      "actions": [
+        { "label": "Start Quiz", "action": "next" },
+        { "label": "Back to Trivia Hub", "action": "route", "value": "senior_trivia" }
+      ]
+    },
+    {
+      "id": "questions",
+      "title": "Music & Entertainment Questions",
+      "description": "Test your knowledge of classic entertainment!",
+      "questions": [
+        {
+          "id": "q1_elvis_nickname",
+          "type": "string",
+          "select": "single",
+          "label": "What was Elvis Presley's famous nickname?",
+          "required": true,
+          "options": [
+            { "label": "The King of Rock and Roll", "value": "king", "is_correct": true, "feedback": "Correct! Elvis was crowned 'The King of Rock and Roll' and remains one of the most influential cultural icons of the 20th century." },
+            { "label": "The Boss", "value": "boss", "feedback": "That's Bruce Springsteen! Elvis was 'The King of Rock and Roll.'" },
+            { "label": "The Duke", "value": "duke", "feedback": "That was a nickname for John Wayne! Elvis was known as 'The King of Rock and Roll.'" },
+            { "label": "The Chairman of the Board", "value": "chairman", "feedback": "That's Frank Sinatra! Elvis was 'The King of Rock and Roll.'" }
+          ],
+          "ui": { "widget": "chip", "orientation": "vertical" }
+        },
+        {
+          "id": "q2_beatles_ed_sullivan",
+          "type": "string",
+          "select": "single",
+          "label": "In what year did The Beatles appear on The Ed Sullivan Show, launching 'Beatlemania' in America?",
+          "required": true,
+          "options": [
+            { "label": "1962", "value": "1962", "feedback": "Close, but that's when they released 'Love Me Do' in the UK. Their Ed Sullivan appearance was in 1964!" },
+            { "label": "1964", "value": "1964", "is_correct": true, "feedback": "Correct! February 9, 1964 - over 73 million people watched The Beatles perform on Ed Sullivan. It was a cultural phenomenon!" },
+            { "label": "1966", "value": "1966", "feedback": "By 1966, The Beatles were already huge! Their Ed Sullivan debut was in 1964." },
+            { "label": "1968", "value": "1968", "feedback": "That's after their touring days ended. Their Ed Sullivan breakthrough was in 1964!" }
+          ],
+          "ui": { "widget": "chip", "orientation": "horizontal" }
+        },
+        {
+          "id": "q3_lucille_ball_show",
+          "type": "string",
+          "select": "single",
+          "label": "Which iconic TV show starred Lucille Ball and Desi Arnaz?",
+          "required": true,
+          "options": [
+            { "label": "I Love Lucy", "value": "lucy", "is_correct": true, "feedback": "Correct! 'I Love Lucy' (1951-1957) was groundbreaking television and remains one of the most beloved sitcoms of all time." },
+            { "label": "The Lucy Show", "value": "lucy_show", "feedback": "Close! 'The Lucy Show' came later (1962-1968). The original with Desi was 'I Love Lucy.'" },
+            { "label": "Here's Lucy", "value": "heres_lucy", "feedback": "That was her third show (1968-1974). The original with Desi Arnaz was 'I Love Lucy.'" },
+            { "label": "The Honeymooners", "value": "honeymooners", "feedback": "That was Jackie Gleason's show! Lucille Ball starred in 'I Love Lucy' with Desi Arnaz." }
+          ],
+          "ui": { "widget": "chip", "orientation": "vertical" }
+        },
+        {
+          "id": "q4_motown",
+          "type": "string",
+          "select": "single",
+          "label": "Which city was the home of Motown Records, the legendary soul and R&B label?",
+          "required": true,
+          "options": [
+            { "label": "Chicago", "value": "chicago", "feedback": "Chicago had great blues and soul, but Motown was founded in Detroit by Berry Gordy!" },
+            { "label": "Detroit", "value": "detroit", "is_correct": true, "feedback": "Correct! Detroit was 'Hitsville USA' - home to The Supremes, Marvin Gaye, Stevie Wonder, The Temptations, and so many legends!" },
+            { "label": "Memphis", "value": "memphis", "feedback": "Memphis had Stax Records (also legendary!), but Motown was based in Detroit." },
+            { "label": "New York", "value": "new_york", "feedback": "Many Motown artists performed in New York, but the label was founded and based in Detroit!" }
+          ],
+          "ui": { "widget": "chip", "orientation": "horizontal" }
+        },
+        {
+          "id": "q5_mash_finale",
+          "type": "string",
+          "select": "single",
+          "label": "The series finale of M*A*S*H (1983) became the most-watched TV episode in U.S. history. How many people tuned in?",
+          "required": true,
+          "options": [
+            { "label": "50 million", "value": "50m", "feedback": "Even bigger! Over 105 million viewers watched the M*A*S*H finale - still one of the most-watched episodes ever." },
+            { "label": "75 million", "value": "75m", "feedback": "Close, but it was even more! Over 105 million viewers watched the M*A*S*H finale." },
+            { "label": "105 million", "value": "105m", "is_correct": true, "feedback": "Correct! 105.9 million viewers watched 'Goodbye, Farewell and Amen' on February 28, 1983. It was a cultural moment!" },
+            { "label": "125 million", "value": "125m", "feedback": "Not quite that high, but close! 105.9 million viewers watched - still one of the most-watched TV episodes ever." }
+          ],
+          "ui": { "widget": "chip", "orientation": "vertical" }
+        },
+        {
+          "id": "q6_johnny_carson",
+          "type": "string",
+          "select": "single",
+          "label": "Johnny Carson hosted The Tonight Show for how many years?",
+          "required": true,
+          "options": [
+            { "label": "20 years", "value": "20", "feedback": "He went even longer! Johnny Carson hosted The Tonight Show for an incredible 30 years (1962-1992)." },
+            { "label": "25 years", "value": "25", "feedback": "Close! Johnny Carson actually hosted The Tonight Show for 30 years (1962-1992)." },
+            { "label": "30 years", "value": "30", "is_correct": true, "feedback": "Correct! Johnny Carson hosted The Tonight Show from 1962 to 1992 - 30 years of late-night laughs and legendary interviews!" },
+            { "label": "35 years", "value": "35", "feedback": "Almost, but not quite! Johnny Carson hosted The Tonight Show for 30 years (1962-1992)." }
+          ],
+          "ui": { "widget": "chip", "orientation": "horizontal" }
+        },
+        {
+          "id": "q7_woodstock",
+          "type": "string",
+          "select": "single",
+          "label": "What year was the legendary Woodstock Music Festival?",
+          "required": true,
+          "options": [
+            { "label": "1967", "value": "1967", "feedback": "That was the Summer of Love in San Francisco! Woodstock came two years later in 1969." },
+            { "label": "1969", "value": "1969", "is_correct": true, "feedback": "Correct! August 15-18, 1969 in Bethel, New York. 'Three days of peace and music' that defined a generation!" },
+            { "label": "1971", "value": "1971", "feedback": "Close, but Woodstock was two years earlier - August 1969!" },
+            { "label": "1973", "value": "1973", "feedback": "That's when the Vietnam War ended. Woodstock was in August 1969!" }
+          ],
+          "ui": { "widget": "chip", "orientation": "horizontal" }
+        },
+        {
+          "id": "q8_disco_saturday_night_fever",
+          "type": "string",
+          "select": "single",
+          "label": "Which actor starred in 'Saturday Night Fever' (1977), launching the disco craze?",
+          "required": true,
+          "options": [
+            { "label": "John Travolta", "value": "travolta", "is_correct": true, "feedback": "Correct! John Travolta's iconic white suit and dance moves made 'Saturday Night Fever' a cultural phenomenon and launched disco into the mainstream!" },
+            { "label": "Richard Gere", "value": "gere", "feedback": "Richard Gere had his own musical moment in 'Chicago' (2002), but John Travolta starred in 'Saturday Night Fever!'" },
+            { "label": "Sylvester Stallone", "value": "stallone", "feedback": "Stallone was boxing in 'Rocky' that same year! John Travolta danced his way to stardom in 'Saturday Night Fever.'" },
+            { "label": "Al Pacino", "value": "pacino", "feedback": "Pacino was doing dramatic roles in the 70s. John Travolta was the disco king in 'Saturday Night Fever!'" }
+          ],
+          "ui": { "widget": "chip", "orientation": "vertical" }
+        },
+        {
+          "id": "q9_mtv_launch",
+          "type": "string",
+          "select": "single",
+          "label": "What was the first music video ever played on MTV when it launched in 1981?",
+          "required": true,
+          "options": [
+            { "label": "Video Killed the Radio Star by The Buggles", "value": "buggles", "is_correct": true, "feedback": "Correct! 'Video Killed the Radio Star' at 12:01 AM on August 1, 1981. The perfect choice to launch the music video revolution!" },
+            { "label": "Thriller by Michael Jackson", "value": "thriller", "feedback": "Thriller came later (1983) and was groundbreaking! But the first video was 'Video Killed the Radio Star' by The Buggles." },
+            { "label": "You Better Run by Pat Benatar", "value": "benatar", "feedback": "Pat Benatar was the second video played! The first was 'Video Killed the Radio Star' by The Buggles." },
+            { "label": "In the Air Tonight by Phil Collins", "value": "collins", "feedback": "Great song, but the first MTV video was 'Video Killed the Radio Star' by The Buggles!" }
+          ],
+          "ui": { "widget": "chip", "orientation": "vertical" }
+        },
+        {
+          "id": "q10_frank_sinatra_city",
+          "type": "string",
+          "select": "single",
+          "label": "Which city did Frank Sinatra sing about in his signature song?",
+          "required": true,
+          "options": [
+            { "label": "Chicago", "value": "chicago", "feedback": "He sang 'Chicago (That Toddlin' Town)' too, but his signature song was about New York, New York!" },
+            { "label": "New York", "value": "new_york", "is_correct": true, "feedback": "Correct! 'New York, New York' became Sinatra's signature song and an anthem for the city. 'If I can make it there, I'll make it anywhere!'" },
+            { "label": "Los Angeles", "value": "la", "feedback": "Sinatra lived in LA, but his signature song was 'New York, New York!'" },
+            { "label": "Las Vegas", "value": "vegas", "feedback": "Sinatra was synonymous with Vegas, but his signature song was 'New York, New York!'" }
+          ],
+          "ui": { "widget": "chip", "orientation": "horizontal" }
+        }
+      ]
+    },
+    {
+      "id": "results",
+      "title": "Quiz Complete!",
+      "type": "results",
+      "outputs": {
+        "summary_text": "Fantastic! You got {{correct_count}} out of {{total_questions}} correct.",
+        "points": [
+          "Score: {{score_percentage}}%",
+          "Points earned: {{points_earned}}",
+          "Badge: Music Master 🎵"
+        ]
+      },
+      "actions": [
+        { "label": "Play Another Game", "action": "route", "value": "senior_trivia" },
+        { "label": "Back to Waiting Room", "action": "route", "value": "hub_waiting" }
+      ]
+    }
+  ]
+}
