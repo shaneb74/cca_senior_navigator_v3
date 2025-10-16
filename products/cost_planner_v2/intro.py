@@ -177,9 +177,18 @@ def _render_quick_estimate_results():
     }
     care_type_display = care_type_display_map.get(estimate.care_tier, estimate.care_tier.replace("_", " ").title())
     
+    # Check if viewing different scenario than GCP recommendation
+    gcp_rec = MCIP.get_care_recommendation()
+    is_different_scenario = False
+    if gcp_rec and gcp_rec.tier and gcp_rec.tier != estimate.care_tier:
+        is_different_scenario = True
+        gcp_recommended = care_type_display_map.get(gcp_rec.tier, gcp_rec.tier)
+    
     col1, col2 = st.columns(2)
     with col1:
         st.markdown(f"**Care Type:** {care_type_display}")
+        if is_different_scenario:
+            st.caption(f"💡 Your GCP recommendation: {gcp_recommended}")
     with col2:
         st.markdown(f"**Location:** {estimate.region_name}")
     
