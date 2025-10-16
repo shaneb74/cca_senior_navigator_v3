@@ -151,12 +151,8 @@ def run_module(config: ModuleConfig) -> Dict[str, Any]:
         st.markdown('</div>', unsafe_allow_html=True)
         return state
     
-    # Handle Save & Continue Later
-    if save_exit_clicked:
-        _handle_save_exit(config, state, step_index, total_steps, reason="save_exit")
-        # Close module container
-        st.markdown('</div>', unsafe_allow_html=True)
-        return state
+    # Save & Continue Later - REMOVED (button no longer rendered)
+    # Progress is automatically saved to tile_state and persists across sessions
     
     if next_clicked and missing:
         st.warning(f"Please complete the required fields: {', '.join(missing)}")
@@ -1312,6 +1308,21 @@ def _render_results_ctas_once(config: ModuleConfig) -> None:
             route_to("hub_concierge")
     
     st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Primary next step: Calculate Costs (only for GCP)
+    if config.product == "gcp_v4":
+        st.markdown("---")
+        st.markdown('<div class="sn-app mod-actions">', unsafe_allow_html=True)
+        if st.button(
+            "💰 Calculate Costs",
+            key="_results_next_cost",
+            type="primary",
+            use_container_width=True,
+            help="See what your recommended care will cost"
+        ):
+            from core.nav import route_to
+            route_to("cost_v2")
+        st.markdown('</div>', unsafe_allow_html=True)
 
 
 def _effect_triggered(values: Sequence[str], triggers: Sequence[str]) -> bool:

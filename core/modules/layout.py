@@ -67,7 +67,7 @@ def actions(next_label: str = "Continue", skip_label: str | None = "Skip", show_
         help=None
     )
     
-    # Back button - small text link, appears above Save & Continue Later
+    # Back button - small text link
     back_clicked = False
     if show_back:
         st.markdown('<div class="mod-back-prev-wrapper">', unsafe_allow_html=True)
@@ -80,18 +80,9 @@ def actions(next_label: str = "Continue", skip_label: str | None = "Skip", show_
         )
         st.markdown('</div>', unsafe_allow_html=True)
     
-    # Save & Continue Later - small text link
+    # Save & Continue Later - REMOVED (production uses cookies/auth)
+    # Progress is automatically saved to tile_state and persists across sessions
     save_exit_clicked = False
-    if show_save_exit and not is_intro:
-        st.markdown('<div class="mod-save-exit-wrapper">', unsafe_allow_html=True)
-        save_exit_clicked = st.button(
-            "💾 Save & Continue Later",
-            key="_mod_save_exit",
-            type="secondary",
-            use_container_width=False,
-            help=None
-        )
-        st.markdown('</div>', unsafe_allow_html=True)
     
     # Back to hub - small text link at bottom
     st.markdown('<div class="mod-back-hub-wrapper">', unsafe_allow_html=True)
