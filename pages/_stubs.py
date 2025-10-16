@@ -776,7 +776,7 @@ def render_export_results():
     
     st.title("📤 Export Your Journey")
     st.markdown(f"### {user_name} Senior Care Journey Summary")
-    st.markdown("*Powered by 🤖 Navi - Your AI Care Navigator*")
+    st.markdown("*Powered by ✨ Navi - Your AI Care Navigator*")
     
     # Journey progress
     completed = progress["completed_count"]

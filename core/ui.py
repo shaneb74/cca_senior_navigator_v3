@@ -343,18 +343,12 @@ def render_mcip_journey_status() -> None:
     navi_message = NaviDialogue.get_journey_message(phase, is_authenticated(), context)
     
     # Extract message components
-    icon = navi_message.get("icon", "🤖")
+    icon = navi_message.get("icon", "✨")
     main_text = navi_message.get("text", "")
     subtext = navi_message.get("subtext", "")
     cta_text = navi_message.get("cta", "")
     
-    # Prefix Navi branding to main text
-    if not main_text.startswith("🤖"):
-        if status == "complete":
-            main_text = f"🤖 Navi says: {main_text}"
-        else:
-            main_text = f"🤖 Navi: {main_text}"
-    
+    # Prefix Navi branding to main text (already included in message)
     # Achievement badges for completed products
     badges_html = _render_achievement_badges(completed_products)
     
@@ -560,9 +554,14 @@ def render_navi_panel_v2(
     primary_action: dict,
     secondary_action: Optional[dict] = None,
     progress: Optional[dict] = None,
-    alert_html: Optional[str] = None
+    alert_html: Optional[str] = None,
+    variant: str = "hub"
 ) -> None:
-    """Render refined Navi panel with structured layout using Streamlit native components."""
+    """Render refined Navi panel with structured layout using Streamlit native components.
+    
+    Args:
+        variant: "hub" (default) or "module" - controls styling and layout
+    """
     from core.nav import route_to
     from core.url_helpers import add_uid_to_href
     
@@ -579,6 +578,12 @@ def render_navi_panel_v2(
         padding: 32px;
         transition: box-shadow 0.16s ease;
     }
+    /* Module variant: more prominent and compact */
+    .navi-panel-v2--module {
+        border-left: 3px solid #2563eb;
+        padding: 24px 28px;
+        margin-bottom: 20px;
+    }
     .navi-panel-v2__header {
         display: flex;
         justify-content: space-between;
@@ -591,6 +596,12 @@ def render_navi_panel_v2(
         color: #2563eb;
         letter-spacing: 0.08em;
         text-transform: uppercase;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .navi-panel-v2--module .navi-panel-v2__eyebrow {
+        font-size: 12px;
     }
     .navi-panel-v2__progress {
         font-size: 11px;
@@ -629,6 +640,11 @@ def render_navi_panel_v2(
     .navi-panel-v2__encouragement--in_progress { background: #eff6ff; border: 1px solid #dbeafe; }
     .navi-panel-v2__encouragement--nearly_there { background: #fef3c7; border: 1px solid #fde68a; }
     .navi-panel-v2__encouragement--complete { background: #f0fdf4; border: 1px solid #bbf7d0; }
+    /* Module variant: make encouragement more prominent */
+    .navi-panel-v2--module .navi-panel-v2__encouragement {
+        font-size: 16px;
+        padding: 14px 18px;
+    }
     .navi-panel-v2__chips-label {
         font-size: 13px;
         font-weight: 600;
@@ -706,7 +722,16 @@ def render_navi_panel_v2(
     # Build complete panel HTML (flat structure, no inner wrapper)
     # Include alert if provided (appears before title)
     alert_section = alert_html if alert_html else ""
-    panel_html = f'<div class="navi-panel-v2"><div class="navi-panel-v2__header"><div class="navi-panel-v2__eyebrow">🤖 Navi</div>{progress_badge}</div>{alert_section}<div class="navi-panel-v2__title">{title}</div><div class="navi-panel-v2__reason">{reason}</div><div class="navi-panel-v2__encouragement navi-panel-v2__encouragement--{status}"><span style="font-size: 18px;">{encouragement.get("icon", "💪")}</span><span>{encouragement.get("text", "")}</span></div>{chips_html}{actions_html}</div>'
+    
+    # Apply variant class
+    variant_class = f"navi-panel-v2--{variant}" if variant != "hub" else ""
+    
+    # For module variant, hide chips and actions (modules have their own CTAs)
+    if variant == "module":
+        chips_html = ""
+        actions_html = ""
+    
+    panel_html = f'<div class="navi-panel-v2 {variant_class}"><div class="navi-panel-v2__header"><div class="navi-panel-v2__eyebrow">✨ Navi</div>{progress_badge}</div>{alert_section}<div class="navi-panel-v2__title">{title}</div><div class="navi-panel-v2__reason">{reason}</div><div class="navi-panel-v2__encouragement navi-panel-v2__encouragement--{status}"><span style="font-size: 18px;">{encouragement.get("icon", "💪")}</span><span>{encouragement.get("text", "")}</span></div>{chips_html}{actions_html}</div>'
     
     st.markdown(panel_html, unsafe_allow_html=True)
 
