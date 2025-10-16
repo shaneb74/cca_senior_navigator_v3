@@ -323,8 +323,15 @@ class BaseTile:
         return f"{href}{separator}uid={uid}"
 
     def _resolved_primary_label(self) -> Optional[str]:
+        # If primary_label is explicitly set, use it (even if None)
         if self.primary_label:
             return str(self.primary_label)
+        
+        # If no route is set, don't show a button
+        if not self.primary_route and not self.primary_go:
+            return None
+        
+        # Otherwise, determine button text from progress
         try:
             value = float(self.progress or 0)
         except Exception:
