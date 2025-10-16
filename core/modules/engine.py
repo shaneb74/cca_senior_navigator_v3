@@ -1220,9 +1220,44 @@ def _render_recommendation_details(points: List[str]) -> None:
 
 def _render_results_ctas_once(config: ModuleConfig) -> None:
     """Render action buttons on results page."""
-    # Removed the three-button row (Back to Hub, Continue to Cost Planner, Restart)
-    # User can navigate using the tile buttons below the recommendation
-    pass
+    state_key = config.state_key
+    
+    st.markdown('<div class="sn-app mod-actions">', unsafe_allow_html=True)
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        # Review Answers button - navigate back to first question
+        if st.button(
+            "← Review Your Answers",
+            key="_results_review",
+            type="secondary",
+            use_container_width=True,
+            help="Go back to review or update your answers"
+        ):
+            # Navigate back to first question (step 0)
+            st.session_state[f"{state_key}._step"] = 0
+            
+            # Update tile state
+            tiles = st.session_state.setdefault("tiles", {})
+            tile_state = tiles.setdefault(config.product, {})
+            tile_state["last_step"] = 0
+            
+            safe_rerun()
+    
+    with col2:
+        # Back to Hub button
+        if st.button(
+            "← Back to Hub",
+            key="_results_back_hub",
+            type="secondary",
+            use_container_width=True,
+            help="Return to the main hub"
+        ):
+            from core.nav import route_to
+            route_to("hub_concierge")
+    
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
 def _effect_triggered(values: Sequence[str], triggers: Sequence[str]) -> bool:
