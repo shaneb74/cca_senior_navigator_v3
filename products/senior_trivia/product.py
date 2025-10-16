@@ -294,6 +294,16 @@ def _render_module_hub():
     st.markdown("## 🎯 Senior Trivia & Brain Games")
     st.markdown("Choose a trivia game to play. Each game takes 3-5 minutes and earns you points and badges!")
     
+    # Back to Waiting Room button
+    if st.button("← Back to Waiting Room", key="back_to_waiting_room", use_container_width=False):
+        # Clear current module selection
+        st.session_state.pop("senior_trivia_current_module", None)
+        # Navigate to waiting room
+        st.query_params.update({"page": "hub_waiting"})
+        st.rerun()
+    
+    st.markdown("<div style='margin: 24px 0;'></div>", unsafe_allow_html=True)
+    
     # Get earned badges
     progress = st.session_state.get("senior_trivia_progress", {})
     badges_earned = progress.get("badges_earned", {})

@@ -52,7 +52,24 @@ def render(ctx=None) -> None:
         (st.session_state.get("gamification", {}) or {}).get("progress", 0)
     )
 
+    # Dynamically add Senior Trivia tile with earned badges (FIRST TILE - order=5)
+    trivia_badges = _get_trivia_badges()
+    
     cards = [
+        ProductTileHub(
+            key="senior_trivia",
+            title="Senior Trivia & Brain Games",
+            desc="Test your knowledge with fun, educational trivia",
+            blurb="Play solo or with family! Topics include senior living myths, music nostalgia, Medicare, healthy habits, and family fun.",
+            primary_label="Play Trivia",
+            primary_go="senior_trivia",
+            secondary_label=None,
+            secondary_go=None,
+            progress=None,
+            badges=trivia_badges,  # Dynamic badges from earned achievements
+            variant="teal",
+            order=5,  # First tile
+        ),
         ProductTileHub(
             key="appointment",
             title="Your Upcoming Appointment",
@@ -107,25 +124,6 @@ def render(ctx=None) -> None:
             order=40,
         ),
     ]
-    
-    # Dynamically add Senior Trivia tile with earned badges
-    trivia_badges = _get_trivia_badges()
-    cards.append(
-        ProductTileHub(
-            key="senior_trivia",
-            title="Senior Trivia & Brain Games",
-            desc="Test your knowledge with fun, educational trivia",
-            blurb="Play solo or with family! Topics include senior living myths, music nostalgia, Medicare, healthy habits, and family fun.",
-            primary_label="Play Trivia",
-            primary_go="senior_trivia",
-            secondary_label=None,
-            secondary_go=None,
-            progress=None,
-            badges=trivia_badges,  # Dynamic badges from earned achievements
-            variant="teal",
-            order=50,
-        )
-    )
 
     guide = compute_hub_guide("waiting_room")
     additional = get_additional_services("waiting_room")
