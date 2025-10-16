@@ -14,7 +14,7 @@ Features:
 
 import streamlit as st
 from core.modules.engine import run_module
-from core.modules.schema import ModuleConfig
+from core.modules.schema import ModuleConfig, StepDef, FieldDef
 from core.navi import render_navi_panel
 from ui.product_shell import product_shell_start, product_shell_end
 
@@ -132,7 +132,16 @@ def _render_module_hub():
 
 
 def _load_module_config(module_key: str) -> ModuleConfig:
-    """Load module configuration for the specified trivia game."""
+    """Load module configuration for the specified trivia game.
+    
+    Converts trivia JSON format to ModuleConfig for module engine.
+    
+    Args:
+        module_key: Key of the trivia module (e.g., "truths_myths")
+    
+    Returns:
+        ModuleConfig object for module engine
+    """
     from pathlib import Path
     import json
     
@@ -141,7 +150,164 @@ def _load_module_config(module_key: str) -> ModuleConfig:
     with open(module_path, "r") as f:
         data = json.load(f)
     
-    return ModuleConfig.from_dict(data)
+    module_meta = data.get("module", {})
+    sections = data.get("sections", [])
+    
+    # Convert sections to steps
+    steps = []
+    for section in sections:
+        step = _convert_section_to_step(section)
+        if step:
+            steps.append(step)
+    
+    return ModuleConfig(
+        product="senior_trivia",
+        version=module_meta.get("version", "v2025.10"),
+        steps=steps,
+        state_key=f"trivia_{module_meta.get('id', module_key)}",
+        outcomes_compute=None,  # Trivia scores computed inline
+        results_step_id=module_meta.get("results_step_id", "results"),
+    )
+
+
+def _convert_section_to_step(section: dict) -> StepDef:
+    """Convert a trivia JSON section to a StepDef.
+    
+    Args:
+        section: Section dict from trivia JSON
+    
+    Returns:
+        StepDef object for module engine
+    """
+    section_type = section.get("type", "questions")
+    section_id = section["id"]
+    title = section.get("title", "")
+    description = section.get("description", "")
+    
+    # Handle info sections (intro pages)
+    if section_type == "info":
+        return StepDef(
+            id=section_id,
+            title=title,
+            subtitle=description,
+            icon=None,
+            fields=[],
+            content=section.get("content"),
+            next_label="Start Quiz" if section_id == "intro" else "Continue",
+            skip_label=None,
+            show_progress=False,
+            show_bottom_bar=True,
+            summary_keys=None,
+        )
+    
+    # Handle results section
+    if section_type == "results":
+        return StepDef(
+            id=section_id,
+            title=title,
+            subtitle=description,
+            icon="🎯",
+            fields=[],
+            next_label="Continue",
+            skip_label=None,
+            show_progress=True,
+            show_bottom_bar=True,
+            summary_keys=None,
+        )
+    
+    # Handle question sections
+    questions = section.get("questions", [])
+    fields = [_convert_question_to_field(q) for q in questions]
+    
+    return StepDef(
+        id=section_id,
+        title=title,
+        subtitle=description,
+        icon=None,
+        fields=fields,
+        next_label="Continue",
+        skip_label=None,
+        show_progress=True,
+        show_bottom_bar=True,
+        summary_keys=None,
+    )
+
+
+def _convert_question_to_field(question: dict) -> FieldDef:
+    """Convert a trivia question to a FieldDef.
+    
+    Args:
+        question: Question dict from trivia JSON
+    
+    Returns:
+        FieldDef object for module engine
+    """
+    question_id = question["id"]
+    question_type = question.get("type", "string")
+    select_type = question.get("select", "single")
+    ui_config = question.get("ui", {})
+    
+    return FieldDef(
+        key=question_id,
+        label=question.get("label", ""),
+        type=_convert_type(question_type, select_type, ui_config),
+        help=question.get("help"),
+        required=question.get("required", False),
+        options=question.get("options", []),
+        min=question.get("min"),
+        max=question.get("max"),
+        step=question.get("step"),
+        placeholder=question.get("placeholder"),
+        default=question.get("default"),
+        visible_if=None,
+        write_key=None,
+        a11y_hint=None,
+        prefill_from=None,
+        ask_if_missing=False,
+        ui=ui_config,
+        effects=[],
+    )
+
+
+def _convert_type(question_type: str, select_type: str, ui: dict = None) -> str:
+    """Convert trivia type to FieldDef type.
+    
+    Args:
+        question_type: Type from JSON ("string", "number", etc.)
+        select_type: Select type ("single", "multi")
+        ui: UI configuration dict with widget preference
+    
+    Returns:
+        FieldDef type string matching component renderer names
+    """
+    widget = (ui or {}).get("widget", "")
+    
+    # Single-select types - use chip widget for trivia
+    if question_type == "string" and select_type == "single":
+        if widget == "chip":
+            return "pill"  # Chip widget uses pill renderer
+        elif widget == "dropdown":
+            return "dropdown"
+        else:
+            return "radio"
+    
+    # Multi-select types
+    elif question_type == "string" and select_type == "multi":
+        if widget == "multi_chip":
+            return "chip_multi"
+        return "multiselect"
+    
+    # Number types
+    elif question_type == "number":
+        return "number"
+    
+    # Boolean types
+    elif question_type == "boolean":
+        return "yesno"
+    
+    # Default to text
+    else:
+        return "text"
 
 
 def _award_completion_points(module_key: str, outcome: dict):
