@@ -1,0 +1,186 @@
+{
+  "module": {
+    "id": "medicare_quiz",
+    "name": "Medicare Enrollment Know-How",
+    "version": "v2025.10",
+    "description": "Learn about Medicare enrollment periods, coverage options, and avoid common mistakes.",
+    "results_step_id": "results",
+    "display": {
+      "title": "Medicare Enrollment Quiz",
+      "subtitle": "Master the ins and outs of Medicare enrollment",
+      "estimated_time": "≈4 min",
+      "autosave": true,
+      "progress_weight": 1.0
+    },
+    "navi_guidance": {
+      "purpose": "Educate seniors about Medicare enrollment rules and timing",
+      "outcome": "Score and practical Medicare knowledge",
+      "encouragement": "Medicare can be confusing - let's make it simple!",
+      "intro_message": {
+        "text": "🏥 Let's demystify Medicare enrollment!",
+        "subtext": "Learn about enrollment periods, coverage, and common mistakes to avoid."
+      }
+    }
+  },
+  "sections": [
+    {
+      "id": "intro",
+      "title": "Welcome to Medicare Enrollment Quiz",
+      "type": "info",
+      "content": [
+        "**Ready to master Medicare enrollment?**",
+        "",
+        "This quiz covers:",
+        "• Initial Enrollment Period (IEP)",
+        "• Annual Enrollment Period (AEP)",
+        "• Special Enrollment Periods (SEP)",
+        "• Medicare Parts A, B, C, and D",
+        "• Common enrollment mistakes",
+        "",
+        "**What you'll get:**",
+        "• Instant feedback with clear explanations",
+        "• Practical Medicare knowledge",
+        "• Your final score and Medicare Pro badge",
+        "• 10 points per correct answer"
+      ],
+      "actions": [
+        { "label": "Start Quiz", "action": "next" },
+        { "label": "Back to Trivia Hub", "action": "route", "value": "senior_trivia" }
+      ]
+    },
+    {
+      "id": "questions",
+      "title": "Medicare Quiz Questions",
+      "description": "Test your Medicare knowledge!",
+      "questions": [
+        {
+          "id": "q1_medicare_age",
+          "type": "string",
+          "select": "single",
+          "label": "At what age can most people enroll in Medicare?",
+          "required": true,
+          "options": [
+            { "label": "60", "value": "60", "feedback": "Not quite! Most people become eligible for Medicare at age 65. Some younger people with disabilities or specific conditions can enroll earlier." },
+            { "label": "62", "value": "62", "feedback": "That's when you can claim Social Security early, but Medicare starts at 65 for most people!" },
+            { "label": "65", "value": "65", "is_correct": true, "feedback": "Correct! Most people become eligible for Medicare at age 65. Your Initial Enrollment Period (IEP) starts 3 months before your 65th birthday month and ends 3 months after." },
+            { "label": "67", "value": "67", "feedback": "That's the Full Retirement Age for Social Security (for those born 1960+), but Medicare starts at 65!" }
+          ],
+          "ui": { "widget": "chip", "orientation": "horizontal" }
+        },
+        {
+          "id": "q2_iep_window",
+          "type": "string",
+          "select": "single",
+          "label": "How long is your Initial Enrollment Period (IEP) for Medicare?",
+          "required": true,
+          "options": [
+            { "label": "3 months", "value": "3mo", "feedback": "Close, but it's longer! Your IEP is 7 months total: 3 months before your birthday month, your birthday month, and 3 months after." },
+            { "label": "6 months", "value": "6mo", "feedback": "Not quite! Your IEP is 7 months: 3 months before your 65th birthday month, your birthday month, and 3 months after." },
+            { "label": "7 months", "value": "7mo", "is_correct": true, "feedback": "Correct! Your Initial Enrollment Period is 7 months: 3 months before your birthday month, your birthday month, and 3 months after. Best to enroll early to avoid coverage gaps!" },
+            { "label": "12 months", "value": "12mo", "feedback": "That's longer than the IEP! Your Initial Enrollment Period is 7 months total, starting 3 months before your 65th birthday month." }
+          ],
+          "ui": { "widget": "chip", "orientation": "horizontal" }
+        },
+        {
+          "id": "q3_aep_dates",
+          "type": "string",
+          "select": "single",
+          "label": "When is the Annual Enrollment Period (AEP) for Medicare?",
+          "required": true,
+          "options": [
+            { "label": "January 1 - March 31", "value": "jan_mar", "feedback": "That's the Medicare Advantage Open Enrollment Period (OEP)! The main AEP is October 15 - December 7." },
+            { "label": "April 1 - June 30", "value": "apr_jun", "feedback": "Not during spring! The Annual Enrollment Period runs October 15 through December 7 each year." },
+            { "label": "October 15 - December 7", "value": "oct_dec", "is_correct": true, "feedback": "Correct! AEP runs from October 15 to December 7 every year. This is when you can switch Medicare Advantage plans, change drug plans, or switch between Original Medicare and Medicare Advantage." },
+            { "label": "November 1 - December 31", "value": "nov_dec", "feedback": "Close! AEP actually starts October 15 and ends December 7 each year." }
+          ],
+          "ui": { "widget": "chip", "orientation": "vertical" }
+        },
+        {
+          "id": "q4_part_a_coverage",
+          "type": "string",
+          "select": "single",
+          "label": "What does Medicare Part A primarily cover?",
+          "required": true,
+          "options": [
+            { "label": "Doctor visits and outpatient care", "value": "doctor", "feedback": "That's Medicare Part B! Part A covers hospital stays, skilled nursing facility care, hospice, and some home health care." },
+            { "label": "Hospital stays and inpatient care", "value": "hospital", "is_correct": true, "feedback": "Correct! Medicare Part A covers hospital stays, skilled nursing facility care (short-term), hospice care, and some home health services. Most people get Part A premium-free if they worked 10+ years." },
+            { "label": "Prescription drugs", "value": "drugs", "feedback": "That's Medicare Part D! Part A covers hospital stays and inpatient care." },
+            { "label": "Dental and vision care", "value": "dental", "feedback": "Unfortunately, Original Medicare doesn't cover routine dental or vision! Part A covers hospital stays and inpatient care." }
+          ],
+          "ui": { "widget": "chip", "orientation": "vertical" }
+        },
+        {
+          "id": "q5_late_enrollment_penalty",
+          "type": "string",
+          "select": "single",
+          "label": "True or False: If you miss your Initial Enrollment Period, you may face a late enrollment penalty.",
+          "required": true,
+          "options": [
+            { "label": "True", "value": "true", "is_correct": true, "feedback": "Correct! If you don't enroll when first eligible (and don't have qualifying coverage), you may pay a late enrollment penalty for Part B (10% for each 12-month delay) and Part D (varies by plan). These penalties can last for life!" },
+            { "label": "False", "value": "false", "feedback": "Actually, this is TRUE! Missing your Initial Enrollment Period can result in permanent late enrollment penalties for Part B and Part D. Always enroll on time unless you have qualifying coverage!" }
+          ],
+          "ui": { "widget": "chip", "orientation": "horizontal" }
+        },
+        {
+          "id": "q6_medicare_advantage",
+          "type": "string",
+          "select": "single",
+          "label": "What is Medicare Advantage (Part C)?",
+          "required": true,
+          "options": [
+            { "label": "An alternative way to receive Medicare benefits through private insurance", "value": "private", "is_correct": true, "feedback": "Correct! Medicare Advantage (Part C) is offered by private insurance companies approved by Medicare. It bundles Parts A, B, and usually D, often with extras like dental, vision, and fitness benefits. You still have Medicare, just delivered differently!" },
+            { "label": "A supplement that works with Original Medicare", "value": "supplement", "feedback": "That's Medigap (Medicare Supplement)! Medicare Advantage (Part C) replaces Original Medicare with a private plan that includes all Part A and B benefits plus extras." },
+            { "label": "A prescription drug plan", "value": "drug_plan", "feedback": "That's Part D! Medicare Advantage (Part C) is a complete alternative to Original Medicare, usually including drug coverage plus extras like dental and vision." },
+            { "label": "Coverage for dental and vision only", "value": "dental_vision", "feedback": "Medicare Advantage often includes dental and vision, but it's much more! It's a complete alternative to Original Medicare that covers everything Part A and B cover, plus extras." }
+          ],
+          "ui": { "widget": "chip", "orientation": "vertical" }
+        },
+        {
+          "id": "q7_sep_trigger",
+          "type": "string",
+          "select": "single",
+          "label": "Which of these qualifies you for a Special Enrollment Period (SEP)?",
+          "required": true,
+          "options": [
+            { "label": "You want to switch doctors", "value": "switch_doctor", "feedback": "That's not an SEP trigger. Special Enrollment Periods are for major life changes like moving, losing coverage, or qualifying for extra help." },
+            { "label": "You moved to a new service area", "value": "moved", "is_correct": true, "feedback": "Correct! Moving to a new address outside your plan's service area qualifies you for a Special Enrollment Period. Other triggers include losing coverage, gaining Medicaid, or entering a nursing home." },
+            { "label": "You're dissatisfied with your current plan", "value": "dissatisfied", "feedback": "Dissatisfaction isn't an SEP trigger - you'd need to wait for the Annual Enrollment Period. SEPs are for major life changes like moving, losing coverage, or qualifying for extra help." },
+            { "label": "It's your birthday month", "value": "birthday", "feedback": "Your birthday month matters during your Initial Enrollment Period (turning 65), but after that, you need a qualifying event like moving or losing coverage for a Special Enrollment Period." }
+          ],
+          "ui": { "widget": "chip", "orientation": "vertical" }
+        },
+        {
+          "id": "q8_part_d_creditable",
+          "type": "string",
+          "select": "single",
+          "label": "What is 'creditable coverage' for Medicare Part D?",
+          "required": true,
+          "options": [
+            { "label": "Any health insurance plan", "value": "any_insurance", "feedback": "Not quite! Creditable coverage is drug coverage that's at least as good as Medicare Part D (like from an employer or union). Having it means you can delay Part D without penalty." },
+            { "label": "Drug coverage as good as or better than Medicare Part D", "value": "drug_coverage", "is_correct": true, "feedback": "Correct! Creditable coverage is prescription drug coverage (from employer, union, VA, TRICARE, etc.) that's at least as good as Medicare Part D. If you have it, you can delay Part D enrollment without paying a penalty!" },
+            { "label": "Coverage you get credit for with Medicare", "value": "credit", "feedback": "Close, but not quite! Creditable coverage specifically refers to drug coverage that's as good as or better than Part D, letting you delay enrollment without penalty." },
+            { "label": "A discount program for prescriptions", "value": "discount", "feedback": "That's not creditable coverage. Creditable coverage is actual drug insurance (like from an employer) that's at least as good as Medicare Part D, allowing you to delay Part D without penalty." }
+          ],
+          "ui": { "widget": "chip", "orientation": "vertical" }
+        }
+      ]
+    },
+    {
+      "id": "results",
+      "title": "Quiz Complete!",
+      "type": "results",
+      "outputs": {
+        "summary_text": "Excellent work! You got {{correct_count}} out of {{total_questions}} correct.",
+        "points": [
+          "Score: {{score_percentage}}%",
+          "Points earned: {{points_earned}}",
+          "Badge: Medicare Pro 🏥"
+        ]
+      },
+      "actions": [
+        { "label": "Play Another Game", "action": "route", "value": "senior_trivia" },
+        { "label": "Back to Waiting Room", "action": "route", "value": "hub_waiting" }
+      ]
+    }
+  ]
+}
