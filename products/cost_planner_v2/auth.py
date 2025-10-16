@@ -14,35 +14,26 @@ def render():
     
     For MVP, we use the existing toggle authentication system.
     Users can:
-    1. Continue as guest (proceed with limited features)
+    1. Auto-skip if already authenticated (seamless experience)
     2. Sign in (toggle auth on)
+    3. Continue as guest (limited features)
     
     Future: Replace with real OAuth/email authentication.
     """
     
-    st.title("🔐 Sign In to Save Your Progress")
-    
-    # Check if already authenticated
+    # AUTO-ADVANCE: If already authenticated, skip this step
     if is_authenticated():
-        name = get_user_name()
-        st.success(f"✅ Welcome back, {name}!")
-        st.info("You're signed in and ready to create your detailed financial plan.")
-        
-        if st.button("Continue to Financial Assessment →", type="primary", use_container_width=True):
-            # Move to triage (next step)
-            st.session_state.cost_v2_step = "triage"
-            st.rerun()
+        # User is logged in - go directly to next step
+        st.session_state.cost_v2_step = "triage"
+        st.rerun()
         return
     
-    # Not authenticated - show options
-    st.info("""
-    ### Why sign in?
+    # Not authenticated - show streamlined sign-in options
+    st.title("🔐 Sign In to Save Your Progress")
     
-    - 💾 **Save your progress** - Pick up where you left off
-    - 📊 **Get personalized recommendations** - Based on your care plan
-    - 🔒 **Keep your data secure** - All information is private
-    - 📧 **Receive expert guidance** - Get advisor support
-    - 📱 **Access anywhere** - View your plan on any device
+    # Simplified, cleaner benefits (no yellow box)
+    st.markdown("""
+    Create an account or sign in to save your progress and get personalized recommendations.
     """)
     
     st.markdown("---")
@@ -52,7 +43,6 @@ def render():
     with col1:
         st.markdown("### 📧 Sign In")
         
-        # Simple demo authentication (toggle-based)
         st.markdown("**For MVP Demo:**")
         
         name_input = st.text_input(
@@ -78,22 +68,14 @@ def render():
     with col2:
         st.markdown("### 🌐 Continue as Guest")
         
-        st.warning("""
-        **Guest Mode Limitations:**
-        
-        - ⚠️ Progress won't be saved
-        - ⚠️ Can't access full financial breakdown
-        - ⚠️ No advisor review available
-        - ⚠️ Results will be lost on page refresh
+        st.markdown("""
+        **Note:** Progress won't be saved in guest mode. You can sign in later.
         """)
-        
-        st.markdown("You can sign in later to unlock all features.")
         
         if st.button("Continue as Guest", use_container_width=True, key="cost_v2_guest"):
             # Set guest flag and continue
             st.session_state.cost_v2_guest_mode = True
             st.session_state.cost_v2_step = "triage"
-            st.info("ℹ️ Proceeding in guest mode. Sign in anytime to save your work.")
             st.rerun()
     
     st.markdown("---")
@@ -102,16 +84,3 @@ def render():
     if st.button("← Back to Quick Estimate", key="auth_back"):
         st.session_state.cost_v2_step = "intro"
         st.rerun()
-    
-    # Future auth methods placeholder
-    with st.expander("🚀 Coming Soon: More Sign-In Options"):
-        st.markdown("""
-        We're adding more authentication methods:
-        
-        - 🔗 **Google Sign-In** - Use your Google account
-        - 🔗 **Facebook Sign-In** - Use your Facebook account
-        - 📱 **Phone/SMS** - Sign in with your mobile number
-        - 🔐 **Magic Link** - Passwordless email authentication
-        
-        For now, use the simple email sign-in above.
-        """)
