@@ -13,6 +13,31 @@ from ui.footer_simple import render_footer_simple
 __all__ = ["render"]
 
 
+def _get_trivia_badges():
+    """Get list of earned trivia badges for tile display.
+    
+    Returns:
+        List of badge strings to show on tile
+    """
+    progress = st.session_state.get("senior_trivia_progress", {})
+    badges_earned = progress.get("badges_earned", {})
+    
+    if not badges_earned:
+        return ["new"]  # Show 'new' badge if no games played yet
+    
+    # Extract badge names (without stars)
+    badge_list = []
+    for module_key, badge_info in badges_earned.items():
+        badge_name = badge_info.get("name", "")
+        # Clean up badge name (remove star emojis)
+        clean_name = badge_name.replace(" ⭐⭐⭐⭐", "").replace(" ⭐⭐⭐", "").replace(" ⭐⭐", "").replace(" ⭐", "")
+        if clean_name:
+            badge_list.append(clean_name)
+    
+    # Limit to 3 badges on tile (most recent)
+    return badge_list[:3] if badge_list else ["new"]
+
+
 def render(ctx=None) -> None:
     person_name = st.session_state.get("person_name", "").strip()
     # Use person's name if available, otherwise use neutral "you"
@@ -81,6 +106,11 @@ def render(ctx=None) -> None:
             variant="violet",
             order=40,
         ),
+    ]
+    
+    # Dynamically add Senior Trivia tile with earned badges
+    trivia_badges = _get_trivia_badges()
+    cards.append(
         ProductTileHub(
             key="senior_trivia",
             title="Senior Trivia & Brain Games",
@@ -88,14 +118,14 @@ def render(ctx=None) -> None:
             blurb="Play solo or with family! Topics include senior living myths, music nostalgia, Medicare, healthy habits, and family fun.",
             primary_label="Play Trivia",
             primary_go="senior_trivia",
-            secondary_label="View badges",
-            secondary_go="trivia_badges",
+            secondary_label=None,
+            secondary_go=None,
             progress=None,
-            badges=["new", "family_friendly"],
+            badges=trivia_badges,  # Dynamic badges from earned achievements
             variant="teal",
             order=50,
-        ),
-    ]
+        )
+    )
 
     guide = compute_hub_guide("waiting_room")
     additional = get_additional_services("waiting_room")
