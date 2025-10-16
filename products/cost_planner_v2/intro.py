@@ -112,9 +112,20 @@ def _render_quick_estimate_form():
     
     care_tier = care_type_map[care_type]
     
-    # Calculate button
-    if st.button("🔍 Calculate Estimate", type="primary", use_container_width=True):
-        _calculate_quick_estimate(care_tier, zip_code or None)
+    # Calculate button and Back to Hub
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        st.markdown('<div data-role="primary">', unsafe_allow_html=True)
+        if st.button("🔍 Calculate Estimate", type="primary", use_container_width=True, key="calc_estimate_btn"):
+            _calculate_quick_estimate(care_tier, zip_code or None)
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown('<div data-role="secondary">', unsafe_allow_html=True)
+        if st.button("← Back to Hub", use_container_width=True, key="intro_back_hub"):
+            st.switch_page("pages/_stubs.py")
+        st.markdown('</div>', unsafe_allow_html=True)
 
 
 def _calculate_quick_estimate(care_tier: str, zip_code: Optional[str]):
@@ -253,16 +264,20 @@ def _render_quick_estimate_results():
     col1, col2 = st.columns([2, 1])
     
     with col1:
+        st.markdown('<div data-role="primary">', unsafe_allow_html=True)
         if st.button("➡️ Continue to Full Assessment", type="primary", use_container_width=True, key="continue_full_assessment"):
             # Start authentication flow (if not logged in) then go to Full Assessment
             st.session_state.cost_v2_step = "auth"
             st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
     
     with col2:
-        if st.button("🔄 Calculate Another Scenario", use_container_width=True, key="recalculate"):
+        st.markdown('<div data-role="secondary">', unsafe_allow_html=True)
+        if st.button("🔄 Calculate Another", use_container_width=True, key="recalculate"):
             # Clear results to allow recalculation
             st.session_state.cost_v2_quick_estimate = None
             st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
 
 
 def _render_auth_gate():
