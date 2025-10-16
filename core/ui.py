@@ -726,13 +726,14 @@ def render_navi_panel_v2(
     
     # Build action buttons HTML with correct routing parameter (?page=) and UID preservation
     actions_html = ""
-    if secondary_action:
-        primary_href = add_uid_to_href(f"?page={primary_action.get('route', '')}") if primary_action.get('route') else "#"
-        secondary_href = add_uid_to_href(f"?page={secondary_action.get('route', '')}") if secondary_action.get('route') else "#"
-        actions_html = f'<div style="display: flex; gap: 12px; margin-top: 18px;"><a class="dashboard-cta dashboard-cta--primary" href="{primary_href}" style="flex: 2;">{primary_action["label"]}</a><a class="dashboard-cta dashboard-cta--ghost" href="{secondary_href}" style="flex: 1;">{secondary_action["label"]}</a></div>'
-    else:
-        primary_href = add_uid_to_href(f"?page={primary_action.get('route', '')}") if primary_action.get('route') else "#"
-        actions_html = f'<div style="margin-top: 18px;"><a class="dashboard-cta dashboard-cta--primary" href="{primary_href}" style="width: 100%; text-align: center;">{primary_action["label"]}</a></div>'
+    if primary_action:
+        if secondary_action:
+            primary_href = add_uid_to_href(f"?page={primary_action.get('route', '')}") if primary_action.get('route') else "#"
+            secondary_href = add_uid_to_href(f"?page={secondary_action.get('route', '')}") if secondary_action.get('route') else "#"
+            actions_html = f'<div style="display: flex; gap: 12px; margin-top: 18px;"><a class="dashboard-cta dashboard-cta--primary" href="{primary_href}" style="flex: 2;">{primary_action["label"]}</a><a class="dashboard-cta dashboard-cta--ghost" href="{secondary_href}" style="flex: 1;">{secondary_action["label"]}</a></div>'
+        else:
+            primary_href = add_uid_to_href(f"?page={primary_action.get('route', '')}") if primary_action.get('route') else "#"
+            actions_html = f'<div style="margin-top: 18px;"><a class="dashboard-cta dashboard-cta--primary" href="{primary_href}" style="width: 100%; text-align: center;">{primary_action["label"]}</a></div>'
     
     # Build complete panel HTML (flat structure, no inner wrapper)
     # Include alert if provided (appears before title)

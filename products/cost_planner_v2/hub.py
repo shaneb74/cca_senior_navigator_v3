@@ -119,8 +119,11 @@ def render():
         # Module progress tracking - initialize from config
         if "cost_v2_modules" not in st.session_state:
             st.session_state.cost_v2_modules = {}
-            for module in visible_modules:
-                module_key = module.get("key")
+        
+        # Initialize only new modules (preserve existing state)
+        for module in visible_modules:
+            module_key = module.get("key")
+            if module_key not in st.session_state.cost_v2_modules:
                 st.session_state.cost_v2_modules[module_key] = {
                     "status": "not_started",
                     "progress": 0,
