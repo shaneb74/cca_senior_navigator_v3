@@ -69,6 +69,11 @@ def run_module(config: ModuleConfig) -> Dict[str, Any]:
     show_step_dots = step.show_progress
     
     # ========================================================================
+    # CENTERED MODULE CONTAINER - Wrap all content (Hub-like aesthetic)
+    # ========================================================================
+    st.markdown('<div class="sn-app module-container">', unsafe_allow_html=True)
+    
+    # ========================================================================
     # NAVI PERSISTENT GUIDE BAR
     # Inject Navi's contextual guidance at the top of every module
     # ========================================================================
@@ -93,6 +98,8 @@ def run_module(config: ModuleConfig) -> Dict[str, Any]:
     if is_results:
         _ensure_outcomes(config, state)
         _render_results_view(state, config)
+        # Close module container
+        st.markdown('</div>', unsafe_allow_html=True)
         return state
 
     _render_summary(step, state)
@@ -127,11 +134,15 @@ def run_module(config: ModuleConfig) -> Dict[str, Any]:
     # Handle Back to Hub
     if back_to_hub_clicked:
         _handle_save_exit(config, state, step_index, total_steps, reason="back_to_hub")
+        # Close module container
+        st.markdown('</div>', unsafe_allow_html=True)
         return state
     
     # Handle Save & Continue Later
     if save_exit_clicked:
         _handle_save_exit(config, state, step_index, total_steps, reason="save_exit")
+        # Close module container
+        st.markdown('</div>', unsafe_allow_html=True)
         return state
     
     if next_clicked and missing:
@@ -143,8 +154,12 @@ def run_module(config: ModuleConfig) -> Dict[str, Any]:
 
     if config.results_step_id and step.id == config.results_step_id:
         _render_results_view(state, config)
+        # Close module container
+        st.markdown('</div>', unsafe_allow_html=True)
         return state
 
+    # Close module container
+    st.markdown('</div>', unsafe_allow_html=True)
     return state
 
 
