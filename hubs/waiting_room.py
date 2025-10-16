@@ -41,6 +41,26 @@ def _get_trivia_badges():
     return badge_list[:3] if badge_list else ["new"]
 
 
+def _get_trivia_progress():
+    """Calculate trivia progress as percentage of quizzes completed.
+    
+    Returns:
+        Progress percentage (0-100)
+    """
+    tiles = st.session_state.get("product_tiles_v2", {})
+    progress = tiles.get("senior_trivia_hub", {})
+    badges_earned = progress.get("badges_earned", {})
+    
+    # Total available quizzes
+    total_quizzes = 5  # truths_myths, music_trivia, medicare_quiz, healthy_habits, community_challenge
+    
+    if not badges_earned:
+        return 0
+    
+    completed_count = len(badges_earned)
+    return int((completed_count / total_quizzes) * 100)
+
+
 def render(ctx=None) -> None:
     person_name = st.session_state.get("person_name", "").strip()
     # Use person's name if available, otherwise use neutral "you"
@@ -57,6 +77,7 @@ def render(ctx=None) -> None:
 
     # Dynamically add Senior Trivia tile with earned badges (FIRST TILE - order=5)
     trivia_badges = _get_trivia_badges()
+    trivia_progress = _get_trivia_progress()
     
     cards = [
         ProductTileHub(
@@ -68,7 +89,7 @@ def render(ctx=None) -> None:
             primary_go="senior_trivia",
             secondary_label=None,
             secondary_go=None,
-            progress=None,
+            progress=trivia_progress,  # Progress based on completed quizzes
             badges=trivia_badges,  # Dynamic badges from earned achievements
             variant="teal",
             order=5,  # First tile
