@@ -219,7 +219,7 @@ def render_dashboard_body(
             
             if personalization == "personalized":
                 card_class += " service-tile-personalized"
-                label_html = '<div class="personalized-label">🤖 Navi Recommended</div>'
+                label_html = '<div class="personalized-label">✨ Navi Recommended</div>'
             
             if is_expanded:
                 card_class += " is-expanded"
