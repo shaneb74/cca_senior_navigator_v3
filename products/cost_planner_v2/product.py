@@ -98,6 +98,8 @@ def _render_navi_with_context(current_step: str):
     - Whether user has completed GCP
     - GCP recommendation if available
     """
+    from core.ui import render_navi_panel_v2
+    from core.nav import route_to
     
     # Get GCP recommendation if available
     gcp_rec = MCIP.get_care_recommendation()
@@ -125,7 +127,7 @@ You can calculate costs for this recommendation below, or explore other care sce
             encouragement = {
                 "icon": "💡",
                 "status": "info",
-                "message": "Feel free to calculate multiple scenarios. Your GCP recommendation will stay visible so you can always refer back to it."
+                "text": "Feel free to calculate multiple scenarios. Your GCP recommendation will stay visible so you can always refer back to it."
             }
         else:
             title = "Let's get a quick cost estimate"
@@ -135,15 +137,17 @@ You can calculate costs for this recommendation below, or explore other care sce
             encouragement = {
                 "icon": "📊",
                 "status": "info",
-                "message": "These are general estimates. For a detailed financial plan with funding sources and strategies, continue to the Full Assessment after calculating."
+                "text": "These are general estimates. For a detailed financial plan with funding sources and strategies, continue to the Full Assessment after calculating."
             }
         
-        render_navi_panel(
-            location="product",
-            product_key="cost_planner_v2",
+        # Render Navi panel V2 with custom message
+        render_navi_panel_v2(
             title=title,
             reason=reason,
-            encouragement=encouragement
+            encouragement=encouragement,
+            context_chips=[],
+            primary_action={'label': 'Continue', 'action': None},
+            variant="hub"
         )
     
     else:
