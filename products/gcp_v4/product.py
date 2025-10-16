@@ -20,15 +20,20 @@ def render():
     """Render GCP v4 product.
     
     Flow:
-    1. Render Navi panel (single intelligence layer)
-    2. Run care_recommendation module via module engine
-    3. Module engine handles all UI and navigation
-    4. When complete, publish CareRecommendation to MCIP
-    5. Show completion screen with recommendation
+    1. Check for restart intent (when complete and re-entering)
+    2. Render Navi panel (single intelligence layer)
+    3. Run care_recommendation module via module engine
+    4. Module engine handles all UI and navigation
+    5. When complete, publish CareRecommendation to MCIP
+    6. Show completion screen with recommendation
     """
     
     # Load module config
     config = _load_module_config()
+    
+    # Check if user is restarting (clicking "Restart" when GCP is complete)
+    # This happens when: GCP complete + returning from hub + at step 0 or results
+    _handle_restart_if_needed(config)
     
     product_shell_start()
     
@@ -98,13 +103,9 @@ def render():
                 import traceback
                 st.error(traceback.format_exc())
         
-        # Add primary next step button (show whenever outcome exists)
-        # This appears BELOW the module's Review/Hub buttons as a prominent CTA
-        if outcome:
-            st.markdown("---")
-            if st.button("💰 Calculate Costs", type="primary", use_container_width=True, key="gcp_next_cost"):
-                from core.nav import route_to
-                route_to("cost_v2")
+        # Calculate Costs button removed - only appears on results page via Navi panel
+        # Results page includes this as a primary action after seeing recommendation
+        
     finally:
         product_shell_end()
 
@@ -234,3 +235,67 @@ def _build_next_step_reason(outcome: dict) -> str:
         return f"Calculate financial impact of {tier} care"
     else:
         return "Complete your care assessment for a personalized recommendation"
+
+
+def _handle_restart_if_needed(config: ModuleConfig) -> None:
+    """Handle restart when user clicks 'Restart' button on completed GCP.
+    
+    Clears GCP state to start fresh, but preserves Cost Planner progress.
+    Only triggers when GCP is complete and user is re-entering.
+    
+    Args:
+        config: Module configuration
+    """
+    # Check if GCP is complete
+    try:
+        from core.mcip import MCIP
+        if not MCIP.is_product_complete("gcp"):
+            return  # Not complete, no restart needed
+    except Exception:
+        return  # Error checking MCIP, skip restart
+    
+    # Get current state
+    state_key = config.state_key
+    tiles = st.session_state.setdefault("tiles", {})
+    tile_state = tiles.setdefault(config.product, {})
+    
+    # Check if we're at the beginning or end (restart scenario)
+    current_step = st.session_state.get(f"{state_key}._step", 0)
+    
+    # Only restart if at step 0 (user clicked Restart button from hub)
+    # Don't auto-restart if they're reviewing answers mid-flow
+    if current_step != 0:
+        return
+    
+    # RESTART: Clear GCP state but preserve Cost Planner
+    # 1. Clear module state
+    if state_key in st.session_state:
+        del st.session_state[state_key]
+    
+    # 2. Clear tile state
+    if config.product in tiles:
+        tiles[config.product] = {}
+    
+    # 3. Clear outcomes
+    outcome_key = f"{state_key}._outcomes"
+    if outcome_key in st.session_state:
+        del st.session_state[outcome_key]
+    
+    # 4. Clear published flag
+    if "gcp_v4_published" in st.session_state:
+        del st.session_state["gcp_v4_published"]
+    
+    # 5. Reset MCIP GCP completion (but preserve Cost Planner!)
+    try:
+        from core.mcip import MCIP
+        # Clear GCP recommendation so it shows as not complete
+        if hasattr(MCIP, '_data') and 'care_recommendation' in MCIP._data:
+            del MCIP._data['care_recommendation']
+        # Mark GCP as not complete in journey
+        if hasattr(MCIP, '_data') and 'journey_progress' in MCIP._data:
+            if 'gcp' in MCIP._data['journey_progress']:
+                MCIP._data['journey_progress']['gcp'] = 0
+    except Exception:
+        pass  # If MCIP clear fails, state is already cleared above
+    
+    # Note: Cost Planner state preserved automatically because we only cleared GCP keys

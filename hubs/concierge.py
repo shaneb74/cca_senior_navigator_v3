@@ -216,6 +216,7 @@ def _build_gcp_tile(hub_order: dict, ordered_index: dict, next_action: dict) -> 
         image_square="gcp.png",
         meta_lines=["≈2 min • Auto-saves"],
         primary_route=f"?page={summary['route']}",
+        primary_label="Restart" if is_complete else None,  # Override button text when complete
         progress=progress,
         status_text=status_text,
         variant="brand",

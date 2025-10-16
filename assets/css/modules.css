@@ -308,9 +308,9 @@ div.mod-multi-pills div[data-testid="stMultiSelect"] span[data-baseweb="tag"] {
    MODULE LAYOUT & TYPOGRAPHY
    =================================================================== */
 
-/* Module container - centered, narrow like Hub */
+/* Module container - centered, narrow like Hub for better readability */
 .sn-app .module-container {
-  max-width: 800px;
+  max-width: 720px;  /* Narrower for better focus and readability */
   margin: 0 auto;
   padding: 32px 24px 60px;
   color: var(--module-text-primary);
