@@ -264,13 +264,17 @@ class MCIP:
         
         Also saves journey state (unlocked_products, completed_products)
         so progress is preserved across sessions.
+        
+        CRITICAL: Uses deepcopy for journey to prevent shared references.
+        Without this, modifying mcip["journey"] would also modify mcip_contracts["journey"].
         """
         if cls.STATE_KEY in st.session_state:
+            import copy
             st.session_state["mcip_contracts"] = {
                 "care_recommendation": st.session_state[cls.STATE_KEY].get("care_recommendation"),
                 "financial_profile": st.session_state[cls.STATE_KEY].get("financial_profile"),
                 "advisor_appointment": st.session_state[cls.STATE_KEY].get("advisor_appointment"),
-                "journey": st.session_state[cls.STATE_KEY].get("journey"),  # Persist journey state
+                "journey": copy.deepcopy(st.session_state[cls.STATE_KEY].get("journey")),  # CRITICAL: deepcopy to prevent shared reference
             }
     
     @classmethod
