@@ -1115,13 +1115,20 @@ def _render_results_view(mod: Dict[str, Any], config: ModuleConfig) -> None:
 
 def _render_results_summary(state: Dict[str, Any], config: ModuleConfig) -> None:
     bullets: List[str] = []
+    
+    # DEBUG: Check if state has the expected fields
+    expected_fields = ["help_overall", "memory_changes", "meds_complexity", "hours_per_day", "isolation"]
+    st.write("🔍 DEBUG - State keys present:", [k for k in expected_fields if k in state])
+    st.write("🔍 DEBUG - State values:", {k: state.get(k) for k in expected_fields if k in state})
 
     def add_bullet(prefix: str, field_key: str, join: bool = False) -> None:
         field = _find_field(config, field_key)
         if not field:
+            st.write(f"⚠️ DEBUG - Field not found: {field_key}")
             return
         value = state.get(field_key)
         if not _has_value(value):
+            st.write(f"⚠️ DEBUG - No value for: {field_key} (value={value})")
             return
         text = _display_value(field, value)
         if join and isinstance(value, (list, tuple, set)):
