@@ -144,6 +144,26 @@ def _render_navi_with_context(current_step: str):
             variant="module"
         )
     
+    elif current_step == "auth":
+        # Authentication step - explain requirement and reassure about security
+        title = "Sign in to continue"
+        reason = "You'll need to sign in to continue to the Financial Assessment."
+        encouragement = {
+            "icon": "🔒",
+            "status": "info",
+            "text": "Your data is protected and securely stored in compliance with HIPAA standards."
+        }
+        
+        # Render Navi panel V2 with security reassurance
+        render_navi_panel_v2(
+            title=title,
+            reason=reason,
+            encouragement=encouragement,
+            context_chips=[],
+            primary_action={'label': 'Continue', 'action': None},
+            variant="module"
+        )
+    
     else:
         # For other steps, use default Navi guidance
         render_navi_panel(
