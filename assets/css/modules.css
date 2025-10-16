@@ -817,37 +817,45 @@ div.mod-multi-pills div[data-testid="stMultiSelect"] span[data-baseweb="tag"] {
   transform: translateY(-1px) !important;
 }
 
-/* Secondary actions (Back, Save & Exit) - Small text links, not buttons */
+/* Secondary actions (Back to Hub, Previous Question) - Ghost button style */
 .sn-app .mod-save-exit-wrapper .stButton > button,
 .sn-app .mod-back-hub-wrapper .stButton > button,
 .sn-app .mod-back-prev-wrapper .stButton > button,
 .sn-app .mod-actions .mod-save-exit-wrapper button,
 .sn-app .mod-actions .mod-back-hub-wrapper button,
-.sn-app .mod-actions .mod-back-prev-wrapper button{
-  background: transparent !important;
-  color: #6b7280 !important;
-  border: none !important;
-  height: auto !important;
-  min-height: auto !important;
-  border-radius: 0 !important;
-  padding: 8px 16px !important;
-  font-weight: 500 !important;
-  font-size: 14px !important;
+.sn-app .mod-actions .mod-back-prev-wrapper button,
+.mod-back-hub-wrapper button[kind="secondary"],
+.mod-back-prev-wrapper button[kind="secondary"],
+div[data-role="secondary"] button[kind="secondary"]{
+  background: #FFFFFF !important;
+  background-color: #FFFFFF !important;
+  color: #0D1F4B !important;
+  border: 1.5px solid #0D1F4B !important;
+  height: 46px !important;
+  min-height: 46px !important;
+  border-radius: 10px !important;
+  padding: 0 14px !important;
+  font-weight: 600 !important;
+  font-size: 1rem !important;
   line-height: var(--leading-normal) !important;
   box-shadow: none !important;
-  transition: color 0.15s ease !important;
+  transition: background-color .12s ease, border-color .12s ease !important;
   text-decoration: none !important;
   width: auto !important;
 }
 
 .sn-app .mod-save-exit-wrapper .stButton > button:hover:not(:disabled),
 .sn-app .mod-back-hub-wrapper .stButton > button:hover:not(:disabled),
-.sn-app .mod-back-prev-wrapper .stButton > button:hover:not(:disabled){
-  background: transparent !important;
-  color: #111827 !important;
-  border: none !important;
+.sn-app .mod-back-prev-wrapper .stButton > button:hover:not(:disabled),
+.mod-back-hub-wrapper button[kind="secondary"]:hover:not(:disabled),
+.mod-back-prev-wrapper button[kind="secondary"]:hover:not(:disabled),
+div[data-role="secondary"] button[kind="secondary"]:hover:not(:disabled){
+  background: #F8F9FB !important;
+  background-color: #F8F9FB !important;
+  color: #0D1F4B !important;
+  border: 1.5px solid #0D1F4B !important;
   box-shadow: none !important;
-  text-decoration: underline !important;
+  text-decoration: none !important;
   transform: none !important;
 }
 

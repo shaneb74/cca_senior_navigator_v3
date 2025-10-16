@@ -317,9 +317,10 @@ button[type="primary"]:hover {
   --btn-primary-text: #FFFFFF;
   --btn-primary-hover: #0A1738;     /* ~8% darker */
   --btn-primary-active: #081330;    /* ~12% darker */
-  --btn-secondary-bg: #E6ECF7;      /* subtle slate/blue */
-  --btn-secondary-text: #0D1F4B;
-  --btn-secondary-hover: #DCE4F3;   /* slightly darker */
+  --btn-secondary-bg: #FFFFFF;      /* white ghost style */
+  --btn-secondary-text: #0D1F4B;    /* navy text */
+  --btn-secondary-border: #0D1F4B;  /* navy outline */
+  --btn-secondary-hover: #F8F9FB;   /* very subtle gray on hover */
   --btn-focus: rgba(13,31,75,.35);  /* focus ring */
   
   /* Question Chip Colors (FAQ, AI Advisor) */
@@ -377,6 +378,7 @@ div[data-role="primary"] .stDownloadButton > button:disabled,
 }
 
 /* Secondary Action Buttons (Back to Hub, Previous Question, Back) */
+/* Ghost style: white background with navy outline and navy text */
 /* Target buttons with data-role attribute OR inside containers with data-role */
 div[data-role="secondary"] .stButton > button,
 div[data-role="secondary"] .stDownloadButton > button,
@@ -384,13 +386,13 @@ div[data-role="secondary"] .stDownloadButton > button,
 .stDownloadButton > button[data-role="secondary"] {
   background: var(--btn-secondary-bg) !important;
   color: var(--btn-secondary-text) !important;
-  border: 1px solid transparent !important;
+  border: 1.5px solid var(--btn-secondary-border) !important;
   border-radius: 10px;
   height: 46px;
   padding: 0 14px;
   font-weight: 600;
   font-size: 1rem;
-  transition: background-color .12s ease, box-shadow .12s ease;
+  transition: background-color .12s ease, border-color .12s ease, box-shadow .12s ease;
 }
 
 div[data-role="secondary"] .stButton > button:hover:not(:disabled),
@@ -398,6 +400,7 @@ div[data-role="secondary"] .stDownloadButton > button:hover:not(:disabled),
 .stButton > button[data-role="secondary"]:hover:not(:disabled),
 .stDownloadButton > button[data-role="secondary"]:hover:not(:disabled) {
   background: var(--btn-secondary-hover) !important;
+  border-color: var(--btn-secondary-border) !important;
 }
 
 div[data-role="secondary"] .stButton > button:focus-visible,
@@ -429,7 +432,8 @@ div[data-role="secondary"] .stDownloadButton > button:disabled,
 /* DO NOT target action buttons with data-role attributes */
 
 /* Only apply to white-on-white secondary buttons WITHOUT data-role */
-button[kind="secondary"][data-testid="stBaseButton-secondary"]:not([data-role]) {
+/* EXCLUDE module back buttons - they have their own ghost styling in modules.css */
+button[kind="secondary"][data-testid="stBaseButton-secondary"]:not([data-role]):not(.mod-back-hub-wrapper *):not(.mod-back-prev-wrapper *) {
   background-color: var(--chip-bg) !important;
   color: var(--chip-text) !important;
   border: 1px solid transparent !important;
@@ -439,7 +443,7 @@ button[kind="secondary"][data-testid="stBaseButton-secondary"]:not([data-role]) 
 }
 
 /* Hover state */
-button[kind="secondary"][data-testid="stBaseButton-secondary"]:not([data-role]):hover:not(:disabled) {
+button[kind="secondary"][data-testid="stBaseButton-secondary"]:not([data-role]):not(.mod-back-hub-wrapper *):not(.mod-back-prev-wrapper *):hover:not(:disabled) {
   background-color: var(--chip-bg-hover) !important;
   box-shadow: 0 2px 6px rgba(74, 144, 226, 0.12);
 }
