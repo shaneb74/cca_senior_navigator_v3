@@ -18,17 +18,27 @@ def render():
     
     st.markdown("---")
     
-    # Initialize qualifier state
+    # Initialize qualifier state (from profile if available, otherwise defaults)
     if "cost_v2_qualifiers" not in st.session_state:
+        # Check if we have saved qualifiers in user profile
+        profile_qualifiers = st.session_state.get('profile', {}).get('qualifiers', {})
         st.session_state.cost_v2_qualifiers = {
-            "is_veteran": False,
-            "is_homeowner": False,
-            "is_on_medicaid": False
+            "is_on_medicaid": profile_qualifiers.get("is_on_medicaid", False),
+            "is_veteran": profile_qualifiers.get("is_veteran", False),
+            "is_homeowner": profile_qualifiers.get("is_homeowner", False)
         }
     
     st.markdown("#### Please answer these three questions:")
     
-    # Question 1: Veteran status
+    # Question 1: Medicaid or State Assistance
+    is_on_medicaid = st.checkbox(
+        "✅ Are you (or your loved one) currently on **Medicaid or State Assistance programs**?",
+        value=st.session_state.cost_v2_qualifiers.get("is_on_medicaid", False),
+        help="This helps us provide specific coverage guidance and identify additional resources",
+        key="cost_v2_is_on_medicaid"
+    )
+    
+    # Question 2: Veteran status
     is_veteran = st.checkbox(
         "✅ Are you (or your loved one) a **Veteran**?",
         value=st.session_state.cost_v2_qualifiers.get("is_veteran", False),
@@ -36,20 +46,12 @@ def render():
         key="cost_v2_is_veteran"
     )
     
-    # Question 2: Home ownership
+    # Question 3: Home ownership
     is_homeowner = st.checkbox(
-        "✅ Do you (or your loved one) own a **home**?",
+        "✅ Are you (or your loved one) a **home owner**?",
         value=st.session_state.cost_v2_qualifiers.get("is_homeowner", False),
         help="This helps us assess available assets and funding options",
         key="cost_v2_is_homeowner"
-    )
-    
-    # Question 3: Medicaid status
-    is_on_medicaid = st.checkbox(
-        "✅ Are you (or your loved one) currently on **Medicaid**? (not Medicare)",
-        value=st.session_state.cost_v2_qualifiers.get("is_on_medicaid", False),
-        help="This helps us provide specific coverage guidance",
-        key="cost_v2_is_on_medicaid"
     )
     
     st.markdown("---")
@@ -64,11 +66,21 @@ def render():
     
     with col2:
         if st.button("Continue to Financial Assessment →", type="primary", use_container_width=True, key="qualifier_continue"):
-            # Save qualifier data
+            # Save qualifier data to session state
             st.session_state.cost_v2_qualifiers = {
+                "is_on_medicaid": is_on_medicaid,
                 "is_veteran": is_veteran,
-                "is_homeowner": is_homeowner,
-                "is_on_medicaid": is_on_medicaid
+                "is_homeowner": is_homeowner
+            }
+            
+            # Save to user profile for persistence
+            if 'profile' not in st.session_state:
+                st.session_state.profile = {}
+            
+            st.session_state.profile['qualifiers'] = {
+                "is_on_medicaid": is_on_medicaid,
+                "is_veteran": is_veteran,
+                "is_homeowner": is_homeowner
             }
             
             # Proceed to modules
