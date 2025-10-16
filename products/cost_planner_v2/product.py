@@ -58,11 +58,8 @@ def render():
     
     product_shell_start()
     
-    # Render Navi panel for guidance
-    render_navi_panel(
-        location="product",
-        product_key="cost_planner_v2"
-    )
+    # Render Navi panel with dynamic guidance based on step and GCP status
+    _render_navi_with_context(current_step)
     
     # Initialize step state
     if "cost_v2_step" not in st.session_state:
@@ -91,6 +88,70 @@ def render():
         st.rerun()
     
     product_shell_end()
+
+
+def _render_navi_with_context(current_step: str):
+    """Render Navi panel with context-aware guidance.
+    
+    Provides specific, helpful guidance based on:
+    - Current step in Cost Planner workflow
+    - Whether user has completed GCP
+    - GCP recommendation if available
+    """
+    
+    # Get GCP recommendation if available
+    gcp_rec = MCIP.get_care_recommendation()
+    has_gcp = gcp_rec and gcp_rec.tier
+    
+    # Care tier display names
+    tier_display_map = {
+        "no_care_needed": "No Care Recommended",
+        "in_home_care": "In-Home Care",
+        "assisted_living": "Assisted Living",
+        "memory_care": "Memory Care",
+        "memory_care_high_acuity": "Memory Care (High Acuity)"
+    }
+    
+    # Build context-aware message based on step
+    if current_step == "intro":
+        if has_gcp:
+            recommended_care = tier_display_map.get(gcp_rec.tier, gcp_rec.tier)
+            title = "Let's explore care costs"
+            reason = f"""Based on your Guided Care Plan, I recommend **{recommended_care}**.
+            
+You can calculate costs for this recommendation below, or explore other care scenarios to compare options.
+
+**Why this matters:** Understanding costs early helps you plan ahead and identify funding sources."""
+            encouragement = {
+                "icon": "💡",
+                "status": "info",
+                "message": "Feel free to calculate multiple scenarios. Your GCP recommendation will stay visible so you can always refer back to it."
+            }
+        else:
+            title = "Let's get a quick cost estimate"
+            reason = """Enter your ZIP code and select a care type to see ballpark costs in your area.
+            
+**Pro tip:** If you complete the Guided Care Plan first, I can give you a personalized recommendation and more accurate cost estimates based on specific care needs."""
+            encouragement = {
+                "icon": "📊",
+                "status": "info",
+                "message": "These are general estimates. For a detailed financial plan with funding sources and strategies, continue to the Full Assessment after calculating."
+            }
+        
+        render_navi_panel(
+            location="product",
+            product_key="cost_planner_v2",
+            title=title,
+            reason=reason,
+            encouragement=encouragement
+        )
+    
+    else:
+        # For other steps, use default Navi guidance
+        render_navi_panel(
+            location="product",
+            product_key="cost_planner_v2"
+        )
 
 
 def _render_intro_step():
