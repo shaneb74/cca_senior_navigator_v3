@@ -34,43 +34,101 @@ def _load_module_config() -> Dict:
 def render():
     """Render module hub with financial assessment modules."""
     
-    # Load module configuration
-    config = _load_module_config()
-    modules_config = config.get("modules", [])
+    # Get qualifier flags from session
+    qualifiers = st.session_state.get('cost_v2_qualifiers', {})
+    is_veteran = qualifiers.get('is_veteran', False)
+    is_on_medicaid = qualifiers.get('is_on_medicaid', False)
     
-    if not modules_config:
-        st.error("❌ No modules configured. Please check the configuration file.")
-        return
+    # Define modules with conditional visibility
+    modules_config = [
+        {
+            "key": "income",
+            "title": "Income Sources",
+            "description": "Monthly income from all sources",
+            "icon": "💰",
+            "estimated_time": "3-5 min",
+            "required": True,
+            "visible": True,
+            "sort_order": 1
+        },
+        {
+            "key": "assets",
+            "title": "Assets & Resources",
+            "description": "Available financial assets and resources",
+            "icon": "🏦",
+            "estimated_time": "3-4 min",
+            "required": True,
+            "visible": True,
+            "sort_order": 2
+        },
+        {
+            "key": "va_benefits",
+            "title": "VA Benefits",
+            "description": "VA Disability and Aid & Attendance benefits",
+            "icon": "🎖️",
+            "estimated_time": "3-5 min",
+            "required": False,
+            "visible": is_veteran,  # Only show if veteran
+            "sort_order": 3
+        },
+        {
+            "key": "health_insurance",
+            "title": "Health & Insurance",
+            "description": "Medicare, Medicaid, and other health coverage",
+            "icon": "🏥",
+            "estimated_time": "4-6 min",
+            "required": False,
+            "visible": True,
+            "sort_order": 4
+        },
+        {
+            "key": "life_insurance",
+            "title": "Life Insurance",
+            "description": "Life insurance policies and cash value",
+            "icon": "🛡️",
+            "estimated_time": "2-3 min",
+            "required": False,
+            "visible": True,
+            "sort_order": 5
+        },
+        {
+            "key": "medicaid_navigation",
+            "title": "Medicaid Navigation",
+            "description": "Medicaid planning and eligibility assessment",
+            "icon": "🧭",
+            "estimated_time": "5-7 min",
+            "required": False,
+            "visible": is_on_medicaid,  # Only show if on Medicaid
+            "sort_order": 6
+        }
+    ]
     
-    # Get context from MCIP
-    recommendation = MCIP.get_care_recommendation()
-    triage = st.session_state.get("cost_v2_triage", {})
-    
-    # Optional: Show info if no GCP recommendation (use general estimates)
-    if not recommendation:
-        st.info("ℹ️ You're using general cost estimates. Complete the Guided Care Plan for personalized recommendations.")
+    # Filter to only visible modules
+    visible_modules = [m for m in modules_config if m.get("visible", True)]
     
     # Navi panel is rendered by product.py - don't duplicate it here
     
     st.title("💰 Financial Assessment")
     
-    # Show context
+    # Get care recommendation for context
+    recommendation = MCIP.get_care_recommendation()
+    
+    # Show care context banner
     if recommendation:
         tier = recommendation.tier.replace("_", " ").title()
-        st.success(f"✅ **Care Recommendation:** {tier}")
-    else:
-        st.warning("⚠️ **Using General Estimates** - No personalized care assessment")
-    
-    if triage:
-        status_display = "Planning Ahead" if triage.get("status") == "planning" else "Existing Customer"
-        st.caption(f"🎯 **Status:** {status_display}")
+        st.markdown(f"""
+        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 12px 16px; margin-bottom: 20px;">
+            <div style="color: #15803d; font-weight: 600;">✅ Care Recommendation: {tier}</div>
+            <div style="color: #166534; font-size: 14px; margin-top: 4px;">Status: Planning Ahead</div>
+        </div>
+        """, unsafe_allow_html=True)
     
     st.markdown("---")
     
     # Module progress tracking - initialize from config
     if "cost_v2_modules" not in st.session_state:
         st.session_state.cost_v2_modules = {}
-        for module in modules_config:
+        for module in visible_modules:
             module_key = module.get("key")
             st.session_state.cost_v2_modules[module_key] = {
                 "status": "not_started",
@@ -80,26 +138,27 @@ def render():
     
     modules_state = st.session_state.cost_v2_modules
     
-    # Calculate overall progress
-    total_modules = len(modules_state)
-    completed = sum(1 for m in modules_state.values() if m["status"] == "completed")
+    # Calculate overall progress (only count visible modules)
+    total_modules = len(visible_modules)
+    completed = sum(1 for m in visible_modules if modules_state.get(m["key"], {}).get("status") == "completed")
     overall_progress = int((completed / total_modules) * 100) if total_modules > 0 else 0
     
     # Show overall progress
-    st.progress(overall_progress / 100, text=f"Overall Progress: {completed}/{total_modules} modules complete")
+    st.markdown(f"**Overall Progress:** {completed}/{total_modules} modules complete")
+    st.progress(overall_progress / 100)
     
     st.markdown("---")
     
     # Module tiles
     st.markdown("### 💼 Financial Assessment Modules")
     
-    # Render modules dynamically from config
-    for module in sorted(modules_config, key=lambda m: m.get("sort_order", 0)):
+    # Render modules dynamically
+    for module in visible_modules:
         _render_module_tile(
             module_key=module.get("key"),
-            title=f"{module.get('icon', '�')} {module.get('title', 'Module')}",
+            title=f"{module.get('icon', '📄')} {module.get('title', 'Module')}",
             description=module.get("description", ""),
-            icon=module.get("icon", "�"),
+            icon=module.get("icon", "📄"),
             estimated_time=module.get("estimated_time", "3-5 min"),
             required=module.get("required", False)
         )
@@ -108,11 +167,11 @@ def render():
     st.markdown("---")
     
     # Summary and next steps
-    required_modules = [m.get("key") for m in modules_config if m.get("required", False)]
+    required_modules = [m.get("key") for m in visible_modules if m.get("required", False)]
     required_completed = sum(1 for key in required_modules if modules_state.get(key, {}).get("status") == "completed")
     
     if completed == total_modules:
-        st.success("### ✅ All Modules Complete!")
+        st.markdown("### ✅ All Modules Complete!")
         st.markdown("You've completed the financial assessment. Review your summary below.")
         
         # Show summary
@@ -137,8 +196,8 @@ def render():
                 route_to("hub_concierge")
     
     elif required_completed == len(required_modules) and len(required_modules) > 0:
-        st.success(f"### ✅ Required Modules Complete ({required_completed}/{len(required_modules)})")
-        st.info(f"💡 Optional: Complete {total_modules - completed} more module(s) for a comprehensive assessment, or proceed with current data.")
+        st.markdown(f"### ✅ Required Modules Complete ({required_completed}/{len(required_modules)})")
+        st.markdown(f"💡 You can complete {total_modules - completed} more optional module(s) for a comprehensive assessment, or proceed with current data.")
         
         # Show summary
         _render_summary()
@@ -162,7 +221,7 @@ def render():
                 route_to("hub_concierge")
     
     else:
-        st.info(f"💡 Complete {len(required_modules) - required_completed} more required module(s) to proceed. ({required_completed}/{len(required_modules)} required complete)")
+        st.markdown(f"💡 Complete {len(required_modules) - required_completed} more required module(s) to proceed. ({required_completed}/{len(required_modules)} required complete)")
 
 
 
@@ -529,7 +588,8 @@ def _render_summary():
     # Get care recommendation for context
     care_rec = MCIP.get_care_recommendation()
     if care_rec:
-        st.info(f"**Care Level:** {care_rec.tier.replace('_', ' ').title()}")
+        st.markdown(f"**Care Level:** {care_rec.tier.replace('_', ' ').title()}")
+        st.markdown("---")
     
     # =========================================================================
     # INCOME SECTION
@@ -567,7 +627,7 @@ def _render_summary():
             data.get('other_monthly', 0)
         ])
         
-        st.success(f"**Total Monthly Income:** ${total_income:,.0f}")
+        st.markdown(f"**Total Monthly Income:** ${total_income:,.0f}")
         st.markdown("---")
     
     # =========================================================================
@@ -615,7 +675,7 @@ def _render_summary():
             )
         
         total_assets = liquid + retirement + investments + real_estate
-        st.success(f"**Total Available Assets:** ${total_assets:,.0f}")
+        st.markdown(f"**Total Available Assets:** ${total_assets:,.0f}")
         st.markdown("---")
     
     # =========================================================================
@@ -648,9 +708,9 @@ def _render_summary():
             
             total_va = va_disability + aid_attendance
             if total_va > 0:
-                st.success(f"**Total VA Benefits:** ${total_va:,.0f}/month")
+                st.markdown(f"**Total VA Benefits:** ${total_va:,.0f}/month")
             else:
-                st.info("✅ Veteran status confirmed - May be eligible for VA benefits")
+                st.markdown("✅ Veteran status confirmed - May be eligible for VA benefits")
             
             st.markdown("---")
     
@@ -665,26 +725,26 @@ def _render_summary():
         
         with col1:
             if data.get('has_medicare'):
-                st.success("✅ **Medicare**")
+                st.markdown("✅ **Medicare**")
             else:
-                st.warning("⚠️ **No Medicare**")
+                st.markdown("⚠️ **No Medicare**")
         
         with col2:
             if data.get('has_medicaid'):
-                st.success("✅ **Medicaid**")
+                st.markdown("✅ **Medicaid**")
                 if data.get('medicaid_covers_ltc'):
                     st.caption("Covers long-term care")
             else:
-                st.info("ℹ️ **No Medicaid**")
+                st.markdown("ℹ️ **No Medicaid**")
         
         with col3:
             if data.get('has_ltc_insurance'):
                 ltc_daily = data.get('ltc_daily_benefit', 0)
                 ltc_monthly = ltc_daily * 30
-                st.success(f"✅ **LTC Insurance**")
+                st.markdown(f"✅ **LTC Insurance**")
                 st.metric("Monthly Benefit", f"${ltc_monthly:,.0f}")
             else:
-                st.info("ℹ️ **No LTC Insurance**")
+                st.markdown("ℹ️ **No LTC Insurance**")
         
         st.markdown("---")
     
@@ -722,7 +782,7 @@ def _render_summary():
                     options.append("Accelerated Death Benefit")
                 if data.get('ltc_rider'):
                     options.append("LTC Rider")
-                st.info(f"**Available Riders:** {', '.join(options)}")
+                st.markdown(f"**Available Riders:** {', '.join(options)}")
             
             st.markdown("---")
     
@@ -745,13 +805,13 @@ def _render_summary():
                     'need_now': 'Need to apply soon',
                     'already_enrolled': 'Already enrolled'
                 }
-                st.info(f"**Status:** {interest_labels.get(interest, interest)}")
+                st.markdown(f"**Status:** {interest_labels.get(interest, interest)}")
             
             with col2:
                 if data.get('preliminary_eligible'):
-                    st.success("✅ **Preliminarily Eligible**")
+                    st.markdown("✅ **Preliminarily Eligible**")
                 else:
-                    st.warning("⚠️ **Planning May Be Needed**")
+                    st.markdown("⚠️ **Planning May Be Needed**")
             
             st.markdown("---")
     
@@ -838,11 +898,11 @@ def _render_summary():
                 st.progress(progress / 100)
                 st.caption(f"Asset runway: {years_total:.1f} years of care coverage")
             else:
-                st.success(f"✅ Assets can cover care costs for {years_total:.1f} years")
+                st.markdown(f"✅ Assets can cover care costs for {years_total:.1f} years")
         elif runway >= 999:
-            st.success("✅ **Income and benefits fully cover monthly care costs!**")
+            st.markdown("✅ **Income and benefits fully cover monthly care costs!**")
         else:
-            st.warning("⚠️ **Immediate financial planning recommended** - Consider Medicaid or other funding sources")
+            st.markdown("⚠️ **Immediate financial planning recommended** - Consider Medicaid or other funding sources")
 
 
 def _format_runway_message(runway_years: int, runway_months: int, monthly_gap: float) -> str:
