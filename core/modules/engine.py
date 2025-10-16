@@ -22,6 +22,11 @@ def run_module(config: ModuleConfig) -> Dict[str, Any]:
     state_key = config.state_key
     st.session_state.setdefault(state_key, {})
     state = st.session_state[state_key]
+    
+    # DEBUG: Check state at module entry
+    st.write("🔍 DEBUG run_module - state_key:", state_key)
+    st.write("🔍 DEBUG run_module - state size:", len(state))
+    st.write("🔍 DEBUG run_module - state keys sample:", list(state.keys())[:10] if state else "EMPTY")
 
     total_steps = len(config.steps)
     
@@ -945,6 +950,11 @@ def _render_confidence_improvement(outcomes: Dict[str, Any], config: ModuleConfi
 
 def _render_results_view(mod: Dict[str, Any], config: ModuleConfig) -> None:
     """Render results with Navi announcing recommendation + clean detail cards."""
+    
+    # DEBUG: Check state persistence
+    st.write("🔍 DEBUG - config.state_key:", config.state_key)
+    st.write("🔍 DEBUG - mod dict size:", len(mod))
+    st.write("🔍 DEBUG - mod keys sample:", list(mod.keys())[:10] if mod else "EMPTY")
     
     # Get data
     outcome_key = f"{config.state_key}._outcomes"
