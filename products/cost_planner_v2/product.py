@@ -164,6 +164,26 @@ def _render_navi_with_context(current_step: str):
             variant="module"
         )
     
+    elif current_step == "triage":
+        # Quick qualifier questions - explain why we're asking
+        title = "Just a few quick questions"
+        reason = "I'll use your answers to personalize the upcoming sections and keep this quick and efficient."
+        encouragement = {
+            "icon": "⚡",
+            "status": "info",
+            "text": "This helps me show you only what's relevant to your situation."
+        }
+        
+        # Render Navi panel V2 with encouragement
+        render_navi_panel_v2(
+            title=title,
+            reason=reason,
+            encouragement=encouragement,
+            context_chips=[],
+            primary_action={'label': 'Continue', 'action': None},
+            variant="module"
+        )
+    
     else:
         # For other steps, use default Navi guidance
         render_navi_panel(
@@ -185,7 +205,7 @@ def _render_auth_step():
 
 
 def _render_triage_step():
-    """Step 3: Status triage (existing vs planning)."""
+    """Step 3: Quick qualifier questions (Veteran, Homeowner, Medicaid)."""
     from products.cost_planner_v2 import triage
     triage.render()
 
