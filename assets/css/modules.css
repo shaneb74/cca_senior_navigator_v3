@@ -45,6 +45,187 @@ div[data-testid="stRadio"] label > div:first-child {
 }
 
 /* ===================================================================
+   📋 EXPERT ADVISOR REVIEW - CARD-BASED LAYOUT
+   =================================================================== */
+
+/* Section cards with consistent styling */
+.sn-app .section-card {
+  background: var(--bg-card, #FFFFFF);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 10px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.03);
+}
+
+/* ===================================================================
+   🎯 COMPLETION PAGE - CLEAN CELEBRATION LAYOUT
+   =================================================================== */
+
+/* Completion cards - similar to section cards but with slight variations */
+.sn-app .completion-card {
+  background: var(--bg-card, #FFFFFF);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 10px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.03);
+}
+
+/* Accomplishment list items */
+.sn-app .accomplishment-item {
+  font-size: 16px;
+  line-height: 1.8;
+  color: var(--text-primary, #0D1F4B);
+  padding: 4px 0;
+}
+
+/* What's Next cards - 3-column grid items */
+.sn-app .next-step-card {
+  background: var(--bg-soft, #F9FAFB);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 10px;
+  padding: 20px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow 0.12s ease, transform 0.12s ease;
+}
+
+.sn-app .next-step-card:hover {
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.sn-app .next-step-card h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary, #0D1F4B);
+  margin-bottom: 12px;
+}
+
+.sn-app .next-step-card p {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-secondary, #334155);
+  margin-bottom: 16px;
+  flex: 1;
+}
+
+/* Responsive: stack cards on mobile */
+@media (max-width: 900px) {
+  .sn-app .next-step-card {
+    margin-bottom: 16px;
+  }
+}
+
+/* Module status items in 2-column grid */
+.sn-app .module-status-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  transition: background-color 0.12s ease;
+}
+
+.sn-app .module-status-item:hover {
+  background: rgba(230, 236, 247, 0.5);
+}
+
+.sn-app .module-status-item .module-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.sn-app .module-status-item .module-label {
+  flex: 1;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-primary, #0D1F4B);
+}
+
+.sn-app .module-status-item .module-status {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--text-muted, #64748B);
+}
+
+.sn-app .module-status-item.completed {
+  background: rgba(0, 122, 92, 0.05);
+}
+
+.sn-app .module-status-item.completed .module-label {
+  color: var(--state-success, #007A5C);
+}
+
+.sn-app .module-status-item.optional {
+  background: rgba(203, 213, 225, 0.1);
+}
+
+.sn-app .module-status-item.incomplete {
+  background: rgba(220, 38, 38, 0.05);
+  border-left: 3px solid #DC2626;
+}
+
+/* Executive summary metrics - clean 4-column grid */
+.sn-app .section-card [data-testid="stMetricValue"] {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary, #0D1F4B);
+}
+
+.sn-app .section-card [data-testid="stMetricLabel"] {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary, #334155);
+  text-transform: none;
+}
+
+/* Tab styling - minimal and clean */
+.sn-app .section-card [data-baseweb="tab-list"] {
+  gap: 0;
+  border-bottom: 2px solid rgba(0, 0, 0, 0.08);
+}
+
+.sn-app .section-card [data-baseweb="tab"] {
+  padding: 12px 20px;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-secondary, #334155);
+  border: none;
+  background: transparent;
+}
+
+.sn-app .section-card [data-baseweb="tab"][aria-selected="true"] {
+  color: var(--brand-navy, #0D1F4B);
+  border-bottom: 2px solid var(--brand-navy, #0D1F4B);
+  background: transparent;
+}
+
+.sn-app .section-card [data-baseweb="tab"]:hover {
+  background: rgba(230, 236, 247, 0.3);
+}
+
+/* Advisor notes text area */
+.sn-app .section-card textarea {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--text-primary, #0D1F4B);
+  background: var(--bg-base, #FFFFFF);
+}
+
+.sn-app .section-card textarea:focus {
+  border-color: var(--brand-navy, #0D1F4B);
+  box-shadow: 0 0 0 3px rgba(13, 31, 75, 0.1);
+  outline: none;
+}
+
+/* ===================================================================
    🧹 HIDE GHOST/EMPTY STREAMLIT CONTAINERS
    =================================================================== */
 /* Hide empty containers that Streamlit creates below widgets */
@@ -1022,3 +1203,356 @@ div[data-testid="stVerticalBlock"]:has(.chip-wrap.is-active) .stButton > button{
   box-shadow: none !important;
   text-decoration: underline !important;
 }
+
+/* ===================================================================
+   COMPACT FINANCIAL ASSESSMENT LAYOUT
+   =================================================================== */
+/* Reduces vertical spacing for Financial Assessment modules to minimize scrolling */
+
+/* Tighten section spacing - reduce from large margins to compact */
+.sn-app [data-testid="stVerticalBlock"]:has(h2) {
+  margin-bottom: 1rem !important;
+  margin-top: 1.25rem !important;
+}
+
+/* Reduce spacing between section title and help text */
+.sn-app h2 + div[data-testid="stMarkdownContainer"] {
+  margin-top: -0.5rem !important;
+  margin-bottom: 0.75rem !important;
+}
+
+/* Tighten field spacing - number inputs, text inputs */
+.sn-app div[data-testid="stNumberInput"],
+.sn-app div[data-testid="stTextInput"],
+.sn-app div[data-testid="stSelectbox"] {
+  margin-bottom: 1rem !important;
+}
+
+/* Reduce space after st.info boxes */
+.sn-app div[data-testid="stAlert"] {
+  margin-bottom: 1rem !important;
+  margin-top: 0.75rem !important;
+}
+
+/* Make horizontal rules (st.markdown('---')) thinner and less spacious */
+.sn-app hr {
+  margin: 1.5rem 0 !important;
+  border-color: #e5e7eb !important;
+  opacity: 0.5;
+}
+
+/* Reduce padding in main container for Financial Assessments */
+.sn-app .mod-wrap {
+  padding: 8px 12px 30px !important;  /* Reduced from 40px bottom padding */
+}
+
+/* Tighten metric display spacing */
+.sn-app div[data-testid="stMetric"] {
+  margin-bottom: 0.75rem !important;
+}
+
+/* Reduce h2 margins (section headers like "Social Security Benefits") */
+.sn-app h2 {
+  margin-top: 1.25rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+/* Reduce h3 margins */
+.sn-app h3 {
+  margin-top: 1rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+/* Caption text (help text) - keep compact */
+.sn-app [data-testid="stCaptionContainer"] {
+  margin-bottom: 0.5rem !important;
+}
+
+/* Navi panel compact styling when used in assessments */
+.sn-app .navi-panel-compact {
+  margin: 0.75rem 0 !important;
+  padding: 0.75rem 1rem !important;
+}
+
+.sn-app .navi-panel-compact .navi-content {
+  font-size: 0.9rem !important;
+  line-height: 1.5 !important;
+}
+
+/* =================== ACCESSIBILITY: SENIOR-FRIENDLY TYPOGRAPHY =================== */
+
+/* Body text - 16px minimum for readability */
+.sn-app [data-testid="stMarkdown"] p {
+  font-size: 16px !important;
+  line-height: 1.6 !important;
+}
+
+/* Section headers - larger and more prominent */
+.sn-app [data-testid="stMarkdown"] h3 {
+  font-size: 20px !important;
+  margin-top: 1.5rem !important;
+  margin-bottom: 1rem !important;
+}
+
+.sn-app [data-testid="stMarkdown"] h4 {
+  font-size: 18px !important;
+  margin-top: 1.25rem !important;
+  margin-bottom: 0.75rem !important;
+}
+
+/* Input labels - larger and clearer */
+.sn-app [data-testid="stNumberInput"] label,
+.sn-app [data-testid="stSelectbox"] label {
+  font-size: 16px !important;
+  font-weight: 500 !important;
+}
+
+/* Caption text - ensure minimum readability */
+.sn-app [data-testid="stCaptionContainer"] {
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+}
+
+/* Expander headers - larger touch targets and text */
+.sn-app [data-testid="stExpander"] summary {
+  font-size: 16px !important;
+  min-height: 44px !important;
+  padding: 0.75rem !important;
+}
+
+/* Expander content - readable text */
+.sn-app [data-testid="stExpander"] [data-testid="stMarkdown"] {
+  font-size: 15px !important;
+  line-height: 1.6 !important;
+}
+
+/* Button text - larger and more legible */
+.sn-app button {
+  font-size: 16px !important;
+  min-height: 44px !important;
+  padding: 0.75rem 1.5rem !important;
+}
+
+/* Total display - extra large for emphasis */
+.sn-app .income-total-display {
+  font-size: 18px !important;
+  line-height: 1.5 !important;
+}
+
+/* WCAG AA Contrast - ensure dark navy on light backgrounds */
+.sn-app [data-testid="stMarkdown"] h3,
+.sn-app [data-testid="stMarkdown"] h4 {
+  color: #0D1F4B !important;
+}
+
+/* =================== INCOME SOURCES TWO-COLUMN GRID =================== */
+
+/* Responsive grid container for income sections */
+.sn-app .income-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)) !important;
+  gap: 24px !important;
+  align-items: start !important;
+  margin-bottom: 1.5rem !important;
+}
+
+/* Mobile/tablet: stack into single column */
+@media (max-width: 900px) {
+  .sn-app .income-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Income card styling - soft bordered tiles */
+.sn-app .income-card {
+  background: white !important;
+  border: 1px solid #E5E7EB !important;
+  border-radius: 8px !important;
+  padding: 1.5rem !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* Income card headers */
+.sn-app .income-card h4 {
+  margin-top: 0 !important;
+  margin-bottom: 0.5rem !important;
+  font-size: 18px !important;
+  color: #0D1F4B !important;
+}
+
+/* Income card captions */
+.sn-app .income-card .income-caption {
+  font-size: 14px !important;
+  color: #6B7280 !important;
+  margin-bottom: 1rem !important;
+  display: block !important;
+}
+
+/* Income card input spacing */
+.sn-app .income-card [data-testid="stNumberInput"],
+.sn-app .income-card [data-testid="stSelectbox"] {
+  margin-bottom: 1rem !important;
+}
+
+/* Income card expander (Quick Guide) */
+.sn-app .income-card [data-testid="stExpander"] {
+  margin-top: 0.5rem !important;
+  border-top: 1px solid #F3F4F6 !important;
+  padding-top: 0.75rem !important;
+}
+
+/* Ensure consistent vertical rhythm within cards */
+.sn-app .income-card > * {
+  margin-bottom: 0 !important;
+}
+
+.sn-app .income-card > *:not(:last-child) {
+  margin-bottom: 0.75rem !important;
+}
+
+/* =================== ASSETS & RESOURCES MODULE =================== */
+
+/* Asset card styling (consistent with income cards) */
+.sn-app .asset-card {
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  border-radius: 10px !important;
+  padding: 16px 16px 20px !important;
+  background: #fff !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+  transition: box-shadow 0.2s ease !important;
+  height: 100% !important;
+}
+
+.sn-app .asset-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Asset card header */
+.sn-app .asset-card h4 {
+  font-size: 20px !important;
+  font-weight: 700 !important;
+  color: #0D1F4B !important;
+  margin: 0 0 12px 0 !important;
+  line-height: 1.3 !important;
+}
+
+/* Asset card caption/subtitle */
+.sn-app .asset-caption {
+  display: block !important;
+  font-size: 15px !important;
+  color: #6B7280 !important;
+  margin-bottom: 12px !important;
+  line-height: 1.5 !important;
+}
+
+/* Spacing between sections within cards */
+.sn-app .asset-card > *:not(:last-child) {
+  margin-bottom: 0.75rem !important;
+}
+
+/* Asset card labels */
+.sn-app .asset-card label {
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  color: #0D1F4B !important;
+}
+
+/* Asset card inputs */
+.sn-app .asset-card input[type="number"] {
+  font-size: 17px !important;
+  padding: 10px 12px !important;
+  min-height: 44px !important;
+  border: 1.5px solid #D1D5DB !important;
+  border-radius: 6px !important;
+}
+
+.sn-app .asset-card input[type="number"]:focus {
+  border-color: #0D1F4B !important;
+  box-shadow: 0 0 0 3px rgba(13, 31, 75, 0.15) !important;
+  outline: none !important;
+}
+
+/* Checkbox styling for home sale interest */
+.sn-app .home-sale-checkbox-wrapper {
+  padding: 12px 0 !important;
+  margin: 8px 0 !important;
+}
+
+.sn-app .asset-card input[type="checkbox"] {
+  width: 20px !important;
+  height: 20px !important;
+  min-height: 20px !important;
+  cursor: pointer !important;
+  margin-right: 8px !important;
+}
+
+.sn-app .asset-card [data-testid="stCheckbox"] {
+  padding: 8px 0 !important;
+}
+
+.sn-app .asset-card [data-testid="stCheckbox"] label {
+  font-size: 16px !important;
+  font-weight: 500 !important;
+  color: #1F2937 !important;
+  line-height: 1.6 !important;
+  display: inline-block !important;
+  cursor: pointer !important;
+  padding-left: 4px !important;
+}
+
+.sn-app .asset-card [data-testid="stCheckbox"] label p {
+  font-size: 16px !important;
+  color: #1F2937 !important;
+  margin: 0 !important;
+  display: inline !important;
+}
+
+.sn-app .asset-card [data-testid="stCheckbox"] span {
+  color: #1F2937 !important;
+  font-size: 16px !important;
+}
+
+/* Responsive: Stack to single column on small screens */
+@media (max-width: 900px) {
+  .sn-app .asset-card {
+    margin-bottom: 20px !important;
+  }
+}
+
+/* =================== FIXED FOOTER NAVIGATION =================== */
+
+/* Add padding to bottom of page to prevent content from being hidden under fixed footer */
+.sn-app [data-testid="stVerticalBlock"] {
+  padding-bottom: 120px !important;
+}
+
+/* Fixed footer bar */
+.sn-app .fixed-footer-nav {
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  background: white !important;
+  border-top: 2px solid #E5E7EB !important;
+  padding: 1rem 2rem !important;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1) !important;
+  z-index: 1000 !important;
+}
+
+/* Footer navigation grid */
+.sn-app .fixed-footer-nav [data-testid="column"] {
+  display: flex !important;
+  align-items: center !important;
+}
+
+/* Auto-save message */
+.sn-app .fixed-footer-nav [data-testid="stMarkdown"] p {
+  font-size: 14px !important;
+  color: #6B7280 !important;
+  margin: 0 !important;
+  text-align: center !important;
+}
+
