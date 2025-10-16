@@ -523,57 +523,32 @@ def _render_module_tile(
     if required:
         required_badge = '<span style="background: #fee2e2; color: #991b1b; padding: 3px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; margin-left: 10px;">REQUIRED</span>'
     
-    # Build tile HTML with Navi-inspired styling
+    # Build tile HTML with Navi-inspired styling (no HTML comments to avoid rendering issues)
     tile_html = f"""
-    <div style="
-        background: white;
-        border: 1px solid #e6edf5;
-        border-radius: 16px;
-        padding: 24px;
-        margin-bottom: 16px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-        transition: all 0.2s ease;
-    ">
-        <div style="display: flex; gap: 20px; align-items: flex-start;">
-            <!-- Icon -->
-            <div style="font-size: 48px; line-height: 1; flex-shrink: 0;">
-                {icon}
+<div style="background: white; border: 1px solid #e6edf5; border-radius: 16px; padding: 24px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);">
+    <div style="display: flex; gap: 20px; align-items: flex-start;">
+        <div style="font-size: 48px; line-height: 1; flex-shrink: 0;">
+            {icon}
+        </div>
+        <div style="flex: 1; min-width: 0;">
+            <div style="display: flex; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+                <h4 style="margin: 0; font-size: 20px; font-weight: 600; color: #1e293b;">
+                    {title}
+                </h4>
+                {required_badge}
+                <span style="background: {status_colors[status]}; color: white; padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                    {status_labels[status]}
+                </span>
             </div>
-            
-            <!-- Content -->
-            <div style="flex: 1; min-width: 0;">
-                <!-- Title + Badge + Status -->
-                <div style="display: flex; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
-                    <h4 style="margin: 0; font-size: 20px; font-weight: 600; color: #1e293b;">
-                        {title}
-                    </h4>
-                    {required_badge}
-                    <span style="
-                        background: {status_colors[status]};
-                        color: white;
-                        padding: 3px 10px;
-                        border-radius: 6px;
-                        font-size: 11px;
-                        font-weight: 600;
-                        text-transform: uppercase;
-                        letter-spacing: 0.5px;
-                    ">
-                        {status_labels[status]}
-                    </span>
-                </div>
-                
-                <!-- Description -->
-                <p style="margin: 0 0 12px 0; color: #475569; font-size: 15px; line-height: 1.5;">
-                    {description}
-                </p>
-                
-                <!-- Time estimate -->
-                <div style="color: #64748b; font-size: 14px;">
-                    ⏱️ {estimated_time}
-                </div>
+            <p style="margin: 0 0 12px 0; color: #475569; font-size: 15px; line-height: 1.5;">
+                {description}
+            </p>
+            <div style="color: #64748b; font-size: 14px;">
+                ⏱️ {estimated_time}
             </div>
         </div>
     </div>
+</div>
     """
     
     st.markdown(tile_html, unsafe_allow_html=True)
