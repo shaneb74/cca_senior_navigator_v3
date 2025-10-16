@@ -231,6 +231,20 @@ def render():
         
         else:
             st.markdown(f"💡 Complete {len(required_modules) - required_completed} more required module(s) to proceed. ({required_completed}/{len(required_modules)} required complete)")
+            
+            st.markdown("---")
+            
+            # Navigation buttons - Continue disabled until required modules complete
+            col1, col2 = st.columns([1, 1])
+            
+            with col1:
+                # Disabled button until requirements met
+                st.button("Continue to Expert Review →", type="primary", use_container_width=True, disabled=True, help="Complete required modules to continue")
+            
+            with col2:
+                if st.button("🏠 Return to Concierge", use_container_width=True):
+                    from core.nav import route_to
+                    route_to("hub_concierge")
 
 
 
