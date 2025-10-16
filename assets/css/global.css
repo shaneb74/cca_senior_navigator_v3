@@ -319,13 +319,13 @@ button[type="primary"]:hover {
   --btn-primary-active: #081330;    /* ~12% darker */
   --btn-secondary-bg: #FFFFFF;      /* white ghost style */
   --btn-secondary-text: #0D1F4B;    /* navy text */
-  --btn-secondary-border: #0D1F4B;  /* navy outline */
-  --btn-secondary-hover: #F8F9FB;   /* very subtle gray on hover */
+  --btn-secondary-border: #D1D5DB;  /* light gray outline (like Log in button) */
+  --btn-secondary-hover: #F9FAFB;   /* very subtle gray on hover */
   --btn-focus: rgba(13,31,75,.35);  /* focus ring */
   
   /* Question Chip Colors (FAQ, AI Advisor) */
-  --chip-bg: #E9F1FF;           /* subtle blue — matches "Questions I've Asked" banner */
-  --chip-bg-hover: #DCE8FF;     /* ~6-8% darker for hover */
+  --chip-bg: #FFFFFF;           /* white background */
+  --chip-bg-hover: #F8F9FB;     /* very subtle gray on hover */
   --chip-text: #0D1F4B;         /* app navy */
   --chip-ring: rgba(13,31,75,.35); /* focus ring */
 }
@@ -386,10 +386,10 @@ div[data-role="secondary"] .stDownloadButton > button,
 .stDownloadButton > button[data-role="secondary"] {
   background: var(--btn-secondary-bg) !important;
   color: var(--btn-secondary-text) !important;
-  border: 1.5px solid var(--btn-secondary-border) !important;
+  border: 1px solid var(--btn-secondary-border) !important;
   border-radius: 10px;
   height: 46px;
-  padding: 0 14px;
+  padding: 0 16px;
   font-weight: 600;
   font-size: 1rem;
   transition: background-color .12s ease, border-color .12s ease, box-shadow .12s ease;
@@ -432,18 +432,19 @@ div[data-role="secondary"] .stDownloadButton > button:disabled,
 /* DO NOT target action buttons with data-role attributes */
 
 /* Only apply to white-on-white secondary buttons WITHOUT data-role */
-/* EXCLUDE module back buttons - they have their own ghost styling in modules.css */
-button[kind="secondary"][data-testid="stBaseButton-secondary"]:not([data-role]):not(.mod-back-hub-wrapper *):not(.mod-back-prev-wrapper *) {
+/* IMPORTANT: This targets FAQ/AI Advisor question chips ONLY */
+/* Module back buttons are styled separately below with ghost style */
+button[kind="secondary"][data-testid="stBaseButton-secondary"]:not([data-role]) {
   background-color: var(--chip-bg) !important;
   color: var(--chip-text) !important;
-  border: 1px solid transparent !important;
+  border: 1px solid #D1D5DB !important;
   border-radius: 10px;
   padding: 10px 14px;
-  transition: background-color .12s ease, box-shadow .12s ease;
+  transition: background-color .12s ease, box-shadow .12s ease, border-color .12s ease;
 }
 
 /* Hover state */
-button[kind="secondary"][data-testid="stBaseButton-secondary"]:not([data-role]):not(.mod-back-hub-wrapper *):not(.mod-back-prev-wrapper *):hover:not(:disabled) {
+button[kind="secondary"][data-testid="stBaseButton-secondary"]:not([data-role]):hover:not(:disabled) {
   background-color: var(--chip-bg-hover) !important;
   box-shadow: 0 2px 6px rgba(74, 144, 226, 0.12);
 }
@@ -466,6 +467,33 @@ button[kind="secondary"][data-testid="stBaseButton-secondary"]:not([data-role]):
   color: initial !important;
   border: initial !important;
   padding: initial !important;
+}
+
+/* ===== Module Navigation Buttons (Previous Question, Back to Hub) ===== */
+/* CRITICAL OVERRIDE: Ghost style for module back buttons */
+/* Must have higher specificity than chip rules above */
+/* Using nested div selectors with data-role for MAXIMUM specificity */
+div.mod-back-hub-wrapper div[data-role="secondary"] .stButton > button[kind="secondary"][data-testid="stBaseButton-secondary"],
+div.mod-back-prev-wrapper div[data-role="secondary"] .stButton > button[kind="secondary"][data-testid="stBaseButton-secondary"],
+div[data-role="secondary"] .stButton > button[kind="secondary"][data-testid="stBaseButton-secondary"] {
+  background: #FFFFFF !important;
+  background-color: #FFFFFF !important;
+  color: #0D1F4B !important;
+  border: 1px solid #D1D5DB !important;
+  height: 46px !important;
+  min-height: 46px !important;
+  border-radius: 10px !important;
+  padding: 0 16px !important;
+  font-weight: 600 !important;
+  font-size: 1rem !important;
+}
+
+div.mod-back-hub-wrapper div[data-role="secondary"] .stButton > button[kind="secondary"][data-testid="stBaseButton-secondary"]:hover:not(:disabled),
+div.mod-back-prev-wrapper div[data-role="secondary"] .stButton > button[kind="secondary"][data-testid="stBaseButton-secondary"]:hover:not(:disabled),
+div[data-role="secondary"] .stButton > button[kind="secondary"][data-testid="stBaseButton-secondary"]:hover:not(:disabled) {
+  background: #F9FAFB !important;
+  background-color: #F9FAFB !important;
+  border-color: #9CA3AF !important;
 }
 
 /* ===== Navi Panel Spacing (Global) ===== */
