@@ -170,8 +170,6 @@ class MCIP:
         Args:
             recommendation: CareRecommendation dataclass
         """
-        print(f"\n{'='*80}")
-        print(f"[MCIP] publish_care_recommendation() called")
         cls.initialize()
         
         # Store recommendation
@@ -300,12 +298,6 @@ class MCIP:
                 "journey": copy.deepcopy(st.session_state[cls.STATE_KEY].get("journey")),  # CRITICAL: deepcopy to prevent shared reference
             }
             st.session_state["mcip_contracts"] = contracts
-            
-            # DEBUG: Print to console to verify save is happening
-            print(f"[MCIP DEBUG] _save_contracts_for_persistence() called")
-            print(f"[MCIP DEBUG] care_recommendation status: {contracts.get('care_recommendation', {}).get('status')}")
-            print(f"[MCIP DEBUG] journey completed: {contracts.get('journey', {}).get('completed_products')}")
-            print(f"[MCIP DEBUG] mcip_contracts in session_state: {'mcip_contracts' in st.session_state}")
     
     @classmethod
     def get_unlocked_products(cls) -> List[str]:
