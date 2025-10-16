@@ -32,7 +32,7 @@ def render():
     
     # Question 1: Medicaid or State Assistance
     is_on_medicaid = st.checkbox(
-        "✅ Are you (or your loved one) currently on **Medicaid or State Assistance programs**?",
+        "Are you (or your loved one) currently on Medicaid or State Assistance programs?",
         value=st.session_state.cost_v2_qualifiers.get("is_on_medicaid", False),
         help="This helps us provide specific coverage guidance and identify additional resources",
         key="cost_v2_is_on_medicaid"
@@ -40,7 +40,7 @@ def render():
     
     # Question 2: Veteran status
     is_veteran = st.checkbox(
-        "✅ Are you (or your loved one) a **Veteran**?",
+        "Are you (or your loved one) a Veteran?",
         value=st.session_state.cost_v2_qualifiers.get("is_veteran", False),
         help="This helps us show VA benefits and resources",
         key="cost_v2_is_veteran"
@@ -48,7 +48,7 @@ def render():
     
     # Question 3: Home ownership
     is_homeowner = st.checkbox(
-        "✅ Are you (or your loved one) a **home owner**?",
+        "Are you (or your loved one) a home owner?",
         value=st.session_state.cost_v2_qualifiers.get("is_homeowner", False),
         help="This helps us assess available assets and funding options",
         key="cost_v2_is_homeowner"
