@@ -263,6 +263,27 @@ def render():
 
 
 
+def _get_tier_display_name(tier: str) -> str:
+    """Convert internal tier name to user-friendly display name.
+    
+    Args:
+        tier: Internal tier name (e.g., "no_care_needed")
+        
+    Returns:
+        User-friendly display name (e.g., "No Care Recommended")
+    """
+    tier_display_map = {
+        "no_care_needed": "No Care Recommended",
+        "independent": "Independent Living",
+        "in_home": "In-Home Care",
+        "in_home_care": "In-Home Care",
+        "assisted_living": "Assisted Living",
+        "memory_care": "Memory Care",
+        "memory_care_high_acuity": "Memory Care (High Acuity)"
+    }
+    return tier_display_map.get(tier, tier.replace("_", " ").title())
+
+
 def _render_care_context(recommendation: CareRecommendation):
     """Show care recommendation context at top of hub.
     
@@ -272,7 +293,7 @@ def _render_care_context(recommendation: CareRecommendation):
     Args:
         recommendation: Care recommendation from MCIP
     """
-    tier_label = recommendation.tier.replace("_", " ").title()
+    tier_label = _get_tier_display_name(recommendation.tier)
     confidence_pct = int(recommendation.confidence * 100)
     
     st.info(f"""
@@ -395,7 +416,7 @@ def _render_financial_preview(financial_data: Dict, recommendation: CareRecommen
         st.metric(
             "Total Monthly Cost",
             f"${financial_data['total_monthly_cost']:,.0f}/mo",
-            delta=f"Based on {recommendation.tier.replace('_', ' ').title()}"
+            delta=f"Based on {_get_tier_display_name(recommendation.tier)}"
         )
     
     # Funding breakdown
@@ -640,7 +661,7 @@ def _render_summary():
     # Get care recommendation for context
     care_rec = MCIP.get_care_recommendation()
     if care_rec:
-        st.markdown(f"**Care Level:** {care_rec.tier.replace('_', ' ').title()}")
+        st.markdown(f"**Care Level:** {_get_tier_display_name(care_rec.tier)}")
         st.markdown("---")
     
     # =========================================================================
