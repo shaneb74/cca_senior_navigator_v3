@@ -21,28 +21,16 @@ def run_module(config: ModuleConfig) -> Dict[str, Any]:
     """Run a module flow defined by ModuleConfig. Returns updated module state."""
     state_key = config.state_key
     
-    # DEBUG: Check if state exists BEFORE setdefault
-    state_exists_before = state_key in st.session_state
-    state_value_before = st.session_state.get(state_key, "NOT_FOUND")
-    
     # Check if we need to restore state from tile_state (session expired but tile persists)
     tiles = st.session_state.setdefault("tiles", {})
     tile_state = tiles.setdefault(config.product, {})
     
     # If state doesn't exist but tile has saved_state, restore it
     if state_key not in st.session_state and "saved_state" in tile_state:
-        st.write("🔄 DEBUG: Restoring state from tile_state")
         st.session_state[state_key] = tile_state["saved_state"].copy()
     
     st.session_state.setdefault(state_key, {})
     state = st.session_state[state_key]
-    
-    # DEBUG: Check state at module entry
-    st.write("🔍 DEBUG run_module - state_key:", state_key)
-    st.write("🔍 DEBUG run_module - state existed before setdefault:", state_exists_before)
-    st.write("🔍 DEBUG run_module - state value before (first 5 keys):", list(state_value_before.keys())[:5] if isinstance(state_value_before, dict) else str(state_value_before))
-    st.write("🔍 DEBUG run_module - state size AFTER setdefault:", len(state))
-    st.write("🔍 DEBUG run_module - state keys sample:", list(state.keys())[:10] if state else "EMPTY")
 
     total_steps = len(config.steps)
     
@@ -971,11 +959,6 @@ def _render_confidence_improvement(outcomes: Dict[str, Any], config: ModuleConfi
 def _render_results_view(mod: Dict[str, Any], config: ModuleConfig) -> None:
     """Render results with Navi announcing recommendation + clean detail cards."""
     
-    # DEBUG: Check state persistence
-    st.write("🔍 DEBUG - config.state_key:", config.state_key)
-    st.write("🔍 DEBUG - mod dict size:", len(mod))
-    st.write("🔍 DEBUG - mod keys sample:", list(mod.keys())[:10] if mod else "EMPTY")
-    
     # Get data
     outcome_key = f"{config.state_key}._outcomes"
     outcomes = st.session_state.get(outcome_key, {})
@@ -1121,11 +1104,6 @@ def _render_results_view(mod: Dict[str, Any], config: ModuleConfig) -> None:
     summary_data = outcomes.get("summary", {})
     points = summary_data.get("points", [])
     
-    # DEBUG: Check what data we have
-    # st.write("DEBUG outcomes keys:", list(outcomes.keys()))
-    # st.write("DEBUG mod keys:", list(mod.keys()))
-    # st.write("DEBUG points:", points)
-    
     if points:
         # Use detailed summary points from derive() function
         # Group them visually with icons
@@ -1145,20 +1123,13 @@ def _render_results_view(mod: Dict[str, Any], config: ModuleConfig) -> None:
 
 def _render_results_summary(state: Dict[str, Any], config: ModuleConfig) -> None:
     bullets: List[str] = []
-    
-    # DEBUG: Check if state has the expected fields
-    expected_fields = ["help_overall", "memory_changes", "meds_complexity", "hours_per_day", "isolation"]
-    st.write("🔍 DEBUG - State keys present:", [k for k in expected_fields if k in state])
-    st.write("🔍 DEBUG - State values:", {k: state.get(k) for k in expected_fields if k in state})
 
     def add_bullet(prefix: str, field_key: str, join: bool = False) -> None:
         field = _find_field(config, field_key)
         if not field:
-            st.write(f"⚠️ DEBUG - Field not found: {field_key}")
             return
         value = state.get(field_key)
         if not _has_value(value):
-            st.write(f"⚠️ DEBUG - No value for: {field_key} (value={value})")
             return
         text = _display_value(field, value)
         if join and isinstance(value, (list, tuple, set)):
