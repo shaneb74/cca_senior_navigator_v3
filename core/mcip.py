@@ -107,15 +107,16 @@ class MCIP:
         # CRITICAL FIX: Always restore from mcip_contracts if available
         # This ensures that completion state persists even if mcip state exists
         # but has stale/incomplete data (e.g., after navigating between pages)
+        # IMPORTANT: Use deepcopy for ALL nested dicts/lists to prevent shared references
         if "mcip_contracts" in st.session_state:
             import copy
             contracts = st.session_state["mcip_contracts"]
             if "care_recommendation" in contracts and contracts["care_recommendation"]:
-                st.session_state[cls.STATE_KEY]["care_recommendation"] = contracts["care_recommendation"]
+                st.session_state[cls.STATE_KEY]["care_recommendation"] = copy.deepcopy(contracts["care_recommendation"])
             if "financial_profile" in contracts and contracts["financial_profile"]:
-                st.session_state[cls.STATE_KEY]["financial_profile"] = contracts["financial_profile"]
+                st.session_state[cls.STATE_KEY]["financial_profile"] = copy.deepcopy(contracts["financial_profile"])
             if "advisor_appointment" in contracts and contracts["advisor_appointment"]:
-                st.session_state[cls.STATE_KEY]["advisor_appointment"] = contracts["advisor_appointment"]
+                st.session_state[cls.STATE_KEY]["advisor_appointment"] = copy.deepcopy(contracts["advisor_appointment"])
             if "journey" in contracts and contracts["journey"]:
                 # CRITICAL: Always restore journey state from contracts
                 # Use deepcopy to avoid shared references between mcip and mcip_contracts
@@ -265,15 +266,15 @@ class MCIP:
         Also saves journey state (unlocked_products, completed_products)
         so progress is preserved across sessions.
         
-        CRITICAL: Uses deepcopy for journey to prevent shared references.
-        Without this, modifying mcip["journey"] would also modify mcip_contracts["journey"].
+        CRITICAL: Uses deepcopy for ALL contracts to prevent shared references.
+        Without this, modifying mcip data would also modify mcip_contracts data.
         """
         if cls.STATE_KEY in st.session_state:
             import copy
             st.session_state["mcip_contracts"] = {
-                "care_recommendation": st.session_state[cls.STATE_KEY].get("care_recommendation"),
-                "financial_profile": st.session_state[cls.STATE_KEY].get("financial_profile"),
-                "advisor_appointment": st.session_state[cls.STATE_KEY].get("advisor_appointment"),
+                "care_recommendation": copy.deepcopy(st.session_state[cls.STATE_KEY].get("care_recommendation")),
+                "financial_profile": copy.deepcopy(st.session_state[cls.STATE_KEY].get("financial_profile")),
+                "advisor_appointment": copy.deepcopy(st.session_state[cls.STATE_KEY].get("advisor_appointment")),
                 "journey": copy.deepcopy(st.session_state[cls.STATE_KEY].get("journey")),  # CRITICAL: deepcopy to prevent shared reference
             }
     
