@@ -253,19 +253,23 @@ def _build_cost_planner_tile(hub_order: dict, ordered_index: dict, next_action: 
     
     # Build description and progress
     if is_complete:
-        desc = summary["summary_line"]
+        desc = None
+        desc_html = f'<span class="tile-recommendation">{summary["summary_line"]}</span>'
         progress = 100
-        status_text = "✓ Complete"
+        status_text = summary["summary_line"]
     elif is_in_progress:
         desc = f"Resume planner ({cost_prog:.0f}% complete)"
+        desc_html = None
         progress = cost_prog
         status_text = None
     elif is_locked:
         desc = summary["summary_line"]
+        desc_html = None
         progress = 0
         status_text = None
     else:
         desc = summary["summary_line"]
+        desc_html = None
         progress = 0
         status_text = None
     
@@ -273,13 +277,16 @@ def _build_cost_planner_tile(hub_order: dict, ordered_index: dict, next_action: 
         key="cost_v2",
         title="Cost Planner",
         desc=desc,
+        desc_html=desc_html,
         blurb="Project expenses, compare living options, and see how long current funds will last.",
         image_square="cp.png",
-        meta_lines=["≈10–15 min • Save anytime"],
-        primary_route=f"?page={summary['route']}" if summary['route'] else None,
-        primary_go="cost_v2",
-        secondary_label="See responses" if is_in_progress else None,
-        secondary_go="cost_view" if is_in_progress else None,
+        meta_lines=["≈10–15 min • Auto-saves"],
+        primary_route=f"?page={summary['route']}" if (summary['route'] and not is_complete) else None,
+        primary_go="cost_v2" if not is_complete else None,
+        primary_label=None if is_complete else None,  # No primary button when complete
+        secondary_route=f"?page={summary['route']}" if (summary['route'] and is_complete) else None,
+        secondary_go="cost_v2" if is_complete else None,  # Restart uses secondary (ghost) button
+        secondary_label="↻ Restart" if is_complete else None,  # Ghost button styling for restart
         progress=progress,
         status_text=status_text,
         variant="brand",

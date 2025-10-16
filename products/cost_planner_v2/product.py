@@ -36,6 +36,9 @@ def render():
     but accessed separately via navigation, not forced in flow.
     """
     
+    # Check for restart intent (when complete and re-entering at intro)
+    _handle_restart_if_needed()
+    
     # CRITICAL: Ensure cost_planner is unlocked when accessed
     # This handles the case where a user navigates directly to Cost Planner
     # without completing GCP first
@@ -232,3 +235,72 @@ def _render_gcp_gate():
         
         **Without GCP:** You'll see general cost ranges that may not match your actual needs.
         """)
+
+
+def _handle_restart_if_needed() -> None:
+    """Handle restart when user clicks 'Restart' button on completed Cost Planner.
+    
+    Clears Cost Planner state to start fresh, but preserves GCP recommendation.
+    Only triggers when Cost Planner is complete and user is at intro step.
+    """
+    # Check if Cost Planner is complete
+    try:
+        from core.mcip import MCIP
+        if not MCIP.is_product_complete("cost_planner"):
+            return  # Not complete, no restart needed
+    except Exception:
+        return  # Error checking MCIP, skip restart
+    
+    # Check if we're at intro (restart scenario)
+    current_step = st.session_state.get("cost_v2_step", "intro")
+    if current_step != "intro":
+        return  # Not at intro, don't auto-restart
+    
+    # RESTART: Clear Cost Planner state but preserve GCP
+    # 1. Clear cost planner step state
+    if "cost_v2_step" in st.session_state:
+        st.session_state.cost_v2_step = "intro"
+    
+    # 2. Clear financial module states
+    module_keys = [
+        "cost_v2_current_module",
+        "cost_v2_guest_mode",
+        "cost_v2_income",
+        "cost_v2_assets", 
+        "cost_v2_va_benefits",
+        "cost_v2_health_insurance",
+        "cost_v2_life_insurance",
+        "cost_v2_medicaid",
+        "cost_v2_modules_complete",
+        "cost_v2_expert_review",
+    ]
+    for key in module_keys:
+        if key in st.session_state:
+            del st.session_state[key]
+    
+    # 3. Clear tile state
+    tiles = st.session_state.get("tiles", {})
+    if "cost_v2" in tiles:
+        tiles["cost_v2"] = {}
+    if "cost_planner" in tiles:
+        tiles["cost_planner"] = {}
+    
+    # 4. Reset MCIP Cost Planner completion (but preserve GCP!)
+    try:
+        from core.mcip import MCIP
+        # Clear Cost Planner summary so it shows as not complete
+        if hasattr(MCIP, '_data') and 'product_summaries' in MCIP._data:
+            if 'cost_v2' in MCIP._data['product_summaries']:
+                del MCIP._data['product_summaries']['cost_v2']
+            if 'cost_planner' in MCIP._data['product_summaries']:
+                del MCIP._data['product_summaries']['cost_planner']
+        # Mark Cost Planner as not complete in journey
+        if hasattr(MCIP, '_data') and 'journey_progress' in MCIP._data:
+            if 'cost_planner' in MCIP._data['journey_progress']:
+                MCIP._data['journey_progress']['cost_planner'] = 0
+            if 'cost_v2' in MCIP._data['journey_progress']:
+                MCIP._data['journey_progress']['cost_v2'] = 0
+    except Exception:
+        pass  # If MCIP clear fails, state is already cleared above
+    
+    # Note: GCP state and recommendation preserved automatically
