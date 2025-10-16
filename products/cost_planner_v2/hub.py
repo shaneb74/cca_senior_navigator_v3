@@ -108,51 +108,55 @@ def render():
     
     # Navi panel is rendered by product.py - don't duplicate it here
     
-    st.title("💰 Financial Assessment")
+    # Center content under Navi using columns
+    _, col_center, _ = st.columns([1, 6, 1])
     
-    st.markdown("---")
-    
-    # Module progress tracking - initialize from config
-    if "cost_v2_modules" not in st.session_state:
-        st.session_state.cost_v2_modules = {}
-        for module in visible_modules:
-            module_key = module.get("key")
-            st.session_state.cost_v2_modules[module_key] = {
-                "status": "not_started",
-                "progress": 0,
-                "data": None
-            }
-    
-    modules_state = st.session_state.cost_v2_modules
-    
-    # Calculate overall progress (only count visible modules)
-    total_modules = len(visible_modules)
-    completed = sum(1 for m in visible_modules if modules_state.get(m["key"], {}).get("status") == "completed")
-    overall_progress = int((completed / total_modules) * 100) if total_modules > 0 else 0
-    
-    # Show overall progress
-    st.markdown(f"**Overall Progress:** {completed}/{total_modules} modules complete")
-    st.progress(overall_progress / 100)
-    
-    st.markdown("---")
-    
-    # Module tiles
-    st.markdown("### 💼 Financial Assessment Modules")
-    
-    # Render modules dynamically in 2-column layout
-    for i in range(0, len(visible_modules), 2):
-        col1, col2 = st.columns(2)
+    with col_center:
+        st.title("💰 Financial Assessment")
         
-        with col1:
-            module = visible_modules[i]
-            _render_module_tile(
-                module_key=module.get("key"),
-                title=module.get('title', 'Module'),
-                description=module.get("description", ""),
-                icon=module.get("icon", "📄"),
-                estimated_time=module.get("estimated_time", "3-5 min"),
-                required=module.get("required", False)
-            )
+        st.markdown("---")
+        
+        # Module progress tracking - initialize from config
+        if "cost_v2_modules" not in st.session_state:
+            st.session_state.cost_v2_modules = {}
+            for module in visible_modules:
+                module_key = module.get("key")
+                st.session_state.cost_v2_modules[module_key] = {
+                    "status": "not_started",
+                    "progress": 0,
+                    "data": None
+                }
+        
+        modules_state = st.session_state.cost_v2_modules
+        
+        # Calculate overall progress (only count visible modules)
+        total_modules = len(visible_modules)
+        completed = sum(1 for m in visible_modules if modules_state.get(m["key"], {}).get("status") == "completed")
+        overall_progress = int((completed / total_modules) * 100) if total_modules > 0 else 0
+        
+        # Show overall progress
+        st.markdown(f"**Overall Progress:** {completed}/{total_modules} modules complete")
+        st.progress(overall_progress / 100)
+        
+        st.markdown("---")
+        
+        # Module tiles
+        st.markdown("### 💼 Financial Assessment Modules")
+        
+        # Render modules dynamically in 2-column layout
+        for i in range(0, len(visible_modules), 2):
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                module = visible_modules[i]
+                _render_module_tile(
+                    module_key=module.get("key"),
+                    title=module.get('title', 'Module'),
+                    description=module.get("description", ""),
+                    icon=module.get("icon", "📄"),
+                    estimated_time=module.get("estimated_time", "3-5 min"),
+                    required=module.get("required", False)
+                )
         
         # Check if there's a second module in this row
         if i + 1 < len(visible_modules):
@@ -166,67 +170,67 @@ def render():
                     estimated_time=module.get("estimated_time", "3-5 min"),
                     required=module.get("required", False)
                 )
-        
-        st.markdown("")
-    
-    st.markdown("---")
-    
-    # Summary and next steps
-    required_modules = [m.get("key") for m in visible_modules if m.get("required", False)]
-    required_completed = sum(1 for key in required_modules if modules_state.get(key, {}).get("status") == "completed")
-    
-    if completed == total_modules:
-        st.markdown("### ✅ All Modules Complete!")
-        st.markdown("You've completed the financial assessment. Review your summary below.")
-        
-        # Show summary
-        _render_summary()
+            
+            st.markdown("")
         
         st.markdown("---")
         
-        # Navigation buttons - automatically publish when continuing
-        col1, col2 = st.columns([1, 1])
+        # Summary and next steps
+        required_modules = [m.get("key") for m in visible_modules if m.get("required", False)]
+        required_completed = sum(1 for key in required_modules if modules_state.get(key, {}).get("status") == "completed")
         
-        with col1:
-            if st.button("Continue to Expert Review →", type="primary", use_container_width=True):
-                # Automatically publish to MCIP before proceeding
-                if not _already_published():
-                    _publish_to_mcip()
-                st.session_state.cost_v2_step = "expert_review"
-                st.rerun()
+        if completed == total_modules:
+            st.markdown("### ✅ All Modules Complete!")
+            st.markdown("You've completed the financial assessment. Review your summary below.")
+            
+            # Show summary
+            _render_summary()
+            
+            st.markdown("---")
+            
+            # Navigation buttons - automatically publish when continuing
+            col1, col2 = st.columns([1, 1])
+            
+            with col1:
+                if st.button("Continue to Expert Review →", type="primary", use_container_width=True):
+                    # Automatically publish to MCIP before proceeding
+                    if not _already_published():
+                        _publish_to_mcip()
+                    st.session_state.cost_v2_step = "expert_review"
+                    st.rerun()
+            
+            with col2:
+                if st.button("🏠 Return to Concierge", use_container_width=True):
+                    from core.nav import route_to
+                    route_to("hub_concierge")
         
-        with col2:
-            if st.button("🏠 Return to Concierge", use_container_width=True):
-                from core.nav import route_to
-                route_to("hub_concierge")
-    
-    elif required_completed == len(required_modules) and len(required_modules) > 0:
-        st.markdown(f"### ✅ Required Modules Complete ({required_completed}/{len(required_modules)})")
-        st.markdown(f"💡 You can complete {total_modules - completed} more optional module(s) for a comprehensive assessment, or proceed with current data.")
+        elif required_completed == len(required_modules) and len(required_modules) > 0:
+            st.markdown(f"### ✅ Required Modules Complete ({required_completed}/{len(required_modules)})")
+            st.markdown(f"💡 You can complete {total_modules - completed} more optional module(s) for a comprehensive assessment, or proceed with current data.")
+            
+            # Show summary
+            _render_summary()
+            
+            st.markdown("---")
+            
+            # Navigation buttons - automatically publish when continuing
+            col1, col2 = st.columns([1, 1])
+            
+            with col1:
+                if st.button("Continue to Expert Review →", type="primary", use_container_width=True):
+                    # Automatically publish to MCIP before proceeding
+                    if not _already_published():
+                        _publish_to_mcip()
+                    st.session_state.cost_v2_step = "expert_review"
+                    st.rerun()
+            
+            with col2:
+                if st.button("🏠 Return to Concierge", use_container_width=True):
+                    from core.nav import route_to
+                    route_to("hub_concierge")
         
-        # Show summary
-        _render_summary()
-        
-        st.markdown("---")
-        
-        # Navigation buttons - automatically publish when continuing
-        col1, col2 = st.columns([1, 1])
-        
-        with col1:
-            if st.button("Continue to Expert Review →", type="primary", use_container_width=True):
-                # Automatically publish to MCIP before proceeding
-                if not _already_published():
-                    _publish_to_mcip()
-                st.session_state.cost_v2_step = "expert_review"
-                st.rerun()
-        
-        with col2:
-            if st.button("🏠 Return to Concierge", use_container_width=True):
-                from core.nav import route_to
-                route_to("hub_concierge")
-    
-    else:
-        st.markdown(f"💡 Complete {len(required_modules) - required_completed} more required module(s) to proceed. ({required_completed}/{len(required_modules)} required complete)")
+        else:
+            st.markdown(f"💡 Complete {len(required_modules) - required_completed} more required module(s) to proceed. ({required_completed}/{len(required_modules)} required complete)")
 
 
 
