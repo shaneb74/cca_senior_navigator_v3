@@ -944,7 +944,7 @@ def _render_confidence_improvement(outcomes: Dict[str, Any], config: ModuleConfi
 
 
 def _render_results_view(mod: Dict[str, Any], config: ModuleConfig) -> None:
-    """Render results as guided narrative: outcome → why → how to improve → next steps."""
+    """Render results with Navi announcing recommendation + clean detail cards."""
     
     # Get data
     outcome_key = f"{config.state_key}._outcomes"
@@ -955,21 +955,6 @@ def _render_results_view(mod: Dict[str, Any], config: ModuleConfig) -> None:
     tier = outcomes.get("tier", "")
     tier_score = outcomes.get("tier_score", 0)
     
-    # ========================================
-    # 1. TOP SECTION - "Your Recommendation" (Hero Card)
-    # ========================================
-    
-    # Determine confidence badge
-    if confidence_pct >= 90:
-        confidence_label = "Strong"
-        confidence_color = "#22c55e"  # Green
-    elif confidence_pct >= 70:
-        confidence_label = "Moderate"
-        confidence_color = "#f59e0b"  # Amber
-    else:
-        confidence_label = "Building"
-        confidence_color = "#ef4444"  # Red
-    
     # Extract recommendation text (clean)
     if recommendation and "recommend" in recommendation.lower():
         rec_text = recommendation.split("recommend")[-1].strip().rstrip(".")
@@ -978,65 +963,157 @@ def _render_results_view(mod: Dict[str, Any], config: ModuleConfig) -> None:
     else:
         rec_text = "Your Guided Care Plan"
     
-    # Add CSS classes for spacing control
-    st.markdown(f"""
-    <div class="gcp-rec-card" style="
-        background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%);
-        border: 1px solid #bfdbfe;
-        border-radius: 12px;
-        padding: 32px;
-        margin: 14px 0 20px 0;
-        text-align: center;
-        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.08);
-    ">
-        <div style="font-size: 14px; color: #64748b; font-weight: 500; letter-spacing: 0.5px; margin-bottom: 12px;">
-            YOUR CARE RECOMMENDATION
-        </div>
-        <div style="font-size: 28px; font-weight: 600; color: #1e293b; margin-bottom: 16px; line-height: 1.3;">
-            {H(rec_text)}
-        </div>
-        <div style="display: flex; align-items: center; justify-content: center; gap: 24px; flex-wrap: wrap;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 13px; color: #64748b;">Confidence:</span>
-                <span style="
-                    background: {confidence_color}15;
-                    color: {confidence_color};
-                    padding: 4px 12px;
-                    border-radius: 12px;
-                    font-weight: 600;
-                    font-size: 14px;
-                ">{confidence_pct}% • {confidence_label}</span>
+    # ========================================
+    # 1. NAVI ANNOUNCES THE RECOMMENDATION
+    # ========================================
+    # Navi says: "Based on your answers, here's what I recommend:"
+    # Then shows the recommendation in her panel
+    
+    from core.ui import render_navi_panel_v2
+    
+    # Build Navi guidance with recommendation
+    navi_title = "Great job! Based on your answers, here's what I recommend:"
+    navi_description = rec_text
+    
+    # Add reassurance message
+    navi_support = "Your care plan can evolve as your needs change. You can retake this assessment anytime to get an updated recommendation."
+    
+    render_navi_panel_v2(
+        variant="module",
+        title=navi_title,
+        description=navi_description,
+        support=navi_support,
+        chips=None,
+        actions=None
+    )
+    
+    st.markdown("<div style='margin: 32px 0;'></div>", unsafe_allow_html=True)
+    
+    # ========================================
+    # 2. RECOMMENDATION CLARITY - Collapsible Drawer (Developer Tool)
+    # ========================================
+    
+    # Calculate clarity metrics (for fine-tuning)
+    tier_thresholds = {
+        "no_care_needed": (0, 8),
+        "in_home": (9, 16),
+        "assisted_living": (17, 24),
+        "memory_care": (25, 39),
+        "memory_care_high_acuity": (40, 100),
+    }
+    
+    boundary_clarity = 100
+    clarity_message = "Clear"
+    if tier in tier_thresholds:
+        min_score, max_score = tier_thresholds[tier]
+        distance_from_min = tier_score - min_score
+        distance_from_max = max_score - tier_score
+        distance_from_boundary = min(distance_from_min, distance_from_max)
+        boundary_clarity = min(int((distance_from_boundary / 3.0) * 100), 100)
+        
+        if boundary_clarity >= 80:
+            clarity_message = "Strong — well within tier"
+        elif boundary_clarity >= 50:
+            clarity_message = "Moderate — some distance from boundary"
+        else:
+            clarity_message = "Near boundary — consider reviewing"
+    
+    clarity_color = "#22c55e" if boundary_clarity >= 80 else "#f59e0b" if boundary_clarity >= 50 else "#ef4444"
+    
+    with st.expander("🔧 Recommendation Clarity (For Fine-Tuning)", expanded=False):
+        st.markdown(f"""
+        <div style="
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+        ">
+            <div style="font-size: 24px; font-weight: 600; color: {clarity_color}; margin-bottom: 8px;">
+                {boundary_clarity}%
+            </div>
+            <div style="font-size: 14px; color: #64748b; margin-bottom: 12px;">
+                {clarity_message}
+            </div>
+            <div style="
+                background: #f1f5f9;
+                height: 8px;
+                border-radius: 4px;
+                overflow: hidden;
+                margin-bottom: 16px;
+            ">
+                <div style="
+                    background: {clarity_color};
+                    height: 100%;
+                    width: {boundary_clarity}%;
+                    transition: width 0.3s ease;
+                "></div>
+            </div>
+            <div style="font-size: 13px; color: #64748b;">
+                <strong>Score:</strong> {tier_score} points<br/>
+                <strong>Tier:</strong> {tier.replace('_', ' ').title()}<br/>
+                <strong>Range:</strong> {tier_thresholds.get(tier, ('N/A', 'N/A'))[0]}-{tier_thresholds.get(tier, ('N/A', 'N/A'))[1]} points
             </div>
         </div>
-    </div>
-    """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
+    
+    st.markdown("<div style='margin: 24px 0;'></div>", unsafe_allow_html=True)
     
     # ========================================
-    # 2. REASSURANCE SECTION (moved up - directly under recommendation)
+    # 3. QUESTION COMPLETENESS - White Card (Consistent with Theme)
     # ========================================
     
-    st.markdown("""
-    <div class="gcp-reassure" style="
-        background: #fff8e1;
-        border: 1px solid #fde68a;
-        border-radius: 10px;
-        padding: 10px 12px;
-        margin: 12px 0 24px 0;
-        color: #92400e;
-        display: flex;
-        gap: 0.6rem;
-        align-items: flex-start;
+    # Calculate completeness
+    answered_count = 0
+    total_count = 0
+    for step in config.steps:
+        if not step.fields:
+            continue
+        for field in step.fields:
+            if field.required:
+                total_count += 1
+                value = mod.get(field.key)
+                if value is not None and value != "" and value != []:
+                    answered_count += 1
+    
+    completeness = answered_count / total_count if total_count > 0 else 1.0
+    completeness_pct = int(completeness * 100)
+    completeness_color = "#22c55e" if completeness_pct >= 90 else "#f59e0b" if completeness_pct >= 70 else "#3b82f6"
+    
+    st.markdown(f"""
+    <div style="
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 32px;
     ">
-        <span style="font-size: 1.1rem;">💬</span>
-        <span style="font-size: 14px; line-height: 1.6;">
-            Your care plan can evolve as your needs change. 
-            You can retake the assessment anytime to get an updated recommendation.
-        </span>
+        <div style="font-size: 12px; color: #64748b; font-weight: 600; letter-spacing: 0.5px; margin-bottom: 12px;">
+            QUESTION COMPLETENESS
+        </div>
+        <div style="font-size: 28px; font-weight: 600; color: {completeness_color}; margin-bottom: 8px;">
+            {completeness_pct}%
+        </div>
+        <div style="font-size: 14px; color: #64748b; margin-bottom: 16px;">
+            {answered_count} of {total_count} questions answered
+        </div>
+        <div style="
+            background: #f1f5f9;
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+        ">
+            <div style="
+                background: {completeness_color};
+                height: 100%;
+                width: {completeness_pct}%;
+                transition: width 0.3s ease;
+            "></div>
+        </div>
     </div>
     """, unsafe_allow_html=True)
     
     # ========================================
-    # 3. DETAILS SECTION - "Why You Got This Recommendation"
+    # 4. WHY YOU GOT THIS RECOMMENDATION
     # ========================================
     
     st.markdown("### 🔍 Why You Got This Recommendation")
@@ -1055,29 +1132,8 @@ def _render_results_view(mod: Dict[str, Any], config: ModuleConfig) -> None:
     st.markdown("<div style='margin: 40px 0;'></div>", unsafe_allow_html=True)
     
     # ========================================
-    # 4. INSIGHTS SECTION - "Improve Your Confidence"
+    # 5. NEXT ACTIONS - Simplified CTAs
     # ========================================
-    
-    if confidence_pct < 100:
-        _render_confidence_improvement(outcomes, config, mod)
-        st.markdown("<div style='margin: 40px 0;'></div>", unsafe_allow_html=True)
-    
-    # ========================================
-    # 5. NEXT ACTIONS SECTION - "What Happens Next"
-    # ========================================
-    
-    st.markdown("""
-    <div class="gcp-next">
-        <div class="gcp-next__title" style="font-weight: 700; margin: 10px 0 6px; color: #0f172a; font-size: 1.05rem;">
-            What Happens Next
-        </div>
-        <p style="font-size: 14px; color: #64748b; margin-bottom: 20px; line-height: 1.6;">
-            Now that you have a recommendation, the next step is the Cost Planner. 
-            You'll get a quick estimate of monthly care costs, adjusted for your ZIP code 
-            and any care needs in your plan.
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
     
     _render_results_ctas_once(config)
 
