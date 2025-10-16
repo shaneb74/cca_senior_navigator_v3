@@ -36,6 +36,23 @@ def render():
     but accessed separately via navigation, not forced in flow.
     """
     
+    # CRITICAL: Ensure cost_planner is unlocked when accessed
+    # This handles the case where a user navigates directly to Cost Planner
+    # without completing GCP first
+    MCIP.initialize()
+    unlocked_products = MCIP.get_unlocked_products()
+    if "cost_planner" not in unlocked_products and "cost_v2" not in unlocked_products:
+        # Auto-unlock cost planner since user is accessing it
+        journey = st.session_state["mcip"]["journey"]
+        if "cost_planner" not in journey["unlocked_products"]:
+            journey["unlocked_products"].append("cost_planner")
+        if "cost_v2" not in journey["unlocked_products"]:
+            journey["unlocked_products"].append("cost_v2")
+        # Save the updated journey state
+        MCIP._save_contracts_for_persistence()
+        print(f"[COST_PLANNER] Auto-unlocked cost_planner and cost_v2")
+        print(f"[COST_PLANNER] Updated unlocked_products: {journey['unlocked_products']}")
+    
     product_shell_start()
     
     # Render Navi panel for guidance

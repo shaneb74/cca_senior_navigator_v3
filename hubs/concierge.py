@@ -27,6 +27,63 @@ def render(ctx=None) -> None:
     # Initialize MCIP
     MCIP.initialize()
     
+    # DEBUG: Show MCIP state
+    with st.expander("🔍 DEBUG: MCIP State", expanded=False):
+        st.write("**User ID & Session:**")
+        st.write(f"anonymous_uid: {st.session_state.get('anonymous_uid', 'NOT SET')}")
+        st.write(f"session_id: {st.session_state.get('session_id', 'NOT SET')}")
+        st.write(f"persistence_loaded: {st.session_state.get('persistence_loaded', False)}")
+        
+        st.write("**MCIP State (mcip):**")
+        if "mcip" in st.session_state:
+            mcip = st.session_state["mcip"]
+            st.json({
+                "care_recommendation_status": mcip.get("care_recommendation", {}).get("status"),
+                "care_recommendation_tier": mcip.get("care_recommendation", {}).get("tier"),
+                "journey_completed": mcip.get("journey", {}).get("completed_products", []),
+                "journey_unlocked": mcip.get("journey", {}).get("unlocked_products", [])
+            })
+        else:
+            st.error("NO MCIP STATE")
+        
+        st.write("**MCIP Contracts (mcip_contracts):**")
+        if "mcip_contracts" in st.session_state:
+            contracts = st.session_state["mcip_contracts"]
+            st.json({
+                "care_recommendation_status": contracts.get("care_recommendation", {}).get("status"),
+                "care_recommendation_tier": contracts.get("care_recommendation", {}).get("tier"),
+                "journey_completed": contracts.get("journey", {}).get("completed_products", []),
+                "journey_unlocked": contracts.get("journey", {}).get("unlocked_products", [])
+            })
+        else:
+            st.error("NO MCIP CONTRACTS")
+        
+        st.write("**User File Status:**")
+        try:
+            from core.session_store import get_or_create_user_id, load_user
+            uid = get_or_create_user_id(st.session_state)
+            user_data = load_user(uid)
+            st.write(f"User file UID: {uid}")
+            st.write(f"User file has mcip_contracts: {'mcip_contracts' in user_data}")
+            if 'mcip_contracts' in user_data:
+                st.json({
+                    "file_care_status": user_data['mcip_contracts'].get("care_recommendation", {}).get("status"),
+                    "file_care_tier": user_data['mcip_contracts'].get("care_recommendation", {}).get("tier"),
+                    "file_journey_completed": user_data['mcip_contracts'].get("journey", {}).get("completed_products", []),
+                })
+        except Exception as e:
+            st.error(f"Error checking user file: {e}")
+        
+        st.write("**Session State Keys (check if mcip_contracts exists):**")
+        st.write([k for k in st.session_state.keys() if 'mcip' in k.lower()])
+        
+        st.write("**MCIP Methods:**")
+        rec = MCIP.get_care_recommendation()
+        st.write(f"get_care_recommendation(): {rec.tier if rec else 'None'}")
+        st.write(f"is_product_complete('gcp'): {MCIP.is_product_complete('gcp')}")
+        cost_summary = MCIP.get_product_summary("cost_v2")
+        st.write(f"get_product_summary('cost_v2') status: {cost_summary.get('status') if cost_summary else 'None'}")
+    
     # Show save confirmation if returning
     # Handle save messages from legacy products (backwards compatibility)
     save_msg = st.session_state.pop("_show_save_message", None)
@@ -357,8 +414,8 @@ def _build_navi_guide_block(ctx) -> str:
     questions_html = ""
 
     actions_html = (
-        f'<a class="btn btn--primary" href="{action_route}">{html.escape(action_label)}</a>'
-        '<a class="btn btn--secondary" href="?page=faqs">Ask Navi →</a>'
+        f'<a class="btn btn--primary" href="{action_route}" target="_self">{html.escape(action_label)}</a>'
+        '<a class="btn btn--secondary" href="?page=faqs" target="_self">Ask Navi →</a>'
     )
 
     reason_html = html.escape(reason) if reason else ""

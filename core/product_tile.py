@@ -262,7 +262,7 @@ class BaseTile:
             else:
                 href = html_escape(self._primary_href())
                 buttons.append(
-                    f'<a class="dashboard-cta dashboard-cta--primary" href="{href}"{tooltip_attr}>'
+                    f'<a class="dashboard-cta dashboard-cta--primary" href="{href}" target="_self"{tooltip_attr}>'
                     f"{html_escape(primary_label)}</a>"
                 )
         if self.secondary_label:
@@ -274,24 +274,53 @@ class BaseTile:
             else:
                 href = html_escape(self._secondary_href())
                 buttons.append(
-                    f'<a class="dashboard-cta dashboard-cta--ghost" href="{href}">'
+                    f'<a class="dashboard-cta dashboard-cta--ghost" href="{href}" target="_self">'
                     f"{html_escape(self.secondary_label)}</a>"
                 )
         return f'<div class="tile-actions">{"".join(buttons)}</div>' if buttons else ""
 
     def _primary_href(self) -> str:
+        href = ""
         if self.primary_route:
-            return self.primary_route
-        if self.primary_go:
-            return f"?go={self.primary_go}"
-        return "#"
+            href = self.primary_route
+        elif self.primary_go:
+            href = f"?go={self.primary_go}"
+        else:
+            return "#"
+        
+        # CRITICAL: Preserve UID in href to maintain session across navigation
+        return self._add_uid_to_href(href)
 
     def _secondary_href(self) -> str:
+        href = ""
         if self.secondary_route:
-            return self.secondary_route
-        if self.secondary_go:
-            return f"?go={self.secondary_go}"
-        return "#"
+            href = self.secondary_route
+        elif self.secondary_go:
+            href = f"?go={self.secondary_go}"
+        else:
+            return "#"
+        
+        # CRITICAL: Preserve UID in href to maintain session across navigation
+        return self._add_uid_to_href(href)
+    
+    def _add_uid_to_href(self, href: str) -> str:
+        """Add current UID to href to preserve session across navigation."""
+        if not href or href == "#":
+            return href
+        
+        # Get current UID from session_state
+        uid = None
+        if 'anonymous_uid' in st.session_state:
+            uid = st.session_state['anonymous_uid']
+        elif 'auth' in st.session_state and st.session_state['auth'].get('user_id'):
+            uid = st.session_state['auth']['user_id']
+        
+        if not uid:
+            return href
+        
+        # Add uid to query string
+        separator = '&' if '?' in href else '?'
+        return f"{href}{separator}uid={uid}"
 
     def _resolved_primary_label(self) -> Optional[str]:
         if self.primary_label:

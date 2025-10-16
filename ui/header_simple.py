@@ -9,6 +9,7 @@ from typing import Optional
 import streamlit as st
 
 from core.ui import img_src
+from core.url_helpers import add_uid_to_href
 
 
 def render_header_simple(active_route: Optional[str] = None) -> None:
@@ -53,19 +54,21 @@ def render_header_simple(active_route: Optional[str] = None) -> None:
         if nav_visibility.get(item["route"], {}).get("visible", True)
     ]
     
-    # Build nav links HTML
+    # Build nav links HTML with UID preservation
     nav_links_html = []
     for item in nav_items:
         is_active = active_route == item["route"]
         active_class = " active" if is_active else ""
         aria_current = ' aria-current="page"' if is_active else ""
         
+        href_with_uid = add_uid_to_href(f"?page={item['route']}")
         nav_links_html.append(
-            f'<a href="?page={item["route"]}" class="nav-link{active_class}"{aria_current}>{item["label"]}</a>'
+            f'<a href="{href_with_uid}" class="nav-link{active_class}"{aria_current}>{item["label"]}</a>'
         )
     
     # Login link (always shown for now)
-    nav_links_html.append('<a href="?page=login" class="nav-link nav-link--login">Log In</a>')
+    login_href = add_uid_to_href("?page=login")
+    nav_links_html.append(f'<a href="{login_href}" class="nav-link nav-link--login">Log In</a>')
     
     nav_html = "\n          ".join(nav_links_html)
     
@@ -203,7 +206,7 @@ def render_header_simple(active_route: Optional[str] = None) -> None:
         f"""
         <header class="sn-header">
           <div class="sn-header__inner">
-            <a href="?page=welcome" class="sn-header__brand" style="display: flex !important; align-items: center; gap: 12px;">
+            <a href="{add_uid_to_href('?page=welcome')}" class="sn-header__brand" style="display: flex !important; align-items: center; gap: 12px;">
               <img src="{logo_url}" alt="CCA Logo" class="sn-header__logo" style="height: 48px !important; width: auto !important; display: block !important; visibility: visible !important; opacity: 1 !important;" />
               <span class="sn-header__brand-text" style="font-size: 1.25rem; font-weight: 700; color: #1e3a8a; display: inline-block;">Senior Navigator</span>
             </a>
