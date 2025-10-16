@@ -26,14 +26,20 @@ from core.nav import route_to
 # ==============================================================================
 # Questions tagged by topic for contextual matching
 # Responses are short, skimmable, action-oriented with cross-links
+#
+# FLAG ALIGNMENT:
+# - All "registry_flags" use EXISTING flag names from core/flags.py FLAG_REGISTRY
+# - Questions automatically appear when any of their registry_flags are True
+# - DO NOT create new flags - only use flags that exist in the registry
 # ==============================================================================
 
 QUESTION_DATABASE = {
-    # CARE PLANNING
+    # CARE PLANNING (no specific flags - always available)
     "start": {
         "question": "Where do I start with care planning?",
         "topic": "planning",
         "keywords": ["start", "begin", "planning", "where", "how"],
+        "registry_flags": [],  # Always available
         "response": """**Let's build your care plan step by step.**
 
 Start with the **Guided Care Plan** in the Concierge Hub (10-15 min):
@@ -54,6 +60,7 @@ Finally, **book an advisor call** when you're ready for expert guidance.
         "question": "What does Medicare cover for long-term care?",
         "topic": "benefits",
         "keywords": ["medicare", "coverage", "cover"],
+        "registry_flags": [],  # Always available
         "response": """**Important: Medicare does NOT cover long-term custodial care.**
 
 Medicare only covers:
@@ -73,6 +80,7 @@ For ongoing help with daily tasks (bathing, dressing, meals), you'll need:
         "question": "What are my next steps after completing assessments?",
         "topic": "planning",
         "keywords": ["next", "after", "now what", "then"],
+        "registry_flags": [],  # Always available
         "response": """**You're making progress! Here's your roadmap:**
 
 ✅ **Completed assessments** — You understand needs and costs
@@ -86,11 +94,12 @@ For ongoing help with daily tasks (bathing, dressing, meals), you'll need:
 💡 **Use "Plan with My Advisor" in the Concierge Hub** to connect with an expert who can help implement your plan."""
     },
     
-    # SAFETY & URGENCY
+    # SAFETY & URGENCY (triggered by safety/fall flags)
     "fall_risk": {
         "question": "How can I reduce fall risk at home?",
         "topic": "safety",
         "keywords": ["fall", "falling", "safety", "home"],
+        "registry_flags": ["falls_multiple", "falls_risk", "moderate_safety_concern", "high_safety_concern"],
         "response": """**Fall prevention is critical. Act now:**
 
 **Immediate actions:**
@@ -114,6 +123,7 @@ For ongoing help with daily tasks (bathing, dressing, meals), you'll need:
         "question": "What's the difference between Memory Care and Assisted Living?",
         "topic": "care",
         "keywords": ["memory care", "assisted living", "difference", "dementia", "alzheimer"],
+        "registry_flags": ["mild_cognitive_decline", "moderate_cognitive_decline", "severe_cognitive_risk", "memory_support"],
         "response": """**Key differences at a glance:**
 
 **Assisted Living** (~$5,500/month)
@@ -135,12 +145,38 @@ For ongoing help with daily tasks (bathing, dressing, meals), you'll need:
 
 💡 **Get a care recommendation with the Guided Care Plan, then check local pricing with Cost Planner.**"""
     },
+    "medication_management": {
+        "question": "Who can help manage medications safely?",
+        "topic": "care",
+        "keywords": ["medication", "meds", "medication management", "pill management", "prescriptions"],
+        "registry_flags": ["medication_management", "chronic_present", "chronic_conditions"],
+        "response": """**Medication safety is critical.** Options for help:
+
+**In-Home Care:**
+• Caregivers can provide medication reminders
+• Some agencies offer medication administration (requires licensed staff)
+• Cost: $28–$40/hour
+
+**Assisted Living/Memory Care:**
+• Staff provides medication management
+• Included in monthly cost (~$5,500–$7,200/month)
+
+**Technology Solutions:**
+• Pill dispensers with alarms ($50–$300)
+• Smart pill boxes that notify family
+• Pharmacy auto-refill services
+
+**Important:** Complex medication regimens may require licensed nursing care. Discuss with your doctor.
+
+💡 **Explore care options with the Guided Care Plan and estimate costs with Cost Planner.**"""
+    },
     
-    # VETERANS
+    # VETERANS (triggered by ADL/dependence flags)
     "va_benefits": {
         "question": "Am I eligible for VA Aid & Attendance benefits?",
         "topic": "veterans",
         "keywords": ["va", "veteran", "aid attendance", "benefits"],
+        "registry_flags": ["veteran_aanda_risk", "moderate_dependence", "high_dependence", "adl_support_high"],
         "response": """**VA may help cover care costs — here's how:**
 
 **Eligibility often includes:**
@@ -163,11 +199,12 @@ For ongoing help with daily tasks (bathing, dressing, meals), you'll need:
 💡 **Check eligibility with the VA Benefits module in Cost Planner.**"""
     },
     
-    # COSTS & FUNDING
+    # COSTS & FUNDING (no specific flags - always relevant)
     "home_care_cost": {
         "question": "How much does in-home care cost?",
         "topic": "costs",
         "keywords": ["home care", "cost", "price", "in-home"],
+        "registry_flags": [],  # Always relevant for cost planning
         "response": """**In-home care typically costs $28-40/hour.**
 
 **Common care packages:**
@@ -192,6 +229,7 @@ For ongoing help with daily tasks (bathing, dressing, meals), you'll need:
         "question": "How can I afford care for my loved one?",
         "topic": "costs",
         "keywords": ["afford", "pay", "budget", "funding", "expensive"],
+        "registry_flags": [],  # Always relevant for cost planning
         "response": """**Care costs feel overwhelming, but there are solutions:**
 
 **Explore these funding sources:**
@@ -218,6 +256,7 @@ For ongoing help with daily tasks (bathing, dressing, meals), you'll need:
         "question": "Does Medicaid cover long-term care?",
         "topic": "benefits",
         "keywords": ["medicaid", "medical aid", "coverage"],
+        "registry_flags": [],  # Always relevant for benefits planning
         "response": """**Yes, Medicaid covers long-term care if you qualify.**
 
 **Typical eligibility:**
@@ -241,11 +280,12 @@ For ongoing help with daily tasks (bathing, dressing, meals), you'll need:
 💡 **The Medicaid Navigation module in Cost Planner guides you through eligibility and planning strategies.**"""
     },
     
-    # PLANNING & FAMILY
+    # PLANNING & FAMILY (triggered by high dependence or caregiver flags)
     "family_conversation": {
         "question": "How do I talk to my family about care?",
         "topic": "planning",
         "keywords": ["talk", "family", "conversation", "discuss"],
+        "registry_flags": ["no_support", "limited_support", "high_dependence", "moderate_dependence"],
         "response": """**The care conversation is challenging. Here's how to approach it:**
 
 **Before the conversation:**
@@ -333,7 +373,11 @@ def _match_question(user_input: str) -> Optional[Dict[str, Any]]:
 
 
 def _get_suggested_questions(exclude: List[str] = None) -> List[str]:
-    """Get 3-6 suggested question chips based on context.
+    """Get 3-6 suggested question chips based on context and active flags.
+    
+    Dynamically filters questions based on flags set by Guided Care Plan and Cost Planner.
+    Questions with empty registry_flags are always available (base questions).
+    Questions with registry_flags only appear when at least one flag is active.
     
     Args:
         exclude: List of question keys to exclude (recently asked)
@@ -341,19 +385,69 @@ def _get_suggested_questions(exclude: List[str] = None) -> List[str]:
     Returns:
         List of question texts to display as chips
     """
+    from core import flags
+    
     exclude = exclude or []
     
-    # Get available questions (not recently asked)
-    available = [key for key in QUESTION_DATABASE.keys() if key not in exclude]
+    # Get active flags from user's journey
+    active_flags_dict = flags.get_all_flags()
+    active_flag_keys = set(active_flags_dict.keys())
+    
+    # Separate questions into categories
+    always_available = []  # Empty registry_flags (base questions)
+    flag_matched = []      # Has registry_flags that match active flags
+    flag_unmatched = []    # Has registry_flags but none match
+    
+    for key, q_data in QUESTION_DATABASE.items():
+        if key in exclude:
+            continue
+            
+        registry_flags = q_data.get("registry_flags", [])
+        
+        if not registry_flags:
+            # Always show questions with empty registry_flags
+            always_available.append(key)
+        else:
+            # Check if any registry flag matches active flags
+            matching_flags = set(registry_flags) & active_flag_keys
+            if matching_flags:
+                # Prioritize by number of matching flags
+                flag_matched.append((key, len(matching_flags)))
+            else:
+                flag_unmatched.append(key)
+    
+    # Sort flag-matched questions by number of matches (descending)
+    flag_matched.sort(key=lambda x: x[1], reverse=True)
+    flag_matched_keys = [key for key, _ in flag_matched]
+    
+    # Build priority pool: flag-matched > always-available > unmatched
+    priority_pool = flag_matched_keys + always_available
+    
+    # If we have enough from priority pool, use those
+    if len(priority_pool) >= 3:
+        available = priority_pool
+    else:
+        # Not enough questions, include some unmatched
+        available = priority_pool + flag_unmatched
     
     # If we've asked too many questions, reset with just the last 3
     if len(available) < 3:
         recent_asked = st.session_state.get("ai_asked_keys", [])
         exclude = recent_asked[-3:] if len(recent_asked) > 3 else []
+        # Re-run the filtering without exclusions
         available = [key for key in QUESTION_DATABASE.keys() if key not in exclude]
     
-    # Shuffle and take 3-6 questions
-    random.shuffle(available)
+    # Shuffle available questions (but flag-matched stay near top)
+    if len(flag_matched_keys) > 0 and len(available) > len(flag_matched_keys):
+        # Keep flag-matched at top, shuffle the rest
+        top_tier = flag_matched_keys[:3]  # Top 3 flag matches always shown
+        rest = [k for k in available if k not in top_tier]
+        random.shuffle(rest)
+        available = top_tier + rest
+    else:
+        random.shuffle(available)
+    
+    # Take 3-6 questions
     num_suggestions = min(6, len(available))
     selected_keys = available[:num_suggestions]
     
