@@ -69,14 +69,17 @@ def render():
     st.markdown("---")
     
     # Navigation buttons
-    col1, col2 = st.columns([1, 2])
+    col1, col2, col3 = st.columns([1, 2, 1])
     
     with col1:
-        if st.button("← Back", key="qualifier_back"):
+        st.markdown('<div data-role="secondary">', unsafe_allow_html=True)
+        if st.button("← Back", key="qualifier_back", use_container_width=True):
             st.session_state.cost_v2_step = "auth"
             st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
     
     with col2:
+        st.markdown('<div data-role="primary">', unsafe_allow_html=True)
         if st.button("Continue to Financial Assessment →", type="primary", use_container_width=True, key="qualifier_continue"):
             # Save qualifier data to session state
             st.session_state.cost_v2_qualifiers = {
@@ -98,3 +101,10 @@ def render():
             # Proceed to modules
             st.session_state.cost_v2_step = "modules"
             st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    with col3:
+        st.markdown('<div data-role="secondary">', unsafe_allow_html=True)
+        if st.button("← Back to Hub", key="qualifier_back_hub", use_container_width=True):
+            st.switch_page("pages/_stubs.py")
+        st.markdown('</div>', unsafe_allow_html=True)

@@ -59,6 +59,8 @@ def actions(next_label: str = "Continue", skip_label: str | None = "Skip", show_
     st.markdown('<div class="sn-app mod-actions">', unsafe_allow_html=True)
     
     # Primary action - centered Continue button (max 400px)
+    # Use HTML wrapper to add data-role attribute for CSS styling
+    st.markdown('<div data-role="primary">', unsafe_allow_html=True)
     next_clicked = st.button(
         next_label, 
         key="_mod_next", 
@@ -66,13 +68,14 @@ def actions(next_label: str = "Continue", skip_label: str | None = "Skip", show_
         use_container_width=True,
         help=None
     )
+    st.markdown('</div>', unsafe_allow_html=True)
     
     # Back button - small text link
     back_clicked = False
     if show_back:
-        st.markdown('<div class="mod-back-prev-wrapper">', unsafe_allow_html=True)
+        st.markdown('<div class="mod-back-prev-wrapper" data-role="secondary">', unsafe_allow_html=True)
         back_clicked = st.button(
-            "← Back to Previous Question",
+            "← Previous Question",
             key="_mod_back_prev",
             type="secondary",
             use_container_width=False,
@@ -85,7 +88,7 @@ def actions(next_label: str = "Continue", skip_label: str | None = "Skip", show_
     save_exit_clicked = False
     
     # Back to hub - small text link at bottom
-    st.markdown('<div class="mod-back-hub-wrapper">', unsafe_allow_html=True)
+    st.markdown('<div class="mod-back-hub-wrapper" data-role="secondary">', unsafe_allow_html=True)
     back_to_hub_clicked = st.button(
         "← Back to Hub",
         key="_mod_back_hub",
