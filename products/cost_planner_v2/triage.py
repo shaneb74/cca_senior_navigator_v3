@@ -30,28 +30,40 @@ def render():
     
     st.markdown("#### Please answer these three questions:")
     
+    st.markdown("")  # Add spacing
+    
     # Question 1: Medicaid or State Assistance
+    st.markdown("**1. Are you (or your loved one) currently on Medicaid or State Assistance programs?**")
     is_on_medicaid = st.checkbox(
-        "Are you (or your loved one) currently on Medicaid or State Assistance programs?",
+        "Yes, currently on Medicaid or State Assistance",
         value=st.session_state.cost_v2_qualifiers.get("is_on_medicaid", False),
         help="This helps us provide specific coverage guidance and identify additional resources",
-        key="cost_v2_is_on_medicaid"
+        key="cost_v2_is_on_medicaid",
+        label_visibility="visible"
     )
+    
+    st.markdown("")  # Add spacing
     
     # Question 2: Veteran status
+    st.markdown("**2. Are you (or your loved one) a Veteran?**")
     is_veteran = st.checkbox(
-        "Are you (or your loved one) a Veteran?",
+        "Yes, a Veteran",
         value=st.session_state.cost_v2_qualifiers.get("is_veteran", False),
         help="This helps us show VA benefits and resources",
-        key="cost_v2_is_veteran"
+        key="cost_v2_is_veteran",
+        label_visibility="visible"
     )
     
+    st.markdown("")  # Add spacing
+    
     # Question 3: Home ownership
+    st.markdown("**3. Are you (or your loved one) a home owner?**")
     is_homeowner = st.checkbox(
-        "Are you (or your loved one) a home owner?",
+        "Yes, a home owner",
         value=st.session_state.cost_v2_qualifiers.get("is_homeowner", False),
         help="This helps us assess available assets and funding options",
-        key="cost_v2_is_homeowner"
+        key="cost_v2_is_homeowner",
+        label_visibility="visible"
     )
     
     st.markdown("---")
