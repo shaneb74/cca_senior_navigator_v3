@@ -73,30 +73,34 @@ def actions(next_label: str = "Continue", skip_label: str | None = "Skip", show_
     # Back button - small text link
     back_clicked = False
     if show_back:
-        st.markdown('<div class="mod-back-prev-wrapper" data-role="secondary">', unsafe_allow_html=True)
+        st.markdown('<div class="mod-back-prev-wrapper">', unsafe_allow_html=True)
+        # Inject data-role into the button container div
+        st.markdown('<div data-role="secondary">', unsafe_allow_html=True)
         back_clicked = st.button(
             "← Previous Question",
-            key="_mod_back_prev",
+            key="_mod_back_prev_v2",
             type="secondary",
             use_container_width=False,
             help=None
         )
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown('</div></div>', unsafe_allow_html=True)
     
     # Save & Continue Later - REMOVED (production uses cookies/auth)
     # Progress is automatically saved to tile_state and persists across sessions
     save_exit_clicked = False
     
     # Back to hub - small text link at bottom
-    st.markdown('<div class="mod-back-hub-wrapper" data-role="secondary">', unsafe_allow_html=True)
+    st.markdown('<div class="mod-back-hub-wrapper">', unsafe_allow_html=True)
+    # Inject data-role into the button container div
+    st.markdown('<div data-role="secondary">', unsafe_allow_html=True)
     back_to_hub_clicked = st.button(
         "← Back to Hub",
-        key="_mod_back_hub",
+        key="_mod_back_hub_v2",
         type="secondary",
         use_container_width=False,
         help=None
     )
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('</div></div>', unsafe_allow_html=True)
     
     # Skip functionality removed - not needed in current design
     skip_clicked = False
