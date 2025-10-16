@@ -261,7 +261,7 @@ def _render_quick_estimate_results():
     # Simplified CTA - Navi provides reassurance
     st.markdown("### Ready for Your Full Financial Plan?")
     
-    col1, col2, col3 = st.columns([2, 1, 1])
+    col1, col2 = st.columns([2, 1])
     
     with col1:
         st.markdown('<div data-role="primary">', unsafe_allow_html=True)
@@ -277,12 +277,6 @@ def _render_quick_estimate_results():
             # Clear results to allow recalculation
             st.session_state.cost_v2_quick_estimate = None
             st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
-    
-    with col3:
-        st.markdown('<div data-role="secondary">', unsafe_allow_html=True)
-        if st.button("← Back to Hub", use_container_width=True, key="results_back_hub"):
-            st.switch_page("pages/_stubs.py")
         st.markdown('</div>', unsafe_allow_html=True)
 
 
