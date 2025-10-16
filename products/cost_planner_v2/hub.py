@@ -192,17 +192,21 @@ def render():
             col1, col2 = st.columns([1, 1])
             
             with col1:
-                if st.button("Continue to Expert Review →", type="primary", use_container_width=True):
+                st.markdown('<div data-role="primary">', unsafe_allow_html=True)
+                if st.button("Continue to Expert Review →", type="primary", use_container_width=True, key="continue_expert_all_done"):
                     # Automatically publish to MCIP before proceeding
                     if not _already_published():
                         _publish_to_mcip()
                     st.session_state.cost_v2_step = "expert_review"
                     st.rerun()
+                st.markdown('</div>', unsafe_allow_html=True)
             
             with col2:
-                if st.button("🏠 Return to Concierge", use_container_width=True):
+                st.markdown('<div data-role="secondary">', unsafe_allow_html=True)
+                if st.button("🏠 Return to Concierge", use_container_width=True, key="return_concierge_all_done"):
                     from core.nav import route_to
                     route_to("hub_concierge")
+                st.markdown('</div>', unsafe_allow_html=True)
         
         elif required_completed == len(required_modules) and len(required_modules) > 0:
             st.markdown(f"### ✅ Required Modules Complete ({required_completed}/{len(required_modules)})")
@@ -217,17 +221,21 @@ def render():
             col1, col2 = st.columns([1, 1])
             
             with col1:
-                if st.button("Continue to Expert Review →", type="primary", use_container_width=True):
+                st.markdown('<div data-role="primary">', unsafe_allow_html=True)
+                if st.button("Continue to Expert Review →", type="primary", use_container_width=True, key="continue_expert_req_done"):
                     # Automatically publish to MCIP before proceeding
                     if not _already_published():
                         _publish_to_mcip()
                     st.session_state.cost_v2_step = "expert_review"
                     st.rerun()
+                st.markdown('</div>', unsafe_allow_html=True)
             
             with col2:
-                if st.button("🏠 Return to Concierge", use_container_width=True):
+                st.markdown('<div data-role="secondary">', unsafe_allow_html=True)
+                if st.button("🏠 Return to Concierge", use_container_width=True, key="return_concierge_req_done"):
                     from core.nav import route_to
                     route_to("hub_concierge")
+                st.markdown('</div>', unsafe_allow_html=True)
         
         else:
             st.markdown(f"💡 Complete {len(required_modules) - required_completed} more required module(s) to proceed. ({required_completed}/{len(required_modules)} required complete)")
@@ -238,13 +246,17 @@ def render():
             col1, col2 = st.columns([1, 1])
             
             with col1:
+                st.markdown('<div data-role="primary">', unsafe_allow_html=True)
                 # Disabled button until requirements met
-                st.button("Continue to Expert Review →", type="primary", use_container_width=True, disabled=True, help="Complete required modules to continue")
+                st.button("Continue to Expert Review →", type="primary", use_container_width=True, disabled=True, help="Complete required modules to continue", key="continue_expert_disabled")
+                st.markdown('</div>', unsafe_allow_html=True)
             
             with col2:
-                if st.button("🏠 Return to Concierge", use_container_width=True):
+                st.markdown('<div data-role="secondary">', unsafe_allow_html=True)
+                if st.button("🏠 Return to Concierge", use_container_width=True, key="return_concierge_incomplete"):
                     from core.nav import route_to
                     route_to("hub_concierge")
+                st.markdown('</div>', unsafe_allow_html=True)
 
 
 
