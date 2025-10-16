@@ -139,16 +139,34 @@ def render():
     # Module tiles
     st.markdown("### 💼 Financial Assessment Modules")
     
-    # Render modules dynamically
-    for module in visible_modules:
-        _render_module_tile(
-            module_key=module.get("key"),
-            title=module.get('title', 'Module'),
-            description=module.get("description", ""),
-            icon=module.get("icon", "📄"),
-            estimated_time=module.get("estimated_time", "3-5 min"),
-            required=module.get("required", False)
-        )
+    # Render modules dynamically in 2-column layout
+    for i in range(0, len(visible_modules), 2):
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            module = visible_modules[i]
+            _render_module_tile(
+                module_key=module.get("key"),
+                title=module.get('title', 'Module'),
+                description=module.get("description", ""),
+                icon=module.get("icon", "📄"),
+                estimated_time=module.get("estimated_time", "3-5 min"),
+                required=module.get("required", False)
+            )
+        
+        # Check if there's a second module in this row
+        if i + 1 < len(visible_modules):
+            with col2:
+                module = visible_modules[i + 1]
+                _render_module_tile(
+                    module_key=module.get("key"),
+                    title=module.get('title', 'Module'),
+                    description=module.get("description", ""),
+                    icon=module.get("icon", "📄"),
+                    estimated_time=module.get("estimated_time", "3-5 min"),
+                    required=module.get("required", False)
+                )
+        
         st.markdown("")
     
     st.markdown("---")
