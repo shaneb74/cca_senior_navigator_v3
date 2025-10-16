@@ -445,31 +445,46 @@ def render():
     padding: var(--space-6) var(--space-4);
 }
 
-/* Page header */
-.faq-header {
-    text-align: center;
+/* Navi Banner Header - matches styling from other pages */
+.navi-banner-advisor {
+    background: #ffffff;
+    border: 1px solid #e6edf5;
+    border-left: 3px solid #4A90E2;
+    border-radius: 16px;
+    padding: 24px 28px;
     margin-bottom: var(--space-8);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
 }
 
-.faq-title {
-    font-size: clamp(2rem, 4vw, 2.5rem);
+.navi-banner-advisor__eyebrow {
+    font-size: 11px;
     font-weight: 800;
-    color: var(--ink);
-    margin-bottom: var(--space-3);
-}
-
-.faq-intro {
-    font-size: 1.25rem;
-    font-weight: 600;
     color: #4A90E2;
-    margin-bottom: var(--space-2);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 12px;
 }
 
-.faq-description {
+.navi-banner-advisor__eyebrow .navi-icon {
+    font-size: 14px;
+}
+
+.navi-banner-advisor__title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--ink);
+    margin: 0 0 8px 0;
+    line-height: 1.3;
+}
+
+.navi-banner-advisor__description {
     font-size: 1rem;
-    color: var(--ink-600);
-    max-width: 54ch;
-    margin: 0 auto;
+    color: #475569;
+    margin: 0;
+    line-height: 1.5;
 }
 
 /* Section spacing */
@@ -655,14 +670,16 @@ def render():
     # Container wrapper
     st.markdown('<div class="faq-container">', unsafe_allow_html=True)
     
-    # Header
+    # Navi Banner Header (consistent with other pages)
     st.markdown("""
-<div class="faq-header">
-    <h1 class="faq-title">AI Advisor</h1>
-    <p class="faq-intro">I'm Navi — your expert advisor.</p>
-    <p class="faq-description">
-        Ask about care options, costs, benefits, and next steps. 
-        I'll point you to the right tools.
+<div class="navi-banner-advisor">
+    <div class="navi-banner-advisor__eyebrow">
+        <span class="navi-icon">✨</span> NAVI — YOUR EXPERT ADVISOR
+    </div>
+    <h1 class="navi-banner-advisor__title">AI Advisor</h1>
+    <p class="navi-banner-advisor__description">
+        I'm Navi — your expert advisor. Ask about care options, costs, benefits, 
+        and next steps. I'll point you to the right tools.
     </p>
 </div>
     """, unsafe_allow_html=True)
