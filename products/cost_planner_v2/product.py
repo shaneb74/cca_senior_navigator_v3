@@ -74,8 +74,8 @@ def render():
     current_step = st.session_state.cost_v2_step
     
     # Render Navi panel with dynamic guidance based on step
-    # Skip for module_active and expert_review since they render their own Navi
-    if current_step not in ["module_active", "expert_review"]:
+    # Skip for module_active, expert_review, and exit since they render their own Navi
+    if current_step not in ["module_active", "expert_review", "exit"]:
         _render_navi_with_context(current_step)
     
     # Route to appropriate step
