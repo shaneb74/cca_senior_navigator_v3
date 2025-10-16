@@ -489,7 +489,7 @@ def _render_module_tile(
     estimated_time: str,
     required: bool = False
 ):
-    """Render a single module tile with product tile aesthetic.
+    """Render a single module tile with product tile aesthetic using native Streamlit.
     
     Args:
         module_key: Module identifier
@@ -505,59 +505,52 @@ def _render_module_tile(
     status = module["status"]
     progress = module["progress"]
     
-    # Status indicator styles
-    status_colors = {
-        "not_started": "#94a3b8",  # gray
-        "in_progress": "#f59e0b",  # amber
-        "completed": "#10b981"     # green
-    }
-    
+    # Status labels
     status_labels = {
         "not_started": "Not Started",
         "in_progress": "In Progress",
         "completed": "Completed"
     }
     
-    # Build required badge
-    required_badge = ""
-    if required:
-        required_badge = '<span style="background: #fee2e2; color: #991b1b; padding: 3px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; margin-left: 10px;">REQUIRED</span>'
-    
-    # Escape any HTML in user-provided strings
-    import html
-    safe_title = html.escape(title)
-    safe_description = html.escape(description)
-    safe_time = html.escape(estimated_time)
-    
-    # Build tile HTML with Navi-inspired styling (no HTML comments to avoid rendering issues)
-    tile_html = f"""
-<div style="background: white; border: 1px solid #e6edf5; border-radius: 16px; padding: 24px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);">
-    <div style="display: flex; gap: 20px; align-items: flex-start;">
-        <div style="font-size: 48px; line-height: 1; flex-shrink: 0;">
-            {icon}
-        </div>
-        <div style="flex: 1; min-width: 0;">
-            <div style="display: flex; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
-                <h4 style="margin: 0; font-size: 20px; font-weight: 600; color: #1e293b;">
-                    {safe_title}
-                </h4>
-                {required_badge}
-                <span style="background: {status_colors[status]}; color: white; padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
-                    {status_labels[status]}
-                </span>
-            </div>
-            <p style="margin: 0 0 12px 0; color: #475569; font-size: 15px; line-height: 1.5;">
-                {safe_description}
-            </p>
-            <div style="color: #64748b; font-size: 14px;">
-                ⏱️ {safe_time}
-            </div>
-        </div>
-    </div>
-</div>
+    # Use container with custom CSS
+    container_css = """
+    <style>
+    .module-tile {
+        background: white;
+        border: 1px solid #e6edf5;
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 16px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+    </style>
     """
+    st.markdown(container_css, unsafe_allow_html=True)
     
-    st.markdown(tile_html, unsafe_allow_html=True)
+    # Create tile using columns
+    with st.container():
+        st.markdown('<div class="module-tile">', unsafe_allow_html=True)
+        
+        col_icon, col_content = st.columns([1, 8])
+        
+        with col_icon:
+            st.markdown(f"<div style='font-size: 48px; text-align: center;'>{icon}</div>", unsafe_allow_html=True)
+        
+        with col_content:
+            # Title with badges
+            title_parts = [f"**{title}**"]
+            if required:
+                title_parts.append("🔴 **REQUIRED**")
+            if status == "completed":
+                title_parts.append("✅")
+            elif status == "in_progress":
+                title_parts.append("🔄")
+            
+            st.markdown(" ".join(title_parts))
+            st.caption(description)
+            st.caption(f"⏱️ {estimated_time} • Status: {status_labels[status]}")
+        
+        st.markdown('</div>', unsafe_allow_html=True)
     
     # Action buttons below tile
     col1, col2, col3 = st.columns([2, 2, 1])
