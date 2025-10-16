@@ -307,6 +307,54 @@ button[type="primary"]:hover {
   color: #fff !important;
 }
 
+/* ===== Fix White-on-White Secondary Buttons ===== */
+/* Target Streamlit's secondary buttons that render with white background */
+/* These appear in AI Advisor question chips, FAQs, and similar UI elements */
+/* DO NOT target black/gray radio-style pills used in GCP, Cost Planner, PFMA */
+
+:root {
+  --chip-bg: #E9F1FF;           /* subtle blue — matches "Questions I've Asked" banner */
+  --chip-bg-hover: #DCE8FF;     /* ~6-8% darker for hover */
+  --chip-text: #0D1F4B;         /* app navy */
+  --chip-ring: rgba(13,31,75,.35); /* focus ring */
+}
+
+/* Only apply to white-on-white secondary buttons */
+button[kind="secondary"][data-testid="stBaseButton-secondary"] {
+  background-color: var(--chip-bg) !important;
+  color: var(--chip-text) !important;
+  border: 1px solid transparent !important;
+  border-radius: 10px;
+  padding: 10px 14px;
+  transition: background-color .12s ease, box-shadow .12s ease;
+}
+
+/* Hover state */
+button[kind="secondary"][data-testid="stBaseButton-secondary"]:hover:not(:disabled) {
+  background-color: var(--chip-bg-hover) !important;
+  box-shadow: 0 2px 6px rgba(74, 144, 226, 0.12);
+}
+
+/* Focus visible state - accessibility */
+button[kind="secondary"][data-testid="stBaseButton-secondary"]:focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 3px var(--chip-ring) !important;
+}
+
+/* Disabled state */
+button[kind="secondary"][data-testid="stBaseButton-secondary"]:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+/* Exclude module action buttons (these have specific styling already) */
+.sn-app .mod-actions button[kind="secondary"][data-testid="stBaseButton-secondary"] {
+  background-color: initial !important;
+  color: initial !important;
+  border: initial !important;
+  padding: initial !important;
+}
+
 /* ===== Navi Panel Spacing (Global) ===== */
 /* Consistent 12px spacing between Navi and content across all pages */
 .sn-app .navi-panel {
