@@ -760,6 +760,8 @@ def render():
         st.session_state["ai_asked_keys"] = []
     if "ai_current_input" not in st.session_state:
         st.session_state["ai_current_input"] = ""
+    if "ai_chip_clicks" not in st.session_state:
+        st.session_state["ai_chip_clicks"] = 0
     
     # Container wrapper
     st.markdown('<div class="faq-container">', unsafe_allow_html=True)
@@ -785,17 +787,24 @@ def render():
     # Get suggested questions (exclude recently asked)
     suggested = _get_suggested_questions(exclude=st.session_state["ai_asked_keys"])
     
-    # Render chips
+    # Render chips with unique keys based on question content + click counter
     cols = st.columns(min(len(suggested), 3))
     for i, question in enumerate(suggested):
         col_idx = i % len(cols)
         with cols[col_idx]:
+            # Use question key (or hash) + click counter for unique button keys
+            question_key = _find_question_key(question)
+            unique_key = f"faq_chip_{question_key or hash(question)}_{st.session_state['ai_chip_clicks']}"
+            
             if st.button(
                 question,
-                key=f"faq_chip_{i}",
+                key=unique_key,
                 use_container_width=True,
                 help="Click to ask this question"
             ):
+                # Increment click counter to force new keys on rerun
+                st.session_state["ai_chip_clicks"] += 1
+                
                 # Ask question and refresh chips
                 _ask_question(question)
                 st.rerun()
