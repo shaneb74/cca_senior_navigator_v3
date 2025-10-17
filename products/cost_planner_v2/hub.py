@@ -162,6 +162,12 @@ def render():
         st.markdown(f"**Overall Progress:** {completed}/{total_modules} modules complete")
         st.progress(overall_progress / 100)
         
+        # BIG BUTTON TO EXPERT REVIEW (ALWAYS VISIBLE!)
+        st.markdown("---")
+        if st.button("🚀 GO TO EXPERT REVIEW →", type="primary", use_container_width=True):
+            st.session_state.cost_v2_step = "expert_review"
+            st.rerun()
+        
         st.markdown("---")
         
         # Module tiles
