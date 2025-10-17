@@ -321,9 +321,10 @@ def _clear_module_state(module_key: str):
     for key in keys_to_clear:
         st.session_state.pop(key, None)
     
-    # Clear tile state for this specific module
+    # Clear tile state for this specific module (from ENGINE tile system)
     # Product key uses "senior_trivia_" prefix for tile storage
-    tiles = st.session_state.get("product_tiles_v2", {})
+    # NOTE: Module engine uses "tiles" (old system), not "product_tiles_v2"
+    tiles = st.session_state.get("tiles", {})
     product_key = f"senior_trivia_{module_key}"
     if product_key in tiles:
         tiles[product_key].pop("saved_state", None)
