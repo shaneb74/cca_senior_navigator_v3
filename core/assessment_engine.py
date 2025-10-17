@@ -171,7 +171,10 @@ def _render_navi_guidance(
     # Progress context chip
     context_chips = []
     if total_progress > 0:
-        context_chips.append(f"Step {current_progress + 1} of {total_progress}")
+        context_chips.append({
+            'label': f"Step {current_progress + 1} of {total_progress}",
+            'sublabel': None
+        })
     
     render_navi_panel_v2(
         title=navi_title,
