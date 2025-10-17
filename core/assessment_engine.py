@@ -599,7 +599,6 @@ def _render_navigation_actions(
             # Clear current assessment and return to assessment hub
             st.session_state.pop(f"{product_key}_current_assessment", None)
             st.session_state[f"{product_key}_step"] = "assessments"
-            from core.nav import safe_rerun
             safe_rerun()
     
     st.markdown('</div>', unsafe_allow_html=True)
