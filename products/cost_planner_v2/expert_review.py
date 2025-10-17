@@ -208,8 +208,8 @@ def _render_coverage_summary(analysis):
     </div>
     """, unsafe_allow_html=True)
     
-    # Monthly breakdown (simple 3-column)
-    col1, col2, col3 = st.columns(3)
+    # Monthly breakdown (simple 4-column - added Runway!)
+    col1, col2, col3, col4 = st.columns(4)
     
     with col1:
         st.markdown(f"""
@@ -242,6 +242,50 @@ def _render_coverage_summary(analysis):
             </div>
         </div>
         """, unsafe_allow_html=True)
+    
+    with col4:
+        # Runway display - CRITICAL METRIC!
+        if analysis.runway_months is not None and analysis.runway_months > 0:
+            years = int(analysis.runway_months / 12)
+            months = int(analysis.runway_months % 12)
+            
+            # Format display
+            if years > 0:
+                runway_value = f"{years}.{months//3}" if months >= 3 else str(years)
+                runway_unit = "yrs" if years > 1 else "yr"
+            else:
+                runway_value = str(int(analysis.runway_months))
+                runway_unit = "mos"
+            
+            # Color based on runway length
+            if analysis.runway_months >= 36:
+                runway_color = "var(--success-fg)"
+            elif analysis.runway_months >= 12:
+                runway_color = "var(--warning-fg)"
+            else:
+                runway_color = "var(--error-fg)"
+            
+            st.markdown(f"""
+            <div style="text-align: center; padding: 16px; background: var(--surface-primary); border-radius: 8px;">
+                <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">Coverage Runway</div>
+                <div style="font-size: 20px; font-weight: 600; color: {runway_color};">
+                    {runway_value}<span style="font-size: 14px; font-weight: 400;"> {runway_unit}</span>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            # No gap or infinite coverage
+            runway_label = "Indefinite" if analysis.monthly_gap <= 0 else "Immediate"
+            runway_color = "var(--success-fg)" if analysis.monthly_gap <= 0 else "var(--error-fg)"
+            
+            st.markdown(f"""
+            <div style="text-align: center; padding: 16px; background: var(--surface-primary); border-radius: 8px;">
+                <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">Coverage Runway</div>
+                <div style="font-size: 20px; font-weight: 600; color: {runway_color};">
+                    {runway_label}
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
 
 def _render_financial_details(analysis, profile):
