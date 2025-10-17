@@ -273,21 +273,40 @@ def _render_fields(section: Dict[str, Any], state: Dict[str, Any]) -> Dict[str, 
         # Get current value or default
         current_value = state.get(key, default)
         
+        # RENDER CUSTOM HTML LABEL (visible regardless of CSS)
+        label_html = f"""
+        <div style="margin-bottom: 4px;">
+            <label style="
+                display: block;
+                font-size: 14px;
+                font-weight: 500;
+                color: #1e293b;
+                line-height: 1.4;
+            ">
+                {label}{'<span style="color: #dc2626;"> *</span>' if required else ''}
+            </label>
+        </div>
+        """
+        
+        # Determine container for rendering
+        if columns:
+            column_num = field.get("column", 1)
+            container = columns.get(column_num, columns[1])
+        else:
+            container = st
+        
+        # Show custom label
+        container.markdown(label_html, unsafe_allow_html=True)
+        
         # Render appropriate widget
         if field_type == "currency":
             min_val = field.get("min", 0)
             max_val = field.get("max", 10000000)
             step = field.get("step", 100)
             
-            # Determine which column to render in
-            if columns:
-                column_num = field.get("column", 1)
-                container = columns.get(column_num, columns[1])
-            else:
-                container = st
-            
             value = container.number_input(
-                label=f"{label} {'*' if required else ''}",
+                label=label,  # Still need this for accessibility
+                label_visibility="collapsed",  # Hide Streamlit's label
                 min_value=min_val,
                 max_value=max_val,
                 value=current_value if current_value is not None else min_val,
@@ -309,15 +328,9 @@ def _render_fields(section: Dict[str, Any], state: Dict[str, Any]) -> Dict[str, 
             except ValueError:
                 current_index = 0
             
-            # Determine which column to render in
-            if columns:
-                column_num = field.get("column", 1)
-                container = columns.get(column_num, columns[1])
-            else:
-                container = st
-            
             selected_label = container.selectbox(
-                label=f"{label} {'*' if required else ''}",
+                label=label,  # Still need this for accessibility
+                label_visibility="collapsed",  # Hide Streamlit's label
                 options=option_labels,
                 index=current_index,
                 help=help_text,
@@ -330,15 +343,8 @@ def _render_fields(section: Dict[str, Any], state: Dict[str, Any]) -> Dict[str, 
             new_values[key] = value
             
         elif field_type == "checkbox":
-            # Determine which column to render in
-            if columns:
-                column_num = field.get("column", 1)
-                container = columns.get(column_num, columns[1])
-            else:
-                container = st
-            
             value = container.checkbox(
-                label=label,
+                label=label,  # Checkbox labels should remain visible
                 value=bool(current_value),
                 help=help_text,
                 key=f"field_{key}"
@@ -349,15 +355,9 @@ def _render_fields(section: Dict[str, Any], state: Dict[str, Any]) -> Dict[str, 
             options = field.get("options", [])
             option_labels = [opt.get("label", opt.get("value")) for opt in options]
             
-            # Determine which column to render in
-            if columns:
-                column_num = field.get("column", 1)
-                container = columns.get(column_num, columns[1])
-            else:
-                container = st
-            
             value = container.multiselect(
-                label=f"{label} {'*' if required else ''}",
+                label=label,
+                label_visibility="collapsed",
                 options=option_labels,
                 default=current_value if isinstance(current_value, list) else [],
                 help=help_text,
@@ -366,15 +366,9 @@ def _render_fields(section: Dict[str, Any], state: Dict[str, Any]) -> Dict[str, 
             new_values[key] = value
             
         elif field_type == "date":
-            # Determine which column to render in
-            if columns:
-                column_num = field.get("column", 1)
-                container = columns.get(column_num, columns[1])
-            else:
-                container = st
-            
             value = container.date_input(
-                label=f"{label} {'*' if required else ''}",
+                label=label,
+                label_visibility="collapsed",
                 value=current_value,
                 help=help_text,
                 key=f"field_{key}"
@@ -382,15 +376,9 @@ def _render_fields(section: Dict[str, Any], state: Dict[str, Any]) -> Dict[str, 
             new_values[key] = value
             
         else:  # text
-            # Determine which column to render in
-            if columns:
-                column_num = field.get("column", 1)
-                container = columns.get(column_num, columns[1])
-            else:
-                container = st
-            
             value = container.text_input(
-                label=f"{label} {'*' if required else ''}",
+                label=label,
+                label_visibility="collapsed",
                 value=str(current_value) if current_value else "",
                 help=help_text,
                 key=f"field_{key}"
