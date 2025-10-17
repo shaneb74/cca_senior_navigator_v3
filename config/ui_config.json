@@ -1,0 +1,33 @@
+{
+  "version": "v2025.10",
+  "header": {
+    "description": "Configuration for global header/navigation visibility",
+    "nav_items": {
+      "welcome": {
+        "visible": true
+      },
+      "hub_concierge": {
+        "visible": true
+      },
+      "hub_waiting": {
+        "visible": true
+      },
+      "hub_learning": {
+        "visible": true
+      },
+      "hub_resources": {
+        "visible": true
+      },
+      "hub_trusted": {
+        "visible": false,
+        "note": "Temporarily hidden for demo - flip to true to restore"
+      },
+      "hub_professional": {
+        "visible": true
+      },
+      "about": {
+        "visible": true
+      }
+    }
+  }
+}

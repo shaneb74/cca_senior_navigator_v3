@@ -42,14 +42,14 @@ def header(step_index: int, total: int, title: str, subtitle: str | None = None)
 
 
 def actions(next_label: str = "Continue", skip_label: str | None = "Skip", show_save_exit: bool = True, is_intro: bool = False, show_back: bool = False, step_index: int = 0, config = None) -> tuple[bool, bool, bool, bool, bool]:
-    """Render module action buttons with proper styling wrapper.
+    """Render module action buttons with simplified, centered layout.
     
     Args:
         next_label: Label for primary action button
-        skip_label: Label for skip button (None to hide)
-        show_save_exit: Whether to show Save & Continue Later button
+        skip_label: Label for skip button (None to hide) - DEPRECATED, not used
+        show_save_exit: Whether to show Save & Continue Later text link
         is_intro: If True, hide Save & Continue Later (nothing to save yet)
-        show_back: If True, show Back button above Save & Continue Later
+        show_back: If True, show Back text link above Save & Continue Later
         step_index: Current step index (for back button navigation)
         config: Module config (for back button state management)
     
@@ -58,8 +58,9 @@ def actions(next_label: str = "Continue", skip_label: str | None = "Skip", show_
     """
     st.markdown('<div class="sn-app mod-actions">', unsafe_allow_html=True)
     
-    # Primary action - full width Continue button using native st.button
-    # This ensures proper click handling while applying CSS classes
+    # Primary action - centered Continue button (max 400px)
+    # Use HTML wrapper to add data-role attribute for CSS styling
+    st.markdown('<div data-role="primary">', unsafe_allow_html=True)
     next_clicked = st.button(
         next_label, 
         key="_mod_next", 
@@ -67,47 +68,42 @@ def actions(next_label: str = "Continue", skip_label: str | None = "Skip", show_
         use_container_width=True,
         help=None
     )
+    st.markdown('</div>', unsafe_allow_html=True)
     
-    # Back button - appears above Save & Continue Later
+    # Back button - small text link
     back_clicked = False
     if show_back:
-        st.markdown('<div style="margin-top: 12px;">', unsafe_allow_html=True)
+        st.markdown('<div class="mod-back-prev-wrapper">', unsafe_allow_html=True)
+        # Inject data-role into the button container div
+        st.markdown('<div data-role="secondary">', unsafe_allow_html=True)
         back_clicked = st.button(
-            "← Back to Previous Question",
-            key="_mod_back_prev",
-            type="secondary",
-            use_container_width=True,
-            help=None
-        )
-        st.markdown('</div>', unsafe_allow_html=True)
-    
-    # Secondary action (Save & Continue Later) - smaller, below Continue, muted
-    save_exit_clicked = False
-    if show_save_exit and not is_intro:
-        st.markdown('<div class="mod-save-exit-wrapper">', unsafe_allow_html=True)
-        save_exit_clicked = st.button(
-            "💾 Save & Continue Later",
-            key="_mod_save_exit",
+            "← Previous Question",
+            key="_mod_back_prev_v2",
             type="secondary",
             use_container_width=False,
             help=None
         )
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown('</div></div>', unsafe_allow_html=True)
     
-    # Back to hub button - always available to exit module
+    # Save & Continue Later - REMOVED (production uses cookies/auth)
+    # Progress is automatically saved to tile_state and persists across sessions
+    save_exit_clicked = False
+    
+    # Back to hub - small text link at bottom
     st.markdown('<div class="mod-back-hub-wrapper">', unsafe_allow_html=True)
+    # Inject data-role into the button container div
+    st.markdown('<div data-role="secondary">', unsafe_allow_html=True)
     back_to_hub_clicked = st.button(
         "← Back to Hub",
-        key="_mod_back_hub",
+        key="_mod_back_hub_v2",
         type="secondary",
-        use_container_width=True,
+        use_container_width=False,
         help=None
     )
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('</div></div>', unsafe_allow_html=True)
     
-    # Skip button (if needed) - removed from primary row
+    # Skip functionality removed - not needed in current design
     skip_clicked = False
-    # Note: Skip functionality removed - can be re-added if needed
     
     st.markdown('</div>', unsafe_allow_html=True)
     return next_clicked, skip_clicked, save_exit_clicked, back_clicked, back_to_hub_clicked

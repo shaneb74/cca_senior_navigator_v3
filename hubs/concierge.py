@@ -215,7 +215,10 @@ def _build_gcp_tile(hub_order: dict, ordered_index: dict, next_action: dict) -> 
         blurb="Answer a few short questions about your daily needs, health, and safety. We'll create a personal care plan to help you take the next step with confidence. Everything saves automatically, and it only takes about 2 minutes.",
         image_square="gcp.png",
         meta_lines=["≈2 min • Auto-saves"],
-        primary_route=f"?page={summary['route']}",
+        primary_route=f"?page={summary['route']}" if not is_complete else None,
+        primary_label=None if is_complete else None,  # No primary button when complete
+        secondary_route=f"?page={summary['route']}" if is_complete else None,  # Restart uses secondary (ghost) button
+        secondary_label="↻ Restart" if is_complete else None,  # Ghost button styling for restart
         progress=progress,
         status_text=status_text,
         variant="brand",
@@ -241,42 +244,64 @@ def _build_cost_planner_tile(hub_order: dict, ordered_index: dict, next_action: 
             "route": None
         }
     
+    # Check if user is in Financial Assessment (past intro/estimate step)
+    cost_v2_step = st.session_state.get("cost_v2_step", "intro")
+    in_financial_assessment = cost_v2_step in ["auth", "triage", "modules", "module_active", "expert_review"]
+    
     # Determine states
     cost_prog = _get_product_progress("cost_v2")
     is_complete = (summary["status"] == "complete")
     is_locked = (summary["status"] == "locked")
-    is_in_progress = not is_complete and not is_locked and cost_prog > 0
+    is_in_progress = not is_complete and not is_locked and (cost_prog > 0 or in_financial_assessment)
     is_next = (next_action.get("route") == "cost_v2")
     
-    # Build description and progress
+    # Build description, button label, and progress
     if is_complete:
-        desc = summary["summary_line"]
+        desc = None
+        desc_html = f'<span class="tile-recommendation">{summary["summary_line"]}</span>'
         progress = 100
-        status_text = "✓ Complete"
+        status_text = summary["summary_line"]
+        button_label = None  # Will use default "View" or similar
+    elif in_financial_assessment:
+        # User has started Financial Assessment - show Resume
+        desc = "Continue your financial assessment"
+        desc_html = None
+        progress = cost_prog if cost_prog > 0 else 25  # Show some progress
+        status_text = None
+        button_label = "Resume"
     elif is_in_progress:
         desc = f"Resume planner ({cost_prog:.0f}% complete)"
+        desc_html = None
         progress = cost_prog
         status_text = None
+        button_label = "Resume"
     elif is_locked:
         desc = summary["summary_line"]
+        desc_html = None
         progress = 0
         status_text = None
+        button_label = None
     else:
         desc = summary["summary_line"]
+        desc_html = None
         progress = 0
         status_text = None
+        button_label = "Get a Quick Cost Estimate"
     
     return ProductTileHub(
         key="cost_v2",
         title="Cost Planner",
         desc=desc,
+        desc_html=desc_html,
         blurb="Project expenses, compare living options, and see how long current funds will last.",
         image_square="cp.png",
-        meta_lines=["≈10–15 min • Save anytime"],
-        primary_route=f"?page={summary['route']}" if summary['route'] else None,
-        primary_go="cost_v2",
-        secondary_label="See responses" if is_in_progress else None,
-        secondary_go="cost_view" if is_in_progress else None,
+        meta_lines=["≈10–15 min • Auto-saves"],
+        primary_route=f"?page={summary['route']}" if (summary['route'] and not is_complete) else None,
+        primary_go="cost_v2" if not is_complete else None,
+        primary_label=button_label,
+        secondary_route=f"?page={summary['route']}" if (summary['route'] and is_complete) else None,
+        secondary_go="cost_v2" if is_complete else None,  # Restart uses secondary (ghost) button
+        secondary_label="↻ Restart" if is_complete else None,  # Ghost button styling for restart
         progress=progress,
         status_text=status_text,
         variant="brand",
@@ -330,7 +355,7 @@ def _build_navi_guide_block(ctx) -> str:
     }
     
     encouragement = encouragement_messages.get(status, encouragement_messages["getting_started"])
-    eyebrow = f"🤖 Navi Insight · {encouragement['eyebrow']}"
+    eyebrow = f"✨ Navi Insight · {encouragement['eyebrow']}"
 
     boost_items = NaviOrchestrator.get_context_boost(ctx) or []
     boost_html = ""
@@ -357,8 +382,8 @@ def _build_navi_guide_block(ctx) -> str:
     questions_html = ""
 
     actions_html = (
-        f'<a class="btn btn--primary" href="{action_route}">{html.escape(action_label)}</a>'
-        '<a class="btn btn--secondary" href="?page=faqs">Ask Navi →</a>'
+        f'<a class="btn btn--primary" href="{action_route}" target="_self">{html.escape(action_label)}</a>'
+        '<a class="btn btn--secondary" href="?page=faqs" target="_self">Ask Navi →</a>'
     )
 
     reason_html = html.escape(reason) if reason else ""

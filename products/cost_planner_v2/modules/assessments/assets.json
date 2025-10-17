@@ -1,0 +1,160 @@
+{
+  "key": "assets",
+  "title": "Assets & Resources",
+  "icon": "🏦",
+  "description": "Available financial assets and resources",
+  "estimated_time": "6-8 min",
+  "required": true,
+  "sort_order": 2,
+  "sections": [
+    {
+      "id": "intro",
+      "type": "intro",
+      "title": "Assets Assessment",
+      "icon": "🏦",
+      "help_text": "This helps me understand what savings, property, or other funds might help pay for care. Enter what you're comfortable sharing — I'll handle the math.",
+      "fields": [],
+      "info_boxes": [
+        {
+          "type": "info",
+          "message": "💡 Inputs stay visible. Open a Quick Guide anytime for examples or definitions."
+        }
+      ]
+    },
+    {
+      "id": "liquid_assets",
+      "title": "Primary Assets",
+      "icon": "🏦",
+      "help_text": "Checking, savings, and investment accounts",
+      "layout": "two_column",
+      "fields": [
+        {
+          "key": "checking_savings",
+          "label": "Checking & Savings",
+          "type": "currency",
+          "required": false,
+          "min": 0,
+          "max": 10000000,
+          "step": 1000,
+          "default": 0,
+          "help": "Total balance in all checking and savings accounts",
+          "column": 1
+        },
+        {
+          "key": "investment_accounts",
+          "label": "Investment Accounts",
+          "type": "currency",
+          "required": false,
+          "min": 0,
+          "max": 50000000,
+          "step": 5000,
+          "default": 0,
+          "help": "401(k), IRA, brokerage, stocks, bonds, mutual funds",
+          "column": 1
+        }
+      ],
+      "info_boxes": [
+        {
+          "type": "info",
+          "message": "💰 Liquid assets are important for immediate care costs. Average for seniors: $100,000–$250,000 (varies widely). Medicaid allows up to $2,000 for individuals (2024)."
+        }
+      ]
+    },
+    {
+      "id": "real_estate",
+      "title": "Property & Real Estate",
+      "icon": "🏠",
+      "help_text": "Your home and other real estate holdings",
+      "layout": "two_column",
+      "fields": [
+        {
+          "key": "primary_residence_value",
+          "label": "Primary Residence Value",
+          "type": "currency",
+          "required": false,
+          "min": 0,
+          "max": 50000000,
+          "step": 25000,
+          "default": 0,
+          "help": "Estimated market value of your current home",
+          "column": 1
+        },
+        {
+          "key": "home_sale_interest",
+          "label": "Interested in home sale or equity options?",
+          "type": "checkbox",
+          "required": false,
+          "default": false,
+          "help": "Check to explore selling, reverse mortgages, or HELOCs",
+          "column": 1
+        },
+        {
+          "key": "other_real_estate",
+          "label": "Other Real Estate",
+          "type": "currency",
+          "required": false,
+          "min": 0,
+          "max": 50000000,
+          "step": 25000,
+          "default": 0,
+          "help": "Rental properties, vacation homes, land, etc.",
+          "column": 2
+        }
+      ],
+      "info_boxes": [
+        {
+          "type": "info",
+          "message": "🏠 Median U.S. home value ~$420,000 (2024). Primary home often Medicaid-exempt (up to certain equity limits). Consider rental income from investment properties."
+        }
+      ]
+    },
+    {
+      "id": "other_resources",
+      "title": "Other Resources",
+      "icon": "💎",
+      "help_text": "Vehicles, valuables, and other assets",
+      "layout": "single_column",
+      "fields": [
+        {
+          "key": "other_resources",
+          "label": "Vehicles / Valuables / Other Assets",
+          "type": "currency",
+          "required": false,
+          "min": 0,
+          "max": 10000000,
+          "step": 5000,
+          "default": 0,
+          "help": "Vehicles, jewelry, collectibles, business interests, etc."
+        }
+      ],
+      "info_boxes": [
+        {
+          "type": "info",
+          "message": "💎 Include: Vehicles (current market value), jewelry/collectibles (appraised value), business ownership stakes. Consider which assets could realistically be sold for care costs."
+        }
+      ]
+    },
+    {
+      "id": "results",
+      "type": "results",
+      "title": "Assets Assessment Complete",
+      "icon": "✅",
+      "fields": []
+    }
+  ],
+  "summary": {
+    "type": "calculated",
+    "label": "Total Asset Value",
+    "formula": "sum(checking_savings, investment_accounts, primary_residence_value, other_real_estate, other_resources)",
+    "display_format": "${:,.0f}"
+  },
+  "output_contract": {
+    "checking_savings": "number",
+    "investment_accounts": "number",
+    "primary_residence_value": "number",
+    "home_sale_interest": "boolean",
+    "other_real_estate": "number",
+    "other_resources": "number",
+    "total_asset_value": "calculated"
+  }
+}

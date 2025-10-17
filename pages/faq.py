@@ -475,6 +475,8 @@ def render():
         st.session_state["ai_thread"] = []
     if "ai_asked_questions" not in st.session_state:
         st.session_state["ai_asked_questions"] = []
+    if "ai_chip_clicks" not in st.session_state:
+        st.session_state["ai_chip_clicks"] = 0
     
     # Suggested questions section
     st.markdown("#### Suggested Questions")
@@ -482,10 +484,15 @@ def render():
     # Get 3 dynamic questions based on user context
     suggested = _get_top_3_suggestions()
     
-    # Display 3 question buttons
+    # Display 3 question buttons with unique keys
     cols = st.columns(3)
     for i, question in enumerate(suggested):
-        if cols[i].button(question, use_container_width=True, key=f"faq_suggested_{i}"):
+        # Use question hash + click counter for unique keys
+        unique_key = f"faq_suggested_{hash(question)}_{st.session_state['ai_chip_clicks']}"
+        
+        if cols[i].button(question, use_container_width=True, key=unique_key):
+            # Increment click counter to force new keys on rerun
+            st.session_state["ai_chip_clicks"] += 1
             _ask_question(question)
             st.rerun()
     
