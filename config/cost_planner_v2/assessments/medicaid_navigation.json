@@ -2,12 +2,12 @@
   "key": "medicaid_navigation",
   "title": "Medicaid Planning",
   "icon": "🏛️",
-  "description": "Medicaid eligibility and planning options",
-  "estimated_time": "3-4 min",
+  "description": "Long-term care Medicaid planning",
+  "estimated_time": "4-6 min",
   "required": false,
   "sort_order": 6,
   "visible_if": {
-    "flag": "medicaid_eligible",
+    "flag": "medicaid_planning_interest",
     "equals": true
   },
   "sections": [
@@ -16,25 +16,182 @@
       "type": "intro",
       "title": "Medicaid Planning Assessment",
       "icon": "🏛️",
-      "help_text": "Let's explore Medicaid eligibility and planning strategies for long-term care.",
-      "fields": []
+      "help_text": "Let's explore Medicaid long-term care benefits, eligibility requirements, and planning strategies.",
+      "fields": [],
+      "info_boxes": [
+        {
+          "type": "info",
+          "message": "ℹ️ Medicaid covers long-term care (nursing home, some assisted living) when private funds are exhausted. Requires meeting income and asset limits, which vary by state."
+        }
+      ]
     },
     {
-      "id": "eligibility",
-      "title": "Medicaid Status",
+      "id": "medicaid_status",
+      "title": "Current Medicaid Status",
       "icon": "📋",
-      "help_text": "Current Medicaid enrollment or eligibility",
+      "help_text": "Your current Medicaid enrollment",
+      "layout": "single_column",
       "fields": [
         {
           "key": "medicaid_status",
-          "label": "Medicaid enrollment status",
+          "label": "Current Medicaid Status",
           "type": "select",
+          "required": false,
           "options": [
             {"value": "not_enrolled", "label": "Not enrolled"},
             {"value": "enrolled", "label": "Currently enrolled"},
-            {"value": "exploring", "label": "Exploring eligibility"}
+            {"value": "applied", "label": "Application pending"},
+            {"value": "interested", "label": "Interested in applying"}
           ],
-          "default": "not_enrolled"
+          "default": "not_enrolled",
+          "help": "Current Medicaid enrollment status"
+        },
+        {
+          "key": "medicaid_covers_ltc",
+          "label": "Does Medicaid cover your long-term care?",
+          "type": "checkbox",
+          "required": false,
+          "default": false,
+          "help": "Check if Medicaid pays for nursing home or assisted living",
+          "visible_if": {
+            "field": "medicaid_status",
+            "equals": "enrolled"
+          }
+        }
+      ]
+    },
+    {
+      "id": "asset_awareness",
+      "title": "Asset & Income Limits",
+      "icon": "💰",
+      "help_text": "Understanding Medicaid eligibility requirements",
+      "layout": "single_column",
+      "fields": [
+        {
+          "key": "aware_of_asset_limits",
+          "label": "Aware of Medicaid asset limits?",
+          "type": "select",
+          "required": false,
+          "options": [
+            {"value": "no", "label": "No"},
+            {"value": "somewhat", "label": "Somewhat"},
+            {"value": "yes", "label": "Yes"}
+          ],
+          "default": "no",
+          "help": "Understanding of state Medicaid asset limits ($2,000-$15,000 for individual)"
+        },
+        {
+          "key": "current_asset_position",
+          "label": "Current Asset Position",
+          "type": "select",
+          "required": false,
+          "options": [
+            {"value": "under_limit", "label": "Under Medicaid limit"},
+            {"value": "near_limit", "label": "Near limit (within 12 months)"},
+            {"value": "over_limit", "label": "Over limit"},
+            {"value": "unknown", "label": "Unsure"}
+          ],
+          "default": "unknown",
+          "help": "Position relative to state Medicaid asset limits"
+        }
+      ],
+      "info_boxes": [
+        {
+          "type": "warning",
+          "message": "⚠️ Medicaid asset limits: Typically $2,000-$15,000 for individuals (varies by state). Exempt assets: primary home (with equity limits), one vehicle, personal belongings, prepaid funeral. Spousal protections allow married couples to keep more assets."
+        }
+      ]
+    },
+    {
+      "id": "spend_down",
+      "title": "Spend-Down Strategies",
+      "icon": "📉",
+      "help_text": "Strategies to become Medicaid eligible",
+      "layout": "single_column",
+      "fields": [
+        {
+          "key": "interested_in_spend_down",
+          "label": "Interested in spend-down strategies?",
+          "type": "checkbox",
+          "required": false,
+          "default": false,
+          "help": "Learn about legal ways to reduce countable assets"
+        },
+        {
+          "key": "spend_down_timeline",
+          "label": "Estimated Timeline to Need Medicaid",
+          "type": "select",
+          "required": false,
+          "options": [
+            {"value": "immediate", "label": "Immediately"},
+            {"value": "6_months", "label": "Within 6 months"},
+            {"value": "1_year", "label": "Within 1 year"},
+            {"value": "2_years", "label": "1-2 years"},
+            {"value": "3_plus_years", "label": "2+ years"},
+            {"value": "unknown", "label": "Unsure"}
+          ],
+          "default": "unknown",
+          "help": "When you anticipate needing Medicaid LTC benefits",
+          "visible_if": {
+            "field": "interested_in_spend_down",
+            "equals": true
+          }
+        }
+      ],
+      "info_boxes": [
+        {
+          "type": "info",
+          "message": "💡 Legal spend-down strategies: Pay off debt, home repairs/improvements, purchase exempt assets (prepaid funeral, wheelchair-accessible vehicle), convert countable assets to income (annuities with strict rules), spousal asset transfers. CAUTION: 5-year lookback period on gifts/transfers."
+        }
+      ]
+    },
+    {
+      "id": "estate_planning",
+      "title": "Estate Planning & Recovery",
+      "icon": "📜",
+      "help_text": "Protecting assets and understanding Medicaid estate recovery",
+      "layout": "single_column",
+      "fields": [
+        {
+          "key": "has_estate_plan",
+          "label": "Current estate planning documents?",
+          "type": "multiselect",
+          "required": false,
+          "options": [
+            {"value": "none", "label": "None"},
+            {"value": "will", "label": "Will"},
+            {"value": "trust", "label": "Trust"},
+            {"value": "poa", "label": "Power of Attorney"},
+            {"value": "healthcare_proxy", "label": "Healthcare Proxy"}
+          ],
+          "default": [],
+          "help": "Current estate planning documents (select all that apply)"
+        },
+        {
+          "key": "aware_of_estate_recovery",
+          "label": "Aware of Medicaid estate recovery?",
+          "type": "checkbox",
+          "required": false,
+          "default": false,
+          "help": "Medicaid may seek repayment from estate after death"
+        },
+        {
+          "key": "interested_in_elder_law",
+          "label": "Interested in elder law attorney consultation?",
+          "type": "checkbox",
+          "required": false,
+          "default": false,
+          "help": "Elder law attorneys specialize in Medicaid planning"
+        }
+      ],
+      "info_boxes": [
+        {
+          "type": "warning",
+          "message": "⚠️ Medicaid Estate Recovery: After death, states must attempt to recover LTC costs from your estate. Primary home usually protected if surviving spouse, disabled/blind child, or child under 21. Trusts and strategic planning can minimize recovery."
+        },
+        {
+          "type": "success",
+          "message": "✅ Elder law attorneys can help with: Medicaid qualification strategies, asset protection, spend-down planning, spousal protections, estate recovery avoidance, trust creation, and application assistance."
         }
       ]
     },
@@ -48,9 +205,19 @@
   ],
   "summary": {
     "type": "text",
-    "label": "Medicaid Planning Summary"
+    "label": "Medicaid Planning Summary",
+    "text": "Assessment captures current Medicaid status, asset position awareness, spend-down interest, and estate planning needs."
   },
   "output_contract": {
-    "medicaid_status": "string"
+    "medicaid_status": "string",
+    "medicaid_covers_ltc": "boolean",
+    "aware_of_asset_limits": "string",
+    "current_asset_position": "string",
+    "interested_in_spend_down": "boolean",
+    "spend_down_timeline": "string",
+    "has_estate_plan": "array",
+    "aware_of_estate_recovery": "boolean",
+    "interested_in_elder_law": "boolean"
   }
 }
+
