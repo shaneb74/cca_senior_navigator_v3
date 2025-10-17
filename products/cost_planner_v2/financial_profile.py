@@ -188,7 +188,15 @@ def build_financial_profile(
     va_data = assessments_state.get("va_benefits", {})
     if va_data:
         profile.has_va_benefits = va_data.get("has_va_benefits", "no")
-        profile.va_disability_rating = int(va_data.get("va_disability_rating", 0))
+        
+        # Parse VA disability rating (comes as string like "50%" or "100%")
+        rating_str = va_data.get("va_disability_rating", "0")
+        try:
+            # Remove '%' if present and convert to int
+            profile.va_disability_rating = int(rating_str.replace("%", "")) if rating_str else 0
+        except (ValueError, AttributeError):
+            profile.va_disability_rating = 0
+        
         profile.va_disability_monthly = float(va_data.get("va_disability_monthly", 0))
         profile.va_pension_monthly = float(va_data.get("va_pension_monthly", 0))
         
