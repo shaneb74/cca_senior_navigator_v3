@@ -61,9 +61,10 @@ def run_assessment(
     
     current_section = sections[section_index]
     
-    # Check if we're viewing results
-    is_results = (section_index == len(sections) - 1 and 
-                  current_section.get("type") == "results")
+    # Check if we're viewing intro or results (no Navi on these)
+    section_type = current_section.get("type")
+    is_intro = (section_type == "intro")
+    is_results = (section_type == "results")
     
     # ========================================================================
     # CENTERED CONTAINER (Hub-like aesthetic)
@@ -73,7 +74,7 @@ def run_assessment(
     # ========================================================================
     # NAVI GUIDANCE PANEL
     # ========================================================================
-    if not is_results:
+    if not is_intro and not is_results:
         _render_navi_guidance(
             assessment_config=assessment_config,
             current_section=current_section,
@@ -595,9 +596,11 @@ def _render_navigation_actions(
     with col3:
         # Back to Hub button
         if st.button("← Back to Hub", key=f"hub_{assessment_key}", type="secondary", use_container_width=True):
-            # Save current state and return to assessment hub
-            from core.nav import route_to
-            route_to(f"{product_key}")
+            # Clear current assessment and return to assessment hub
+            st.session_state.pop(f"{product_key}_current_assessment", None)
+            st.session_state[f"{product_key}_step"] = "assessments"
+            from core.nav import safe_rerun
+            safe_rerun()
     
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -624,9 +627,11 @@ def _render_results_navigation(
     with col2:
         # Back to Hub button
         if st.button("← Back to Hub", key=f"hub_results_{assessment_key}", type="primary", use_container_width=True):
-            # Save current state and return to assessment hub
-            from core.nav import route_to
-            route_to(f"{product_key}")
+            # Clear current assessment and return to assessment hub
+            st.session_state.pop(f"{product_key}_current_assessment", None)
+            st.session_state[f"{product_key}_step"] = "assessments"
+            from core.nav import safe_rerun
+            safe_rerun()
     
     st.markdown('</div>', unsafe_allow_html=True)
 
