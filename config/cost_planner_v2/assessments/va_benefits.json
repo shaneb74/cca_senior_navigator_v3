@@ -1,0 +1,48 @@
+{
+  "key": "va_benefits",
+  "title": "VA Benefits",
+  "icon": "🎖️",
+  "description": "Veterans Affairs benefits and aid",
+  "estimated_time": "2-3 min",
+  "required": false,
+  "sort_order": 3,
+  "visible_if": {
+    "flag": "is_veteran",
+    "equals": true
+  },
+  "sections": [
+    {
+      "id": "intro",
+      "type": "intro",
+      "title": "VA Benefits Assessment",
+      "icon": "🎖️",
+      "help_text": "Let's assess your Veterans Affairs benefits and potential aid for care costs.",
+      "fields": []
+    },
+    {
+      "id": "va_status",
+      "title": "VA Benefits Status",
+      "icon": "📋",
+      "help_text": "Current VA benefits enrollment",
+      "fields": [
+        {
+          "key": "has_va_benefits",
+          "label": "Currently receiving VA benefits?",
+          "type": "select",
+          "options": [
+            {"value": "no", "label": "No"},
+            {"value": "yes", "label": "Yes"}
+          ],
+          "default": "no"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "type": "text",
+    "label": "VA Benefits Summary"
+  },
+  "output_contract": {
+    "has_va_benefits": "string"
+  }
+}

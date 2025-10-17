@@ -1,0 +1,44 @@
+{
+  "key": "health_insurance",
+  "title": "Health Insurance",
+  "icon": "🏥",
+  "description": "Medicare, Medicaid, and supplemental coverage",
+  "estimated_time": "3-4 min",
+  "required": false,
+  "sort_order": 4,
+  "sections": [
+    {
+      "id": "intro",
+      "type": "intro",
+      "title": "Health Insurance Assessment",
+      "icon": "🏥",
+      "help_text": "Let's review your health insurance coverage to understand potential care cost offsets.",
+      "fields": []
+    },
+    {
+      "id": "medicare",
+      "title": "Medicare Coverage",
+      "icon": "📄",
+      "help_text": "Medicare enrollment and coverage details",
+      "fields": [
+        {
+          "key": "has_medicare",
+          "label": "Enrolled in Medicare?",
+          "type": "select",
+          "options": [
+            {"value": "no", "label": "No"},
+            {"value": "yes", "label": "Yes"}
+          ],
+          "default": "no"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "type": "text",
+    "label": "Health Insurance Summary"
+  },
+  "output_contract": {
+    "has_medicare": "string"
+  }
+}

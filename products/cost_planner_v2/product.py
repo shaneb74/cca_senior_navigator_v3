@@ -60,13 +60,13 @@ def render():
     
     # Initialize step state - check if user has progressed past intro
     if "cost_v2_step" not in st.session_state:
-        # Check if user has completed intro by checking for modules state
-        if "cost_v2_modules" in st.session_state:
+        # Check if user has completed intro by checking for assessment state
+        if "cost_v2_income" in st.session_state or "cost_v2_assets" in st.session_state:
             # User has been to Financial Assessment - resume there
-            st.session_state.cost_v2_step = "modules"
+            st.session_state.cost_v2_step = "assessments"
         elif "cost_v2_qualifiers" in st.session_state:
-            # User has completed qualifiers - resume at modules
-            st.session_state.cost_v2_step = "modules"
+            # User has completed qualifiers - resume at assessments
+            st.session_state.cost_v2_step = "assessments"
         else:
             # First time - start at intro
             st.session_state.cost_v2_step = "intro"
@@ -85,8 +85,9 @@ def render():
         _render_auth_step()
     elif current_step == "triage":
         _render_triage_step()
-    elif current_step == "modules":
-        _render_modules_step()
+    elif current_step in ["modules", "assessments"]:
+        # Support both old "modules" and new "assessments" step names for backward compatibility
+        _render_assessments_step()
     elif current_step == "module_active":
         _render_active_module()
     elif current_step == "expert_review":
@@ -195,14 +196,14 @@ def _render_navi_with_context(current_step: str):
             variant="module"
         )
     
-    elif current_step == "modules":
+    elif current_step in ["modules", "assessments"]:
         # Financial Assessment hub - explain module purpose
-        title = "Let's work through these financial modules together"
+        title = "Let's work through these financial assessments together"
         reason = "Completing them will help us figure out how to pay for the care that was recommended."
         encouragement = {
             "icon": "💪",
             "status": "info",
-            "text": "Each module takes just a few minutes and helps build your complete financial picture."
+            "text": "Each assessment takes just a few minutes and helps build your complete financial picture."
         }
         
         # Render Navi panel V2 with financial guidance
@@ -241,10 +242,10 @@ def _render_triage_step():
     triage.render()
 
 
-def _render_modules_step():
-    """Step 4: Financial modules hub."""
-    from products.cost_planner_v2 import hub
-    hub.render()
+def _render_assessments_step():
+    """Step 4: Financial Assessment hub (now using JSON-driven assessments)."""
+    from products.cost_planner_v2.assessments import render_assessment_hub
+    render_assessment_hub(product_key="cost_planner_v2")
 
 
 def _render_active_module():
@@ -336,7 +337,7 @@ def _render_gcp_gate():
     col1, col2 = st.columns([1, 1])
     
     with col1:
-        if st.button("➡️ Continue to Financial Modules", type="primary", use_container_width=True, key="gate_continue"):
+        if st.button("➡️ Continue to Financial Assessment", type="primary", use_container_width=True, key="gate_continue"):
             st.session_state.cost_v2_step = "triage"
             st.rerun()
     

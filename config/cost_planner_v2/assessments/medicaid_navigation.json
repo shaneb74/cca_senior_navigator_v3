@@ -1,0 +1,49 @@
+{
+  "key": "medicaid_navigation",
+  "title": "Medicaid Planning",
+  "icon": "🏛️",
+  "description": "Medicaid eligibility and planning options",
+  "estimated_time": "3-4 min",
+  "required": false,
+  "sort_order": 6,
+  "visible_if": {
+    "flag": "medicaid_eligible",
+    "equals": true
+  },
+  "sections": [
+    {
+      "id": "intro",
+      "type": "intro",
+      "title": "Medicaid Planning Assessment",
+      "icon": "🏛️",
+      "help_text": "Let's explore Medicaid eligibility and planning strategies for long-term care.",
+      "fields": []
+    },
+    {
+      "id": "eligibility",
+      "title": "Medicaid Status",
+      "icon": "📋",
+      "help_text": "Current Medicaid enrollment or eligibility",
+      "fields": [
+        {
+          "key": "medicaid_status",
+          "label": "Medicaid enrollment status",
+          "type": "select",
+          "options": [
+            {"value": "not_enrolled", "label": "Not enrolled"},
+            {"value": "enrolled", "label": "Currently enrolled"},
+            {"value": "exploring", "label": "Exploring eligibility"}
+          ],
+          "default": "not_enrolled"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "type": "text",
+    "label": "Medicaid Planning Summary"
+  },
+  "output_contract": {
+    "medicaid_status": "string"
+  }
+}
