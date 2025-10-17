@@ -204,7 +204,6 @@ def _save_section(form_data: dict):
     })
     
     st.success("✓ Financial information saved!")
-    st.balloons()
     
     # Return to menu after short delay
     import time

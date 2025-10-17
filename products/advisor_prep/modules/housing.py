@@ -169,7 +169,6 @@ def _save_section(form_data: dict):
     })
     
     st.success("✓ Housing preferences saved!")
-    st.balloons()
     
     # Return to menu after short delay
     import time

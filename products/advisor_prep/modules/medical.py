@@ -256,7 +256,6 @@ def _save_medical_section(selected_conditions: list, selected_flags: list, medic
     })
     
     st.success("✓ Medical information saved!")
-    st.balloons()
     
     # Return to menu after short delay
     import time
