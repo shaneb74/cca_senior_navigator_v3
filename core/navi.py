@@ -364,6 +364,38 @@ class NaviOrchestrator:
         return boost
 
 
+def _has_diabetes_condition() -> bool:
+    """Check if user has diabetes as a chronic condition.
+    
+    Checks:
+    1. Primary: medical.conditions.chronic[] contains diabetes
+    2. Alternate: chronic_present flag + diabetes in conditions
+    
+    Returns:
+        True if diabetes condition is present
+    """
+    try:
+        from core.flag_manager import get_chronic_conditions, is_active
+        
+        # Check chronic conditions list for diabetes
+        conditions = get_chronic_conditions()
+        for condition in conditions:
+            if condition.get("code") == "diabetes":
+                return True
+        
+        # Alternate: check if chronic_present flag active AND diabetes in list
+        if is_active("chronic_present"):
+            for condition in conditions:
+                code = condition.get("code", "").lower()
+                if "diabetes" in code or "diabetic" in code:
+                    return True
+        
+        return False
+    except Exception:
+        # Graceful degradation if flag_manager unavailable
+        return False
+
+
 def render_navi_panel(
     location: str = "hub",
     hub_key: Optional[str] = None,
@@ -581,9 +613,16 @@ def render_navi_panel(
                 })
             
             # Build encouragement banner
+            encouragement_text = wr_msg["encouragement"]
+            
+            # Check for condition-triggered trivia unlocks
+            diabetes_badge = badges_earned.get("diabetes_knowledge")
+            if _has_diabetes_condition() and not diabetes_badge:
+                encouragement_text = "Since we know you're managing diabetes, I've unlocked a quick trivia game about healthy habits and glucose management. Want to give it a try?"
+            
             encouragement = {
                 'icon': '💪',
-                'text': wr_msg["encouragement"],
+                'text': encouragement_text,
                 'status': 'in_progress'
             }
             
