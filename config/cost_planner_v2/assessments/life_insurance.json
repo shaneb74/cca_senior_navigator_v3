@@ -32,6 +32,13 @@
           "default": "no"
         }
       ]
+    },
+    {
+      "id": "results",
+      "type": "results",
+      "title": "Life Insurance Assessment Complete",
+      "icon": "✅",
+      "fields": []
     }
   ],
   "summary": {

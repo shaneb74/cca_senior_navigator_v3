@@ -36,6 +36,13 @@
           "default": "no"
         }
       ]
+    },
+    {
+      "id": "results",
+      "type": "results",
+      "title": "VA Benefits Assessment Complete",
+      "icon": "✅",
+      "fields": []
     }
   ],
   "summary": {
