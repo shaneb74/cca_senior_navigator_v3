@@ -81,12 +81,20 @@ def render():
     with col2:
         st.markdown('<div data-role="primary">', unsafe_allow_html=True)
         if st.button("Continue to Financial Assessment →", type="primary", use_container_width=True, key="qualifier_continue"):
-            # Save qualifier data to session state
+            # Save qualifier data to session state (legacy)
             st.session_state.cost_v2_qualifiers = {
                 "is_on_medicaid": is_on_medicaid,
                 "is_veteran": is_veteran,
                 "is_homeowner": is_homeowner
             }
+            
+            # ALSO set global flags for Phase 3 assessment visibility
+            if 'flags' not in st.session_state:
+                st.session_state.flags = {}
+            
+            st.session_state.flags['is_veteran'] = is_veteran
+            # Set medicaid_planning_interest if user is on Medicaid or interested
+            st.session_state.flags['medicaid_planning_interest'] = is_on_medicaid
             
             # Save to user profile for persistence
             if 'profile' not in st.session_state:
