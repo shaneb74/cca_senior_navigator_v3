@@ -53,7 +53,8 @@ class ExpertReviewAnalysis:
 def calculate_expert_review(
     profile: FinancialProfile,
     care_recommendation: Optional[CareRecommendation] = None,
-    zip_code: Optional[str] = None
+    zip_code: Optional[str] = None,
+    estimated_monthly_cost: Optional[float] = None
 ) -> ExpertReviewAnalysis:
     """
     Perform comprehensive expert financial review analysis.
@@ -62,21 +63,28 @@ def calculate_expert_review(
         profile: FinancialProfile from assessments
         care_recommendation: GCP care recommendation (tier, type, flags)
         zip_code: User's ZIP code for regional cost adjustment
+        estimated_monthly_cost: Pre-calculated monthly cost from intro (if available)
         
     Returns:
         ExpertReviewAnalysis with all calculated metrics
     """
     
-    # ==== STEP 1: Get base monthly cost estimate ====
-    base_monthly_cost = _get_base_care_cost(care_recommendation)
-    
-    # ==== STEP 2: Apply care flag modifiers ====
-    care_flags_modifier = _calculate_care_flags_modifier(care_recommendation)
-    adjusted_monthly_cost = base_monthly_cost * care_flags_modifier
-    
-    # ==== STEP 3: Apply regional modifier ====
-    regional_modifier = _get_regional_modifier(zip_code)
-    estimated_monthly_cost = adjusted_monthly_cost * regional_modifier
+    # ==== STEP 1: Get estimated monthly cost ====
+    if estimated_monthly_cost is not None:
+        # Use the estimate from intro page (preferred - already has all modifiers applied)
+        care_flags_modifier = 1.0  # Already included in intro estimate
+        regional_modifier = 1.0  # Already included in intro estimate
+    else:
+        # Fallback: Calculate from scratch
+        base_monthly_cost = _get_base_care_cost(care_recommendation)
+        
+        # Apply care flag modifiers
+        care_flags_modifier = _calculate_care_flags_modifier(care_recommendation)
+        adjusted_monthly_cost = base_monthly_cost * care_flags_modifier
+        
+        # Apply regional modifier
+        regional_modifier = _get_regional_modifier(zip_code)
+        estimated_monthly_cost = adjusted_monthly_cost * regional_modifier
     
     # ==== STEP 4: Calculate total monthly income + benefits ====
     total_monthly_income = profile.total_monthly_income
