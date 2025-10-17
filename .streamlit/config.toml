@@ -1,6 +1,6 @@
 [theme]
 base = "light"
-primaryColor = "#111827"            # dark gray/black for selection (matches module design)
+primaryColor = "#0D1F4B"            # navy for primary action buttons
 backgroundColor = "#FFFFFF"
 secondaryBackgroundColor = "#FFFFFF"
 textColor = "#0d1f4b"

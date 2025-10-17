@@ -24,7 +24,7 @@
         "can_pause": "You can pause anytime - your progress is automatically saved"
       },
       "intro_message": {
-        "text": "🤖 Navi: Let's find the senior care option that fits best.",
+        "text": "✨ Navi: Let's find the senior care option that fits best.",
         "subtext": "You'll answer a few quick questions about daily needs, safety, and cognition. It takes about two minutes, and you can pause anytime—the plan saves automatically."
       }
     }
@@ -35,21 +35,17 @@
       "title": "Welcome to the Guided Care Plan",
       "type": "info",
       "content": [
-        "This quick check helps us recommend the best senior care setting for your situation.",
-        "It takes about two minutes and you can pause anytime—your progress is saved automatically.",
+        "Quick two-minute check to match you with the right care setting.",
+        "Answer for the person who needs help—pause anytime and we'll save your place.",
         "",
-        "**What we'll ask about:**",
-        "• Daily living and support needs",
-        "• Medications, mobility, and fall safety",
-        "• Memory, mood, and behavior changes",
-        "• Who provides help today",
+        "**What you'll cover:**",
+        "• Daily support and safety",
+        "• Health, medications, and falls",
+        "• Memory or behavior changes",
+        "• Who helps today",
         "",
-        "**Based on your answers, we'll recommend one of five care options:**",
-        "• No Care Needed",
-        "• In-Home Care",
-        "• Assisted Living",
-        "• Memory Care",
-        "• Memory Care (High Acuity)"
+        "**What you'll get:**",
+        "• A care match such as No Care Needed, In-Home Care, Assisted Living, Memory Care, or Memory Care (High Acuity)"
       ],
       "actions": [
         { "label": "Get Started", "action": "next" },

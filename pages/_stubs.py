@@ -707,8 +707,8 @@ def render_about():
 
 def render_faqs():
     """Delegate to the full FAQ/AI Advisor implementation."""
-    from pages import faq
-    faq.render()
+    from pages import ai_advisor
+    ai_advisor.render()
 
 
 # --- DEPRECATED: temporarily disabled during CSS/IA refactor ---
@@ -776,7 +776,7 @@ def render_export_results():
     
     st.title("📤 Export Your Journey")
     st.markdown(f"### {user_name} Senior Care Journey Summary")
-    st.markdown("*Powered by 🤖 Navi - Your AI Care Navigator*")
+    st.markdown("*Powered by ✨ Navi - Your AI Care Navigator*")
     
     # Journey progress
     completed = progress["completed_count"]

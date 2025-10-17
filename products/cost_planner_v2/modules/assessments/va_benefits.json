@@ -1,0 +1,174 @@
+{
+  "key": "va_benefits",
+  "title": "VA Benefits",
+  "icon": "🎖️",
+  "description": "Veterans Affairs benefits and aid",
+  "estimated_time": "3-5 min",
+  "required": false,
+  "sort_order": 3,
+  "visible_if": {
+    "flag": "is_veteran",
+    "equals": true
+  },
+  "sections": [
+    {
+      "id": "intro",
+      "type": "intro",
+      "title": "VA Benefits Assessment",
+      "icon": "🎖️",
+      "help_text": "Let's assess your Veterans Affairs benefits and potential aid for care costs. VA benefits can significantly offset care expenses.",
+      "fields": [],
+      "info_boxes": [
+        {
+          "type": "success",
+          "message": "🎖️ Thank you for your service! VA Aid & Attendance can provide up to $2,431/month (2024) for veterans needing help with daily activities."
+        }
+      ]
+    },
+    {
+      "id": "va_status",
+      "title": "VA Benefits Status",
+      "icon": "📋",
+      "help_text": "Current VA benefits enrollment",
+      "layout": "single_column",
+      "fields": [
+        {
+          "key": "has_va_benefits",
+          "label": "Currently receiving VA benefits?",
+          "type": "select",
+          "required": false,
+          "options": [
+            {"value": "no", "label": "No"},
+            {"value": "yes", "label": "Yes"},
+            {"value": "applied", "label": "Application pending"},
+            {"value": "eligible", "label": "Eligible but not applied"}
+          ],
+          "default": "no",
+          "help": "Current VA benefits status"
+        },
+        {
+          "key": "va_disability_rating",
+          "label": "VA Disability Rating",
+          "type": "select",
+          "required": false,
+          "options": [
+            {"value": "none", "label": "No rating / 0%"},
+            {"value": "10-30", "label": "10-30%"},
+            {"value": "40-60", "label": "40-60%"},
+            {"value": "70-90", "label": "70-90%"},
+            {"value": "100", "label": "100%"}
+          ],
+          "default": "none",
+          "help": "Current VA disability rating percentage",
+          "visible_if": {
+            "field": "has_va_benefits",
+            "in": ["yes", "applied"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "va_income",
+      "title": "VA Monthly Income",
+      "icon": "💰",
+      "help_text": "Monthly VA benefit payments",
+      "layout": "single_column",
+      "fields": [
+        {
+          "key": "va_disability_monthly",
+          "label": "Monthly Disability Compensation",
+          "type": "currency",
+          "required": false,
+          "min": 0,
+          "max": 5000,
+          "step": 10,
+          "default": 0,
+          "help": "Monthly VA disability compensation payment"
+        },
+        {
+          "key": "va_pension_monthly",
+          "label": "Monthly VA Pension",
+          "type": "currency",
+          "required": false,
+          "min": 0,
+          "max": 3000,
+          "step": 10,
+          "default": 0,
+          "help": "VA pension for wartime veterans (income-based)"
+        }
+      ],
+      "info_boxes": [
+        {
+          "type": "info",
+          "message": "💡 VA disability is tax-free and not counted as income for Medicaid eligibility. Rates increase with disability percentage and dependents."
+        }
+      ]
+    },
+    {
+      "id": "aid_attendance",
+      "title": "Aid & Attendance",
+      "icon": "🏥",
+      "help_text": "Enhanced benefit for veterans needing daily assistance",
+      "layout": "single_column",
+      "fields": [
+        {
+          "key": "has_aid_attendance",
+          "label": "Receiving Aid & Attendance?",
+          "type": "select",
+          "required": false,
+          "options": [
+            {"value": "no", "label": "No"},
+            {"value": "yes", "label": "Yes"},
+            {"value": "applied", "label": "Application pending"},
+            {"value": "eligible", "label": "May be eligible"}
+          ],
+          "default": "no",
+          "help": "Aid & Attendance is for veterans needing help with daily activities"
+        },
+        {
+          "key": "aid_attendance_monthly",
+          "label": "Monthly Aid & Attendance Benefit",
+          "type": "currency",
+          "required": false,
+          "min": 0,
+          "max": 3000,
+          "step": 10,
+          "default": 0,
+          "help": "Monthly A&A benefit amount",
+          "visible_if": {
+            "field": "has_aid_attendance",
+            "equals": "yes"
+          }
+        }
+      ],
+      "info_boxes": [
+        {
+          "type": "success",
+          "message": "✅ Aid & Attendance eligibility: Wartime veteran with 90+ days active duty (1+ during wartime), needs help with daily activities, meets income/asset limits. Can pay for assisted living, memory care, or in-home care."
+        }
+      ]
+    },
+    {
+      "id": "results",
+      "type": "results",
+      "title": "VA Benefits Assessment Complete",
+      "icon": "✅",
+      "fields": []
+    }
+  ],
+  "summary": {
+    "type": "calculated",
+    "label": "Total Monthly VA Benefits",
+    "formula": "sum(va_disability_monthly, va_pension_monthly, aid_attendance_monthly)",
+    "display_format": "${:,.0f}/month"
+  },
+  "output_contract": {
+    "has_va_benefits": "string",
+    "va_disability_rating": "string",
+    "va_disability_monthly": "number",
+    "va_pension_monthly": "number",
+    "has_aid_attendance": "string",
+    "aid_attendance_monthly": "number",
+    "total_va_monthly": "calculated"
+  }
+}

@@ -93,6 +93,11 @@
           "key": "hub_professional",
           "label": "Professional",
           "module": "hubs.professional:render"
+        },
+        {
+          "key": "hub_resources",
+          "label": "Resources",
+          "module": "hubs.resources:render"
         }
       ]
     },
@@ -128,6 +133,54 @@
           "key": "faqs",
           "label": "FAQs",
           "module": "pages._stubs:render_faqs",
+          "hidden": true
+        },
+        {
+          "key": "fall_risk",
+          "label": "Fall Risk",
+          "module": "products.fall_risk:render",
+          "hidden": true
+        },
+        {
+          "key": "disease_mgmt",
+          "label": "Disease Management Program",
+          "module": "products.disease_mgmt:render",
+          "hidden": true
+        },
+        {
+          "key": "home_safety",
+          "label": "Home Safety Check",
+          "module": "products.home_safety:render",
+          "hidden": true
+        },
+        {
+          "key": "home_health",
+          "label": "Find Home Health",
+          "module": "products.home_health:render",
+          "hidden": true
+        },
+        {
+          "key": "dme",
+          "label": "Find DME",
+          "module": "products.dme:render",
+          "hidden": true
+        },
+        {
+          "key": "med_manage",
+          "label": "Medication Management",
+          "module": "products.med_manage:render",
+          "hidden": true
+        },
+        {
+          "key": "predictive_health",
+          "label": "Predictive Health Analytics",
+          "module": "products.predictive_health:render",
+          "hidden": true
+        },
+        {
+          "key": "senior_trivia",
+          "label": "Senior Trivia & Brain Games",
+          "module": "products.senior_trivia.product:render",
           "hidden": true
         }
       ]

@@ -1,0 +1,414 @@
+"""
+Expert Review Formulas for Cost Planner v2
+
+Implements financial analysis formulas that combine:
+- Financial assessment data (FinancialProfile)
+- Care recommendations from GCP (care type, intensity, flags)
+- Regional cost data
+
+Calculates:
+- Coverage percentage (how much of care cost is covered by income/benefits)
+- Monthly gap amount (shortfall between cost and income)
+- Runway months (how long assets will last)
+"""
+
+from typing import Dict, Any, Optional, Tuple
+from dataclasses import dataclass
+import streamlit as st
+
+from products.cost_planner_v2.financial_profile import FinancialProfile
+from core.mcip import CareRecommendation
+
+
+@dataclass
+class ExpertReviewAnalysis:
+    """
+    Results of expert financial review analysis.
+    """
+    # Input data
+    estimated_monthly_cost: float
+    total_monthly_income: float
+    total_monthly_benefits: float
+    total_liquid_assets: float
+    
+    # Calculated metrics
+    coverage_percentage: float  # 0-100+
+    monthly_gap: float  # Can be negative (surplus) or positive (shortfall)
+    runway_months: Optional[float]  # None if gap <= 0 (covered indefinitely)
+    
+    # Categorization
+    coverage_tier: str  # "excellent", "good", "moderate", "concerning", "critical"
+    recommendation_level: str  # "low_priority", "medium_priority", "high_priority", "urgent"
+    
+    # Modifiers applied
+    care_flags_modifier: float  # Multiplier for care complexity (1.0 = no change, 1.2 = 20% increase)
+    regional_modifier: float  # Multiplier for regional costs
+    
+    # Recommendations
+    primary_recommendation: str
+    action_items: list
+    resources: list
+
+
+def calculate_expert_review(
+    profile: FinancialProfile,
+    care_recommendation: Optional[CareRecommendation] = None,
+    zip_code: Optional[str] = None,
+    estimated_monthly_cost: Optional[float] = None
+) -> ExpertReviewAnalysis:
+    """
+    Perform comprehensive expert financial review analysis.
+    
+    Args:
+        profile: FinancialProfile from assessments
+        care_recommendation: GCP care recommendation (tier, type, flags)
+        zip_code: User's ZIP code for regional cost adjustment
+        estimated_monthly_cost: Pre-calculated monthly cost from intro (if available)
+        
+    Returns:
+        ExpertReviewAnalysis with all calculated metrics
+    """
+    
+    # ==== STEP 1: Get estimated monthly cost ====
+    if estimated_monthly_cost is not None:
+        # Use the estimate from intro page (preferred - already has all modifiers applied)
+        care_flags_modifier = 1.0  # Already included in intro estimate
+        regional_modifier = 1.0  # Already included in intro estimate
+    else:
+        # Fallback: Calculate from scratch
+        base_monthly_cost = _get_base_care_cost(care_recommendation)
+        
+        # Apply care flag modifiers
+        care_flags_modifier = _calculate_care_flags_modifier(care_recommendation)
+        adjusted_monthly_cost = base_monthly_cost * care_flags_modifier
+        
+        # Apply regional modifier
+        regional_modifier = _get_regional_modifier(zip_code)
+        estimated_monthly_cost = adjusted_monthly_cost * regional_modifier
+    
+    # ==== STEP 4: Calculate total monthly income + benefits ====
+    total_monthly_income = profile.total_monthly_income
+    total_monthly_benefits = profile.total_va_benefits_monthly + profile.annuity_monthly_income
+    total_monthly_resources = total_monthly_income + total_monthly_benefits
+    
+    # ==== STEP 5: Calculate coverage percentage ====
+    if estimated_monthly_cost > 0:
+        coverage_percentage = (total_monthly_resources / estimated_monthly_cost) * 100
+    else:
+        coverage_percentage = 100.0  # No cost = fully covered
+    
+    # ==== STEP 6: Calculate monthly gap ====
+    monthly_gap = estimated_monthly_cost - total_monthly_resources
+    
+    # ==== STEP 7: Calculate liquid assets (exclude home) ====
+    total_liquid_assets = (
+        profile.checking_savings +
+        profile.investment_accounts +
+        profile.other_real_estate +
+        profile.other_resources +
+        profile.total_accessible_life_value  # Cash value from life insurance
+    )
+    
+    # ==== STEP 8: Calculate runway months ====
+    if monthly_gap > 0 and total_liquid_assets > 0:
+        runway_months = total_liquid_assets / monthly_gap
+    elif monthly_gap <= 0:
+        runway_months = None  # Indefinite - income covers costs
+    else:
+        runway_months = 0  # No assets, immediate shortfall
+    
+    # ==== STEP 9: Categorize coverage tier ====
+    coverage_tier = _categorize_coverage(coverage_percentage, runway_months)
+    
+    # ==== STEP 10: Determine recommendation level ====
+    recommendation_level = _determine_recommendation_level(
+        coverage_percentage, runway_months, profile
+    )
+    
+    # ==== STEP 11: Generate recommendations ====
+    primary_recommendation, action_items, resources = _generate_recommendations(
+        coverage_percentage=coverage_percentage,
+        monthly_gap=monthly_gap,
+        runway_months=runway_months,
+        profile=profile,
+        care_recommendation=care_recommendation
+    )
+    
+    return ExpertReviewAnalysis(
+        estimated_monthly_cost=estimated_monthly_cost,
+        total_monthly_income=total_monthly_income,
+        total_monthly_benefits=total_monthly_benefits,
+        total_liquid_assets=total_liquid_assets,
+        coverage_percentage=coverage_percentage,
+        monthly_gap=monthly_gap,
+        runway_months=runway_months,
+        coverage_tier=coverage_tier,
+        recommendation_level=recommendation_level,
+        care_flags_modifier=care_flags_modifier,
+        regional_modifier=regional_modifier,
+        primary_recommendation=primary_recommendation,
+        action_items=action_items,
+        resources=resources
+    )
+
+
+def _get_base_care_cost(care_recommendation: Optional[CareRecommendation]) -> float:
+    """
+    Get base monthly care cost based on GCP recommendation.
+    
+    Base costs (national average, 2024):
+    - Independent Living: $2,500/month
+    - Assisted Living: $4,500/month
+    - Memory Care: $6,500/month
+    - Skilled Nursing: $8,500/month
+    - In-Home Care (part-time): $3,000/month
+    - In-Home Care (full-time): $6,000/month
+    """
+    if not care_recommendation:
+        return 4500  # Default to assisted living
+    
+    care_tier = getattr(care_recommendation, 'tier', 'moderate')
+    care_type = getattr(care_recommendation, 'care_type', None)
+    
+    # Map care types to base costs
+    cost_map = {
+        "independent_living": 2500,
+        "assisted_living": 4500,
+        "memory_care": 6500,
+        "skilled_nursing": 8500,
+        "in_home_part_time": 3000,
+        "in_home_full_time": 6000
+    }
+    
+    # If care_type specified, use it
+    if care_type in cost_map:
+        return cost_map[care_type]
+    
+    # Otherwise, map tier to care type
+    tier_to_cost = {
+        "minimal": 2500,
+        "low": 3000,
+        "moderate": 4500,
+        "substantial": 6500,
+        "intensive": 8500
+    }
+    
+    return tier_to_cost.get(care_tier, 4500)
+
+
+def _calculate_care_flags_modifier(care_recommendation: Optional[CareRecommendation]) -> float:
+    """
+    Calculate cost modifier based on GCP care flags.
+    
+    Care flags indicate additional needs that increase cost:
+    - fall_risk: +10% (additional monitoring, safety equipment)
+    - cognitive_support: +15% (memory care programming, specialized staff)
+    - emotional_followup: +5% (counseling, social work services)
+    - medication_management: +10% (nursing oversight, pharmacy coordination)
+    - mobility_assistance: +10% (physical therapy, adaptive equipment)
+    """
+    if not care_recommendation:
+        return 1.0
+    
+    # Get flags - it's a List[Dict[str, Any]] per the dataclass
+    flags_list = getattr(care_recommendation, 'flags', [])
+    
+    # Convert list of flag dicts to a simple dict for easier checking
+    flags = {}
+    for flag_dict in flags_list:
+        if isinstance(flag_dict, dict):
+            flags.update(flag_dict)
+    
+    modifier = 1.0
+    
+    # Add modifiers for each active flag
+    if flags.get("fall_risk"):
+        modifier += 0.10
+    if flags.get("cognitive_support"):
+        modifier += 0.15
+    if flags.get("emotional_followup"):
+        modifier += 0.05
+    if flags.get("medication_management"):
+        modifier += 0.10
+    if flags.get("mobility_assistance"):
+        modifier += 0.10
+    
+    # Cap at 1.5x (50% increase max)
+    return min(modifier, 1.5)
+
+
+def _get_regional_modifier(zip_code: Optional[str]) -> float:
+    """
+    Get regional cost modifier based on ZIP code.
+    
+    Regional modifiers (relative to national average = 1.0):
+    - High cost areas (CA, NY, HI): 1.3-1.5x
+    - Moderate cost areas (Urban): 1.1-1.2x
+    - Average cost areas: 1.0x
+    - Low cost areas (Rural, South): 0.8-0.9x
+    
+    For now, return 1.0 (national average). In production, this would
+    query a regional cost database by ZIP code.
+    """
+    # TODO: Implement regional cost lookup
+    # This would integrate with a cost database or API
+    return 1.0
+
+
+def _categorize_coverage(
+    coverage_percentage: float,
+    runway_months: Optional[float]
+) -> str:
+    """
+    Categorize coverage into tiers for user-friendly display.
+    
+    Tiers:
+    - excellent: 100%+ coverage, or 60+ months runway
+    - good: 80-99% coverage, or 36-59 months runway
+    - moderate: 60-79% coverage, or 18-35 months runway
+    - concerning: 40-59% coverage, or 6-17 months runway
+    - critical: <40% coverage, or <6 months runway
+    """
+    # If fully covered by income
+    if coverage_percentage >= 100:
+        return "excellent"
+    
+    # If have runway, use that for categorization
+    if runway_months is not None:
+        if runway_months >= 60:
+            return "excellent"
+        elif runway_months >= 36:
+            return "good"
+        elif runway_months >= 18:
+            return "moderate"
+        elif runway_months >= 6:
+            return "concerning"
+        else:
+            return "critical"
+    
+    # Otherwise use coverage percentage
+    if coverage_percentage >= 80:
+        return "good"
+    elif coverage_percentage >= 60:
+        return "moderate"
+    elif coverage_percentage >= 40:
+        return "concerning"
+    else:
+        return "critical"
+
+
+def _determine_recommendation_level(
+    coverage_percentage: float,
+    runway_months: Optional[float],
+    profile: FinancialProfile
+) -> str:
+    """
+    Determine recommendation priority level.
+    
+    Levels:
+    - low_priority: Well covered, no immediate action needed
+    - medium_priority: Some gaps, should explore options
+    - high_priority: Significant gaps, action needed soon
+    - urgent: Critical gaps, immediate action required
+    """
+    # Fully covered = low priority
+    if coverage_percentage >= 100:
+        return "low_priority"
+    
+    # Check runway
+    if runway_months is not None:
+        if runway_months >= 36:
+            return "low_priority"
+        elif runway_months >= 12:
+            return "medium_priority"
+        elif runway_months >= 6:
+            return "high_priority"
+        else:
+            return "urgent"
+    
+    # No assets but coverage above 80%
+    if coverage_percentage >= 80:
+        return "medium_priority"
+    
+    # Low coverage, no assets
+    return "urgent"
+
+
+def _generate_recommendations(
+    coverage_percentage: float,
+    monthly_gap: float,
+    runway_months: Optional[float],
+    profile: FinancialProfile,
+    care_recommendation: Optional[CareRecommendation]
+) -> Tuple[str, list, list]:
+    """
+    Generate personalized recommendations based on financial analysis.
+    
+    Returns:
+        (primary_recommendation, action_items, resources)
+    """
+    action_items = []
+    resources = []
+    
+    # ==== DETERMINE PRIMARY RECOMMENDATION ====
+    if coverage_percentage >= 100:
+        primary_recommendation = "Great news! Your income and benefits fully cover your estimated care costs."
+        action_items = [
+            "Review your financial plan annually",
+            "Consider setting aside savings for unexpected expenses",
+            "Explore supplemental care options if needed"
+        ]
+        resources = [
+            "Financial planning for seniors",
+            "Estate planning resources"
+        ]
+    
+    elif coverage_percentage >= 80:
+        primary_recommendation = f"Your income covers {coverage_percentage:.0f}% of estimated care costs. You have a solid foundation with a small gap to address."
+        action_items = [
+            f"Plan for ${abs(monthly_gap):,.0f}/month shortfall",
+            "Explore supplemental income sources",
+            "Review asset liquidation timeline"
+        ]
+        if runway_months and runway_months < 36:
+            action_items.append("Consider long-term care insurance or Medicaid planning")
+        resources = [
+            "Income optimization strategies",
+            "Asset management for seniors"
+        ]
+    
+    elif coverage_percentage >= 50:
+        primary_recommendation = f"Your income covers {coverage_percentage:.0f}% of estimated costs. Strategic planning is recommended to address the gap."
+        action_items = [
+            f"Develop strategy for ${abs(monthly_gap):,.0f}/month gap",
+            "Explore home equity options" if profile.primary_residence_value > 100000 else None,
+            "Consider Medicaid planning",
+            "Review VA benefits eligibility" if not profile.has_va_benefits else None,
+            "Investigate community resources and programs"
+        ]
+        action_items = [item for item in action_items if item]  # Remove None values
+        resources = [
+            "Medicaid planning guide",
+            "Reverse mortgage information",
+            "VA benefits application",
+            "Community senior services"
+        ]
+    
+    else:  # < 50%
+        primary_recommendation = f"Your income covers {coverage_percentage:.0f}% of estimated costs. Immediate planning is essential to secure sustainable care."
+        action_items = [
+            f"Address ${abs(monthly_gap):,.0f}/month shortfall urgently",
+            "Apply for Medicaid immediately",
+            "Explore all benefit programs (VA, SSI, state assistance)",
+            "Contact local Area Agency on Aging for resources",
+            "Consider care alternatives (family care, adult day programs)"
+        ]
+        resources = [
+            "Medicaid application assistance",
+            "Financial aid for seniors",
+            "Area Agency on Aging locator",
+            "Community care options",
+            "Family caregiver support"
+        ]
+    
+    return primary_recommendation, action_items, resources

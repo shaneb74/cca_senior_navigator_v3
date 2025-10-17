@@ -117,6 +117,48 @@ FLAG_REGISTRY: Dict[str, Dict[str, str]] = {
         "description": "One or more chronic health conditions present",
     },
     
+    # COST PLANNER FLAGS (for cost multipliers)
+    "memory_support": {
+        "category": "cognitive",
+        "severity": "high",
+        "description": "Severe memory issues requiring specialized memory care (+20% cost)",
+    },
+    "mobility_limited": {
+        "category": "mobility",
+        "severity": "high",
+        "description": "Wheelchair or bedbound requiring lift equipment (+15% cost)",
+    },
+    "adl_support_high": {
+        "category": "adl",
+        "severity": "high",
+        "description": "Extensive ADL support required (+10% cost)",
+    },
+    "medication_management": {
+        "category": "health",
+        "severity": "moderate",
+        "description": "Complex medication regimen requiring professional management (+8% cost)",
+    },
+    "behavioral_concerns": {
+        "category": "cognitive",
+        "severity": "high",
+        "description": "Behavioral issues requiring specialized management (+12% cost)",
+    },
+    "falls_risk": {
+        "category": "safety",
+        "severity": "high",
+        "description": "Multiple falls requiring enhanced safety measures (+8% cost)",
+    },
+    "chronic_conditions": {
+        "category": "health",
+        "severity": "moderate",
+        "description": "Multiple chronic conditions requiring coordinated care (+10% cost)",
+    },
+    "safety_concerns": {
+        "category": "safety",
+        "severity": "moderate",
+        "description": "Safety monitoring needed (+10% cost)",
+    },
+    
     # SUPPORT SYSTEM FLAGS
     "no_support": {
         "category": "caregiver",

@@ -1,156 +1,118 @@
 """
-Cost Planner v2 - Triage Step
+Cost Planner v2 - Quick Qualifier
 
-Determines user's current status:
-- Existing customer (already in facility/receiving care)
-- Planning ahead (no current placement)
-
-This affects which modules are shown and cost calculation approach.
+Three simple questions to personalize which financial modules are shown:
+- Veteran status (for VA Benefits module)
+- Home ownership (for Assets module)
+- Medicaid enrollment (for specific coverage guidance)
 """
 
 import streamlit as st
-from core.mcip import MCIP
 
 
 def render():
-    """Render triage step to determine user status."""
+    """Render quick qualifier questions to personalize modules."""
     
-    st.title("🎯 Your Current Situation")
-    st.markdown("### Help us understand where you are in your care journey")
-    
-    # Get GCP recommendation for context
-    recommendation = MCIP.get_care_recommendation()
-    
-    if recommendation:
-        tier = recommendation.tier.replace("_", " ").title()
-        st.info(f"💡 **Your Care Assessment:** {tier} recommended")
+    st.title("📋 Quick Questions")
+    st.markdown("### Help us personalize your Financial Assessment")
     
     st.markdown("---")
     
-    # Initialize triage state
-    if "cost_v2_triage" not in st.session_state:
-        st.session_state.cost_v2_triage = None
+    # Initialize qualifier state (from profile if available, otherwise defaults)
+    if "cost_v2_qualifiers" not in st.session_state:
+        # Check if we have saved qualifiers in user profile
+        profile_qualifiers = st.session_state.get('profile', {}).get('qualifiers', {})
+        st.session_state.cost_v2_qualifiers = {
+            "is_on_medicaid": profile_qualifiers.get("is_on_medicaid", False),
+            "is_veteran": profile_qualifiers.get("is_veteran", False),
+            "is_homeowner": profile_qualifiers.get("is_homeowner", False)
+        }
     
-    # Status selection
-    st.markdown("#### What best describes your current situation?")
+    st.markdown("#### Please answer these three questions:")
     
-    status = st.radio(
-        "Select one:",
-        options=[
-            "planning",
-            "existing"
-        ],
-        format_func=lambda x: {
-            "planning": "📋 Planning Ahead - Not currently receiving care",
-            "existing": "🏥 Existing Customer - Already in facility or receiving care"
-        }[x],
-        help="This helps us tailor the financial assessment to your situation",
-        key="cost_v2_triage_status"
+    st.markdown("")  # Add spacing
+    
+    # Question 1: Medicaid or State Assistance
+    st.markdown("**1. Are you (or your loved one) currently on Medicaid or State Assistance programs?**")
+    is_on_medicaid = st.checkbox(
+        "Yes, currently on Medicaid or State Assistance",
+        value=st.session_state.cost_v2_qualifiers.get("is_on_medicaid", False),
+        help="This helps us provide specific coverage guidance and identify additional resources",
+        key="cost_v2_is_on_medicaid",
+        label_visibility="visible"
     )
     
-    # Show description based on selection
-    if status == "planning":
-        st.success("""
-        ### 📋 Planning Ahead
-        
-        Great! We'll help you:
-        - ✅ Estimate future care costs
-        - ✅ Calculate financial runway
-        - ✅ Identify funding sources
-        - ✅ Compare facility options
-        - ✅ Plan for future transitions
-        
-        **You'll complete:**
-        1. Income & Assets assessment
-        2. Monthly costs projection
-        3. Coverage analysis (insurance, VA, etc.)
-        4. Gap analysis and recommendations
-        """)
+    st.markdown("")  # Add spacing
     
-    elif status == "existing":
-        st.info("""
-        ### 🏥 Existing Customer
-        
-        We'll help you:
-        - ✅ Review current costs
-        - ✅ Optimize payment sources
-        - ✅ Identify additional benefits
-        - ✅ Project future expenses
-        - ✅ Plan for cost increases
-        
-        **You'll complete:**
-        1. Current facility/care costs
-        2. Payment sources review
-        3. Additional benefits eligibility
-        4. Future cost projection
-        """)
+    # Question 2: Veteran status
+    st.markdown("**2. Are you (or your loved one) a Veteran?**")
+    is_veteran = st.checkbox(
+        "Yes, a Veteran",
+        value=st.session_state.cost_v2_qualifiers.get("is_veteran", False),
+        help="This helps us show VA benefits and resources",
+        key="cost_v2_is_veteran",
+        label_visibility="visible"
+    )
     
-    st.markdown("---")
+    st.markdown("")  # Add spacing
     
-    # Additional context questions
-    with st.expander("📝 Optional: Tell us more (helps with accuracy)"):
-        
-        if status == "planning":
-            location = st.text_input(
-                "Preferred Location (City, State)",
-                placeholder="e.g., San Diego, CA",
-                help="We'll use this for regional cost adjustments",
-                key="cost_v2_location"
-            )
-            
-            timeline = st.selectbox(
-                "Expected Timeline",
-                options=[
-                    "Immediate (0-3 months)",
-                    "Near-term (3-6 months)",
-                    "Mid-term (6-12 months)",
-                    "Long-term (1+ years)"
-                ],
-                help="When do you expect to need care?",
-                key="cost_v2_timeline"
-            )
-        
-        elif status == "existing":
-            facility_name = st.text_input(
-                "Facility/Provider Name",
-                placeholder="e.g., Sunrise Senior Living",
-                help="Optional - helps us verify current costs",
-                key="cost_v2_facility"
-            )
-            
-            monthly_cost = st.number_input(
-                "Current Monthly Cost ($)",
-                min_value=0,
-                max_value=50000,
-                step=100,
-                help="Approximate current monthly cost",
-                key="cost_v2_current_cost"
-            )
+    # Question 3: Home ownership
+    st.markdown("**3. Are you (or your loved one) a home owner?**")
+    is_homeowner = st.checkbox(
+        "Yes, a home owner",
+        value=st.session_state.cost_v2_qualifiers.get("is_homeowner", False),
+        help="This helps us assess available assets and funding options",
+        key="cost_v2_is_homeowner",
+        label_visibility="visible"
+    )
     
     st.markdown("---")
     
     # Navigation buttons
-    col1, col2 = st.columns([1, 2])
+    col1, col2, col3 = st.columns([1, 2, 1])
     
     with col1:
-        if st.button("← Back", key="triage_back"):
+        st.markdown('<div data-role="secondary">', unsafe_allow_html=True)
+        if st.button("← Back", key="qualifier_back", use_container_width=True):
             st.session_state.cost_v2_step = "auth"
             st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
     
     with col2:
-        if st.button("Continue to Financial Assessment →", type="primary", use_container_width=True, key="triage_continue"):
-            # Save triage data
-            st.session_state.cost_v2_triage = {
-                "status": status,
-                "location": st.session_state.get("cost_v2_location", ""),
-                "timeline": st.session_state.get("cost_v2_timeline", ""),
-                "facility_name": st.session_state.get("cost_v2_facility", ""),
-                "monthly_cost": st.session_state.get("cost_v2_current_cost", 0)
+        st.markdown('<div data-role="primary">', unsafe_allow_html=True)
+        if st.button("Continue to Financial Assessment →", type="primary", use_container_width=True, key="qualifier_continue"):
+            # Save qualifier data to session state (legacy)
+            st.session_state.cost_v2_qualifiers = {
+                "is_on_medicaid": is_on_medicaid,
+                "is_veteran": is_veteran,
+                "is_homeowner": is_homeowner
             }
             
-            # Proceed to modules
-            st.session_state.cost_v2_step = "modules"
+            # ALSO set global flags for Phase 3 assessment visibility
+            if 'flags' not in st.session_state:
+                st.session_state.flags = {}
+            
+            st.session_state.flags['is_veteran'] = is_veteran
+            # Set medicaid_planning_interest if user is on Medicaid or interested
+            st.session_state.flags['medicaid_planning_interest'] = is_on_medicaid
+            
+            # Save to user profile for persistence
+            if 'profile' not in st.session_state:
+                st.session_state.profile = {}
+            
+            st.session_state.profile['qualifiers'] = {
+                "is_on_medicaid": is_on_medicaid,
+                "is_veteran": is_veteran,
+                "is_homeowner": is_homeowner
+            }
+            
+            # Proceed to assessment hub (with tiles)
+            st.session_state.cost_v2_step = "assessments"
             st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
     
-    # Help text
-    st.caption("💡 **Tip:** Your responses help us provide more accurate cost estimates and recommendations.")
+    with col3:
+        st.markdown('<div data-role="secondary">', unsafe_allow_html=True)
+        if st.button("← Back to Hub", key="qualifier_back_hub", use_container_width=True):
+            st.switch_page("pages/_stubs.py")
+        st.markdown('</div>', unsafe_allow_html=True)

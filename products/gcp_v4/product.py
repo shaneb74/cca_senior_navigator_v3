@@ -20,34 +20,71 @@ def render():
     """Render GCP v4 product.
     
     Flow:
-    1. Render Navi panel (single intelligence layer)
-    2. Run care_recommendation module via module engine
-    3. Module engine handles all UI and navigation
-    4. When complete, publish CareRecommendation to MCIP
-    5. Show completion screen with recommendation
+    1. Check for restart intent (when complete and re-entering)
+    2. Render Navi panel (single intelligence layer)
+    3. Run care_recommendation module via module engine
+    4. Module engine handles all UI and navigation
+    5. When complete, publish CareRecommendation to MCIP
+    6. Show completion screen with recommendation
     """
     
     # Load module config
     config = _load_module_config()
     
+    # Check if user is restarting (clicking "Restart" when GCP is complete)
+    # This happens when: GCP complete + returning from hub + at step 0 or results
+    _handle_restart_if_needed(config)
+    
     product_shell_start()
     
     try:
-        # Render Navi panel (THE single intelligence layer)
-        # Provides module-level guidance, progress, contextual help
-        render_navi_panel(
-            location="product",
-            product_key="gcp_v4",
-            module_config=config
+        # Check if we're CURRENTLY VIEWING the results step
+        # Need to check BOTH session state AND tile state (for resume functionality)
+        state_key = config.state_key
+        
+        # Check tile state first (takes priority for resume)
+        tiles = st.session_state.setdefault("tiles", {})
+        tile_state = tiles.setdefault(config.product, {})
+        saved_step = tile_state.get("last_step")
+        
+        # Determine current step index (same logic as run_module)
+        if saved_step is not None and saved_step >= 0:
+            current_step_index = saved_step
+        else:
+            current_step_index = int(st.session_state.get(f"{state_key}._step", 0))
+        
+        # Clamp to valid range
+        current_step_index = max(0, min(current_step_index, len(config.steps) - 1))
+        
+        # Safely get current step
+        current_step = None
+        if 0 <= current_step_index < len(config.steps):
+            current_step = config.steps[current_step_index]
+        
+        # Check if current step is the results step
+        is_on_results_step = (
+            current_step is not None and 
+            config.results_step_id and 
+            current_step.id == config.results_step_id
         )
+        
+        # Render Navi panel (THE single intelligence layer) UNLESS actively on results step
+        # Provides module-level guidance, progress, contextual help
+        # Results step has its own Navi announcement, so we skip here
+        if not is_on_results_step:
+            render_navi_panel(
+                location="product",
+                product_key="gcp_v4",
+                module_config=config
+            )
         
         # Run module engine (handles all rendering and navigation)
         # The engine stores state in st.session_state[config.state_key]
         # and outcomes in st.session_state[f"{config.state_key}._outcomes"]
         module_state = run_module(config)
         
-        # Check if module has computed outcomes (means we're on results step)
-        outcome_key = f"{config.state_key}._outcomes"
+        # Check if outcome exists for publishing
+        outcome_key = f"{state_key}._outcomes"
         outcome = st.session_state.get(outcome_key)
         
         # If outcome exists and we haven't published yet, publish to MCIP
@@ -61,26 +98,14 @@ def render():
                 gcp_outcome = derive_outcome(module_state)
                 _publish_to_mcip(gcp_outcome, module_state)
                 _mark_published()
-                
-                # Show completion message (engine already rendered results step)
-                st.success("✅ Your care recommendation has been saved!")
             except Exception as e:
                 st.error(f"❌ Error saving recommendation: {e}")
                 import traceback
                 st.error(traceback.format_exc())
         
-        # Add next steps buttons (show whenever outcome exists, published or not)
-        if outcome:
-            st.markdown("---")
-            col1, col2 = st.columns(2)
-            with col1:
-                if st.button("💰 Calculate Costs", type="primary", use_container_width=True, key="gcp_next_cost"):
-                    from core.nav import route_to
-                    route_to("cost_v2")
-            with col2:
-                if st.button("🏠 Return to Hub", use_container_width=True, key="gcp_next_hub"):
-                    from core.nav import route_to
-                    route_to("hub_concierge")
+        # Calculate Costs button removed - only appears on results page via Navi panel
+        # Results page includes this as a primary action after seeing recommendation
+        
     finally:
         product_shell_end()
 
@@ -210,3 +235,67 @@ def _build_next_step_reason(outcome: dict) -> str:
         return f"Calculate financial impact of {tier} care"
     else:
         return "Complete your care assessment for a personalized recommendation"
+
+
+def _handle_restart_if_needed(config: ModuleConfig) -> None:
+    """Handle restart when user clicks 'Restart' button on completed GCP.
+    
+    Clears GCP state to start fresh, but preserves Cost Planner progress.
+    Only triggers when GCP is complete and user is re-entering.
+    
+    Args:
+        config: Module configuration
+    """
+    # Check if GCP is complete
+    try:
+        from core.mcip import MCIP
+        if not MCIP.is_product_complete("gcp"):
+            return  # Not complete, no restart needed
+    except Exception:
+        return  # Error checking MCIP, skip restart
+    
+    # Get current state
+    state_key = config.state_key
+    tiles = st.session_state.setdefault("tiles", {})
+    tile_state = tiles.setdefault(config.product, {})
+    
+    # Check if we're at the beginning or end (restart scenario)
+    current_step = st.session_state.get(f"{state_key}._step", 0)
+    
+    # Only restart if at step 0 (user clicked Restart button from hub)
+    # Don't auto-restart if they're reviewing answers mid-flow
+    if current_step != 0:
+        return
+    
+    # RESTART: Clear GCP state but preserve Cost Planner
+    # 1. Clear module state
+    if state_key in st.session_state:
+        del st.session_state[state_key]
+    
+    # 2. Clear tile state
+    if config.product in tiles:
+        tiles[config.product] = {}
+    
+    # 3. Clear outcomes
+    outcome_key = f"{state_key}._outcomes"
+    if outcome_key in st.session_state:
+        del st.session_state[outcome_key]
+    
+    # 4. Clear published flag
+    if "gcp_v4_published" in st.session_state:
+        del st.session_state["gcp_v4_published"]
+    
+    # 5. Reset MCIP GCP completion (but preserve Cost Planner!)
+    try:
+        from core.mcip import MCIP
+        # Clear GCP recommendation so it shows as not complete
+        if hasattr(MCIP, '_data') and 'care_recommendation' in MCIP._data:
+            del MCIP._data['care_recommendation']
+        # Mark GCP as not complete in journey
+        if hasattr(MCIP, '_data') and 'journey_progress' in MCIP._data:
+            if 'gcp' in MCIP._data['journey_progress']:
+                MCIP._data['journey_progress']['gcp'] = 0
+    except Exception:
+        pass  # If MCIP clear fails, state is already cleared above
+    
+    # Note: Cost Planner state preserved automatically because we only cleared GCP keys
