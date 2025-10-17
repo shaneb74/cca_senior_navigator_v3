@@ -13,6 +13,54 @@ from ui.footer_simple import render_footer_simple
 __all__ = ["render"]
 
 
+def _get_trivia_badges():
+    """Get list of earned trivia badges for tile display.
+    
+    Reads from persisted product_tiles_v2 structure.
+    
+    Returns:
+        List of badge strings to show on tile
+    """
+    tiles = st.session_state.get("product_tiles_v2", {})
+    progress = tiles.get("senior_trivia_hub", {})
+    badges_earned = progress.get("badges_earned", {})
+    
+    if not badges_earned:
+        return ["new"]  # Show 'new' badge if no games played yet
+    
+    # Extract badge names (without stars)
+    badge_list = []
+    for module_key, badge_info in badges_earned.items():
+        badge_name = badge_info.get("name", "")
+        # Clean up badge name (remove star emojis)
+        clean_name = badge_name.replace(" ⭐⭐⭐⭐", "").replace(" ⭐⭐⭐", "").replace(" ⭐⭐", "").replace(" ⭐", "")
+        if clean_name:
+            badge_list.append(clean_name)
+    
+    # Limit to 3 badges on tile (most recent)
+    return badge_list[:3] if badge_list else ["new"]
+
+
+def _get_trivia_progress():
+    """Calculate trivia progress as percentage of quizzes completed.
+    
+    Returns:
+        Progress percentage (0-100)
+    """
+    tiles = st.session_state.get("product_tiles_v2", {})
+    progress = tiles.get("senior_trivia_hub", {})
+    badges_earned = progress.get("badges_earned", {})
+    
+    # Total available quizzes
+    total_quizzes = 5  # truths_myths, music_trivia, medicare_quiz, healthy_habits, community_challenge
+    
+    if not badges_earned:
+        return 0
+    
+    completed_count = len(badges_earned)
+    return int((completed_count / total_quizzes) * 100)
+
+
 def render(ctx=None) -> None:
     person_name = st.session_state.get("person_name", "").strip()
     # Use person's name if available, otherwise use neutral "you"
@@ -27,7 +75,25 @@ def render(ctx=None) -> None:
         (st.session_state.get("gamification", {}) or {}).get("progress", 0)
     )
 
+    # Dynamically add Senior Trivia tile with earned badges (FIRST TILE - order=5)
+    trivia_badges = _get_trivia_badges()
+    trivia_progress = _get_trivia_progress()
+    
     cards = [
+        ProductTileHub(
+            key="senior_trivia",
+            title="Senior Trivia & Brain Games",
+            desc="Test your knowledge with fun, educational trivia",
+            blurb="Play solo or with family! Topics include senior living myths, music nostalgia, Medicare, healthy habits, and family fun.",
+            primary_label="Play Trivia",
+            primary_go="senior_trivia",
+            secondary_label=None,
+            secondary_go=None,
+            progress=trivia_progress,  # Progress based on completed quizzes
+            badges=trivia_badges,  # Dynamic badges from earned achievements
+            variant="teal",
+            order=5,  # First tile
+        ),
         ProductTileHub(
             key="appointment",
             title="Your Upcoming Appointment",

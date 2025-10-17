@@ -110,7 +110,11 @@ def run_module(config: ModuleConfig) -> Dict[str, Any]:
     
     if is_results:
         _ensure_outcomes(config, state)
-        _render_results_view(state, config)
+        
+        # Check if product wants to skip default results rendering
+        if not getattr(config, 'skip_default_results', False):
+            _render_results_view(state, config)
+        
         # Close module container
         st.markdown('</div>', unsafe_allow_html=True)
         return state
@@ -547,6 +551,7 @@ def _compute_context(config: ModuleConfig) -> Dict[str, Any]:
     profile = st.session_state.get("profile", {})
     auth = st.session_state.get("auth", {})
     return {
+        "config": config,  # Include config for scoring functions
         "product": config.product,
         "version": config.version,
         "person_a_name": state.get("recipient_name") or "this person",
@@ -960,6 +965,9 @@ def _render_results_view(mod: Dict[str, Any], config: ModuleConfig) -> None:
     outcomes = st.session_state.get(outcome_key, {})
     recommendation = _get_recommendation(mod, config)
     confidence = outcomes.get("confidence", 1.0)
+    # Handle None confidence gracefully
+    if confidence is None:
+        confidence = 1.0
     confidence_pct = int(confidence * 100)
     tier = outcomes.get("tier", "")
     tier_score = outcomes.get("tier_score", 0)
@@ -1305,7 +1313,8 @@ def _render_results_ctas_once(config: ModuleConfig) -> None:
             help="Return to the main hub"
         ):
             from core.nav import route_to
-            route_to("hub_concierge")
+            hub_route = _hub_route_for_product(config.product)
+            route_to(hub_route)
     
     st.markdown('</div>', unsafe_allow_html=True)
     

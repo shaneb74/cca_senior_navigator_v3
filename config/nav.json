@@ -176,6 +176,12 @@
           "label": "Predictive Health Analytics",
           "module": "products.predictive_health:render",
           "hidden": true
+        },
+        {
+          "key": "senior_trivia",
+          "label": "Senior Trivia & Brain Games",
+          "module": "products.senior_trivia.product:render",
+          "hidden": true
         }
       ]
     }
