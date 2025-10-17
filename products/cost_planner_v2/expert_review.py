@@ -1,657 +1,322 @@
-"""Expert Review Step - Cost Planner v2 (Redesigned)
+"""
+Expert Financial Review for Cost Planner v2
 
-Clean, calm summary page with card-based layout.
-No warning banners - just clear information and confident guidance.
-
-Design Philosophy:
-- Calm, high-level summary (not a warning screen)
-- Clear module completion status without pressure
-- Readable financial summary with scannable metrics
-- Consistent visual language with Financial Assessment modules
+Clean, professional display of financial analysis with recommendations.
+Communication through Navi panel, minimal UI clutter.
 """
 
-from typing import Dict, Optional, List
+from html import escape as H
 import streamlit as st
-from datetime import datetime
+
 from core.ui import render_navi_panel_v2
+from core.state import MCIP
+from products.cost_planner_v2.financial_profile import get_financial_profile, publish_to_mcip
+from products.cost_planner_v2.expert_formulas import calculate_expert_review
 
 
 def render():
-    """Render expert review with clean card-based layout.
+    """
+    Render expert financial review page.
     
-    Layout:
-    1. Navi Panel (warm, confident guidance)
-    2. Module Completion Summary (2-column grid with icons)
-    3. Executive Summary (4-metric grid)
-    4. Detailed Breakdown (tabs)
-    5. Optional Advisor Notes
-    6. Fixed Footer Navigation
+    Shows financial analysis with clean, professional design.
+    Navi handles all communication, UI stays minimal.
     """
     
-    # Get all module data
-    modules = st.session_state.get("cost_v2_modules", {})
+    # Get financial profile
+    profile = get_financial_profile()
     
-    # Check if required modules are complete
-    income_data = modules.get("income", {}).get("data", {})
-    assets_data = modules.get("assets", {}).get("data", {})
-    
-    if not income_data or not assets_data:
-        st.error("⚠️ **Income & Assets modules are required.** Please complete them before accessing Expert Review.")
-        if st.button("← Back to Financial Modules"):
-            st.session_state.cost_v2_step = "modules"
-            st.rerun()
+    # Check if required assessments complete
+    if not profile.required_assessments_complete:
+        _render_incomplete_state()
         return
     
-    # Render sections
-    _render_navi_guidance(modules)
-    st.markdown('<div style="height: 24px;"></div>', unsafe_allow_html=True)  # Spacing
+    # Get GCP recommendation for cost estimation
+    care_recommendation = MCIP.get_care_recommendation()
     
-    _render_module_completion(modules)
-    st.markdown('<div style="height: 32px;"></div>', unsafe_allow_html=True)
+    # Get ZIP code from intro
+    zip_code = st.session_state.get("cost_v2_zip")
     
-    _render_executive_summary(modules)
-    st.markdown('<div style="height: 32px;"></div>', unsafe_allow_html=True)
+    # Calculate expert review
+    analysis = calculate_expert_review(
+        profile=profile,
+        care_recommendation=care_recommendation,
+        zip_code=zip_code
+    )
     
-    _render_detailed_breakdown(modules)
-    st.markdown('<div style="height: 32px;"></div>', unsafe_allow_html=True)
+    # Publish profile to MCIP
+    publish_to_mcip(profile)
     
-    _render_advisor_notes()
-    st.markdown('<div style="height: 32px;"></div>', unsafe_allow_html=True)
+    # Render Navi guidance
+    _render_navi_guidance(analysis, profile)
     
-    _render_footer_navigation()
+    # Main content container
+    st.markdown('<div class="sn-app module-container">', unsafe_allow_html=True)
+    
+    # Page header
+    st.markdown('<div class="mod-head"><div class="mod-head-row"><h2 class="h2">💰 Financial Review</h2></div></div>', unsafe_allow_html=True)
+    
+    # Coverage summary (clean, minimal)
+    _render_coverage_summary(analysis)
+    
+    st.markdown('<div style="margin: 32px 0;"></div>', unsafe_allow_html=True)
+    
+    # Financial details (simple list)
+    _render_financial_details(analysis, profile)
+    
+    st.markdown('<div style="margin: 32px 0;"></div>', unsafe_allow_html=True)
+    
+    # Action items (clean list)
+    _render_action_items(analysis)
+    
+    st.markdown('<div style="margin: 48px 0;"></div>', unsafe_allow_html=True)
+    
+    # Navigation
+    _render_navigation()
+    
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
-def _render_navi_guidance(modules: Dict):
-    """Render Navi panel with warm, confident tone."""
+
+def _render_incomplete_state():
+    """Show state when required assessments not complete."""
     
-    # Count completed modules
-    completed_count = sum([
-        1 for module in modules.values()
-        if module.get("status") == "completed"
-    ])
-    total_modules = 6  # Income, Assets, VA, Health Insurance, Life Insurance, Medicaid
+    # Navi communication
+    render_navi_panel_v2(
+        title="Complete Required Assessments",
+        reason="Please complete Income and Assets assessments to see your financial review.",
+        encouragement={
+            'icon': '📋',
+            'text': 'These two assessments are essential for accurate cost analysis.',
+            'status': 'active'
+        },
+        context_chips=[],
+        primary_action={'label': '', 'route': ''},
+        variant="module"
+    )
     
-    # Determine encouragement message
-    if completed_count == total_modules:
-        encouragement = "You've completed all modules — excellent work! Your financial picture is comprehensive and ready for review."
-        icon = "🎉"
-        status = "complete"
-    elif completed_count >= 2:
-        encouragement = "Completing the optional modules gives a clearer financial picture and helps me better estimate how long your assets can pay for care."
-        icon = "💡"
-        status = "in_progress"
-    else:
-        encouragement = "Let's get a few more modules done to build a complete financial picture."
-        icon = "📋"
-        status = "pending"
+    # Minimal content
+    st.markdown('<div class="sn-app module-container">', unsafe_allow_html=True)
+    st.markdown('<div class="mod-head"><div class="mod-head-row"><h2 class="h2">💰 Financial Review</h2></div></div>', unsafe_allow_html=True)
+    
+    st.info("Complete Income and Assets assessments to unlock your personalized financial review.")
+    
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        if st.button("← Back to Assessments", use_container_width=True, type="primary"):
+            st.session_state.cost_v2_step = "assessments"
+            st.rerun()
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+
+
+def _render_navi_guidance(analysis, profile):
+    """Render Navi panel with contextual guidance based on analysis."""
+    
+    # Determine message based on coverage tier
+    if analysis.coverage_tier == "excellent":
+        title = "Excellent Financial Position"
+        reason = "Your income and benefits fully cover your estimated care costs. You're well-prepared financially."
+        encouragement = {
+            'icon': '✅',
+            'text': 'Review the recommendations below to optimize your financial strategy.',
+            'status': 'complete'
+        }
+    
+    elif analysis.coverage_tier == "good":
+        title = "Strong Financial Foundation"
+        reason = f"Your income covers {analysis.coverage_percentage:.0f}% of estimated care costs. You have a solid foundation with manageable gaps."
+        encouragement = {
+            'icon': '👍',
+            'text': 'Review the action items below to address the small remaining gap.',
+            'status': 'active'
+        }
+    
+    elif analysis.coverage_tier == "moderate":
+        title = "Strategic Planning Recommended"
+        reason = f"Your income covers {analysis.coverage_percentage:.0f}% of estimated costs. A strategic plan will help bridge the gap."
+        encouragement = {
+            'icon': '📊',
+            'text': 'Focus on the action items below to develop your financial strategy.',
+            'status': 'active'
+        }
+    
+    elif analysis.coverage_tier == "concerning":
+        title = "Action Needed Soon"
+        reason = f"Your income covers {analysis.coverage_percentage:.0f}% of estimated costs. Planning is important to secure sustainable care."
+        encouragement = {
+            'icon': '⚠️',
+            'text': 'Prioritize the action items below—time is important.',
+            'status': 'warning'
+        }
+    
+    else:  # critical
+        title = "Immediate Planning Essential"
+        reason = f"Your income covers {analysis.coverage_percentage:.0f}% of estimated costs. Immediate action is needed to secure care."
+        encouragement = {
+            'icon': '🚨',
+            'text': 'Follow the action items below urgently—help is available.',
+            'status': 'warning'
+        }
+    
+    # Context chips
+    context_chips = []
+    if analysis.runway_months is not None:
+        if analysis.runway_months >= 36:
+            runway_label = f"{int(analysis.runway_months)} months coverage"
+        elif analysis.runway_months >= 12:
+            runway_label = f"{int(analysis.runway_months)} months runway"
+        else:
+            runway_label = f"{int(analysis.runway_months)} months remaining"
+        
+        context_chips.append({
+            'label': runway_label,
+            'sublabel': None
+        })
     
     render_navi_panel_v2(
-        title="Your Expert Advisor Review",
-        reason="Here's your Expert Advisor Review. I've summarized what you've completed so far and what we still recommend.",
-        encouragement={
-            "icon": icon,
-            "message": encouragement,
-            "status": status
-        },
-        context_chips=[
-            {"label": f"{completed_count}/{total_modules} modules completed"},
-            {"label": "You can finalize now or go back to add more details"}
-        ],
-        primary_action=None  # No action in Navi here
+        title=title,
+        reason=reason,
+        encouragement=encouragement,
+        context_chips=context_chips,
+        primary_action={'label': '', 'route': ''},
+        variant="module"
     )
 
 
-def _render_module_completion(modules: Dict):
-    """Render module completion summary in 2-column grid."""
-    
-    st.markdown('<div class="section-card">', unsafe_allow_html=True)
-    st.markdown("### 📊 Module Completion Summary")
-    
-    # Define all modules with their completion status
-    module_list = [
-        {
-            "key": "income",
-            "label": "Income Sources",
-            "required": True
-        },
-        {
-            "key": "assets",
-            "label": "Assets & Resources",
-            "required": True
-        },
-        {
-            "key": "va_benefits",
-            "label": "VA Benefits",
-            "required": False
-        },
-        {
-            "key": "health_insurance",
-            "label": "Health & Insurance",
-            "required": False
-        },
-        {
-            "key": "life_insurance",
-            "label": "Life Insurance",
-            "required": False
-        },
-        {
-            "key": "medicaid_navigation",
-            "label": "Medicaid Navigation",
-            "required": False
-        }
-    ]
-    
-    # Add completion status to each module
-    for module in module_list:
-        module_data = modules.get(module["key"], {})
-        module["completed"] = module_data.get("status") == "completed"
-    
-    # Render 2-column grid
-    col1, col2 = st.columns(2, gap="large")
-    
-    # Split modules into two columns
-    left_modules = module_list[::2]  # Every other module starting from 0
-    right_modules = module_list[1::2]  # Every other module starting from 1
-    
-    with col1:
-        for module in left_modules:
-            _render_module_status_item(module)
-    
-    with col2:
-        for module in right_modules:
-            _render_module_status_item(module)
-    
-    # Legend
-    st.markdown('<div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(0,0,0,0.08);"></div>', unsafe_allow_html=True)
-    st.caption("**Legend:** ✅ Completed • ⚪ Optional / Not Started")
-    
-    st.markdown('</div>', unsafe_allow_html=True)
 
-
-def _render_module_status_item(module: Dict):
-    """Render a single module status item."""
+def _render_coverage_summary(analysis):
+    """Render clean coverage summary - no banners, just facts."""
     
-    if module["completed"]:
-        icon = "✅"
-        status_class = "completed"
-        status_text = "Completed"
-    else:
-        icon = "⚪"
-        status_class = "optional" if not module["required"] else "incomplete"
-        status_text = "Optional" if not module["required"] else "Required"
+    # Coverage percentage (large, clean display)
+    coverage_display = f"{min(analysis.coverage_percentage, 999):.0f}%" if analysis.coverage_percentage < 1000 else "999%+"
     
-    st.markdown(
-        f'<div class="module-status-item {status_class}">'
-        f'  <span class="module-icon">{icon}</span>'
-        f'  <span class="module-label">{module["label"]}</span>'
-        f'  <span class="module-status">{status_text}</span>'
-        f'</div>',
-        unsafe_allow_html=True
-    )
-
-
-def _render_executive_summary(modules: Dict):
-    """Render executive summary with 4-metric grid."""
+    st.markdown(f"""
+    <div style="text-align: center; padding: 24px 0;">
+        <div style="font-size: 48px; font-weight: 700; color: var(--text-primary);">
+            {coverage_display}
+        </div>
+        <div style="font-size: 14px; color: var(--text-secondary); margin-top: 8px;">
+            Income Coverage of Estimated Care Costs
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
     
-    st.markdown('<div class="section-card">', unsafe_allow_html=True)
-    st.markdown("### 💼 Executive Summary")
-    
-    # Calculate metrics from module data
-    metrics = _calculate_financial_metrics(modules)
-    
-    # 4-column grid for key metrics
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        st.metric(
-            label="Monthly Care Cost",
-            value=f"${metrics['monthly_cost']:,.0f}",
-            help="Total estimated monthly care costs"
-        )
-    
-    with col2:
-        st.metric(
-            label="Coverage & Income",
-            value=f"${metrics['monthly_coverage']:,.0f}",
-            help="Total monthly coverage from all sources"
-        )
-    
-    with col3:
-        if metrics['monthly_gap'] > 0:
-            st.metric(
-                label="Monthly Surplus",
-                value=f"+${metrics['monthly_gap']:,.0f}",
-                delta=f"+${metrics['monthly_gap']:,.0f}",
-                delta_color="normal",
-                help="Monthly surplus after all expenses"
-            )
-        else:
-            gap = abs(metrics['monthly_gap'])
-            st.metric(
-                label="Monthly Gap",
-                value=f"${gap:,.0f}",
-                delta=f"-${gap:,.0f}",
-                delta_color="inverse",
-                help="Monthly shortfall to cover from assets"
-            )
-    
-    with col4:
-        runway_display = metrics['runway_display']
-        st.metric(
-            label="Financial Runway",
-            value=runway_display,
-            help="Estimated time until assets depleted" if runway_display != "Unlimited" else "Sufficient income to cover all costs"
-        )
-    
-    # Context line (care plan reference)
-    from core.mcip import MCIP
-    recommendation = MCIP.get_care_recommendation()
-    if recommendation:
-        tier_label = recommendation.tier.replace("_", " ").title()
-        confidence_pct = int(recommendation.confidence * 100)
-        st.caption(f"Based on: **{tier_label}** care plan, {confidence_pct}% confidence")
-    
-    st.markdown('</div>', unsafe_allow_html=True)
-
-
-def _calculate_financial_metrics(modules: Dict) -> Dict:
-    """Calculate all financial metrics from module data.
-    
-    Returns dict with:
-    - monthly_cost: Total monthly care cost
-    - monthly_coverage: Total monthly coverage (income + benefits)
-    - monthly_gap: Surplus (positive) or gap (negative)
-    - total_assets: Total available assets
-    - runway_years: Years until assets depleted
-    - runway_display: Display string for runway metric
-    """
-    
-    # Get module data
-    income_data = modules.get("income", {}).get("data", {})
-    assets_data = modules.get("assets", {}).get("data", {})
-    va_data = modules.get("va_benefits", {}).get("data", {})
-    insurance_data = modules.get("health_insurance", {}).get("data", {})
-    life_insurance_data = modules.get("life_insurance", {}).get("data", {})
-    
-    # Calculate total monthly income
-    total_monthly_income = (
-        income_data.get("ss_monthly", 0) +
-        income_data.get("pension_monthly", 0) +
-        income_data.get("employment_monthly", 0) +
-        income_data.get("investment_monthly", 0) +
-        income_data.get("other_monthly", 0) +
-        (va_data.get("va_disability_monthly", 0) if va_data else 0) +
-        (va_data.get("aid_attendance_monthly", 0) if va_data else 0)
-    )
-    
-    # Calculate total assets
-    total_assets = (
-        assets_data.get("checking_savings", 0) +
-        assets_data.get("investment_accounts", 0) +
-        assets_data.get("primary_residence_value", 0) +
-        assets_data.get("other_real_estate", 0) +
-        assets_data.get("other_resources", 0)
-    )
-    
-    # Get monthly care cost from MCIP
-    from core.mcip import MCIP
-    estimated_monthly_cost = 0
-    recommendation = MCIP.get_care_recommendation()
-    
-    financial_profile = MCIP.get_financial_profile()
-    if financial_profile and hasattr(financial_profile, 'estimated_monthly_cost'):
-        estimated_monthly_cost = financial_profile.estimated_monthly_cost
-    elif recommendation:
-        # Fallback: tier-based defaults
-        tier_defaults = {
-            'independent': 2500,
-            'in_home': 4500,
-            'assisted_living': 5000,
-            'memory_care': 7000,
-            'memory_care_high_acuity': 9000
-        }
-        estimated_monthly_cost = tier_defaults.get(recommendation.tier, 5000)
-    
-    # Calculate total coverage
-    total_coverage = (
-        (insurance_data.get("ltc_daily_benefit", 0) * 30 if insurance_data and insurance_data.get("has_ltc_insurance") else 0) +
-        (life_insurance_data.get("monthly_benefit", 0) if life_insurance_data else 0)
-    )
-    
-    # Calculate gap (positive = surplus, negative = shortfall)
-    monthly_coverage = total_monthly_income + total_coverage
-    monthly_gap = monthly_coverage - estimated_monthly_cost
-    
-    # Calculate runway
-    if monthly_gap < 0 and total_assets > 0:
-        shortfall = abs(monthly_gap)
-        runway_months = int(total_assets / shortfall)
-        runway_years = runway_months / 12
-        runway_display = f"{runway_years:.1f} years"
-    else:
-        runway_years = 999
-        runway_display = "Unlimited"
-    
-    return {
-        "monthly_cost": estimated_monthly_cost,
-        "monthly_coverage": monthly_coverage,
-        "monthly_gap": monthly_gap,
-        "total_assets": total_assets,
-        "runway_years": runway_years,
-        "runway_display": runway_display
-    }
-
-
-def _render_detailed_breakdown(modules: Dict):
-    """Render detailed financial breakdown in tabs."""
-    
-    st.markdown('<div class="section-card">', unsafe_allow_html=True)
-    st.markdown("### 📈 Detailed Breakdown")
-    
-    tab1, tab2, tab3, tab4 = st.tabs([
-        "💰 Financial Overview",
-        "📊 Monthly Costs",
-        "🛡️ Coverage & Benefits",
-        "📈 Projections"
-    ])
-    
-    with tab1:
-        _render_financial_overview_tab(modules)
-    
-    with tab2:
-        _render_monthly_costs_tab(modules)
-    
-    with tab3:
-        _render_coverage_tab(modules)
-    
-    with tab4:
-        _render_projections_tab(modules)
-    
-    st.markdown('</div>', unsafe_allow_html=True)
-
-
-def _render_financial_overview_tab(modules: Dict):
-    """Render financial overview tab content."""
-    
-    income_data = modules.get("income", {}).get("data", {})
-    assets_data = modules.get("assets", {}).get("data", {})
-    va_data = modules.get("va_benefits", {}).get("data", {})
-    
-    col1, col2 = st.columns(2, gap="large")
-    
-    with col1:
-        st.markdown("#### Monthly Income Sources")
-        
-        # Social Security
-        ss_monthly = income_data.get("ss_monthly", 0)
-        if ss_monthly > 0:
-            st.markdown(f"**Social Security:** ${ss_monthly:,.0f}")
-        
-        # Pension
-        pension_monthly = income_data.get("pension_monthly", 0)
-        if pension_monthly > 0:
-            st.markdown(f"**Pension:** ${pension_monthly:,.0f}")
-        
-        # Employment
-        employment_monthly = income_data.get("employment_monthly", 0)
-        if employment_monthly > 0:
-            st.markdown(f"**Employment:** ${employment_monthly:,.0f}")
-        
-        # Investment
-        investment_monthly = income_data.get("investment_monthly", 0)
-        if investment_monthly > 0:
-            st.markdown(f"**Investment Income:** ${investment_monthly:,.0f}")
-        
-        # Other
-        other_monthly = income_data.get("other_monthly", 0)
-        if other_monthly > 0:
-            st.markdown(f"**Other Income:** ${other_monthly:,.0f}")
-        
-        # VA Benefits
-        if va_data:
-            va_disability = va_data.get("va_disability_monthly", 0)
-            aid_attendance = va_data.get("aid_attendance_monthly", 0)
-            if va_disability > 0:
-                st.markdown(f"**VA Disability:** ${va_disability:,.0f}")
-            if aid_attendance > 0:
-                st.markdown(f"**Aid & Attendance:** ${aid_attendance:,.0f}")
-        
-        # Total
-        total_income = (
-            ss_monthly + pension_monthly + employment_monthly +
-            investment_monthly + other_monthly +
-            (va_data.get("va_disability_monthly", 0) if va_data else 0) +
-            (va_data.get("aid_attendance_monthly", 0) if va_data else 0)
-        )
-        st.markdown(f"---")
-        st.markdown(f"**Total Monthly Income:** ${total_income:,.0f}")
-    
-    with col2:
-        st.markdown("#### Available Assets")
-        
-        # Checking & Savings
-        checking_savings = assets_data.get("checking_savings", 0)
-        if checking_savings > 0:
-            st.markdown(f"**Checking & Savings:** ${checking_savings:,.0f}")
-        
-        # Investment Accounts
-        investment_accounts = assets_data.get("investment_accounts", 0)
-        if investment_accounts > 0:
-            st.markdown(f"**Investment Accounts:** ${investment_accounts:,.0f}")
-        
-        # Primary Residence
-        primary_residence = assets_data.get("primary_residence_value", 0)
-        if primary_residence > 0:
-            st.markdown(f"**Primary Residence:** ${primary_residence:,.0f}")
-        
-        # Other Real Estate
-        other_re = assets_data.get("other_real_estate", 0)
-        if other_re > 0:
-            st.markdown(f"**Other Real Estate:** ${other_re:,.0f}")
-        
-        # Other Resources
-        other_resources = assets_data.get("other_resources", 0)
-        if other_resources > 0:
-            st.markdown(f"**Other Resources:** ${other_resources:,.0f}")
-        
-        # Total
-        total_assets = (
-            checking_savings + investment_accounts + primary_residence +
-            other_re + other_resources
-        )
-        st.markdown(f"---")
-        st.markdown(f"**Total Assets:** ${total_assets:,.0f}")
-
-
-def _render_monthly_costs_tab(modules: Dict):
-    """Render monthly costs tab content."""
-    
-    from core.mcip import MCIP
-    
-    # Get care recommendation
-    recommendation = MCIP.get_care_recommendation()
-    if not recommendation:
-        st.info("Complete your Guided Care Plan to see detailed cost breakdown.")
-        return
-    
-    # Get estimated cost
-    financial_profile = MCIP.get_financial_profile()
-    if financial_profile and hasattr(financial_profile, 'estimated_monthly_cost'):
-        monthly_cost = financial_profile.estimated_monthly_cost
-    else:
-        tier_defaults = {
-            'independent': 2500,
-            'in_home': 4500,
-            'assisted_living': 5000,
-            'memory_care': 7000,
-            'memory_care_high_acuity': 9000
-        }
-        monthly_cost = tier_defaults.get(recommendation.tier, 5000)
-    
-    # Display care tier
-    tier_label = recommendation.tier.replace("_", " ").title()
-    st.markdown(f"#### {tier_label} Care Costs")
-    
-    st.metric("Base Monthly Cost", f"${monthly_cost:,.0f}")
-    st.metric("Annual Cost", f"${monthly_cost * 12:,.0f}")
-    
-    # Show flags if any
-    if recommendation.flags:
-        st.markdown("---")
-        st.markdown("**Care Complexity Factors:**")
-        for flag in recommendation.flags:
-            flag_id = flag.get('id') if isinstance(flag, dict) else flag
-            st.markdown(f"- {flag_id.replace('_', ' ').title()}")
-
-
-def _render_coverage_tab(modules: Dict):
-    """Render coverage & benefits tab content."""
-    
-    insurance_data = modules.get("health_insurance", {}).get("data", {})
-    life_insurance_data = modules.get("life_insurance", {}).get("data", {})
-    va_data = modules.get("va_benefits", {}).get("data", {})
-    
-    st.markdown("#### Coverage Sources")
-    
-    has_coverage = False
-    
-    # Medicare
-    if insurance_data and insurance_data.get("has_medicare"):
-        st.markdown("**Medicare:** ✅ Enrolled")
-        has_coverage = True
-    
-    # Long-Term Care Insurance
-    if insurance_data and insurance_data.get("has_ltc_insurance"):
-        daily_benefit = insurance_data.get("ltc_daily_benefit", 0)
-        monthly_benefit = daily_benefit * 30
-        st.markdown(f"**Long-Term Care Insurance:** ${monthly_benefit:,.0f}/month")
-        st.caption(f"Daily benefit: ${daily_benefit:.0f}")
-        has_coverage = True
-    
-    # Life Insurance
-    if life_insurance_data:
-        monthly_benefit = life_insurance_data.get("monthly_benefit", 0)
-        if monthly_benefit > 0:
-            st.markdown(f"**Life Insurance Benefit:** ${monthly_benefit:,.0f}/month")
-            has_coverage = True
-    
-    # VA Benefits
-    if va_data:
-        va_disability = va_data.get("va_disability_monthly", 0)
-        aid_attendance = va_data.get("aid_attendance_monthly", 0)
-        if va_disability > 0:
-            st.markdown(f"**VA Disability:** ${va_disability:,.0f}/month")
-            has_coverage = True
-        if aid_attendance > 0:
-            st.markdown(f"**Aid & Attendance:** ${aid_attendance:,.0f}/month")
-            has_coverage = True
-    
-    if not has_coverage:
-        st.info("Complete optional modules to add coverage sources.")
-
-
-def _render_projections_tab(modules: Dict):
-    """Render projections tab content."""
-    
-    metrics = _calculate_financial_metrics(modules)
-    
-    st.markdown("#### 30-Year Financial Runway")
-    
-    # Show key metrics
+    # Monthly breakdown (simple 3-column)
     col1, col2, col3 = st.columns(3)
+    
     with col1:
-        st.metric("Monthly Care Cost", f"${metrics['monthly_cost']:,.0f}")
+        st.markdown(f"""
+        <div style="text-align: center; padding: 16px; background: var(--surface-primary); border-radius: 8px;">
+            <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">Estimated Cost</div>
+            <div style="font-size: 20px; font-weight: 600; color: var(--text-primary);">
+                ${analysis.estimated_monthly_cost:,.0f}<span style="font-size: 14px; font-weight: 400;">/mo</span>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    
     with col2:
-        st.metric("Monthly Coverage + Income", f"${metrics['monthly_coverage']:,.0f}")
+        st.markdown(f"""
+        <div style="text-align: center; padding: 16px; background: var(--surface-primary); border-radius: 8px;">
+            <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">Total Income</div>
+            <div style="font-size: 20px; font-weight: 600; color: var(--text-primary);">
+                ${analysis.total_monthly_income + analysis.total_monthly_benefits:,.0f}<span style="font-size: 14px; font-weight: 400;">/mo</span>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    
     with col3:
-        if metrics['monthly_gap'] >= 0:
-            st.metric("Monthly Surplus", f"+${metrics['monthly_gap']:,.0f}")
-        else:
-            st.metric("Monthly Gap", f"${abs(metrics['monthly_gap']):,.0f}")
+        gap_label = "Surplus" if analysis.monthly_gap < 0 else "Gap"
+        gap_color = "var(--success-fg)" if analysis.monthly_gap < 0 else "var(--error-fg)"
+        st.markdown(f"""
+        <div style="text-align: center; padding: 16px; background: var(--surface-primary); border-radius: 8px;">
+            <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 4px;">{gap_label}</div>
+            <div style="font-size: 20px; font-weight: 600; color: {gap_color};">
+                ${abs(analysis.monthly_gap):,.0f}<span style="font-size: 14px; font-weight: 400;">/mo</span>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+
+def _render_financial_details(analysis, profile):
+    """Render financial details as clean, simple list."""
     
-    st.markdown("---")
+    st.markdown("### Financial Details")
     
-    # Calculate runway
-    if metrics['monthly_gap'] < 0 and metrics['total_assets'] > 0:
-        shortfall = abs(metrics['monthly_gap'])
-        runway_years = metrics['runway_years']
+    # Income breakdown
+    if analysis.total_monthly_income > 0:
+        st.markdown(f"**Monthly Income:** ${analysis.total_monthly_income:,.0f}")
         
-        st.markdown(f"**Asset Runway:** {runway_years:.1f} years")
-        st.markdown(f"**Total Assets Available:** ${metrics['total_assets']:,.0f}")
+        # Show breakdown if helpful
+        details = []
+        if profile.ss_monthly > 0:
+            details.append(f"Social Security ${profile.ss_monthly:,.0f}")
+        if profile.pension_monthly > 0:
+            details.append(f"Pension ${profile.pension_monthly:,.0f}")
+        if profile.employment_monthly > 0:
+            details.append(f"Employment ${profile.employment_monthly:,.0f}")
+        if profile.other_income_monthly > 0:
+            details.append(f"Other ${profile.other_income_monthly:,.0f}")
         
-        # Simple projection
-        st.markdown("---")
-        st.markdown("**Projection (with 3% annual inflation):**")
+        if details:
+            st.markdown(f"<div style='color: var(--text-secondary); font-size: 14px; margin-left: 16px;'>{', '.join(details)}</div>", unsafe_allow_html=True)
+    
+    # Benefits
+    if analysis.total_monthly_benefits > 0:
+        st.markdown(f"**Monthly Benefits:** ${analysis.total_monthly_benefits:,.0f}")
+    
+    # Assets
+    if analysis.total_liquid_assets > 0:
+        st.markdown(f"**Liquid Assets:** ${analysis.total_liquid_assets:,.0f}")
         
-        # Calculate year-by-year
-        inflation_rate = 0.03
-        remaining_assets = metrics['total_assets']
-        years_to_show = min(10, int(runway_years) + 2)
-        
-        for year in range(1, years_to_show + 1):
-            inflation_multiplier = (1 + inflation_rate) ** year
-            inflated_gap = shortfall * inflation_multiplier
-            annual_gap = inflated_gap * 12
-            remaining_assets -= annual_gap
+        # Runway if applicable
+        if analysis.runway_months is not None and analysis.runway_months > 0:
+            years = int(analysis.runway_months / 12)
+            months = int(analysis.runway_months % 12)
             
-            if remaining_assets > 0:
-                st.markdown(f"**Year {year}:** ${remaining_assets:,.0f} remaining")
+            if years > 0:
+                runway_text = f"{years} year{'s' if years != 1 else ''}"
+                if months > 0:
+                    runway_text += f", {months} month{'s' if months != 1 else ''}"
             else:
-                st.markdown(f"**Year {year}:** ⚠️ Assets depleted")
-                break
-    
-    elif metrics['monthly_gap'] >= 0:
-        st.success("✅ Your income and coverage fully cover care costs. Assets remain intact.")
-    else:
-        st.info("Complete financial modules to see detailed projections.")
+                runway_text = f"{months} month{'s' if months != 1 else ''}"
+            
+            st.markdown(f"<div style='color: var(--text-secondary); font-size: 14px; margin-left: 16px;'>Coverage runway: {runway_text}</div>", unsafe_allow_html=True)
 
 
-def _render_advisor_notes():
-    """Render optional advisor notes section."""
+def _render_action_items(analysis):
+    """Render action items as clean, simple list."""
     
-    st.markdown('<div class="section-card">', unsafe_allow_html=True)
-    st.markdown("### 💬 Advisor Notes (Optional)")
+    st.markdown("### Recommended Actions")
     
-    # Initialize in session state
-    if "cost_v2_advisor_notes" not in st.session_state:
-        st.session_state.cost_v2_advisor_notes = ""
+    # Primary recommendation
+    st.markdown(f"**{analysis.primary_recommendation}**")
     
-    notes = st.text_area(
-        "Add notes for your financial advisor or care planner:",
-        value=st.session_state.cost_v2_advisor_notes,
-        height=100,
-        placeholder="E.g., 'Would like to discuss Medicaid options' or 'Interested in home equity planning'",
-        key="advisor_notes_input",
-        label_visibility="collapsed"
-    )
+    st.markdown('<div style="margin: 16px 0;"></div>', unsafe_allow_html=True)
     
-    st.session_state.cost_v2_advisor_notes = notes
+    # Action items
+    if analysis.action_items:
+        for i, action in enumerate(analysis.action_items, 1):
+            st.markdown(f"{i}. {action}")
     
-    st.markdown('</div>', unsafe_allow_html=True)
+    # Resources (if any)
+    if analysis.resources:
+        st.markdown('<div style="margin: 24px 0;"></div>', unsafe_allow_html=True)
+        st.markdown("**Helpful Resources:**")
+        for resource in analysis.resources:
+            st.markdown(f"• {resource}")
 
 
-def _render_footer_navigation():
-    """Render fixed footer navigation."""
+def _render_navigation():
+    """Render simple navigation buttons."""
     
-    st.markdown("---")
-    
-    # Footer with auto-save message
-    st.caption("✅ Your progress is automatically saved")
-    
-    # Three-column layout for buttons
     col1, col2, col3 = st.columns([1, 1, 1])
     
     with col1:
-        if st.button("⬅️ Review Modules", use_container_width=True, key="review_modules_btn"):
-            st.session_state.cost_v2_step = "modules"
-            st.rerun()
-    
-    with col2:
-        if st.button("✅ Finalize & Continue", use_container_width=True, type="primary", key="finalize_btn"):
-            st.session_state.cost_v2_step = "exit"
+        if st.button("← Back to Assessments", use_container_width=True):
+            st.session_state.cost_v2_step = "assessments"
             st.rerun()
     
     with col3:
-        if st.button("🏠 Return to Hub", use_container_width=True, key="return_hub_btn"):
-            from core.nav import route_to
-            route_to("hub_concierge")
+        if st.button("Exit Cost Planner →", use_container_width=True):
+            st.session_state.cost_v2_step = "exit"
+            st.rerun()
