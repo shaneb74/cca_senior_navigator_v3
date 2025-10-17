@@ -259,10 +259,14 @@ def render_assessment_page(assessment_key: str, product_key: str = "cost_planner
     
     # Get sections
     sections = assessment_config.get("sections", [])
-    field_sections = [s for s in sections if s.get("type") == "fields"]
+    
+    # Separate sections by type
+    intro_sections = [s for s in sections if s.get("type") == "intro"]
+    results_sections = [s for s in sections if s.get("type") == "results"]
+    # Field sections are those that have fields but aren't intro/results
+    field_sections = [s for s in sections if s.get("fields") and s.get("type") not in ["intro", "results"]]
     
     # Render intro if exists
-    intro_sections = [s for s in sections if s.get("type") == "intro"]
     if intro_sections:
         intro = intro_sections[0]
         if intro.get("help_text"):
@@ -302,7 +306,6 @@ def render_assessment_page(assessment_key: str, product_key: str = "cost_planner
     st.markdown("---")
     
     # Calculate and show results if formula exists
-    results_sections = [s for s in sections if s.get("type") == "results"]
     if results_sections:
         results = results_sections[0]
         calculation = results.get("calculation")
