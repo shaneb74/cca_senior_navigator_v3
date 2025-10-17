@@ -252,10 +252,19 @@ def render_assessment_page(assessment_key: str, product_key: str = "cost_planner
     icon = assessment_config.get("icon", "📊")
     description = assessment_config.get("description", "")
     
-    # Header
-    st.markdown(f"# {icon} {title}")
-    st.markdown(f"*{description}*")
-    st.markdown("---")
+    # Compact header with container
+    st.markdown(f"""
+    <div style="
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 24px;
+        border-radius: 12px;
+        margin-bottom: 24px;
+        color: white;
+    ">
+        <h1 style="margin: 0; font-size: 28px;">{icon} {title}</h1>
+        <p style="margin: 8px 0 0 0; opacity: 0.9; font-size: 14px;">{description}</p>
+    </div>
+    """, unsafe_allow_html=True)
     
     # Get sections
     sections = assessment_config.get("sections", [])
@@ -266,46 +275,36 @@ def render_assessment_page(assessment_key: str, product_key: str = "cost_planner
     # Field sections are those that have fields but aren't intro/results
     field_sections = [s for s in sections if s.get("fields") and s.get("type") not in ["intro", "results"]]
     
-    # Render intro if exists
+    # Compact intro (help text only, no big info boxes at top)
     if intro_sections:
         intro = intro_sections[0]
         if intro.get("help_text"):
-            st.markdown(intro["help_text"])
-        
-        # Render intro info boxes
-        for info_box in intro.get("info_boxes", []):
-            _render_single_info_box(info_box)
-        
-        st.markdown("---")
+            st.info(f"💡 {intro['help_text']}")
     
-    # Render all field sections at once
+    # Render all field sections in an expander for cleaner look
     for idx, section in enumerate(field_sections):
         section_title = section.get("title", f"Section {idx + 1}")
         section_icon = section.get("icon", "📝")
         
-        st.markdown(f"### {section_icon} {section_title}")
-        
-        # Render fields for this section
-        new_values = _render_fields_for_page(section, state)
-        if new_values:
-            state.update(new_values)
+        # Use expander for each section (collapsed by default except first)
+        with st.expander(f"{section_icon} {section_title}", expanded=(idx == 0)):
+            # Render fields for this section
+            new_values = _render_fields_for_page(section, state)
+            if new_values:
+                state.update(new_values)
+                
+                # Save to tiles for persistence
+                tiles = st.session_state.setdefault("tiles", {})
+                product_tiles = tiles.setdefault(product_key, {})
+                assessments_state = product_tiles.setdefault("assessments", {})
+                assessments_state[assessment_key] = state.copy()
             
-            # Save to tiles for persistence
-            tiles = st.session_state.setdefault("tiles", {})
-            product_tiles = tiles.setdefault(product_key, {})
-            assessments_state = product_tiles.setdefault("assessments", {})
-            assessments_state[assessment_key] = state.copy()
-        
-        # Render section info boxes
-        for info_box in section.get("info_boxes", []):
-            _render_single_info_box(info_box)
-        
-        # Add spacing between sections
-        st.markdown("<div style='margin: 32px 0;'></div>", unsafe_allow_html=True)
+            # Render section info boxes (compact, at bottom of expander)
+            for info_box in section.get("info_boxes", []):
+                _render_single_info_box(info_box)
     
-    st.markdown("---")
     
-    # Calculate and show results if formula exists
+    # Calculate and show results if formula exists (compact summary at top)
     if results_sections:
         results = results_sections[0]
         calculation = results.get("calculation")
@@ -331,14 +330,30 @@ def render_assessment_page(assessment_key: str, product_key: str = "cost_planner
                 else:
                     formatted = str(total)
                 
-                # Display result
+                # Display result in a nice card at the top
                 result_label = calculation.get("label", "Total")
-                st.success(f"**{result_label}:** {formatted}")
+                st.markdown(f"""
+                <div style="
+                    background: #f0fdf4;
+                    border-left: 4px solid #22c55e;
+                    padding: 16px 20px;
+                    border-radius: 8px;
+                    margin: 24px 0;
+                ">
+                    <div style="font-size: 14px; color: #166534; font-weight: 600; margin-bottom: 4px;">
+                        {result_label}
+                    </div>
+                    <div style="font-size: 28px; color: #15803d; font-weight: 700;">
+                        {formatted}
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
     
     # Mark as complete
     state["status"] = "done"
     
-    # Render navigation at bottom
+    # Compact navigation at bottom
+    st.markdown("<div style='margin: 32px 0;'></div>", unsafe_allow_html=True)
     _render_page_navigation(assessment_key, product_key, assessment_config)
 
 
@@ -469,26 +484,36 @@ def _render_page_navigation(assessment_key: str, product_key: str, assessment_co
     assets_complete = _is_assessment_complete("assets", product_key)
     required_complete = income_complete and assets_complete
     
-    st.markdown("---")
-    st.markdown("### Navigation")
-    
-    # Two-column layout: Back to Hub | Expert Review
+    # Compact navigation
     col1, col2 = st.columns(2)
     
     # Back to Hub button
     with col1:
-        if st.button("← Back to Assessments", use_container_width=True):
+        if st.button("← Back to Assessments", use_container_width=True, type="secondary"):
             st.session_state.cost_v2_step = "assessments"
             st.rerun()
     
     # Expert Review button
     with col2:
         if required_complete:
-            if st.button("🚀 Go to Expert Review →", use_container_width=True, type="primary"):
+            if st.button("🚀 Expert Review →", use_container_width=True, type="primary"):
                 st.session_state.cost_v2_step = "expert_review"
                 st.rerun()
         else:
-            st.warning("Complete Income & Assets first")
+            # Disabled state with tooltip
+            st.markdown("""
+            <div style="
+                background: #fef3c7;
+                border: 1px solid #fbbf24;
+                border-radius: 6px;
+                padding: 12px;
+                text-align: center;
+                font-size: 14px;
+                color: #92400e;
+            ">
+                ⚠️ Complete Income & Assets first
+            </div>
+            """, unsafe_allow_html=True)
 
 
 __all__ = ["render_assessment_hub", "render_assessment_page"]
