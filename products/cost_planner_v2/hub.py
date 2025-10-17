@@ -130,6 +130,27 @@ def render():
                     "data": None
                 }
         
+        # Sync with actual assessment engine state (new Phase 2 assessments)
+        for module in visible_modules:
+            module_key = module.get("key")
+            assessment_state_key = f"cost_planner_v2_{module_key}"
+            
+            if assessment_state_key in st.session_state:
+                assessment_state = st.session_state[assessment_state_key]
+                
+                # Check if assessment completed (has completed_at field)
+                if assessment_state.get("completed_at"):
+                    st.session_state.cost_v2_modules[module_key]["status"] = "completed"
+                    st.session_state.cost_v2_modules[module_key]["progress"] = 100
+                    st.session_state.cost_v2_modules[module_key]["data"] = assessment_state.get("responses", {})
+                elif assessment_state.get("current_section_index", 0) > 0:
+                    # In progress
+                    total_sections = len(assessment_state.get("sections", []))
+                    current = assessment_state.get("current_section_index", 0)
+                    progress = int((current / total_sections) * 100) if total_sections > 0 else 0
+                    st.session_state.cost_v2_modules[module_key]["status"] = "in_progress"
+                    st.session_state.cost_v2_modules[module_key]["progress"] = progress
+        
         modules_state = st.session_state.cost_v2_modules
         
         # Calculate overall progress (only count visible modules)
