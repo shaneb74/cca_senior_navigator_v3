@@ -223,6 +223,122 @@ def _render_assessment(assessment_key: str, product_key: str) -> None:
     )
 
 
+def render_assessment_page(assessment_key: str, product_key: str = "cost_planner_v2") -> None:
+    """
+    Render a full assessment page with all sections visible at once.
+    
+    This replaces the hub-based multi-step pattern with a single scrollable page
+    showing intro, all field sections, and calculated results together.
+    
+    Args:
+        assessment_key: Assessment to render (e.g., 'income', 'assets')
+        product_key: Product key for state management
+    """
+    
+    # Load assessment config
+    assessment_config = _load_assessment_config(assessment_key, product_key)
+    
+    if not assessment_config:
+        st.error(f"⚠️ Assessment '{assessment_key}' not found.")
+        return
+    
+    # Initialize state
+    state_key = f"{product_key}_{assessment_key}"
+    st.session_state.setdefault(state_key, {})
+    state = st.session_state[state_key]
+    
+    # Get assessment metadata
+    title = assessment_config.get("title", "Assessment")
+    icon = assessment_config.get("icon", "📊")
+    description = assessment_config.get("description", "")
+    
+    # Header
+    st.markdown(f"# {icon} {title}")
+    st.markdown(f"*{description}*")
+    st.markdown("---")
+    
+    # Get sections
+    sections = assessment_config.get("sections", [])
+    field_sections = [s for s in sections if s.get("type") == "fields"]
+    
+    # Render intro if exists
+    intro_sections = [s for s in sections if s.get("type") == "intro"]
+    if intro_sections:
+        intro = intro_sections[0]
+        if intro.get("help_text"):
+            st.markdown(intro["help_text"])
+        
+        # Render intro info boxes
+        for info_box in intro.get("info_boxes", []):
+            _render_single_info_box(info_box)
+        
+        st.markdown("---")
+    
+    # Render all field sections at once
+    for idx, section in enumerate(field_sections):
+        section_title = section.get("title", f"Section {idx + 1}")
+        section_icon = section.get("icon", "📝")
+        
+        st.markdown(f"### {section_icon} {section_title}")
+        
+        # Render fields for this section
+        new_values = _render_fields_for_page(section, state)
+        if new_values:
+            state.update(new_values)
+            
+            # Save to tiles for persistence
+            tiles = st.session_state.setdefault("tiles", {})
+            product_tiles = tiles.setdefault(product_key, {})
+            assessments_state = product_tiles.setdefault("assessments", {})
+            assessments_state[assessment_key] = state.copy()
+        
+        # Render section info boxes
+        for info_box in section.get("info_boxes", []):
+            _render_single_info_box(info_box)
+        
+        # Add spacing between sections
+        st.markdown("<div style='margin: 32px 0;'></div>", unsafe_allow_html=True)
+    
+    st.markdown("---")
+    
+    # Calculate and show results if formula exists
+    results_sections = [s for s in sections if s.get("type") == "results"]
+    if results_sections:
+        results = results_sections[0]
+        calculation = results.get("calculation")
+        
+        if calculation:
+            calc_type = calculation.get("type")
+            
+            if calc_type == "sum":
+                # Calculate sum
+                field_keys = calculation.get("fields", [])
+                total = 0
+                for field_key in field_keys:
+                    value = state.get(field_key, 0)
+                    if isinstance(value, (int, float)):
+                        total += value
+                
+                # Format result
+                result_format = calculation.get("format", "currency")
+                if result_format == "currency":
+                    formatted = f"${total:,.0f}"
+                elif result_format == "currency_monthly":
+                    formatted = f"${total:,.0f}/month"
+                else:
+                    formatted = str(total)
+                
+                # Display result
+                result_label = calculation.get("label", "Total")
+                st.success(f"**{result_label}:** {formatted}")
+    
+    # Mark as complete
+    state["status"] = "done"
+    
+    # Render navigation at bottom
+    _render_page_navigation(assessment_key, product_key, assessment_config)
+
+
 def _load_all_assessments(product_key: str) -> List[Dict[str, Any]]:
     """Load all assessment configurations."""
     
@@ -315,4 +431,153 @@ def _get_assessment_progress(assessment_key: str, product_key: str) -> int:
     return min(progress, 100)
 
 
-__all__ = ["render_assessment_hub"]
+def _render_fields_for_page(section: Dict[str, Any], state: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Render fields for a section in page mode (all fields visible at once).
+    Returns dict of updated field values.
+    """
+    from core.assessment_engine import _render_single_field, _check_field_visibility
+    
+    fields = section.get("fields", [])
+    if not fields:
+        st.info("No fields defined for this section.")
+        return {}
+    
+    new_values = {}
+    flags = st.session_state.get("flags", {})
+    
+    # Handle two-column layout if specified
+    layout = section.get("layout", "single")
+    
+    if layout == "two_column":
+        col1, col2 = st.columns(2)
+        for idx, field in enumerate(fields):
+            # Check visibility
+            if not _check_field_visibility(field, state, flags):
+                continue
+            
+            # Alternate columns
+            with (col1 if idx % 2 == 0 else col2):
+                value = _render_single_field(field, state)
+                if value is not None:
+                    new_values[field["key"]] = value
+    else:
+        # Single column
+        for field in fields:
+            # Check visibility
+            if not _check_field_visibility(field, state, flags):
+                continue
+            
+            value = _render_single_field(field, state)
+            if value is not None:
+                new_values[field["key"]] = value
+    
+    return new_values
+
+
+def _render_single_info_box(info_box: Dict[str, Any]) -> None:
+    """Render a single info box."""
+    variant = info_box.get("variant", "info")
+    message = info_box.get("message", "")
+    
+    # Map variants to Streamlit methods
+    if variant == "success":
+        st.success(message)
+    elif variant == "warning":
+        st.warning(message)
+    elif variant == "error":
+        st.error(message)
+    else:
+        st.info(message)
+
+
+def _render_page_navigation(assessment_key: str, product_key: str, assessment_config: Dict[str, Any]) -> None:
+    """Render navigation buttons at bottom of assessment page."""
+    
+    # Define assessment order
+    assessment_order = ["income", "assets", "health_insurance", "life_insurance", "va_benefits", "medicaid_navigation"]
+    
+    # Get flags for conditional assessments
+    flags = st.session_state.get("flags", {})
+    is_veteran = flags.get("is_veteran", False)
+    medicaid_interest = flags.get("medicaid_planning_interest", False)
+    
+    # Filter order based on flags
+    visible_order = []
+    for key in assessment_order:
+        if key == "va_benefits" and not is_veteran:
+            continue
+        if key == "medicaid_navigation" and not medicaid_interest:
+            continue
+        visible_order.append(key)
+    
+    # Find current index
+    try:
+        current_idx = visible_order.index(assessment_key)
+    except ValueError:
+        current_idx = 0
+    
+    # Determine previous and next
+    prev_key = visible_order[current_idx - 1] if current_idx > 0 else None
+    next_key = visible_order[current_idx + 1] if current_idx < len(visible_order) - 1 else None
+    
+    # Check if required assessments complete (income and assets)
+    income_complete = _is_assessment_complete("income", product_key)
+    assets_complete = _is_assessment_complete("assets", product_key)
+    required_complete = income_complete and assets_complete
+    
+    st.markdown("---")
+    st.markdown("### Navigation")
+    
+    # Create button layout
+    if next_key:
+        col1, col2, col3 = st.columns(3)
+    else:
+        # Last assessment - show Expert Review button
+        col1, col2 = st.columns(2)
+    
+    # Previous button
+    with col1:
+        if prev_key:
+            prev_config = _load_assessment_config(prev_key, product_key)
+            prev_title = prev_config.get("title", "Previous") if prev_config else "Previous"
+            if st.button(f"← {prev_title}", use_container_width=True):
+                st.session_state.cost_v2_step = f"assessment_{prev_key}"
+                st.rerun()
+        else:
+            # First assessment - back to intro
+            if st.button("← Back to Intro", use_container_width=True):
+                st.session_state.cost_v2_step = "intro"
+                st.rerun()
+    
+    # Next button or Expert Review
+    if next_key:
+        with col2:
+            next_config = _load_assessment_config(next_key, product_key)
+            next_title = next_config.get("title", "Next") if next_config else "Next"
+            
+            # Disable next if current assessment is required and not complete
+            is_required = assessment_config.get("required", False)
+            
+            if st.button(f"{next_title} →", use_container_width=True, type="primary"):
+                st.session_state.cost_v2_step = f"assessment_{next_key}"
+                st.rerun()
+        
+        # Optional: Expert Review bypass on non-last pages
+        with col3:
+            if required_complete:
+                if st.button("🚀 Expert Review", use_container_width=True, type="secondary"):
+                    st.session_state.cost_v2_step = "expert_review"
+                    st.rerun()
+    else:
+        # Last assessment - prominent Expert Review button
+        with col2:
+            if required_complete:
+                if st.button("🚀 Go to Expert Review →", use_container_width=True, type="primary"):
+                    st.session_state.cost_v2_step = "expert_review"
+                    st.rerun()
+            else:
+                st.warning("⚠️ Please complete Income and Assets assessments before proceeding to Expert Review")
+
+
+__all__ = ["render_assessment_hub", "render_assessment_page"]
