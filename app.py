@@ -46,7 +46,7 @@ def _sanitize_query_params_for_welcome(current_route: str) -> None:
         st.query_params[key] = value
 
 
-def inject_css():
+def inject_css() -> None:
     """Load global CSS and module-specific CSS."""
     try:
         # Load global CSS
@@ -54,8 +54,13 @@ def inject_css():
             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
         
         # Load module CSS (must come after global to override)
+        # Adding cache-busting comment to force browser reload
         with open("assets/css/modules.css", "r", encoding="utf-8") as f:
-            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+            css_content = f.read()
+            # Add timestamp comment to bust cache
+            import time
+            cache_buster = f"/* Cache bust: {int(time.time())} */\n"
+            st.markdown(f"<style>{cache_buster}{css_content}</style>", unsafe_allow_html=True)
     
     except FileNotFoundError:
         # no-op on Cloud if path differs; don't crash
