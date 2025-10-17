@@ -13,6 +13,13 @@ Design Philosophy:
 from typing import Dict
 import streamlit as st
 from core.ui import render_navi_panel_v2
+from products.cost_planner_v2.utils.financial_helpers import (
+    normalize_income_data,
+    normalize_asset_data,
+    calculate_total_monthly_income,
+    calculate_total_asset_value,
+    calculate_total_asset_debt,
+)
 
 
 def render():
@@ -135,25 +142,25 @@ def _calculate_completion_metrics() -> Dict:
     insurance_data = modules.get("health_insurance", {}).get("data", {})
     life_insurance_data = modules.get("life_insurance", {}).get("data", {})
     
-    # Calculate total monthly income
-    total_monthly_income = (
-        income_data.get("ss_monthly", 0) +
-        income_data.get("pension_monthly", 0) +
-        income_data.get("employment_monthly", 0) +
-        income_data.get("investment_monthly", 0) +
-        income_data.get("other_monthly", 0) +
-        (va_data.get("va_disability_monthly", 0) if va_data else 0) +
-        (va_data.get("aid_attendance_monthly", 0) if va_data else 0)
-    )
+    # Normalize income and asset data for consistent calculations
+    normalized_income = normalize_income_data(income_data)
+    normalized_assets = normalize_asset_data(assets_data)
     
-    # Calculate total assets
-    total_assets = (
-        assets_data.get("checking_savings", 0) +
-        assets_data.get("investment_accounts", 0) +
-        assets_data.get("primary_residence_value", 0) +
-        assets_data.get("other_real_estate", 0) +
-        assets_data.get("other_resources", 0)
-    )
+    base_monthly_income = calculate_total_monthly_income(normalized_income)
+    
+    va_monthly_benefit = 0.0
+    if va_data:
+        va_monthly_benefit = (
+            va_data.get("va_disability_monthly", 0.0) +
+            va_data.get("aid_attendance_monthly", 0.0) +
+            va_data.get("va_pension_monthly", 0.0)
+        )
+    
+    total_monthly_income = base_monthly_income
+    
+    total_assets = calculate_total_asset_value(normalized_assets)
+    total_asset_debt = calculate_total_asset_debt(normalized_assets)
+    net_assets = max(total_assets - total_asset_debt, 0.0)
     
     # Get monthly care cost from MCIP
     from core.mcip import MCIP
@@ -174,10 +181,14 @@ def _calculate_completion_metrics() -> Dict:
         estimated_monthly_cost = tier_defaults.get(recommendation.tier, 5000)
     
     # Calculate total coverage
-    total_coverage = (
-        (insurance_data.get("ltc_daily_benefit", 0) * 30 if insurance_data and insurance_data.get("has_ltc_insurance") else 0) +
-        (life_insurance_data.get("monthly_benefit", 0) if life_insurance_data else 0)
+    ltc_monthly = (
+        insurance_data.get("ltc_daily_benefit", 0) * 30
+        if insurance_data and insurance_data.get("has_ltc_insurance")
+        else 0
     )
+    life_monthly = life_insurance_data.get("monthly_benefit", 0) if life_insurance_data else 0
+    
+    total_coverage = ltc_monthly + life_monthly + va_monthly_benefit
     
     # Calculate gap
     monthly_coverage = total_monthly_income + total_coverage
@@ -187,7 +198,10 @@ def _calculate_completion_metrics() -> Dict:
         "monthly_cost": estimated_monthly_cost,
         "monthly_coverage": monthly_coverage,
         "monthly_gap": monthly_gap,
-        "total_assets": total_assets
+        "total_assets": total_assets,
+        "net_assets": net_assets,
+        "va_monthly_benefit": va_monthly_benefit,
+        "base_monthly_income": base_monthly_income
     }
 
 
@@ -207,7 +221,7 @@ def _render_whats_next_section():
         if st.button("Schedule Meeting", use_container_width=True, type="primary", key="schedule_advisor_btn"):
             from core.nav import route_to
             st.session_state.cost_planner_v2_complete = True
-            route_to("pfma_v2")
+            route_to("pfma_v3")
         st.markdown('</div>', unsafe_allow_html=True)
     
     with col2:

@@ -1,0 +1,65 @@
+{
+  "key": "housing",
+  "title": "Housing Preferences",
+  "icon": "🏠",
+  "description": "Help us understand your housing needs and preferences for care settings",
+  "fields": [
+    {
+      "key": "care_preference",
+      "label": "Preferred Care Setting",
+      "type": "select",
+      "options": [
+        "Stay at home with in-home care",
+        "Assisted living facility",
+        "Memory care facility",
+        "Nursing home / Skilled nursing",
+        "Independent living community",
+        "Move in with family",
+        "Unsure / Need guidance"
+      ],
+      "prefill_from": "gcp.results.recommendation",
+      "required": false,
+      "help": "Your ideal care setting"
+    },
+    {
+      "key": "location_preference",
+      "label": "Location Preference",
+      "type": "text",
+      "placeholder": "City, state, or zip code",
+      "required": false,
+      "help": "Where would you like to receive care or find housing?"
+    },
+    {
+      "key": "move_timeline",
+      "label": "Timeline for Move / Care Start",
+      "type": "select",
+      "options": [
+        "Immediate (0-30 days)",
+        "1-3 months",
+        "3-6 months",
+        "6-12 months",
+        "Planning ahead (12+ months)",
+        "Not planning to move"
+      ],
+      "required": false,
+      "help": "How soon do you need care or housing?"
+    },
+    {
+      "key": "housing_priorities",
+      "label": "Housing Priorities",
+      "type": "multiselect",
+      "options": [
+        "Close to family",
+        "Affordable cost",
+        "High-quality care",
+        "Social activities",
+        "Medical services on-site",
+        "Pet-friendly",
+        "Private room/apartment",
+        "Access to outdoors"
+      ],
+      "required": false,
+      "help": "What matters most to you? (Select all that apply)"
+    }
+  ]
+}

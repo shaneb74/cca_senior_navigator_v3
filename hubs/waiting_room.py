@@ -1,10 +1,12 @@
 # hubs/waiting_room.py
 import html
 import streamlit as st
+from typing import Optional
 
 from core.additional_services import get_additional_services
 from core.base_hub import render_dashboard_body
 from core.hub_guide import compute_hub_guide
+from core.mcip import MCIP
 from core.navi import render_navi_panel
 from core.product_tile import ProductTileHub
 from ui.header_simple import render_header_simple
@@ -61,6 +63,65 @@ def _get_trivia_progress():
     return int((completed_count / total_quizzes) * 100)
 
 
+def _build_advisor_prep_tile() -> Optional[ProductTileHub]:
+    """Build Advisor Prep tile if PFMA booking exists.
+    
+    Returns:
+        ProductTileHub or None if not available
+    """
+    prep_summary = MCIP.get_advisor_prep_summary()
+    
+    if not prep_summary.get("available"):
+        return None  # Don't show tile until appointment booked
+    
+    sections_complete = prep_summary.get("sections_complete", [])
+    progress = prep_summary.get("progress", 0)
+    next_section = prep_summary.get("next_section")
+    appt_context = prep_summary.get("appointment_context", "")
+    
+    # Build description
+    if progress == 100:
+        desc = "✓ All prep sections complete — you're ready!"
+        primary_label = "Review Prep"
+    elif progress > 0:
+        desc = f"{len(sections_complete)} of 4 sections complete"
+        primary_label = "Continue Prep"
+    else:
+        desc = "Help your advisor prepare for your consultation"
+        primary_label = "Start Prep"
+    
+    # Build badges
+    badges = []
+    if progress == 100:
+        badges = [{"label": "Ready", "tone": "success"}]
+    elif progress > 0:
+        badges = [{"label": f"{len(sections_complete)}/4", "tone": "info"}]
+    
+    return ProductTileHub(
+        key="advisor_prep",
+        title="Advisor Prep",
+        desc=desc,
+        blurb=appt_context,
+        badge_text="OPTIONAL",
+        image_square="advisor_prep.png",  # Note: image file needs to be added
+        meta_lines=["4 sections • 5-10 min total"],
+        badges=badges,
+        primary_label=primary_label,
+        primary_route="?page=advisor_prep",
+        primary_go="advisor_prep",
+        secondary_label=None,
+        secondary_go=None,
+        progress=progress,
+        status_text="✓ Complete" if progress == 100 else None,
+        variant="purple",
+        order=6,  # After Trivia (5), before Appointment (10)
+        locked=False,
+        recommended_in_hub="waiting_room",
+        recommended_total=3,
+        recommended_order=1  # Recommend first after booking
+    )
+
+
 def render(ctx=None) -> None:
     person_name = st.session_state.get("person_name", "").strip()
     # Use person's name if available, otherwise use neutral "you"
@@ -79,6 +140,9 @@ def render(ctx=None) -> None:
     trivia_badges = _get_trivia_badges()
     trivia_progress = _get_trivia_progress()
     
+    # Build advisor prep tile (conditional on PFMA booking)
+    advisor_prep_tile = _build_advisor_prep_tile()
+    
     cards = [
         ProductTileHub(
             key="senior_trivia",
@@ -94,6 +158,8 @@ def render(ctx=None) -> None:
             variant="teal",
             order=5,  # First tile
         ),
+        # Conditionally add Advisor Prep tile (order=6)
+        advisor_prep_tile,
         ProductTileHub(
             key="appointment",
             title="Your Upcoming Appointment",
@@ -148,6 +214,9 @@ def render(ctx=None) -> None:
             order=40,
         ),
     ]
+    
+    # Filter out None tiles (Advisor Prep may be None if appointment not booked)
+    cards = [c for c in cards if c is not None]
 
     guide = compute_hub_guide("waiting_room")
     additional = get_additional_services("waiting_room")

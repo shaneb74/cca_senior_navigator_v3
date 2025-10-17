@@ -122,41 +122,73 @@ FLAG_REGISTRY: Dict[str, Dict[str, str]] = {
         "category": "cognitive",
         "severity": "high",
         "description": "Severe memory issues requiring specialized memory care (+20% cost)",
+        "cost_multiplier": 1.20,
     },
     "mobility_limited": {
         "category": "mobility",
         "severity": "high",
         "description": "Wheelchair or bedbound requiring lift equipment (+15% cost)",
+        "cost_multiplier": 1.15,
     },
     "adl_support_high": {
         "category": "adl",
         "severity": "high",
         "description": "Extensive ADL support required (+10% cost)",
+        "cost_multiplier": 1.10,
     },
     "medication_management": {
         "category": "health",
         "severity": "moderate",
         "description": "Complex medication regimen requiring professional management (+8% cost)",
+        "cost_multiplier": 1.08,
     },
     "behavioral_concerns": {
         "category": "cognitive",
         "severity": "high",
         "description": "Behavioral issues requiring specialized management (+12% cost)",
+        "cost_multiplier": 1.12,
+    },
+    "diabetic_care": {
+        "category": "health",
+        "severity": "moderate",
+        "description": "Diabetes management and monitoring requiring specialized care",
+        "cost_multiplier": 1.05,
+    },
+    "wound_care": {
+        "category": "health",
+        "severity": "moderate",
+        "description": "Specialized wound care requiring skilled nursing",
+        "cost_multiplier": 1.08,
+    },
+    "oxygen_therapy": {
+        "category": "health",
+        "severity": "moderate",
+        "description": "Supplemental oxygen therapy requiring equipment and monitoring",
+        "cost_multiplier": 1.05,
+    },
+    "hospice_palliative": {
+        "category": "health",
+        "severity": "high",
+        "description": "End-of-life or comfort-focused palliative care",
+        "cost_multiplier": 1.15,
     },
     "falls_risk": {
         "category": "safety",
         "severity": "high",
         "description": "Multiple falls requiring enhanced safety measures (+8% cost)",
+        "cost_multiplier": 1.08,
     },
     "chronic_conditions": {
         "category": "health",
         "severity": "moderate",
         "description": "Multiple chronic conditions requiring coordinated care (+10% cost)",
+        "cost_multiplier": 1.10,
     },
     "safety_concerns": {
         "category": "safety",
         "severity": "moderate",
         "description": "Safety monitoring needed (+10% cost)",
+        "cost_multiplier": 1.10,
     },
     
     # SUPPORT SYSTEM FLAGS
@@ -191,6 +223,19 @@ FLAG_REGISTRY: Dict[str, Dict[str, str]] = {
 
 # Quick lookup set for validation
 VALID_FLAGS: Set[str] = set(FLAG_REGISTRY.keys())
+
+# Cost model flags (used by Cost Planner for pricing modifiers)
+# Applied multiplicatively in order after base + ZIP adjustments
+COST_MODEL_FLAGS: List[str] = [
+    "memory_support",         # +20%
+    "mobility_limited",       # +15%
+    "behavioral_concerns",    # +12%
+    "adl_support_high",       # +10%
+    "chronic_conditions",     # +10%
+    "safety_concerns",        # +10%
+    "medication_management",  # +8%
+    "falls_risk",             # +8%
+]
 
 
 def get_flag_info(flag_id: str) -> Optional[Dict[str, str]]:
@@ -371,6 +416,7 @@ def has_all_flags(flag_names: list) -> bool:
 __all__ = [
     "FLAG_REGISTRY",
     "VALID_FLAGS",
+    "COST_MODEL_FLAGS",
     "get_flag_info",
     "validate_flags",
     "get_flags_by_category",

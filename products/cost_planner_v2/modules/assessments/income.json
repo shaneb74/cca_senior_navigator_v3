@@ -22,6 +22,60 @@
       ]
     },
     {
+      "id": "household_context",
+      "title": "Household Context",
+      "icon": "👥",
+      "help_text": "Tell me about anyone who shares income or expenses with you.",
+      "layout": "single_column",
+      "fields": [
+        {
+          "key": "has_partner",
+          "label": "Do you have a spouse or partner involved in your finances?",
+          "type": "select",
+          "required": false,
+          "options": [
+            {"value": "no_partner", "label": "No partner"},
+            {"value": "partner_separate", "label": "Yes, but we keep finances separate"},
+            {"value": "partner_shared", "label": "Yes, we share income and expenses"}
+          ],
+          "default": "no_partner",
+          "help": "This helps me understand whether to account for shared household income."
+        },
+        {
+          "key": "partner_income_monthly",
+          "label": "Partner's Monthly Contribution Toward Care",
+          "type": "currency",
+          "required": false,
+          "min": 0,
+          "max": 50000,
+          "step": 100,
+          "default": 0,
+          "help": "If your spouse/partner will help cover care, enter the amount they can reliably contribute each month.",
+          "visible_if": {
+            "field": "has_partner",
+            "equals": "partner_shared"
+          }
+        },
+        {
+          "key": "shared_finance_notes",
+          "label": "Anything important about how you share finances?",
+          "type": "textarea",
+          "required": false,
+          "help": "Mention separate accounts, legal restrictions, or other details that affect how shared income can be used.",
+          "visible_if": {
+            "field": "has_partner",
+            "not_equals": "no_partner"
+          }
+        }
+      ],
+      "info_boxes": [
+        {
+          "type": "info",
+          "message": "👥 If you keep finances separate, note what is realistically available for care so we can build the right plan."
+        }
+      ]
+    },
+    {
       "id": "social_security",
       "title": "Social Security Benefits",
       "icon": "🏛️",
@@ -121,9 +175,57 @@
       "id": "other_income",
       "title": "Other Income Sources",
       "icon": "💵",
-      "help_text": "Family support, trust distributions, VA benefits, etc.",
-      "layout": "single_column",
+      "help_text": "Break out any additional income so we can gauge reliability and flexibility.",
+      "layout": "two_column",
       "fields": [
+        {
+          "key": "retirement_withdrawals_monthly",
+          "label": "Retirement Account Withdrawals (Monthly Average)",
+          "type": "currency",
+          "required": false,
+          "min": 0,
+          "max": 50000,
+          "step": 100,
+          "default": 0,
+          "help": "401(k), IRA, or other retirement draws you can rely on each month",
+          "column": 1
+        },
+        {
+          "key": "rental_income_monthly",
+          "label": "Rental or Business Income (Monthly)",
+          "type": "currency",
+          "required": false,
+          "min": 0,
+          "max": 50000,
+          "step": 100,
+          "default": 0,
+          "help": "Net monthly income from rentals, business ownership, or royalties",
+          "column": 2
+        },
+        {
+          "key": "ltc_insurance_monthly",
+          "label": "Long-Term Care or Disability Insurance Benefits",
+          "type": "currency",
+          "required": false,
+          "min": 0,
+          "max": 50000,
+          "step": 100,
+          "default": 0,
+          "help": "Monthly payout from long-term care, disability, or similar insurance",
+          "column": 1
+        },
+        {
+          "key": "family_support_monthly",
+          "label": "Family or Other Support (Monthly)",
+          "type": "currency",
+          "required": false,
+          "min": 0,
+          "max": 50000,
+          "step": 100,
+          "default": 0,
+          "help": "Contributions from family, friends, or trusts dedicated to care costs",
+          "column": 2
+        },
         {
           "key": "other_monthly",
           "label": "Other Monthly Income",
@@ -133,13 +235,62 @@
           "max": 50000,
           "step": 100,
           "default": 0,
-          "help": "Family support, trust distributions, VA benefits, or other income"
+          "help": "VA benefits, reverse mortgage payouts, or anything else not listed",
+          "column": 1
         }
       ],
       "info_boxes": [
         {
           "type": "info",
-          "message": "💡 Examples: Family support from adult children, trust distributions, VA Aid & Attendance ($2,431/month in 2024), reverse mortgage payments (age 62+)."
+          "message": "💡 Separating each source helps flag what is guaranteed vs. needs follow-up (e.g., trust distributions, VA Aid & Attendance, reverse mortgage payments)."
+        }
+      ]
+    },
+    {
+      "id": "irregular_income",
+      "title": "Periodic or Lump-Sum Income",
+      "icon": "🗓️",
+      "help_text": "Some income isn't monthly. Capture anything you draw quarterly, annually, or as-needed.",
+      "layout": "single_column",
+      "fields": [
+        {
+          "key": "periodic_income_avg_monthly",
+          "label": "Average Monthly Amount from Periodic Income",
+          "type": "currency",
+          "required": false,
+          "min": 0,
+          "max": 50000,
+          "step": 100,
+          "default": 0,
+          "help": "Take the amount you typically receive in a year and divide by 12 so we can include it in planning."
+        },
+        {
+          "key": "periodic_income_frequency",
+          "label": "How often does this periodic income arrive?",
+          "type": "select",
+          "required": false,
+          "options": [
+            {"value": "monthly", "label": "Monthly"},
+            {"value": "quarterly", "label": "Quarterly"},
+            {"value": "semi_annual", "label": "Semi-annual"},
+            {"value": "annual", "label": "Annual"},
+            {"value": "as_needed", "label": "Only when needed"}
+          ],
+          "default": "annual",
+          "help": "This lets me see if the funds are predictable or need extra planning."
+        },
+        {
+          "key": "periodic_income_notes",
+          "label": "Details about periodic or lump-sum income",
+          "type": "textarea",
+          "required": false,
+          "help": "Include things like required minimum distributions, dividend schedules, or plans to sell assets for cash."
+        }
+      ],
+      "info_boxes": [
+        {
+          "type": "info",
+          "message": "🧮 Need a hand? Example: $6,000 RMD paid annually ≈ $500/month. Call out anything with penalties or timing constraints."
         }
       ]
     },
@@ -154,7 +305,7 @@
   "summary": {
     "type": "calculated",
     "label": "Total Monthly Income",
-    "formula": "sum(ss_monthly, pension_monthly, employment_monthly, other_monthly)",
+    "formula": "sum(ss_monthly, pension_monthly, employment_monthly, retirement_withdrawals_monthly, rental_income_monthly, ltc_insurance_monthly, family_support_monthly, other_monthly, partner_income_monthly, periodic_income_avg_monthly)",
     "display_format": "${:,.0f}/month"
   },
   "output_contract": {
@@ -162,7 +313,17 @@
     "pension_monthly": "number",
     "employment_status": "string",
     "employment_monthly": "number",
+    "has_partner": "string",
+    "partner_income_monthly": "number",
+    "shared_finance_notes": "string",
+    "retirement_withdrawals_monthly": "number",
+    "rental_income_monthly": "number",
+    "ltc_insurance_monthly": "number",
+    "family_support_monthly": "number",
     "other_monthly": "number",
+    "periodic_income_avg_monthly": "number",
+    "periodic_income_frequency": "string",
+    "periodic_income_notes": "string",
     "total_monthly_income": "calculated"
   }
 }
