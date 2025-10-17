@@ -275,6 +275,7 @@ def _award_and_persist_badge(module_key: str, badge_name: str, badge_level: str,
         trivia_hub_tile = tiles_legacy.setdefault("senior_trivia", {})
         
         # Calculate aggregate progress (quizzes completed / total quizzes)
+        # Note: Condition-triggered quizzes (diabetes, COPD, etc.) are tracked but not required for 100%
         total_quizzes = 5  # truths_myths, music_trivia, medicare_quiz, healthy_habits, community_challenge
         completed_count = len(progress["badges_earned"])
         progress_pct = int((completed_count / total_quizzes) * 100)
@@ -298,6 +299,40 @@ def _award_and_persist_badge(module_key: str, badge_name: str, badge_level: str,
             st.success(f"🎉 Badge upgraded to **{badge_name}**!")
         else:
             st.success(f"🎉 You earned the **{badge_name}** badge!")
+
+
+def _has_diabetes_condition() -> bool:
+    """Check if user has diabetes as a chronic condition.
+    
+    Checks:
+    1. Primary: medical.conditions.chronic[] contains diabetes
+    2. Alternate: chronic_present flag + diabetes in conditions
+    
+    Returns:
+        True if diabetes condition is present
+    """
+    try:
+        from core.flag_manager import get_chronic_conditions, is_active
+        
+        # Check chronic conditions list for diabetes
+        conditions = get_chronic_conditions()
+        for condition in conditions:
+            if condition.get("code") == "diabetes":
+                return True
+        
+        # Alternate: check if chronic_present flag active AND diabetes in list
+        # (handles edge case where flag exists but condition list not yet synced)
+        if is_active("chronic_present"):
+            # Recheck conditions list in case of race condition
+            for condition in conditions:
+                code = condition.get("code", "").lower()
+                if "diabetes" in code or "diabetic" in code:
+                    return True
+        
+        return False
+    except Exception:
+        # Graceful degradation if flag_manager unavailable
+        return False
 
 
 def _clear_module_state(module_key: str):
@@ -351,6 +386,9 @@ def _render_module_hub():
     progress = tiles.get("senior_trivia_hub", {})
     badges_earned = progress.get("badges_earned", {})
     
+    # Check for condition-triggered modules (diabetes)
+    has_diabetes = _has_diabetes_condition()
+    
     # Module cards
     modules = [
         {
@@ -390,6 +428,22 @@ def _render_module_hub():
         }
     ]
     
+    # Add condition-triggered modules
+    if has_diabetes:
+        # Check if badge earned to determine badge status
+        diabetes_badge = badges_earned.get("diabetes_knowledge")
+        diabetes_module = {
+            "key": "diabetes_knowledge",
+            "title": "🩸 Diabetes Knowledge Check",
+            "desc": "Quick, fun questions to help you stay sharp about managing diabetes",
+            "time": "4 min",
+            "questions": 6,
+            "badge_status": "🆕 New" if not diabetes_badge else None,
+            "condition_triggered": True
+        }
+        # Insert after healthy_habits (before community_challenge)
+        modules.insert(4, diabetes_module)
+    
     for module in modules:
         # Check if badge earned for this module
         badge_info = badges_earned.get(module["key"])
@@ -397,7 +451,11 @@ def _render_module_hub():
         with st.container():
             col1, col2 = st.columns([3, 1])
             with col1:
-                st.markdown(f"### {module['title']}")
+                # Title with badge status if condition-triggered and new
+                title = module['title']
+                if module.get('condition_triggered') and module.get('badge_status'):
+                    title += f" {module['badge_status']}"
+                st.markdown(f"### {title}")
                 st.markdown(module['desc'])
                 
                 # Show badge if earned
