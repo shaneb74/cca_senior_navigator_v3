@@ -1,0 +1,50 @@
+{
+  "key": "assets",
+  "title": "Assets & Resources",
+  "icon": "🏦",
+  "description": "Available financial assets and resources",
+  "estimated_time": "3-4 min",
+  "required": true,
+  "sort_order": 2,
+  "sections": [
+    {
+      "id": "intro",
+      "type": "intro",
+      "title": "Assets Assessment",
+      "icon": "🏦",
+      "help_text": "Let's catalog your financial assets to understand available resources for care.",
+      "fields": []
+    },
+    {
+      "id": "liquid_assets",
+      "title": "Liquid Assets",
+      "icon": "💵",
+      "help_text": "Easily accessible cash and savings",
+      "layout": "two_column",
+      "fields": [
+        {
+          "key": "checking_savings",
+          "label": "Checking & Savings Accounts",
+          "type": "currency",
+          "required": false,
+          "min": 0,
+          "max": 10000000,
+          "step": 1000,
+          "default": 0,
+          "help": "Total in bank accounts",
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "type": "calculated",
+    "label": "Total Liquid Assets",
+    "formula": "sum(checking_savings)",
+    "display_format": "${:,.0f}"
+  },
+  "output_contract": {
+    "checking_savings": "number",
+    "total_liquid_assets": "calculated"
+  }
+}

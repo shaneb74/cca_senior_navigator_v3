@@ -1,0 +1,44 @@
+{
+  "key": "life_insurance",
+  "title": "Life Insurance & Annuities",
+  "icon": "📜",
+  "description": "Life insurance policies and annuity contracts",
+  "estimated_time": "2-3 min",
+  "required": false,
+  "sort_order": 5,
+  "sections": [
+    {
+      "id": "intro",
+      "type": "intro",
+      "title": "Life Insurance Assessment",
+      "icon": "📜",
+      "help_text": "Let's review life insurance policies and annuities that might help fund care.",
+      "fields": []
+    },
+    {
+      "id": "policies",
+      "title": "Insurance Policies",
+      "icon": "📄",
+      "help_text": "Active life insurance and annuity contracts",
+      "fields": [
+        {
+          "key": "has_life_insurance",
+          "label": "Have active life insurance?",
+          "type": "select",
+          "options": [
+            {"value": "no", "label": "No"},
+            {"value": "yes", "label": "Yes"}
+          ],
+          "default": "no"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "type": "text",
+    "label": "Life Insurance Summary"
+  },
+  "output_contract": {
+    "has_life_insurance": "string"
+  }
+}
