@@ -189,8 +189,8 @@ def _render_assessment_card(assessment: Dict[str, Any], product_key: str) -> Non
         use_container_width=True,
         type="primary" if required and not is_complete else "secondary"
     ):
-        # Navigate to page-based assessment (Phase 5)
-        st.session_state.cost_v2_step = f"assessment_{key}"
+        # Set current assessment to trigger the assessment engine
+        st.session_state[f"{product_key}_current_assessment"] = key
         
         # Log event
         log_event("assessment.started", {
@@ -215,7 +215,7 @@ def _render_assessment(assessment_key: str, product_key: str) -> None:
             st.rerun()
         return
     
-    # Run assessment engine
+    # Run assessment engine (original multi-step flow)
     run_assessment(
         assessment_key=assessment_key,
         assessment_config=assessment_config,
