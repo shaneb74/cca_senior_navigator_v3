@@ -3,7 +3,7 @@
   "title": "Income Sources",
   "icon": "💰",
   "description": "Monthly income from all sources",
-  "estimated_time": "2-3 min",
+  "estimated_time": "5-7 min",
   "required": true,
   "sort_order": 1,
   "sections": [
@@ -12,14 +12,21 @@
       "type": "intro",
       "title": "Income Assessment",
       "icon": "💰",
-      "help_text": "Let's identify all sources of monthly income to understand your financial resources.",
-      "fields": []
+      "help_text": "We'll review your Social Security, pension, and any other income you have coming in each month. Once we've got that, I'll help you figure out what's available for care costs.",
+      "fields": [],
+      "info_boxes": [
+        {
+          "type": "info",
+          "message": "💡 You can save and come back anytime. Your progress is automatically tracked."
+        }
+      ]
     },
     {
       "id": "social_security",
       "title": "Social Security Benefits",
       "icon": "🏛️",
-      "help_text": "Enter your monthly Social Security retirement or disability benefits.",
+      "help_text": "Monthly Social Security retirement or disability benefits",
+      "layout": "single_column",
       "fields": [
         {
           "key": "ss_monthly",
@@ -31,6 +38,108 @@
           "step": 10,
           "default": 0,
           "help": "Enter the monthly Social Security benefit amount"
+        }
+      ],
+      "info_boxes": [
+        {
+          "type": "info",
+          "message": "📊 When to claim: Age 62 (reduced) vs. 66-67 (full) vs. 70 (max benefit, up to 30% more). Spousal benefits: Up to 50% of spouse's benefit if higher than your own. Average 2024: $1,907/month (retirement), $1,537/month (disability)."
+        }
+      ]
+    },
+    {
+      "id": "pension",
+      "title": "Pension & Annuity Income",
+      "icon": "📊",
+      "help_text": "Retirement pension and annuity payments (combined)",
+      "layout": "single_column",
+      "fields": [
+        {
+          "key": "pension_monthly",
+          "label": "Monthly Pension/Annuity Income",
+          "type": "currency",
+          "required": false,
+          "min": 0,
+          "max": 20000,
+          "step": 100,
+          "default": 0,
+          "help": "Monthly pension or annuity income (combined total)"
+        }
+      ],
+      "info_boxes": [
+        {
+          "type": "info",
+          "message": "💼 Lump sum vs. monthly: Weigh guaranteed income vs. flexibility. Survivor benefits: Choose the right option to protect your spouse's income. Value: Lifetime guaranteed income is valuable for care planning."
+        }
+      ]
+    },
+    {
+      "id": "employment",
+      "title": "Employment Income",
+      "icon": "💼",
+      "help_text": "Income from current employment or self-employment",
+      "layout": "single_column",
+      "fields": [
+        {
+          "key": "employment_status",
+          "label": "Employment Status",
+          "type": "select",
+          "required": false,
+          "options": [
+            {"value": "not_employed", "label": "Not employed"},
+            {"value": "part_time", "label": "Part-time employment"},
+            {"value": "full_time", "label": "Full-time employment"},
+            {"value": "self_employed", "label": "Self-employed"}
+          ],
+          "default": "not_employed",
+          "help": "Current employment situation"
+        },
+        {
+          "key": "employment_monthly",
+          "label": "Monthly Employment Income (after tax)",
+          "type": "currency",
+          "required": false,
+          "min": 0,
+          "max": 50000,
+          "step": 100,
+          "default": 0,
+          "help": "Net monthly income from employment",
+          "visible_if": {
+            "field": "employment_status",
+            "not_equals": "not_employed"
+          }
+        }
+      ],
+      "info_boxes": [
+        {
+          "type": "info",
+          "message": "⚠️ Social Security impact: Earnings above $22,320 (2024) may reduce SS benefits if claiming before full retirement age. Part-time work provides income plus social engagement."
+        }
+      ]
+    },
+    {
+      "id": "other_income",
+      "title": "Other Income Sources",
+      "icon": "💵",
+      "help_text": "Family support, trust distributions, VA benefits, etc.",
+      "layout": "single_column",
+      "fields": [
+        {
+          "key": "other_monthly",
+          "label": "Other Monthly Income",
+          "type": "currency",
+          "required": false,
+          "min": 0,
+          "max": 50000,
+          "step": 100,
+          "default": 0,
+          "help": "Family support, trust distributions, VA benefits, or other income"
+        }
+      ],
+      "info_boxes": [
+        {
+          "type": "info",
+          "message": "💡 Examples: Family support from adult children, trust distributions, VA Aid & Attendance ($2,431/month in 2024), reverse mortgage payments (age 62+)."
         }
       ]
     },
@@ -45,11 +154,15 @@
   "summary": {
     "type": "calculated",
     "label": "Total Monthly Income",
-    "formula": "sum(ss_monthly)",
+    "formula": "sum(ss_monthly, pension_monthly, employment_monthly, other_monthly)",
     "display_format": "${:,.0f}/month"
   },
   "output_contract": {
     "ss_monthly": "number",
+    "pension_monthly": "number",
+    "employment_status": "string",
+    "employment_monthly": "number",
+    "other_monthly": "number",
     "total_monthly_income": "calculated"
   }
 }
