@@ -34,10 +34,10 @@ def _load_module_config() -> Dict:
 def render():
     """Render module hub with financial assessment modules."""
     
-    # Get qualifier flags from session
-    qualifiers = st.session_state.get('cost_v2_qualifiers', {})
-    is_veteran = qualifiers.get('is_veteran', False)
-    is_on_medicaid = qualifiers.get('is_on_medicaid', False)
+    # Get flags from session state (matches Phase 3 flag-based visibility)
+    flags = st.session_state.get('flags', {})
+    is_veteran = flags.get('is_veteran', False)
+    medicaid_planning_interest = flags.get('medicaid_planning_interest', False)
     
     # Define modules with conditional visibility
     modules_config = [
@@ -98,7 +98,7 @@ def render():
             "icon": "🧭",
             "estimated_time": "5-7 min",
             "required": False,
-            "visible": is_on_medicaid,  # Only show if on Medicaid
+            "visible": medicaid_planning_interest,  # Only show if interested in Medicaid planning
             "sort_order": 6
         }
     ]
