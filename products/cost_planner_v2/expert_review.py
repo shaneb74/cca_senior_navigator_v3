@@ -9,7 +9,7 @@ from html import escape as H
 import streamlit as st
 
 from core.ui import render_navi_panel_v2
-from core.state import MCIP
+from core.mcip import MCIP
 from products.cost_planner_v2.financial_profile import get_financial_profile, publish_to_mcip
 from products.cost_planner_v2.expert_formulas import calculate_expert_review
 
