@@ -7,7 +7,6 @@ JSON-driven generic form renderer for housing preferences.
 import json
 import streamlit as st
 from pathlib import Path
-from products.advisor_prep.utils import award_duck_badge
 
 from core.mcip import MCIP
 from core.events import log_event
@@ -145,8 +144,12 @@ def _save_section(form_data: dict):
     if "housing" not in sections_complete:
         sections_complete.append("housing")
     
-    # Award duck badge
-    award_duck_badge("housing")
+    # Award duck badge (local import to avoid circular dependency)
+    try:
+        from products.advisor_prep.utils import award_duck_badge
+        award_duck_badge("housing")
+    except ImportError:
+        pass  # Duck badges not available
     
     # Update MCIP contract with prep progress
     appt = MCIP.get_advisor_appointment()

@@ -8,7 +8,6 @@ import json
 import streamlit as st
 from pathlib import Path
 from datetime import date
-from products.advisor_prep.utils import award_duck_badge
 
 from core.mcip import MCIP
 from core.events import log_event
@@ -152,8 +151,12 @@ def _save_section(form_data: dict):
     if "personal" not in sections_complete:
         sections_complete.append("personal")
     
-    # Award duck badge
-    award_duck_badge("personal")
+    # Award duck badge (local import to avoid circular dependency)
+    try:
+        from products.advisor_prep.utils import award_duck_badge
+        award_duck_badge("personal")
+    except ImportError:
+        pass  # Duck badges not available
     
     # Update MCIP contract with prep progress
     appt = MCIP.get_advisor_appointment()
