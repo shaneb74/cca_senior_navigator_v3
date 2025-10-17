@@ -189,8 +189,8 @@ def _render_assessment_card(assessment: Dict[str, Any], product_key: str) -> Non
         use_container_width=True,
         type="primary" if required and not is_complete else "secondary"
     ):
-        # Set current assessment
-        st.session_state[f"{product_key}_current_assessment"] = key
+        # Navigate to page-based assessment (Phase 5)
+        st.session_state.cost_v2_step = f"assessment_{key}"
         
         # Log event
         log_event("assessment.started", {
@@ -494,33 +494,6 @@ def _render_single_info_box(info_box: Dict[str, Any]) -> None:
 def _render_page_navigation(assessment_key: str, product_key: str, assessment_config: Dict[str, Any]) -> None:
     """Render navigation buttons at bottom of assessment page."""
     
-    # Define assessment order
-    assessment_order = ["income", "assets", "health_insurance", "life_insurance", "va_benefits", "medicaid_navigation"]
-    
-    # Get flags for conditional assessments
-    flags = st.session_state.get("flags", {})
-    is_veteran = flags.get("is_veteran", False)
-    medicaid_interest = flags.get("medicaid_planning_interest", False)
-    
-    # Filter order based on flags
-    visible_order = []
-    for key in assessment_order:
-        if key == "va_benefits" and not is_veteran:
-            continue
-        if key == "medicaid_navigation" and not medicaid_interest:
-            continue
-        visible_order.append(key)
-    
-    # Find current index
-    try:
-        current_idx = visible_order.index(assessment_key)
-    except ValueError:
-        current_idx = 0
-    
-    # Determine previous and next
-    prev_key = visible_order[current_idx - 1] if current_idx > 0 else None
-    next_key = visible_order[current_idx + 1] if current_idx < len(visible_order) - 1 else None
-    
     # Check if required assessments complete (income and assets)
     income_complete = _is_assessment_complete("income", product_key)
     assets_complete = _is_assessment_complete("assets", product_key)
@@ -529,55 +502,23 @@ def _render_page_navigation(assessment_key: str, product_key: str, assessment_co
     st.markdown("---")
     st.markdown("### Navigation")
     
-    # Create button layout
-    if next_key:
-        col1, col2, col3 = st.columns(3)
-    else:
-        # Last assessment - show Expert Review button
-        col1, col2 = st.columns(2)
+    # Two-column layout: Back to Hub | Expert Review
+    col1, col2 = st.columns(2)
     
-    # Previous button
+    # Back to Hub button
     with col1:
-        if prev_key:
-            prev_config = _load_assessment_config(prev_key, product_key)
-            prev_title = prev_config.get("title", "Previous") if prev_config else "Previous"
-            if st.button(f"← {prev_title}", use_container_width=True):
-                st.session_state.cost_v2_step = f"assessment_{prev_key}"
+        if st.button("← Back to Assessments", use_container_width=True):
+            st.session_state.cost_v2_step = "assessments"
+            st.rerun()
+    
+    # Expert Review button
+    with col2:
+        if required_complete:
+            if st.button("🚀 Go to Expert Review →", use_container_width=True, type="primary"):
+                st.session_state.cost_v2_step = "expert_review"
                 st.rerun()
         else:
-            # First assessment - back to intro
-            if st.button("← Back to Intro", use_container_width=True):
-                st.session_state.cost_v2_step = "intro"
-                st.rerun()
-    
-    # Next button or Expert Review
-    if next_key:
-        with col2:
-            next_config = _load_assessment_config(next_key, product_key)
-            next_title = next_config.get("title", "Next") if next_config else "Next"
-            
-            # Disable next if current assessment is required and not complete
-            is_required = assessment_config.get("required", False)
-            
-            if st.button(f"{next_title} →", use_container_width=True, type="primary"):
-                st.session_state.cost_v2_step = f"assessment_{next_key}"
-                st.rerun()
-        
-        # Optional: Expert Review bypass on non-last pages
-        with col3:
-            if required_complete:
-                if st.button("🚀 Expert Review", use_container_width=True, type="secondary"):
-                    st.session_state.cost_v2_step = "expert_review"
-                    st.rerun()
-    else:
-        # Last assessment - prominent Expert Review button
-        with col2:
-            if required_complete:
-                if st.button("🚀 Go to Expert Review →", use_container_width=True, type="primary"):
-                    st.session_state.cost_v2_step = "expert_review"
-                    st.rerun()
-            else:
-                st.warning("⚠️ Please complete Income and Assets assessments before proceeding to Expert Review")
+            st.warning("Complete Income & Assets first")
 
 
 __all__ = ["render_assessment_hub", "render_assessment_page"]
