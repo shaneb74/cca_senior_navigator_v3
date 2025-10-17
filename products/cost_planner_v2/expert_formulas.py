@@ -17,6 +17,7 @@ from dataclasses import dataclass
 import streamlit as st
 
 from products.cost_planner_v2.financial_profile import FinancialProfile
+from core.mcip import CareRecommendation
 
 
 @dataclass
@@ -51,7 +52,7 @@ class ExpertReviewAnalysis:
 
 def calculate_expert_review(
     profile: FinancialProfile,
-    care_recommendation: Optional[Dict[str, Any]] = None,
+    care_recommendation: Optional[CareRecommendation] = None,
     zip_code: Optional[str] = None
 ) -> ExpertReviewAnalysis:
     """
@@ -143,7 +144,7 @@ def calculate_expert_review(
     )
 
 
-def _get_base_care_cost(care_recommendation: Optional[Dict[str, Any]]) -> float:
+def _get_base_care_cost(care_recommendation: Optional[CareRecommendation]) -> float:
     """
     Get base monthly care cost based on GCP recommendation.
     
@@ -158,8 +159,8 @@ def _get_base_care_cost(care_recommendation: Optional[Dict[str, Any]]) -> float:
     if not care_recommendation:
         return 4500  # Default to assisted living
     
-    care_tier = care_recommendation.get("tier", "moderate")
-    care_type = care_recommendation.get("care_type")
+    care_tier = getattr(care_recommendation, 'tier', 'moderate')
+    care_type = getattr(care_recommendation, 'care_type', None)
     
     # Map care types to base costs
     cost_map = {
@@ -187,7 +188,7 @@ def _get_base_care_cost(care_recommendation: Optional[Dict[str, Any]]) -> float:
     return tier_to_cost.get(care_tier, 4500)
 
 
-def _calculate_care_flags_modifier(care_recommendation: Optional[Dict[str, Any]]) -> float:
+def _calculate_care_flags_modifier(care_recommendation: Optional[CareRecommendation]) -> float:
     """
     Calculate cost modifier based on GCP care flags.
     
@@ -201,7 +202,15 @@ def _calculate_care_flags_modifier(care_recommendation: Optional[Dict[str, Any]]
     if not care_recommendation:
         return 1.0
     
-    flags = care_recommendation.get("flags", {})
+    # Get flags - it's a List[Dict[str, Any]] per the dataclass
+    flags_list = getattr(care_recommendation, 'flags', [])
+    
+    # Convert list of flag dicts to a simple dict for easier checking
+    flags = {}
+    for flag_dict in flags_list:
+        if isinstance(flag_dict, dict):
+            flags.update(flag_dict)
+    
     modifier = 1.0
     
     # Add modifiers for each active flag
@@ -322,7 +331,7 @@ def _generate_recommendations(
     monthly_gap: float,
     runway_months: Optional[float],
     profile: FinancialProfile,
-    care_recommendation: Optional[Dict[str, Any]]
+    care_recommendation: Optional[CareRecommendation]
 ) -> Tuple[str, list, list]:
     """
     Generate personalized recommendations based on financial analysis.
