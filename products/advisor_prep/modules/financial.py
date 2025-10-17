@@ -16,7 +16,7 @@ from products.advisor_prep.prefill import get_financial_prefill
 
 
 def render():
-    """Render Financial prep section with prefill from Cost Planner."""
+    """Render Financial prep section."""
     
     # Load config
     config = _load_config()
