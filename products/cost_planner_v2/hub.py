@@ -291,6 +291,14 @@ def render():
                     from core.nav import route_to
                     route_to("hub_concierge")
                 st.markdown('</div>', unsafe_allow_html=True)
+        
+        # 🚨 ALWAYS SHOW EXPERT REVIEW BUTTON AT BOTTOM (EMERGENCY ACCESS) 🚨
+        st.markdown("---")
+        st.markdown("### 🔬 Skip to Expert Review")
+        st.markdown("*View financial analysis even if assessments aren't complete*")
+        if st.button("🚀 GO TO EXPERT REVIEW (BYPASS) →", type="secondary", use_container_width=True, key="expert_review_bottom_bypass"):
+            st.session_state.cost_v2_step = "expert_review"
+            st.rerun()
 
 
 
