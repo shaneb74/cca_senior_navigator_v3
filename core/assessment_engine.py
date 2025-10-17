@@ -118,6 +118,15 @@ def run_assessment(
     # ========================================================================
     if is_results:
         _render_results_view(assessment_config, state, assessment_key)
+        
+        # Render navigation actions for results page
+        _render_results_navigation(
+            assessment_key=assessment_key,
+            state_key=state_key,
+            section_index=section_index,
+            product_key=product_key
+        )
+        
         st.markdown('</div>', unsafe_allow_html=True)
         return state
     
@@ -586,6 +595,35 @@ def _render_navigation_actions(
     with col3:
         # Back to Hub button
         if st.button("← Back to Hub", key=f"hub_{assessment_key}", type="secondary", use_container_width=True):
+            # Save current state and return to assessment hub
+            from core.nav import route_to
+            route_to(f"{product_key}")
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+
+
+def _render_results_navigation(
+    assessment_key: str,
+    state_key: str,
+    section_index: int,
+    product_key: str
+) -> None:
+    """Render navigation buttons for results page."""
+    
+    st.markdown('<div class="sn-app mod-actions">', unsafe_allow_html=True)
+    
+    col1, col2 = st.columns([1, 1])
+    
+    with col1:
+        # Review Answers button - go back to first question section
+        if st.button("← Review Answers", key=f"review_{assessment_key}", type="secondary", use_container_width=True):
+            # Find first non-intro section
+            st.session_state[f"{state_key}._section"] = 1  # Skip intro (0), go to first questions (1)
+            safe_rerun()
+    
+    with col2:
+        # Back to Hub button
+        if st.button("← Back to Hub", key=f"hub_results_{assessment_key}", type="primary", use_container_width=True):
             # Save current state and return to assessment hub
             from core.nav import route_to
             route_to(f"{product_key}")
