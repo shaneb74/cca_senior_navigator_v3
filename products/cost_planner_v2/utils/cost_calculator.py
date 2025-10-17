@@ -14,6 +14,15 @@ from typing import Dict, Any, Optional, List, Tuple
 from dataclasses import dataclass
 from .regional_data import RegionalDataProvider
 
+# Import flag manager for validation
+try:
+    from core import flag_manager
+    from core.flags import COST_MODEL_FLAGS
+    FLAG_MANAGER_AVAILABLE = True
+except ImportError:
+    FLAG_MANAGER_AVAILABLE = False
+    COST_MODEL_FLAGS = []
+
 
 # COST ADJUSTMENTS MAPPING
 # Maps GCP flags to cost adjustment percentages and rationale
@@ -257,6 +266,18 @@ class CostCalculator:
             if meds_complexity in ['moderate', 'complex']:
                 if 'medication_management' not in flags:
                     flags.append('medication_management')
+        
+        # Validate cost flags (CHECKPOINT 2 integration - defense in depth)
+        if FLAG_MANAGER_AVAILABLE and flags:
+            cost_flags = [f for f in flags if f in COST_MODEL_FLAGS]
+            try:
+                invalid = flag_manager.validate_flags(cost_flags, context="cost_planner.estimate")
+                if invalid:
+                    # Filter out invalid flags (already logged by validator)
+                    flags = [f for f in flags if f not in invalid]
+            except Exception as e:
+                # Don't fail estimate if validation has issues
+                print(f"⚠️  Warning: Flag validation error: {e}")
         
         # CARE MULTIPLIERS (applied cumulatively to running total)
         

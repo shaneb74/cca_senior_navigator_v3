@@ -37,7 +37,8 @@ def render(ctx=None) -> None:
             "cost": "Cost Planner",
             "cost_v2": "Cost Planner",
             "pfma": "Plan with My Advisor",
-            "pfma_v2": "Plan with My Advisor"
+            "pfma_v2": "Plan with My Advisor",
+            "pfma_v3": "Plan with My Advisor"
         }.get(save_msg.get("product", ""), "questionnaire")
         
         prog = save_msg.get("progress", 0)
@@ -59,7 +60,7 @@ def render(ctx=None) -> None:
     # Build hub order from MCIP
     hub_order = {
         "hub_id": "concierge",
-        "ordered_products": ["gcp_v4", "cost_v2", "pfma_v2"],
+        "ordered_products": ["gcp_v4", "cost_v2", "pfma_v3"],
         "reason": _get_hub_reason(),
         "total": 3,
         "next_step": next_action.get("route", "gcp_v4").replace("?page=", ""),
@@ -443,51 +444,51 @@ def _build_saved_progress_alert(save_msg: Optional[dict]) -> str:
 
 
 def _build_pfma_tile(hub_order: dict, ordered_index: dict, next_action: dict) -> ProductTileHub:
-    """Build PFMA tile dynamically from MCIP."""
-    summary = MCIP.get_product_summary("pfma_v2")
+    """Build PFMA v3 tile dynamically from MCIP."""
+    summary = MCIP.get_pfma_summary()
     
-    if not summary:
-        summary = {
-            "status": "locked",
-            "summary_line": "Complete Cost Planner first",
-            "route": None
-        }
+    # Check if Cost Planner is complete (prerequisite)
+    financial = MCIP.get_financial_profile()
+    is_locked = (financial is None)
     
     # Determine states
-    pfma_prog = _get_product_progress("pfma_v2")
-    is_complete = (summary["status"] == "complete")
-    is_locked = (summary["status"] == "locked")
-    is_in_progress = not is_complete and not is_locked and pfma_prog > 0
-    is_next = (next_action.get("route") == "pfma_v2")
+    is_complete = summary["booked"]
+    prep_progress = summary.get("prep_progress", 0)
+    is_next = (next_action.get("route") == "pfma_v3")
     
     # Build description and progress
     if is_complete:
-        desc = summary["summary_line"]
+        desc = f"✓ Appointment booked: {summary.get('confirmation_id', 'Confirmed')}"
+        if prep_progress < 100:
+            desc += f" • Prep: {prep_progress}% complete"
         progress = 100
         status_text = "✓ Complete"
-        meta_lines = ["✅ 🦆🦆🦆🦆 All Ducks in a Row!"]
-        badges = [{"label": "🦆🦆🦆🦆 Earned", "tone": "success"}]
-    elif is_in_progress:
-        desc = f"Resume appointment booking ({pfma_prog:.0f}% complete)"
-        progress = pfma_prog
-        status_text = None
-        meta_lines = ["≈5–8 min • Ducks in a Row"]
-        badges = []
+        meta_lines = ["✅ Appointment scheduled", f"Advisor Prep: {prep_progress}% complete"]
+        badges = [{"label": "Booked", "tone": "success"}]
+        primary_label = "View Appointment"
+        secondary_label = "Prepare for Meeting" if prep_progress < 100 else "Review Prep"
+        secondary_go = "advisor_prep"
     elif is_locked:
-        desc = summary["summary_line"]
+        desc = "Complete Cost Planner to book your appointment"
         progress = 0
         status_text = None
-        meta_lines = ["≈5–8 min • Ducks in a Row"]
+        meta_lines = ["≈3 min • Scheduling only"]
         badges = []
+        primary_label = "Locked"
+        secondary_label = None
+        secondary_go = None
     else:
-        desc = summary["summary_line"]
+        desc = "Book your free consultation with a care advisor"
         progress = 0
         status_text = None
-        meta_lines = ["≈5–8 min • Ducks in a Row"]
+        meta_lines = ["≈3 min • Scheduling only"]
         badges = []
+        primary_label = "Book Appointment"
+        secondary_label = None
+        secondary_go = None
     
     return ProductTileHub(
-        key="pfma_v2",
+        key="pfma_v3",
         title="Plan with My Advisor",
         desc=desc,
         blurb="Get matched with the right advisor to coordinate care, benefits, and trusted partners.",
@@ -495,10 +496,11 @@ def _build_pfma_tile(hub_order: dict, ordered_index: dict, next_action: dict) ->
         image_square="pfma.png",
         meta_lines=meta_lines,
         badges=badges,
-        primary_route=f"?page={summary['route']}" if summary['route'] else None,
-        primary_go="pfma_v2",
-        secondary_label="Share updates",
-        secondary_go="pfma_updates",
+        primary_route=f"?page=pfma_v3" if not is_locked else None,
+        primary_go="pfma_v3",
+        primary_label=primary_label,
+        secondary_label=secondary_label,
+        secondary_go=secondary_go,
         progress=progress,
         status_text=status_text,
         variant="brand",

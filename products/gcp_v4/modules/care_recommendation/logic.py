@@ -13,6 +13,13 @@ from pathlib import Path
 from typing import Dict, Any, List, Tuple
 from .flags import build_flags
 
+# Import flag manager for persisting flags
+try:
+    from core import flag_manager
+    FLAG_MANAGER_AVAILABLE = True
+except ImportError:
+    FLAG_MANAGER_AVAILABLE = False
+
 
 # Tier thresholds based on total score
 # CRITICAL: These are the ONLY 5 allowed tier values
@@ -78,6 +85,10 @@ def derive_outcome(answers: Dict[str, Any], context: Dict[str, Any] = None, conf
     if not flag_ids:
         flag_ids = _extract_flags_from_answers(answers, module_data)
     flags = build_flags(flag_ids)
+    
+    # Persist flags via Flag Manager (CHECKPOINT 2 integration)
+    if FLAG_MANAGER_AVAILABLE:
+        _persist_flags_via_manager(flag_ids, answers)
     
     # Determine suggested next product
     suggested_next = _determine_next_product(tier, confidence)
@@ -347,6 +358,46 @@ def _build_rationale(scoring_details: Dict[str, Any], tier: str, total_score: fl
         rationale.append("✓ No formal care is needed at this time. If circumstances change, return to update your assessment.")
     
     return rationale[:6]  # Keep top 6 items
+
+
+def _persist_flags_via_manager(flag_ids: List[str], answers: Dict[str, Any]) -> None:
+    """
+    Persist flags using Flag Manager service (CHECKPOINT 2-5 integration).
+    
+    Special handling:
+    - Chronic conditions: Use update_chronic_conditions() for auto-flag activation
+    - All other flags: Use activate() for direct persistence
+    
+    Args:
+        flag_ids: List of flag IDs to persist
+        answers: User answers (used to extract chronic condition codes)
+    """
+    if not FLAG_MANAGER_AVAILABLE:
+        return
+    
+    # Handle chronic conditions separately (CHECKPOINT 5)
+    chronic_codes = answers.get("chronic_conditions", [])
+    if chronic_codes and isinstance(chronic_codes, list):
+        try:
+            # This will auto-activate chronic_present/chronic_conditions flags
+            flag_manager.update_chronic_conditions(chronic_codes, source="gcp", context="gcp.chronic_conditions")
+        except Exception as e:
+            # Don't fail GCP if flag manager has issues
+            print(f"⚠️  Warning: Could not persist chronic conditions: {e}")
+    
+    # Activate all other flags
+    for flag_id in flag_ids:
+        # Skip chronic flags (handled above by update_chronic_conditions)
+        if flag_id in ["chronic_present", "chronic_conditions"]:
+            continue
+        
+        try:
+            flag_manager.activate(flag_id, source="gcp", context="gcp.care_recommendation")
+        except flag_manager.InvalidFlagError as e:
+            # Log but don't fail - allows GCP to work even with invalid flags
+            print(f"⚠️  Warning: Invalid flag '{flag_id}': {e}")
+        except Exception as e:
+            print(f"⚠️  Warning: Could not activate flag '{flag_id}': {e}")
 
 
 def _extract_flags_from_state(answers: Dict[str, Any]) -> List[str]:

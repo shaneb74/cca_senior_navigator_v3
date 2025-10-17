@@ -10,7 +10,7 @@ State Management: Tracks completion status and progress
 """
 
 import json
-import os
+import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -18,6 +18,49 @@ import streamlit as st
 
 from core.assessment_engine import run_assessment
 from core.events import log_event
+from core.session_store import safe_rerun
+from core.ui import render_navi_panel_v2
+from products.cost_planner_v2.utils.financial_helpers import (
+    normalize_income_data,
+    normalize_asset_data,
+    calculate_total_monthly_income,
+    calculate_total_asset_value,
+    calculate_total_asset_debt,
+)
+
+
+_SINGLE_PAGE_ASSESSMENTS: Dict[str, Dict[str, Any]] = {
+    "income": {
+        "save_label": "Save Income Information",
+        "success_message": "Income assessment saved.",
+        "navi": {
+            "title": "I'm here to help",
+            "reason": "We'll review monthly income so your care plan stays realistic.",
+            "encouragement": {
+                "icon": "💡",
+                "text": "Take your time—I'll keep track of everything you enter.",
+                "status": "getting_started"
+            }
+        },
+        "expert_requires": ["income", "assets"],
+        "expert_disabled_text": "Complete the Assets assessment to unlock Expert Review."
+    },
+    "assets": {
+        "save_label": "Save Asset Information",
+        "success_message": "Assets assessment saved.",
+        "navi": {
+            "title": "You're doing great",
+            "reason": "Capture assets and obligations so we can map out funding options.",
+            "encouragement": {
+                "icon": "🧭",
+                "text": "List only what matters—clarity beats perfection here.",
+                "status": "getting_started"
+            }
+        },
+        "expert_requires": ["income", "assets"],
+        "expert_disabled_text": "Complete the Income assessment to unlock Expert Review."
+    }
+}
 
 
 def render_assessment_hub(product_key: str = "cost_planner_v2") -> None:
@@ -215,6 +258,16 @@ def _render_assessment(assessment_key: str, product_key: str) -> None:
             st.rerun()
         return
     
+    # Use single-page layout for designated assessments (e.g., income, assets)
+    if assessment_key in _SINGLE_PAGE_ASSESSMENTS:
+        _render_single_page_assessment(
+            assessment_key=assessment_key,
+            assessment_config=assessment_config,
+            product_key=product_key,
+            settings=_SINGLE_PAGE_ASSESSMENTS[assessment_key]
+        )
+        return
+    
     # Run assessment engine (original multi-step flow)
     run_assessment(
         assessment_key=assessment_key,
@@ -355,6 +408,339 @@ def render_assessment_page(assessment_key: str, product_key: str = "cost_planner
     # Compact navigation at bottom
     st.markdown("<div style='margin: 32px 0;'></div>", unsafe_allow_html=True)
     _render_page_navigation(assessment_key, product_key, assessment_config)
+
+
+def _render_single_page_assessment(
+    assessment_key: str,
+    assessment_config: Dict[str, Any],
+    product_key: str,
+    settings: Dict[str, Any]
+) -> None:
+    """Render designated assessments on a single page with streamlined styling."""
+    
+    state_key = f"{product_key}_{assessment_key}"
+    state = st.session_state.setdefault(state_key, {})
+    
+    success_flash_key = f"{state_key}._flash_success"
+    error_flash_key = f"{state_key}._flash_error"
+    
+    success_flash = st.session_state.pop(success_flash_key, None)
+    error_flash = st.session_state.pop(error_flash_key, None)
+    
+    # Ensure derived fields are populated even on initial load
+    _persist_assessment_state(product_key, assessment_key, state)
+    
+    st.markdown('<div class="sn-app module-container">', unsafe_allow_html=True)
+    
+    navi = settings.get("navi")
+    if navi:
+        nav_cols = st.columns([1, 2, 1])
+        with nav_cols[1]:
+            encouragement = navi.get("encouragement", {})
+            render_navi_panel_v2(
+                title=navi.get("title", ""),
+                reason=navi.get("reason", ""),
+                encouragement={
+                    "icon": encouragement.get("icon", "💡"),
+                    "text": encouragement.get("text", ""),
+                    "status": encouragement.get("status", "getting_started")
+                },
+                context_chips=navi.get("context_chips", []),
+                primary_action={"label": "", "action": None},
+                variant="module"
+            )
+        st.markdown("<div style='margin: 24px 0;'></div>", unsafe_allow_html=True)
+    
+    title = assessment_config.get("title", "Assessment")
+    icon = assessment_config.get("icon", "📋")
+    description = assessment_config.get("description", "")
+    
+    st.markdown(
+        f"""
+        <div style="display:flex; flex-direction:column; gap:10px; text-align:left;">
+            <div style="font-size:30px; font-weight:700; color:#0f172a;">{icon} {title}</div>
+            <div style="font-size:15px; color:#475569; line-height:1.6;">{description}</div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    
+    if success_flash:
+        st.success(success_flash)
+    if error_flash:
+        st.warning(error_flash)
+    
+    sections = assessment_config.get("sections", [])
+    field_sections = [
+        s for s in sections if s.get("fields") and s.get("type") not in ["intro", "results"]
+    ]
+    
+    intro_section = next((s for s in sections if s.get("type") == "intro"), None)
+    if intro_section and intro_section.get("help_text"):
+        st.markdown(
+            f"<div style='font-size:14px; color:#475569; margin: 12px 0 24px 0;'>{intro_section.get('help_text')}</div>",
+            unsafe_allow_html=True
+        )
+    else:
+        st.markdown("<div style='margin: 12px 0 24px 0;'></div>", unsafe_allow_html=True)
+    
+    if field_sections:
+        for row_index in range(0, len(field_sections), 2):
+            row_sections = field_sections[row_index:row_index + 2]
+            row_cols = st.columns(2, gap="large")
+            for col_index in range(2):
+                if col_index < len(row_sections):
+                    section = row_sections[col_index]
+                    with row_cols[col_index]:
+                        _render_section_content(section, state, product_key, assessment_key)
+                else:
+                    with row_cols[col_index]:
+                        st.write("")
+            if row_index + 2 < len(field_sections):
+                st.markdown("<div style='margin: 24px 0;'></div>", unsafe_allow_html=True)
+    else:
+        st.write("No sections configured.")
+    
+    summary_config = assessment_config.get("summary", {})
+    summary_value = _calculate_summary_total(summary_config, state)
+    
+    if summary_config and summary_value is not None:
+        label = summary_config.get("label", "Summary")
+        display_format = summary_config.get("display_format", "${:,.0f}")
+        try:
+            formatted_total = display_format.format(summary_value)
+        except Exception:
+            formatted_total = f"${summary_value:,.0f}"
+        
+        st.markdown(
+            f"""
+            <div style="
+                border: 1px solid #e2e8f0;
+                border-radius: 12px;
+                padding: 18px 20px;
+                margin: 28px 0 8px 0;
+                background: #ffffff;
+            ">
+                <div style="font-size:12px; font-weight:600; color:#475569; letter-spacing:0.04em; text-transform:uppercase;">
+                    {label}
+                </div>
+                <div style="font-size:28px; font-weight:700; color:#0f172a; margin-top:6px;">
+                    {formatted_total}
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+    else:
+        st.markdown("<div style='margin:28px 0 8px 0;'></div>", unsafe_allow_html=True)
+    
+    st.markdown("<div style='margin: 32px 0 16px 0;'></div>", unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns([1, 1.2, 1])
+    
+    back_label = settings.get("back_label", "← Back to Assessments")
+    save_label = settings.get("save_label", "Save")
+    success_message = settings.get("success_message", "Details saved.")
+    expert_requires = settings.get("expert_requires", [])
+    expert_disabled_text = settings.get("expert_disabled_text")
+    expert_button_label = settings.get("expert_button_label", "🚀 Expert Review →")
+    
+    with col1:
+        if st.button(back_label, type="secondary", use_container_width=True, key=f"{assessment_key}_back"):
+            st.session_state.pop(f"{product_key}_current_assessment", None)
+            st.session_state.cost_v2_step = "assessments"
+            safe_rerun()
+    
+    with col2:
+        if st.button(save_label, type="primary", use_container_width=True, key=f"{assessment_key}_save"):
+            missing_fields = _get_missing_required_fields(field_sections, state)
+            if missing_fields:
+                st.session_state[error_flash_key] = "Please complete required fields: " + ", ".join(missing_fields)
+            else:
+                previously_done = state.get("status") == "done"
+                state["status"] = "done"
+                state["completed_at"] = time.strftime("%Y-%m-%d %H:%M:%S")
+                _persist_assessment_state(product_key, assessment_key, state)
+                st.session_state[success_flash_key] = success_message
+                
+                event_payload = {
+                    "product": product_key,
+                    "assessment": assessment_key,
+                    "mode": "single_page"
+                }
+                summary_value_for_event = _calculate_summary_total(summary_config, state)
+                if summary_config and summary_value_for_event is not None:
+                    event_payload["calculated_summary"] = summary_value_for_event
+                
+                if previously_done:
+                    log_event("assessment.updated", event_payload)
+                else:
+                    log_event("assessment.completed", event_payload)
+            safe_rerun()
+    
+    with col3:
+        def _is_complete(target_key: str) -> bool:
+            if target_key == assessment_key:
+                return state.get("status") == "done"
+            return _is_assessment_complete(target_key, product_key)
+        
+        expert_ready = all(_is_complete(target) for target in expert_requires) if expert_requires else True
+        
+        if expert_ready:
+            if st.button(expert_button_label, type="secondary", use_container_width=True, key=f"{assessment_key}_expert"):
+                st.session_state.cost_v2_step = "expert_review"
+                st.session_state.pop(f"{product_key}_current_assessment", None)
+                safe_rerun()
+        else:
+            if expert_disabled_text:
+                st.markdown(
+                    f"""
+                    <div style="
+                        background:#f8fafc;
+                        border:1px dashed #cbd5f5;
+                        border-radius:8px;
+                        padding:12px;
+                        font-size:13px;
+                        color:#64748b;
+                        text-align:center;
+                    ">
+                        {expert_disabled_text}
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+
+
+def _render_section_content(
+    section: Dict[str, Any],
+    state: Dict[str, Any],
+    product_key: str,
+    assessment_key: str
+) -> None:
+    """Render a section's heading and fields inside a single column."""
+    
+    section_icon = section.get("icon", "📝")
+    section_title = section.get("title", "Section")
+    help_text = section.get("help_text")
+    
+    st.markdown(
+        f"""
+        <div style="display:flex; flex-direction:column; gap:6px; margin-bottom:12px;">
+            <div style="font-size:20px; font-weight:600; color:#0f172a;">{section_icon} {section_title}</div>
+            {f"<div style='font-size:14px; color:#475569;'>{help_text}</div>" if help_text else ""}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    
+    new_values = _render_fields_for_page(section, state)
+    if new_values:
+        state.update(new_values)
+        _persist_assessment_state(product_key, assessment_key, state)
+    
+    st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
+
+
+def _persist_assessment_state(product_key: str, assessment_key: str, state: Dict[str, Any]) -> None:
+    """Persist assessment state into session tiles and module registry."""
+    augmented_state = _augment_assessment_state(assessment_key, state)
+    
+    # Persist to tiles (used by financial profile builder)
+    tiles = st.session_state.setdefault("tiles", {})
+    product_tiles = tiles.setdefault(product_key, {})
+    assessments_state = product_tiles.setdefault("assessments", {})
+    assessments_state[assessment_key] = augmented_state.copy()
+    
+    # Update module registry for backward compatibility with hub metrics
+    modules = st.session_state.setdefault("cost_v2_modules", {})
+    module_entry = modules.setdefault(assessment_key, {
+        "status": "in_progress",
+        "progress": 0,
+        "data": {}
+    })
+    module_entry["data"] = augmented_state.copy()
+    
+    if augmented_state.get("status") == "done":
+        module_entry["status"] = "completed"
+        module_entry["progress"] = 100
+    else:
+        if module_entry.get("status") != "completed":
+            module_entry["status"] = module_entry.get("status", "in_progress") or "in_progress"
+            module_entry.setdefault("progress", 0)
+
+
+def _augment_assessment_state(assessment_key: str, state: Dict[str, Any]) -> Dict[str, Any]:
+    """Augment raw assessment state with normalized values and summaries."""
+    base_state = dict(state or {})
+    
+    if assessment_key == "income":
+        normalized = normalize_income_data(base_state)
+        # Ensure total is up to date (normalize already calculates but recalc for certainty)
+        normalized["total_monthly_income"] = calculate_total_monthly_income(normalized)
+        return normalized
+    
+    if assessment_key == "assets":
+        normalized = normalize_asset_data(base_state)
+        normalized["total_asset_value"] = calculate_total_asset_value(normalized)
+        normalized["total_asset_debt"] = calculate_total_asset_debt(normalized)
+        normalized["net_asset_value"] = max(
+            normalized["total_asset_value"] - normalized["total_asset_debt"],
+            0.0
+        )
+        return normalized
+    
+    return base_state
+
+
+def _calculate_summary_total(summary_config: Dict[str, Any], state: Dict[str, Any]) -> Optional[float]:
+    """Calculate summary total using the formula defined in config."""
+    if not summary_config:
+        return None
+    
+    formula = summary_config.get("formula")
+    if not formula:
+        return None
+    
+    try:
+        if formula.startswith("sum(") and formula.endswith(")"):
+            field_names = [f.strip() for f in formula[4:-1].split(",") if f.strip()]
+            total = 0.0
+            for field_name in field_names:
+                value = state.get(field_name)
+                if isinstance(value, (int, float)):
+                    total += float(value)
+                elif isinstance(value, str) and value.strip():
+                    try:
+                        total += float(value)
+                    except ValueError:
+                        continue
+            return total
+        
+        return float(eval(formula, {"__builtins__": {}}, state))
+    except Exception:
+        return None
+
+
+def _get_missing_required_fields(sections: List[Dict[str, Any]], state: Dict[str, Any]) -> List[str]:
+    """Return labels for required fields that have not been completed."""
+    from core.assessment_engine import _is_field_visible  # Local import to avoid circularity
+    
+    missing: List[str] = []
+    for section in sections:
+        for field in section.get("fields", []):
+            if not field.get("required"):
+                continue
+            if not _is_field_visible(field, state):
+                continue
+            
+            key = field.get("key")
+            value = state.get(key)
+            if value in (None, "", []):
+                missing.append(field.get("label", key))
+    
+    return missing
 
 
 def _load_all_assessments(product_key: str) -> List[Dict[str, Any]]:

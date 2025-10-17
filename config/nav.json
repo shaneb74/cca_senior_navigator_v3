@@ -130,6 +130,18 @@
           "hidden": true
         },
         {
+          "key": "pfma_v3",
+          "label": "Plan with My Advisor",
+          "module": "products.pfma_v3.product:render",
+          "hidden": true
+        },
+        {
+          "key": "advisor_prep",
+          "label": "Advisor Prep",
+          "module": "products.advisor_prep.product:render",
+          "hidden": true
+        },
+        {
           "key": "faqs",
           "label": "FAQs",
           "module": "pages._stubs:render_faqs",

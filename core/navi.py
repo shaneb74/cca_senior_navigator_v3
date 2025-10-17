@@ -462,13 +462,153 @@ def render_navi_panel(
             return ctx
         
         # ============================================================
+        # WAITING ROOM HUB - POST-CONCIERGE PROGRESSION
+        # ============================================================
+        if hub_key == "waiting_room":
+            # Get Waiting Room tracking state from MCIP
+            wr_state = MCIP.get_waiting_room_state()
+            advisor_prep_status = wr_state.get("advisor_prep_status", "not_started")
+            trivia_status = wr_state.get("trivia_status", "not_started")
+            current_focus = wr_state.get("current_focus", "advisor_prep")
+            
+            # Determine guidance state (6 possible states based on spec)
+            if advisor_prep_status == "not_started":
+                wr_phase = "advisor_prep_not_started"
+            elif advisor_prep_status == "in_progress":
+                wr_phase = "advisor_prep_in_progress"
+            elif advisor_prep_status == "complete" and trivia_status == "not_started":
+                wr_phase = "advisor_prep_complete_trivia_not_started"
+            elif trivia_status == "in_progress":
+                wr_phase = "trivia_in_progress"
+            elif trivia_status == "complete":
+                wr_phase = "trivia_complete"
+            else:
+                wr_phase = "advisor_prep_not_started"  # Default fallback
+            
+            # Map phase to title, reason, CTA
+            wr_messages = {
+                "advisor_prep_not_started": {
+                    "title": "🪑 Welcome to your Waiting Room!",
+                    "reason": "Let's start by preparing for your advisor call. It only takes a few minutes and helps your advisor personalize your session.",
+                    "cta_label": "Start Prep",
+                    "cta_route": "advisor_prep",
+                    "encouragement": "This is where you can prepare, play, and explore while you wait."
+                },
+                "advisor_prep_in_progress": {
+                    "title": "Nice progress on your prep!",
+                    "reason": "You've completed some prep sections. Want to finish them up before your call?",
+                    "cta_label": "Continue Prep",
+                    "cta_route": "advisor_prep",
+                    "encouragement": "You're doing great—let's finish this up!"
+                },
+                "advisor_prep_complete_trivia_not_started": {
+                    "title": "Great work! You're ready for your call.",
+                    "reason": "While you wait, want to play a few Trivia games to learn more about your care topics?",
+                    "cta_label": "Play Trivia",
+                    "cta_route": "senior_trivia",
+                    "encouragement": "Test your knowledge and have some fun!"
+                },
+                "trivia_in_progress": {
+                    "title": "Keep it up!",
+                    "reason": "Each trivia round helps us learn more about what's relevant to you.",
+                    "cta_label": "Resume Trivia",
+                    "cta_route": "senior_trivia",
+                    "encouragement": "You're on a roll—let's keep going!"
+                },
+                "trivia_complete": {
+                    "title": "🎉 You've finished your prep and trivia!",
+                    "reason": "Explore other resources while you wait for your appointment.",
+                    "cta_label": "Explore Learning Center",
+                    "cta_route": "educational_feed",
+                    "encouragement": "You're all set! Feel free to browse around."
+                }
+            }
+            
+            wr_msg = wr_messages.get(wr_phase, wr_messages["advisor_prep_not_started"])
+            
+            # Build context chips for Waiting Room
+            context_chips = []
+            
+            # Appointment chip
+            if ctx.advisor_appointment:
+                appt_date = ctx.advisor_appointment.date
+                context_chips.append({
+                    'icon': '📅',
+                    'label': 'Appt',
+                    'value': appt_date,
+                    'sublabel': ctx.advisor_appointment.time
+                })
+            
+            # Prep status chip
+            prep_summary = MCIP.get_advisor_prep_summary()
+            if prep_summary.get("available"):
+                progress = prep_summary.get("progress", 0)
+                sections_complete = len(prep_summary.get("sections_complete", []))
+                context_chips.append({
+                    'icon': '📝',
+                    'label': 'Prep',
+                    'value': 'Complete' if progress == 100 else f'{sections_complete}/4',
+                    'sublabel': f'{progress}%'
+                })
+            
+            # Trivia status chip (if any games played)
+            tiles = st.session_state.get("product_tiles_v2", {})
+            trivia_progress = tiles.get("senior_trivia_hub", {})
+            badges_earned = trivia_progress.get("badges_earned", {})
+            if badges_earned:
+                context_chips.append({
+                    'icon': '🎮',
+                    'label': 'Trivia',
+                    'value': f'{len(badges_earned)}/5',
+                    'sublabel': 'quizzes'
+                })
+            
+            # Build encouragement banner
+            encouragement = {
+                'icon': '💪',
+                'text': wr_msg["encouragement"],
+                'status': 'in_progress'
+            }
+            
+            # Primary action
+            primary_action = {
+                'label': wr_msg["cta_label"],
+                'route': wr_msg["cta_route"]
+            }
+            
+            # Secondary action (optional)
+            secondary_action = None
+            
+            # No progress bar for Waiting Room (not linear journey)
+            # No alert HTML for Waiting Room
+            
+            # Render Waiting Room V2 panel
+            render_navi_panel_v2(
+                title=wr_msg["title"],
+                reason=wr_msg["reason"],
+                encouragement=encouragement,
+                context_chips=context_chips,
+                primary_action=primary_action,
+                secondary_action=secondary_action,
+                progress=None,  # No progress bar for Waiting Room
+                alert_html=""  # No alerts
+            )
+            
+            return ctx
+        
+        # ============================================================
         # MEMBER HUB (CONCIERGE) - EXISTING LOGIC UNCHANGED
         # ============================================================
         # Hub-level guidance - use NEW V2 panel design
         completed_count = ctx.progress.get('completed_count', 0)
         
+        # Check if PFMA is complete (Concierge journey finished)
+        pfma_complete = ctx.advisor_appointment and ctx.advisor_appointment.scheduled
+        
         # Determine journey phase
-        if completed_count == 0:
+        if pfma_complete:
+            phase = "concierge_complete"
+        elif completed_count == 0:
             phase = "getting_started"
         elif completed_count == 3:
             phase = "complete"
@@ -522,11 +662,12 @@ def render_navi_panel(
             'getting_started': '🚀',
             'in_progress': '💪',
             'nearly_there': '🎯',
-            'complete': '🎉'
+            'complete': '🎉',
+            'concierge_complete': '🎉'
         }
         encouragement = {
             'icon': encouragement_icons.get(phase, '💪'),
-            'text': journey_msg['text'],
+            'text': journey_msg.get('text', ''),
             'status': phase
         }
         
@@ -554,12 +695,12 @@ def render_navi_panel(
             })
         
         if ctx.advisor_appointment:
-            advisor_type = getattr(ctx.advisor_appointment, 'advisor_type', 'Financial Advisor')
+            appt_date = ctx.advisor_appointment.date
             context_chips.append({
                 'icon': '📅',
                 'label': 'Appt',
-                'value': 'Scheduled',
-                'sublabel': advisor_type
+                'value': appt_date,
+                'sublabel': ctx.advisor_appointment.time
             })
         else:
             context_chips.append({
@@ -568,13 +709,31 @@ def render_navi_panel(
                 'value': 'Not scheduled'
             })
         
-        # Build primary action
-        primary_label = next_action.get('action', 'Continue')  # MCIP returns 'action', not 'label'
-        primary_route = next_action.get('route', 'hub_concierge')  # MCIP returns 'route', not 'action_key'
-        primary_action = {
-            'label': primary_label,
-            'route': primary_route
-        }
+        # Build primary action - special handling for concierge_complete
+        if phase == "concierge_complete":
+            # Concierge complete - route to Waiting Room
+            title = journey_msg.get('text', 'Congratulations!')
+            reason = journey_msg.get('subtext', "You've completed the Concierge journey.")
+            primary_action = {
+                'label': 'Go to Waiting Room',
+                'route': 'hub_waiting_room'
+            }
+        else:
+            # Standard title and action logic
+            if ctx.user_name:
+                title = f"Hey {ctx.user_name}—let's keep going." if completed_count > 0 else f"Hey {ctx.user_name}—let's get started."
+            else:
+                title = "Let's keep going." if completed_count > 0 else "Let's get started."
+            
+            reason = next_action.get('reason', 'This will help us find the right support for your situation.')
+            primary_label = next_action.get('action', 'Continue')
+            primary_route = next_action.get('route', 'hub_concierge')
+            primary_action = {
+                'label': primary_label,
+                'route': primary_route
+            }
+        
+        # Build secondary action (Ask Navi → FAQ)
         
         # Build secondary action (Ask Navi → FAQ)
         num_suggested = len(NaviOrchestrator.get_suggested_questions(ctx.flags, ctx.progress['completed_products']))

@@ -43,14 +43,20 @@ class FinancialProfile:
 
 @dataclass
 class AdvisorAppointment:
-    """Standardized appointment contract published by PFMA."""
+    """Standardized appointment contract published by PFMA v3."""
     scheduled: bool
     date: str
     time: str
     type: str  # phone | video | in_person
     confirmation_id: str
+    contact_email: str
+    contact_phone: str
+    timezone: str
+    notes: str
     generated_at: str
     status: str  # scheduled | confirmed | cancelled
+    prep_sections_complete: list  # ["personal", "financial", ...]
+    prep_progress: int  # 0-100
 
 
 class MCIP:
@@ -84,6 +90,11 @@ class MCIP:
                 "unlocked_products": ["gcp"],  # GCP always unlocked
                 "recommended_next": "gcp"
             },
+            "waiting_room": {
+                "advisor_prep_status": "not_started",  # not_started | in_progress | complete
+                "trivia_status": "not_started",  # not_started | in_progress | complete
+                "current_focus": "advisor_prep"  # advisor_prep | trivia | learning
+            },
             "events": []
         }
         
@@ -103,6 +114,11 @@ class MCIP:
                     for journey_key, journey_default in default_state["journey"].items():
                         if journey_key not in existing[key]:
                             existing[key][journey_key] = journey_default
+                elif key == "waiting_room" and isinstance(existing[key], dict):
+                    # Ensure all waiting_room sub-keys exist
+                    for wr_key, wr_default in default_state["waiting_room"].items():
+                        if wr_key not in existing[key]:
+                            existing[key][wr_key] = wr_default
         
         # CRITICAL FIX: Always restore from mcip_contracts if available
         # This ensures that completion state persists even if mcip state exists
@@ -127,6 +143,10 @@ class MCIP:
                 # Use deepcopy to avoid shared references between mcip and mcip_contracts
                 # This ensures modifying mcip["journey"] doesn't corrupt mcip_contracts["journey"]
                 st.session_state[cls.STATE_KEY]["journey"] = copy.deepcopy(contracts["journey"])
+            
+            if "waiting_room" in contracts and contracts["waiting_room"]:
+                # Restore waiting room tracking state
+                st.session_state[cls.STATE_KEY]["waiting_room"] = copy.deepcopy(contracts["waiting_room"])
             
             restored_from_contracts = True
         else:
@@ -272,6 +292,174 @@ class MCIP:
             "confirmation_id": appointment.confirmation_id
         })
     
+    @classmethod
+    def set_advisor_appointment(cls, appointment: AdvisorAppointment) -> None:
+        """Alias for publish_appointment (used by PFMA v3 and Advisor Prep).
+        
+        Args:
+            appointment: AdvisorAppointment dataclass
+        """
+        cls.publish_appointment(appointment)
+    
+    @classmethod
+    def get_pfma_summary(cls) -> dict:
+        """Get PFMA booking status for Concierge tile display.
+        
+        Returns:
+            {
+                "booked": bool,
+                "appointment_date": str,
+                "appointment_time": str,
+                "confirmation_id": str,
+                "route": str,  # "pfma_v3" or "advisor_prep"
+                "next_action": str,  # "Book Appointment" or "View Prep"
+                "prep_progress": int  # 0-100
+            }
+        """
+        cls.initialize()
+        appt = cls.get_advisor_appointment()
+        
+        if not appt or not appt.scheduled:
+            return {
+                "booked": False,
+                "route": "pfma_v3",
+                "next_action": "Book Appointment",
+                "prep_progress": 0
+            }
+        
+        return {
+            "booked": True,
+            "appointment_date": appt.date,
+            "appointment_time": appt.time,
+            "confirmation_id": appt.confirmation_id,
+            "route": "advisor_prep" if appt.prep_progress < 100 else "hub_waiting_room",
+            "next_action": "Complete Prep" if appt.prep_progress < 100 else "All Set",
+            "prep_progress": appt.prep_progress
+        }
+    
+    @classmethod
+    def get_advisor_prep_summary(cls) -> dict:
+        """Get Advisor Prep status for Waiting Room tile.
+        
+        Returns:
+            {
+                "available": bool,
+                "sections_complete": list,
+                "progress": int,  # 0-100
+                "next_section": str,  # "personal" | "financial" | etc.
+                "appointment_context": str  # "Your appointment is in 8 days"
+            }
+        """
+        cls.initialize()
+        appt = cls.get_advisor_appointment()
+        
+        if not appt or not appt.scheduled:
+            return {"available": False}
+        
+        sections_complete = appt.prep_sections_complete or []
+        progress = appt.prep_progress or 0
+        
+        all_sections = ["personal", "financial", "housing", "medical"]
+        remaining = [s for s in all_sections if s not in sections_complete]
+        next_section = remaining[0] if remaining else None
+        
+        # Calculate days until appointment
+        from datetime import datetime
+        try:
+            appt_date = datetime.fromisoformat(appt.date)
+            days_until = (appt_date - datetime.now()).days
+            if days_until == 0:
+                context = f"Your appointment is today at {appt.time}"
+            elif days_until == 1:
+                context = f"Your appointment is tomorrow at {appt.time}"
+            elif days_until > 1:
+                context = f"Your appointment is in {days_until} days"
+            else:
+                context = f"Your appointment: {appt.date} at {appt.time}"
+        except:
+            context = f"Your appointment: {appt.date} at {appt.time}"
+        
+        return {
+            "available": True,
+            "sections_complete": sections_complete,
+            "progress": progress,
+            "next_section": next_section,
+            "appointment_context": context
+        }
+    
+    # =========================================================================
+    # WAITING ROOM TRACKING (Progress across Advisor Prep → Trivia → Learning)
+    # =========================================================================
+    
+    @classmethod
+    def get_waiting_room_state(cls) -> dict:
+        """Get current Waiting Room progress state.
+        
+        Returns:
+            {
+                "advisor_prep_status": "not_started" | "in_progress" | "complete",
+                "trivia_status": "not_started" | "in_progress" | "complete",
+                "current_focus": "advisor_prep" | "trivia" | "learning"
+            }
+        """
+        cls.initialize()
+        return st.session_state[cls.STATE_KEY].get("waiting_room", {
+            "advisor_prep_status": "not_started",
+            "trivia_status": "not_started",
+            "current_focus": "advisor_prep"
+        })
+    
+    @classmethod
+    def update_advisor_prep_status(cls, status: str) -> None:
+        """Update Advisor Prep status and adjust current_focus if needed.
+        
+        Args:
+            status: "not_started" | "in_progress" | "complete"
+        """
+        cls.initialize()
+        waiting_room = st.session_state[cls.STATE_KEY]["waiting_room"]
+        waiting_room["advisor_prep_status"] = status
+        
+        # If Advisor Prep is complete, shift focus to Trivia
+        if status == "complete" and waiting_room["current_focus"] == "advisor_prep":
+            waiting_room["current_focus"] = "trivia"
+        
+        # Save for persistence
+        cls._save_contracts_for_persistence()
+        
+        cls._fire_event("mcip.waiting_room.advisor_prep_updated", {"status": status})
+    
+    @classmethod
+    def update_trivia_status(cls, status: str) -> None:
+        """Update Trivia status and adjust current_focus if needed.
+        
+        Args:
+            status: "not_started" | "in_progress" | "complete"
+        """
+        cls.initialize()
+        waiting_room = st.session_state[cls.STATE_KEY]["waiting_room"]
+        waiting_room["trivia_status"] = status
+        
+        # If Trivia is complete, shift focus to Learning
+        if status == "complete" and waiting_room["current_focus"] == "trivia":
+            waiting_room["current_focus"] = "learning"
+        
+        # Save for persistence
+        cls._save_contracts_for_persistence()
+        
+        cls._fire_event("mcip.waiting_room.trivia_updated", {"status": status})
+    
+    @classmethod
+    def set_waiting_room_focus(cls, focus: str) -> None:
+        """Manually set Waiting Room current focus.
+        
+        Args:
+            focus: "advisor_prep" | "trivia" | "learning"
+        """
+        cls.initialize()
+        st.session_state[cls.STATE_KEY]["waiting_room"]["current_focus"] = focus
+        cls._save_contracts_for_persistence()
+    
     # =========================================================================
     # JOURNEY MANAGEMENT
     # =========================================================================
@@ -296,6 +484,7 @@ class MCIP:
                 "financial_profile": copy.deepcopy(st.session_state[cls.STATE_KEY].get("financial_profile")),
                 "advisor_appointment": copy.deepcopy(st.session_state[cls.STATE_KEY].get("advisor_appointment")),
                 "journey": copy.deepcopy(st.session_state[cls.STATE_KEY].get("journey")),  # CRITICAL: deepcopy to prevent shared reference
+                "waiting_room": copy.deepcopy(st.session_state[cls.STATE_KEY].get("waiting_room")),  # Track Waiting Room progress
             }
             st.session_state["mcip_contracts"] = contracts
     

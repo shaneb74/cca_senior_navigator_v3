@@ -77,6 +77,11 @@ def input_pill(field: FieldDef, current: Any = None) -> Any:
     if not options:
         return current if current is not None else field.default
 
+    # Filter out options with empty labels to prevent gray pills
+    options = [opt for opt in options if opt.get("label", "").strip()]
+    if not options:
+        return current if current is not None else field.default
+
     # Build value mapping
     labels = [opt.get("label", "") for opt in options]
     label_to_value = {

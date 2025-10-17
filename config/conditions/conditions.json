@@ -1,0 +1,97 @@
+{
+  "version": "1.0.0",
+  "updated_at": "2025-10-17",
+  "description": "Canonical registry of chronic health conditions for GCP and PFMA",
+  "conditions": [
+    {
+      "code": "diabetes",
+      "label": "Diabetes",
+      "category": "endocrine",
+      "common": true
+    },
+    {
+      "code": "copd",
+      "label": "COPD (Chronic Obstructive Pulmonary Disease)",
+      "category": "respiratory",
+      "common": true
+    },
+    {
+      "code": "chf",
+      "label": "Congestive Heart Failure (CHF)",
+      "category": "cardiovascular",
+      "common": true
+    },
+    {
+      "code": "hypertension",
+      "label": "Hypertension (High Blood Pressure)",
+      "category": "cardiovascular",
+      "common": true
+    },
+    {
+      "code": "arthritis",
+      "label": "Arthritis",
+      "category": "musculoskeletal",
+      "common": true
+    },
+    {
+      "code": "stroke",
+      "label": "Stroke / CVA",
+      "category": "neurological",
+      "common": true
+    },
+    {
+      "code": "parkinsons",
+      "label": "Parkinson's Disease",
+      "category": "neurological",
+      "common": true
+    },
+    {
+      "code": "cancer",
+      "label": "Cancer (any type)",
+      "category": "oncology",
+      "common": true
+    },
+    {
+      "code": "kidney_disease",
+      "label": "Chronic Kidney Disease",
+      "category": "renal",
+      "common": false
+    },
+    {
+      "code": "liver_disease",
+      "label": "Chronic Liver Disease",
+      "category": "hepatic",
+      "common": false
+    },
+    {
+      "code": "osteoporosis",
+      "label": "Osteoporosis",
+      "category": "musculoskeletal",
+      "common": false
+    },
+    {
+      "code": "asthma",
+      "label": "Asthma",
+      "category": "respiratory",
+      "common": false
+    },
+    {
+      "code": "alzheimers",
+      "label": "Alzheimer's Disease",
+      "category": "neurological",
+      "common": false
+    },
+    {
+      "code": "dementia_other",
+      "label": "Dementia (other than Alzheimer's)",
+      "category": "neurological",
+      "common": false
+    },
+    {
+      "code": "other",
+      "label": "Other (not listed)",
+      "category": "other",
+      "common": false
+    }
+  ]
+}

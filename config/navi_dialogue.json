@@ -116,6 +116,30 @@
         ],
         "why_this_matters": "You've taken a huge step toward securing the right care. You should feel confident and prepared."
       }
+    },
+    "concierge_complete": {
+      "status": "concierge_complete",
+      "completed": 3,
+      "context": "PFMA complete - Concierge journey finished, Waiting Room next",
+      "messages": {
+        "main_authenticated": {
+          "text": "🎉 Congratulations, {name}! You've completed your Concierge journey.",
+          "subtext": "Your advisor appointment is scheduled and you're ready for the next phase.",
+          "cta": "Go to Waiting Room",
+          "icon": "🎉"
+        },
+        "main_guest": {
+          "text": "🎉 Congratulations! You've completed the Concierge phase.",
+          "subtext": "Your advisor appointment is scheduled and you're ready for the next phase.",
+          "cta": "Go to Waiting Room",
+          "icon": "🎉"
+        },
+        "context_boost": [
+          "Head over to the Waiting Room to prepare for your call and explore new activities while you wait.",
+          "You've finished the planning stage. Let's get ready for your conversation and have a little fun!"
+        ],
+        "why_this_matters": "The Waiting Room is where you can prepare for your advisor call, play trivia games, and explore helpful resources."
+      }
     }
   },
   "product_gates": {

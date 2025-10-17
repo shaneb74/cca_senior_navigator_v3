@@ -1,0 +1,59 @@
+{
+  "key": "financial",
+  "title": "Financial Overview",
+  "icon": "💰",
+  "description": "Share your financial situation to help us identify assistance programs and resources",
+  "fields": [
+    {
+      "key": "monthly_income",
+      "label": "Approximate Monthly Income",
+      "type": "number",
+      "prefill_from": "cost_planner.income_assets.monthly_income",
+      "prefill_hint": true,
+      "required": false,
+      "help": "Total monthly income from all sources"
+    },
+    {
+      "key": "total_assets",
+      "label": "Approximate Total Assets",
+      "type": "number",
+      "prefill_from": "cost_planner.income_assets.total_assets",
+      "prefill_hint": true,
+      "required": false,
+      "help": "Savings, investments, property value, etc."
+    },
+    {
+      "key": "insurance_coverage",
+      "label": "Insurance Coverage",
+      "type": "multiselect",
+      "options": [
+        "Medicare Part A (Hospital)",
+        "Medicare Part B (Medical)",
+        "Medicare Part D (Prescription)",
+        "Medigap/Supplement",
+        "Medicaid",
+        "VA Benefits",
+        "Long-term Care Insurance",
+        "Private Health Insurance",
+        "None"
+      ],
+      "prefill_hint": true,
+      "required": false,
+      "help": "Select all that apply"
+    },
+    {
+      "key": "primary_concern",
+      "label": "Primary Financial Concern",
+      "type": "select",
+      "options": [
+        "Affordability",
+        "Limited runway",
+        "Benefits navigation",
+        "None identified"
+      ],
+      "prefill_hint": true,
+      "required": false,
+      "help": "What financial topic would you like to focus on?"
+    }
+  ]
+}

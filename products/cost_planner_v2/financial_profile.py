@@ -12,6 +12,12 @@ Output: Unified FinancialProfile ready for MCIP publishing and analysis
 from typing import Any, Dict, Optional
 from dataclasses import dataclass, field
 import streamlit as st
+from products.cost_planner_v2.utils.financial_helpers import (
+    normalize_income_data,
+    normalize_asset_data,
+    income_breakdown,
+    asset_breakdown,
+)
 
 
 @dataclass
@@ -28,17 +34,43 @@ class FinancialProfile:
     pension_monthly: float = 0.0
     employment_status: str = "not_employed"
     employment_monthly: float = 0.0
+    has_partner: str = "no_partner"
+    shared_finance_notes: str = ""
+    partner_income_monthly: float = 0.0
+    retirement_withdrawals_monthly: float = 0.0
+    rental_income_monthly: float = 0.0
+    ltc_insurance_monthly: float = 0.0
+    family_support_monthly: float = 0.0
+    periodic_income_avg_monthly: float = 0.0
     other_income_monthly: float = 0.0
     total_monthly_income: float = 0.0
+    income_breakdown: Dict[str, float] = field(default_factory=dict)
     
     # ==== ASSETS & RESOURCES ====
     checking_savings: float = 0.0
     investment_accounts: float = 0.0
     primary_residence_value: float = 0.0
+    primary_residence_has_debt: bool = False
+    primary_residence_mortgage_balance: float = 0.0
+    primary_residence_liquidity_window: str = "under_6_months"
     home_sale_interest: bool = False
     other_real_estate: float = 0.0
+    other_real_estate_has_debt: bool = False
+    other_real_estate_debt_balance: float = 0.0
     other_resources: float = 0.0
+    asset_has_partner: str = "no_partner"
+    asset_legal_restrictions: str = ""
+    liquid_assets_has_loan: bool = False
+    liquid_assets_loan_balance: float = 0.0
+    asset_secured_loans: float = 0.0
+    asset_other_debts: float = 0.0
+    asset_debt_notes: str = ""
+    asset_liquidity_concerns: str = "no_concerns"
+    asset_liquidity_notes: str = ""
     total_asset_value: float = 0.0
+    total_asset_debt: float = 0.0
+    net_asset_value: float = 0.0
+    asset_breakdown: Dict[str, float] = field(default_factory=dict)
     
     # ==== HEALTH INSURANCE ====
     has_medicare: bool = False
@@ -115,36 +147,53 @@ def build_financial_profile(
     assessments_state = product_tiles.get("assessments", {})
     
     # ==== INCOME ASSESSMENT ====
-    income_data = assessments_state.get("income", {})
-    if income_data:
-        profile.ss_monthly = float(income_data.get("ss_monthly", 0))
-        profile.pension_monthly = float(income_data.get("pension_monthly", 0))
+    income_raw = assessments_state.get("income", {})
+    if income_raw:
+        income_data = normalize_income_data(income_raw)
+        profile.ss_monthly = float(income_data.get("ss_monthly", 0.0))
+        profile.pension_monthly = float(income_data.get("pension_monthly", 0.0))
         profile.employment_status = income_data.get("employment_status", "not_employed")
-        profile.employment_monthly = float(income_data.get("employment_monthly", 0))
-        profile.other_income_monthly = float(income_data.get("other_monthly", 0))
-        profile.total_monthly_income = (
-            profile.ss_monthly + 
-            profile.pension_monthly + 
-            profile.employment_monthly + 
-            profile.other_income_monthly
-        )
+        profile.employment_monthly = float(income_data.get("employment_monthly", 0.0))
+        profile.has_partner = income_data.get("has_partner", "no_partner")
+        profile.shared_finance_notes = income_data.get("shared_finance_notes", "")
+        profile.partner_income_monthly = float(income_data.get("partner_income_monthly", 0.0))
+        profile.retirement_withdrawals_monthly = float(income_data.get("retirement_withdrawals_monthly", 0.0))
+        profile.rental_income_monthly = float(income_data.get("rental_income_monthly", 0.0))
+        profile.ltc_insurance_monthly = float(income_data.get("ltc_insurance_monthly", 0.0))
+        profile.family_support_monthly = float(income_data.get("family_support_monthly", 0.0))
+        profile.periodic_income_avg_monthly = float(income_data.get("periodic_income_avg_monthly", 0.0))
+        profile.other_income_monthly = float(income_data.get("other_income_monthly", 0.0))
+        profile.total_monthly_income = float(income_data.get("total_monthly_income", profile.total_monthly_income))
+        profile.income_breakdown = income_breakdown(income_data)
     
     # ==== ASSETS ASSESSMENT ====
-    assets_data = assessments_state.get("assets", {})
-    if assets_data:
-        profile.checking_savings = float(assets_data.get("checking_savings", 0))
-        profile.investment_accounts = float(assets_data.get("investment_accounts", 0))
-        profile.primary_residence_value = float(assets_data.get("primary_residence_value", 0))
+    assets_raw = assessments_state.get("assets", {})
+    if assets_raw:
+        assets_data = normalize_asset_data(assets_raw)
+        profile.asset_has_partner = assets_data.get("asset_has_partner", "no_partner")
+        profile.asset_legal_restrictions = assets_data.get("asset_legal_restrictions", "")
+        profile.checking_savings = float(assets_data.get("checking_savings", 0.0))
+        profile.investment_accounts = float(assets_data.get("investment_accounts", 0.0))
+        profile.liquid_assets_has_loan = bool(assets_data.get("liquid_assets_has_loan", False))
+        profile.liquid_assets_loan_balance = float(assets_data.get("liquid_assets_loan_balance", 0.0))
+        profile.primary_residence_value = float(assets_data.get("primary_residence_value", 0.0))
+        profile.primary_residence_has_debt = bool(assets_data.get("primary_residence_has_debt", False))
+        profile.primary_residence_mortgage_balance = float(assets_data.get("primary_residence_mortgage_balance", 0.0))
+        profile.primary_residence_liquidity_window = assets_data.get("primary_residence_liquidity_window", "under_6_months")
         profile.home_sale_interest = bool(assets_data.get("home_sale_interest", False))
-        profile.other_real_estate = float(assets_data.get("other_real_estate", 0))
-        profile.other_resources = float(assets_data.get("other_resources", 0))
-        profile.total_asset_value = (
-            profile.checking_savings +
-            profile.investment_accounts +
-            profile.primary_residence_value +
-            profile.other_real_estate +
-            profile.other_resources
-        )
+        profile.other_real_estate = float(assets_data.get("other_real_estate", 0.0))
+        profile.other_real_estate_has_debt = bool(assets_data.get("other_real_estate_has_debt", False))
+        profile.other_real_estate_debt_balance = float(assets_data.get("other_real_estate_debt_balance", 0.0))
+        profile.other_resources = float(assets_data.get("other_resources", 0.0))
+        profile.asset_secured_loans = float(assets_data.get("asset_secured_loans", 0.0))
+        profile.asset_other_debts = float(assets_data.get("asset_other_debts", 0.0))
+        profile.asset_debt_notes = assets_data.get("asset_debt_notes", "")
+        profile.asset_liquidity_concerns = assets_data.get("asset_liquidity_concerns", "no_concerns")
+        profile.asset_liquidity_notes = assets_data.get("asset_liquidity_notes", "")
+        profile.total_asset_value = float(assets_data.get("total_asset_value", profile.total_asset_value))
+        profile.total_asset_debt = float(assets_data.get("total_asset_debt", 0.0))
+        profile.net_asset_value = float(assets_data.get("net_asset_value", max(profile.total_asset_value - profile.total_asset_debt, 0.0)))
+        profile.asset_breakdown = asset_breakdown(assets_data)
     
     # ==== HEALTH INSURANCE ASSESSMENT ====
     health_data = assessments_state.get("health_insurance", {})
