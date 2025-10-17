@@ -21,6 +21,7 @@ import streamlit as st
 from core.mcip import MCIP
 from core.flags import get_all_flags
 from core.state import is_authenticated, get_user_name
+from products.advisor_prep.utils import get_duck_progress, is_all_ducks_earned
 
 
 def _get_tier_display_name(tier: str) -> str:
@@ -544,11 +545,27 @@ def render_navi_panel(
             if prep_summary.get("available"):
                 progress = prep_summary.get("progress", 0)
                 sections_complete = len(prep_summary.get("sections_complete", []))
+                
+                # Get duck progress
+                duck_progress = get_duck_progress()
+                duck_count = duck_progress["earned_count"]
+                
+                # Build chip display
+                if is_all_ducks_earned():
+                    chip_value = "🦆🦆🦆🦆"
+                    chip_sublabel = "All Ducks!"
+                elif duck_count > 0:
+                    chip_value = "🦆" * duck_count
+                    chip_sublabel = f'{sections_complete}/4 sections'
+                else:
+                    chip_value = f'{sections_complete}/4'
+                    chip_sublabel = f'{progress}%'
+                
                 context_chips.append({
                     'icon': '📝',
                     'label': 'Prep',
-                    'value': 'Complete' if progress == 100 else f'{sections_complete}/4',
-                    'sublabel': f'{progress}%'
+                    'value': chip_value,
+                    'sublabel': chip_sublabel
                 })
             
             # Trivia status chip (if any games played)
