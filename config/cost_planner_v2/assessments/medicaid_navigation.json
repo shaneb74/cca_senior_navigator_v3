@@ -37,6 +37,13 @@
           "default": "not_enrolled"
         }
       ]
+    },
+    {
+      "id": "results",
+      "type": "results",
+      "title": "Medicaid Planning Assessment Complete",
+      "icon": "✅",
+      "fields": []
     }
   ],
   "summary": {

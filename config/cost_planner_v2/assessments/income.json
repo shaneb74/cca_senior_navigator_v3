@@ -33,6 +33,13 @@
           "help": "Enter the monthly Social Security benefit amount"
         }
       ]
+    },
+    {
+      "id": "results",
+      "type": "results",
+      "title": "Income Assessment Complete",
+      "icon": "✅",
+      "fields": []
     }
   ],
   "summary": {

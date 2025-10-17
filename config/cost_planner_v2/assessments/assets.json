@@ -35,6 +35,13 @@
           "column": 1
         }
       ]
+    },
+    {
+      "id": "results",
+      "type": "results",
+      "title": "Assets Assessment Complete",
+      "icon": "✅",
+      "fields": []
     }
   ],
   "summary": {
