@@ -8,6 +8,7 @@ Includes prefill logic from Cost Planner and Financial Profile.
 import json
 import streamlit as st
 from pathlib import Path
+from products.advisor_prep.utils import award_duck_badge
 
 from core.mcip import MCIP
 from core.events import log_event
@@ -179,6 +180,9 @@ def _save_section(form_data: dict):
     sections_complete = st.session_state["advisor_prep"]["sections_complete"]
     if "financial" not in sections_complete:
         sections_complete.append("financial")
+    
+    # Award duck badge
+    award_duck_badge("financial")
     
     # Update MCIP contract with prep progress
     appt = MCIP.get_advisor_appointment()

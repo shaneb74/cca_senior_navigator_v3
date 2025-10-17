@@ -9,6 +9,7 @@ Integrates with Flag Manager for:
 
 import json
 import streamlit as st
+from products.advisor_prep.utils import award_duck_badge
 from pathlib import Path
 
 import core.flag_manager as flag_manager
@@ -231,6 +232,9 @@ def _save_medical_section(selected_conditions: list, selected_flags: list, medic
     sections_complete = st.session_state["advisor_prep"]["sections_complete"]
     if "medical" not in sections_complete:
         sections_complete.append("medical")
+    
+    # Award duck badge
+    award_duck_badge("medical")
     
     # Update MCIP contract with prep progress
     appt = MCIP.get_advisor_appointment()

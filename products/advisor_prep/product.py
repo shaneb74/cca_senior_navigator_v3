@@ -24,6 +24,7 @@ from core.mcip import MCIP
 from core.nav import route_to
 from core.navi import render_navi_panel
 from core.events import log_event
+from products.advisor_prep.utils import get_duck_progress, is_all_ducks_earned
 
 
 def render():
@@ -136,6 +137,15 @@ def _render_section_menu():
     progress = len(sections_complete) * 25
     
     st.progress(progress / 100, text=f"Progress: {len(sections_complete)}/4 sections complete")
+    
+    # Duck badge progress
+    duck_progress = get_duck_progress()
+    if duck_progress["earned_count"] > 0:
+        duck_display = "🦆" * duck_progress["earned_count"]
+        if is_all_ducks_earned():
+            st.success(f"🎉 {duck_display} **All Ducks in a Row!** You've completed all prep sections.")
+        else:
+            st.info(f"{duck_display} **{duck_progress['earned_count']}/4 Ducks Earned** — Keep going!")
     
     st.markdown("---")
     
