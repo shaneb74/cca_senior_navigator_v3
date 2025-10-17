@@ -263,95 +263,129 @@ def _render_fields(section: Dict[str, Any], state: Dict[str, Any]) -> Dict[str, 
         # Get current value or default
         current_value = state.get(key, default)
         
-        # Determine which column to render in
-        if columns:
-            column_num = field.get("column", 1)
-            container = columns.get(column_num, columns[1])
-        else:
-            container = st
-        
         # Render appropriate widget
-        with container:
-            if field_type == "currency":
-                min_val = field.get("min", 0)
-                max_val = field.get("max", 10000000)
-                step = field.get("step", 100)
-                
-                value = container.number_input(
-                    label=f"{label} {'*' if required else ''}",
-                    min_value=min_val,
-                    max_value=max_val,
-                    value=current_value if current_value is not None else min_val,
-                    step=step,
-                    format="%d",
-                    help=help_text,
-                    key=f"field_{key}"
-                )
-                new_values[key] = value
-                
-            elif field_type == "select":
-                options = field.get("options", [])
-                option_labels = [opt.get("label", opt.get("value")) for opt in options]
-                option_values = [opt.get("value", opt.get("label")) for opt in options]
-                
-                # Find current index
-                try:
-                    current_index = option_values.index(current_value) if current_value else 0
-                except ValueError:
-                    current_index = 0
-                
-                selected_label = container.selectbox(
-                    label=f"{label} {'*' if required else ''}",
-                    options=option_labels,
-                    index=current_index,
-                    help=help_text,
-                    key=f"field_{key}"
-                )
-                
-                # Map back to value
-                selected_index = option_labels.index(selected_label)
-                value = option_values[selected_index]
-                new_values[key] = value
-                
-            elif field_type == "checkbox":
-                value = container.checkbox(
-                    label=label,
-                    value=bool(current_value),
-                    help=help_text,
-                    key=f"field_{key}"
-                )
-                new_values[key] = value
-                
-            elif field_type == "multiselect":
-                options = field.get("options", [])
-                option_labels = [opt.get("label", opt.get("value")) for opt in options]
-                
-                value = container.multiselect(
-                    label=f"{label} {'*' if required else ''}",
-                    options=option_labels,
-                    default=current_value if isinstance(current_value, list) else [],
-                    help=help_text,
-                    key=f"field_{key}"
-                )
-                new_values[key] = value
-                
-            elif field_type == "date":
-                value = container.date_input(
-                    label=f"{label} {'*' if required else ''}",
-                    value=current_value,
-                    help=help_text,
-                    key=f"field_{key}"
-                )
-                new_values[key] = value
-                
-            else:  # text
-                value = container.text_input(
-                    label=f"{label} {'*' if required else ''}",
-                    value=str(current_value) if current_value else "",
-                    help=help_text,
-                    key=f"field_{key}"
-                )
-                new_values[key] = value
+        if field_type == "currency":
+            min_val = field.get("min", 0)
+            max_val = field.get("max", 10000000)
+            step = field.get("step", 100)
+            
+            # Determine which column to render in
+            if columns:
+                column_num = field.get("column", 1)
+                container = columns.get(column_num, columns[1])
+            else:
+                container = st
+            
+            value = container.number_input(
+                label=f"{label} {'*' if required else ''}",
+                min_value=min_val,
+                max_value=max_val,
+                value=current_value if current_value is not None else min_val,
+                step=step,
+                format="%d",
+                help=help_text,
+                key=f"field_{key}"
+            )
+            new_values[key] = value
+            
+        elif field_type == "select":
+            options = field.get("options", [])
+            option_labels = [opt.get("label", opt.get("value")) for opt in options]
+            option_values = [opt.get("value", opt.get("label")) for opt in options]
+            
+            # Find current index
+            try:
+                current_index = option_values.index(current_value) if current_value else 0
+            except ValueError:
+                current_index = 0
+            
+            # Determine which column to render in
+            if columns:
+                column_num = field.get("column", 1)
+                container = columns.get(column_num, columns[1])
+            else:
+                container = st
+            
+            selected_label = container.selectbox(
+                label=f"{label} {'*' if required else ''}",
+                options=option_labels,
+                index=current_index,
+                help=help_text,
+                key=f"field_{key}"
+            )
+            
+            # Map back to value
+            selected_index = option_labels.index(selected_label)
+            value = option_values[selected_index]
+            new_values[key] = value
+            
+        elif field_type == "checkbox":
+            # Determine which column to render in
+            if columns:
+                column_num = field.get("column", 1)
+                container = columns.get(column_num, columns[1])
+            else:
+                container = st
+            
+            value = container.checkbox(
+                label=label,
+                value=bool(current_value),
+                help=help_text,
+                key=f"field_{key}"
+            )
+            new_values[key] = value
+            
+        elif field_type == "multiselect":
+            options = field.get("options", [])
+            option_labels = [opt.get("label", opt.get("value")) for opt in options]
+            
+            # Determine which column to render in
+            if columns:
+                column_num = field.get("column", 1)
+                container = columns.get(column_num, columns[1])
+            else:
+                container = st
+            
+            value = container.multiselect(
+                label=f"{label} {'*' if required else ''}",
+                options=option_labels,
+                default=current_value if isinstance(current_value, list) else [],
+                help=help_text,
+                key=f"field_{key}"
+            )
+            new_values[key] = value
+            
+        elif field_type == "date":
+            # Determine which column to render in
+            if columns:
+                column_num = field.get("column", 1)
+                container = columns.get(column_num, columns[1])
+            else:
+                container = st
+            
+            value = container.date_input(
+                label=f"{label} {'*' if required else ''}",
+                value=current_value,
+                help=help_text,
+                key=f"field_{key}"
+            )
+            new_values[key] = value
+            
+        else:  # text
+            # Determine which column to render in
+            if columns:
+                column_num = field.get("column", 1)
+                container = columns.get(column_num, columns[1])
+            else:
+                container = st
+            
+            value = container.text_input(
+                label=f"{label} {'*' if required else ''}",
+                value=str(current_value) if current_value else "",
+                help=help_text,
+                key=f"field_{key}"
+            )
+            new_values[key] = value
     
     return new_values
 
