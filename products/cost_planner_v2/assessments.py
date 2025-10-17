@@ -436,43 +436,10 @@ def _render_fields_for_page(section: Dict[str, Any], state: Dict[str, Any]) -> D
     Render fields for a section in page mode (all fields visible at once).
     Returns dict of updated field values.
     """
-    from core.assessment_engine import _render_single_field, _check_field_visibility
+    from core.assessment_engine import _render_fields
     
-    fields = section.get("fields", [])
-    if not fields:
-        st.info("No fields defined for this section.")
-        return {}
-    
-    new_values = {}
-    flags = st.session_state.get("flags", {})
-    
-    # Handle two-column layout if specified
-    layout = section.get("layout", "single")
-    
-    if layout == "two_column":
-        col1, col2 = st.columns(2)
-        for idx, field in enumerate(fields):
-            # Check visibility
-            if not _check_field_visibility(field, state, flags):
-                continue
-            
-            # Alternate columns
-            with (col1 if idx % 2 == 0 else col2):
-                value = _render_single_field(field, state)
-                if value is not None:
-                    new_values[field["key"]] = value
-    else:
-        # Single column
-        for field in fields:
-            # Check visibility
-            if not _check_field_visibility(field, state, flags):
-                continue
-            
-            value = _render_single_field(field, state)
-            if value is not None:
-                new_values[field["key"]] = value
-    
-    return new_values
+    # Just use the existing _render_fields function from assessment_engine
+    return _render_fields(section, state)
 
 
 def _render_single_info_box(info_box: Dict[str, Any]) -> None:
