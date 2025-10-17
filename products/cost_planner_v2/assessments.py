@@ -226,7 +226,8 @@ def _render_assessment(assessment_key: str, product_key: str) -> None:
 def _load_all_assessments(product_key: str) -> List[Dict[str, Any]]:
     """Load all assessment configurations."""
     
-    assessments_dir = Path(__file__).parent.parent.parent / "config" / product_key / "assessments"
+    # Load from modules/assessments/ directory (colocation with product code)
+    assessments_dir = Path(__file__).parent / "modules" / "assessments"
     
     if not assessments_dir.exists():
         return []
@@ -251,7 +252,8 @@ def _load_all_assessments(product_key: str) -> List[Dict[str, Any]]:
 def _load_assessment_config(assessment_key: str, product_key: str) -> Optional[Dict[str, Any]]:
     """Load a specific assessment configuration."""
     
-    config_path = Path(__file__).parent.parent.parent / "config" / product_key / "assessments" / f"{assessment_key}.json"
+    # Load from modules/assessments/ directory (colocation with product code)
+    config_path = Path(__file__).parent / "modules" / "assessments" / f"{assessment_key}.json"
     
     if not config_path.exists():
         return None
