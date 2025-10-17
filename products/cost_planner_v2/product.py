@@ -90,10 +90,6 @@ def render():
     elif current_step in ["modules", "assessments"]:
         # Support both old "modules" and new "assessments" step names for backward compatibility
         _render_assessments_step()
-    elif current_step.startswith("assessment_"):
-        # Page-based assessment routing (Phase 5)
-        assessment_key = current_step.replace("assessment_", "")
-        _render_assessment_page_step(assessment_key)
     elif current_step == "expert_review":
         _render_expert_review_step()
     elif current_step == "exit":
