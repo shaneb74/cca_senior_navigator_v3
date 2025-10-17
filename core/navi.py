@@ -716,7 +716,7 @@ def render_navi_panel(
             reason = journey_msg.get('subtext', "You've completed the Concierge journey.")
             primary_action = {
                 'label': 'Go to Waiting Room',
-                'route': 'hub_waiting_room'
+                'route': 'hub_waiting'
             }
         else:
             # Standard title and action logic

@@ -88,7 +88,7 @@ def _render_gate():
     
     with col1:
         if st.button("← Return to Waiting Room", type="secondary", use_container_width=True):
-            route_to("hub_waiting_room")
+            route_to("hub_waiting")
     
     with col2:
         if st.button("Book Appointment →", type="primary", use_container_width=True):
@@ -182,13 +182,13 @@ def _render_section_menu():
     
     with col_nav1:
         if st.button("← Return to Waiting Room", type="secondary", use_container_width=True):
-            route_to("hub_waiting_room")
+            route_to("hub_waiting")
     
     with col_nav2:
         if progress == 100:
             if st.button("✓ All Done", type="primary", use_container_width=True):
                 log_event("advisor_prep.completed", {"sections_complete": 4})
-                route_to("hub_waiting_room")
+                route_to("hub_waiting")
 
 
 def _load_section_configs() -> list:
