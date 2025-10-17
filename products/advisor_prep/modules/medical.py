@@ -19,7 +19,7 @@ from products.advisor_prep.prefill import get_care_needs_prefill, update_care_ne
 
 
 def render():
-    """Render Medical prep section with Flag Manager integration."""
+    """Render Medical & Care Needs prep section."""
     
     # Load config
     config = _load_config()
