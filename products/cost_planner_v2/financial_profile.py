@@ -281,89 +281,36 @@ def get_financial_profile(product_key: str = "cost_planner_v2") -> Optional[Fina
     return profile
 
 
-def publish_to_mcip(profile: FinancialProfile) -> bool:
+def publish_to_mcip(analysis, profile: FinancialProfile) -> bool:
     """
-    Publish FinancialProfile to MCIP contracts for persistence.
+    Publish financial analysis summary to MCIP contracts.
     
-    This allows the financial data to be accessed by other products
-    and persisted across sessions.
+    Creates MCIP FinancialProfile contract with summary data from expert analysis.
+    
+    Args:
+        analysis: ExpertReviewAnalysis with calculated metrics
+        profile: FinancialProfile with assessment data (for metadata)
     
     Returns:
         True if publish succeeded, False otherwise
     """
     try:
-        from core.state import MCIP
+        from core.mcip import MCIP, FinancialProfile as MCIPFinancialProfile
+        from datetime import datetime
         
-        # Convert profile to dict for MCIP
-        profile_dict = {
-            "income": {
-                "ss_monthly": profile.ss_monthly,
-                "pension_monthly": profile.pension_monthly,
-                "employment_status": profile.employment_status,
-                "employment_monthly": profile.employment_monthly,
-                "other_income_monthly": profile.other_income_monthly,
-                "total_monthly_income": profile.total_monthly_income
-            },
-            "assets": {
-                "checking_savings": profile.checking_savings,
-                "investment_accounts": profile.investment_accounts,
-                "primary_residence_value": profile.primary_residence_value,
-                "home_sale_interest": profile.home_sale_interest,
-                "other_real_estate": profile.other_real_estate,
-                "other_resources": profile.other_resources,
-                "total_asset_value": profile.total_asset_value
-            },
-            "health_insurance": {
-                "has_medicare": profile.has_medicare,
-                "medicare_parts": profile.medicare_parts,
-                "has_medicare_advantage": profile.has_medicare_advantage,
-                "has_medicare_supplement": profile.has_medicare_supplement,
-                "medicare_premium_monthly": profile.medicare_premium_monthly,
-                "has_medicaid": profile.has_medicaid,
-                "medicaid_covers_ltc": profile.medicaid_covers_ltc,
-                "has_ltc_insurance": profile.has_ltc_insurance,
-                "ltc_daily_benefit": profile.ltc_daily_benefit,
-                "ltc_benefit_period_months": profile.ltc_benefit_period_months,
-                "ltc_elimination_days": profile.ltc_elimination_days,
-                "has_private_insurance": profile.has_private_insurance,
-                "private_insurance_premium_monthly": profile.private_insurance_premium_monthly
-            },
-            "life_insurance": {
-                "has_life_insurance": profile.has_life_insurance,
-                "life_insurance_type": profile.life_insurance_type,
-                "life_insurance_face_value": profile.life_insurance_face_value,
-                "life_insurance_cash_value": profile.life_insurance_cash_value,
-                "life_insurance_premium_monthly": profile.life_insurance_premium_monthly,
-                "has_annuities": profile.has_annuities,
-                "annuity_current_value": profile.annuity_current_value,
-                "annuity_monthly_income": profile.annuity_monthly_income,
-                "total_accessible_life_value": profile.total_accessible_life_value
-            },
-            "va_benefits": {
-                "has_va_benefits": profile.has_va_benefits,
-                "va_disability_rating": profile.va_disability_rating,
-                "va_disability_monthly": profile.va_disability_monthly,
-                "va_pension_monthly": profile.va_pension_monthly,
-                "has_aid_attendance": profile.has_aid_attendance,
-                "aid_attendance_monthly": profile.aid_attendance_monthly,
-                "total_va_benefits_monthly": profile.total_va_benefits_monthly
-            },
-            "medicaid_planning": {
-                "medicaid_status": profile.medicaid_status,
-                "interested_in_spend_down": profile.interested_in_spend_down,
-                "spend_down_timeline": profile.spend_down_timeline,
-                "has_estate_plan": profile.has_estate_plan
-            },
-            "metadata": {
-                "completeness_percentage": profile.completeness_percentage,
-                "required_assessments_complete": profile.required_assessments_complete,
-                "optional_assessments_complete": profile.optional_assessments_complete,
-                "last_updated": profile.last_updated
-            }
-        }
+        # Create MCIP contract with summary metrics
+        mcip_profile = MCIPFinancialProfile(
+            estimated_monthly_cost=analysis.estimated_monthly_cost,
+            coverage_percentage=analysis.coverage_percentage,
+            gap_amount=analysis.monthly_gap,
+            runway_months=int(analysis.runway_months) if analysis.runway_months else 0,
+            confidence=profile.completeness_percentage / 100.0,  # Convert to 0.0-1.0
+            generated_at=datetime.now().isoformat(),
+            status="complete" if profile.required_assessments_complete else "in_progress"
+        )
         
-        # Publish to MCIP under 'financial_profile' key
-        MCIP.set("financial_profile", profile_dict)
+        # Publish to MCIP
+        MCIP.publish_financial_profile(mcip_profile)
         
         return True
     

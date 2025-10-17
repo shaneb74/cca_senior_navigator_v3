@@ -50,8 +50,8 @@ def render():
         estimated_monthly_cost=estimated_monthly_cost
     )
     
-    # Publish profile to MCIP
-    publish_to_mcip(profile)
+    # Publish summary to MCIP
+    publish_to_mcip(analysis, profile)
     
     # Render Navi guidance
     _render_navi_guidance(analysis, profile)
