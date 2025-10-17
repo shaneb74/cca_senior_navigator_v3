@@ -74,8 +74,10 @@ def render():
     current_step = st.session_state.cost_v2_step
     
     # Render Navi panel with dynamic guidance based on step
-    # Skip for module_active, expert_review, and exit since they render their own Navi
-    if current_step not in ["module_active", "expert_review", "exit"]:
+    # Skip for module_active, expert_review, exit, and when inside an assessment
+    # (assessments render their own contextual Navi panels)
+    current_assessment = st.session_state.get("cost_planner_v2_current_assessment")
+    if current_step not in ["module_active", "expert_review", "exit"] and not current_assessment:
         _render_navi_with_context(current_step)
     
     # Route to appropriate step
