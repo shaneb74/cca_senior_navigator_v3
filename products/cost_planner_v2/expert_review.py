@@ -36,11 +36,18 @@ def render():
     # Get ZIP code from intro
     zip_code = st.session_state.get("cost_v2_zip")
     
+    # Check if we have an estimate from the intro page
+    intro_estimate = st.session_state.get("cost_v2_quick_estimate")
+    estimated_monthly_cost = None
+    if intro_estimate and "estimate" in intro_estimate:
+        estimated_monthly_cost = intro_estimate["estimate"].monthly_adjusted
+    
     # Calculate expert review
     analysis = calculate_expert_review(
         profile=profile,
         care_recommendation=care_recommendation,
-        zip_code=zip_code
+        zip_code=zip_code,
+        estimated_monthly_cost=estimated_monthly_cost
     )
     
     # Publish profile to MCIP
