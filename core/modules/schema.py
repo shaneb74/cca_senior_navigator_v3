@@ -217,6 +217,7 @@ class ModuleConfig:
     theme_variant: Optional[str] = None
     outcomes_compute: Optional[str] = None
     results_step_id: Optional[str] = None
+    skip_default_results: bool = False  # NEW: Skip default results rendering
     navi_intro: Optional[Dict[str, str]] = None  # NEW: Navi module intro
     navi_outro: Optional[Dict[str, str]] = None  # NEW: Navi module outro
 

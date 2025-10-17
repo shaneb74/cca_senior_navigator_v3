@@ -1,0 +1,212 @@
+{
+  "module": {
+    "id": "healthy_habits",
+    "name": "Healthy Habits & Longevity Quiz",
+    "version": "v2025.10",
+    "description": "Evidence-based lifestyle quiz covering mobility, nutrition, fall prevention, and mental well-being.",
+    "results_step_id": "results",
+    "display": {
+      "title": "Healthy Habits Quiz",
+      "subtitle": "Learn evidence-based tips for healthy aging",
+      "estimated_time": "≈5 min",
+      "autosave": true,
+      "progress_weight": 1.0
+    },
+    "navi_guidance": {
+      "purpose": "Reinforce healthy habits and longevity practices",
+      "outcome": "Score and practical wellness tips",
+      "encouragement": "Small habits make a big difference!",
+      "intro_message": {
+        "text": "💪 Ready to boost your wellness knowledge?",
+        "subtext": "Learn evidence-based habits for healthy, independent aging!"
+      }
+    }
+  },
+  "sections": [
+    {
+      "id": "intro",
+      "title": "Welcome to Healthy Habits Quiz",
+      "type": "info",
+      "content": [
+        "**Ready to learn about healthy aging?**",
+        "",
+        "This quiz covers:",
+        "• Mobility and exercise",
+        "• Nutrition for seniors",
+        "• Fall prevention strategies",
+        "• Mental well-being and social connection",
+        "• Evidence-based longevity tips",
+        "",
+        "**What you'll get:**",
+        "• Instant feedback with health tips",
+        "• Evidence-based wellness knowledge",
+        "• Your final score and Wellness Champion badge",
+        "• 10 points per correct answer"
+      ],
+      "actions": [
+        { "label": "Start Quiz", "action": "next" },
+        { "label": "Back to Trivia Hub", "action": "route", "value": "senior_trivia" }
+      ]
+    },
+    {
+      "id": "questions",
+      "title": "Healthy Habits Questions",
+      "description": "Test your wellness knowledge!",
+      "questions": [
+        {
+          "id": "q1_exercise_minutes",
+          "type": "string",
+          "select": "single",
+          "label": "How many minutes of moderate exercise do experts recommend for seniors each week?",
+          "required": true,
+          "options": [
+            { "label": "30 minutes", "value": "30", "feedback": "That's per day! The CDC recommends 150 minutes per week (about 30 minutes x 5 days) of moderate activity for older adults." },
+            { "label": "75 minutes", "value": "75", "feedback": "That's for vigorous exercise! For moderate activity (like brisk walking), aim for 150 minutes per week." },
+            { "label": "150 minutes", "value": "150", "is_correct": true, "feedback": "Correct! The CDC recommends at least 150 minutes (2.5 hours) per week of moderate-intensity activity like brisk walking, plus muscle-strengthening activities twice a week." },
+            { "label": "300 minutes", "value": "300", "feedback": "That's great if you can do it, but the minimum recommendation is 150 minutes per week of moderate activity!" }
+          ],
+          "ui": { "widget": "chip", "orientation": "horizontal" }
+        },
+        {
+          "id": "q2_hydration",
+          "type": "string",
+          "select": "single",
+          "label": "Why is staying hydrated especially important for seniors?",
+          "required": true,
+          "options": [
+            { "label": "Seniors feel thirsty less often", "value": "thirst", "is_correct": true, "feedback": "Correct! As we age, our sense of thirst decreases, making dehydration more likely. Drink water regularly even if you don't feel thirsty - aim for 6-8 glasses daily unless your doctor advises otherwise." },
+            { "label": "Water helps you lose weight", "value": "weight", "feedback": "While water can help with weight management, the main concern for seniors is that thirst signals weaken with age, making dehydration more dangerous." },
+            { "label": "Seniors need more water than younger adults", "value": "more_water", "feedback": "Not necessarily more, but seniors' thirst signals weaken, making it harder to know when to drink. Regular hydration habits are key!" },
+            { "label": "All seniors have kidney problems", "value": "kidneys", "feedback": "Not all seniors have kidney issues, but thirst signals do weaken with age, making dehydration risk higher regardless of kidney health." }
+          ],
+          "ui": { "widget": "chip", "orientation": "vertical" }
+        },
+        {
+          "id": "q3_protein",
+          "type": "string",
+          "select": "single",
+          "label": "True or False: Seniors need MORE protein than younger adults to maintain muscle mass.",
+          "required": true,
+          "options": [
+            { "label": "True", "value": "true", "is_correct": true, "feedback": "Correct! Research shows seniors need about 1-1.2 grams of protein per kilogram of body weight daily (compared to 0.8g for younger adults) to prevent muscle loss. Include protein at every meal!" },
+            { "label": "False", "value": "false", "feedback": "Actually true! Seniors need MORE protein (1-1.2g per kg of body weight vs. 0.8g for younger adults) to maintain muscle mass and strength as we age." }
+          ],
+          "ui": { "widget": "chip", "orientation": "horizontal" }
+        },
+        {
+          "id": "q4_balance_exercise",
+          "type": "string",
+          "select": "single",
+          "label": "Which activity is BEST for improving balance and preventing falls?",
+          "required": true,
+          "options": [
+            { "label": "Swimming", "value": "swimming", "feedback": "Swimming is excellent for cardio and joints, but doesn't challenge balance since you're supported by water. Try tai chi or standing yoga!" },
+            { "label": "Tai chi", "value": "tai_chi", "is_correct": true, "feedback": "Correct! Tai chi has been proven in multiple studies to reduce fall risk by up to 50%. It improves balance, leg strength, and body awareness. Other good options: yoga, standing exercises, and walking on uneven surfaces." },
+            { "label": "Cycling", "value": "cycling", "feedback": "Cycling is great for cardio and leg strength, but doesn't improve balance as much since you're supported. Tai chi, yoga, or standing exercises are better for balance!" },
+            { "label": "Lifting weights while seated", "value": "seated_weights", "feedback": "Seated exercises build strength but don't challenge balance. For fall prevention, include standing activities like tai chi, yoga, or balance-specific exercises." }
+          ],
+          "ui": { "widget": "chip", "orientation": "vertical" }
+        },
+        {
+          "id": "q5_vitamin_d",
+          "type": "string",
+          "select": "single",
+          "label": "Why is Vitamin D especially important for seniors?",
+          "required": true,
+          "options": [
+            { "label": "It helps with vision", "value": "vision", "feedback": "That's Vitamin A! Vitamin D is crucial for bone health and muscle function, reducing fracture and fall risk in seniors." },
+            { "label": "It supports bone health and reduces fall risk", "value": "bones", "is_correct": true, "feedback": "Correct! Vitamin D helps absorb calcium for strong bones AND supports muscle function, reducing fall risk. Many seniors are deficient - talk to your doctor about testing and supplementation!" },
+            { "label": "It prevents dementia", "value": "dementia", "feedback": "While Vitamin D may play a role in brain health, its proven benefits are for bone strength and muscle function, reducing fracture and fall risk." },
+            { "label": "It boosts immune system only", "value": "immune", "feedback": "Vitamin D does support immunity, but for seniors, its most critical role is maintaining bone health and muscle function to prevent falls and fractures!" }
+          ],
+          "ui": { "widget": "chip", "orientation": "vertical" }
+        },
+        {
+          "id": "q6_social_connection",
+          "type": "string",
+          "select": "single",
+          "label": "Social isolation in seniors is linked to:",
+          "required": true,
+          "options": [
+            { "label": "Higher risk of depression and cognitive decline", "value": "health_risks", "is_correct": true, "feedback": "Correct! Social isolation increases risk of depression, anxiety, cognitive decline, heart disease, and even premature death. Staying connected through friends, family, community groups, or activities is vital for healthy aging!" },
+            { "label": "Better focus and concentration", "value": "focus", "feedback": "Actually the opposite! Social isolation increases risk of cognitive decline. Regular social interaction keeps your mind sharp and mood positive." },
+            { "label": "Lower blood pressure", "value": "blood_pressure", "feedback": "Actually, loneliness and isolation can INCREASE blood pressure and heart disease risk. Social connection is protective for physical and mental health!" },
+            { "label": "No significant health effects", "value": "no_effects", "feedback": "Social isolation has serious health consequences! It's linked to depression, cognitive decline, heart disease, and increased mortality. Staying connected is crucial for healthy aging." }
+          ],
+          "ui": { "widget": "chip", "orientation": "vertical" }
+        },
+        {
+          "id": "q7_sleep_hours",
+          "type": "string",
+          "select": "single",
+          "label": "How many hours of sleep do most seniors need per night?",
+          "required": true,
+          "options": [
+            { "label": "5-6 hours", "value": "5-6", "feedback": "That's not enough for most people! Seniors still need 7-9 hours of quality sleep for physical and mental health." },
+            { "label": "7-9 hours", "value": "7-9", "is_correct": true, "feedback": "Correct! While sleep patterns change with age, seniors still need 7-9 hours per night. If you're having trouble sleeping, talk to your doctor - don't just accept poor sleep as 'normal' aging!" },
+            { "label": "10-12 hours", "value": "10-12", "feedback": "That's more than most seniors need! The recommended range is 7-9 hours. Sleeping much more could indicate health issues - talk to your doctor." },
+            { "label": "Seniors need less sleep than adults", "value": "less", "feedback": "Common myth! Seniors still need 7-9 hours like other adults. Sleep quality may change, but the need for adequate sleep doesn't decrease." }
+          ],
+          "ui": { "widget": "chip", "orientation": "horizontal" }
+        },
+        {
+          "id": "q8_brain_health",
+          "type": "string",
+          "select": "single",
+          "label": "Which activity is MOST protective against cognitive decline?",
+          "required": true,
+          "options": [
+            { "label": "Crossword puzzles only", "value": "crosswords", "feedback": "Puzzles are good, but the MOST protective activity is aerobic exercise! It increases blood flow to the brain and promotes new neuron growth. Combine exercise with social activities and mental challenges for maximum benefit." },
+            { "label": "Learning a new language or instrument", "value": "learning", "feedback": "Excellent choice! Learning new skills builds 'cognitive reserve,' but research shows aerobic exercise has the strongest protective effect against cognitive decline. Best approach: combine exercise, learning, and social connection!" },
+            { "label": "Regular aerobic exercise", "value": "exercise", "is_correct": true, "feedback": "Correct! Aerobic exercise (walking, dancing, swimming) is the #1 proven way to reduce dementia risk. It increases blood flow to the brain, promotes new neuron growth, and reduces inflammation. Aim for 150 minutes per week!" },
+            { "label": "Taking memory supplements", "value": "supplements", "feedback": "Most memory supplements lack strong evidence! The most proven strategy is regular aerobic exercise, which increases brain blood flow and promotes new neuron growth. Add social activities and mental challenges for maximum benefit." }
+          ],
+          "ui": { "widget": "chip", "orientation": "vertical" }
+        },
+        {
+          "id": "q9_medication_review",
+          "type": "string",
+          "select": "single",
+          "label": "How often should seniors have their medications reviewed by a doctor or pharmacist?",
+          "required": true,
+          "options": [
+            { "label": "Only when starting a new medication", "value": "new_only", "feedback": "Too infrequent! Medications that were safe years ago may become risky as your body changes. Get a complete review at least once a year, or anytime you have new symptoms." },
+            { "label": "Once a year or whenever health changes occur", "value": "yearly", "is_correct": true, "feedback": "Correct! Get a comprehensive medication review at least annually, and anytime you start/stop a med, have new symptoms, or see a new doctor. Bring ALL meds (including over-the-counter and supplements) to each review!" },
+            { "label": "Every 5 years", "value": "five_years", "feedback": "Way too long! Your body and health change - medications should be reviewed at least annually, or more often if you have new health issues or symptoms." },
+            { "label": "Medication reviews aren't necessary", "value": "not_necessary", "feedback": "Very important! Medication interactions, side effects, and appropriateness change as you age. Annual reviews prevent problems and may reduce unnecessary meds." }
+          ],
+          "ui": { "widget": "chip", "orientation": "vertical" }
+        },
+        {
+          "id": "q10_hearing_health",
+          "type": "string",
+          "select": "single",
+          "label": "True or False: Untreated hearing loss in seniors is linked to faster cognitive decline.",
+          "required": true,
+          "options": [
+            { "label": "True", "value": "true", "is_correct": true, "feedback": "Correct! Research shows untreated hearing loss accelerates cognitive decline and increases dementia risk. When you can't hear well, your brain works harder to decode sounds, leaving less capacity for memory and thinking. Get your hearing tested and consider hearing aids!" },
+            { "label": "False", "value": "false", "feedback": "Actually TRUE! Studies show untreated hearing loss accelerates cognitive decline. When you strain to hear, your brain has less energy for memory and thinking. Good news: hearing aids may slow cognitive decline!" }
+          ],
+          "ui": { "widget": "chip", "orientation": "horizontal" }
+        }
+      ]
+    },
+    {
+      "id": "results",
+      "title": "Quiz Complete!",
+      "type": "results",
+      "outputs": {
+        "summary_text": "Great work! You got {{correct_count}} out of {{total_questions}} correct.",
+        "points": [
+          "Score: {{score_percentage}}%",
+          "Points earned: {{points_earned}}",
+          "Badge: Wellness Champion 💪"
+        ]
+      },
+      "actions": [
+        { "label": "Play Another Game", "action": "route", "value": "senior_trivia" },
+        { "label": "Back to Waiting Room", "action": "route", "value": "hub_waiting" }
+      ]
+    }
+  ]
+}

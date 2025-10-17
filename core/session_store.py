@@ -453,6 +453,7 @@ USER_PERSIST_KEYS = {
     # Note: 'mcip' itself is NOT persisted - MCIP.initialize() reconstructs
     # the full state structure and journey tracking from contracts + progress
     'tiles',
+    'product_tiles_v2',  # New tile system (includes trivia badges, etc.)
     'preferences',
     'auth',
     'flags',
