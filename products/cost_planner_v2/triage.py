@@ -106,8 +106,8 @@ def render():
                 "is_homeowner": is_homeowner
             }
             
-            # Proceed to first assessment page (income)
-            st.session_state.cost_v2_step = "assessment_income"
+            # Proceed to assessment hub (with tiles)
+            st.session_state.cost_v2_step = "assessments"
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
     
