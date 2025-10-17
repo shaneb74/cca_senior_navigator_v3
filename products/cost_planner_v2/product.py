@@ -90,8 +90,6 @@ def render():
     elif current_step in ["modules", "assessments"]:
         # Support both old "modules" and new "assessments" step names for backward compatibility
         _render_assessments_step()
-    elif current_step == "module_active":
-        _render_active_module()
     elif current_step == "expert_review":
         _render_expert_review_step()
     elif current_step == "exit":
@@ -248,46 +246,6 @@ def _render_assessments_step():
     """Step 4: Financial Assessment hub (now using JSON-driven assessments)."""
     from products.cost_planner_v2.assessments import render_assessment_hub
     render_assessment_hub(product_key="cost_planner_v2")
-
-
-def _render_active_module():
-    """Render currently active financial module."""
-    module_key = st.session_state.get("cost_v2_current_module")
-    
-    if not module_key:
-        # No module selected - go back to hub
-        st.session_state.cost_v2_step = "modules"
-        st.rerun()
-        return
-    
-    # Import the specific module renderer based on key
-    try:
-        if module_key == "income":
-            from products.cost_planner_v2.modules import income
-            income.render()
-        elif module_key == "assets":
-            from products.cost_planner_v2.modules import assets
-            assets.render()
-        elif module_key == "va_benefits":
-            from products.cost_planner_v2.modules import va_benefits
-            va_benefits.render()
-        elif module_key == "health_insurance":
-            from products.cost_planner_v2.modules import health_insurance
-            health_insurance.render()
-        elif module_key == "life_insurance":
-            from products.cost_planner_v2.modules import life_insurance
-            life_insurance.render()
-        elif module_key == "medicaid_navigation":
-            from products.cost_planner_v2.modules import medicaid_navigation
-            medicaid_navigation.render()
-        else:
-            st.error(f"Unknown module: {module_key}")
-            st.session_state.cost_v2_step = "modules"
-            st.rerun()
-    except Exception as e:
-        st.error(f"Error loading module '{module_key}': {e}")
-        st.session_state.cost_v2_step = "modules"
-        st.rerun()
 
 
 def _render_expert_review_step():
