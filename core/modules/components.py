@@ -95,6 +95,12 @@ def input_pill(field: FieldDef, current: Any = None) -> Any:
         labels[0] if labels else ""
     )
 
+    # Calculate index - ensure it's always valid to prevent Streamlit from adding blank option
+    if current_label in labels:
+        default_index = labels.index(current_label)
+    else:
+        default_index = 0  # Default to first option if no match
+    
     # Render with wrapper for custom styling
     st.markdown('<div class="sn-app mod-field mod-radio-pills">', unsafe_allow_html=True)
     st.markdown(f"<div class='mod-label'><span>{H(label)}</span></div>", unsafe_allow_html=True)
@@ -103,11 +109,11 @@ def input_pill(field: FieldDef, current: Any = None) -> Any:
     if field.a11y_hint:
         st.markdown(f"<div class='visually-hidden'>{H(field.a11y_hint)}</div>", unsafe_allow_html=True)
     
-    # Use native st.radio with horizontal layout
+    # Use native st.radio with horizontal layout - ALWAYS provide valid index
     choice_label = st.radio(
         label=label,
         options=labels,
-        index=labels.index(current_label) if current_label in labels else 0,
+        index=default_index,  # Explicit valid index prevents blank option
         horizontal=True,
         label_visibility="collapsed",
         key=f"{field.key}_pill",

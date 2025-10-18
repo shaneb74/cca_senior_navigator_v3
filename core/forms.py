@@ -84,6 +84,12 @@ def chip_group(
     if current_label is None and labels:
         current_label = labels[0]
 
+    # Calculate index - ensure it's always valid to prevent Streamlit from adding blank option
+    if current_label and current_label in labels:
+        default_index = labels.index(current_label)
+    else:
+        default_index = 0  # Default to first option if no match
+    
     # Add wrapper with HTML/CSS for pill styling
     # Using a unique data attribute so CSS can target it
     st.markdown(
@@ -96,11 +102,11 @@ def chip_group(
     if help_text:
         st.markdown(f'<div class="mod-help">{_escape(help_text)}</div>', unsafe_allow_html=True)
     
-    # Use native st.radio with horizontal layout
+    # Use native st.radio with horizontal layout - ALWAYS provide valid index
     choice_label = st.radio(
         label=label or "",
         options=labels,
-        index=labels.index(current_label) if current_label in labels else 0,
+        index=default_index,  # Explicit valid index prevents blank option
         horizontal=True,
         label_visibility="collapsed",
         key=f"{key}__radio",
