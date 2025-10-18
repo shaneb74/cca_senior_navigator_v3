@@ -312,7 +312,7 @@ def _has_diabetes_condition() -> bool:
         True if diabetes condition is present
     """
     try:
-        from core.flag_manager import get_chronic_conditions, is_active
+        from core.flag_manager import get_chronic_conditions, get_active
         
         # Check chronic conditions list for diabetes
         conditions = get_chronic_conditions()
@@ -322,7 +322,8 @@ def _has_diabetes_condition() -> bool:
         
         # Alternate: check if chronic_present flag active AND diabetes in list
         # (handles edge case where flag exists but condition list not yet synced)
-        if is_active("chronic_present"):
+        active_flags = get_active()
+        if "chronic_present" in active_flags:
             # Recheck conditions list in case of race condition
             for condition in conditions:
                 code = condition.get("code", "").lower()
