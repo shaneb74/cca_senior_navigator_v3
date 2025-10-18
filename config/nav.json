@@ -124,9 +124,15 @@
           "hidden": true
         },
         {
-          "key": "pfma_v2",
-          "label": "Plan with My Advisor v2",
-          "module": "products.pfma_v2.product:render",
+          "key": "pfma_v3",
+          "label": "Plan with My Advisor",
+          "module": "products.pfma_v3.product:render",
+          "hidden": true
+        },
+        {
+          "key": "advisor_prep",
+          "label": "Advisor Prep",
+          "module": "products.advisor_prep.product:render",
           "hidden": true
         },
         {
@@ -175,6 +181,12 @@
           "key": "predictive_health",
           "label": "Predictive Health Analytics",
           "module": "products.predictive_health:render",
+          "hidden": true
+        },
+        {
+          "key": "senior_trivia",
+          "label": "Senior Trivia & Brain Games",
+          "module": "products.senior_trivia.product:render",
           "hidden": true
         }
       ]

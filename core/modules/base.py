@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Dict, List, Set
+from typing import Any
 
 import streamlit as st
 
@@ -10,7 +10,7 @@ from core.modules.inputs import render_input
 from core.modules.schema import validate_manifest
 
 
-def load_module_manifest(product: str, module: str) -> Dict[str, Any]:
+def load_module_manifest(product: str, module: str) -> dict[str, Any]:
     manifest_path = Path("products") / product / "modules" / module / "module.json"
     try:
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -25,12 +25,12 @@ def load_module_manifest(product: str, module: str) -> Dict[str, Any]:
         st.stop()
 
 
-def _visible(question: Dict[str, Any], answers: Dict[str, Any]) -> bool:
+def _visible(question: dict[str, Any], answers: dict[str, Any]) -> bool:
     cond = question.get("visible_if")
     if not cond:
         return True
 
-    def _check(rule: Dict[str, Any]) -> bool:
+    def _check(rule: dict[str, Any]) -> bool:
         if "eq" in rule:
             key, value = rule["eq"]
             return answers.get(key) == value
@@ -91,15 +91,15 @@ def _visible(question: Dict[str, Any], answers: Dict[str, Any]) -> bool:
 def render_module_inputs(
     product: str,
     module: str,
-    manifest: Dict[str, Any],
-    previous_answers: Dict[str, Any],
+    manifest: dict[str, Any],
+    previous_answers: dict[str, Any],
     *,
-    inputs: List[Dict[str, Any]] | None = None,
-) -> tuple[Dict[str, Any], List[str], Dict[str, Any]]:
+    inputs: list[dict[str, Any]] | None = None,
+) -> tuple[dict[str, Any], list[str], dict[str, Any]]:
     st.session_state["_module_slug"] = f"{product}.{module}"
     answers = dict(previous_answers or {})
-    required_visible: List[str] = []
-    completion_entries: List[Dict[str, Any]] = []
+    required_visible: list[str] = []
+    completion_entries: list[dict[str, Any]] = []
     section_answered = 0.0
     section_total = 0.0
 

@@ -2,31 +2,73 @@ from textwrap import dedent
 
 import streamlit as st
 
-from core.state import authenticate_user
 from core.nav import route_to
+from core.state import authenticate_user
 from core.ui import img_src
 
 
+# Demo/test user profiles with fixed UIDs for consistent testing
+DEMO_USERS = {
+    "demo_sarah": {
+        "name": "Sarah",
+        "email": "sarah@demo.test",
+        "uid": "demo_sarah_cost_planner",
+        "description": "Memory Care (8.5 years) - diabetes, memory issues, multiple ADLs",
+    },
+    "demo_john": {
+        "name": "John Test",
+        "email": "john@demo.test",
+        "uid": "demo_john_cost_planner",
+        "description": "Assisted Living (10+ years) - complete GCP + Cost Planner",
+    },
+    "demo_mary": {
+        "name": "Mary Complete",
+        "email": "mary@demo.test",
+        "uid": "demo_mary_full_data",
+        "description": "Complete assessments - for expert review testing",
+    },
+}
+
+
 def render():
-    """Render login page - simple auth toggle (no real authentication)."""
-    
+    """Render login page - simple auth toggle + demo user selection."""
+
+    # Check if demo user selected
+    demo_user_key = st.query_params.get("demo_user")
+    if demo_user_key and demo_user_key in DEMO_USERS:
+        demo = DEMO_USERS[demo_user_key]
+        
+        # Set the specific demo UID in session state
+        st.session_state["anonymous_uid"] = demo["uid"]
+        
+        # Authenticate with demo user info
+        authenticate_user(name=demo["name"], email=demo["email"])
+        
+        # Update URL to include demo UID
+        st.query_params.clear()
+        st.query_params["uid"] = demo["uid"]
+        
+        # Redirect to hub
+        route_to("hub_concierge")
+        st.rerun()
+
     # Check if form was submitted
     if st.query_params.get("action") == "login":
         # Get form data from session state (set by JavaScript)
         name = st.session_state.get("_login_name", "Sarah")
         email = st.session_state.get("_login_email", "sarah@example.com")
-        
+
         # Toggle auth on
         authenticate_user(name=name, email=email)
-        
+
         # Clear query params and redirect to hub
         st.query_params.clear()
         route_to("hub_concierge")
         st.rerun()
-    
+
     # Show form UI
     logo = img_src("static/images/logos/cca_logo.png")
-    
+
     body_html = dedent(
         f"""
         <style>
@@ -107,20 +149,76 @@ def render():
         </section>
         """
     )
-    
+
     # Login page has its own custom layout, no header/footer
     st.markdown(body_html, unsafe_allow_html=True)
-    
+
     # Add Streamlit login button below
     st.markdown("---")
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        if st.button("🔐 Log in (Toggle Auth On)", use_container_width=True, type="primary"):
+    
+    st.markdown("### 🔐 Login Options")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("#### Quick Login")
+        if st.button("🔐 Log in as Sarah", use_container_width=True, type="primary"):
             # Get values from form (use defaults)
             authenticate_user(name="Sarah", email="sarah@example.com")
             st.success("✅ Logged in as Sarah!")
             st.info("Redirecting to Concierge Hub...")
-            st.balloons()
             route_to("hub_concierge")
             st.rerun()
-
+    
+    with col2:
+        st.markdown("#### Demo Users (Fixed UIDs for Testing)")
+        st.caption("These users have consistent UIDs - perfect for testing persistence across app restarts!")
+        
+        for key, demo in DEMO_USERS.items():
+            button_label = f"👤 {demo['name']}"
+            if st.button(
+                button_label,
+                key=f"demo_btn_{key}",
+                use_container_width=True,
+                help=f"{demo['description']}\nUID: {demo['uid']}",
+            ):
+                st.info(f"Loading demo user: {demo['name']}")
+                st.caption(f"UID: `{demo['uid']}`")
+                st.query_params["demo_user"] = key
+                st.rerun()
+    
+    # Developer info
+    st.markdown("---")
+    st.markdown("### 💡 Developer Notes")
+    st.markdown("""
+    **Demo Users for Testing:**
+    - Each demo user has a **fixed UID** that persists across app restarts
+    - Bookmark URLs will maintain the demo UID automatically
+    - Data files: `data/users/{uid}.json`
+    
+    **Testing Persistence:**
+    1. Login as a demo user (e.g., "John Test")
+    2. Fill out Cost Planner assessments
+    3. Note the UID in the URL: `?uid=demo_john_cost_planner`
+    4. Restart the app
+    5. Login as same demo user → **Data restored!**
+    
+    **UID Mapping:**
+    ```
+    Sarah Demo  → demo_sarah_test_001
+    John Test   → demo_john_cost_planner
+    Mary Complete → demo_mary_full_data
+    ```
+    """)
+    
+    # Show current session info
+    st.markdown("### 🔍 Current Session Info")
+    current_uid = st.session_state.get("anonymous_uid", "Not set")
+    auth = st.session_state.get("auth", {})
+    is_auth = auth.get("is_authenticated", False)
+    
+    info_col1, info_col2 = st.columns(2)
+    with info_col1:
+        st.metric("Current UID", current_uid)
+    with info_col2:
+        st.metric("Authenticated", "Yes" if is_auth else "No")

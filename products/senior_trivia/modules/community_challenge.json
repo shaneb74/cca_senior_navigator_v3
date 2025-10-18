@@ -1,0 +1,193 @@
+{
+  "module": {
+    "id": "community_challenge",
+    "name": "Community Challenge / Family Trivia",
+    "version": "v2025.10",
+    "description": "Collaborative trivia designed for family members to play together - fun for all generations!",
+    "results_step_id": "results",
+    "display": {
+      "title": "Family Trivia Challenge",
+      "subtitle": "Play together and learn together!",
+      "estimated_time": "≈4 min",
+      "autosave": true,
+      "progress_weight": 1.0
+    },
+    "navi_guidance": {
+      "purpose": "Foster family connection through shared trivia fun",
+      "outcome": "Score and positive reinforcement for playing together",
+      "encouragement": "Perfect for playing with family - everyone can contribute!",
+      "intro_message": {
+        "text": "👨‍👩‍👧‍👦 Ready for family trivia fun?",
+        "subtext": "Play this one together! Questions span generations and spark great conversations."
+      }
+    }
+  },
+  "sections": [
+    {
+      "id": "intro",
+      "title": "Welcome to Family Trivia Challenge",
+      "type": "info",
+      "content": [
+        "**Grab your family and play together!**",
+        "",
+        "This quiz is designed for:",
+        "• Grandparents, parents, and grandchildren",
+        "• Sparking conversations across generations",
+        "• Learning about each other's experiences",
+        "• Building connection through shared fun",
+        "",
+        "**Questions cover:**",
+        "• History and current events",
+        "• Pop culture across decades",
+        "• Family traditions and values",
+        "• Fun facts everyone can enjoy",
+        "",
+        "**What you'll get:**",
+        "• Instant feedback that celebrates learning together",
+        "• Conversation starters for the whole family",
+        "• Your final score and Family Fun badge",
+        "• 10 points per correct answer"
+      ],
+      "actions": [
+        { "label": "Start Quiz", "action": "next" },
+        { "label": "Back to Trivia Hub", "action": "route", "value": "senior_trivia" }
+      ]
+    },
+    {
+      "id": "questions",
+      "title": "Family Trivia Questions",
+      "description": "Answer together and discuss your answers!",
+      "questions": [
+        {
+          "id": "q1_moon_landing",
+          "type": "string",
+          "select": "single",
+          "label": "In what year did humans first land on the moon?",
+          "required": true,
+          "options": [
+            { "label": "1965", "value": "1965", "feedback": "Close! The Apollo program was underway, but the moon landing happened in 1969 with Apollo 11. Ask older family members where they were when they heard the news!" },
+            { "label": "1969", "value": "1969", "is_correct": true, "feedback": "Correct! July 20, 1969 - Neil Armstrong and Buzz Aldrin walked on the moon while Michael Collins orbited above. 'One small step for man, one giant leap for mankind!' Ask family: Where were you when it happened?" },
+            { "label": "1972", "value": "1972", "feedback": "That was Apollo 17, the last moon mission! The first landing was July 20, 1969 with Apollo 11." },
+            { "label": "1975", "value": "1975", "feedback": "By then, the Apollo program had ended. The first moon landing was July 20, 1969 - a moment many grandparents remember vividly!" }
+          ],
+          "ui": { "widget": "chip", "orientation": "horizontal" }
+        },
+        {
+          "id": "q2_generations_names",
+          "type": "string",
+          "select": "single",
+          "label": "Which generation comes AFTER the Baby Boomers?",
+          "required": true,
+          "options": [
+            { "label": "Silent Generation", "value": "silent", "feedback": "The Silent Generation came BEFORE Baby Boomers (born 1928-1945). After Boomers comes Generation X!" },
+            { "label": "Generation X", "value": "gen_x", "is_correct": true, "feedback": "Correct! The generational order is: Silent Generation (1928-1945), Baby Boomers (1946-1964), Generation X (1965-1980), Millennials (1981-1996), Gen Z (1997-2012), Gen Alpha (2013+). Discuss: What was life like growing up in each generation?" },
+            { "label": "Millennials", "value": "millennials", "feedback": "Millennials came after Gen X! The order is: Silent, Boomers, Gen X, Millennials, Gen Z, Gen Alpha." },
+            { "label": "Gen Z", "value": "gen_z", "feedback": "Gen Z came later! After Baby Boomers came Generation X (1965-1980), then Millennials, then Gen Z." }
+          ],
+          "ui": { "widget": "chip", "orientation": "vertical" }
+        },
+        {
+          "id": "q3_family_dinner",
+          "type": "string",
+          "select": "single",
+          "label": "Research shows families who eat dinner together regularly have children with:",
+          "required": true,
+          "options": [
+            { "label": "Better grades and less risky behavior", "value": "better_outcomes", "is_correct": true, "feedback": "Correct! Studies show regular family dinners are linked to better academic performance, lower rates of substance abuse, better nutrition, and stronger family bonds. It's not about perfect meals - it's about connection! Discuss: What are your family's dinner traditions?" },
+            { "label": "Perfect table manners", "value": "manners", "feedback": "While manners may improve, the real benefits are bigger! Family dinners are linked to better grades, lower risk behaviors, and stronger emotional bonds. The key is connection, not perfection!" },
+            { "label": "More food allergies", "value": "allergies", "feedback": "No connection there! Family dinners actually lead to POSITIVE outcomes: better grades, healthier eating, lower substance abuse rates, and stronger family bonds." },
+            { "label": "No measurable differences", "value": "no_difference", "feedback": "Actually, there are big differences! Regular family dinners are linked to better academic performance, healthier eating, lower substance abuse rates, and stronger emotional well-being." }
+          ],
+          "ui": { "widget": "chip", "orientation": "vertical" }
+        },
+        {
+          "id": "q4_smartphone_generation",
+          "type": "string",
+          "select": "single",
+          "label": "The first iPhone was released in what year?",
+          "required": true,
+          "options": [
+            { "label": "2003", "value": "2003", "feedback": "Too early! The first iPhone was released in 2007. It revolutionized mobile phones and started the smartphone era. Discuss: How have phones changed your family's life?" },
+            { "label": "2007", "value": "2007", "is_correct": true, "feedback": "Correct! June 29, 2007 - the first iPhone launched, changing communication forever. Discuss: How were things different before smartphones? What do different generations appreciate (or miss) about pre-smartphone life?" },
+            { "label": "2010", "value": "2010", "feedback": "By 2010, smartphones were already widespread! The first iPhone came out in 2007. Ask older family members: What was life like before smartphones?" },
+            { "label": "2012", "value": "2012", "feedback": "Too late! The first iPhone was released in 2007. By 2012, smartphones were everywhere!" }
+          ],
+          "ui": { "widget": "chip", "orientation": "horizontal" }
+        },
+        {
+          "id": "q5_thank_you_notes",
+          "type": "string",
+          "select": "single",
+          "label": "True or False: Handwritten thank-you notes are still considered polite and meaningful today.",
+          "required": true,
+          "options": [
+            { "label": "True", "value": "true", "is_correct": true, "feedback": "Correct! Handwritten notes are still valued across all generations as thoughtful, personal, and memorable. While texts and emails are fine for quick thanks, handwritten notes show extra effort and care. Discuss: What traditions does your family want to keep alive?" },
+            { "label": "False", "value": "false", "feedback": "Actually, handwritten notes are still appreciated! While communication styles have changed, taking time to write by hand shows thoughtfulness. Many younger people are rediscovering the joy of handwritten notes!" }
+          ],
+          "ui": { "widget": "chip", "orientation": "horizontal" }
+        },
+        {
+          "id": "q6_family_recipes",
+          "type": "string",
+          "select": "single",
+          "label": "Passing down family recipes helps preserve:",
+          "required": true,
+          "options": [
+            { "label": "Cultural heritage and family stories", "value": "heritage", "is_correct": true, "feedback": "Correct! Family recipes carry cultural heritage, family history, and memories. They connect generations and keep traditions alive. Each recipe has a story! Discuss: What's your family's most treasured recipe? Who taught it to you? Have you passed it on?" },
+            { "label": "Only cooking skills", "value": "cooking", "feedback": "It's much more than that! Family recipes preserve cultural heritage, family history, memories, and connections between generations. Every recipe has a story!" },
+            { "label": "Exact measurements and techniques", "value": "measurements", "feedback": "While techniques matter, the real value is bigger! Recipes preserve cultural heritage, family stories, and connections across generations. It's about tradition and memory, not just ingredients!" },
+            { "label": "Nothing meaningful", "value": "nothing", "feedback": "Food is deeply meaningful! Family recipes preserve cultural heritage, family history, and emotional connections. They're vehicles for storytelling and keeping traditions alive across generations." }
+          ],
+          "ui": { "widget": "chip", "orientation": "vertical" }
+        },
+        {
+          "id": "q7_generations_tech",
+          "type": "string",
+          "select": "single",
+          "label": "Which statement is TRUE about different generations and technology?",
+          "required": true,
+          "options": [
+            { "label": "Only young people understand technology", "value": "young_only", "feedback": "Not true! Seniors are the fastest-growing group of social media users. Technology adoption spans all ages - it's about interest and practice, not generation!" },
+            { "label": "Seniors are the fastest-growing group of social media users", "value": "seniors_growing", "is_correct": true, "feedback": "Correct! Seniors are the fastest-growing demographic on social media, especially Facebook. Many seniors use video calls, smartphones, and tablets daily. Technology skills span all generations - it's about learning and adaptation! Discuss: How does each generation in your family use technology?" },
+            { "label": "Young people never call or write letters", "value": "no_letters", "feedback": "Not true! Many young people appreciate voice calls and handwritten notes. Communication preferences vary within generations, not just between them!" },
+            { "label": "Technology has separated all generations", "value": "separated", "feedback": "Actually, technology can bring generations together! Video calls connect distant families, shared photos create memories, and collaborative games build bonds. It's how we use tech that matters!" }
+          ],
+          "ui": { "widget": "chip", "orientation": "vertical" }
+        },
+        {
+          "id": "q8_storytelling",
+          "type": "string",
+          "select": "single",
+          "label": "Why is it important for grandparents to share their life stories with grandchildren?",
+          "required": true,
+          "options": [
+            { "label": "It gives grandparents something to talk about", "value": "talk_about", "feedback": "It's much deeper than that! Family stories give children a sense of identity, resilience, and belonging. They learn where they come from and see examples of overcoming challenges." },
+            { "label": "It helps children understand their family identity and history", "value": "identity", "is_correct": true, "feedback": "Correct! Research shows children who know their family stories have higher self-esteem, better coping skills, and stronger family bonds. Stories connect past to present and teach resilience. Discuss: What's a story from your life that younger family members should know?" },
+            { "label": "Children don't care about old stories", "value": "dont_care", "feedback": "Actually, children benefit greatly from family stories! Research shows knowing family history builds self-esteem, resilience, and identity. Stories connect generations and teach important lessons!" },
+            { "label": "Stories don't have lasting value", "value": "no_value", "feedback": "Stories have tremendous value! Children who know their family history show better emotional health, stronger identity, and greater resilience. Stories connect generations and preserve wisdom." }
+          ],
+          "ui": { "widget": "chip", "orientation": "vertical" }
+        }
+      ]
+    },
+    {
+      "id": "results",
+      "title": "Quiz Complete!",
+      "type": "results",
+      "outputs": {
+        "summary_text": "Wonderful teamwork! You got {{correct_count}} out of {{total_questions}} correct.",
+        "points": [
+          "Score: {{score_percentage}}%",
+          "Points earned: {{points_earned}}",
+          "Badge: Family Fun 👨‍👩‍👧‍👦",
+          "",
+          "Remember: The real win is the time you spent together and the conversations you started!"
+        ]
+      },
+      "actions": [
+        { "label": "Play Another Game", "action": "route", "value": "senior_trivia" },
+        { "label": "Back to Waiting Room", "action": "route", "value": "hub_waiting" }
+      ]
+    }
+  ]
+}

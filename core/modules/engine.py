@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import importlib
 import time
+from collections.abc import Mapping, Sequence
 from dataclasses import asdict
 from html import escape as H
-from typing import Any, Dict, List, Mapping, Optional, Sequence
+from typing import Any
 
 import streamlit as st
 
@@ -13,75 +14,77 @@ from core.nav import PRODUCTS
 from core.session_store import safe_rerun
 
 from . import components as components
-from .layout import actions, bottom_summary, header
+from .layout import actions
 from .schema import FieldDef, ModuleConfig, OutcomeContract, StepDef
 
 
-def run_module(config: ModuleConfig) -> Dict[str, Any]:
+def run_module(config: ModuleConfig) -> dict[str, Any]:
     """Run a module flow defined by ModuleConfig. Returns updated module state."""
     state_key = config.state_key
-    
+
     # Check if we need to restore state from tile_state (session expired but tile persists)
     tiles = st.session_state.setdefault("tiles", {})
     tile_state = tiles.setdefault(config.product, {})
-    
+
     # If state doesn't exist but tile has saved_state, restore it
     if state_key not in st.session_state and "saved_state" in tile_state:
         st.session_state[state_key] = tile_state["saved_state"].copy()
-    
+
     st.session_state.setdefault(state_key, {})
     state = st.session_state[state_key]
 
     total_steps = len(config.steps)
-    
+
     # Validate module configuration
     if total_steps == 0:
         st.error("⚠️ Module configuration error: No steps defined.")
         st.stop()
-    
+
     # Check tile state for last saved step (resume functionality)
     tiles = st.session_state.setdefault("tiles", {})
     tile_state = tiles.setdefault(config.product, {})
     saved_step = tile_state.get("last_step")
-    
+
     # Resume from saved step if exists, otherwise start at 0
     if saved_step is not None and saved_step >= 0:
         step_index = saved_step
     else:
         step_index = int(st.session_state.get(f"{state_key}._step", 0))
-    
+
     # Clamp to valid range with additional safety check
     step_index = max(0, min(step_index, total_steps - 1))
-    
+
     # Final bounds validation before array access
     if step_index < 0 or step_index >= total_steps:
-        st.error(f"⚠️ Invalid step index: {step_index} (total steps: {total_steps}). Resetting to step 0.")
+        st.error(
+            f"⚠️ Invalid step index: {step_index} (total steps: {total_steps}). Resetting to step 0."
+        )
         step_index = 0
         st.session_state[f"{state_key}._step"] = 0
-    
+
     # Store step index for internal navigation
     st.session_state[f"{state_key}._step"] = step_index
-    
+
     step = config.steps[step_index]
 
     # Substitute {{name}} template in title
     title = _substitute_title(step.title, state)
-    
+
     # Calculate progress BEFORE rendering header
     progress = _update_progress(config, state, step, step_index)
-    
+
     # Calculate progress-eligible steps (exclude intro/results pages)
     progress_steps = [s for s in config.steps if s.show_progress]
     progress_total = len(progress_steps)
-    
+
     # Check if current step should show progress indicators
     show_step_dots = step.show_progress
-    
+
     # ========================================================================
     # CENTERED MODULE CONTAINER - Wrap all content (Hub-like aesthetic)
     # ========================================================================
     st.markdown('<div class="sn-app module-container">', unsafe_allow_html=True)
-    
+
     # ========================================================================
     # NAVI PERSISTENT GUIDE BAR
     # Inject Navi's contextual guidance at the top of every module
@@ -89,10 +92,20 @@ def run_module(config: ModuleConfig) -> Dict[str, Any]:
     # DISABLED: Now using main Navi panel (blue box) which shows step progress
     # The purple box was duplicate - main Navi panel at page top handles all guidance
     # _render_navi_guide_bar(config, step, state, step_index, progress_total)
-    
+
     # Render header with actual progress
     # Note: Progress bar also disabled since Navi panel shows progress (X/Y steps)
-    _render_header(step_index, total_steps, title, step.subtitle, progress, progress_total, show_step_dots, step.id == config.steps[0].id, config)
+    _render_header(
+        step_index,
+        total_steps,
+        title,
+        step.subtitle,
+        progress,
+        progress_total,
+        show_step_dots,
+        step.id == config.steps[0].id,
+        config,
+    )
 
     # Render content array (for info-type pages)
     if step.content:
@@ -107,12 +120,16 @@ def run_module(config: ModuleConfig) -> Dict[str, Any]:
         tile_state["saved_state"] = state.copy()
 
     is_results = config.results_step_id and step.id == config.results_step_id
-    
+
     if is_results:
         _ensure_outcomes(config, state)
-        _render_results_view(state, config)
+
+        # Check if product wants to skip default results rendering
+        if not getattr(config, "skip_default_results", False):
+            _render_results_view(state, config)
+
         # Close module container
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
         return state
 
     _render_summary(step, state)
@@ -122,38 +139,38 @@ def run_module(config: ModuleConfig) -> Dict[str, Any]:
 
     # Render actions - get save_exit button state
     # Detect if this is the intro page (first step) - nothing to save yet
-    is_intro_page = (step.id == config.steps[0].id)
+    is_intro_page = step.id == config.steps[0].id
     next_clicked, skip_clicked, save_exit_clicked, back_clicked, back_to_hub_clicked = actions(
-        step.next_label, 
-        step.skip_label, 
+        step.next_label,
+        step.skip_label,
         is_intro=is_intro_page,
         show_back=(not is_intro_page and step_index > 0),
         step_index=step_index,
-        config=config
+        config=config,
     )
-    
+
     # Handle Back button
     if back_clicked:
         prev_index = max(0, step_index - 1)
         st.session_state[f"{config.state_key}._step"] = prev_index
-        
+
         # Update tile state for resume functionality
         tiles = st.session_state.setdefault("tiles", {})
         tile_state = tiles.setdefault(config.product, {})
         tile_state["last_step"] = prev_index
-        
+
         safe_rerun()
-    
+
     # Handle Back to Hub
     if back_to_hub_clicked:
         _handle_save_exit(config, state, step_index, total_steps, reason="back_to_hub")
         # Close module container
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
         return state
-    
+
     # Save & Continue Later - REMOVED (button no longer rendered)
     # Progress is automatically saved to tile_state and persists across sessions
-    
+
     if next_clicked and missing:
         st.warning(f"Please complete the required fields: {', '.join(missing)}")
     allow_next = next_clicked and not missing
@@ -164,32 +181,44 @@ def run_module(config: ModuleConfig) -> Dict[str, Any]:
     if config.results_step_id and step.id == config.results_step_id:
         _render_results_view(state, config)
         # Close module container
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
         return state
 
     # Close module container
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
     return state
 
 
-def _render_header(step_index: int, total: int, title: str, subtitle: str | None, progress: float, progress_total: int, show_step_dots: bool = True, is_intro: bool = False, config: ModuleConfig | None = None) -> None:
+def _render_header(
+    step_index: int,
+    total: int,
+    title: str,
+    subtitle: str | None,
+    progress: float,
+    progress_total: int,
+    show_step_dots: bool = True,
+    is_intro: bool = False,
+    config: ModuleConfig | None = None,
+) -> None:
     """Render module header without progress bar (Navi panel handles progress)."""
     from html import escape as _escape
-    
+
     # Progress bar removed - Navi panel at top now shows step progress (X/Y)
-    
+
     subtitle_html = ""
     if subtitle:
         # Convert newlines to <br> tags and wrap paragraphs
-        lines = subtitle.split('\n')
+        lines = subtitle.split("\n")
         formatted_lines = []
         first_line = True
         for line in lines:
             stripped = line.strip()
             if stripped:
                 # First line gets emphasized styling (h3)
-                if first_line and stripped.endswith(':'):
-                    formatted_lines.append(f"<h3 class='h3' style='margin-top: 1.5rem; margin-bottom: 1rem;'>{_escape(stripped)}</h3>")
+                if first_line and stripped.endswith(":"):
+                    formatted_lines.append(
+                        f"<h3 class='h3' style='margin-top: 1.5rem; margin-bottom: 1rem;'>{_escape(stripped)}</h3>"
+                    )
                     first_line = False
                 else:
                     # Escape the line but preserve emoji and special chars
@@ -197,7 +226,7 @@ def _render_header(step_index: int, total: int, title: str, subtitle: str | None
             elif formatted_lines:  # Add spacing between paragraphs
                 formatted_lines.append("<br/>")
         subtitle_html = f"<div class='lead'>{''.join(formatted_lines)}</div>"
-    
+
     # Header without back button (back button moved to actions section)
     st.markdown(
         f"""
@@ -216,25 +245,25 @@ def _substitute_title(title: str, state: Mapping[str, Any]) -> str:
     """Replace {{name}} with person's name from state or session."""
     if "{{name}}" not in title:
         return title
-    
+
     # Try to get name from module state first
     name = state.get("recipient_name") or state.get("person_name")
-    
+
     # Fall back to session state
     if not name:
         profile = st.session_state.get("profile", {})
         name = profile.get("recipient_name") or profile.get("person_name")
-    
+
     # Default to generic text
     if not name:
         name = "This Person"
-    
+
     return title.replace("{{name}}", name)
 
 
 def _render_content(content: list[str]) -> None:
     """Render content array for info-type pages.
-    
+
     Args:
         content: List of content lines with markdown support.
                  Empty strings create spacing.
@@ -248,8 +277,8 @@ def _render_content(content: list[str]) -> None:
             st.markdown("<br/>", unsafe_allow_html=True)
 
 
-def _render_fields(step: StepDef, state: Mapping[str, Any]) -> Dict[str, Any]:
-    new_values: Dict[str, Any] = {}
+def _render_fields(step: StepDef, state: Mapping[str, Any]) -> dict[str, Any]:
+    new_values: dict[str, Any] = {}
     for field in step.fields:
         if not _is_visible(field, state):
             continue
@@ -264,12 +293,12 @@ def _render_fields(step: StepDef, state: Mapping[str, Any]) -> Dict[str, Any]:
 
 
 def _update_progress(
-    config: ModuleConfig, state: Dict[str, Any], step: StepDef, step_index: int
+    config: ModuleConfig, state: dict[str, Any], step: StepDef, step_index: int
 ) -> float:
     # Only count steps that have show_progress=True (exclude intro)
     progress_steps = [s for s in config.steps if s.show_progress]
     total = len(progress_steps) or 1
-    
+
     # Check if we're on results page FIRST - that's always 100%
     if config.results_step_id and step.id == config.results_step_id:
         progress = 1.0
@@ -288,13 +317,13 @@ def _update_progress(
                 fraction = completed / len(required)
             else:
                 fraction = 1.0
-            
+
             # Progress is (completed steps + fraction of current) / total
             progress = (progress_index + fraction) / total
 
     progress_pct = round(progress * 100, 1)
     state["progress"] = progress_pct
-    
+
     if progress >= 1.0:
         state["status"] = "done"
     elif progress > 0:
@@ -307,7 +336,7 @@ def _update_progress(
     tile_state["progress"] = progress_pct
     # NOTE: Do NOT update last_step here - it should only update on navigation
     # to avoid overwriting the step before user clicks Continue
-    
+
     if progress >= 1.0:
         tile_state["status"] = "done"
     elif progress > 0:
@@ -357,7 +386,7 @@ def _handle_nav(
 
     next_index = min(step_index + 1, total_steps - 1)
     st.session_state[f"{config.state_key}._step"] = next_index
-    
+
     # Update tile state with new step for resume functionality
     tiles = st.session_state.setdefault("tiles", {})
     tile_state = tiles.setdefault(config.product, {})
@@ -399,7 +428,7 @@ def _hub_route_for_product(product_key: str) -> str:
 
 def _handle_save_exit(
     config: ModuleConfig,
-    state: Dict[str, Any],
+    state: dict[str, Any],
     step_index: int,
     total_steps: int,
     reason: str = "save_exit",
@@ -407,21 +436,21 @@ def _handle_save_exit(
     """Handle Save & Continue Later button - saves progress and returns to hub."""
     # Progress is already auto-saved in state
     progress_pct = state.get("progress", 0)
-    
+
     # Calculate readable step info
     progress_steps = [s for s in config.steps if s.show_progress]
     completed_progress_steps = min(step_index, len(progress_steps))
-    
+
     # Store exit info for hub message
     state["last_exit_step"] = step_index
     state["last_exit_time"] = time.strftime("%Y-%m-%d %H:%M:%S")
     state["last_exit_reason"] = reason
-    
+
     # Update tile state with current step for resume functionality
     tiles = st.session_state.setdefault("tiles", {})
     tile_state = tiles.setdefault(config.product, {})
     tile_state["last_step"] = step_index
-    
+
     hub_route = _hub_route_for_product(config.product)
 
     # Set a session flag to show completion message
@@ -433,7 +462,7 @@ def _handle_save_exit(
         "reason": reason,
         "hub_route": hub_route,
     }
-    
+
     event_name = "product.saved_exit" if reason == "save_exit" else "product.back_to_hub"
     payload = {
         "product": config.product,
@@ -444,18 +473,17 @@ def _handle_save_exit(
         "reason": reason,
     }
     _emit(event_name, payload)
-    
+
     # Navigate to concierge hub
     st.query_params.clear()
     st.query_params["page"] = hub_route
     _rerun_app()
 
 
-
-def _ensure_outcomes(config: ModuleConfig, answers: Dict[str, Any]) -> None:
+def _ensure_outcomes(config: ModuleConfig, answers: dict[str, Any]) -> None:
     state_key = config.state_key
     outcome_key = f"{state_key}._outcomes"
-    
+
     if st.session_state.get(outcome_key):
         return
 
@@ -471,18 +499,22 @@ def _ensure_outcomes(config: ModuleConfig, answers: Dict[str, Any]) -> None:
                 # Don't wrap in OutcomeContract - store dict directly
                 # This allows product-specific schemas (e.g., GCP's tier/tier_score)
                 st.session_state[outcome_key] = result
-                
+
                 # Still handle legacy handoff for backward compatibility
                 handoff = st.session_state.setdefault("handoff", {})
                 handoff[state_key] = result
-                
+
                 _emit(
                     "module.outcomes.ready",
-                    {"state_key": state_key, "outcome": str(result.get("tier") or result.get("recommendation", ""))}
+                    {
+                        "state_key": state_key,
+                        "outcome": str(result.get("tier") or result.get("recommendation", "")),
+                    },
                 )
                 return  # Early return - we're done
         except Exception as e:
             import traceback
+
             st.error(f"❌ Error computing outcomes: {type(e).__name__}: {str(e)}")
             st.text(traceback.format_exc())
             outcome = OutcomeContract()
@@ -515,7 +547,7 @@ def _ensure_outcomes(config: ModuleConfig, answers: Dict[str, Any]) -> None:
         reason = (
             f"{person_name}'s care plan suggests {outcome.recommendation.replace('_', ' ').title()}"
         )
-        nudges: List[str] = []
+        nudges: list[str] = []
         if outcome.flags.get("emotional_followup"):
             nudges.append("Emotional wellbeing may need an advisor check-in.")
         if outcome.flags.get("fall_risk"):
@@ -542,11 +574,12 @@ def _resolve_callable(path: str):
     return getattr(module, attr)
 
 
-def _compute_context(config: ModuleConfig) -> Dict[str, Any]:
+def _compute_context(config: ModuleConfig) -> dict[str, Any]:
     state = st.session_state.get(config.state_key, {})
     profile = st.session_state.get("profile", {})
     auth = st.session_state.get("auth", {})
     return {
+        "config": config,  # Include config for scoring functions
         "product": config.product,
         "version": config.version,
         "person_a_name": state.get("recipient_name") or "this person",
@@ -555,7 +588,7 @@ def _compute_context(config: ModuleConfig) -> Dict[str, Any]:
     }
 
 
-def _emit(event: str, payload: Optional[Dict[str, Any]] = None) -> None:
+def _emit(event: str, payload: dict[str, Any] | None = None) -> None:
     try:
         log_event(event, payload or {})
     except Exception:
@@ -577,7 +610,7 @@ def _is_visible(field: FieldDef, state: Mapping[str, Any]) -> bool:
     return True
 
 
-def _format_summary_value(value: Any, field: Optional[FieldDef] = None) -> str:
+def _format_summary_value(value: Any, field: FieldDef | None = None) -> str:
     if field:
         return _display_value(field, value)
     if value is None:
@@ -603,8 +636,8 @@ def _has_value(value: Any) -> bool:
     return True
 
 
-def _required_fields(step: StepDef, state: Mapping[str, Any]) -> List[FieldDef]:
-    fields: List[FieldDef] = []
+def _required_fields(step: StepDef, state: Mapping[str, Any]) -> list[FieldDef]:
+    fields: list[FieldDef] = []
     for field in step.fields:
         if not field.required:
             continue
@@ -617,8 +650,8 @@ def _required_fields(step: StepDef, state: Mapping[str, Any]) -> List[FieldDef]:
     return fields
 
 
-def _required_missing(required_fields: Sequence[FieldDef], state: Mapping[str, Any]) -> List[str]:
-    missing: List[str] = []
+def _required_missing(required_fields: Sequence[FieldDef], state: Mapping[str, Any]) -> list[str]:
+    missing: list[str] = []
     for field in required_fields:
         store_key = field.write_key or field.key
         value = state.get(store_key)
@@ -627,7 +660,7 @@ def _required_missing(required_fields: Sequence[FieldDef], state: Mapping[str, A
     return missing
 
 
-def _apply_step_effects(step: StepDef, state: Dict[str, Any]) -> None:
+def _apply_step_effects(step: StepDef, state: dict[str, Any]) -> None:
     if not step.fields:
         return
     flags = state.setdefault("flags", {})
@@ -639,10 +672,10 @@ def _apply_step_effects(step: StepDef, state: Dict[str, Any]) -> None:
         _apply_effects(field, value, flags)
 
 
-def _apply_effects(field: FieldDef, value: Any, flags: Dict[str, Any]) -> None:
+def _apply_effects(field: FieldDef, value: Any, flags: dict[str, Any]) -> None:
     if not field.effects:
         return
-    values: List[str] = []
+    values: list[str] = []
     if isinstance(value, str):
         values = [value]
     elif isinstance(value, (list, tuple, set)):
@@ -684,7 +717,7 @@ def _display_value(field: FieldDef, value: Any) -> str:
     return str(value)
 
 
-def _find_field(config: ModuleConfig, key: str) -> Optional[FieldDef]:
+def _find_field(config: ModuleConfig, key: str) -> FieldDef | None:
     for step in config.steps:
         for field in step.fields:
             if (field.write_key or field.key) == key:
@@ -692,19 +725,19 @@ def _find_field(config: ModuleConfig, key: str) -> Optional[FieldDef]:
     return None
 
 
-def _get_recommendation(mod: Dict[str, Any], config: ModuleConfig) -> Optional[str]:
+def _get_recommendation(mod: dict[str, Any], config: ModuleConfig) -> str | None:
     """Get recommendation text from outcomes or module state."""
     # Try to get from outcomes first (preferred)
     outcome_key = f"{config.state_key}._outcomes"
     outcomes = st.session_state.get(outcome_key, {})
-    
+
     # GCP v4 uses "tier" field (new system)
     tier = outcomes.get("tier")
     if tier:
         # Special handling for independent tier - more helpful message
         if tier.lower() == "independent":
             return "Good for now! If things change, consider In-Home Care."
-        
+
         mapping = {
             "in_home": "In-Home Care with Support",
             "assisted_living": "Assisted Living",
@@ -712,18 +745,22 @@ def _get_recommendation(mod: Dict[str, Any], config: ModuleConfig) -> Optional[s
         }
         pretty = mapping.get(tier.lower(), tier.replace("_", " ").title())
         return f"Based on your answers, we recommend {pretty}."
-    
+
     # Legacy modules use "recommendation" field
     recommendation = outcomes.get("recommendation")
     if recommendation:
         # If the recommendation is already properly formatted (contains capitals or special chars),
         # use it as-is (this is the case for new logic_v3 output)
-        if any(c.isupper() for c in recommendation) or "/" in recommendation or "-" in recommendation:
+        if (
+            any(c.isupper() for c in recommendation)
+            or "/" in recommendation
+            or "-" in recommendation
+        ):
             return f"Based on your answers, we recommend {recommendation}."
-        
+
         # Otherwise, normalize the recommendation key for backward compatibility
         rec_key = recommendation.lower().replace(" ", "_").replace("/", "_").replace("-", "_")
-        
+
         # CRITICAL: Map recommendation to display name - ONLY 5 allowed tiers
         mapping = {
             "no_care_needed": "No Care Needed",
@@ -733,14 +770,14 @@ def _get_recommendation(mod: Dict[str, Any], config: ModuleConfig) -> Optional[s
             "memory_care": "Memory Care",
             "memory_care_high_acuity": "Memory Care (High Acuity)",
         }
-        
+
         pretty = mapping.get(rec_key)
         if not pretty:
             # Fallback: title case the recommendation
             pretty = recommendation.replace("_", " ").replace("/", " / ").title()
-        
+
         return f"Based on your answers, we recommend {pretty}."
-    
+
     # Fallback: try module state
     text = str(mod.get("recommendation_text", "")).strip()
     if text:
@@ -763,11 +800,13 @@ def _get_recommendation(mod: Dict[str, Any], config: ModuleConfig) -> Optional[s
     return f"Based on your answers, we recommend {pretty}."
 
 
-def _render_confidence_improvement(outcomes: Dict[str, Any], config: ModuleConfig, state: Dict[str, Any]) -> None:
+def _render_confidence_improvement(
+    outcomes: dict[str, Any], config: ModuleConfig, state: dict[str, Any]
+) -> None:
     """Render confidence improvement guidance on results page.
-    
+
     Redesigned as split cards showing progress and clarity with actionable guidance.
-    
+
     Args:
         outcomes: Outcome data with confidence and scoring details
         config: Module configuration
@@ -775,20 +814,20 @@ def _render_confidence_improvement(outcomes: Dict[str, Any], config: ModuleConfi
     """
     confidence = outcomes.get("confidence", 1.0)
     confidence_pct = int(confidence * 100)
-    
+
     # Only show improvement guidance if confidence < 100%
     if confidence_pct >= 100:
         return
-    
+
     # Get scoring details
     tier_score = outcomes.get("tier_score", 0)
     tier = outcomes.get("tier", "")
-    
+
     # Calculate completeness
     answered_count = 0
     total_count = 0
     unanswered_questions = []
-    
+
     for step in config.steps:
         if not step.fields:  # Skip intro/results pages
             continue
@@ -799,15 +838,13 @@ def _render_confidence_improvement(outcomes: Dict[str, Any], config: ModuleConfi
                 if value is not None and value != "" and value != []:
                     answered_count += 1
                 else:
-                    unanswered_questions.append({
-                        'label': field.label,
-                        'step_id': step.id,
-                        'step_title': step.title
-                    })
-    
+                    unanswered_questions.append(
+                        {"label": field.label, "step_id": step.id, "step_title": step.title}
+                    )
+
     completeness = answered_count / total_count if total_count > 0 else 1.0
     completeness_pct = int(completeness * 100)
-    
+
     # Determine tier boundaries for clarity
     tier_thresholds = {
         "no_care_needed": (0, 8),
@@ -816,7 +853,7 @@ def _render_confidence_improvement(outcomes: Dict[str, Any], config: ModuleConfi
         "memory_care": (25, 39),
         "memory_care_high_acuity": (40, 100),
     }
-    
+
     boundary_clarity = 100  # Default
     clarity_message = "Clear"
     if tier in tier_thresholds:
@@ -825,30 +862,40 @@ def _render_confidence_improvement(outcomes: Dict[str, Any], config: ModuleConfi
         distance_from_max = max_score - tier_score
         distance_from_boundary = min(distance_from_min, distance_from_max)
         boundary_clarity = min(int((distance_from_boundary / 3.0) * 100), 100)
-        
+
         if boundary_clarity >= 80:
             clarity_message = "Strong — well within tier"
         elif boundary_clarity >= 50:
             clarity_message = "Moderate — some distance from boundary"
         else:
             clarity_message = "Near boundary — consider reviewing"
-    
+
     st.markdown("### 💡 Improve Your Confidence")
-    
-    st.markdown("""
+
+    st.markdown(
+        """
     <p style="font-size: 14px; color: #64748b; margin-bottom: 20px;">
         Your confidence score is based on how complete your answers are and how clear your tier placement is.
     </p>
-    """, unsafe_allow_html=True)
-    
+    """,
+        unsafe_allow_html=True,
+    )
+
     # Split into two horizontal cards
     col1, col2 = st.columns(2)
-    
+
     with col1:
         # Progress card
-        completeness_color = "#22c55e" if completeness_pct >= 90 else "#f59e0b" if completeness_pct >= 70 else "#ef4444"
-        
-        st.markdown(f"""
+        completeness_color = (
+            "#22c55e"
+            if completeness_pct >= 90
+            else "#f59e0b"
+            if completeness_pct >= 70
+            else "#ef4444"
+        )
+
+        st.markdown(
+            f"""
         <div style="
             background: white;
             border: 1px solid #e2e8f0;
@@ -879,13 +926,22 @@ def _render_confidence_improvement(outcomes: Dict[str, Any], config: ModuleConfi
                 "></div>
             </div>
         </div>
-        """, unsafe_allow_html=True)
-    
+        """,
+            unsafe_allow_html=True,
+        )
+
     with col2:
         # Clarity card
-        clarity_color = "#22c55e" if boundary_clarity >= 80 else "#f59e0b" if boundary_clarity >= 50 else "#ef4444"
-        
-        st.markdown(f"""
+        clarity_color = (
+            "#22c55e"
+            if boundary_clarity >= 80
+            else "#f59e0b"
+            if boundary_clarity >= 50
+            else "#ef4444"
+        )
+
+        st.markdown(
+            f"""
         <div style="
             background: white;
             border: 1px solid #e2e8f0;
@@ -916,30 +972,34 @@ def _render_confidence_improvement(outcomes: Dict[str, Any], config: ModuleConfi
                 "></div>
             </div>
         </div>
-        """, unsafe_allow_html=True)
-    
+        """,
+            unsafe_allow_html=True,
+        )
+
     # Guidance section below both cards
     if completeness_pct < 100 or boundary_clarity < 80:
         st.markdown("<div style='margin: 20px 0;'></div>", unsafe_allow_html=True)
-        
+
         with st.expander("🔍 How to Improve Your Confidence", expanded=(completeness_pct < 90)):
             if completeness_pct < 100 and unanswered_questions:
                 st.markdown("**📝 Complete Unanswered Questions**")
-                st.markdown(f"You have {len(unanswered_questions)} unanswered question(s). Answering them will improve your confidence score.")
-                
+                st.markdown(
+                    f"You have {len(unanswered_questions)} unanswered question(s). Answering them will improve your confidence score."
+                )
+
                 if len(unanswered_questions) <= 5:
                     for q in unanswered_questions:
                         st.markdown(f"- {q['label']}")
-            
+
             if boundary_clarity < 80 and tier in tier_thresholds:
                 st.markdown("**📊 Your Score is Near a Tier Boundary**")
                 min_score, max_score = tier_thresholds[tier]
                 st.markdown(f"""
-                Your current score is **{tier_score} points**, which places you in the **{tier.replace('_', ' ').title()}** tier (range: {min_score}-{max_score} points).
+                Your current score is **{tier_score} points**, which places you in the **{tier.replace("_", " ").title()}** tier (range: {min_score}-{max_score} points).
                 
                 You're close to a tier boundary, which means small changes in your answers could affect your recommendation. Consider reviewing your responses for accuracy.
                 """)
-            
+
             # Go back button
             st.markdown("<div style='margin: 16px 0;'></div>", unsafe_allow_html=True)
             if st.button("← Review Your Answers", type="secondary", use_container_width=True):
@@ -951,19 +1011,21 @@ def _render_confidence_improvement(outcomes: Dict[str, Any], config: ModuleConfi
                         break
 
 
-
-def _render_results_view(mod: Dict[str, Any], config: ModuleConfig) -> None:
+def _render_results_view(mod: dict[str, Any], config: ModuleConfig) -> None:
     """Render results with Navi announcing recommendation + clean detail cards."""
-    
+
     # Get data
     outcome_key = f"{config.state_key}._outcomes"
     outcomes = st.session_state.get(outcome_key, {})
     recommendation = _get_recommendation(mod, config)
     confidence = outcomes.get("confidence", 1.0)
+    # Handle None confidence gracefully
+    if confidence is None:
+        confidence = 1.0
     confidence_pct = int(confidence * 100)
     tier = outcomes.get("tier", "")
     tier_score = outcomes.get("tier_score", 0)
-    
+
     # Extract recommendation text (clean)
     if recommendation and "recommend" in recommendation.lower():
         rec_text = recommendation.split("recommend")[-1].strip().rstrip(".")
@@ -971,19 +1033,19 @@ def _render_results_view(mod: Dict[str, Any], config: ModuleConfig) -> None:
         rec_text = recommendation
     else:
         rec_text = "Your Guided Care Plan"
-    
+
     # ========================================
     # 1. NAVI ANNOUNCES THE RECOMMENDATION
     # ========================================
     # Navi says: "Based on your answers, here's what I recommend:"
     # Then shows the recommendation in her panel
-    
+
     from core.ui import render_navi_panel_v2
-    
+
     # Build Navi guidance with recommendation
     navi_title = "Great job! Based on your answers, here's what I recommend:"
     navi_reason = rec_text
-    
+
     # Calculate question completeness for contextual message
     answered_count = 0
     total_count = 0
@@ -996,9 +1058,9 @@ def _render_results_view(mod: Dict[str, Any], config: ModuleConfig) -> None:
                 value = mod.get(field.key)
                 if value is not None and value != "" and value != []:
                     answered_count += 1
-    
+
     unanswered_count = total_count - answered_count
-    
+
     # Add contextual encouragement message
     # If questions were skipped, let user know they can get a more reliable recommendation
     # Otherwise, reassure them the plan can evolve
@@ -1006,26 +1068,22 @@ def _render_results_view(mod: Dict[str, Any], config: ModuleConfig) -> None:
         encouragement_text = f"You skipped {unanswered_count} question{'s' if unanswered_count > 1 else ''}. I can give a more reliable recommendation with more information—feel free to retake this assessment anytime."
     else:
         encouragement_text = "Your care plan can evolve as your needs change. You can retake this assessment anytime to get an updated recommendation."
-    
+
     render_navi_panel_v2(
         title=navi_title,
         reason=navi_reason,
-        encouragement={
-            'icon': '💬',
-            'text': encouragement_text,
-            'status': 'complete'
-        },
+        encouragement={"icon": "💬", "text": encouragement_text, "status": "complete"},
         context_chips=[],
-        primary_action={'label': '', 'route': ''},
-        variant="module"
+        primary_action={"label": "", "route": ""},
+        variant="module",
     )
-    
+
     st.markdown("<div style='margin: 32px 0;'></div>", unsafe_allow_html=True)
-    
+
     # ========================================
     # 2. RECOMMENDATION CLARITY - Collapsible Drawer (Developer Tool)
     # ========================================
-    
+
     # Calculate clarity metrics (for fine-tuning)
     tier_thresholds = {
         "no_care_needed": (0, 8),
@@ -1034,7 +1092,7 @@ def _render_results_view(mod: Dict[str, Any], config: ModuleConfig) -> None:
         "memory_care": (25, 39),
         "memory_care_high_acuity": (40, 100),
     }
-    
+
     boundary_clarity = 100
     clarity_message = "Clear"
     if tier in tier_thresholds:
@@ -1043,18 +1101,21 @@ def _render_results_view(mod: Dict[str, Any], config: ModuleConfig) -> None:
         distance_from_max = max_score - tier_score
         distance_from_boundary = min(distance_from_min, distance_from_max)
         boundary_clarity = min(int((distance_from_boundary / 3.0) * 100), 100)
-        
+
         if boundary_clarity >= 80:
             clarity_message = "Strong — well within tier"
         elif boundary_clarity >= 50:
             clarity_message = "Moderate — some distance from boundary"
         else:
             clarity_message = "Near boundary — consider reviewing"
-    
-    clarity_color = "#22c55e" if boundary_clarity >= 80 else "#f59e0b" if boundary_clarity >= 50 else "#ef4444"
-    
+
+    clarity_color = (
+        "#22c55e" if boundary_clarity >= 80 else "#f59e0b" if boundary_clarity >= 50 else "#ef4444"
+    )
+
     with st.expander("🔧 Recommendation Clarity (For Fine-Tuning)", expanded=False):
-        st.markdown(f"""
+        st.markdown(
+            f"""
         <div style="
             background: white;
             border: 1px solid #e2e8f0;
@@ -1083,23 +1144,25 @@ def _render_results_view(mod: Dict[str, Any], config: ModuleConfig) -> None:
             </div>
             <div style="font-size: 13px; color: #64748b;">
                 <strong>Score:</strong> {tier_score} points<br/>
-                <strong>Tier:</strong> {tier.replace('_', ' ').title()}<br/>
-                <strong>Range:</strong> {tier_thresholds.get(tier, ('N/A', 'N/A'))[0]}-{tier_thresholds.get(tier, ('N/A', 'N/A'))[1]} points
+                <strong>Tier:</strong> {tier.replace("_", " ").title()}<br/>
+                <strong>Range:</strong> {tier_thresholds.get(tier, ("N/A", "N/A"))[0]}-{tier_thresholds.get(tier, ("N/A", "N/A"))[1]} points
             </div>
         </div>
-        """, unsafe_allow_html=True)
-    
+        """,
+            unsafe_allow_html=True,
+        )
+
     st.markdown("<div style='margin: 24px 0;'></div>", unsafe_allow_html=True)
-    
+
     # ========================================
     # 3. WHY YOU GOT THIS RECOMMENDATION
     # ========================================
-    
+
     st.markdown("### 🔍 Why You Got This Recommendation")
-    
+
     summary_data = outcomes.get("summary", {})
     points = summary_data.get("points", [])
-    
+
     if points:
         # Use detailed summary points from derive() function
         # Group them visually with icons
@@ -1107,18 +1170,18 @@ def _render_results_view(mod: Dict[str, Any], config: ModuleConfig) -> None:
     else:
         # Fallback to basic summary
         _render_results_summary(mod, config)
-    
+
     st.markdown("<div style='margin: 40px 0;'></div>", unsafe_allow_html=True)
-    
+
     # ========================================
     # 4. NEXT ACTIONS - Simplified CTAs
     # ========================================
-    
+
     _render_results_ctas_once(config)
 
 
-def _render_results_summary(state: Dict[str, Any], config: ModuleConfig) -> None:
-    bullets: List[str] = []
+def _render_results_summary(state: dict[str, Any], config: ModuleConfig) -> None:
+    bullets: list[str] = []
 
     def add_bullet(prefix: str, field_key: str, join: bool = False) -> None:
         field = _find_field(config, field_key)
@@ -1136,7 +1199,7 @@ def _render_results_summary(state: Dict[str, Any], config: ModuleConfig) -> None
     add_bullet("Cognitive notes:", "memory_changes")
     add_bullet("Medication complexity:", "meds_complexity")
 
-    chronic_chunks: List[str] = []
+    chronic_chunks: list[str] = []
     chronic_field = _find_field(config, "chronic_conditions")
     chronic_value = state.get("chronic_conditions")
     if chronic_field and _has_value(chronic_value):
@@ -1169,9 +1232,9 @@ def _render_results_summary(state: Dict[str, Any], config: ModuleConfig) -> None
     st.markdown(f"<ul>{items}</ul>", unsafe_allow_html=True)
 
 
-def _render_recommendation_details(points: List[str]) -> None:
+def _render_recommendation_details(points: list[str]) -> None:
     """Render recommendation details in a clean, icon-based grid.
-    
+
     Groups summary points by category with visual icons.
     """
     # Categorize points by keyword detection
@@ -1183,59 +1246,75 @@ def _render_recommendation_details(points: List[str]) -> None:
         "daily": {"icon": "🏠", "label": "Daily Living", "points": []},
         "social": {"icon": "👥", "label": "Social & Support", "points": []},
     }
-    
+
     # Categorize each point
     for point in points:
         point_lower = point.lower()
         categorized = False
-        
+
         # Cognitive
-        if any(word in point_lower for word in ["memory", "cognitive", "confusion", "dementia", "alzheimer"]):
+        if any(
+            word in point_lower
+            for word in ["memory", "cognitive", "confusion", "dementia", "alzheimer"]
+        ):
             categories["cognitive"]["points"].append(point)
             categorized = True
-        
+
         # Medication
         if any(word in point_lower for word in ["medication", "prescription", "med", "drug"]):
             categories["medication"]["points"].append(point)
             categorized = True
-        
+
         # Mobility
-        if any(word in point_lower for word in ["mobility", "fall", "walk", "wheelchair", "transfer", "balance"]):
+        if any(
+            word in point_lower
+            for word in ["mobility", "fall", "walk", "wheelchair", "transfer", "balance"]
+        ):
             categories["mobility"]["points"].append(point)
             categorized = True
-        
+
         # Health conditions
-        if any(word in point_lower for word in ["chronic", "condition", "disease", "illness", "diabetes", "heart"]):
+        if any(
+            word in point_lower
+            for word in ["chronic", "condition", "disease", "illness", "diabetes", "heart"]
+        ):
             categories["health"]["points"].append(point)
             categorized = True
-        
+
         # Daily living
-        if any(word in point_lower for word in ["adl", "bathing", "dressing", "eating", "toileting", "grooming", "hygiene"]):
+        if any(
+            word in point_lower
+            for word in ["adl", "bathing", "dressing", "eating", "toileting", "grooming", "hygiene"]
+        ):
             categories["daily"]["points"].append(point)
             categorized = True
-        
+
         # Social
-        if any(word in point_lower for word in ["social", "isolation", "alone", "caregiver", "family", "support"]):
+        if any(
+            word in point_lower
+            for word in ["social", "isolation", "alone", "caregiver", "family", "support"]
+        ):
             categories["social"]["points"].append(point)
             categorized = True
-        
+
         # If not categorized, add to daily living as default
         if not categorized:
             categories["daily"]["points"].append(point)
-    
+
     # Render only categories that have points
     active_categories = [cat for cat in categories.values() if cat["points"]]
-    
+
     if not active_categories:
         return
-    
+
     # Determine grid columns based on count
     num_cols = min(len(active_categories), 3)
     cols = st.columns(num_cols)
-    
+
     for idx, category in enumerate(active_categories):
         with cols[idx % num_cols]:
-            st.markdown(f"""
+            st.markdown(
+                f"""
             <div style="
                 background: white;
                 border: 1px solid #e2e8f0;
@@ -1259,8 +1338,10 @@ def _render_recommendation_details(points: List[str]) -> None:
                     {"<br>".join([f"• {H(p)}" for p in category["points"]])}
                 </div>
             </div>
-            """, unsafe_allow_html=True)
-    
+            """,
+                unsafe_allow_html=True,
+            )
+
     # Add collapsible "View More Details" if there are many points
     if len(points) > 6:
         with st.expander("📋 View Full Details", expanded=False):
@@ -1271,11 +1352,11 @@ def _render_recommendation_details(points: List[str]) -> None:
 def _render_results_ctas_once(config: ModuleConfig) -> None:
     """Render action buttons on results page."""
     state_key = config.state_key
-    
+
     st.markdown('<div class="sn-app mod-actions">', unsafe_allow_html=True)
-    
+
     col1, col2 = st.columns(2)
-    
+
     with col1:
         # Review Answers button - navigate back to first question
         if st.button(
@@ -1283,18 +1364,18 @@ def _render_results_ctas_once(config: ModuleConfig) -> None:
             key="_results_review",
             type="secondary",
             use_container_width=True,
-            help="Go back to review or update your answers"
+            help="Go back to review or update your answers",
         ):
             # Navigate back to first question (step 0)
             st.session_state[f"{state_key}._step"] = 0
-            
+
             # Update tile state
             tiles = st.session_state.setdefault("tiles", {})
             tile_state = tiles.setdefault(config.product, {})
             tile_state["last_step"] = 0
-            
+
             safe_rerun()
-    
+
     with col2:
         # Back to Hub button
         if st.button(
@@ -1302,13 +1383,15 @@ def _render_results_ctas_once(config: ModuleConfig) -> None:
             key="_results_back_hub",
             type="secondary",
             use_container_width=True,
-            help="Return to the main hub"
+            help="Return to the main hub",
         ):
             from core.nav import route_to
-            route_to("hub_concierge")
-    
-    st.markdown('</div>', unsafe_allow_html=True)
-    
+
+            hub_route = _hub_route_for_product(config.product)
+            route_to(hub_route)
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
     # Primary next step: Calculate Costs (only for GCP)
     if config.product == "gcp_v4":
         st.markdown("---")
@@ -1318,11 +1401,12 @@ def _render_results_ctas_once(config: ModuleConfig) -> None:
             key="_results_next_cost",
             type="primary",
             use_container_width=True,
-            help="See what your recommended care will cost"
+            help="See what your recommended care will cost",
         ):
             from core.nav import route_to
+
             route_to("cost_v2")
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
 
 
 def _effect_triggered(values: Sequence[str], triggers: Sequence[str]) -> bool:
@@ -1348,17 +1432,13 @@ def _rerun_app() -> None:
 
 
 def _render_navi_guide_bar(
-    config: ModuleConfig,
-    step: StepDef,
-    state: Dict[str, Any],
-    step_index: int,
-    progress_total: int
+    config: ModuleConfig, step: StepDef, state: dict[str, Any], step_index: int, progress_total: int
 ) -> None:
     """Render Navi's persistent guide bar at top of module.
-    
+
     PRIORITY: Use step.navi_guidance if embedded in module JSON.
     FALLBACK: Use navi_dialogue.json for legacy modules.
-    
+
     Args:
         config: Module configuration
         step: Current step definition
@@ -1367,43 +1447,41 @@ def _render_navi_guide_bar(
         progress_total: Total progress-eligible steps
     """
     try:
-        from core.ui import render_navi_guide_bar
         from core.mcip import MCIP
-        
+        from core.ui import render_navi_guide_bar
+
         # Check if step has embedded navi_guidance (new system)
         if step.navi_guidance:
             message = step.navi_guidance
         # Check if module has intro/outro guidance
         elif step_index == 0 and config.navi_intro:
             message = config.navi_intro
-        elif (step_index == len(config.steps) - 1 or 
-              (config.results_step_id and step.id == config.results_step_id)) and config.navi_outro:
+        elif (
+            step_index == len(config.steps) - 1
+            or (config.results_step_id and step.id == config.results_step_id)
+        ) and config.navi_outro:
             message = config.navi_outro
         else:
             # Fallback to dialogue JSON (legacy system)
             from core.navi_dialogue import NaviDialogue
-            
+
             # Map product key to dialogue key
-            product_to_dialogue = {
-                "gcp_v4": "gcp",
-                "cost_v2": "cost_planner",
-                "pfma_v2": "pfma"
-            }
-            
+            product_to_dialogue = {"gcp_v4": "gcp", "cost_v2": "cost_planner", "pfma_v2": "pfma"}
+
             dialogue_product = product_to_dialogue.get(config.product, config.product)
-            
+
             # Determine module key from step
-            is_first_step = (step_index == 0)
-            is_last_step = (step_index == len(config.steps) - 1)
+            is_first_step = step_index == 0
+            is_last_step = step_index == len(config.steps) - 1
             is_results = config.results_step_id and step.id == config.results_step_id
-            
+
             if is_first_step:
                 module_key = "intro"
             elif is_results or is_last_step:
                 module_key = "complete"
             else:
                 module_key = step.id if step.id else "intro"
-            
+
             # Build context from MCIP
             context = {}
             try:
@@ -1413,7 +1491,7 @@ def _render_navi_guide_bar(
                     context["confidence"] = int(care_rec.confidence * 100)
             except:
                 pass
-            
+
             try:
                 financial = MCIP.get_financial_profile()
                 if financial:
@@ -1421,25 +1499,27 @@ def _render_navi_guide_bar(
                     context["runway_months"] = financial.runway_months
             except:
                 pass
-            
+
             # Get message from dialogue JSON
             message = NaviDialogue.get_module_message(dialogue_product, module_key, context)
-        
+
         if not message:
             return
-        
+
         # Calculate current progress step
         progress_steps = [s for s in config.steps if s.show_progress]
-        current_progress = sum(1 for s in progress_steps if config.steps.index(s) < step_index) + (1 if step.show_progress else 0)
-        
+        current_progress = sum(1 for s in progress_steps if config.steps.index(s) < step_index) + (
+            1 if step.show_progress else 0
+        )
+
         # Determine if we should show progress
-        is_first_step = (step_index == 0)
+        is_first_step = step_index == 0
         is_results = config.results_step_id and step.id == config.results_step_id
-        show_progress_bar = (progress_total > 0 and not is_first_step and not is_results)
-        
+        show_progress_bar = progress_total > 0 and not is_first_step and not is_results
+
         # Get color from message or use default
         color = message.get("color", "#8b5cf6")
-        
+
         render_navi_guide_bar(
             text=message.get("text", ""),
             subtext=message.get("subtext"),
@@ -1447,11 +1527,12 @@ def _render_navi_guide_bar(
             show_progress=show_progress_bar,
             current_step=current_progress if current_progress > 0 else None,
             total_steps=progress_total if progress_total > 0 else None,
-            color=color
+            color=color,
         )
     except Exception as e:
         # Silently fail if Navi can't render (don't break module flow)
         import sys
+
         print(f"[WARN] Navi guide bar failed: {e}", file=sys.stderr)
 
 

@@ -1,4 +1,5 @@
 """Simple product shell - no layout.py complexity."""
+
 from __future__ import annotations
 
 import streamlit as st

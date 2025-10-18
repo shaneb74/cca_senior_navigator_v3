@@ -1,0 +1,89 @@
+{
+  "key": "medical",
+  "title": "Medical & Care Needs",
+  "icon": "🩺",
+  "description": "Share your health conditions and care needs to receive personalized guidance",
+  "special_handling": "flag_manager",
+  "fields": [
+    {
+      "key": "chronic_conditions",
+      "label": "Chronic Health Conditions",
+      "type": "conditions_registry",
+      "source": "flag_manager",
+      "registry_path": "config/conditions/conditions.json",
+      "auto_flags": {
+        "1_or_more": "chronic_present",
+        "2_or_more": "chronic_conditions"
+      },
+      "required": false,
+      "help": "Select any ongoing health conditions (from Conditions Registry)"
+    },
+    {
+      "key": "care_flags",
+      "label": "Additional Care Needs",
+      "type": "flag_toggles",
+      "source": "flag_manager",
+      "flags": [
+        {
+          "key": "memory_support",
+          "label": "Memory Support",
+          "icon": "🧠",
+          "help": "Cognitive impairment, dementia, or Alzheimer's support"
+        },
+        {
+          "key": "mobility_limited",
+          "label": "Mobility Assistance",
+          "icon": "🦽",
+          "help": "Difficulty walking, wheelchair use, or mobility limitations"
+        },
+        {
+          "key": "behavioral_concerns",
+          "label": "Behavioral Support",
+          "icon": "🤝",
+          "help": "Challenging behaviors requiring specialized care"
+        },
+        {
+          "key": "medication_management",
+          "label": "Medication Management",
+          "icon": "💊",
+          "help": "Complex medication regimen requiring assistance"
+        },
+        {
+          "key": "diabetic_care",
+          "label": "Diabetic Care",
+          "icon": "🩸",
+          "help": "Diabetes management and monitoring"
+        },
+        {
+          "key": "wound_care",
+          "label": "Wound Care",
+          "icon": "🩹",
+          "help": "Requires specialized wound care"
+        },
+        {
+          "key": "oxygen_therapy",
+          "label": "Oxygen Therapy",
+          "icon": "🫁",
+          "help": "Supplemental oxygen required"
+        },
+        {
+          "key": "hospice_palliative",
+          "label": "Hospice / Palliative Care",
+          "icon": "🕊️",
+          "help": "End-of-life or comfort-focused care"
+        }
+      ],
+      "required": false,
+      "help": "Select all care needs that apply"
+    },
+    {
+      "key": "medical_notes",
+      "label": "Additional Medical Information",
+      "type": "textarea",
+      "placeholder": "Any other health information your advisor should know...",
+      "required": false,
+      "max_chars": 500,
+      "help": "Recent hospitalizations, upcoming surgeries, special equipment needs, etc."
+    }
+  ]
+}

@@ -1,7 +1,6 @@
 """Simple product layout - no headers, minimal wrapper."""
-from __future__ import annotations
 
-import streamlit as st
+from __future__ import annotations
 
 
 def render_product_start() -> None:
