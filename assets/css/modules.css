@@ -247,12 +247,11 @@ div.element-container:empty {
 }
 
 /* Hide Streamlit's native widget labels (we use custom styled labels) */
+/* Hide widget labels ONLY within specific module field contexts to avoid breaking multiselect/other components */
 .sn-app .mod-field [data-testid="stWidgetLabel"],
 .mod-field [data-testid="stWidgetLabel"],
 .mod-radio-pills [data-testid="stWidgetLabel"],
-.mod-multi-pills [data-testid="stWidgetLabel"],
-[data-testid="stWidgetLabel"][aria-hidden="true"],
-label[data-testid="stWidgetLabel"] {
+.mod-multi-pills [data-testid="stWidgetLabel"] {
   display: none !important;
   height: 0 !important;
   margin: 0 !important;
@@ -262,8 +261,10 @@ label[data-testid="stWidgetLabel"] {
   left: -9999px !important;
 }
 
-/* Also hide the markdown container inside widget labels */
-[data-testid="stWidgetLabel"] [data-testid="stMarkdownContainer"] {
+/* Also hide the markdown container inside widget labels in these contexts */
+.mod-field [data-testid="stWidgetLabel"] [data-testid="stMarkdownContainer"],
+.mod-radio-pills [data-testid="stWidgetLabel"] [data-testid="stMarkdownContainer"],
+.mod-multi-pills [data-testid="stWidgetLabel"] [data-testid="stMarkdownContainer"] {
   display: none !important;
 }
 
