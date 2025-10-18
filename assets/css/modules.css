@@ -315,6 +315,20 @@ div.element-container:empty {
   align-items: center !important;
 }
 
+/* 🐛 GHOST BUTTON FIX: Hide the first blank option that Streamlit injects */
+.mod-radio-pills [data-testid="stRadio"] label:first-of-type,
+.mod-radio-pills div[data-testid="stRadio"] label:first-of-type,
+.mod-radio-pills [role="radiogroup"] > label:first-of-type {
+  display: none !important;
+  visibility: hidden !important;
+  position: absolute !important;
+  left: -9999px !important;
+  width: 0 !important;
+  height: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
 /* BASE PILL STYLE - Gray unselected */
 /* Target ALL possible label variations Streamlit generates */
 /* GLOBAL: Apply to ALL radio buttons in the app */
