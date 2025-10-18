@@ -132,8 +132,8 @@ def _get_prefill_value(field: dict) -> str:
     # Parse path (e.g., "gcp.basic_info.name")
     parts = prefill_path.split(".")
     
-    # For now, return None (prefill logic can be enhanced later)
-    # TODO: Implement actual prefill from GCP/Cost Planner session data
+    # Prefill is currently handled by get_personal_prefill() function
+    # This fallback returns None for any fields not covered by that function
     return None
 
 
