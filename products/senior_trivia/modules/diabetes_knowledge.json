@@ -1,0 +1,165 @@
+{
+  "module": {
+    "id": "diabetes_knowledge",
+    "name": "Diabetes Knowledge Check",
+    "version": "v2025.10",
+    "description": "Quick, fun questions to help you stay sharp about managing diabetes.",
+    "results_step_id": "results",
+    "display": {
+      "title": "Diabetes Knowledge Check",
+      "subtitle": "Learn smart strategies for managing diabetes",
+      "estimated_time": "≈4 min",
+      "autosave": true,
+      "progress_weight": 1.0
+    },
+    "navi_guidance": {
+      "purpose": "Reinforce diabetes management knowledge and healthy habits",
+      "outcome": "Score and practical diabetes management tips",
+      "encouragement": "Small knowledge gains lead to better health!",
+      "intro_message": {
+        "text": "🩸 Ready to test your diabetes know-how?",
+        "subtext": "Quick questions about glucose management, healthy habits, and staying safe!"
+      }
+    },
+    "condition_trigger": {
+      "primary": "medical.conditions.chronic[] contains 'diabetes'",
+      "alternate": "flags.active[] includes 'chronic_present' AND chronic conditions includes diabetes",
+      "visibility": "conditional"
+    }
+  },
+  "sections": [
+    {
+      "id": "intro",
+      "title": "Welcome to Diabetes Knowledge Check",
+      "type": "info",
+      "content": [
+        "**Since you're managing diabetes, let's review some key concepts!**",
+        "",
+        "This quick quiz covers:",
+        "• Healthy blood sugar ranges",
+        "• Preventing hypoglycemia (low blood sugar)",
+        "• Long-term diabetes management goals",
+        "• Foot care and circulation",
+        "• Lifestyle habits that help control blood sugar",
+        "",
+        "**What you'll get:**",
+        "• Instant feedback with helpful tips",
+        "• Evidence-based diabetes knowledge",
+        "• Your final score and Healthy You Badge",
+        "• 10 points per correct answer"
+      ],
+      "actions": [
+        { "label": "Start Quiz", "action": "next" },
+        { "label": "Back to Trivia Hub", "action": "route", "value": "senior_trivia" }
+      ]
+    },
+    {
+      "id": "questions",
+      "title": "Diabetes Knowledge Questions",
+      "description": "Test your diabetes management know-how!",
+      "questions": [
+        {
+          "id": "q1_fasting_range",
+          "type": "string",
+          "select": "single",
+          "label": "What is considered a healthy fasting blood sugar range for most adults with diabetes?",
+          "required": true,
+          "options": [
+            { "label": "50–70 mg/dL", "value": "50-70", "feedback": "That's too low and risks hypoglycemia! The American Diabetes Association recommends 80–130 mg/dL for fasting blood sugar. Talk to your doctor about your individual target." },
+            { "label": "80–130 mg/dL", "value": "80-130", "is_correct": true, "feedback": "Correct! The ADA recommends fasting blood sugar between 80–130 mg/dL for most adults with diabetes. Your doctor may adjust this target based on your individual health, age, and other factors." },
+            { "label": "130–180 mg/dL", "value": "130-180", "feedback": "That's a bit high for fasting! The ADA recommends 80–130 mg/dL before meals. Your doctor may set different targets based on your individual needs." },
+            { "label": "180–220 mg/dL", "value": "180-220", "feedback": "That's too high! Consistently elevated blood sugar increases risk of complications. The recommended fasting range is 80–130 mg/dL. Check with your doctor about your target." }
+          ],
+          "ui": { "widget": "chip", "orientation": "vertical" }
+        },
+        {
+          "id": "q2_hypoglycemia_cause",
+          "type": "string",
+          "select": "single",
+          "label": "Which of these can cause blood sugar to drop too low (hypoglycemia)?",
+          "required": true,
+          "options": [
+            { "label": "Drinking water", "value": "water", "feedback": "Water doesn't affect blood sugar! Common causes of low blood sugar include: skipping meals after taking insulin or diabetes meds, too much insulin, or more exercise than usual without adjusting food or medication." },
+            { "label": "Taking vitamins", "value": "vitamins", "feedback": "Most vitamins don't cause low blood sugar! The main culprit is skipping meals after taking insulin or diabetes medications, or exercising more than usual without adjusting food intake." },
+            { "label": "Skipping a meal after taking insulin", "value": "skipping_meal", "is_correct": true, "feedback": "Correct! Taking insulin or certain diabetes medications without eating enough food can cause dangerous low blood sugar. Always coordinate your meals with your medication schedule, and carry fast-acting carbs (like glucose tablets or juice) just in case!" },
+            { "label": "Walking 10 minutes", "value": "walking", "feedback": "Short walks usually don't cause dangerous lows, though exercise does lower blood sugar. The bigger risk is skipping meals after taking insulin or diabetes meds. Always match your food intake to your medications and activity level!" }
+          ],
+          "ui": { "widget": "chip", "orientation": "vertical" }
+        },
+        {
+          "id": "q3_management_goal",
+          "type": "string",
+          "select": "single",
+          "label": "What is the main long-term goal of diabetes management?",
+          "required": true,
+          "options": [
+            { "label": "Keeping blood glucose levels in a healthy range", "value": "glucose_control", "is_correct": true, "feedback": "Correct! The primary goal is maintaining blood glucose in your target range to prevent complications like heart disease, kidney damage, nerve damage, and vision loss. This involves medication, diet, exercise, monitoring, and regular medical care." },
+            { "label": "Avoiding all sugar forever", "value": "no_sugar", "feedback": "You don't need to eliminate all sugar! The goal is keeping blood glucose in a healthy range through balanced meals, medication, exercise, and monitoring. Work with your care team to create a realistic, enjoyable eating plan." },
+            { "label": "Never exercising", "value": "no_exercise", "feedback": "Exercise is actually helpful for diabetes! It helps insulin work better and lowers blood sugar. The goal is keeping glucose levels stable through medication, balanced eating, regular activity, and monitoring." },
+            { "label": "Taking more medication", "value": "more_meds", "feedback": "More medication isn't always better! The goal is keeping blood glucose in your target range using the right combination of medication, diet, exercise, and monitoring. Work with your doctor to find the right balance." }
+          ],
+          "ui": { "widget": "chip", "orientation": "vertical" }
+        },
+        {
+          "id": "q4_foot_care",
+          "type": "string",
+          "select": "single",
+          "label": "Why is foot care especially important for people with diabetes?",
+          "required": true,
+          "options": [
+            { "label": "It improves vision", "value": "vision", "feedback": "Foot care doesn't affect vision! For people with diabetes, reduced circulation and nerve damage mean foot injuries can go unnoticed and become serious infections. Check your feet daily, wear proper shoes, and see a podiatrist regularly." },
+            { "label": "Reduced circulation and sensation can lead to unnoticed injuries", "value": "circulation", "is_correct": true, "feedback": "Correct! Diabetes can damage nerves (reducing sensation) and blood vessels (reducing circulation). This means you might not feel a blister or cut, and it may not heal well, leading to serious infections. Check your feet daily, wear proper shoes, keep feet clean and moisturized, and see a podiatrist regularly!" },
+            { "label": "It prevents arthritis", "value": "arthritis", "feedback": "Foot care doesn't prevent arthritis! For people with diabetes, nerve damage and poor circulation mean foot injuries can become serious infections without proper care. Daily foot checks and good shoes are essential!" },
+            { "label": "It increases metabolism", "value": "metabolism", "feedback": "Foot care doesn't boost metabolism! The reason it's critical for people with diabetes is that nerve damage and poor circulation mean injuries can go unnoticed and become dangerous infections. Check feet daily and report any problems to your doctor!" }
+          ],
+          "ui": { "widget": "chip", "orientation": "vertical" }
+        },
+        {
+          "id": "q5_lifestyle_habit",
+          "type": "string",
+          "select": "single",
+          "label": "Which lifestyle habit helps most with blood sugar control?",
+          "required": true,
+          "options": [
+            { "label": "Regular exercise and balanced meals", "value": "exercise_meals", "is_correct": true, "feedback": "Correct! Regular physical activity helps insulin work more effectively, and balanced meals (with consistent carbs, fiber, protein, and healthy fats) prevent blood sugar spikes. Aim for 150 minutes of moderate activity per week and work with a dietitian to create a meal plan that works for you!" },
+            { "label": "Drinking coffee", "value": "coffee", "feedback": "Coffee doesn't directly help blood sugar control! The most effective habits are regular exercise (which helps insulin work better) and balanced meals with consistent carbs, fiber, protein, and healthy fats." },
+            { "label": "Sleeping less", "value": "less_sleep", "feedback": "Poor sleep actually makes blood sugar harder to control! Aim for 7-9 hours per night. The best habits for glucose control are regular exercise and balanced, consistent meals." },
+            { "label": "Avoiding all carbs", "value": "no_carbs", "feedback": "You don't need to avoid all carbs! The key is consistent, balanced meals with the right amount and type of carbs (emphasize whole grains, vegetables, and fiber). Combine this with regular exercise for best blood sugar control!" }
+          ],
+          "ui": { "widget": "chip", "orientation": "vertical" }
+        },
+        {
+          "id": "q6_a1c_meaning",
+          "type": "string",
+          "select": "single",
+          "label": "What does the A1C test measure?",
+          "required": true,
+          "options": [
+            { "label": "Current blood sugar at this moment", "value": "current", "feedback": "That's a regular blood glucose test! A1C measures your AVERAGE blood sugar over the past 2-3 months by measuring glucose attached to hemoglobin in red blood cells. Most people with diabetes should get A1C tested at least twice a year." },
+            { "label": "Average blood sugar over the past 2-3 months", "value": "average", "is_correct": true, "feedback": "Correct! A1C measures your average blood glucose over the past 2-3 months by checking glucose attached to red blood cells. For most people with diabetes, the A1C goal is below 7% (your doctor may set a different target). Get tested at least twice a year, or more often if your treatment changes!" },
+            { "label": "Kidney function", "value": "kidney", "feedback": "That's a different test! A1C measures your average blood sugar over the past 2-3 months. It's a key indicator of diabetes control and helps your doctor adjust your treatment plan." },
+            { "label": "Blood pressure", "value": "blood_pressure", "feedback": "That's measured with a blood pressure cuff! A1C is a blood test that shows your average blood sugar over the past 2-3 months, giving you and your doctor a picture of your overall diabetes control." }
+          ],
+          "ui": { "widget": "chip", "orientation": "vertical" }
+        }
+      ]
+    },
+    {
+      "id": "results",
+      "title": "Quiz Complete!",
+      "type": "results",
+      "outputs": {
+        "summary_text": "Great work! You got {{correct_count}} out of {{total_questions}} correct.",
+        "points": [
+          "Score: {{score_percentage}}%",
+          "Points earned: {{points_earned}}",
+          "Badge: Healthy You 🩸"
+        ]
+      },
+      "actions": [
+        { "label": "Play Another Game", "action": "route", "value": "senior_trivia" },
+        { "label": "Back to Waiting Room", "action": "route", "value": "hub_waiting" }
+      ]
+    }
+  ]
+}

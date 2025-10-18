@@ -1,0 +1,273 @@
+{
+  "module": {
+    "id": "truths_myths",
+    "name": "Truths & Myths about Senior Living",
+    "version": "v2025.10",
+    "description": "Test your knowledge and bust common myths about senior care, assisted living, memory care, and financial planning.",
+    "results_step_id": "results",
+    "display": {
+      "title": "Truths & Myths Quiz",
+      "subtitle": "Separate fact from fiction in senior care and living options",
+      "estimated_time": "≈4 min",
+      "autosave": true,
+      "progress_weight": 1.0
+    },
+    "navi_guidance": {
+      "purpose": "Educate seniors and families about common misconceptions in senior care",
+      "outcome": "Score and instant feedback on each answer",
+      "encouragement": "Don't worry about getting them all right - learning is the goal!",
+      "intro_message": {
+        "text": "🎯 Let's bust some myths about senior living!",
+        "subtext": "Each question comes with instant feedback. Ready to learn?"
+      }
+    }
+  },
+  "sections": [
+    {
+      "id": "intro",
+      "title": "Welcome to Truths & Myths Quiz",
+      "type": "info",
+      "content": [
+        "**Ready to test your senior care knowledge?**",
+        "",
+        "This quick quiz covers common myths and truths about:",
+        "• Assisted living and memory care",
+        "• Medicare and custodial care",
+        "• In-home care options",
+        "• Safety and independence",
+        "",
+        "**What you'll get:**",
+        "• Instant feedback on each answer",
+        "• Educational explanations",
+        "• Your final score and badge",
+        "• 10 points per correct answer"
+      ],
+      "actions": [
+        { "label": "Start Quiz", "action": "next" },
+        { "label": "Back to Trivia Hub", "action": "route", "value": "senior_trivia" }
+      ]
+    },
+    {
+      "id": "questions",
+      "title": "Quiz Questions",
+      "description": "Answer each question to the best of your knowledge.",
+      "questions": [
+        {
+          "id": "q1_medicare_custodial",
+          "type": "string",
+          "select": "single",
+          "label": "True or False: Medicare covers long-term custodial care in assisted living facilities.",
+          "required": true,
+          "options": [
+            { 
+              "label": "True", 
+              "value": "true",
+              "feedback": "Not quite! Medicare does NOT cover long-term custodial care like help with bathing, dressing, or meals. It only covers skilled nursing for short-term recovery (up to 100 days). You'd need Medicaid or private insurance for custodial care."
+            },
+            { 
+              "label": "False", 
+              "value": "false",
+              "is_correct": true,
+              "feedback": "Correct! Medicare does NOT cover long-term custodial care. It only pays for skilled nursing during short-term recovery (up to 100 days). For ongoing help with daily activities, you'd need Medicaid, private insurance, or pay out-of-pocket."
+            }
+          ],
+          "ui": { "widget": "chip", "orientation": "horizontal" }
+        },
+        {
+          "id": "q2_assisted_living_medical",
+          "type": "string",
+          "select": "single",
+          "label": "True or False: Assisted living facilities provide 24/7 skilled medical care like hospitals.",
+          "required": true,
+          "options": [
+            { 
+              "label": "True",
+              "value": "true",
+              "feedback": "Not quite! Assisted living provides help with daily activities (meals, bathing, medication reminders), but NOT 24/7 skilled nursing. For round-the-clock medical care, you'd need a skilled nursing facility or memory care with nursing staff."
+            },
+            { 
+              "label": "False",
+              "value": "false",
+              "is_correct": true,
+              "feedback": "Correct! Assisted living is for people who need help with daily activities but don't require constant medical supervision. Think of it as supportive housing with meals, activities, and assistance - not a medical facility."
+            }
+          ],
+          "ui": { "widget": "chip", "orientation": "horizontal" }
+        },
+        {
+          "id": "q3_memory_care_alzheimers",
+          "type": "string",
+          "select": "single",
+          "label": "True or False: Memory care communities are only for people with Alzheimer's disease.",
+          "required": true,
+          "options": [
+            { 
+              "label": "True",
+              "value": "true",
+              "feedback": "Not quite! While Alzheimer's is the most common cause, memory care also serves people with other forms of dementia (vascular dementia, Lewy body dementia, frontotemporal dementia), Parkinson's-related cognitive decline, and other memory disorders."
+            },
+            { 
+              "label": "False",
+              "value": "false",
+              "is_correct": true,
+              "feedback": "Correct! Memory care welcomes anyone with significant cognitive decline, including Alzheimer's, other dementias, Parkinson's, stroke-related memory loss, and more. The specialized care focuses on safety, routine, and cognitive engagement."
+            }
+          ],
+          "ui": { "widget": "chip", "orientation": "horizontal" }
+        },
+        {
+          "id": "q4_home_care_vs_facility",
+          "type": "string",
+          "select": "single",
+          "label": "Which statement is TRUE about in-home care?",
+          "required": true,
+          "options": [
+            { 
+              "label": "It's always cheaper than assisted living",
+              "value": "cheaper",
+              "feedback": "Not always! In-home care can cost $20-30/hour. If someone needs 8+ hours daily, it can exceed assisted living costs ($4,000-6,000/month). Plus, family caregivers often supplement in-home care, which has hidden costs (time, stress, lost wages)."
+            },
+            { 
+              "label": "It allows seniors to stay in their own home",
+              "value": "stay_home",
+              "is_correct": true,
+              "feedback": "Correct! The biggest benefit of in-home care is aging in place - staying in familiar surroundings with one-on-one support. However, it's not always the safest or most cost-effective option for everyone, especially with 24/7 needs."
+            },
+            { 
+              "label": "Medicare covers all in-home care costs",
+              "value": "medicare_covers",
+              "feedback": "Unfortunately no! Medicare only covers short-term skilled nursing or therapy at home (after hospitalization or illness). It doesn't cover long-term custodial care like help with bathing, cooking, or companionship."
+            },
+            { 
+              "label": "In-home caregivers must be family members",
+              "value": "family_only",
+              "feedback": "Not true! In-home care includes professional caregivers from agencies, independent contractors, and yes, family members too. Many families combine professional care with family support for the best outcome."
+            }
+          ],
+          "ui": { "widget": "chip", "orientation": "vertical" }
+        },
+        {
+          "id": "q5_assisted_living_independence",
+          "type": "string",
+          "select": "single",
+          "label": "True or False: Moving to assisted living means giving up all independence.",
+          "required": true,
+          "options": [
+            { 
+              "label": "True",
+              "value": "true",
+              "feedback": "Not true! Assisted living is designed to maximize independence while providing support. Residents have their own apartments, set their own schedules, choose activities, and make daily decisions. Staff help with tasks that are becoming difficult, not everything."
+            },
+            { 
+              "label": "False",
+              "value": "false",
+              "is_correct": true,
+              "feedback": "Correct! Assisted living enhances independence by removing burdens (cooking, cleaning, home maintenance) while preserving choice and autonomy. Many residents say they feel MORE independent because they're no longer struggling with daily tasks alone."
+            }
+          ],
+          "ui": { "widget": "chip", "orientation": "horizontal" }
+        },
+        {
+          "id": "q6_falls_prevention",
+          "type": "string",
+          "select": "single",
+          "label": "What is the #1 cause of falls in seniors' homes?",
+          "required": true,
+          "options": [
+            { 
+              "label": "Poor lighting",
+              "value": "lighting",
+              "feedback": "Close, but not #1! Poor lighting is a major factor, especially at night. But the most common cause is environmental hazards like clutter, loose rugs, and uneven surfaces."
+            },
+            { 
+              "label": "Clutter and tripping hazards",
+              "value": "clutter",
+              "is_correct": true,
+              "feedback": "Correct! Clutter, loose rugs, electrical cords, and uneven thresholds cause the majority of falls. Simple changes like removing rugs, clearing walkways, and adding grab bars can dramatically reduce fall risk."
+            },
+            { 
+              "label": "Medication side effects",
+              "value": "medication",
+              "feedback": "Good thought! Medication side effects (dizziness, drowsiness) do increase fall risk, but they're not the #1 cause. Environmental hazards like clutter and loose rugs are more common culprits."
+            },
+            { 
+              "label": "Weak muscles",
+              "value": "weak_muscles",
+              "feedback": "You're on the right track! Weak muscles and poor balance are major risk factors, but the #1 cause is actually environmental hazards - things in the home that create tripping risks."
+            }
+          ],
+          "ui": { "widget": "chip", "orientation": "vertical" }
+        },
+        {
+          "id": "q7_medicaid_vs_medicare",
+          "type": "string",
+          "select": "single",
+          "label": "True or False: Medicaid and Medicare are the same program.",
+          "required": true,
+          "options": [
+            { 
+              "label": "True",
+              "value": "true",
+              "feedback": "Nope! They're completely different programs. Medicare is federal health insurance for seniors 65+ (and some younger people with disabilities). Medicaid is a joint federal-state program for low-income individuals that CAN cover long-term care."
+            },
+            { 
+              "label": "False",
+              "value": "false",
+              "is_correct": true,
+              "feedback": "Correct! Medicare = health insurance for seniors. Medicaid = needs-based program that can cover long-term care. Many seniors have both ('dual eligible'), but they serve different purposes and have different eligibility rules."
+            }
+          ],
+          "ui": { "widget": "chip", "orientation": "horizontal" }
+        },
+        {
+          "id": "q8_planning_timing",
+          "type": "string",
+          "select": "single",
+          "label": "When is the best time to start planning for senior care?",
+          "required": true,
+          "options": [
+            { 
+              "label": "After a crisis or hospitalization",
+              "value": "after_crisis",
+              "feedback": "That's when most people start, but it's not ideal! Crisis planning is stressful and limits your options. The best time to plan is BEFORE you need care, when you can research, visit facilities, and make thoughtful decisions."
+            },
+            { 
+              "label": "When you turn 65",
+              "value": "age_65",
+              "feedback": "Good milestone, but you can (and should) start earlier! Financial planning, long-term care insurance, and housing decisions are best made in your 50s or early 60s, before health changes limit your options."
+            },
+            { 
+              "label": "Before you need care (proactive planning)",
+              "value": "before_needed",
+              "is_correct": true,
+              "feedback": "Correct! The best time is BEFORE you need care. Proactive planning (in your 50s or 60s) lets you explore options, save money, get insurance, and make decisions without pressure. Crisis planning is stressful and expensive."
+            },
+            { 
+              "label": "It's never too early or too late",
+              "value": "anytime",
+              "feedback": "While it's true that planning can happen anytime, the BEST time is before you need care. Waiting until a crisis limits your options and adds stress. Start early!"
+            }
+          ],
+          "ui": { "widget": "chip", "orientation": "vertical" }
+        }
+      ]
+    },
+    {
+      "id": "results",
+      "title": "Quiz Complete!",
+      "type": "results",
+      "outputs": {
+        "summary_text": "Great job! You got {{correct_count}} out of {{total_questions}} correct.",
+        "points": [
+          "Score: {{score_percentage}}%",
+          "Points earned: {{points_earned}}",
+          "Badge: {{badge_name}}"
+        ]
+      },
+      "actions": [
+        { "label": "Play Another Game", "action": "route", "value": "senior_trivia" },
+        { "label": "Back to Waiting Room", "action": "route", "value": "hub_waiting" }
+      ]
+    }
+  ]
+}

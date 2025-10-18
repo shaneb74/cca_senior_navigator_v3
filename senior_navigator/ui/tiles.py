@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import html
-from typing import Dict, Iterable
+from collections.abc import Iterable
 
 import streamlit as st
 
@@ -23,7 +23,7 @@ def _render_meta_lines(meta: Iterable[object]) -> str:
     return "".join(lines)
 
 
-def render_product_tile(config: Dict[str, object]) -> None:
+def render_product_tile(config: dict[str, object]) -> None:
     """
     Render a large product tile using shared tokens.
     Unknown keys in config are ignored.
@@ -65,7 +65,7 @@ def render_product_tile(config: Dict[str, object]) -> None:
     st.markdown("".join(parts), unsafe_allow_html=True)
 
 
-def render_module_tile(config: Dict[str, object]) -> None:
+def render_module_tile(config: dict[str, object]) -> None:
     """
     Render a compact module tile for product sub-modules.
     Config keys outside the expected set are ignored.

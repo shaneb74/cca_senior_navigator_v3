@@ -1,23 +1,24 @@
 from __future__ import annotations
 
 import html
+from collections.abc import Sequence
 from textwrap import dedent
-from typing import Dict, Optional, Sequence
+from typing import Optional, Dict
 
 import streamlit as st
 
 from core.mcip import MCIP
 from core.nav import route_to
-from core.state import is_authenticated, is_professional, switch_to_member, switch_to_professional
+from core.state import is_authenticated
 from core.ui import img_src
 from core.url_helpers import add_uid_to_href
 from layout import static_url  # Keep static_url for now
-from ui.header_simple import render_header_simple
 from ui.footer_simple import render_footer_simple
+from ui.header_simple import render_header_simple
 
 _CSS_FLAG = "_welcome_css_main"
 
-_PILLS: Dict[str, Dict[str, Optional[str]]] = {
+_PILLS: dict[str, dict[str, str | None]] = {
     "someone": {
         "label": "For someone",
         "page": "pages/someone_else.py",
@@ -41,7 +42,7 @@ _PILL_ROUTES = {
     "pro": "professionals",
 }
 
-_PILL_SETS: Dict[str, Sequence[str]] = {
+_PILL_SETS: dict[str, Sequence[str]] = {
     "someone": ("someone", "self"),
     "self": ("someone", "self"),
     "pro": ("someone", "self", "pro"),
@@ -346,9 +347,9 @@ def render_welcome_card(
         classes = "context-pill-link"
         if key == safe_active:
             classes += " is-active"
-        
+
         # Build aria-current attribute separately to avoid quote nesting issues
-        aria_attr = 'aria-current="page"' if key == safe_active else ''
+        aria_attr = 'aria-current="page"' if key == safe_active else ""
         href_with_uid = add_uid_to_href(f"?page={route}")
         pill_links.append(
             f"<a href='{href_with_uid}' class='{classes}' data-pill='{key}' {aria_attr}>{icon}<span>{html.escape(cfg['label'])}</span></a>"
@@ -362,7 +363,7 @@ def render_welcome_card(
             _clean_html(
                 f"""
                 <div class="context-top">
-                  <div class="context-pill-group">{''.join(pill_links)}</div>
+                  <div class="context-pill-group">{"".join(pill_links)}</div>
                   <a class="context-close" href="{back_href}" aria-label="Back to welcome">×</a>
                 </div>
                 """
@@ -401,7 +402,7 @@ def render_welcome_card(
                 st.session_state["planning_for_relationship"] = "someone_else"
             elif safe_active == "self":
                 st.session_state["planning_for_relationship"] = "self"
-            
+
             # Store name if provided (not empty or whitespace)
             if name_value and name_value.strip():
                 st.session_state["planning_for_name"] = name_value.strip()
@@ -411,7 +412,7 @@ def render_welcome_card(
                 # Clear names if exists, allowing generic terms to be used
                 st.session_state.pop("planning_for_name", None)
                 st.session_state.pop("person_name", None)
-            
+
             # Navigate regardless of whether name was provided
             if submit_route:
                 _go_to(None, submit_route)
@@ -453,7 +454,7 @@ def _welcome_body(
     show_secondary: bool = True,
 ) -> str:
     """Generate welcome page body with dynamic CTA buttons.
-    
+
     Args:
         primary_label: Text for primary button
         primary_route: Route for primary button (page name or route key)
@@ -462,13 +463,17 @@ def _welcome_body(
     hero_url = static_url("hero.png")
     family_main = static_url("welcome_someone_else.png")
     self_main = static_url("welcome_self.png")
-    
+
     # Build CTA buttons with UID preservation
     primary_href = add_uid_to_href(f"?page={primary_route}")
-    cta_html = f'<a href="{primary_href}" class="btn btn--primary wl-btn">{html.escape(primary_label)}</a>'
+    cta_html = (
+        f'<a href="{primary_href}" class="btn btn--primary wl-btn">{html.escape(primary_label)}</a>'
+    )
     if show_secondary:
         login_href = add_uid_to_href("?page=login")
-        cta_html += f'\n                      <a href="{login_href}" class="btn btn--secondary">Log in</a>'
+        cta_html += (
+            f'\n                      <a href="{login_href}" class="btn btn--secondary">Log in</a>'
+        )
 
     return _clean_html(
         f"""
@@ -512,7 +517,7 @@ def _welcome_body(
                       Helping you make confident care decisions for someone you love.
                     </p>
                     <div class="card-actions">
-                      <a href="{add_uid_to_href('?page=someone_else')}" class="btn btn--primary">For someone</a>
+                      <a href="{add_uid_to_href("?page=someone_else")}" class="btn btn--primary">For someone</a>
                     </div>
                   </article>
 
@@ -526,7 +531,7 @@ def _welcome_body(
                       Plan for your own future care with trusted guidance and peace of mind.
                     </p>
                     <div class="card-actions">
-                      <a href="{add_uid_to_href('?page=self')}" class="btn btn--primary">For myself</a>
+                      <a href="{add_uid_to_href("?page=self")}" class="btn btn--primary">For myself</a>
                     </div>
                   </article>
                 </div>
@@ -538,7 +543,7 @@ def _welcome_body(
                   <p class="professional-login__message">Login here to access your personalized dashboards.</p>
                   <p class="professional-login__roles">Discharge Planners • Nurses • Physicians • Social Workers • Geriatric Care Managers</p>
                   <div class="professional-login__button">
-                    <a href="{add_uid_to_href('?page=hub_professional')}" class="btn btn--primary">🔐 For Professionals</a>
+                    <a href="{add_uid_to_href("?page=hub_professional")}" class="btn btn--primary">🔐 For Professionals</a>
                   </div>
                 </div>
               </section>
@@ -561,16 +566,15 @@ def render(ctx: Optional[dict] = None) -> None:
     #     st.query_params["page"] = "welcome"
     #     st.rerun()
     # ============================================================
-    
+
     _inject_welcome_css()
-    
+
     # Determine button state based on authentication and planning context
     authenticated = is_authenticated()
-    has_planning_context = (
-        st.session_state.get("planning_for_name") 
-        or st.session_state.get("person_name")
+    has_planning_context = st.session_state.get("planning_for_name") or st.session_state.get(
+        "person_name"
     )
-    
+
     # Button configuration based on state
     if not authenticated:
         # State: Not logged in
@@ -589,10 +593,10 @@ def render(ctx: Optional[dict] = None) -> None:
         primary_label = "Continue where you left off"
         primary_route = next_action.get("route", "hub_concierge")
         show_secondary = False
-    
+
     # Render with simple header/footer (no layout.py wrapper)
     render_header_simple(active_route="welcome")
-    
+
     # Render body HTML directly
     body_html = _welcome_body(
         primary_label=primary_label,
@@ -600,7 +604,7 @@ def render(ctx: Optional[dict] = None) -> None:
         show_secondary=show_secondary,
     )
     st.markdown(body_html, unsafe_allow_html=True)
-    
+
     render_footer_simple()
 
 

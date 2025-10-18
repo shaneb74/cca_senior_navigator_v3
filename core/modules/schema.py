@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 ALLOWED_TYPES = {"string", "number", "boolean", "date", "currency"}
 ALLOWED_SELECT = {"single", "multi"}
@@ -20,7 +20,7 @@ ALLOWED_WIDGETS = {
 ALLOWED_ACTIONS = {"next", "prev", "route", "save_exit", "restart", "submit"}
 
 
-def _require(d: Dict[str, Any], key: str, where: str) -> None:
+def _require(d: dict[str, Any], key: str, where: str) -> None:
     if key not in d:
         raise ValueError(f"Manifest error: missing '{key}' in {where}.")
 
@@ -30,21 +30,19 @@ def _require_type(val: Any, typ, where: str, key: str) -> None:
         raise ValueError(f"Manifest error: '{key}' in {where} must be {typ.__name__}.")
 
 
-def _validate_actions(actions: List[Dict[str, Any]], where: str) -> None:
+def _validate_actions(actions: list[dict[str, Any]], where: str) -> None:
     for i, action in enumerate(actions):
         action_where = f"{where}.actions[{i}]"
         _require(action, "label", action_where)
         _require(action, "action", action_where)
         act = action["action"]
         if act not in ALLOWED_ACTIONS:
-            raise ValueError(
-                f"Manifest error: invalid action '{act}' in {action_where}."
-            )
+            raise ValueError(f"Manifest error: invalid action '{act}' in {action_where}.")
         if act == "route":
             _require(action, "value", f"{action_where} (route requires 'value').")
 
 
-def _validate_visible_if(visible_if: Dict[str, Any], where: str) -> None:
+def _validate_visible_if(visible_if: dict[str, Any], where: str) -> None:
     allowed = {
         "eq",
         "neq",
@@ -67,7 +65,7 @@ def _validate_visible_if(visible_if: Dict[str, Any], where: str) -> None:
         )
 
 
-def validate_manifest(manifest: Dict[str, Any]) -> None:
+def validate_manifest(manifest: dict[str, Any]) -> None:
     _require(manifest, "module", "manifest")
     _require(manifest, "sections", "manifest")
     _require_type(manifest["sections"], list, "manifest", "sections")
@@ -122,9 +120,7 @@ def validate_manifest(manifest: Dict[str, Any]) -> None:
             for key in ("id", "type", "select", "label"):
                 _require(question, key, q_where)
             if question["type"] not in ALLOWED_TYPES:
-                raise ValueError(
-                    f"Manifest error: invalid type '{question['type']}' in {q_where}."
-                )
+                raise ValueError(f"Manifest error: invalid type '{question['type']}' in {q_where}.")
             if question["select"] not in ALLOWED_SELECT:
                 raise ValueError(
                     f"Manifest error: invalid select '{question['select']}' in {q_where}."
@@ -140,9 +136,7 @@ def validate_manifest(manifest: Dict[str, Any]) -> None:
             if ui:
                 widget = ui.get("widget")
                 if widget and widget not in ALLOWED_WIDGETS:
-                    raise ValueError(
-                        f"Manifest error: invalid ui.widget '{widget}' in {q_where}."
-                    )
+                    raise ValueError(f"Manifest error: invalid ui.widget '{widget}' in {q_where}.")
             if "visible_if" in question:
                 _validate_visible_if(question["visible_if"], q_where)
 
@@ -172,65 +166,66 @@ class FieldDef:
     key: str
     label: str
     type: str
-    help: Optional[str] = None
+    help: str | None = None
     required: bool = False
-    options: Optional[List[Dict[str, Any]]] = None
-    min: Optional[float] = None
-    max: Optional[float] = None
-    step: Optional[float] = None
-    placeholder: Optional[str] = None
-    default: Optional[Any] = None
-    visible_if: Optional[Dict[str, Any]] = None
-    write_key: Optional[str] = None
-    a11y_hint: Optional[str] = None
-    prefill_from: Optional[List[str]] = None
+    options: list[dict[str, Any]] | None = None
+    min: float | None = None
+    max: float | None = None
+    step: float | None = None
+    placeholder: str | None = None
+    default: Any | None = None
+    visible_if: dict[str, Any] | None = None
+    write_key: str | None = None
+    a11y_hint: str | None = None
+    prefill_from: list[str] | None = None
     ask_if_missing: bool = False
-    ui: Optional[Dict[str, Any]] = None
-    effects: Optional[List[Dict[str, Any]]] = None
-    guidance: Optional[Dict[str, str]] = None  # NEW: Navi guidance tooltip
+    ui: dict[str, Any] | None = None
+    effects: list[dict[str, Any]] | None = None
+    guidance: dict[str, str] | None = None  # NEW: Navi guidance tooltip
 
 
 @dataclass
 class StepDef:
     id: str
     title: str
-    subtitle: Optional[str] = None
-    icon: Optional[str] = None
-    fields: List[FieldDef] = field(default_factory=list)
-    content: Optional[List[str]] = None  # NEW: Content array for info-type pages
+    subtitle: str | None = None
+    icon: str | None = None
+    fields: list[FieldDef] = field(default_factory=list)
+    content: list[str] | None = None  # NEW: Content array for info-type pages
     next_label: str = "Continue"
-    skip_label: Optional[str] = None
+    skip_label: str | None = None
     show_progress: bool = True
     show_bottom_bar: bool = True
-    summary_keys: Optional[List[str]] = None
-    navi_guidance: Optional[Dict[str, str]] = None  # NEW: Navi section guidance
+    summary_keys: list[str] | None = None
+    navi_guidance: dict[str, str] | None = None  # NEW: Navi section guidance
 
 
 @dataclass
 class ModuleConfig:
     product: str
     version: str
-    steps: List[StepDef]
+    steps: list[StepDef]
     state_key: str
     analytics_prefix: str = "module"
     autosave: bool = True
-    theme_variant: Optional[str] = None
-    outcomes_compute: Optional[str] = None
-    results_step_id: Optional[str] = None
-    navi_intro: Optional[Dict[str, str]] = None  # NEW: Navi module intro
-    navi_outro: Optional[Dict[str, str]] = None  # NEW: Navi module outro
+    theme_variant: str | None = None
+    outcomes_compute: str | None = None
+    results_step_id: str | None = None
+    skip_default_results: bool = False  # NEW: Skip default results rendering
+    navi_intro: dict[str, str] | None = None  # NEW: Navi module intro
+    navi_outro: dict[str, str] | None = None  # NEW: Navi module outro
 
 
 @dataclass
 class OutcomeContract:
-    recommendation: Optional[str] = None
-    confidence: Optional[float] = None
-    flags: Dict[str, bool] = field(default_factory=dict)
-    tags: List[str] = field(default_factory=list)
-    domain_scores: Dict[str, Any] = field(default_factory=dict)
-    summary: Dict[str, Any] = field(default_factory=dict)
-    routing: Dict[str, Any] = field(default_factory=dict)
-    audit: Dict[str, Any] = field(default_factory=dict)
+    recommendation: str | None = None
+    confidence: float | None = None
+    flags: dict[str, bool] = field(default_factory=dict)
+    tags: list[str] = field(default_factory=list)
+    domain_scores: dict[str, Any] = field(default_factory=dict)
+    summary: dict[str, Any] = field(default_factory=dict)
+    routing: dict[str, Any] = field(default_factory=dict)
+    audit: dict[str, Any] = field(default_factory=dict)
 
 
 FieldType = str  # legacy alias kept for backward compatibility

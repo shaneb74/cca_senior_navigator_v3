@@ -11,53 +11,54 @@ Data sources:
 
 import json
 import os
-from typing import Optional, Dict, Any
 from dataclasses import dataclass
+from typing import Any, Optional, Dict
 
 
 @dataclass
 class RegionalMultiplier:
     """Regional cost multiplier."""
+
     multiplier: float
     region_name: str
     precision: str  # "zip", "zip3", "state", or "national"
-    
-    
+
+
 class RegionalDataProvider:
     """Provides regional cost multipliers with precedence system."""
-    
-    _config: Optional[Dict[str, Any]] = None
+
+    _config: Optional[dict[str, Any]] = None
     _config_path = "config/regional_cost_config.json"
-    
+
     @classmethod
-    def _load_config(cls) -> Dict[str, Any]:
+    def _load_config(cls) -> dict[str, Any]:
         """Load regional config once and cache.
-        
+
         Transforms array-based config into lookup dicts for fast access.
         """
         if cls._config is None:
             config_path = os.path.join(os.getcwd(), cls._config_path)
             if os.path.exists(config_path):
-                with open(config_path, 'r') as f:
+                with open(config_path) as f:
                     raw_config = json.load(f)
-                
+
                 # Transform array-based structure into lookup dicts
                 cls._config = {
                     "zip_multipliers": {},
                     "zip3_multipliers": {},
                     "state_multipliers": {},
-                    "default_multiplier": raw_config.get("zip_multipliers", {}).get("default", 1.0)
+                    "default_multiplier": raw_config.get("zip_multipliers", {}).get("default", 1.0),
                 }
-                
+
                 # Process WA-specific ZIPs first (higher precedence)
                 zip_data = raw_config.get("zip_multipliers", {})
                 for entry in zip_data.get("by_zip_wa", []):
                     zip_code = entry["zip"]
                     cls._config["zip_multipliers"][zip_code] = {
                         "multiplier": entry["multiplier"],
-                        "name": entry.get("notes", zip_code)
+                        "name": entry.get("notes", zip_code),
                     }
-                
+
                 # Process general ZIPs
                 for entry in zip_data.get("by_zip", []):
                     zip_code = entry["zip"]
@@ -65,17 +66,17 @@ class RegionalDataProvider:
                     if zip_code not in cls._config["zip_multipliers"]:
                         cls._config["zip_multipliers"][zip_code] = {
                             "multiplier": entry["multiplier"],
-                            "name": entry.get("notes", zip_code)
+                            "name": entry.get("notes", zip_code),
                         }
-                
+
                 # Process WA-specific ZIP3s
                 for entry in zip_data.get("by_zip3_wa", []):
                     zip3 = entry["zip3"]
                     cls._config["zip3_multipliers"][zip3] = {
                         "multiplier": entry["multiplier"],
-                        "name": entry.get("notes", f"Region {zip3}")
+                        "name": entry.get("notes", f"Region {zip3}"),
                     }
-                
+
                 # Process general ZIP3s
                 for entry in zip_data.get("by_zip3", []):
                     zip3 = entry["zip3"]
@@ -83,24 +84,24 @@ class RegionalDataProvider:
                     if zip3 not in cls._config["zip3_multipliers"]:
                         cls._config["zip3_multipliers"][zip3] = {
                             "multiplier": entry["multiplier"],
-                            "name": entry.get("notes", f"Region {zip3}")
+                            "name": entry.get("notes", f"Region {zip3}"),
                         }
-                
+
                 # Process states (WA and general combined)
                 for entry in zip_data.get("by_state_wa", []):
                     state = entry["state"]
                     cls._config["state_multipliers"][state] = {
                         "multiplier": entry["multiplier"],
-                        "name": state
+                        "name": state,
                     }
-                
+
                 for entry in zip_data.get("by_state", []):
                     state = entry["state"]
                     # Don't overwrite WA-specific entry
                     if state not in cls._config["state_multipliers"]:
                         cls._config["state_multipliers"][state] = {
                             "multiplier": entry["multiplier"],
-                            "name": state
+                            "name": state,
                         }
             else:
                 # Fallback to empty config
@@ -108,29 +109,31 @@ class RegionalDataProvider:
                     "zip_multipliers": {},
                     "zip3_multipliers": {},
                     "state_multipliers": {},
-                    "default_multiplier": 1.0
+                    "default_multiplier": 1.0,
                 }
         return cls._config
-    
+
     @classmethod
-    def get_multiplier(cls, zip_code: Optional[str] = None, state: Optional[str] = None) -> RegionalMultiplier:
+    def get_multiplier(
+        cls, zip_code: Optional[str] = None, state: Optional[str] = None
+    ) -> RegionalMultiplier:
         """Get regional multiplier using precedence system.
-        
+
         Precedence (most specific to least specific):
         1. ZIP code (exact match)
         2. ZIP3 (first 3 digits)
         3. State
         4. National default (1.0)
-        
+
         Args:
             zip_code: 5-digit ZIP code (optional)
             state: 2-letter state code (optional)
-            
+
         Returns:
             RegionalMultiplier with multiplier value and metadata
         """
         config = cls._load_config()
-        
+
         # Try ZIP code exact match
         if zip_code and len(zip_code) >= 5:
             zip5 = zip_code[:5]
@@ -138,9 +141,9 @@ class RegionalDataProvider:
                 return RegionalMultiplier(
                     multiplier=config["zip_multipliers"][zip5]["multiplier"],
                     region_name=config["zip_multipliers"][zip5].get("name", zip5),
-                    precision="zip"
+                    precision="zip",
                 )
-        
+
         # Try ZIP3 (first 3 digits)
         if zip_code and len(zip_code) >= 3:
             zip3 = zip_code[:3]
@@ -148,9 +151,9 @@ class RegionalDataProvider:
                 return RegionalMultiplier(
                     multiplier=config["zip3_multipliers"][zip3]["multiplier"],
                     region_name=config["zip3_multipliers"][zip3].get("name", f"Region {zip3}"),
-                    precision="zip3"
+                    precision="zip3",
                 )
-        
+
         # Try state
         if state:
             state_upper = state.upper()
@@ -158,20 +161,20 @@ class RegionalDataProvider:
                 return RegionalMultiplier(
                     multiplier=config["state_multipliers"][state_upper]["multiplier"],
                     region_name=config["state_multipliers"][state_upper].get("name", state_upper),
-                    precision="state"
+                    precision="state",
                 )
-        
+
         # Fallback to national default
         return RegionalMultiplier(
             multiplier=config.get("default_multiplier", 1.0),
             region_name="National Average",
-            precision="national"
+            precision="national",
         )
-    
+
     @classmethod
-    def get_all_states(cls) -> Dict[str, str]:
+    def get_all_states(cls) -> dict[str, str]:
         """Get all available states with names.
-        
+
         Returns:
             Dict mapping state code to state name
         """

@@ -1,10 +1,10 @@
 """Simple header component - no layout.py, no session state manipulation."""
+
 from __future__ import annotations
 
 import json
 from pathlib import Path
 from textwrap import dedent
-from typing import Optional
 
 import streamlit as st
 
@@ -12,29 +12,29 @@ from core.ui import img_src
 from core.url_helpers import add_uid_to_href
 
 
-def render_header_simple(active_route: Optional[str] = None) -> None:
+def render_header_simple(active_route: str | None = None) -> None:
     """
     Render a clean, single-line header with logo and navigation links.
-    
+
     Uses plain <a href="?page=X"> links for instant navigation without reruns.
     No session state writes, no st.button() complexity.
-    
+
     Args:
         active_route: Current page route (e.g., 'welcome', 'hub_concierge')
     """
     logo_url = img_src("static/images/logos/cca_logo.png")
-    
+
     # Load UI configuration for nav visibility
     ui_config_path = Path(__file__).parent.parent / "config" / "ui_config.json"
     nav_visibility = {}
     try:
-        with open(ui_config_path, "r", encoding="utf-8") as f:
+        with open(ui_config_path, encoding="utf-8") as f:
             ui_config = json.load(f)
             nav_visibility = ui_config.get("header", {}).get("nav_items", {})
     except (FileNotFoundError, json.JSONDecodeError):
         # If config doesn't exist or is invalid, show all items by default
         pass
-    
+
     # Define navigation items (use exact keys from nav.json)
     # Visibility controlled by config/ui_config.json
     all_nav_items = [
@@ -47,31 +47,30 @@ def render_header_simple(active_route: Optional[str] = None) -> None:
         {"label": "Professional", "route": "hub_professional"},
         {"label": "About Us", "route": "about"},
     ]
-    
+
     # Filter based on visibility config (default to visible if not specified)
     nav_items = [
-        item for item in all_nav_items
-        if nav_visibility.get(item["route"], {}).get("visible", True)
+        item for item in all_nav_items if nav_visibility.get(item["route"], {}).get("visible", True)
     ]
-    
+
     # Build nav links HTML with UID preservation
     nav_links_html = []
     for item in nav_items:
         is_active = active_route == item["route"]
         active_class = " active" if is_active else ""
         aria_current = ' aria-current="page"' if is_active else ""
-        
+
         href_with_uid = add_uid_to_href(f"?page={item['route']}")
         nav_links_html.append(
             f'<a href="{href_with_uid}" class="nav-link{active_class}"{aria_current}>{item["label"]}</a>'
         )
-    
+
     # Login link (always shown for now)
     login_href = add_uid_to_href("?page=login")
     nav_links_html.append(f'<a href="{login_href}" class="nav-link nav-link--login">Log In</a>')
-    
+
     nav_html = "\n          ".join(nav_links_html)
-    
+
     css = dedent(
         """
         <style>
@@ -201,12 +200,12 @@ def render_header_simple(active_route: Optional[str] = None) -> None:
         </style>
         """
     )
-    
+
     html = dedent(
         f"""
         <header class="sn-header">
           <div class="sn-header__inner">
-            <a href="{add_uid_to_href('?page=welcome')}" class="sn-header__brand" style="display: flex !important; align-items: center; gap: 12px;">
+            <a href="{add_uid_to_href("?page=welcome")}" class="sn-header__brand" style="display: flex !important; align-items: center; gap: 12px;">
               <img src="{logo_url}" alt="CCA Logo" class="sn-header__logo" style="height: 48px !important; width: auto !important; display: block !important; visibility: visible !important; opacity: 1 !important;" />
               <span class="sn-header__brand-text" style="font-size: 1.25rem; font-weight: 700; color: #1e3a8a; display: inline-block;">Senior Navigator</span>
             </a>
@@ -217,7 +216,7 @@ def render_header_simple(active_route: Optional[str] = None) -> None:
         </header>
         """
     )
-    
+
     # Render CSS first, then HTML separately (like hub pages do)
     st.markdown(css, unsafe_allow_html=True)
     st.markdown(html, unsafe_allow_html=True)

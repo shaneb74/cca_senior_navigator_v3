@@ -1,0 +1,69 @@
+{
+  "key": "personal",
+  "title": "Personal Information",
+  "icon": "👤",
+  "description": "Help your advisor understand your personal situation and preferences",
+  "fields": [
+    {
+      "key": "full_name",
+      "label": "Full Name",
+      "type": "text",
+      "prefill_from": "gcp.basic_info.name",
+      "required": false,
+      "help": "Your full legal name"
+    },
+    {
+      "key": "preferred_name",
+      "label": "Preferred Name / Nickname",
+      "type": "text",
+      "required": false,
+      "help": "How you'd like to be addressed"
+    },
+    {
+      "key": "date_of_birth",
+      "label": "Date of Birth",
+      "type": "date",
+      "prefill_from": "gcp.basic_info.dob",
+      "required": false,
+      "help": "Used to determine age-specific resources"
+    },
+    {
+      "key": "living_situation",
+      "label": "Current Living Situation",
+      "type": "select",
+      "options": [
+        "Living alone",
+        "With spouse/partner",
+        "With adult children",
+        "With other family",
+        "Assisted living",
+        "Other"
+      ],
+      "prefill_from": "gcp.household.living_arrangement",
+      "required": false,
+      "help": "Your current living arrangement"
+    },
+    {
+      "key": "marital_status",
+      "label": "Marital Status",
+      "type": "select",
+      "options": [
+        "Single",
+        "Married",
+        "Widowed",
+        "Divorced",
+        "Separated",
+        "Prefer not to say"
+      ],
+      "required": false
+    },
+    {
+      "key": "primary_caregiver",
+      "label": "Primary Caregiver / Contact Person",
+      "type": "text",
+      "placeholder": "Name and relationship",
+      "required": false,
+      "help": "Who helps coordinate your care?"
+    }
+  ]
+}

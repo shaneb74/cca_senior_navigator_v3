@@ -1,11 +1,10 @@
-from typing import List, Optional, Tuple
-
+from typing import Optional
 import streamlit as st
 
 from core.ui import img_src
 
 
-def _page(title: str, desc: str, ctas: Optional[List[Tuple[str, str]]] = None):
+def _page(title: str, desc: str, ctas: Optional[list[tuple[str, str]]] = None):
     # Apply consistent styling like other pages
     st.markdown(
         """<style>
@@ -60,6 +59,7 @@ def render_welcome():
     <p class="hero-sub">Expert advisors - no cost. Helping families navigate the most important senior living decisions with clarity and compassion.</p>
     <div class="cta-row">
       <a class="btn btn--primary" href="?page=welcome_contextual">Start Now</a>
+      <a class="btn btn--secondary" href="?page=login" style="margin-left: var(--space-3);">Demo/Test Login 🧪</a>
     </div>
   </div>
   <div>
@@ -138,8 +138,8 @@ def render_welcome_contextual():
         st.markdown(
             f"""<div class="modal-card stack-sm">
       <div class="toggle">
-        <a class="pill{' is-selected' if not is_me else ''}" href="?page=welcome_contextual&who=someone">For someone</a>
-        <a class="pill{' is-selected' if is_me else ''}" href="?page=welcome_contextual&who=me">For me</a>
+        <a class="pill{" is-selected" if not is_me else ""}" href="?page=welcome_contextual&who=someone">For someone</a>
+        <a class="pill{" is-selected" if is_me else ""}" href="?page=welcome_contextual&who=me">For me</a>
       </div>
       <h3 class="mt-space-4">{title_copy}</h3>
       <p>{body_copy}</p>""",
@@ -707,8 +707,9 @@ def render_about():
 
 def render_faqs():
     """Delegate to the full FAQ/AI Advisor implementation."""
-    from pages import faq
-    faq.render()
+    from pages import ai_advisor
+
+    ai_advisor.render()
 
 
 # --- DEPRECATED: temporarily disabled during CSS/IA refactor ---
@@ -720,24 +721,25 @@ def render_signup():
 def render_logout():
     """Logout page - toggles auth off."""
     import streamlit as st
-    from core.state import logout_user
+
     from core.nav import route_to
-    
+    from core.state import logout_user
+
     # Toggle auth off
     logout_user()
-    
+
     st.title("👋 Logged Out")
     st.success("You've been logged out successfully!")
     st.info("Your progress is saved. Log back in anytime to continue.")
-    
+
     st.markdown("---")
-    
+
     col1, col2 = st.columns(2)
     with col1:
         if st.button("← Back to Welcome", use_container_width=True):
             route_to("welcome")
             st.rerun()
-    
+
     with col2:
         if st.button("🔐 Log Back In", use_container_width=True, type="primary"):
             route_to("login")
@@ -746,14 +748,15 @@ def render_logout():
 
 def render_export_results():
     """Export/share journey results - shows summary of all completed products.
-    
+
     Powered by Navi, your AI guide through the senior care journey.
     """
-    from core.mcip import MCIP
-    from core.state import get_user_ctx
     import json
     from datetime import datetime
-    
+
+    from core.mcip import MCIP
+    from core.state import get_user_ctx
+
     st.markdown(
         """<style>
         .main .block-container {
@@ -763,37 +766,37 @@ def render_export_results():
         </style>""",
         unsafe_allow_html=True,
     )
-    
+
     # Get user context
     ctx = get_user_ctx()
     user_name = ctx.get("auth", {}).get("name", "Your")
-    
+
     # Get data from Navi (MCIP)
     care_rec = MCIP.get_care_recommendation()
     financial = MCIP.get_financial_profile()
     appointment = MCIP.get_advisor_appointment()
     progress = MCIP.get_journey_progress()
-    
+
     st.title("📤 Export Your Journey")
     st.markdown(f"### {user_name} Senior Care Journey Summary")
     st.markdown("*Powered by ✨ Navi - Your AI Care Navigator*")
-    
+
     # Journey progress
     completed = progress["completed_count"]
     st.progress(completed / 3.0)
     st.markdown(f"**{completed}/3 Products Completed**")
-    
+
     st.markdown("---")
-    
+
     # Care Recommendation
     if care_rec:
         st.markdown("### 🧭 Guided Care Plan")
         tier_map = {
             "no_care": "No Care Needed",
-            "in_home": "In-Home Care", 
+            "in_home": "In-Home Care",
             "assisted_living": "Assisted Living",
             "memory_care": "Memory Care",
-            "memory_care_high": "Memory Care — High Acuity"
+            "memory_care_high": "Memory Care — High Acuity",
         }
         tier_label = tier_map.get(care_rec.tier, care_rec.tier)
         st.markdown(f"**Navi's Recommendation:** {tier_label}")
@@ -802,7 +805,7 @@ def render_export_results():
             st.markdown("**Key Factors:**")
             for reason in care_rec.rationale[:3]:
                 st.markdown(f"- {reason}")
-    
+
     # Financial Profile
     if financial:
         st.markdown("### 💰 Cost Planner")
@@ -810,21 +813,21 @@ def render_export_results():
         st.markdown(f"**Runway:** {financial.runway_months} months")
         if financial.gap_amount > 0:
             st.markdown(f"**Monthly Gap:** ${financial.gap_amount:,.0f}")
-    
+
     # Appointment
     if appointment and appointment.scheduled:
         st.markdown("### 📅 Plan with My Advisor")
         st.markdown(f"**Type:** {appointment.type.title()}")
         st.markdown(f"**Date:** {appointment.date} at {appointment.time}")
         st.markdown(f"**Confirmation:** {appointment.confirmation_id}")
-    
+
     st.markdown("---")
-    
+
     # Export options
     st.markdown("### Export Options")
-    
+
     col1, col2, col3 = st.columns(3)
-    
+
     with col1:
         # Export as JSON
         export_data = {
@@ -834,23 +837,23 @@ def render_export_results():
             "progress": progress,
             "care_recommendation": care_rec.__dict__ if care_rec else None,
             "financial_profile": financial.__dict__ if financial else None,
-            "advisor_appointment": appointment.__dict__ if appointment else None
+            "advisor_appointment": appointment.__dict__ if appointment else None,
         }
-        
+
         json_str = json.dumps(export_data, indent=2)
         st.download_button(
             label="📄 Download JSON",
             data=json_str,
             file_name=f"care_journey_{datetime.now().strftime('%Y%m%d')}.json",
-            mime="application/json"
+            mime="application/json",
         )
-    
+
     with col2:
         # Copy to clipboard (via text area)
         summary_text = f"""
 SENIOR CARE JOURNEY SUMMARY
 Powered by Navi - AI Care Navigator
-Generated: {datetime.now().strftime('%B %d, %Y')}
+Generated: {datetime.now().strftime("%B %d, %Y")}
 
 Progress: {completed}/3 Products Completed
 """
@@ -860,22 +863,25 @@ Progress: {completed}/3 Products Completed
             summary_text += f"\nFINANCIAL PROFILE:\n- Monthly Cost: ${financial.estimated_monthly_cost:,.0f}\n- Runway: {financial.runway_months} months\n"
         if appointment and appointment.scheduled:
             summary_text += f"\nADVISOR APPOINTMENT:\n- {appointment.type.title()} - {appointment.date} at {appointment.time}\n"
-        
+
         if st.button("📋 Copy Summary", use_container_width=True):
             st.code(summary_text, language=None)
             st.success("Summary displayed above - copy from the text box!")
-    
+
     with col3:
         # Email results (placeholder)
         if st.button("📧 Email Results", use_container_width=True):
             st.info("Email feature coming soon! Use the Copy or Download options for now.")
-    
+
     st.markdown("---")
-    
+
     # Footer message from Navi
-    st.info("🤖 **Navi here!** Your progress is always saved. Come back anytime to continue your journey or update your plan.")
-    
+    st.info(
+        "🤖 **Navi here!** Your progress is always saved. Come back anytime to continue your journey or update your plan."
+    )
+
     # Back to hub
     from core.nav import route_to
+
     if st.button("← Back to Concierge Hub", use_container_width=True):
         route_to("hub_concierge")

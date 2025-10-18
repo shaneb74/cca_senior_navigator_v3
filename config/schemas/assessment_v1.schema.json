@@ -1,0 +1,230 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Assessment Configuration Schema v1",
+  "description": "Schema for validating financial assessment JSON configurations",
+  "type": "object",
+  "required": ["key", "title", "icon", "description", "sections"],
+  "properties": {
+    "key": {
+      "type": "string",
+      "description": "Unique identifier for the assessment",
+      "pattern": "^[a-z_]+$"
+    },
+    "title": {
+      "type": "string",
+      "description": "Display title for the assessment"
+    },
+    "icon": {
+      "type": "string",
+      "description": "Emoji icon for visual identification"
+    },
+    "description": {
+      "type": "string",
+      "description": "Brief description of what the assessment covers"
+    },
+    "estimated_time": {
+      "type": "string",
+      "description": "Estimated completion time (e.g., '2-3 min')"
+    },
+    "required": {
+      "type": "boolean",
+      "description": "Whether this assessment is required for completion"
+    },
+    "sort_order": {
+      "type": "integer",
+      "description": "Display order in assessment hub (lower = earlier)"
+    },
+    "visible_if": {
+      "type": "object",
+      "description": "Conditional visibility based on flags",
+      "properties": {
+        "flag": {
+          "type": "string",
+          "description": "Flag key to check"
+        },
+        "equals": {
+          "type": "boolean",
+          "description": "Expected flag value"
+        }
+      },
+      "required": ["flag"]
+    },
+    "sections": {
+      "type": "array",
+      "description": "Assessment sections (steps)",
+      "items": {
+        "type": "object",
+        "required": ["id", "title"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique section identifier",
+            "pattern": "^[a-z_]+$"
+          },
+          "type": {
+            "type": "string",
+            "description": "Section type",
+            "enum": ["intro", "form", "results"]
+          },
+          "title": {
+            "type": "string",
+            "description": "Section display title"
+          },
+          "icon": {
+            "type": "string",
+            "description": "Section icon"
+          },
+          "help_text": {
+            "type": "string",
+            "description": "Guidance text for this section"
+          },
+          "layout": {
+            "type": "string",
+            "description": "Layout style",
+            "enum": ["simple", "two_column"]
+          },
+          "fields": {
+            "type": "array",
+            "description": "Form fields in this section",
+            "items": {
+              "type": "object",
+              "required": ["key", "label", "type"],
+              "properties": {
+                "key": {
+                  "type": "string",
+                  "description": "Field identifier (used as state key)",
+                  "pattern": "^[a-z_]+$"
+                },
+                "label": {
+                  "type": "string",
+                  "description": "Field label"
+                },
+                "type": {
+                  "type": "string",
+                  "description": "Field widget type",
+                  "enum": ["currency", "select", "checkbox", "multiselect", "text", "date"]
+                },
+                "required": {
+                  "type": "boolean",
+                  "description": "Whether field is required"
+                },
+                "min": {
+                  "type": "number",
+                  "description": "Minimum value (for numeric fields)"
+                },
+                "max": {
+                  "type": "number",
+                  "description": "Maximum value (for numeric fields)"
+                },
+                "step": {
+                  "type": "number",
+                  "description": "Step increment (for numeric fields)"
+                },
+                "default": {
+                  "description": "Default value"
+                },
+                "help": {
+                  "type": "string",
+                  "description": "Help text for field"
+                },
+                "column": {
+                  "type": "integer",
+                  "description": "Column number for two-column layout",
+                  "enum": [1, 2]
+                },
+                "options": {
+                  "type": "array",
+                  "description": "Options for select/multiselect fields",
+                  "items": {
+                    "type": "object",
+                    "required": ["value", "label"],
+                    "properties": {
+                      "value": {
+                        "type": "string",
+                        "description": "Option value"
+                      },
+                      "label": {
+                        "type": "string",
+                        "description": "Option display label"
+                      }
+                    }
+                  }
+                },
+                "visible_if": {
+                  "type": "object",
+                  "description": "Conditional visibility for field",
+                  "properties": {
+                    "field": {
+                      "type": "string",
+                      "description": "Field to check"
+                    },
+                    "equals": {
+                      "description": "Expected value for equality check"
+                    },
+                    "not_equals": {
+                      "description": "Expected value for inequality check"
+                    },
+                    "in": {
+                      "type": "array",
+                      "description": "List of allowed values"
+                    }
+                  },
+                  "required": ["field"]
+                }
+              }
+            }
+          },
+          "info_boxes": {
+            "type": "array",
+            "description": "Informational boxes to display",
+            "items": {
+              "type": "object",
+              "required": ["type", "message"],
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "description": "Box type",
+                  "enum": ["info", "success", "warning", "error"]
+                },
+                "message": {
+                  "type": "string",
+                  "description": "Message to display"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "description": "Summary calculation for results",
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Summary type",
+          "enum": ["calculated", "text"]
+        },
+        "label": {
+          "type": "string",
+          "description": "Summary label"
+        },
+        "formula": {
+          "type": "string",
+          "description": "Calculation formula (e.g., 'sum(field1, field2)')"
+        },
+        "display_format": {
+          "type": "string",
+          "description": "Display format string (e.g., '${:,.0f}')"
+        }
+      }
+    },
+    "output_contract": {
+      "type": "object",
+      "description": "Expected output fields and types",
+      "additionalProperties": {
+        "type": "string"
+      }
+    }
+  }
+}

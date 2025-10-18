@@ -3,12 +3,11 @@ from __future__ import annotations
 
 from html import escape as html_escape
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Optional,  Any
 
 import streamlit as st
 
 from layout import render_page
-from core.session_store import safe_rerun
 
 
 def _inject_hub_css_once() -> None:
@@ -25,7 +24,7 @@ def _inject_hub_css_once() -> None:
         [Path("assets/css/modules.css"), here.parents[1] / "assets" / "css" / "modules.css"],
     ]
 
-    ordered_paths: List[Path] = []
+    ordered_paths: list[Path] = []
     for group in groups:
         for css_path in group:
             if css_path not in ordered_paths:
@@ -57,13 +56,13 @@ def render_dashboard_body(
     *,
     title: str = "",
     subtitle: Optional[str] = None,
-    chips: Optional[List[Dict[str, str]]] = None,
+    chips: list[dict[str, str]] | None = None,
     hub_guide_block: Optional[Any] = None,
-    hub_order: Optional[Dict[str, Any]] = None,
-    cards: Optional[List[Any]] = None,
+    hub_order: dict[str, Any] | None = None,
+    cards: list[Any] | None = None,
     cards_html: Optional[str] = None,
-    series_steps: Optional[List[Dict[str, Any]]] = None,
-    additional_services: Optional[List[Dict[str, Any]]] = None,
+    series_steps: list[dict[str, Any]] | None = None,
+    additional_services: list[dict[str, Any]] | None = None,
 ) -> str:
     _inject_hub_css_once()
 
@@ -71,7 +70,7 @@ def render_dashboard_body(
     series_steps = series_steps or []
     card_items = list(cards or [])
 
-    head_segments: List[str] = []
+    head_segments: list[str] = []
     if any([title, subtitle, chips, series_steps]):
         head_segments.append('<div class="dashboard-head">')
         if title:
@@ -129,7 +128,7 @@ def render_dashboard_body(
             title_text = html_escape(str(hub_guide_block.get("title", "")))
             body_text = html_escape(str(hub_guide_block.get("body", "")))
             actions = hub_guide_block.get("actions") or []
-            action_html: List[str] = []
+            action_html: list[str] = []
             for action in actions:
                 label = html_escape(str(action.get("label", "Open")))
                 go = html_escape(str(action.get("route") or action.get("go") or ""))
@@ -150,7 +149,7 @@ def render_dashboard_body(
             )
 
     # Cards grid (ordered)
-    sorted_cards: List[Tuple[int, str, Any]] = []
+    sorted_cards: list[tuple[int, str, Any]] = []
     for c in card_items:
         vis = getattr(c, "visible", True) if hasattr(c, "visible") else c.get("visible", True)
         if not vis:
@@ -160,7 +159,7 @@ def render_dashboard_body(
         sorted_cards.append((int(order), str(t).casefold(), c))
     sorted_cards.sort(key=lambda x: (x[0], x[1]))
 
-    card_html_chunks: List[str] = []
+    card_html_chunks: list[str] = []
     for _, __, card in sorted_cards:
         if hasattr(card, "render_html"):
             chunk = card.render_html()
@@ -177,70 +176,74 @@ def render_dashboard_body(
 
     # Additional services (optional) - Build as HTML string, don't render with st.markdown
     additional_html = ""
-    
+
     # Check if GCP is complete
     gcp_prog = float(st.session_state.get("tiles", {}).get("gcp_v4", {}).get("progress", 0))
     if gcp_prog == 0:
         # Fallback to legacy gcp key
         gcp_prog = float(st.session_state.get("tiles", {}).get("gcp", {}).get("progress", 0))
-    
+
     if additional_services:
         # Initialize expanded partner tracking
         if "expanded_partner" not in st.session_state:
             st.session_state.expanded_partner = None
-        
+
         # Build section header
         additional_chunks = [
             '<section class="dashboard-additional">',
             '<header class="dashboard-additional__head">',
             '<h3 class="dashboard-additional__title">Additional services</h3>',
             '<p class="dashboard-muted">Curated partner solutions that complement your plan.</p>',
-            '</header>',
+            "</header>",
             '<div class="dashboard-additional__grid">',
         ]
-        
+
         # Build each service card as pure HTML
         for idx, s in enumerate(additional_services):
             partner_id = s.get("id")
-            is_expanded = (st.session_state.get("expanded_partner") == partner_id)
-            
+            is_expanded = st.session_state.get("expanded_partner") == partner_id
+
             subtitle_val = s.get("subtitle")
             cta_label = html_escape(str(s.get("cta", "Open")))
             cta_route = html_escape(str(s.get("go", "")))
-            
+
             # Check if partner has connection config (for inline expansion)
             partner_data = s.get("_raw_partner_data")
-            has_connection = partner_data and partner_data.get("connection") if partner_data else False
-            
+            has_connection = (
+                partner_data and partner_data.get("connection") if partner_data else False
+            )
+
             # Apply personalization styling
             personalization = s.get("personalization")
             card_class = "dashboard-additional__card"
             label_html = ""
-            
+
             if personalization == "personalized":
                 card_class += " service-tile-personalized"
                 label_html = '<div class="personalized-label">✨ Navi Recommended</div>'
-            
+
             if is_expanded:
                 card_class += " is-expanded"
-            
+
             # Build card HTML
             additional_chunks.append(f'<div class="{card_class}" id="service-{partner_id}">')
             if label_html:
                 additional_chunks.append(label_html)
-            additional_chunks.append(f'<h4>{html_escape(str(s.get("title", "")))}</h4>')
+            additional_chunks.append(f"<h4>{html_escape(str(s.get('title', '')))}</h4>")
             if subtitle_val:
                 additional_chunks.append(f"<p>{html_escape(str(subtitle_val))}</p>")
-            
+
             # CTA link - always use HTML link for consistency
-            additional_chunks.append(f'<a class="dashboard-additional__cta" href="?go={cta_route}">{cta_label}</a>')
-            
-            additional_chunks.append('</div>')  # Close card
-        
+            additional_chunks.append(
+                f'<a class="dashboard-additional__cta" href="?go={cta_route}">{cta_label}</a>'
+            )
+
+            additional_chunks.append("</div>")  # Close card
+
         # Close grid and section
-        additional_chunks.append('</div>')  # Close grid
-        additional_chunks.append('</section>')  # Close section
-        
+        additional_chunks.append("</div>")  # Close grid
+        additional_chunks.append("</section>")  # Close section
+
         additional_html = "".join(additional_chunks)
     elif gcp_prog >= 100:
         # GCP complete but no services (user didn't trigger any flags)
@@ -307,7 +310,7 @@ class BaseHub:
         self._default_kwargs = dict(default_kwargs or {})
 
     def render(self, **kwargs) -> None:
-        payload: Dict[str, Any] = {}
+        payload: dict[str, Any] = {}
         if hasattr(self, "build_dashboard"):
             try:
                 payload = self.build_dashboard() or {}

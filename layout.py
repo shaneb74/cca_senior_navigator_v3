@@ -1,12 +1,12 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
 from textwrap import dedent
-from typing import Any, Callable, Optional
+from typing import Any
 
 import streamlit as st
 
-from core.state import is_professional, switch_to_member
 from core.ui import safe_img_src
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -59,7 +59,7 @@ def _current_page() -> str:
     return "welcome"
 
 
-def _nav_link(label: str, key: str, current: Optional[str] = None) -> str:
+def _nav_link(label: str, key: str, current: str | None = None) -> str:
     active = " is-active" if current == key else ""
     return f'<a href="?page={key}" class="nav-link{active}">{label}</a>'
 
@@ -83,15 +83,15 @@ RESPONSIVE_CSS = dedent(
 ).strip()
 
 
-def _build_header(active_route: Optional[str] = None) -> str:
-    from core.state import is_authenticated, get_user_name
-    
+def _build_header(active_route: str | None = None) -> str:
+    from core.state import get_user_name, is_authenticated
+
     logo_url = safe_img_src("cca_logo.png")
     brand_html = ""
     if logo_url:
         brand_html = f'<img src="{logo_url}" alt="Concierge Care Advisors" class="brand-logo" />'
     current = active_route or _current_page()
-    
+
     # Build navigation links
     nav_links = [
         _nav_link("Welcome", "welcome", current),
@@ -101,9 +101,9 @@ def _build_header(active_route: Optional[str] = None) -> str:
         _nav_link("Trusted Partners", "hub_trusted", current),
         _nav_link("Professional", "hub_professional", current),
     ]
-    
+
     links = "".join(nav_links)
-    
+
     # Auth button - toggles between login and logout
     if is_authenticated():
         user_name = get_user_name()
@@ -112,11 +112,11 @@ def _build_header(active_route: Optional[str] = None) -> str:
             f'<div class="header-auth">'
             f'<span class="header-auth__greeting">👋 {display_name}</span>'
             f'<a href="?page=logout" class="btn btn--secondary header-auth__logout">Log out</a>'
-            f'</div>'
+            f"</div>"
         )
     else:
         auth_button = '<a href="?page=login" class="btn btn--secondary" style="height:32px;padding:0 12px">Log in</a>'
-    
+
     return dedent(
         f"""
         <header class="header sn-global-header" id="sn-global-header">
@@ -145,11 +145,11 @@ FOOTER_HTML = dedent(
     <a href="?page=terms" class="nav-link">Terms &amp; Conditions</a>
     <a href="?page=privacy" class="nav-link">Privacy Policy</a>
     <a href="?page=about" class="nav-link">About</a>
-    <a href="{SOCIAL['instagram']}" class="nav-link" target="_blank" rel="noopener">Instagram</a>
-    <a href="{SOCIAL['facebook']}" class="nav-link" target="_blank" rel="noopener">Facebook</a>
-    <a href="{SOCIAL['x']}" class="nav-link" target="_blank" rel="noopener">X</a>
-    <a href="{SOCIAL['youtube']}" class="nav-link" target="_blank" rel="noopener">YouTube</a>
-    <a href="{SOCIAL['linkedin']}" class="nav-link" target="_blank" rel="noopener">LinkedIn</a>
+    <a href="{SOCIAL["instagram"]}" class="nav-link" target="_blank" rel="noopener">Instagram</a>
+    <a href="{SOCIAL["facebook"]}" class="nav-link" target="_blank" rel="noopener">Facebook</a>
+    <a href="{SOCIAL["x"]}" class="nav-link" target="_blank" rel="noopener">X</a>
+    <a href="{SOCIAL["youtube"]}" class="nav-link" target="_blank" rel="noopener">YouTube</a>
+    <a href="{SOCIAL["linkedin"]}" class="nav-link" target="_blank" rel="noopener">LinkedIn</a>
     </div>
     </div>
     </footer>
@@ -175,14 +175,14 @@ def _ensure_global_css() -> None:
 
 
 def render_page(
-    content: Optional[Callable[..., Any] | str] = None,
+    content: Callable[..., Any] | str | None = None,
     *args: Any,
-    body_html: Optional[str] = None,
+    body_html: str | None = None,
     show_header: bool = True,
     show_footer: bool = True,
     title: str = "",
-    active_route: Optional[str] = None,
-    sidebar_html: Optional[str] = None,
+    active_route: str | None = None,
+    sidebar_html: str | None = None,
     body_only: bool = False,
     **kwargs: Any,
 ) -> None:
@@ -238,7 +238,7 @@ def render_page(
         render_footer()
 
 
-def render_header(active_route: Optional[str] = None) -> None:
+def render_header(active_route: str | None = None) -> None:
     _ensure_global_css()
     if not st.session_state.get(_RESPONSIVE_SENTINEL):
         st.markdown(RESPONSIVE_CSS, unsafe_allow_html=True)
@@ -256,7 +256,7 @@ def render_footer() -> None:
 def render_shell_start(
     title: str = "",
     *,
-    active_route: Optional[str] = None,
+    active_route: str | None = None,
     show_header: bool = True,
 ) -> None:
     """Open the global layout shell without relying on render_page."""

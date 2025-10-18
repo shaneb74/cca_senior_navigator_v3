@@ -5,28 +5,29 @@ Resources Hub - Educational Resources and Self-Service Tools
 This hub mirrors the Concierge Hub in layout, styling, and functionality.
 Includes Navi at the top and the Additional Services section below.
 """
+
 import html
 from typing import Optional
 
 import streamlit as st
 
-from core.mcip import MCIP
-from core.navi import render_navi_panel
 from core.additional_services import get_additional_services
 from core.base_hub import render_dashboard_body
+from core.mcip import MCIP
+from core.navi import render_navi_panel
 from core.product_tile import ProductTileHub
-from ui.header_simple import render_header_simple
 from ui.footer_simple import render_footer_simple
+from ui.header_simple import render_header_simple
 
 __all__ = ["render"]
 
 
 def render(ctx=None) -> None:
     """Render the Resources Hub with Navi orchestration."""
-    
+
     # Initialize MCIP
     MCIP.initialize()
-    
+
     # Show save confirmation if returning
     save_msg = st.session_state.pop("_show_save_message", None)
     if save_msg:
@@ -37,29 +38,37 @@ def render(ctx=None) -> None:
             "home_health": "Find Home Health",
             "dme": "Find DME",
             "med_manage": "Medication Management",
-            "predictive_health": "Predictive Health Analytics"
+            "predictive_health": "Predictive Health Analytics",
         }.get(save_msg.get("product", ""), "resource")
-        
+
         prog = save_msg.get("progress", 0)
-        
+
         if prog >= 100:
             st.success(f"✅ {product_name} complete!")
         else:
             st.info(f"💾 Progress saved! You're {prog:.0f}% through {product_name}.")
-    
+
     person_name = st.session_state.get("person_name", "").strip()
     person = person_name if person_name else "you"
-    
+
     # Build hub order
     hub_order = {
         "hub_id": "resources",
-        "ordered_products": ["med_manage", "predictive_health", "fall_risk", "disease_mgmt", "home_safety", "home_health", "dme"],
+        "ordered_products": [
+            "med_manage",
+            "predictive_health",
+            "fall_risk",
+            "disease_mgmt",
+            "home_safety",
+            "home_health",
+            "dme",
+        ],
         "reason": "Explore helpful resources and tools",
         "total": 7,
         "next_step": "med_manage",
     }
     hub_order["next_route"] = f"?page={hub_order['next_step']}"
-    
+
     # Build product tiles
     cards = [
         _build_med_manage_tile(),
@@ -70,23 +79,23 @@ def render(ctx=None) -> None:
         _build_home_health_tile(),
         _build_dme_tile(),
     ]
-    
+
     # Get additional services
     additional = get_additional_services("resources")
-    
+
     # Build chips
     chips = [{"label": "Resources"}]
     if person_name:
         chips.append({"label": f"For {person}", "variant": "muted"})
     chips.append({"label": "Self-service tools"})
-    
+
     alert_html = _build_saved_progress_alert(save_msg)
 
     # Use callback pattern to render Navi AFTER header but BEFORE body
     def render_content():
         # Render Navi panel (after header, before hub content)
         render_navi_panel(location="hub", hub_key="resources")
-        
+
         # Render hub body HTML WITHOUT title/subtitle/chips (Navi replaces them)
         body_html = render_dashboard_body(
             title=None,  # Skip title - Navi provides context
@@ -97,10 +106,10 @@ def render(ctx=None) -> None:
             cards=cards,
             additional_services=additional,  # Include in HTML for proper layout
         )
-        
+
         full_html = (alert_html or "") + body_html
         st.markdown(full_html, unsafe_allow_html=True)
-    
+
     # Render with simple header/footer
     render_header_simple(active_route="hub_resources")
     render_content()
@@ -111,7 +120,7 @@ def _build_saved_progress_alert(save_msg: Optional[dict]) -> str:
     """Build progress alert banner."""
     if not save_msg:
         return ""
-    
+
     product_name = {
         "fall_risk": "Fall Risk",
         "disease_mgmt": "Disease Management Program",
@@ -119,29 +128,21 @@ def _build_saved_progress_alert(save_msg: Optional[dict]) -> str:
         "home_health": "Find Home Health",
         "dme": "Find DME",
         "med_manage": "Medication Management",
-        "predictive_health": "Predictive Health Analytics"
+        "predictive_health": "Predictive Health Analytics",
     }.get(save_msg.get("product", ""), "resource")
 
     prog = save_msg.get("progress", 0)
     if prog >= 100:
         message = f"✅ {product_name} complete!"
-        style = {
-            "bg": "#ecfdf5",
-            "border": "#bbf7d0",
-            "color": "#047857"
-        }
+        style = {"bg": "#ecfdf5", "border": "#bbf7d0", "color": "#047857"}
     else:
         message = f"💾 Progress saved! You're {prog:.0f}% through {product_name}."
-        style = {
-            "bg": "#eff6ff",
-            "border": "#bfdbfe",
-            "color": "#1d4ed8"
-        }
+        style = {"bg": "#eff6ff", "border": "#bfdbfe", "color": "#1d4ed8"}
 
     return (
         '<div style="margin-bottom:20px;padding:16px 20px;border-radius:14px;'
         f'background:{style["bg"]};border:1px solid {style["border"]};color:{style["color"]};"'
-        f'>{html.escape(message)}</div>'
+        f">{html.escape(message)}</div>"
     )
 
 
