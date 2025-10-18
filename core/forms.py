@@ -90,6 +90,8 @@ def chip_group(
     else:
         default_index = 0  # Default to first option if no match
     
+    radio_key = f"{key}__radio"
+    
     # Add wrapper with HTML/CSS for pill styling
     # Using a unique data attribute so CSS can target it
     st.markdown(
@@ -109,7 +111,7 @@ def chip_group(
         index=default_index,  # Explicit valid index prevents blank option
         horizontal=True,
         label_visibility="collapsed",
-        key=f"{key}__radio",
+        key=radio_key,
     )
     
     st.markdown('</div>', unsafe_allow_html=True)
