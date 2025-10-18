@@ -88,7 +88,7 @@ def _render_gate():
     
     with col1:
         if st.button("← Return to Waiting Room", type="secondary", use_container_width=True):
-            route_to("hub_waiting_room")
+            route_to("hub_waiting")
     
     with col2:
         if st.button("Book Appointment →", type="primary", use_container_width=True):
@@ -137,6 +137,19 @@ def _render_section_menu():
     
     st.progress(progress / 100, text=f"Progress: {len(sections_complete)}/4 sections complete")
     
+    # Duck badge progress (local import to avoid circular dependency)
+    try:
+        from products.advisor_prep.utils import get_duck_progress, is_all_ducks_earned
+        duck_progress = get_duck_progress()
+        if duck_progress["earned_count"] > 0:
+            duck_display = "🦆" * duck_progress["earned_count"]
+            if is_all_ducks_earned():
+                st.success(f"🎉 {duck_display} **All Ducks in a Row!** You've completed all prep sections.")
+            else:
+                st.info(f"{duck_display} **{duck_progress['earned_count']}/4 Ducks Earned** — Keep going!")
+    except ImportError:
+        pass  # Duck badges not available, skip display
+    
     st.markdown("---")
     
     # Load section configs
@@ -182,13 +195,13 @@ def _render_section_menu():
     
     with col_nav1:
         if st.button("← Return to Waiting Room", type="secondary", use_container_width=True):
-            route_to("hub_waiting_room")
+            route_to("hub_waiting")
     
     with col_nav2:
         if progress == 100:
             if st.button("✓ All Done", type="primary", use_container_width=True):
                 log_event("advisor_prep.completed", {"sections_complete": 4})
-                route_to("hub_waiting_room")
+                route_to("hub_waiting")
 
 
 def _load_section_configs() -> list:

@@ -144,6 +144,13 @@ def _save_section(form_data: dict):
     if "housing" not in sections_complete:
         sections_complete.append("housing")
     
+    # Award duck badge (local import to avoid circular dependency)
+    try:
+        from products.advisor_prep.utils import award_duck_badge
+        award_duck_badge("housing")
+    except ImportError:
+        pass  # Duck badges not available
+    
     # Update MCIP contract with prep progress
     appt = MCIP.get_advisor_appointment()
     if appt:
@@ -169,7 +176,6 @@ def _save_section(form_data: dict):
     })
     
     st.success("✓ Housing preferences saved!")
-    st.balloons()
     
     # Return to menu after short delay
     import time

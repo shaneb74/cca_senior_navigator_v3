@@ -180,6 +180,13 @@ def _save_section(form_data: dict):
     if "financial" not in sections_complete:
         sections_complete.append("financial")
     
+    # Award duck badge (local import to avoid circular dependency)
+    try:
+        from products.advisor_prep.utils import award_duck_badge
+        award_duck_badge("financial")
+    except ImportError:
+        pass  # Duck badges not available
+    
     # Update MCIP contract with prep progress
     appt = MCIP.get_advisor_appointment()
     if appt:
@@ -204,7 +211,6 @@ def _save_section(form_data: dict):
     })
     
     st.success("✓ Financial information saved!")
-    st.balloons()
     
     # Return to menu after short delay
     import time
