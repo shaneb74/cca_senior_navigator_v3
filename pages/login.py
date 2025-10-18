@@ -2,31 +2,31 @@ from textwrap import dedent
 
 import streamlit as st
 
-from core.state import authenticate_user
 from core.nav import route_to
+from core.state import authenticate_user
 from core.ui import img_src
 
 
 def render():
     """Render login page - simple auth toggle (no real authentication)."""
-    
+
     # Check if form was submitted
     if st.query_params.get("action") == "login":
         # Get form data from session state (set by JavaScript)
         name = st.session_state.get("_login_name", "Sarah")
         email = st.session_state.get("_login_email", "sarah@example.com")
-        
+
         # Toggle auth on
         authenticate_user(name=name, email=email)
-        
+
         # Clear query params and redirect to hub
         st.query_params.clear()
         route_to("hub_concierge")
         st.rerun()
-    
+
     # Show form UI
     logo = img_src("static/images/logos/cca_logo.png")
-    
+
     body_html = dedent(
         f"""
         <style>
@@ -107,10 +107,10 @@ def render():
         </section>
         """
     )
-    
+
     # Login page has its own custom layout, no header/footer
     st.markdown(body_html, unsafe_allow_html=True)
-    
+
     # Add Streamlit login button below
     st.markdown("---")
     col1, col2, col3 = st.columns([1, 2, 1])
@@ -123,4 +123,3 @@ def render():
             st.balloons()
             route_to("hub_concierge")
             st.rerun()
-

@@ -20,27 +20,28 @@ API:
 
 import json
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Dict, List, Optional
 
 import streamlit as st
 
 from core.events import log_event
-from core.flags import FLAG_REGISTRY, VALID_FLAGS
-
+from core.flags import VALID_FLAGS
 
 # ==============================================================================
 # EXCEPTIONS
 # ==============================================================================
 
+
 class InvalidFlagError(ValueError):
     """Raised when flag_id not in canonical registry"""
+
     pass
 
 
 class InvalidConditionError(ValueError):
     """Raised when condition code not in conditions registry"""
+
     pass
 
 
@@ -55,7 +56,9 @@ VALIDATION_MODE = os.getenv("FLAG_VALIDATION", "strict")
 DATA_DIR = Path(__file__).parent.parent / "data" / "users"
 
 # Conditions registry path
-CONDITIONS_REGISTRY_PATH = Path(__file__).parent.parent / "config" / "conditions" / "conditions.json"
+CONDITIONS_REGISTRY_PATH = (
+    Path(__file__).parent.parent / "config" / "conditions" / "conditions.json"
+)
 
 # Lazy-loaded conditions registry
 _CONDITIONS_REGISTRY = None
@@ -64,6 +67,7 @@ _CONDITIONS_REGISTRY = None
 # ==============================================================================
 # INTERNAL HELPERS
 # ==============================================================================
+
 
 def _get_user_id() -> str:
     """Get current user ID from session state"""
@@ -81,14 +85,14 @@ def _get_user_file_path() -> Path:
 def _load_user_session() -> dict:
     """Load user session JSON from disk"""
     file_path = _get_user_file_path()
-    
+
     if not file_path.exists():
         return {}
-    
+
     try:
-        with open(file_path, 'r') as f:
+        with open(file_path) as f:
             return json.load(f)
-    except (json.JSONDecodeError, IOError) as e:
+    except (OSError, json.JSONDecodeError) as e:
         print(f"⚠️  Error loading user session: {e}")
         return {}
 
@@ -96,17 +100,17 @@ def _load_user_session() -> dict:
 def _save_user_session(session: dict) -> None:
     """Save user session JSON to disk (atomic write)"""
     file_path = _get_user_file_path()
-    
+
     # Ensure directory exists
     file_path.parent.mkdir(parents=True, exist_ok=True)
-    
+
     # Atomic write: write to temp file, then rename
-    temp_path = file_path.with_suffix('.tmp')
+    temp_path = file_path.with_suffix(".tmp")
     try:
-        with open(temp_path, 'w') as f:
+        with open(temp_path, "w") as f:
             json.dump(session, f, indent=2)
         temp_path.replace(file_path)
-    except IOError as e:
+    except OSError as e:
         print(f"⚠️  Error saving user session: {e}")
         if temp_path.exists():
             temp_path.unlink()
@@ -114,35 +118,35 @@ def _save_user_session(session: dict) -> None:
 
 def _get_timestamp() -> str:
     """Get current UTC timestamp in ISO 8601 format"""
-    return datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
+    return datetime.now(UTC).isoformat().replace("+00:00", "Z")
 
 
-def _normalize_legacy_flags(session: dict) -> Dict[str, any]:
+def _normalize_legacy_flags(session: dict) -> dict[str, any]:
     """
     Normalize legacy flag format to new structure.
-    
+
     Legacy format:
         mcip_contracts.care_recommendation.flags = [...]
-    
+
     New format:
         flags.active = [...]
         flags.provenance = {...}
-    
+
     Returns normalized flags structure (in-memory only, no write)
     """
     # Check if new format already exists
     if "flags" in session and "active" in session.get("flags", {}):
         return session["flags"]
-    
+
     # Extract legacy flags
     legacy_flags = []
-    
+
     # Check care_recommendation contract
     try:
         care_rec = session.get("mcip_contracts", {}).get("care_recommendation", {})
         if "flags" in care_rec:
             flags_data = care_rec["flags"]
-            
+
             # Handle list of dicts (current format)
             if isinstance(flags_data, list):
                 for item in flags_data:
@@ -156,44 +160,42 @@ def _normalize_legacy_flags(session: dict) -> Dict[str, any]:
                 legacy_flags.extend([k for k, v in flags_data.items() if v])
     except Exception:
         pass
-    
+
     # Check tiles.gcp_v4.saved_state.flags (old GCP format)
     try:
-        gcp_flags = session.get("tiles", {}).get("gcp_v4", {}).get("saved_state", {}).get("flags", {})
+        gcp_flags = (
+            session.get("tiles", {}).get("gcp_v4", {}).get("saved_state", {}).get("flags", {})
+        )
         if isinstance(gcp_flags, dict):
             legacy_flags.extend([k for k, v in gcp_flags.items() if v])
     except Exception:
         pass
-    
+
     # Deduplicate
     legacy_flags = list(set(legacy_flags))
-    
+
     if not legacy_flags:
         return {"active": [], "provenance": {}}
-    
+
     # Build normalized structure
     timestamp = _get_timestamp()
     return {
         "active": legacy_flags,
         "provenance": {
-            flag_id: {
-                "source": "legacy_gcp",
-                "updated_at": timestamp
-            }
-            for flag_id in legacy_flags
-        }
+            flag_id: {"source": "legacy_gcp", "updated_at": timestamp} for flag_id in legacy_flags
+        },
     }
 
 
 def _load_conditions_registry() -> dict:
     """Load conditions registry from JSON (cached)"""
     global _CONDITIONS_REGISTRY
-    
+
     if _CONDITIONS_REGISTRY is not None:
         return _CONDITIONS_REGISTRY
-    
+
     try:
-        with open(CONDITIONS_REGISTRY_PATH, 'r') as f:
+        with open(CONDITIONS_REGISTRY_PATH) as f:
             _CONDITIONS_REGISTRY = json.load(f)
         return _CONDITIONS_REGISTRY
     except (FileNotFoundError, json.JSONDecodeError) as e:
@@ -201,7 +203,7 @@ def _load_conditions_registry() -> dict:
         return {"conditions": []}
 
 
-def _get_valid_condition_codes() -> List[str]:
+def _get_valid_condition_codes() -> list[str]:
     """Get list of valid condition codes from registry"""
     registry = _load_conditions_registry()
     return [c["code"] for c in registry.get("conditions", [])]
@@ -210,36 +212,38 @@ def _get_valid_condition_codes() -> List[str]:
 def _validate_flag(flag_id: str, context: str = "unknown") -> None:
     """
     Validate flag_id against canonical registry.
-    
+
     Args:
         flag_id: Flag identifier to validate
         context: Module/context for error messages
-    
+
     Raises:
         InvalidFlagError: If flag not in registry (strict mode)
     """
     if flag_id not in VALID_FLAGS:
         # Log validation error
-        log_event("flag_validation_error", {
-            "flag_id": flag_id,
-            "context": context,
-            "timestamp": _get_timestamp()
-        })
-        
+        log_event(
+            "flag_validation_error",
+            {"flag_id": flag_id, "context": context, "timestamp": _get_timestamp()},
+        )
+
         # Find similar flags (fuzzy match)
         suggestions = [
-            valid_flag for valid_flag in VALID_FLAGS
+            valid_flag
+            for valid_flag in VALID_FLAGS
             if flag_id.lower() in valid_flag.lower() or valid_flag.lower() in flag_id.lower()
         ][:3]
-        
+
         error_msg = f"Flag '{flag_id}' not found in canonical registry.\n"
         error_msg += f"  Source: {context}\n"
         if suggestions:
-            error_msg += f"  Did you mean one of these?\n"
+            error_msg += "  Did you mean one of these?\n"
             for suggestion in suggestions:
                 error_msg += f"    - {suggestion}\n"
-        error_msg += f"  See core/flags.py:FLAG_REGISTRY for all {len(VALID_FLAGS)} canonical flags."
-        
+        error_msg += (
+            f"  See core/flags.py:FLAG_REGISTRY for all {len(VALID_FLAGS)} canonical flags."
+        )
+
         if VALIDATION_MODE == "strict":
             raise InvalidFlagError(error_msg)
         else:
@@ -249,28 +253,27 @@ def _validate_flag(flag_id: str, context: str = "unknown") -> None:
 def _validate_condition_code(code: str, context: str = "unknown") -> None:
     """
     Validate condition code against conditions registry.
-    
+
     Args:
         code: Condition code to validate
         context: Module/context for error messages
-    
+
     Raises:
         InvalidConditionError: If code not in registry (strict mode)
     """
     valid_codes = _get_valid_condition_codes()
-    
+
     if code not in valid_codes:
         # Log validation error
-        log_event("condition_validation_error", {
-            "code": code,
-            "context": context,
-            "timestamp": _get_timestamp()
-        })
-        
+        log_event(
+            "condition_validation_error",
+            {"code": code, "context": context, "timestamp": _get_timestamp()},
+        )
+
         error_msg = f"Condition code '{code}' not found in conditions registry.\n"
         error_msg += f"  Source: {context}\n"
-        error_msg += f"  See config/conditions/conditions.json for all valid codes."
-        
+        error_msg += "  See config/conditions/conditions.json for all valid codes."
+
         if VALIDATION_MODE == "strict":
             raise InvalidConditionError(error_msg)
         else:
@@ -281,18 +284,19 @@ def _validate_condition_code(code: str, context: str = "unknown") -> None:
 # PUBLIC API
 # ==============================================================================
 
+
 def activate(flag_id: str, source: str, context: str = None) -> None:
     """
     Activate a flag in the user's session.
-    
+
     Args:
         flag_id: Canonical flag ID (must exist in FLAG_REGISTRY)
         source: Module identifier (e.g., "gcp", "cp", "pfma")
         context: Optional context for validation errors (e.g., "gcp.mobility_question")
-    
+
     Raises:
         InvalidFlagError: If flag_id not in registry (strict mode)
-    
+
     Example:
         activate("mobility_limited", "gcp")
         activate("chronic_present", "pfma", context="pfma.medical_review")
@@ -300,57 +304,50 @@ def activate(flag_id: str, source: str, context: str = None) -> None:
     # Validate flag
     validation_context = context or source
     _validate_flag(flag_id, validation_context)
-    
+
     # Load session
     session = _load_user_session()
-    
+
     # Normalize legacy flags if needed
     if "flags" not in session:
         session["flags"] = _normalize_legacy_flags(session)
-    
+
     # Ensure structure exists
     if "active" not in session["flags"]:
         session["flags"]["active"] = []
     if "provenance" not in session["flags"]:
         session["flags"]["provenance"] = {}
-    
+
     # Idempotent add to active list
     if flag_id not in session["flags"]["active"]:
         session["flags"]["active"].append(flag_id)
-    
+
     # Update provenance (always update timestamp, even if re-activating)
     timestamp = _get_timestamp()
-    session["flags"]["provenance"][flag_id] = {
-        "source": source,
-        "updated_at": timestamp
-    }
-    
+    session["flags"]["provenance"][flag_id] = {"source": source, "updated_at": timestamp}
+
     # Save session
     _save_user_session(session)
-    
+
     # Log event
-    log_event("flag_activated", {
-        "flag_id": flag_id,
-        "source": source,
-        "timestamp": timestamp
-    })
+    log_event("flag_activated", {"flag_id": flag_id, "source": source, "timestamp": timestamp})
 
 
 def deactivate(flag_id: str, source: str, context: str = None) -> None:
     """
     Deactivate a flag in the user's session.
-    
+
     Args:
         flag_id: Flag ID to deactivate
         source: Module identifier (e.g., "gcp", "cp", "pfma")
         context: Optional context for logging
-    
+
     Note:
         - Validates flag exists in registry (logs warning if not)
         - Removes from flags.active[]
         - Removes from flags.provenance{} (clean state, no archive)
         - No-op if flag not currently active
-    
+
     Example:
         deactivate("mobility_limited", "gcp")
     """
@@ -361,91 +358,87 @@ def deactivate(flag_id: str, source: str, context: str = None) -> None:
     except InvalidFlagError:
         # Log but continue (allow deactivating invalid flags for cleanup)
         pass
-    
+
     # Load session
     session = _load_user_session()
-    
+
     # Normalize legacy flags if needed
     if "flags" not in session:
         session["flags"] = _normalize_legacy_flags(session)
-    
+
     # Check if flag is active
     active_flags = session.get("flags", {}).get("active", [])
     if flag_id not in active_flags:
         # Already deactivated, no-op
         return
-    
+
     # Remove from active list
     session["flags"]["active"].remove(flag_id)
-    
+
     # Remove from provenance (clean state)
     if flag_id in session.get("flags", {}).get("provenance", {}):
         del session["flags"]["provenance"][flag_id]
-    
+
     # Save session
     _save_user_session(session)
-    
+
     # Log event
     timestamp = _get_timestamp()
-    log_event("flag_deactivated", {
-        "flag_id": flag_id,
-        "source": source,
-        "timestamp": timestamp
-    })
+    log_event("flag_deactivated", {"flag_id": flag_id, "source": source, "timestamp": timestamp})
 
 
-def get_active() -> List[str]:
+def get_active() -> list[str]:
     """
     Get list of currently active flags.
-    
+
     Returns:
         List of flag IDs (empty list if no flags)
-    
+
     Example:
         active = get_active()
         # ["mobility_limited", "chronic_present"]
     """
     session = _load_user_session()
-    
+
     # Normalize legacy flags if needed
     if "flags" not in session:
         flags_data = _normalize_legacy_flags(session)
         return flags_data.get("active", [])
-    
+
     return session.get("flags", {}).get("active", [])
 
 
-def get_provenance(flag_id: str) -> Optional[Dict[str, str]]:
+def get_provenance(flag_id: str) -> dict[str, str] | None:
     """
     Get provenance metadata for a specific flag.
-    
+
     Args:
         flag_id: Flag ID to query
-    
+
     Returns:
         Dict with {source, updated_at} or None if not active
-    
+
     Example:
         prov = get_provenance("mobility_limited")
         # {"source": "gcp", "updated_at": "2025-10-17T14:32:18Z"}
     """
     session = _load_user_session()
-    
+
     # Normalize legacy flags if needed
     if "flags" not in session:
         flags_data = _normalize_legacy_flags(session)
         return flags_data.get("provenance", {}).get(flag_id)
-    
+
     return session.get("flags", {}).get("provenance", {}).get(flag_id)
 
 
-def get_all_provenance() -> Dict[str, Dict[str, str]]:
+def get_all_provenance() -> dict[str, dict[str, str]]:
     """
     Get provenance metadata for all active flags.
-    
+
     Returns:
         Dict mapping flag_id to {source, updated_at}
-    
+
     Example:
         all_prov = get_all_provenance()
         # {
@@ -454,36 +447,36 @@ def get_all_provenance() -> Dict[str, Dict[str, str]]:
         # }
     """
     session = _load_user_session()
-    
+
     # Normalize legacy flags if needed
     if "flags" not in session:
         flags_data = _normalize_legacy_flags(session)
         return flags_data.get("provenance", {})
-    
+
     return session.get("flags", {}).get("provenance", {})
 
 
 def is_valid(flag_id: str) -> bool:
     """
     Check if flag_id is valid (exists in registry).
-    
+
     Args:
         flag_id: Flag ID to check
-    
+
     Returns:
         True if valid, False otherwise
     """
     return flag_id in VALID_FLAGS
 
 
-def validate_flags(flag_ids: List[str], context: str = "unknown") -> List[str]:
+def validate_flags(flag_ids: list[str], context: str = "unknown") -> list[str]:
     """
     Validate multiple flags against registry.
-    
+
     Args:
         flag_ids: List of flag IDs to validate
         context: Context for error messages
-    
+
     Returns:
         List of invalid flag IDs (empty if all valid)
     """
@@ -491,17 +484,16 @@ def validate_flags(flag_ids: List[str], context: str = "unknown") -> List[str]:
     for flag_id in flag_ids:
         if flag_id not in VALID_FLAGS:
             invalid.append(flag_id)
-            log_event("flag_validation_error", {
-                "flag_id": flag_id,
-                "context": context,
-                "timestamp": _get_timestamp()
-            })
-    
+            log_event(
+                "flag_validation_error",
+                {"flag_id": flag_id, "context": context, "timestamp": _get_timestamp()},
+            )
+
     if invalid and VALIDATION_MODE == "strict":
         error_msg = f"Invalid flags from {context}: {invalid}\n"
         error_msg += f"See core/flags.py:FLAG_REGISTRY for all {len(VALID_FLAGS)} canonical flags."
         raise InvalidFlagError(error_msg)
-    
+
     return invalid
 
 
@@ -509,67 +501,64 @@ def validate_flags(flag_ids: List[str], context: str = "unknown") -> List[str]:
 # CHRONIC CONDITION MANAGEMENT
 # ==============================================================================
 
-def update_chronic_conditions(condition_codes: List[str], source: str, context: str = None) -> None:
+
+def update_chronic_conditions(condition_codes: list[str], source: str, context: str = None) -> None:
     """
     Update chronic conditions list and auto-activate flags based on count.
-    
+
     Activation Rules:
         - count >= 1: activate chronic_present
         - count >= 2: activate chronic_conditions
         - count == 0: deactivate both flags
         - count == 1: keep chronic_present, deactivate chronic_conditions
-    
+
     Args:
         condition_codes: List of condition codes (from conditions registry)
         source: Module identifier (e.g., "gcp", "pfma")
         context: Optional context for validation errors
-    
+
     Raises:
         InvalidConditionError: If any code not in registry (strict mode)
-    
+
     Example:
         update_chronic_conditions(["diabetes", "copd"], "gcp")
-        # Writes medical.conditions.chronic[] 
+        # Writes medical.conditions.chronic[]
         # Activates chronic_present + chronic_conditions
     """
     # Validate all condition codes
     validation_context = context or source
     for code in condition_codes:
         _validate_condition_code(code, validation_context)
-    
+
     # Load session
     session = _load_user_session()
-    
+
     # Ensure medical.conditions structure exists
     if "medical" not in session:
         session["medical"] = {}
     if "conditions" not in session["medical"]:
         session["medical"]["conditions"] = {}
-    
+
     # Build condition records
     timestamp = _get_timestamp()
     condition_records = []
     seen_codes = set()
-    
+
     for code in condition_codes:
         # Deduplicate
         if code in seen_codes:
             continue
         seen_codes.add(code)
-        
-        condition_records.append({
-            "code": code,
-            "source": source,
-            "updated_at": timestamp
-        })
-    
+
+        condition_records.append({"code": code, "source": source, "updated_at": timestamp})
+
     # Write to session
     session["medical"]["conditions"]["chronic"] = condition_records
     _save_user_session(session)
-    
+
     # Apply flag activation rules
     count = len(condition_records)
-    
+
     if count == 0:
         # Deactivate both flags
         deactivate("chronic_present", source, context)
@@ -582,23 +571,26 @@ def update_chronic_conditions(condition_codes: List[str], source: str, context: 
         # Activate both flags
         activate("chronic_present", source, context)
         activate("chronic_conditions", source, context)
-    
+
     # Log event
-    log_event("chronic_conditions_updated", {
-        "condition_codes": condition_codes,
-        "count": count,
-        "source": source,
-        "timestamp": timestamp
-    })
+    log_event(
+        "chronic_conditions_updated",
+        {
+            "condition_codes": condition_codes,
+            "count": count,
+            "source": source,
+            "timestamp": timestamp,
+        },
+    )
 
 
-def get_chronic_conditions() -> List[Dict[str, str]]:
+def get_chronic_conditions() -> list[dict[str, str]]:
     """
     Get list of chronic condition records.
-    
+
     Returns:
         List of condition records with {code, source, updated_at}
-    
+
     Example:
         conditions = get_chronic_conditions()
         # [
@@ -610,41 +602,40 @@ def get_chronic_conditions() -> List[Dict[str, str]]:
     return session.get("medical", {}).get("conditions", {}).get("chronic", [])
 
 
-def validate_condition_codes(codes: List[str], context: str = "unknown") -> List[str]:
+def validate_condition_codes(codes: list[str], context: str = "unknown") -> list[str]:
     """
     Validate multiple condition codes against registry.
-    
+
     Args:
         codes: List of condition codes to validate
         context: Context for error messages
-    
+
     Returns:
         List of invalid codes (empty if all valid)
     """
     valid_codes = _get_valid_condition_codes()
     invalid = []
-    
+
     for code in codes:
         if code not in valid_codes:
             invalid.append(code)
-            log_event("condition_validation_error", {
-                "code": code,
-                "context": context,
-                "timestamp": _get_timestamp()
-            })
-    
+            log_event(
+                "condition_validation_error",
+                {"code": code, "context": context, "timestamp": _get_timestamp()},
+            )
+
     if invalid and VALIDATION_MODE == "strict":
         error_msg = f"Invalid condition codes from {context}: {invalid}\n"
-        error_msg += f"See config/conditions/conditions.json for all valid codes."
+        error_msg += "See config/conditions/conditions.json for all valid codes."
         raise InvalidConditionError(error_msg)
-    
+
     return invalid
 
 
 def get_conditions_registry() -> dict:
     """
     Get full conditions registry.
-    
+
     Returns:
         Dict with version, updated_at, and conditions array
     """
@@ -655,16 +646,17 @@ def get_conditions_registry() -> dict:
 # DEBUG UTILITIES
 # ==============================================================================
 
+
 def dump_flag_state() -> None:
     """Print current flags + provenance for debugging"""
     active = get_active()
     provenance = get_all_provenance()
-    
-    print(f"\n{'='*60}")
+
+    print(f"\n{'=' * 60}")
     print(f"FLAG STATE FOR USER: {_get_user_id()}")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
     print(f"\nActive flags ({len(active)}):")
-    
+
     if not active:
         print("  (none)")
     else:
@@ -673,15 +665,14 @@ def dump_flag_state() -> None:
             print(f"  - {flag_id}")
             print(f"      source: {prov.get('source', 'unknown')}")
             print(f"      updated: {prov.get('updated_at', 'unknown')}")
-    
-    print(f"\n{'='*60}\n")
+
+    print(f"\n{'=' * 60}\n")
 
 
 __all__ = [
     # Exceptions
     "InvalidFlagError",
     "InvalidConditionError",
-    
     # Flag management
     "activate",
     "deactivate",
@@ -690,16 +681,13 @@ __all__ = [
     "get_all_provenance",
     "is_valid",
     "validate_flags",
-    
     # Condition management
     "update_chronic_conditions",
     "get_chronic_conditions",
     "validate_condition_codes",
     "get_conditions_registry",
-    
     # Debug
     "dump_flag_state",
-    
     # Config
     "VALIDATION_MODE",
 ]

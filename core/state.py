@@ -8,7 +8,7 @@ DEFAULT_CTX = {
         "user_id": None,
         "role": "guest",
         "name": None,
-        "email": None
+        "email": None,
     },
     "flags": {},
 }
@@ -40,7 +40,7 @@ def authenticate_user(name: str = "Sarah", email: str = "sarah@example.com") -> 
         "user_id": "demo_user_123",
         "role": "member",
         "name": name,
-        "email": email
+        "email": email,
     }
 
 

@@ -13,13 +13,13 @@ DESIGN PRINCIPLES:
 - Action-oriented responses with module cross-links
 """
 
-import streamlit as st
-import time
 import random
-from typing import List, Dict, Set, Any, Optional
+import time
+from typing import Any
+
+import streamlit as st
 
 from core.nav import route_to
-
 
 # ==============================================================================
 # NAVI QUESTION DATABASE
@@ -54,7 +54,7 @@ Then use the **Cost Planner** to:
 
 Finally, **book an advisor call** when you're ready for expert guidance.
 
-💡 **Start in the Concierge Hub** — I'll guide you through each step."""
+💡 **Start in the Concierge Hub** — I'll guide you through each step.""",
     },
     "medicare": {
         "question": "What does Medicare cover for long-term care?",
@@ -74,7 +74,7 @@ For ongoing help with daily tasks (bathing, dressing, meals), you'll need:
 • Long-term care insurance
 • Private pay
 
-💡 **Check eligibility with the VA Benefits or Medicaid modules in Cost Planner.**"""
+💡 **Check eligibility with the VA Benefits or Medicaid modules in Cost Planner.**""",
     },
     "next_steps": {
         "question": "What are my next steps after completing assessments?",
@@ -91,15 +91,19 @@ For ongoing help with daily tasks (bathing, dressing, meals), you'll need:
 4. Apply for benefits (VA, Medicaid) if eligible
 5. Book an advisor call for personalized guidance
 
-💡 **Use "Plan with My Advisor" in the Concierge Hub** to connect with an expert who can help implement your plan."""
+💡 **Use "Plan with My Advisor" in the Concierge Hub** to connect with an expert who can help implement your plan.""",
     },
-    
     # SAFETY & URGENCY (triggered by safety/fall flags)
     "fall_risk": {
         "question": "How can I reduce fall risk at home?",
         "topic": "safety",
         "keywords": ["fall", "falling", "safety", "home"],
-        "registry_flags": ["falls_multiple", "falls_risk", "moderate_safety_concern", "high_safety_concern"],
+        "registry_flags": [
+            "falls_multiple",
+            "falls_risk",
+            "moderate_safety_concern",
+            "high_safety_concern",
+        ],
         "response": """**Fall prevention is critical. Act now:**
 
 **Immediate actions:**
@@ -117,13 +121,18 @@ For ongoing help with daily tasks (bathing, dressing, meals), you'll need:
 **Cost:** $500-2,000 for basic modifications
 **Funding:** VA HISA grants cover modifications for eligible veterans
 
-💡 **Veterans: Check eligibility with the VA Benefits module in Cost Planner.**"""
+💡 **Veterans: Check eligibility with the VA Benefits module in Cost Planner.**""",
     },
     "memory_care": {
         "question": "What's the difference between Memory Care and Assisted Living?",
         "topic": "care",
         "keywords": ["memory care", "assisted living", "difference", "dementia", "alzheimer"],
-        "registry_flags": ["mild_cognitive_decline", "moderate_cognitive_decline", "severe_cognitive_risk", "memory_support"],
+        "registry_flags": [
+            "mild_cognitive_decline",
+            "moderate_cognitive_decline",
+            "severe_cognitive_risk",
+            "memory_support",
+        ],
         "response": """**Key differences at a glance:**
 
 **Assisted Living** (~$5,500/month)
@@ -143,12 +152,18 @@ For ongoing help with daily tasks (bathing, dressing, meals), you'll need:
 • Needs 24/7 supervision
 • Behavioral changes require specialized care
 
-💡 **Get a care recommendation with the Guided Care Plan, then check local pricing with Cost Planner.**"""
+💡 **Get a care recommendation with the Guided Care Plan, then check local pricing with Cost Planner.**""",
     },
     "medication_management": {
         "question": "Who can help manage medications safely?",
         "topic": "care",
-        "keywords": ["medication", "meds", "medication management", "pill management", "prescriptions"],
+        "keywords": [
+            "medication",
+            "meds",
+            "medication management",
+            "pill management",
+            "prescriptions",
+        ],
         "registry_flags": ["medication_management", "chronic_present", "chronic_conditions"],
         "response": """**Medication safety is critical.** Options for help:
 
@@ -168,15 +183,19 @@ For ongoing help with daily tasks (bathing, dressing, meals), you'll need:
 
 **Important:** Complex medication regimens may require licensed nursing care. Discuss with your doctor.
 
-💡 **Explore care options with the Guided Care Plan and estimate costs with Cost Planner.**"""
+💡 **Explore care options with the Guided Care Plan and estimate costs with Cost Planner.**""",
     },
-    
     # VETERANS (triggered by ADL/dependence flags)
     "va_benefits": {
         "question": "Am I eligible for VA Aid & Attendance benefits?",
         "topic": "veterans",
         "keywords": ["va", "veteran", "aid attendance", "benefits"],
-        "registry_flags": ["veteran_aanda_risk", "moderate_dependence", "high_dependence", "adl_support_high"],
+        "registry_flags": [
+            "veteran_aanda_risk",
+            "moderate_dependence",
+            "high_dependence",
+            "adl_support_high",
+        ],
         "response": """**VA may help cover care costs — here's how:**
 
 **Eligibility often includes:**
@@ -196,9 +215,8 @@ For ongoing help with daily tasks (bathing, dressing, meals), you'll need:
 
 **Processing time:** 3-6 months, so apply early
 
-💡 **Check eligibility with the VA Benefits module in Cost Planner.**"""
+💡 **Check eligibility with the VA Benefits module in Cost Planner.**""",
     },
-    
     # COSTS & FUNDING (no specific flags - always relevant)
     "home_care_cost": {
         "question": "How much does in-home care cost?",
@@ -223,7 +241,7 @@ For ongoing help with daily tasks (bathing, dressing, meals), you'll need:
 • Long-term care insurance
 • Private pay
 
-💡 **Get personalized estimates with the Cost Planner using your ZIP code.**"""
+💡 **Get personalized estimates with the Cost Planner using your ZIP code.**""",
     },
     "afford_care": {
         "question": "How can I afford care for my loved one?",
@@ -250,7 +268,7 @@ For ongoing help with daily tasks (bathing, dressing, meals), you'll need:
 3. Calculate your "runway" (how long funds last)
 4. Apply for benefits early (processing takes months)
 
-💡 **Use the Cost Planner's financial modules to build your funding strategy.**"""
+💡 **Use the Cost Planner's financial modules to build your funding strategy.**""",
     },
     "medicaid": {
         "question": "Does Medicaid cover long-term care?",
@@ -277,15 +295,19 @@ For ongoing help with daily tasks (bathing, dressing, meals), you'll need:
 
 **Important:** Rules vary by state. 5-year look-back period for asset transfers.
 
-💡 **The Medicaid Navigation module in Cost Planner guides you through eligibility and planning strategies.**"""
+💡 **The Medicaid Navigation module in Cost Planner guides you through eligibility and planning strategies.**""",
     },
-    
     # PLANNING & FAMILY (triggered by high dependence or caregiver flags)
     "family_conversation": {
         "question": "How do I talk to my family about care?",
         "topic": "planning",
         "keywords": ["talk", "family", "conversation", "discuss"],
-        "registry_flags": ["no_support", "limited_support", "high_dependence", "moderate_dependence"],
+        "registry_flags": [
+            "no_support",
+            "limited_support",
+            "high_dependence",
+            "moderate_dependence",
+        ],
         "response": """**The care conversation is challenging. Here's how to approach it:**
 
 **Before the conversation:**
@@ -310,8 +332,8 @@ For ongoing help with daily tasks (bathing, dressing, meals), you'll need:
 • Cost Planner estimates
 • Doctor's recommendations
 
-💡 **Use the Guided Care Plan and Cost Planner to frame conversations with objective information.**"""
-    }
+💡 **Use the Guided Care Plan and Cost Planner to frame conversations with objective information.**""",
+    },
 }
 
 # Topic-based question groupings for chip rotation
@@ -347,63 +369,64 @@ I'm still learning, but here's what I can help with:
 # QUESTION MATCHING & SUGGESTION ENGINE
 # ==============================================================================
 
-def _match_question(user_input: str) -> Optional[Dict[str, Any]]:
+
+def _match_question(user_input: str) -> dict[str, Any] | None:
     """Match user input to a question in the database.
-    
+
     Args:
         user_input: User's question text
-        
+
     Returns:
         Question dict if match found, None otherwise
     """
     user_lower = user_input.lower().strip()
-    
+
     # Try exact match first
     for q_data in QUESTION_DATABASE.values():
         if q_data["question"].lower() == user_lower:
             return q_data
-    
+
     # Try keyword matching
     for q_data in QUESTION_DATABASE.values():
         for keyword in q_data["keywords"]:
             if keyword in user_lower:
                 return q_data
-    
+
     return None
 
 
-def _get_suggested_questions(exclude: List[str] = None) -> List[str]:
+def _get_suggested_questions(exclude: list[str] = None) -> list[str]:
     """Get 3-6 suggested question chips based on context and active flags.
-    
+
     Dynamically filters questions based on flags set by Guided Care Plan and Cost Planner.
     Questions with empty registry_flags are always available (base questions).
     Questions with registry_flags only appear when at least one flag is active.
-    
+
     Args:
         exclude: List of question keys to exclude (recently asked)
-        
+
     Returns:
         List of question texts to display as chips
     """
     from core import flags
-    
+
     exclude = exclude or []
-    
+
     # Get active flags from user's journey
     active_flags_dict = flags.get_all_flags()
     active_flag_keys = set(active_flags_dict.keys())
-    
+
     # Separate questions into categories
     always_available = []  # Empty registry_flags (base questions)
-    flag_matched = []      # Has registry_flags that match active flags
-    flag_unmatched = []    # Has registry_flags but none match
-    
+    flag_matched = []  # Has registry_flags that match active flags
+    flag_unmatched = []  # Has registry_flags but none match
+
     for key, q_data in QUESTION_DATABASE.items():
         if key in exclude:
             continue
-            
+
         registry_flags = q_data.get("registry_flags", [])
-        
+
         if not registry_flags:
             # Always show questions with empty registry_flags
             always_available.append(key)
@@ -415,28 +438,28 @@ def _get_suggested_questions(exclude: List[str] = None) -> List[str]:
                 flag_matched.append((key, len(matching_flags)))
             else:
                 flag_unmatched.append(key)
-    
+
     # Sort flag-matched questions by number of matches (descending)
     flag_matched.sort(key=lambda x: x[1], reverse=True)
     flag_matched_keys = [key for key, _ in flag_matched]
-    
+
     # Build priority pool: flag-matched > always-available > unmatched
     priority_pool = flag_matched_keys + always_available
-    
+
     # If we have enough from priority pool, use those
     if len(priority_pool) >= 3:
         available = priority_pool
     else:
         # Not enough questions, include some unmatched
         available = priority_pool + flag_unmatched
-    
+
     # If we've asked too many questions, reset with just the last 3
     if len(available) < 3:
         recent_asked = st.session_state.get("ai_asked_keys", [])
         exclude = recent_asked[-3:] if len(recent_asked) > 3 else []
         # Re-run the filtering without exclusions
         available = [key for key in QUESTION_DATABASE.keys() if key not in exclude]
-    
+
     # Shuffle available questions (but flag-matched stay near top)
     if len(flag_matched_keys) > 0 and len(available) > len(flag_matched_keys):
         # Keep flag-matched at top, shuffle the rest
@@ -446,21 +469,21 @@ def _get_suggested_questions(exclude: List[str] = None) -> List[str]:
         available = top_tier + rest
     else:
         random.shuffle(available)
-    
+
     # Take 3-6 questions
     num_suggestions = min(6, len(available))
     selected_keys = available[:num_suggestions]
-    
+
     # Return question texts
     return [QUESTION_DATABASE[key]["question"] for key in selected_keys]
 
 
-def _find_question_key(question_text: str) -> Optional[str]:
+def _find_question_key(question_text: str) -> str | None:
     """Find the database key for a question text.
-    
+
     Args:
         question_text: Display text of the question
-        
+
     Returns:
         Database key if found, None otherwise
     """
@@ -472,16 +495,16 @@ def _find_question_key(question_text: str) -> Optional[str]:
 
 def _get_navi_response(user_input: str) -> str:
     """Generate Navi's response to user input.
-    
+
     Args:
         user_input: User's question text
-        
+
     Returns:
         Response text
     """
     # Try to match question
     matched = _match_question(user_input)
-    
+
     if matched:
         return matched["response"]
     else:
@@ -492,6 +515,7 @@ def _get_navi_response(user_input: str) -> str:
 # UI COMPONENTS
 # ==============================================================================
 
+
 def _render_typing_indicator():
     """Show Navi thinking animation for 600-900ms."""
     with st.spinner("✨ Navi is thinking..."):
@@ -500,7 +524,7 @@ def _render_typing_indicator():
 
 def _render_message_bubble(role: str, content: str):
     """Render a message bubble.
-    
+
     Args:
         role: 'user' or 'navi'
         content: Message text
@@ -510,7 +534,7 @@ def _render_message_bubble(role: str, content: str):
             f"""<div class="faq-message faq-message--user">
 {content}
 </div>""",
-            unsafe_allow_html=True
+            unsafe_allow_html=True,
         )
     else:
         st.markdown(
@@ -518,7 +542,7 @@ def _render_message_bubble(role: str, content: str):
 <div class="faq-navi-icon">✨</div>
 <div class="faq-navi-content">{content}</div>
 </div>""",
-            unsafe_allow_html=True
+            unsafe_allow_html=True,
         )
 
 
@@ -526,11 +550,13 @@ def _render_message_bubble(role: str, content: str):
 # MAIN RENDER FUNCTION
 # ==============================================================================
 
+
 def render():
     """Render the AI Advisor page with Navi redesign."""
-    
+
     # Inject custom CSS for this page
-    st.markdown("""
+    st.markdown(
+        """
 <style>
 /* Page container - comfortable read width */
 .faq-container {
@@ -751,8 +777,10 @@ def render():
     }
 }
 </style>
-    """, unsafe_allow_html=True)
-    
+    """,
+        unsafe_allow_html=True,
+    )
+
     # Initialize session state
     if "ai_thread" not in st.session_state:
         st.session_state["ai_thread"] = []
@@ -762,12 +790,13 @@ def render():
         st.session_state["ai_current_input"] = ""
     if "ai_chip_clicks" not in st.session_state:
         st.session_state["ai_chip_clicks"] = 0
-    
+
     # Container wrapper
     st.markdown('<div class="faq-container">', unsafe_allow_html=True)
-    
+
     # Navi Banner Header (consistent with other pages)
-    st.markdown("""
+    st.markdown(
+        """
 <div class="navi-banner-advisor">
     <div class="navi-banner-advisor__eyebrow">
         <span class="navi-icon">✨</span> NAVI — YOUR EXPERT ADVISOR
@@ -778,15 +807,17 @@ def render():
         and next steps. I'll point you to the right tools.
     </p>
 </div>
-    """, unsafe_allow_html=True)
-    
+    """,
+        unsafe_allow_html=True,
+    )
+
     # Suggested Questions section
     st.markdown('<div class="faq-section">', unsafe_allow_html=True)
     st.markdown('<h2 class="faq-section-title">Suggested Questions</h2>', unsafe_allow_html=True)
-    
+
     # Get suggested questions (exclude recently asked)
     suggested = _get_suggested_questions(exclude=st.session_state["ai_asked_keys"])
-    
+
     # Render chips with unique keys based on question content + click counter
     cols = st.columns(min(len(suggested), 3))
     for i, question in enumerate(suggested):
@@ -794,79 +825,77 @@ def render():
         with cols[col_idx]:
             # Use question key (or hash) + click counter for unique button keys
             question_key = _find_question_key(question)
-            unique_key = f"faq_chip_{question_key or hash(question)}_{st.session_state['ai_chip_clicks']}"
-            
+            unique_key = (
+                f"faq_chip_{question_key or hash(question)}_{st.session_state['ai_chip_clicks']}"
+            )
+
             if st.button(
                 question,
                 key=unique_key,
                 use_container_width=True,
-                help="Click to ask this question"
+                help="Click to ask this question",
             ):
                 # Increment click counter to force new keys on rerun
                 st.session_state["ai_chip_clicks"] += 1
-                
+
                 # Ask question and refresh chips
                 _ask_question(question)
                 st.rerun()
-    
-    st.markdown('</div>', unsafe_allow_html=True)
-    
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
     # Ask Me Anything section
     st.markdown('<div class="faq-section faq-input-section">', unsafe_allow_html=True)
     st.markdown('<h2 class="faq-section-title">Ask Me Anything</h2>', unsafe_allow_html=True)
-    
+
     # Text input with Enter to send
     user_input = st.text_input(
         "Your question",
         value=st.session_state.get("ai_current_input", ""),
         placeholder="e.g., How can I afford home care?",
         key="ai_text_input",
-        label_visibility="collapsed"
+        label_visibility="collapsed",
     )
-    
+
     # Buttons row
     col1, col2 = st.columns([3, 1])
     with col1:
         send_clicked = st.button(
-            "Send",
-            type="primary",
-            use_container_width=True,
-            key="ai_send_btn"
+            "Send", type="primary", use_container_width=True, key="ai_send_btn"
         )
     with col2:
-        clear_clicked = st.button(
-            "Clear chat",
-            use_container_width=True,
-            key="ai_clear_btn"
-        )
-    
+        clear_clicked = st.button("Clear chat", use_container_width=True, key="ai_clear_btn")
+
     # Handle send action (button or Enter key via text input change)
     if send_clicked and user_input.strip():
         _ask_question(user_input.strip())
         st.session_state["ai_current_input"] = ""
         st.rerun()
-    
+
     # Handle clear action
     if clear_clicked:
         st.session_state["ai_thread"] = []
         st.session_state["ai_asked_keys"] = []
         st.session_state["ai_current_input"] = ""
         st.rerun()
-    
-    st.markdown('</div>', unsafe_allow_html=True)
-    
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
     # Conversation section
     st.markdown('<div class="faq-conversation">', unsafe_allow_html=True)
     st.markdown('<h2 class="faq-section-title">Questions I\'ve Asked</h2>', unsafe_allow_html=True)
-    
+
     thread = st.session_state.get("ai_thread", [])
-    
+
     if not thread:
-        st.markdown("""
+        st.markdown(
+            """
 <div class="faq-empty-state">
     💡 Click a suggested question above or type your own to start chatting with Navi.
 </div>
-        """, unsafe_allow_html=True)
+        """,
+            unsafe_allow_html=True,
+        )
     else:
         # Render messages in reverse chronological order (newest first)
         # This keeps new answers at the top, just below the section title
@@ -875,43 +904,46 @@ def render():
                 _render_message_bubble("user", message)
             else:
                 _render_message_bubble("navi", message)
-    
-    st.markdown('</div>', unsafe_allow_html=True)
-    
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
     # Guardrail footer
-    st.markdown("""
+    st.markdown(
+        """
 <div class="faq-guardrail">
     Navi offers information, not medical or legal advice.
 </div>
-    """, unsafe_allow_html=True)
-    
+    """,
+        unsafe_allow_html=True,
+    )
+
     # Back to Hub button
     st.markdown('<div style="margin-top: var(--space-6);">', unsafe_allow_html=True)
     if st.button("← Back to Hub", use_container_width=True, key="faq_back_to_hub"):
         route_to("hub_concierge")
         st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
-    
+    st.markdown("</div>", unsafe_allow_html=True)
+
     # Close container
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
 
 def _ask_question(question: str):
     """Process a question: show typing indicator, add to thread, track question key.
-    
+
     Args:
         question: Question text from user
     """
     # Show typing indicator
     _render_typing_indicator()
-    
+
     # Get Navi's response
     response = _get_navi_response(question)
-    
+
     # Add to thread
     st.session_state["ai_thread"].append(("user", question))
     st.session_state["ai_thread"].append(("navi", response))
-    
+
     # Track question key for chip rotation (if it's a suggested question)
     question_key = _find_question_key(question)
     if question_key and question_key not in st.session_state["ai_asked_keys"]:

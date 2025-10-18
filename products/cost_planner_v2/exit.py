@@ -10,99 +10,97 @@ Design Philosophy:
 - Visually cohesive with Expert Advisor Review
 """
 
-from typing import Dict
 import streamlit as st
+
 from core.ui import render_navi_panel_v2
 from products.cost_planner_v2.utils.financial_helpers import (
-    normalize_income_data,
-    normalize_asset_data,
-    calculate_total_monthly_income,
-    calculate_total_asset_value,
     calculate_total_asset_debt,
+    calculate_total_asset_value,
+    calculate_total_monthly_income,
+    normalize_asset_data,
+    normalize_income_data,
 )
 
 
 def render():
     """Render exit step with clean card-based completion layout.
-    
+
     Layout:
     1. Navi Panel (celebratory, encouraging)
     2. Accomplishments Card (checklist of completed items)
     3. Plan Highlights Card (key metrics summary)
     4. What's Next Grid (3 actionable paths)
     """
-    
+
     _render_navi_completion()
     st.markdown('<div style="height: 24px;"></div>', unsafe_allow_html=True)
-    
+
     st.markdown("## 🎯 Your Financial Plan is Complete")
     st.markdown('<div style="height: 16px;"></div>', unsafe_allow_html=True)
-    
+
     _render_accomplishments_card()
     st.markdown('<div style="height: 32px;"></div>', unsafe_allow_html=True)
-    
+
     _render_plan_highlights_card()
     st.markdown('<div style="height: 32px;"></div>', unsafe_allow_html=True)
-    
+
     _render_whats_next_section()
 
 
 def _render_navi_completion():
     """Render Navi panel with celebratory, encouraging tone."""
-    
+
     render_navi_panel_v2(
         title="Your Financial Plan is Complete!",
         reason="You've completed your financial plan — great work! You can download a copy, share it with your family, or meet with an advisor to review it together. Everything you've entered is saved and ready for next steps.",
         encouragement={
             "icon": "💡",
             "message": "The more details you add over time, the clearer your plan becomes — and I'll keep helping you update it whenever you need.",
-            "status": "complete"
+            "status": "complete",
         },
-        context_chips=[
-            {"label": "All modules completed"},
-            {"label": "Ready to download or share"}
-        ],
-        primary_action=None  # No action in Navi here
+        context_chips=[{"label": "All modules completed"}, {"label": "Ready to download or share"}],
+        primary_action=None,  # No action in Navi here
     )
 
 
 def _render_accomplishments_card():
     """Render accomplishments checklist card."""
-    
+
     st.markdown('<div class="completion-card">', unsafe_allow_html=True)
     st.markdown("### ✔️ Summary of What You've Accomplished")
-    
+
     accomplishments = [
         "Authenticated and secured your account",
         "Completed your Guided Care Plan",
         "Assessed income and available assets",
         "Calculated care costs and coverage",
         "Reviewed your financial runway",
-        "Had expert review of your financial plan"
+        "Had expert review of your financial plan",
     ]
-    
+
     for item in accomplishments:
         st.markdown(f'<div class="accomplishment-item">• {item}</div>', unsafe_allow_html=True)
-    
-    st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown("</div>", unsafe_allow_html=True)
 
 
 def _render_plan_highlights_card():
     """Render plan highlights summary card."""
-    
+
     st.markdown('<div class="completion-card">', unsafe_allow_html=True)
     st.markdown("### 💡 Plan Highlights")
-    
+
     # Get care recommendation
     from core.mcip import MCIP
+
     recommendation = MCIP.get_care_recommendation()
-    
+
     # Get financial metrics
     metrics = _calculate_completion_metrics()
-    
+
     # Display highlights
     col1, col2 = st.columns(2, gap="large")
-    
+
     with col1:
         if recommendation:
             tier_label = recommendation.tier.replace("_", " ").title()
@@ -112,74 +110,75 @@ def _render_plan_highlights_card():
         else:
             st.markdown("**Recommended Care Plan:** Not set")
             st.markdown("**Confidence Level:** —")
-    
+
     with col2:
         st.markdown(f"**Monthly Care Cost:** ${metrics['monthly_cost']:,.0f}")
-        if metrics['monthly_gap'] >= 0:
+        if metrics["monthly_gap"] >= 0:
             st.markdown(f"**Monthly Surplus:** +${metrics['monthly_gap']:,.0f}")
         else:
             st.markdown(f"**Monthly Gap:** ${abs(metrics['monthly_gap']):,.0f}")
-    
-    st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown("</div>", unsafe_allow_html=True)
 
 
-def _calculate_completion_metrics() -> Dict:
+def _calculate_completion_metrics() -> dict:
     """Calculate financial metrics for completion summary.
-    
+
     Returns dict with:
     - monthly_cost
     - monthly_coverage
     - monthly_gap (positive = surplus, negative = shortfall)
     - total_assets
     """
-    
+
     modules = st.session_state.get("cost_v2_modules", {})
-    
+
     # Get module data
     income_data = modules.get("income", {}).get("data", {})
     assets_data = modules.get("assets", {}).get("data", {})
     va_data = modules.get("va_benefits", {}).get("data", {})
     insurance_data = modules.get("health_insurance", {}).get("data", {})
     life_insurance_data = modules.get("life_insurance", {}).get("data", {})
-    
+
     # Normalize income and asset data for consistent calculations
     normalized_income = normalize_income_data(income_data)
     normalized_assets = normalize_asset_data(assets_data)
-    
+
     base_monthly_income = calculate_total_monthly_income(normalized_income)
-    
+
     va_monthly_benefit = 0.0
     if va_data:
         va_monthly_benefit = (
-            va_data.get("va_disability_monthly", 0.0) +
-            va_data.get("aid_attendance_monthly", 0.0) +
-            va_data.get("va_pension_monthly", 0.0)
+            va_data.get("va_disability_monthly", 0.0)
+            + va_data.get("aid_attendance_monthly", 0.0)
+            + va_data.get("va_pension_monthly", 0.0)
         )
-    
+
     total_monthly_income = base_monthly_income
-    
+
     total_assets = calculate_total_asset_value(normalized_assets)
     total_asset_debt = calculate_total_asset_debt(normalized_assets)
     net_assets = max(total_assets - total_asset_debt, 0.0)
-    
+
     # Get monthly care cost from MCIP
     from core.mcip import MCIP
+
     estimated_monthly_cost = 0
     recommendation = MCIP.get_care_recommendation()
-    
+
     financial_profile = MCIP.get_financial_profile()
-    if financial_profile and hasattr(financial_profile, 'estimated_monthly_cost'):
+    if financial_profile and hasattr(financial_profile, "estimated_monthly_cost"):
         estimated_monthly_cost = financial_profile.estimated_monthly_cost
     elif recommendation:
         tier_defaults = {
-            'independent': 2500,
-            'in_home': 4500,
-            'assisted_living': 5000,
-            'memory_care': 7000,
-            'memory_care_high_acuity': 9000
+            "independent": 2500,
+            "in_home": 4500,
+            "assisted_living": 5000,
+            "memory_care": 7000,
+            "memory_care_high_acuity": 9000,
         }
         estimated_monthly_cost = tier_defaults.get(recommendation.tier, 5000)
-    
+
     # Calculate total coverage
     ltc_monthly = (
         insurance_data.get("ltc_daily_benefit", 0) * 30
@@ -187,13 +186,13 @@ def _calculate_completion_metrics() -> Dict:
         else 0
     )
     life_monthly = life_insurance_data.get("monthly_benefit", 0) if life_insurance_data else 0
-    
+
     total_coverage = ltc_monthly + life_monthly + va_monthly_benefit
-    
+
     # Calculate gap
     monthly_coverage = total_monthly_income + total_coverage
     monthly_gap = monthly_coverage - estimated_monthly_cost
-    
+
     return {
         "monthly_cost": estimated_monthly_cost,
         "monthly_coverage": monthly_coverage,
@@ -201,46 +200,50 @@ def _calculate_completion_metrics() -> Dict:
         "total_assets": total_assets,
         "net_assets": net_assets,
         "va_monthly_benefit": va_monthly_benefit,
-        "base_monthly_income": base_monthly_income
+        "base_monthly_income": base_monthly_income,
     }
 
 
 def _render_whats_next_section():
     """Render What's Next section with 3-column grid."""
-    
+
     st.markdown("## 🚀 What's Next")
     st.markdown('<div style="height: 16px;"></div>', unsafe_allow_html=True)
-    
+
     # 3-column grid
     col1, col2, col3 = st.columns(3, gap="large")
-    
+
     with col1:
         st.markdown('<div class="next-step-card">', unsafe_allow_html=True)
         st.markdown("### 📅 Meet with an Advisor")
         st.markdown("Review your plan with a certified senior care advisor")
-        if st.button("Schedule Meeting", use_container_width=True, type="primary", key="schedule_advisor_btn"):
+        if st.button(
+            "Schedule Meeting", use_container_width=True, type="primary", key="schedule_advisor_btn"
+        ):
             from core.nav import route_to
+
             st.session_state.cost_planner_v2_complete = True
             route_to("pfma_v3")
-        st.markdown('</div>', unsafe_allow_html=True)
-    
+        st.markdown("</div>", unsafe_allow_html=True)
+
     with col2:
         st.markdown('<div class="next-step-card">', unsafe_allow_html=True)
         st.markdown("### 📄 Download Your Plan")
         st.markdown("Get a PDF copy of your comprehensive financial plan")
         if st.button("Download PDF", use_container_width=True, key="download_pdf_btn"):
             st.info("📄 PDF generation coming soon!")
-        st.markdown('</div>', unsafe_allow_html=True)
-    
+        st.markdown("</div>", unsafe_allow_html=True)
+
     with col3:
         st.markdown('<div class="next-step-card">', unsafe_allow_html=True)
         st.markdown("### 🏠 Return to Hub")
         st.markdown("Explore other tools and resources in your dashboard")
         if st.button("Go to Hub", use_container_width=True, key="goto_hub_btn"):
             from core.nav import route_to
+
             st.session_state.cost_planner_v2_complete = True
             route_to("hub_concierge")
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
 
 
 def _clear_all_data():
@@ -261,12 +264,12 @@ def _clear_all_data():
         "cost_v2_schedule_advisor",
         "cost_v2_show_restart_confirm",
         "cost_planner_v2_published",
-        "cost_planner_v2_complete"
+        "cost_planner_v2_complete",
     ]
-    
+
     for key in keys_to_clear:
         if key in st.session_state:
             del st.session_state[key]
-    
+
     # Reset to intro step
     st.session_state.cost_v2_step = "intro"

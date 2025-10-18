@@ -1,6 +1,6 @@
 import importlib
 import json
-from typing import Callable, Dict
+from collections.abc import Callable
 
 import streamlit as st
 
@@ -36,15 +36,15 @@ def _import_callable(path: str) -> Callable:
     return getattr(importlib.import_module(mod), fn)
 
 
-def load_nav(ctx: dict) -> Dict[str, dict]:
-    with open("config/nav.json", "r", encoding="utf-8") as f:
+def load_nav(ctx: dict) -> dict[str, dict]:
+    with open("config/nav.json", encoding="utf-8") as f:
         cfg = json.load(f)
 
     role = ctx["auth"].get("role", "guest")
     is_auth = ctx["auth"].get("is_authenticated", False)
     flags = {k for k, v in ctx.get("flags", {}).items() if v}
 
-    pages: Dict[str, dict] = {}
+    pages: dict[str, dict] = {}
     for group in cfg["groups"]:
         for item in group["items"]:
             if item.get("requires_auth") and not is_auth:
@@ -66,9 +66,9 @@ def load_nav(ctx: dict) -> Dict[str, dict]:
 
 def route_to(key: str) -> None:
     """Navigate to a page by updating query params and triggering rerun.
-    
+
     Preserves UID in query params to maintain session across navigation.
-    
+
     Args:
         key: Page key from nav.json (e.g., "hub_concierge")
     """
@@ -77,18 +77,17 @@ def route_to(key: str) -> None:
     st.query_params["page"] = key
     if current_uid:
         st.query_params["uid"] = current_uid
-    
+
     st.rerun()
 
 
-
-def current_route(default: str, pages: Dict[str, dict]) -> str:
+def current_route(default: str, pages: dict[str, dict]) -> str:
     """Get current route from query params.
-    
+
     Args:
         default: Default page key if none set
         pages: Available pages dict
-        
+
     Returns:
         Current page key or default
     """

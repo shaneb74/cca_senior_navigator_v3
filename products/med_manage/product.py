@@ -2,6 +2,7 @@
 """
 Medication Management - Coming Soon Module
 """
+
 from products.resources_common.coming_soon import render_coming_soon
 
 __all__ = ["render"]

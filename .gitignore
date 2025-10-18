@@ -12,6 +12,9 @@ __pycache__/
 data/users/
 *.lock
 
+# Linting cache
+.ruff_cache/
+
 # quarantine old code
 _backup/
 archive/

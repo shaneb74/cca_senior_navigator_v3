@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Dict, List, Mapping
+from typing import Any
 
 import streamlit as st
 
@@ -10,8 +11,8 @@ from core.base_hub import render_dashboard_body
 from core.hub_guide import compute_hub_guide, partners_intel_from_state
 from core.navi import render_navi_panel
 from core.product_tile import ProductTileHub, tile_requirements_satisfied
-from ui.header_simple import render_header_simple
 from ui.footer_simple import render_footer_simple
+from ui.header_simple import render_header_simple
 
 DATA_DIR = Path(__file__).resolve().parents[1] / "config"
 PARTNERS_FILE = DATA_DIR / "partners.json"
@@ -20,11 +21,11 @@ FILTER_KEY = "_partners_filters"
 
 
 def _load_json(path: Path) -> Any:
-    with open(path, "r", encoding="utf-8") as handle:
+    with open(path, encoding="utf-8") as handle:
         return json.load(handle)
 
 
-def _get_filters(default_state: str, categories: Mapping[str, Dict[str, Any]]) -> Dict[str, str]:
+def _get_filters(default_state: str, categories: Mapping[str, dict[str, Any]]) -> dict[str, str]:
     stored = st.session_state.get(FILTER_KEY, {})
     default_filters = {
         "q": stored.get("q", ""),
@@ -67,7 +68,7 @@ def _get_filters(default_state: str, categories: Mapping[str, Dict[str, Any]]) -
     return filters
 
 
-def _matches_filters(partner: Dict[str, Any], filters: Dict[str, str]) -> bool:
+def _matches_filters(partner: dict[str, Any], filters: dict[str, str]) -> bool:
     query = filters["q"].strip().lower()
     if query:
         haystack = " ".join(
@@ -90,13 +91,13 @@ def _matches_filters(partner: Dict[str, Any], filters: Dict[str, str]) -> bool:
 
 
 def _partner_to_tile(
-    partner: Dict[str, Any], state: Mapping[str, Any], order: int
+    partner: dict[str, Any], state: Mapping[str, Any], order: int
 ) -> ProductTileHub:
     unlocked = tile_requirements_satisfied(partner.get("unlock_requires"), state)
     lock_msg = partner.get("lock_msg") or ""
     rating = partner.get("rating")
 
-    meta_lines: List[str] = []
+    meta_lines: list[str] = []
     if isinstance(rating, (int, float)):
         meta_lines.append(f"Rating {rating:.1f}")
 
@@ -128,8 +129,8 @@ def _partner_to_tile(
 
 
 def page_partners() -> None:
-    partners: List[Dict[str, Any]] = _load_json(PARTNERS_FILE)
-    categories_data: List[Dict[str, Any]] = _load_json(CATEGORIES_FILE)
+    partners: list[dict[str, Any]] = _load_json(PARTNERS_FILE)
+    categories_data: list[dict[str, Any]] = _load_json(CATEGORIES_FILE)
     categories = {entry["id"]: entry for entry in categories_data}
 
     profile_state = (
@@ -160,7 +161,7 @@ def page_partners() -> None:
     def render_content():
         # Render Navi panel (after header, before hub content)
         render_navi_panel(location="hub", hub_key="partners")
-        
+
         # Render hub body HTML WITHOUT title/chips (Navi replaces them)
         body_html = render_dashboard_body(
             title=None,

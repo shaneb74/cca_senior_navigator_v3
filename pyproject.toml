@@ -2,8 +2,38 @@
 target-version = "py313"
 line-length = 100
 exclude = [
-  "venv", "_backup", "build", "dist", ".git", ".streamlit", "__pycache__"
+  "venv", ".venv", "_backup", "build", "dist", ".git", ".streamlit", "__pycache__", "archive", "_archive_debug_docs"
 ]
+
+# Enable specific rule sets
+[tool.ruff.lint]
+select = [
+  "E",   # pycodestyle errors
+  "W",   # pycodestyle warnings
+  "F",   # pyflakes
+  "I",   # isort (import sorting)
+  "B",   # flake8-bugbear
+  "C4",  # flake8-comprehensions
+  "UP",  # pyupgrade
+  "ARG", # flake8-unused-arguments
+]
+ignore = [
+  "E501",  # line too long (handled by formatter)
+  "B008",  # do not perform function calls in argument defaults
+  "B904",  # Allow raising exceptions without from e
+  "ARG001", # Unused function argument (common in Streamlit callbacks)
+  "ARG002", # Unused method argument
+]
+
+# Allow fix for all enabled rules (when `--fix` is provided)
+fixable = ["ALL"]
+unfixable = []
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
 
 [tool.black]
 target-version = ["py313"]

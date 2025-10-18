@@ -1,7 +1,6 @@
 # hubs/waiting_room.py
-import html
+
 import streamlit as st
-from typing import Optional
 
 from core.additional_services import get_additional_services
 from core.base_hub import render_dashboard_body
@@ -9,76 +8,83 @@ from core.hub_guide import compute_hub_guide
 from core.mcip import MCIP
 from core.navi import render_navi_panel
 from core.product_tile import ProductTileHub
-from ui.header_simple import render_header_simple
 from ui.footer_simple import render_footer_simple
+from ui.header_simple import render_header_simple
 
 __all__ = ["render"]
 
 
 def _get_trivia_badges():
     """Get list of earned trivia badges for tile display.
-    
+
     Reads from persisted product_tiles_v2 structure.
-    
+
     Returns:
         List of badge strings to show on tile
     """
     tiles = st.session_state.get("product_tiles_v2", {})
     progress = tiles.get("senior_trivia_hub", {})
     badges_earned = progress.get("badges_earned", {})
-    
+
     if not badges_earned:
         return ["new"]  # Show 'new' badge if no games played yet
-    
+
     # Extract badge names (without stars)
     badge_list = []
     for module_key, badge_info in badges_earned.items():
         badge_name = badge_info.get("name", "")
         # Clean up badge name (remove star emojis)
-        clean_name = badge_name.replace(" ⭐⭐⭐⭐", "").replace(" ⭐⭐⭐", "").replace(" ⭐⭐", "").replace(" ⭐", "")
+        clean_name = (
+            badge_name.replace(" ⭐⭐⭐⭐", "")
+            .replace(" ⭐⭐⭐", "")
+            .replace(" ⭐⭐", "")
+            .replace(" ⭐", "")
+        )
         if clean_name:
             badge_list.append(clean_name)
-    
+
     # Limit to 3 badges on tile (most recent)
     return badge_list[:3] if badge_list else ["new"]
 
 
 def _get_trivia_progress():
     """Calculate trivia progress as percentage of quizzes completed.
-    
+
     Returns:
         Progress percentage (0-100)
     """
     tiles = st.session_state.get("product_tiles_v2", {})
     progress = tiles.get("senior_trivia_hub", {})
     badges_earned = progress.get("badges_earned", {})
-    
+
     # Total available quizzes
-    total_quizzes = 5  # truths_myths, music_trivia, medicare_quiz, healthy_habits, community_challenge
-    
+    total_quizzes = (
+        5  # truths_myths, music_trivia, medicare_quiz, healthy_habits, community_challenge
+    )
+
     if not badges_earned:
         return 0
-    
+
     completed_count = len(badges_earned)
     return int((completed_count / total_quizzes) * 100)
 
 
-def _build_advisor_prep_tile() -> Optional[ProductTileHub]:
+def _build_advisor_prep_tile() -> ProductTileHub | None:
     """Build Advisor Prep tile if PFMA booking exists.
-    
+
     Returns:
         ProductTileHub or None if not available
     """
     prep_summary = MCIP.get_advisor_prep_summary()
-    
+
     if not prep_summary.get("available"):
         return None  # Don't show tile until appointment booked
-    
+
     sections_complete = prep_summary.get("sections_complete", [])
     progress = prep_summary.get("progress", 0)
     next_section = prep_summary.get("next_section")
     appt_context = prep_summary.get("appointment_context", "")
-    
+
     # Build description
     if progress == 100:
         desc = "✓ All prep sections complete — you're ready!"
@@ -89,14 +95,14 @@ def _build_advisor_prep_tile() -> Optional[ProductTileHub]:
     else:
         desc = "Help your advisor prepare for your consultation"
         primary_label = "Start Prep"
-    
+
     # Build badges
     badges = []
     if progress == 100:
         badges = [{"label": "Ready", "tone": "success"}]
     elif progress > 0:
         badges = [{"label": f"{len(sections_complete)}/4", "tone": "info"}]
-    
+
     return ProductTileHub(
         key="advisor_prep",
         title="Advisor Prep",
@@ -118,7 +124,7 @@ def _build_advisor_prep_tile() -> Optional[ProductTileHub]:
         locked=False,
         recommended_in_hub="waiting_room",
         recommended_total=3,
-        recommended_order=1  # Recommend first after booking
+        recommended_order=1,  # Recommend first after booking
     )
 
 
@@ -139,10 +145,10 @@ def render(ctx=None) -> None:
     # Dynamically add Senior Trivia tile with earned badges (FIRST TILE - order=5)
     trivia_badges = _get_trivia_badges()
     trivia_progress = _get_trivia_progress()
-    
+
     # Build advisor prep tile (conditional on PFMA booking)
     advisor_prep_tile = _build_advisor_prep_tile()
-    
+
     cards = [
         ProductTileHub(
             key="senior_trivia",
@@ -214,7 +220,7 @@ def render(ctx=None) -> None:
             order=40,
         ),
     ]
-    
+
     # Filter out None tiles (Advisor Prep may be None if appointment not booked)
     cards = [c for c in cards if c is not None]
 
@@ -225,7 +231,7 @@ def render(ctx=None) -> None:
     def render_content():
         # Render Navi panel (after header, before hub content)
         render_navi_panel(location="hub", hub_key="waiting_room")
-        
+
         # Render hub body HTML WITHOUT title/subtitle/chips (Navi replaces them)
         body_html = render_dashboard_body(
             title=None,

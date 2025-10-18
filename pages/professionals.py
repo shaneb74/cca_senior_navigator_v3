@@ -10,18 +10,18 @@ import streamlit as st
 from core.base_hub import render_dashboard_body
 from core.navi import render_navi_panel
 from core.product_tile import ProductTileHub
-from ui.header_simple import render_header_simple
 from ui.footer_simple import render_footer_simple
+from ui.header_simple import render_header_simple
 
 
 def _build_professional_tiles():
     """Build the 6 Professional product tiles for demo."""
-    
+
     # Demo data
     pending_actions = 7
     new_referrals = 3
     cases_needing_updates = 5
-    
+
     tiles = [
         ProductTileHub(
             key="prof-dashboard",
@@ -106,21 +106,21 @@ def _build_professional_tiles():
             order=60,
         ),
     ]
-    
+
     return tiles
 
 
 def render(ctx=None):
     """Render Professional page with Professional-specific Navi."""
-    
+
     # Build Professional tiles
     tiles = _build_professional_tiles()
-    
+
     # Use callback pattern to render Navi AFTER header
     def render_content():
         # Render Professional-specific Navi panel
         render_navi_panel(location="hub", hub_key="professional")
-        
+
         # Render hub body HTML WITHOUT title/subtitle (Navi replaces them)
         body_html = render_dashboard_body(
             title=None,
@@ -129,7 +129,7 @@ def render(ctx=None):
             cards=tiles,
         )
         st.markdown(body_html, unsafe_allow_html=True)
-    
+
     # Render with simple header/footer
     render_header_simple(active_route="professionals")
     render_content()

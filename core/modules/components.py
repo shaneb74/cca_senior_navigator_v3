@@ -1,14 +1,15 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 from html import escape as H
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any
 
 import streamlit as st
 
 from .schema import FieldDef
 
 
-def _label(label: str, help_text: Optional[str] = None, a11y: Optional[str] = None) -> None:
+def _label(label: str, help_text: str | None = None, a11y: str | None = None) -> None:
     st.markdown(f"<div class='mod-label'><span>{H(label)}</span></div>", unsafe_allow_html=True)
     if help_text:
         st.markdown(f"<div class='mod-help'>{H(help_text)}</div>", unsafe_allow_html=True)
@@ -16,18 +17,18 @@ def _label(label: str, help_text: Optional[str] = None, a11y: Optional[str] = No
         st.markdown(f"<div class='visually-hidden'>{H(a11y)}</div>", unsafe_allow_html=True)
 
 
-def _safe_label(label: Optional[str], fallback: str) -> str:
+def _safe_label(label: str | None, fallback: str) -> str:
     candidate = (label or "").strip()
     return candidate or fallback
 
 
-def _option_labels(options: Optional[List[Dict[str, Any]]]) -> List[str]:
+def _option_labels(options: list[dict[str, Any]] | None) -> list[str]:
     if not options:
         return []
     return [str(opt.get("label", opt.get("value", ""))) for opt in options]
 
 
-def _default_index(options: Optional[List[Dict[str, Any]]], default: Any) -> int:
+def _default_index(options: list[dict[str, Any]] | None, default: Any) -> int:
     if not options or default is None:
         return 0
     for idx, opt in enumerate(options):
@@ -36,7 +37,7 @@ def _default_index(options: Optional[List[Dict[str, Any]]], default: Any) -> int
     return 0
 
 
-def _value_from_label(options: Optional[List[Dict[str, Any]]], label: str) -> Any:
+def _value_from_label(options: list[dict[str, Any]] | None, label: str) -> Any:
     if not options:
         return label
     for opt in options:
@@ -45,7 +46,7 @@ def _value_from_label(options: Optional[List[Dict[str, Any]]], label: str) -> An
     return label
 
 
-def _normalize_list(value: Any) -> List[str]:
+def _normalize_list(value: Any) -> list[str]:
     if value is None:
         return []
     if isinstance(value, str):
@@ -87,12 +88,12 @@ def input_pill(field: FieldDef, current: Any = None) -> Any:
     label_to_value = {
         opt.get("label", ""): opt.get("value", opt.get("label", "")) for opt in options
     }
-    
+
     # Get current value and find its label
     current_value = current if current is not None else field.default
     current_label = next(
-        (lab for lab, val in label_to_value.items() if val == current_value), 
-        labels[0] if labels else ""
+        (lab for lab, val in label_to_value.items() if val == current_value),
+        labels[0] if labels else "",
     )
 
     # Render with wrapper for custom styling
@@ -101,10 +102,12 @@ def input_pill(field: FieldDef, current: Any = None) -> Any:
     if field.help:
         st.markdown(f"<div class='mod-help'>{H(field.help)}</div>", unsafe_allow_html=True)
     if field.a11y_hint:
-        st.markdown(f"<div class='visually-hidden'>{H(field.a11y_hint)}</div>", unsafe_allow_html=True)
-    
+        st.markdown(
+            f"<div class='visually-hidden'>{H(field.a11y_hint)}</div>", unsafe_allow_html=True
+        )
+
     radio_key = f"{field.key}_pill"
-    
+
     # Calculate index - DON'T pre-select on first render to prevent ghost button
     if radio_key in st.session_state:
         # User has interacted - use current value
@@ -115,7 +118,7 @@ def input_pill(field: FieldDef, current: Any = None) -> Any:
     else:
         # First render - no pre-selection to avoid ghost button
         default_index = None
-    
+
     # Use native st.radio with horizontal layout
     choice_label = st.radio(
         label=label,
@@ -125,9 +128,9 @@ def input_pill(field: FieldDef, current: Any = None) -> Any:
         label_visibility="collapsed",
         key=radio_key,
     )
-    
-    st.markdown('</div>', unsafe_allow_html=True)
-    
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
     return label_to_value.get(choice_label, choice_label)
 
 
@@ -224,7 +227,7 @@ def input_textarea(field: FieldDef, current: Any = None) -> str:
     )
 
 
-def input_chip_multi(field: FieldDef, current: Any = None) -> List[str]:
+def input_chip_multi(field: FieldDef, current: Any = None) -> list[str]:
     """Render pill-style multi-select (uses st.multiselect with custom CSS)."""
     label = _safe_label(field.label, field.key)
     options = field.options or []
@@ -236,7 +239,7 @@ def input_chip_multi(field: FieldDef, current: Any = None) -> List[str]:
     label_to_value = {
         opt.get("label", ""): opt.get("value", opt.get("label", "")) for opt in options
     }
-    
+
     # Get current selected values
     current_values = set(_normalize_list(current if current is not None else field.default))
     default_labels = [lab for lab in labels if label_to_value.get(lab) in current_values]
@@ -247,8 +250,10 @@ def input_chip_multi(field: FieldDef, current: Any = None) -> List[str]:
     if field.help:
         st.markdown(f"<div class='mod-help'>{H(field.help)}</div>", unsafe_allow_html=True)
     if field.a11y_hint:
-        st.markdown(f"<div class='visually-hidden'>{H(field.a11y_hint)}</div>", unsafe_allow_html=True)
-    
+        st.markdown(
+            f"<div class='visually-hidden'>{H(field.a11y_hint)}</div>", unsafe_allow_html=True
+        )
+
     # Use native st.multiselect
     chosen_labels = st.multiselect(
         label=label,
@@ -257,13 +262,13 @@ def input_chip_multi(field: FieldDef, current: Any = None) -> List[str]:
         label_visibility="collapsed",
         key=f"{field.key}_chips",
     )
-    
-    st.markdown('</div>', unsafe_allow_html=True)
-    
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
     return [label_to_value[label] for label in chosen_labels]
 
 
-def input_multi_dropdown(field: FieldDef, current: Any = None) -> List[str]:
+def input_multi_dropdown(field: FieldDef, current: Any = None) -> list[str]:
     label = _safe_label(field.label, field.key)
     _label(label, field.help, field.a11y_hint)
 
@@ -290,10 +295,10 @@ def input_multi_dropdown(field: FieldDef, current: Any = None) -> List[str]:
     return [label_to_value[label] for label in chosen_labels]
 
 
-def input_pill_list(field: FieldDef, current: Any = None) -> List[str]:
+def input_pill_list(field: FieldDef, current: Any = None) -> list[str]:
     label = _safe_label(field.label, field.key)
     _label(label, field.help, field.a11y_hint)
-    values: List[str] = [str(v) for v in (current or field.default or [])]
+    values: list[str] = [str(v) for v in (current or field.default or [])]
 
     new_value = st.text_input(
         label=label,

@@ -1,4 +1,5 @@
 """Simple footer component - minimal copyright and version."""
+
 from __future__ import annotations
 
 from textwrap import dedent
@@ -9,9 +10,9 @@ import streamlit as st
 def render_footer_simple(version: str = "3.2.1") -> None:
     """
     Render a minimal footer with copyright and version.
-    
+
     No excessive padding, just a clean single line.
-    
+
     Args:
         version: App version string (default: "3.2.1")
     """
@@ -67,7 +68,7 @@ def render_footer_simple(version: str = "3.2.1") -> None:
         </style>
         """
     )
-    
+
     html = dedent(
         f"""
         <footer class="sn-footer">
@@ -79,7 +80,7 @@ def render_footer_simple(version: str = "3.2.1") -> None:
         </footer>
         """
     )
-    
+
     st.markdown(css + html, unsafe_allow_html=True)
 
 

@@ -12,12 +12,10 @@ Calculates:
 - Runway months (how long assets will last)
 """
 
-from typing import Dict, Any, Optional, Tuple
 from dataclasses import dataclass
-import streamlit as st
 
-from products.cost_planner_v2.financial_profile import FinancialProfile
 from core.mcip import CareRecommendation
+from products.cost_planner_v2.financial_profile import FinancialProfile
 
 
 @dataclass
@@ -25,25 +23,28 @@ class ExpertReviewAnalysis:
     """
     Results of expert financial review analysis.
     """
+
     # Input data
     estimated_monthly_cost: float
     total_monthly_income: float
     total_monthly_benefits: float
     total_liquid_assets: float
-    
+
     # Calculated metrics
     coverage_percentage: float  # 0-100+
     monthly_gap: float  # Can be negative (surplus) or positive (shortfall)
-    runway_months: Optional[float]  # None if gap <= 0 (covered indefinitely)
-    
+    runway_months: float | None  # None if gap <= 0 (covered indefinitely)
+
     # Categorization
     coverage_tier: str  # "excellent", "good", "moderate", "concerning", "critical"
     recommendation_level: str  # "low_priority", "medium_priority", "high_priority", "urgent"
-    
+
     # Modifiers applied
-    care_flags_modifier: float  # Multiplier for care complexity (1.0 = no change, 1.2 = 20% increase)
+    care_flags_modifier: (
+        float  # Multiplier for care complexity (1.0 = no change, 1.2 = 20% increase)
+    )
     regional_modifier: float  # Multiplier for regional costs
-    
+
     # Recommendations
     primary_recommendation: str
     action_items: list
@@ -52,23 +53,23 @@ class ExpertReviewAnalysis:
 
 def calculate_expert_review(
     profile: FinancialProfile,
-    care_recommendation: Optional[CareRecommendation] = None,
-    zip_code: Optional[str] = None,
-    estimated_monthly_cost: Optional[float] = None
+    care_recommendation: CareRecommendation | None = None,
+    zip_code: str | None = None,
+    estimated_monthly_cost: float | None = None,
 ) -> ExpertReviewAnalysis:
     """
     Perform comprehensive expert financial review analysis.
-    
+
     Args:
         profile: FinancialProfile from assessments
         care_recommendation: GCP care recommendation (tier, type, flags)
         zip_code: User's ZIP code for regional cost adjustment
         estimated_monthly_cost: Pre-calculated monthly cost from intro (if available)
-        
+
     Returns:
         ExpertReviewAnalysis with all calculated metrics
     """
-    
+
     # ==== STEP 1: Get estimated monthly cost ====
     if estimated_monthly_cost is not None:
         # Use the estimate from intro page (preferred - already has all modifiers applied)
@@ -77,38 +78,38 @@ def calculate_expert_review(
     else:
         # Fallback: Calculate from scratch
         base_monthly_cost = _get_base_care_cost(care_recommendation)
-        
+
         # Apply care flag modifiers
         care_flags_modifier = _calculate_care_flags_modifier(care_recommendation)
         adjusted_monthly_cost = base_monthly_cost * care_flags_modifier
-        
+
         # Apply regional modifier
         regional_modifier = _get_regional_modifier(zip_code)
         estimated_monthly_cost = adjusted_monthly_cost * regional_modifier
-    
+
     # ==== STEP 4: Calculate total monthly income + benefits ====
     total_monthly_income = profile.total_monthly_income
     total_monthly_benefits = profile.total_va_benefits_monthly + profile.annuity_monthly_income
     total_monthly_resources = total_monthly_income + total_monthly_benefits
-    
+
     # ==== STEP 5: Calculate coverage percentage ====
     if estimated_monthly_cost > 0:
         coverage_percentage = (total_monthly_resources / estimated_monthly_cost) * 100
     else:
         coverage_percentage = 100.0  # No cost = fully covered
-    
+
     # ==== STEP 6: Calculate monthly gap ====
     monthly_gap = estimated_monthly_cost - total_monthly_resources
-    
+
     # ==== STEP 7: Calculate liquid assets (exclude home) ====
     total_liquid_assets = (
-        profile.checking_savings +
-        profile.investment_accounts +
-        profile.other_real_estate +
-        profile.other_resources +
-        profile.total_accessible_life_value  # Cash value from life insurance
+        profile.checking_savings
+        + profile.investment_accounts
+        + profile.other_real_estate
+        + profile.other_resources
+        + profile.total_accessible_life_value  # Cash value from life insurance
     )
-    
+
     # ==== STEP 8: Calculate runway months ====
     if monthly_gap > 0 and total_liquid_assets > 0:
         runway_months = total_liquid_assets / monthly_gap
@@ -116,24 +117,24 @@ def calculate_expert_review(
         runway_months = None  # Indefinite - income covers costs
     else:
         runway_months = 0  # No assets, immediate shortfall
-    
+
     # ==== STEP 9: Categorize coverage tier ====
     coverage_tier = _categorize_coverage(coverage_percentage, runway_months)
-    
+
     # ==== STEP 10: Determine recommendation level ====
     recommendation_level = _determine_recommendation_level(
         coverage_percentage, runway_months, profile
     )
-    
+
     # ==== STEP 11: Generate recommendations ====
     primary_recommendation, action_items, resources = _generate_recommendations(
         coverage_percentage=coverage_percentage,
         monthly_gap=monthly_gap,
         runway_months=runway_months,
         profile=profile,
-        care_recommendation=care_recommendation
+        care_recommendation=care_recommendation,
     )
-    
+
     return ExpertReviewAnalysis(
         estimated_monthly_cost=estimated_monthly_cost,
         total_monthly_income=total_monthly_income,
@@ -148,14 +149,14 @@ def calculate_expert_review(
         regional_modifier=regional_modifier,
         primary_recommendation=primary_recommendation,
         action_items=action_items,
-        resources=resources
+        resources=resources,
     )
 
 
-def _get_base_care_cost(care_recommendation: Optional[CareRecommendation]) -> float:
+def _get_base_care_cost(care_recommendation: CareRecommendation | None) -> float:
     """
     Get base monthly care cost based on GCP recommendation.
-    
+
     Base costs (national average, 2024):
     - Independent Living: $2,500/month
     - Assisted Living: $4,500/month
@@ -166,10 +167,10 @@ def _get_base_care_cost(care_recommendation: Optional[CareRecommendation]) -> fl
     """
     if not care_recommendation:
         return 4500  # Default to assisted living
-    
-    care_tier = getattr(care_recommendation, 'tier', 'moderate')
-    care_type = getattr(care_recommendation, 'care_type', None)
-    
+
+    care_tier = getattr(care_recommendation, "tier", "moderate")
+    care_type = getattr(care_recommendation, "care_type", None)
+
     # Map care types to base costs
     cost_map = {
         "independent_living": 2500,
@@ -177,29 +178,29 @@ def _get_base_care_cost(care_recommendation: Optional[CareRecommendation]) -> fl
         "memory_care": 6500,
         "skilled_nursing": 8500,
         "in_home_part_time": 3000,
-        "in_home_full_time": 6000
+        "in_home_full_time": 6000,
     }
-    
+
     # If care_type specified, use it
     if care_type in cost_map:
         return cost_map[care_type]
-    
+
     # Otherwise, map tier to care type
     tier_to_cost = {
         "minimal": 2500,
         "low": 3000,
         "moderate": 4500,
         "substantial": 6500,
-        "intensive": 8500
+        "intensive": 8500,
     }
-    
+
     return tier_to_cost.get(care_tier, 4500)
 
 
-def _calculate_care_flags_modifier(care_recommendation: Optional[CareRecommendation]) -> float:
+def _calculate_care_flags_modifier(care_recommendation: CareRecommendation | None) -> float:
     """
     Calculate cost modifier based on GCP care flags.
-    
+
     Care flags indicate additional needs that increase cost:
     - fall_risk: +10% (additional monitoring, safety equipment)
     - cognitive_support: +15% (memory care programming, specialized staff)
@@ -209,18 +210,18 @@ def _calculate_care_flags_modifier(care_recommendation: Optional[CareRecommendat
     """
     if not care_recommendation:
         return 1.0
-    
+
     # Get flags - it's a List[Dict[str, Any]] per the dataclass
-    flags_list = getattr(care_recommendation, 'flags', [])
-    
+    flags_list = getattr(care_recommendation, "flags", [])
+
     # Convert list of flag dicts to a simple dict for easier checking
     flags = {}
     for flag_dict in flags_list:
         if isinstance(flag_dict, dict):
             flags.update(flag_dict)
-    
+
     modifier = 1.0
-    
+
     # Add modifiers for each active flag
     if flags.get("fall_risk"):
         modifier += 0.10
@@ -232,21 +233,21 @@ def _calculate_care_flags_modifier(care_recommendation: Optional[CareRecommendat
         modifier += 0.10
     if flags.get("mobility_assistance"):
         modifier += 0.10
-    
+
     # Cap at 1.5x (50% increase max)
     return min(modifier, 1.5)
 
 
-def _get_regional_modifier(zip_code: Optional[str]) -> float:
+def _get_regional_modifier(zip_code: str | None) -> float:
     """
     Get regional cost modifier based on ZIP code.
-    
+
     Regional modifiers (relative to national average = 1.0):
     - High cost areas (CA, NY, HI): 1.3-1.5x
     - Moderate cost areas (Urban): 1.1-1.2x
     - Average cost areas: 1.0x
     - Low cost areas (Rural, South): 0.8-0.9x
-    
+
     For now, return 1.0 (national average). In production, this would
     query a regional cost database by ZIP code.
     """
@@ -255,13 +256,10 @@ def _get_regional_modifier(zip_code: Optional[str]) -> float:
     return 1.0
 
 
-def _categorize_coverage(
-    coverage_percentage: float,
-    runway_months: Optional[float]
-) -> str:
+def _categorize_coverage(coverage_percentage: float, runway_months: float | None) -> str:
     """
     Categorize coverage into tiers for user-friendly display.
-    
+
     Tiers:
     - excellent: 100%+ coverage, or 60+ months runway
     - good: 80-99% coverage, or 36-59 months runway
@@ -272,7 +270,7 @@ def _categorize_coverage(
     # If fully covered by income
     if coverage_percentage >= 100:
         return "excellent"
-    
+
     # If have runway, use that for categorization
     if runway_months is not None:
         if runway_months >= 60:
@@ -285,7 +283,7 @@ def _categorize_coverage(
             return "concerning"
         else:
             return "critical"
-    
+
     # Otherwise use coverage percentage
     if coverage_percentage >= 80:
         return "good"
@@ -298,13 +296,11 @@ def _categorize_coverage(
 
 
 def _determine_recommendation_level(
-    coverage_percentage: float,
-    runway_months: Optional[float],
-    profile: FinancialProfile
+    coverage_percentage: float, runway_months: float | None, profile: FinancialProfile
 ) -> str:
     """
     Determine recommendation priority level.
-    
+
     Levels:
     - low_priority: Well covered, no immediate action needed
     - medium_priority: Some gaps, should explore options
@@ -314,7 +310,7 @@ def _determine_recommendation_level(
     # Fully covered = low priority
     if coverage_percentage >= 100:
         return "low_priority"
-    
+
     # Check runway
     if runway_months is not None:
         if runway_months >= 36:
@@ -325,11 +321,11 @@ def _determine_recommendation_level(
             return "high_priority"
         else:
             return "urgent"
-    
+
     # No assets but coverage above 80%
     if coverage_percentage >= 80:
         return "medium_priority"
-    
+
     # Low coverage, no assets
     return "urgent"
 
@@ -337,46 +333,42 @@ def _determine_recommendation_level(
 def _generate_recommendations(
     coverage_percentage: float,
     monthly_gap: float,
-    runway_months: Optional[float],
+    runway_months: float | None,
     profile: FinancialProfile,
-    care_recommendation: Optional[CareRecommendation]
-) -> Tuple[str, list, list]:
+    care_recommendation: CareRecommendation | None,
+) -> tuple[str, list, list]:
     """
     Generate personalized recommendations based on financial analysis.
-    
+
     Returns:
         (primary_recommendation, action_items, resources)
     """
     action_items = []
     resources = []
-    
+
     # ==== DETERMINE PRIMARY RECOMMENDATION ====
     if coverage_percentage >= 100:
-        primary_recommendation = "Great news! Your income and benefits fully cover your estimated care costs."
+        primary_recommendation = (
+            "Great news! Your income and benefits fully cover your estimated care costs."
+        )
         action_items = [
             "Review your financial plan annually",
             "Consider setting aside savings for unexpected expenses",
-            "Explore supplemental care options if needed"
+            "Explore supplemental care options if needed",
         ]
-        resources = [
-            "Financial planning for seniors",
-            "Estate planning resources"
-        ]
-    
+        resources = ["Financial planning for seniors", "Estate planning resources"]
+
     elif coverage_percentage >= 80:
         primary_recommendation = f"Your income covers {coverage_percentage:.0f}% of estimated care costs. You have a solid foundation with a small gap to address."
         action_items = [
             f"Plan for ${abs(monthly_gap):,.0f}/month shortfall",
             "Explore supplemental income sources",
-            "Review asset liquidation timeline"
+            "Review asset liquidation timeline",
         ]
         if runway_months and runway_months < 36:
             action_items.append("Consider long-term care insurance or Medicaid planning")
-        resources = [
-            "Income optimization strategies",
-            "Asset management for seniors"
-        ]
-    
+        resources = ["Income optimization strategies", "Asset management for seniors"]
+
     elif coverage_percentage >= 50:
         primary_recommendation = f"Your income covers {coverage_percentage:.0f}% of estimated costs. Strategic planning is recommended to address the gap."
         action_items = [
@@ -384,16 +376,16 @@ def _generate_recommendations(
             "Explore home equity options" if profile.primary_residence_value > 100000 else None,
             "Consider Medicaid planning",
             "Review VA benefits eligibility" if not profile.has_va_benefits else None,
-            "Investigate community resources and programs"
+            "Investigate community resources and programs",
         ]
         action_items = [item for item in action_items if item]  # Remove None values
         resources = [
             "Medicaid planning guide",
             "Reverse mortgage information",
             "VA benefits application",
-            "Community senior services"
+            "Community senior services",
         ]
-    
+
     else:  # < 50%
         primary_recommendation = f"Your income covers {coverage_percentage:.0f}% of estimated costs. Immediate planning is essential to secure sustainable care."
         action_items = [
@@ -401,14 +393,14 @@ def _generate_recommendations(
             "Apply for Medicaid immediately",
             "Explore all benefit programs (VA, SSI, state assistance)",
             "Contact local Area Agency on Aging for resources",
-            "Consider care alternatives (family care, adult day programs)"
+            "Consider care alternatives (family care, adult day programs)",
         ]
         resources = [
             "Medicaid application assistance",
             "Financial aid for seniors",
             "Area Agency on Aging locator",
             "Community care options",
-            "Family caregiver support"
+            "Family caregiver support",
         ]
-    
+
     return primary_recommendation, action_items, resources

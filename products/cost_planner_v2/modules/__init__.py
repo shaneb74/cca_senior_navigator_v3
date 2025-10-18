@@ -15,9 +15,9 @@ New module structure (v3.0.0):
 
 __all__ = [
     "income",
-    "assets", 
+    "assets",
     "va_benefits",
     "health_insurance",
     "life_insurance",
-    "medicaid_navigation"
+    "medicaid_navigation",
 ]

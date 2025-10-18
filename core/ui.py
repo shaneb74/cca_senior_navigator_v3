@@ -3,7 +3,6 @@ import functools
 import mimetypes
 import pathlib
 import sys
-from typing import Optional
 
 import streamlit as st
 
@@ -64,8 +63,7 @@ def safe_img_src(filename: str) -> str:
 
 
 def header(app_title: str, current_key: str, pages: dict):
-    from layout import \
-        render_header  # local import to avoid circular at module load
+    from layout import render_header  # local import to avoid circular at module load
 
     render_header(active_route=current_key)
 
@@ -78,7 +76,7 @@ def page_container_close():
     st.markdown("</main>", unsafe_allow_html=True)
 
 
-def hub_section(title: str, right_meta: Optional[str] = None):
+def hub_section(title: str, right_meta: str | None = None):
     right = f'<div class="tile-meta"><span>{right_meta}</span></div>' if right_meta else ""
     st.markdown(
         f"""<section class="container section">
@@ -125,7 +123,7 @@ def render_product_tile(product_key: str, state: dict):
         html = f"""
 <div class="tile-head">
     <div class="tile-title">{title}</div>
-    <span class="badge {status_class}">{state['status'].replace('_', ' ').title()}</span>
+    <span class="badge {status_class}">{state["status"].replace("_", " ").title()}</span>
 </div>
 <div class="tile-progress">
     <div class="progress-bar" style="width: {progress}%"></div>
@@ -149,10 +147,10 @@ def render_module_tile(product_key: str, module_key: str, state: dict):
     if state["outputs"]:
         primary_output = state["outputs"][0]
         meta_spans.append(
-            f'<span>{primary_output["label"]}: <strong>{primary_output["value"]}</strong></span>'
+            f"<span>{primary_output['label']}: <strong>{primary_output['value']}</strong></span>"
         )
         for output in state["outputs"][1:]:
-            meta_spans.append(f'<span>{output["label"]}: {output["value"]}</span>')
+            meta_spans.append(f"<span>{output['label']}: {output['value']}</span>")
 
     completed_at = state.get("completed_at", "")
     if completed_at:
@@ -163,7 +161,7 @@ def render_module_tile(product_key: str, module_key: str, state: dict):
     html = f"""
 <div class="tile-head">
   <div class="tile-title">{title}</div>
-  <span class="badge {status_class}">{state['status'].replace('_', ' ').title()}</span>
+  <span class="badge {status_class}">{state["status"].replace("_", " ").title()}</span>
 </div>
 <div class="tile-progress">
   <div class="progress-bar" style="width: {progress}%"></div>
@@ -215,7 +213,7 @@ def render_hub_tile(
     # Render the tile using design system classes with buttons inside
     st.markdown(
         f"""
-    <article class="tile tile--{status if status != 'locked' else 'locked'}">
+    <article class="tile tile--{status if status != "locked" else "locked"}">
       <div class="tile-head">
         <h3 class="tile-title">{title}</h3>
         <span class="badge {status_class}">{badge}</span>
@@ -280,38 +278,38 @@ def render_hub_tile(
 
 def render_mcip_journey_status() -> None:
     """Render Navi journey status banner showing progress and next action.
-    
+
     Navi is your AI guide through the senior care journey.
     Now powered by structured dialogue system from navi_dialogue.json.
-    
+
     Shows contextual guidance based on journey phase:
     - getting_started: Welcome and first product intro
     - in_progress: Celebration + next product guidance
     - nearly_there: Almost done + final product
     - complete: Celebration + export/share
-    
+
     Includes gamification:
     - Achievement badges for each completed product
     - Visual celebrations on completion
     - "Share My Results" button when complete
     """
     from core.mcip import MCIP
-    from core.state import get_user_ctx, is_authenticated, get_user_name
     from core.navi_dialogue import NaviDialogue
-    
+    from core.state import get_user_name, is_authenticated
+
     # Get journey data
     progress = MCIP.get_journey_progress()
     next_action = MCIP.get_recommended_next_action()
-    
+
     completed = progress["completed_count"]
     completed_products = progress["completed_products"]
     total = 3  # GCP, Cost Planner, PFMA
-    
+
     # Build context for Navi dialogue
     context = {
         "name": get_user_name() or "there",
     }
-    
+
     # Add contract data to context if available
     try:
         care_rec = MCIP.get_care_recommendation()
@@ -320,7 +318,7 @@ def render_mcip_journey_status() -> None:
             context["confidence"] = int(care_rec.confidence * 100)
     except:
         pass
-    
+
     try:
         financial = MCIP.get_financial_profile()
         if financial:
@@ -328,45 +326,46 @@ def render_mcip_journey_status() -> None:
             context["runway_months"] = financial.runway_months
     except:
         pass
-    
+
     # Map MCIP status to dialogue phase
     status = next_action["status"]
     phase_map = {
         "complete": "complete",
         "nearly_there": "nearly_there",
         "in_progress": "in_progress",
-        "getting_started": "getting_started"
+        "getting_started": "getting_started",
     }
     phase = phase_map.get(status, "getting_started")
-    
+
     # Get Navi's message from dialogue system
     navi_message = NaviDialogue.get_journey_message(phase, is_authenticated(), context)
-    
+
     # Extract message components
     icon = navi_message.get("icon", "✨")
     main_text = navi_message.get("text", "")
     subtext = navi_message.get("subtext", "")
     cta_text = navi_message.get("cta", "")
-    
+
     # Prefix Navi branding to main text (already included in message)
     # Achievement badges for completed products
     badges_html = _render_achievement_badges(completed_products)
-    
+
     # Status-based styling
     color_map = {
-        "complete": "#10b981",       # Green
-        "nearly_there": "#f59e0b",   # Amber
-        "in_progress": "#3b82f6",    # Blue
-        "getting_started": "#8b5cf6" # Purple
+        "complete": "#10b981",  # Green
+        "nearly_there": "#f59e0b",  # Amber
+        "in_progress": "#3b82f6",  # Blue
+        "getting_started": "#8b5cf6",  # Purple
     }
     bg_color = color_map.get(status, "#8b5cf6")
-    
+
     # Add confetti on complete
     if status == "complete":
         _render_celebration_effect()
-    
+
     # Render banner with Navi branding
-    st.markdown(f"""
+    st.markdown(
+        f"""
         <div style="
             background: linear-gradient(135deg, {bg_color} 0%, {bg_color}dd 100%);
             border-radius: 12px;
@@ -387,20 +386,26 @@ def render_mcip_journey_status() -> None:
                     </div>
                     {badges_html}
                 </div>
-                {f'<div style="font-size: 14px; font-weight: 500; padding: 8px 16px; background: rgba(255,255,255,0.2); border-radius: 20px;">{completed}/{total}</div>' if status != "complete" else ''}
+                {f'<div style="font-size: 14px; font-weight: 500; padding: 8px 16px; background: rgba(255,255,255,0.2); border-radius: 20px;">{completed}/{total}</div>' if status != "complete" else ""}
             </div>
         </div>
-    """, unsafe_allow_html=True)
-    
+    """,
+        unsafe_allow_html=True,
+    )
+
     # Action buttons
     col1, col2 = st.columns([3, 1])
-    
+
     with col1:
         # Navigate to next action
         if status != "complete" and next_action.get("route"):
-            if st.button(f"→ {next_action['action']}", key=f"mcip_nav_{next_action['route']}", use_container_width=True):
+            if st.button(
+                f"→ {next_action['action']}",
+                key=f"mcip_nav_{next_action['route']}",
+                use_container_width=True,
+            ):
                 route_to(next_action["route"])
-    
+
     with col2:
         # Share/Export results (always available if any progress)
         if completed > 0:
@@ -410,24 +415,24 @@ def render_mcip_journey_status() -> None:
 
 def _render_achievement_badges(completed_products: list) -> str:
     """Render achievement badges for completed products.
-    
+
     Args:
         completed_products: List of completed product keys
-    
+
     Returns:
         HTML string with badges
     """
     badges = {
         "gcp": {"emoji": "🧭", "title": "Care Navigator", "color": "#8b5cf6"},
         "cost_planner": {"emoji": "💰", "title": "Financial Planner", "color": "#3b82f6"},
-        "pfma": {"emoji": "📅", "title": "Appointment Setter", "color": "#f59e0b"}
+        "pfma": {"emoji": "📅", "title": "Appointment Setter", "color": "#f59e0b"},
     }
-    
+
     if not completed_products:
         return ""
-    
+
     badges_html = '<div style="display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap;">'
-    
+
     for product_key in completed_products:
         badge = badges.get(product_key)
         if badge:
@@ -443,21 +448,22 @@ def _render_achievement_badges(completed_products: list) -> str:
                     font-weight: 500;
                     backdrop-filter: blur(10px);
                 ">
-                    <span style="font-size: 16px;">{badge['emoji']}</span>
-                    <span>✓ {badge['title']}</span>
+                    <span style="font-size: 16px;">{badge["emoji"]}</span>
+                    <span>✓ {badge["title"]}</span>
                 </div>
             """
-    
-    badges_html += '</div>'
+
+    badges_html += "</div>"
     return badges_html
 
 
 def _render_celebration_effect() -> None:
     """Render confetti/celebration effect when journey is complete.
-    
+
     Uses CSS animation for visual dopamine hit.
     """
-    st.markdown("""
+    st.markdown(
+        """
         <style>
         @keyframes confetti {
             0% { transform: translateY(-100%) rotate(0deg); opacity: 1; }
@@ -480,23 +486,25 @@ def _render_celebration_effect() -> None:
         <div class="confetti" style="left: 40%;"></div>
         <div class="confetti" style="left: 60%;"></div>
         <div class="confetti" style="left: 80%;"></div>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
 
 def render_navi_guide_bar(
     text: str,
-    subtext: Optional[str] = None,
+    subtext: str | None = None,
     icon: str = "🤖",
     show_progress: bool = False,
-    current_step: Optional[int] = None,
-    total_steps: Optional[int] = None,
-    color: str = "#8b5cf6"
+    current_step: int | None = None,
+    total_steps: int | None = None,
+    color: str = "#8b5cf6",
 ) -> None:
     """Render persistent Navi guide bar at top of page.
-    
+
     DEPRECATED: Use render_navi_panel_v2() for hub pages.
     This legacy function remains for product/module pages.
-    
+
     Args:
         text: Main message from Navi (required)
         subtext: Additional context/explanation (optional)
@@ -513,10 +521,10 @@ def render_navi_guide_bar(
         progress_badge = f'<div style="font-size: 12px; font-weight: 500; padding: 4px 12px; background: rgba(255,255,255,0.2); border-radius: 12px; white-space: nowrap;">{current_step}/{total_steps}</div>'
     else:
         progress_badge = ""
-    
+
     # Build subtext HTML if provided
-    subtext_html = f'<div style="font-size: 12px; opacity: 0.9;">{subtext}</div>' if subtext else ''
-    
+    subtext_html = f'<div style="font-size: 12px; opacity: 0.9;">{subtext}</div>' if subtext else ""
+
     # Render compact guide bar (all as one HTML block to avoid escaping)
     html = f"""
         <div style="
@@ -542,7 +550,7 @@ def render_navi_guide_bar(
             {progress_badge}
         </div>
     """
-    
+
     st.markdown(html, unsafe_allow_html=True)
 
 
@@ -552,19 +560,18 @@ def render_navi_panel_v2(
     encouragement: dict,
     context_chips: list[dict],
     primary_action: dict,
-    secondary_action: Optional[dict] = None,
-    progress: Optional[dict] = None,
-    alert_html: Optional[str] = None,
-    variant: str = "hub"
+    secondary_action: dict | None = None,
+    progress: dict | None = None,
+    alert_html: str | None = None,
+    variant: str = "hub",
 ) -> None:
     """Render refined Navi panel with structured layout using Streamlit native components.
-    
+
     Args:
         variant: "hub" (default) or "module" - controls styling and layout
     """
-    from core.nav import route_to
     from core.url_helpers import add_uid_to_href
-    
+
     # Inject CSS for Navi panel V2 (matches product tile styling)
     navi_css = """
     <style>
@@ -702,53 +709,67 @@ def render_navi_panel_v2(
     </style>
     """
     st.markdown(navi_css, unsafe_allow_html=True)
-    
+
     # Build HTML components
     progress_badge = ""
-    if progress and progress.get('current') is not None and progress.get('total'):
+    if progress and progress.get("current") is not None and progress.get("total"):
         progress_badge = f'<div class="navi-panel-v2__progress">Step {progress["current"]}/{progress["total"]}</div>'
-    
+
     # Build context chips
     chips_html = ""
     if context_chips:
         chip_items = []
         for chip in context_chips:
             sublabel_html = ""
-            if chip.get('sublabel'):
-                sublabel_html = f'<div class="navi-panel-v2__chip-sublabel">{chip["sublabel"]}</div>'
-            
-            chip_items.append(f'<div class="navi-panel-v2__chip"><div class="navi-panel-v2__chip-label"><span>{chip.get("icon", "")}</span><span>{chip.get("label", "")}</span></div><div class="navi-panel-v2__chip-value">{chip.get("value", "Not set")}</div>{sublabel_html}</div>')
-        
+            if chip.get("sublabel"):
+                sublabel_html = (
+                    f'<div class="navi-panel-v2__chip-sublabel">{chip["sublabel"]}</div>'
+                )
+
+            chip_items.append(
+                f'<div class="navi-panel-v2__chip"><div class="navi-panel-v2__chip-label"><span>{chip.get("icon", "")}</span><span>{chip.get("label", "")}</span></div><div class="navi-panel-v2__chip-value">{chip.get("value", "Not set")}</div>{sublabel_html}</div>'
+            )
+
         chips_html = f'<div class="navi-panel-v2__chips-label">What I know so far:</div><div class="navi-panel-v2__chips">{"".join(chip_items)}</div>'
-    
+
     # Get encouragement status
-    status = encouragement.get('status', 'in_progress')
-    
+    status = encouragement.get("status", "in_progress")
+
     # Build action buttons HTML with correct routing parameter (?page=) and UID preservation
     actions_html = ""
     if primary_action:
         if secondary_action:
-            primary_href = add_uid_to_href(f"?page={primary_action.get('route', '')}") if primary_action.get('route') else "#"
-            secondary_href = add_uid_to_href(f"?page={secondary_action.get('route', '')}") if secondary_action.get('route') else "#"
+            primary_href = (
+                add_uid_to_href(f"?page={primary_action.get('route', '')}")
+                if primary_action.get("route")
+                else "#"
+            )
+            secondary_href = (
+                add_uid_to_href(f"?page={secondary_action.get('route', '')}")
+                if secondary_action.get("route")
+                else "#"
+            )
             actions_html = f'<div style="display: flex; gap: 12px; margin-top: 18px;"><a class="dashboard-cta dashboard-cta--primary" href="{primary_href}" style="flex: 2;">{primary_action["label"]}</a><a class="dashboard-cta dashboard-cta--ghost" href="{secondary_href}" style="flex: 1;">{secondary_action["label"]}</a></div>'
         else:
-            primary_href = add_uid_to_href(f"?page={primary_action.get('route', '')}") if primary_action.get('route') else "#"
+            primary_href = (
+                add_uid_to_href(f"?page={primary_action.get('route', '')}")
+                if primary_action.get("route")
+                else "#"
+            )
             actions_html = f'<div style="margin-top: 18px;"><a class="dashboard-cta dashboard-cta--primary" href="{primary_href}" style="width: 100%; text-align: center;">{primary_action["label"]}</a></div>'
-    
+
     # Build complete panel HTML (flat structure, no inner wrapper)
     # Include alert if provided (appears before title)
     alert_section = alert_html if alert_html else ""
-    
+
     # Apply variant class
     variant_class = f"navi-panel-v2--{variant}" if variant != "hub" else ""
-    
+
     # For module variant, hide chips and actions (modules have their own CTAs)
     if variant == "module":
         chips_html = ""
         actions_html = ""
-    
+
     panel_html = f'<div class="navi-panel-v2 {variant_class}"><div class="navi-panel-v2__header"><div class="navi-panel-v2__eyebrow">✨ Navi</div>{progress_badge}</div>{alert_section}<div class="navi-panel-v2__title">{title}</div><div class="navi-panel-v2__reason">{reason}</div><div class="navi-panel-v2__encouragement navi-panel-v2__encouragement--{status}"><span style="font-size: 18px;">{encouragement.get("icon", "💪")}</span><span>{encouragement.get("text", "")}</span></div>{chips_html}{actions_html}</div>'
-    
+
     st.markdown(panel_html, unsafe_allow_html=True)
-
-

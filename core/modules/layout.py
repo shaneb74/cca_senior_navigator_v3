@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from html import escape as _escape
-from typing import Dict
 
 import streamlit as st
 
@@ -9,7 +8,7 @@ import streamlit as st
 def header(step_index: int, total: int, title: str, subtitle: str | None = None) -> None:
     # Calculate progress percentage
     progress_pct = ((step_index + 1) / total) * 100 if total > 0 else 0
-    
+
     dots = "".join(
         [
             f"<span class='step-pill{' is-active' if i == step_index else ''}'></span>"
@@ -17,14 +16,14 @@ def header(step_index: int, total: int, title: str, subtitle: str | None = None)
         ]
     )
     subtitle_html = f"<div class='lead'>{_escape(subtitle)}</div>" if subtitle else ""
-    
+
     # Add blue progress bar
     progress_bar_html = f"""
         <div class="mod-progress-rail">
           <div class="mod-progress-fill" style="width: {progress_pct:.1f}%"></div>
         </div>
     """
-    
+
     st.markdown(
         f"""
         <div class="mod-head">
@@ -41,9 +40,17 @@ def header(step_index: int, total: int, title: str, subtitle: str | None = None)
     )
 
 
-def actions(next_label: str = "Continue", skip_label: str | None = "Skip", show_save_exit: bool = True, is_intro: bool = False, show_back: bool = False, step_index: int = 0, config = None) -> tuple[bool, bool, bool, bool, bool]:
+def actions(
+    next_label: str = "Continue",
+    skip_label: str | None = "Skip",
+    show_save_exit: bool = True,
+    is_intro: bool = False,
+    show_back: bool = False,
+    step_index: int = 0,
+    config=None,
+) -> tuple[bool, bool, bool, bool, bool]:
     """Render module action buttons with simplified, centered layout.
-    
+
     Args:
         next_label: Label for primary action button
         skip_label: Label for skip button (None to hide) - DEPRECATED, not used
@@ -52,24 +59,20 @@ def actions(next_label: str = "Continue", skip_label: str | None = "Skip", show_
         show_back: If True, show Back text link above Save & Continue Later
         step_index: Current step index (for back button navigation)
         config: Module config (for back button state management)
-    
+
     Returns:
         (next_clicked, skip_clicked, save_exit_clicked, back_clicked, back_to_hub_clicked)
     """
     st.markdown('<div class="sn-app mod-actions">', unsafe_allow_html=True)
-    
+
     # Primary action - centered Continue button (max 400px)
     # Use HTML wrapper to add data-role attribute for CSS styling
     st.markdown('<div data-role="primary">', unsafe_allow_html=True)
     next_clicked = st.button(
-        next_label, 
-        key="_mod_next", 
-        type="primary", 
-        use_container_width=True,
-        help=None
+        next_label, key="_mod_next", type="primary", use_container_width=True, help=None
     )
-    st.markdown('</div>', unsafe_allow_html=True)
-    
+    st.markdown("</div>", unsafe_allow_html=True)
+
     # Back button - small text link
     back_clicked = False
     if show_back:
@@ -81,14 +84,14 @@ def actions(next_label: str = "Continue", skip_label: str | None = "Skip", show_
             key="_mod_back_prev_v2",
             type="secondary",
             use_container_width=False,
-            help=None
+            help=None,
         )
-        st.markdown('</div></div>', unsafe_allow_html=True)
-    
+        st.markdown("</div></div>", unsafe_allow_html=True)
+
     # Save & Continue Later - REMOVED (production uses cookies/auth)
     # Progress is automatically saved to tile_state and persists across sessions
     save_exit_clicked = False
-    
+
     # Back to hub - small text link at bottom
     st.markdown('<div class="mod-back-hub-wrapper">', unsafe_allow_html=True)
     # Inject data-role into the button container div
@@ -98,18 +101,18 @@ def actions(next_label: str = "Continue", skip_label: str | None = "Skip", show_
         key="_mod_back_hub_v2",
         type="secondary",
         use_container_width=False,
-        help=None
+        help=None,
     )
-    st.markdown('</div></div>', unsafe_allow_html=True)
-    
+    st.markdown("</div></div>", unsafe_allow_html=True)
+
     # Skip functionality removed - not needed in current design
     skip_clicked = False
-    
-    st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown("</div>", unsafe_allow_html=True)
     return next_clicked, skip_clicked, save_exit_clicked, back_clicked, back_to_hub_clicked
 
 
-def bottom_summary(items: Dict[str, str]) -> None:
+def bottom_summary(items: dict[str, str]) -> None:
     if not items:
         return
     chips = "".join(
