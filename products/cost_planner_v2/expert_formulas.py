@@ -250,8 +250,8 @@ def _get_regional_modifier(zip_code: Optional[str]) -> float:
     For now, return 1.0 (national average). In production, this would
     query a regional cost database by ZIP code.
     """
-    # TODO: Implement regional cost lookup
-    # This would integrate with a cost database or API
+    # Regional cost lookup not implemented
+    # Returns national average (1.0) - would integrate with cost database/API in future
     return 1.0
 
 
