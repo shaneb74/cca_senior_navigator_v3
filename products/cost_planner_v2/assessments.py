@@ -363,8 +363,8 @@ def render_assessment_page(assessment_key: str, product_key: str = "cost_planner
 
         # Use expander for each section (collapsed by default except first)
         with st.expander(f"{section_icon} {section_title}", expanded=(idx == 0)):
-            # Render fields for this section
-            new_values = _render_fields_for_page(section, state)
+            # Render fields for this section (default to basic mode for this legacy function)
+            new_values = _render_fields_for_page(section, state, view_mode="basic")
             if new_values:
                 state.update(new_values)
 
@@ -508,6 +508,12 @@ def _render_single_page_assessment(
     else:
         st.markdown("<div style='margin: 12px 0 24px 0;'></div>", unsafe_allow_html=True)
 
+    # Render Basic/Advanced toggle for Income and Assets assessments
+    view_mode = "basic"  # Default
+    if assessment_key in ["income", "assets"]:
+        from core.assessment_engine import _render_view_mode_toggle
+        view_mode = _render_view_mode_toggle(state_key)
+
     if field_sections:
         for row_index in range(0, len(field_sections), 2):
             row_sections = field_sections[row_index : row_index + 2]
@@ -516,7 +522,7 @@ def _render_single_page_assessment(
                 if col_index < len(row_sections):
                     section = row_sections[col_index]
                     with row_cols[col_index]:
-                        _render_section_content(section, state, product_key, assessment_key)
+                        _render_section_content(section, state, product_key, assessment_key, view_mode)
                 else:
                     with row_cols[col_index]:
                         st.write("")
@@ -652,7 +658,7 @@ def _render_single_page_assessment(
 
 
 def _render_section_content(
-    section: dict[str, Any], state: dict[str, Any], product_key: str, assessment_key: str
+    section: dict[str, Any], state: dict[str, Any], product_key: str, assessment_key: str, view_mode: str = "basic"
 ) -> None:
     """Render a section's heading and fields inside a single column."""
 
@@ -670,7 +676,7 @@ def _render_section_content(
         unsafe_allow_html=True,
     )
 
-    new_values = _render_fields_for_page(section, state)
+    new_values = _render_fields_for_page(section, state, view_mode)
     if new_values:
         state.update(new_values)
         _persist_assessment_state(product_key, assessment_key, state)
@@ -869,15 +875,20 @@ def _get_assessment_progress(assessment_key: str, product_key: str) -> int:
     return min(progress, 100)
 
 
-def _render_fields_for_page(section: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:
+def _render_fields_for_page(section: dict[str, Any], state: dict[str, Any], view_mode: str = "basic") -> dict[str, Any]:
     """
     Render fields for a section in page mode (all fields visible at once).
     Returns dict of updated field values.
+    
+    Args:
+        section: Section configuration dict
+        state: Current assessment state
+        view_mode: Current view mode ('basic' or 'advanced')
     """
     from core.assessment_engine import _render_fields
 
-    # Just use the existing _render_fields function from assessment_engine
-    return _render_fields(section, state)
+    # Use _render_fields with view_mode parameter
+    return _render_fields(section, state, view_mode)
 
 
 def _render_single_info_box(info_box: dict[str, Any]) -> None:
