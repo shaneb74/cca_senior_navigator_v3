@@ -363,6 +363,39 @@ class NaviOrchestrator:
         return boost
 
 
+def _has_diabetes_condition() -> bool:
+    """Check if user has diabetes as a chronic condition.
+    
+    Checks:
+    1. Primary: medical.conditions.chronic[] contains diabetes
+    2. Alternate: chronic_present flag + diabetes in conditions
+    
+    Returns:
+        True if diabetes condition is present
+    """
+    try:
+        from core.flag_manager import get_chronic_conditions, get_active
+        
+        # Check chronic conditions list for diabetes
+        conditions = get_chronic_conditions()
+        for condition in conditions:
+            if condition.get("code") == "diabetes":
+                return True
+        
+        # Alternate: check if chronic_present flag active AND diabetes in list
+        active_flags = get_active()
+        if "chronic_present" in active_flags:
+            for condition in conditions:
+                code = condition.get("code", "").lower()
+                if "diabetes" in code or "diabetic" in code:
+                    return True
+        
+        return False
+    except Exception:
+        # Graceful degradation if flag_manager unavailable
+        return False
+
+
 def render_navi_panel(
     location: str = "hub",
     hub_key: Optional[str] = None,
@@ -544,11 +577,33 @@ def render_navi_panel(
             if prep_summary.get("available"):
                 progress = prep_summary.get("progress", 0)
                 sections_complete = len(prep_summary.get("sections_complete", []))
+                
+                # Get duck progress (local import to avoid circular dependency)
+                try:
+                    from products.advisor_prep.utils import get_duck_progress, is_all_ducks_earned
+                    duck_progress = get_duck_progress()
+                    duck_count = duck_progress["earned_count"]
+                    
+                    # Build chip display
+                    if is_all_ducks_earned():
+                        chip_value = "🦆🦆🦆🦆"
+                        chip_sublabel = "All Ducks!"
+                    elif duck_count > 0:
+                        chip_value = "🦆" * duck_count
+                        chip_sublabel = f'{sections_complete}/4 sections'
+                    else:
+                        chip_value = f'{sections_complete}/4'
+                        chip_sublabel = f'{progress}%'
+                except ImportError:
+                    # Fallback if utils not available
+                    chip_value = 'Complete' if progress == 100 else f'{sections_complete}/4'
+                    chip_sublabel = f'{progress}%'
+                
                 context_chips.append({
                     'icon': '📝',
                     'label': 'Prep',
-                    'value': 'Complete' if progress == 100 else f'{sections_complete}/4',
-                    'sublabel': f'{progress}%'
+                    'value': chip_value,
+                    'sublabel': chip_sublabel
                 })
             
             # Trivia status chip (if any games played)
@@ -564,9 +619,16 @@ def render_navi_panel(
                 })
             
             # Build encouragement banner
+            encouragement_text = wr_msg["encouragement"]
+            
+            # Check for condition-triggered trivia unlocks
+            diabetes_badge = badges_earned.get("diabetes_knowledge")
+            if _has_diabetes_condition() and not diabetes_badge:
+                encouragement_text = "Since we know you're managing diabetes, I've unlocked a quick trivia game about healthy habits and glucose management. Want to give it a try?"
+            
             encouragement = {
                 'icon': '💪',
-                'text': wr_msg["encouragement"],
+                'text': encouragement_text,
                 'status': 'in_progress'
             }
             
@@ -716,7 +778,7 @@ def render_navi_panel(
             reason = journey_msg.get('subtext', "You've completed the Concierge journey.")
             primary_action = {
                 'label': 'Go to Waiting Room',
-                'route': 'hub_waiting_room'
+                'route': 'hub_waiting'
             }
         else:
             # Standard title and action logic

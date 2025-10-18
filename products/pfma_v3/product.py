@@ -419,4 +419,4 @@ def _render_confirmation(appt: AdvisorAppointment):
     with col_btn3:
         if st.button("Go to Waiting Room →", type="secondary", use_container_width=True):
             log_event("waiting_room.first_visit", {"from_product": "pfma_v3"})
-            route_to("hub_waiting_room")
+            route_to("hub_waiting")

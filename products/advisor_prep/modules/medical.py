@@ -232,6 +232,13 @@ def _save_medical_section(selected_conditions: list, selected_flags: list, medic
     if "medical" not in sections_complete:
         sections_complete.append("medical")
     
+    # Award duck badge (local import to avoid circular dependency)
+    try:
+        from products.advisor_prep.utils import award_duck_badge
+        award_duck_badge("medical")
+    except ImportError:
+        pass  # Duck badges not available
+    
     # Update MCIP contract with prep progress
     appt = MCIP.get_advisor_appointment()
     if appt:
@@ -256,7 +263,6 @@ def _save_medical_section(selected_conditions: list, selected_flags: list, medic
     })
     
     st.success("✓ Medical information saved!")
-    st.balloons()
     
     # Return to menu after short delay
     import time
