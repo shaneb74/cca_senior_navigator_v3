@@ -10,6 +10,9 @@ __pycache__/
 # Session and user data (local persistence)
 .cache/
 data/users/
+# Exception: Include demo profiles for deployment
+!data/users/demo/
+!data/users/demo/*.json
 *.lock
 
 # Linting cache
