@@ -315,9 +315,13 @@ div.element-container:empty {
   align-items: center !important;
 }
 
-/* 🐛 GHOST BUTTON FIX: Hide the first blank option that Streamlit injects */
+/* 🐛 GHOST BUTTON FIX: Hide the first blank option AND any empty labels */
+/* Target first label in the radiogroup container */
+.mod-radio-pills [data-testid="stRadio"] > div > label:first-child,
 .mod-radio-pills [data-testid="stRadio"] label:first-of-type,
+.mod-radio-pills div[data-testid="stRadio"] > div > label:first-child,
 .mod-radio-pills div[data-testid="stRadio"] label:first-of-type,
+.mod-radio-pills [role="radiogroup"] > label:first-child,
 .mod-radio-pills [role="radiogroup"] > label:first-of-type {
   display: none !important;
   visibility: hidden !important;
@@ -329,15 +333,78 @@ div.element-container:empty {
   pointer-events: none !important;
 }
 
+/* Also hide any labels that are empty or have no text content */
+.mod-radio-pills [data-testid="stRadio"] label:empty,
+.mod-radio-pills div[data-testid="stRadio"] label:empty {
+  display: none !important;
+  visibility: hidden !important;
+  position: absolute !important;
+  left: -9999px !important;
+}
+
+/* Hide labels with minimal/no content (ghost buttons often have empty divs) */
+.mod-radio-pills [data-testid="stRadio"] label > div:empty,
+.mod-radio-pills div[data-testid="stRadio"] label > div:empty {
+  display: none !important;
+}
+
+/* Nuclear option: Hide first label if it appears collapsed/small */
+.sn-app .mod-radio-pills [data-testid="stRadio"] > div > label:first-child:not(:has(div:not(:empty))) {
+  display: none !important;
+}
+
+/* SUPER NUCLEAR: Hide the collapsed Streamlit widget label AND first radio label */
+.sn-app .mod-radio-pills [data-testid="stWidgetLabel"],
+.sn-app .mod-radio-pills label[data-testid="stWidgetLabel"],
+.mod-radio-pills [data-testid="stWidgetLabel"],
+.mod-radio-pills label[data-testid="stWidgetLabel"] {
+  display: none !important;
+  visibility: hidden !important;
+  position: absolute !important;
+  left: -9999px !important;
+  width: 0 !important;
+  height: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Hide aria-hidden labels that might be rendering */
+.mod-radio-pills label[aria-hidden="true"],
+.mod-radio-pills [aria-hidden="true"] {
+  display: none !important;
+  visibility: hidden !important;
+  position: absolute !important;
+  left: -9999px !important;
+}
+
+/* 🎯 THE REAL GHOST BUTTON: Hide Streamlit's widget label that appears despite label_visibility="collapsed" */
+/* Target the emotion-cache label that comes BEFORE the radio group */
+.mod-radio-pills label.st-emotion-cache-u7lc60,
+.sn-app .mod-radio-pills label.st-emotion-cache-u7lc60,
+.mod-radio-pills label[class*="e1gk92lc0"]:first-child,
+.mod-radio-pills > div > label:first-child[class*="st-emotion"] {
+  display: none !important;
+  visibility: hidden !important;
+  position: absolute !important;
+  left: -9999px !important;
+  width: 0 !important;
+  height: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
 /* BASE PILL STYLE - Gray unselected */
 /* Target ALL possible label variations Streamlit generates */
 /* GLOBAL: Apply to ALL radio buttons in the app */
-[data-testid="stRadio"] label,
-[data-testid="stRadio"] > div > label,
-[data-testid="stRadio"] div[role="radiogroup"] > label,
-div[data-testid="stRadio"] label,
-div[data-testid="stRadio"] > div > label,
-div[data-testid="stRadio"] div[role="radiogroup"] > label {
+/* BUT EXCLUDE the widget label itself! */
+[data-testid="stRadio"] label:not([data-testid="stWidgetLabel"]):not([aria-hidden="true"]),
+[data-testid="stRadio"] > div > label:not([data-testid="stWidgetLabel"]):not([aria-hidden="true"]),
+[data-testid="stRadio"] div[role="radiogroup"] > label:not([data-testid="stWidgetLabel"]):not([aria-hidden="true"]),
+div[data-testid="stRadio"] label:not([data-testid="stWidgetLabel"]):not([aria-hidden="true"]),
+div[data-testid="stRadio"] > div > label:not([data-testid="stWidgetLabel"]):not([aria-hidden="true"]),
+div[data-testid="stRadio"] div[role="radiogroup"] > label:not([data-testid="stWidgetLabel"]):not([aria-hidden="true"]) {
   /* Reset everything first */
   all: unset !important;
   
@@ -416,9 +483,9 @@ div[data-testid="stRadio"] label > div {
   line-height: inherit !important;
 }
 
-/* HOVER - Slightly darker gray */
-[data-testid="stRadio"] label:hover,
-div[data-testid="stRadio"] label:hover {
+/* HOVER - Slightly darker gray (exclude widget label) */
+[data-testid="stRadio"] label:not([data-testid="stWidgetLabel"]):not([aria-hidden="true"]):hover,
+div[data-testid="stRadio"] label:not([data-testid="stWidgetLabel"]):not([aria-hidden="true"]):hover {
   background: #e8ecf3 !important;
   background-color: #e8ecf3 !important;
   border-color: #d1d9e6 !important;
@@ -426,11 +493,11 @@ div[data-testid="stRadio"] label:hover {
   transform: translateY(0) !important;
 }
 
-/* SELECTED STATE - Black pill with white text */
-[data-testid="stRadio"] label:has(input[type="radio"]:checked),
-[data-testid="stRadio"] label:has(input:checked),
-div[data-testid="stRadio"] label:has(input[type="radio"]:checked),
-div[data-testid="stRadio"] label:has(input:checked) {
+/* SELECTED STATE - Black pill with white text (exclude widget label) */
+[data-testid="stRadio"] label:not([data-testid="stWidgetLabel"]):not([aria-hidden="true"]):has(input[type="radio"]:checked),
+[data-testid="stRadio"] label:not([data-testid="stWidgetLabel"]):not([aria-hidden="true"]):has(input:checked),
+div[data-testid="stRadio"] label:not([data-testid="stWidgetLabel"]):not([aria-hidden="true"]):has(input[type="radio"]:checked),
+div[data-testid="stRadio"] label:not([data-testid="stWidgetLabel"]):not([aria-hidden="true"]):has(input:checked) {
   background: #111827 !important;
   background-color: #111827 !important;
   color: #ffffff !important;
@@ -441,9 +508,9 @@ div[data-testid="stRadio"] label:has(input:checked) {
   transform: translateY(-1px) !important;
 }
 
-/* SELECTED HOVER - Slightly lighter black */
-[data-testid="stRadio"] label:has(input:checked):hover,
-div[data-testid="stRadio"] label:has(input:checked):hover {
+/* SELECTED HOVER - Slightly lighter black (exclude widget label) */
+[data-testid="stRadio"] label:not([data-testid="stWidgetLabel"]):not([aria-hidden="true"]):has(input:checked):hover,
+div[data-testid="stRadio"] label:not([data-testid="stWidgetLabel"]):not([aria-hidden="true"]):has(input:checked):hover {
   background: #1f2937 !important;
   background-color: #1f2937 !important;
   border-radius: 8px !important;  /* Match border radius */
