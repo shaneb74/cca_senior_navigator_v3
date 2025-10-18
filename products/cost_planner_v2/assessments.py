@@ -118,21 +118,6 @@ def _render_hub_view(product_key: str) -> None:
     st.progress(overall_progress / 100.0)
     st.markdown("<div style='margin: 24px 0;'></div>", unsafe_allow_html=True)
 
-    # 🚀 BIG EXPERT REVIEW BUTTON (ALWAYS VISIBLE)
-    st.markdown("### 🚀 Ready to See Your Financial Analysis?")
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        if st.button(
-            "**GO TO EXPERT REVIEW NOW →**",
-            type="primary",
-            use_container_width=True,
-            key="goto_expert_review_top",
-        ):
-            st.session_state.cost_v2_step = "expert_review"
-            st.rerun()
-
-    st.markdown("<div style='margin: 32px 0;'></div>", unsafe_allow_html=True)
-
     # Render assessment cards in grid
     _render_assessment_grid(assessments, product_key)
 
@@ -163,19 +148,20 @@ def _render_assessment_grid(assessments: list[dict[str, Any]], product_key: str)
         with cols[col_index]:
             _render_assessment_card(assessment, product_key)
 
-    # 🚀 BOTTOM EXPERT REVIEW BUTTON (ALWAYS VISIBLE)
-    st.markdown("<div style='margin: 32px 0;'></div>", unsafe_allow_html=True)
+    # 🚀 EXPERT REVIEW BUTTON AT BOTTOM (PRIMARY CTA)
+    st.markdown("<div style='margin: 48px 0 32px 0;'></div>", unsafe_allow_html=True)
     st.markdown("---")
-    st.markdown("### 🔬 Skip to Expert Review")
-    st.markdown("*View your financial analysis even if assessments aren't complete*")
-    if st.button(
-        "🚀 GO TO EXPERT REVIEW (BYPASS) →",
-        type="secondary",
-        use_container_width=True,
-        key="goto_expert_review_bottom",
-    ):
-        st.session_state.cost_v2_step = "expert_review"
-        st.rerun()
+    st.markdown("### � Ready to See Your Financial Analysis?")
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        if st.button(
+            "**GO TO EXPERT REVIEW NOW →**",
+            type="primary",
+            use_container_width=True,
+            key="goto_expert_review_bottom",
+        ):
+            st.session_state.cost_v2_step = "expert_review"
+            st.rerun()
 
 
 def _render_assessment_card(assessment: dict[str, Any], product_key: str) -> None:
