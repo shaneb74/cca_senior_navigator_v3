@@ -75,6 +75,7 @@
           "select": "single",
           "label": "What is this person's age range?",
           "required": true,
+          "default": "under_65",
           "options": [
             { "label": "Under 65", "value": "under_65" },
             { "label": "65–74", "value": "65_74" },
@@ -93,6 +94,7 @@
           "select": "single",
           "label": "Current living situation?",
           "required": true,
+          "default": "alone",
           "options": [
             { "label": "Alone", "value": "alone" },
             { "label": "With family", "value": "with_family" },
@@ -107,6 +109,7 @@
           "select": "single",
           "label": "Is this person's home located far from family, care providers, or essential services?",
           "required": true,
+          "default": "accessible",
           "options": [
             { "label": "No – easily accessible", "value": "accessible", "score": 0 },
             { "label": "Somewhat isolated", "value": "somewhat", "score": 1, "flags": ["low_access"] },
