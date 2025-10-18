@@ -4,9 +4,9 @@ MCIP v2 - Master Care Intelligence Panel
 The Conductor: Orchestrates the user journey across all hubs, products, and modules.
 """
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, fields
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional, Dict
 
 import streamlit as st
 
@@ -180,7 +180,7 @@ class MCIP:
     # =========================================================================
 
     @classmethod
-    def get_care_recommendation(cls) -> CareRecommendation | None:
+    def get_care_recommendation(cls) -> Optional[CareRecommendation]:
         """Get the current care recommendation.
 
         Returns:
@@ -190,7 +190,11 @@ class MCIP:
         rec_data = st.session_state[cls.STATE_KEY].get("care_recommendation")
 
         if rec_data and rec_data.get("status") not in ["new", None]:
-            return CareRecommendation(**rec_data)
+            # Filter to only the fields expected by CareRecommendation dataclass
+            # This handles demo profiles with extra fields (assessment_data, scores, etc.)
+            valid_fields = {f.name for f in fields(CareRecommendation)}
+            filtered_data = {k: v for k, v in rec_data.items() if k in valid_fields}
+            return CareRecommendation(**filtered_data)
         return None
 
     @classmethod
@@ -237,7 +241,7 @@ class MCIP:
     # =========================================================================
 
     @classmethod
-    def get_financial_profile(cls) -> FinancialProfile | None:
+    def get_financial_profile(cls) -> Optional[FinancialProfile]:
         """Get the current financial profile.
 
         Returns:
@@ -247,7 +251,11 @@ class MCIP:
         profile_data = st.session_state[cls.STATE_KEY].get("financial_profile")
 
         if profile_data:
-            return FinancialProfile(**profile_data)
+            # Filter to only the fields expected by FinancialProfile dataclass
+            # This handles demo profiles with extra fields (monthly_income, total_liquid_assets, etc.)
+            valid_fields = {f.name for f in fields(FinancialProfile)}
+            filtered_data = {k: v for k, v in profile_data.items() if k in valid_fields}
+            return FinancialProfile(**filtered_data)
         return None
 
     @classmethod
@@ -277,7 +285,7 @@ class MCIP:
     # =========================================================================
 
     @classmethod
-    def get_advisor_appointment(cls) -> AdvisorAppointment | None:
+    def get_advisor_appointment(cls) -> Optional[AdvisorAppointment]:
         """Get the current advisor appointment.
 
         Returns:
@@ -579,7 +587,7 @@ class MCIP:
         return product_key in journey["completed_products"]
 
     @classmethod
-    def get_recommended_next_product(cls) -> str | None:
+    def get_recommended_next_product(cls) -> Optional[str]:
         """Get MCIP's recommended next product.
 
         Returns:
@@ -725,7 +733,7 @@ class MCIP:
         }
 
     @classmethod
-    def get_product_summary(cls, product_key: str) -> dict[str, Any] | None:
+    def get_product_summary(cls, product_key: str) -> Optional[dict[str, Any]]:
         """Get summary info for a product tile.
 
         Pulls relevant data from MCIP contracts to show on product tiles.
@@ -960,7 +968,7 @@ class MCIP:
 # =============================================================================
 
 
-def get_care_tier_legacy_compatible() -> str | None:
+def get_care_tier_legacy_compatible() -> Optional[str]:
     """Get care tier from MCIP or legacy GCP state.
 
     Temporary helper during migration to support both patterns.

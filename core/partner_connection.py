@@ -36,7 +36,7 @@ Example partner connection config:
 """
 
 from datetime import datetime
-from typing import Any
+from typing import Optional,  Any
 
 import requests
 import streamlit as st
@@ -316,7 +316,7 @@ def _log_lead_locally(
     fields: dict[str, Any],
     payload: dict[str, Any],
     success: bool = True,
-    error: str | None = None,
+    error: Optional[str] = None,
 ) -> None:
     """Log lead submission locally (for analytics/backup)."""
     # Store in session state for now (could be database in production)

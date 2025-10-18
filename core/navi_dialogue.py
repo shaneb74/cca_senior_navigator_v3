@@ -9,7 +9,7 @@ import json
 import random
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any
+from typing import Optional,  Any
 
 try:
     import streamlit as st
@@ -22,7 +22,7 @@ except ImportError:
 class NaviDialogue:
     """Navi's dialogue system - loads contextual messages based on journey state."""
 
-    _dialogue_data: dict[str, Any] | None = None
+    _dialogue_data: Optional[dict[str, Any]] = None
 
     @classmethod
     def load_dialogue(cls) -> dict[str, Any]:
@@ -35,7 +35,7 @@ class NaviDialogue:
 
     @classmethod
     def get_journey_message(
-        cls, phase: str, is_authenticated: bool = False, context: dict[str, Any] | None = None
+        cls, phase: str, is_authenticated: bool = False, context: Optional[dict[str, Any]] = None
     ) -> dict[str, str]:
         """Get Navi's main journey message for current phase.
 
@@ -82,7 +82,7 @@ class NaviDialogue:
         return message
 
     @classmethod
-    def get_context_boost(cls, phase: str, context: dict[str, Any] | None = None) -> list[str]:
+    def get_context_boost(cls, phase: str, context: Optional[dict[str, Any]] = None) -> list[str]:
         """Get contextual boost messages for current phase.
 
         Args:
@@ -103,7 +103,7 @@ class NaviDialogue:
 
     @classmethod
     def get_product_intro(
-        cls, product_key: str, context: dict[str, Any] | None = None
+        cls, product_key: str, context: Optional[dict[str, Any]] = None
     ) -> dict[str, Any]:
         """Get Navi's introduction message when starting a product.
 
@@ -136,7 +136,7 @@ class NaviDialogue:
         return dialogue["product_gates"].get(product_key, {})
 
     @classmethod
-    def get_micro_moment(cls, moment_type: str, context: dict[str, Any] | None = None) -> str:
+    def get_micro_moment(cls, moment_type: str, context: Optional[dict[str, Any]] = None) -> str:
         """Get a micro-moment message (progress save, unlock, achievement, etc.).
 
         Args:
@@ -184,7 +184,7 @@ class NaviDialogue:
 
     @classmethod
     def get_module_message(
-        cls, product_key: str, module_key: str, context: dict[str, Any] | None = None
+        cls, product_key: str, module_key: str, context: Optional[dict[str, Any]] = None
     ) -> dict[str, str]:
         """Get Navi's guidance message for a specific module.
 
@@ -242,7 +242,7 @@ class NaviDialogue:
 
 
 def render_navi_message(
-    message: dict[str, str], show_cta: bool = True, cta_callback: Callable | None = None
+    message: dict[str, str], show_cta: bool = True, cta_callback: Optional[Callable] = None
 ) -> None:
     """Render a Navi message in Streamlit.
 
@@ -331,7 +331,7 @@ def render_navi_intro(intro: dict[str, Any]) -> None:
 # ============================================================================
 
 
-def show_navi_journey_phase(phase: str, context: dict[str, Any] | None = None) -> None:
+def show_navi_journey_phase(phase: str, context: Optional[dict[str, Any]] = None) -> None:
     """Show Navi's message for current journey phase.
 
     Args:
@@ -359,7 +359,7 @@ def show_navi_journey_phase(phase: str, context: dict[str, Any] | None = None) -
         render_navi_boost(boost)
 
 
-def show_navi_product_intro(product_key: str, context: dict[str, Any] | None = None) -> None:
+def show_navi_product_intro(product_key: str, context: Optional[dict[str, Any]] = None) -> None:
     """Show Navi's introduction when starting a product.
 
     Args:
@@ -390,7 +390,7 @@ def show_navi_gate(product_key: str) -> None:
     render_navi_message(message)
 
 
-def show_navi_micro_moment(moment_type: str, context: dict[str, Any] | None = None) -> None:
+def show_navi_micro_moment(moment_type: str, context: Optional[dict[str, Any]] = None) -> None:
     """Show a quick Navi micro-moment message.
 
     Args:
@@ -407,10 +407,10 @@ def show_navi_micro_moment(moment_type: str, context: dict[str, Any] | None = No
 def show_navi_module_guide(
     product_key: str,
     module_key: str,
-    context: dict[str, Any] | None = None,
+    context: Optional[dict[str, Any]] = None,
     show_progress: bool = False,
-    current_step: int | None = None,
-    total_steps: int | None = None,
+    current_step: Optional[int] = None,
+    total_steps: Optional[int] = None,
 ) -> None:
     """Show Navi's persistent guide bar for current module.
 

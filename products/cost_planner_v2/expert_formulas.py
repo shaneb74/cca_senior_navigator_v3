@@ -13,6 +13,7 @@ Calculates:
 """
 
 from dataclasses import dataclass
+from typing import Optional
 
 from core.mcip import CareRecommendation
 from products.cost_planner_v2.financial_profile import FinancialProfile
@@ -33,7 +34,7 @@ class ExpertReviewAnalysis:
     # Calculated metrics
     coverage_percentage: float  # 0-100+
     monthly_gap: float  # Can be negative (surplus) or positive (shortfall)
-    runway_months: float | None  # None if gap <= 0 (covered indefinitely)
+    runway_months: Optional[float]  # None if gap <= 0 (covered indefinitely)
 
     # Categorization
     coverage_tier: str  # "excellent", "good", "moderate", "concerning", "critical"
@@ -53,9 +54,9 @@ class ExpertReviewAnalysis:
 
 def calculate_expert_review(
     profile: FinancialProfile,
-    care_recommendation: CareRecommendation | None = None,
-    zip_code: str | None = None,
-    estimated_monthly_cost: float | None = None,
+    care_recommendation: Optional[CareRecommendation] = None,
+    zip_code: Optional[str] = None,
+    estimated_monthly_cost: Optional[float] = None,
 ) -> ExpertReviewAnalysis:
     """
     Perform comprehensive expert financial review analysis.
@@ -87,10 +88,22 @@ def calculate_expert_review(
         regional_modifier = _get_regional_modifier(zip_code)
         estimated_monthly_cost = adjusted_monthly_cost * regional_modifier
 
-    # ==== STEP 4: Calculate total monthly income + benefits ====
+    # ==== STEP 2: Apply LTC Insurance Benefits ====
+    ltc_monthly_coverage = 0.0
+    if profile.has_ltc_insurance and profile.ltc_daily_benefit > 0:
+        # LTC insurance pays per day (convert to monthly)
+        ltc_monthly_coverage = profile.ltc_daily_benefit * 30
+        # Reduce estimated care cost by LTC coverage
+        estimated_monthly_cost = max(0, estimated_monthly_cost - ltc_monthly_coverage)
+
+    # ==== STEP 3: Calculate total monthly income + benefits ====
     total_monthly_income = profile.total_monthly_income
     total_monthly_benefits = profile.total_va_benefits_monthly + profile.annuity_monthly_income
-    total_monthly_resources = total_monthly_income + total_monthly_benefits
+
+    # Subtract LTC premium from disposable income (if applicable)
+    ltc_premium_cost = profile.ltc_monthly_premium if profile.has_ltc_insurance else 0.0
+
+    total_monthly_resources = total_monthly_income + total_monthly_benefits - ltc_premium_cost
 
     # ==== STEP 5: Calculate coverage percentage ====
     if estimated_monthly_cost > 0:
@@ -153,7 +166,7 @@ def calculate_expert_review(
     )
 
 
-def _get_base_care_cost(care_recommendation: CareRecommendation | None) -> float:
+def _get_base_care_cost(care_recommendation: Optional[CareRecommendation]) -> float:
     """
     Get base monthly care cost based on GCP recommendation.
 
@@ -197,7 +210,7 @@ def _get_base_care_cost(care_recommendation: CareRecommendation | None) -> float
     return tier_to_cost.get(care_tier, 4500)
 
 
-def _calculate_care_flags_modifier(care_recommendation: CareRecommendation | None) -> float:
+def _calculate_care_flags_modifier(care_recommendation: Optional[CareRecommendation]) -> float:
     """
     Calculate cost modifier based on GCP care flags.
 
@@ -238,7 +251,7 @@ def _calculate_care_flags_modifier(care_recommendation: CareRecommendation | Non
     return min(modifier, 1.5)
 
 
-def _get_regional_modifier(zip_code: str | None) -> float:
+def _get_regional_modifier(zip_code: Optional[str]) -> float:
     """
     Get regional cost modifier based on ZIP code.
 
@@ -256,7 +269,7 @@ def _get_regional_modifier(zip_code: str | None) -> float:
     return 1.0
 
 
-def _categorize_coverage(coverage_percentage: float, runway_months: float | None) -> str:
+def _categorize_coverage(coverage_percentage: float, runway_months: Optional[float]) -> str:
     """
     Categorize coverage into tiers for user-friendly display.
 
@@ -296,7 +309,7 @@ def _categorize_coverage(coverage_percentage: float, runway_months: float | None
 
 
 def _determine_recommendation_level(
-    coverage_percentage: float, runway_months: float | None, profile: FinancialProfile
+    coverage_percentage: float, runway_months: Optional[float], profile: FinancialProfile
 ) -> str:
     """
     Determine recommendation priority level.
@@ -333,9 +346,9 @@ def _determine_recommendation_level(
 def _generate_recommendations(
     coverage_percentage: float,
     monthly_gap: float,
-    runway_months: float | None,
+    runway_months: Optional[float],
     profile: FinancialProfile,
-    care_recommendation: CareRecommendation | None,
+    care_recommendation: Optional[CareRecommendation],
 ) -> tuple[str, list, list]:
     """
     Generate personalized recommendations based on financial analysis.
@@ -402,5 +415,51 @@ def _generate_recommendations(
             "Community care options",
             "Family caregiver support",
         ]
+
+    # ==== ENHANCE WITH PROFILE-SPECIFIC INSIGHTS ====
+
+    # LTC Insurance elimination period alert
+    if profile.has_ltc_insurance and profile.ltc_elimination_days > 0:
+        action_items.append(
+            f"⏱️ Note: LTC insurance has {profile.ltc_elimination_days}-day waiting period before benefits begin"
+        )
+
+    # LTC Insurance benefit period alert
+    if profile.has_ltc_insurance and profile.ltc_benefit_period_months > 0:
+        years = profile.ltc_benefit_period_months / 12
+        action_items.append(
+            f"📅 LTC insurance coverage limited to {years:.1f} years - plan for care beyond this period"
+        )
+
+    # Medicaid asset position insights
+    if profile.current_asset_position == "near_limit":
+        action_items.insert(
+            0, "🎯 You're near Medicaid asset limits - consider expedited Medicaid planning"
+        )
+    elif profile.current_asset_position == "under_limit":
+        action_items.insert(0, "✅ Asset position qualifies for Medicaid - consider applying soon")
+
+    # Medicaid education priority
+    if profile.interested_in_spend_down and profile.aware_of_asset_limits == "no":
+        action_items.insert(
+            0, "📚 HIGH PRIORITY: Schedule Medicaid eligibility consultation to understand options"
+        )
+
+    # Elder law referral
+    if profile.interested_in_elder_law:
+        resources.insert(0, "🏛️ Elder Law Attorney Referral - specialized Medicaid planning")
+
+    # Periodic income notes (context for PDF export)
+    if profile.periodic_income_notes:
+        # Add note to action items if it contains important timing info
+        if any(
+            keyword in profile.periodic_income_notes.lower()
+            for keyword in ["rmd", "required", "distribute", "sell", "sale"]
+        ):
+            action_items.append("📝 Review periodic income timing notes for planning coordination")
+
+    # Asset liquidity concerns
+    if profile.asset_liquidity_concerns not in ["no_concerns", ""]:
+        action_items.append("⚠️ Review asset liquidity constraints before relying on reserves")
 
     return primary_recommendation, action_items, resources

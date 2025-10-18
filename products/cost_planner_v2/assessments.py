@@ -12,7 +12,7 @@ State Management: Tracks completion status and progress
 import json
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional, Dict
 
 import streamlit as st
 
@@ -726,7 +726,7 @@ def _augment_assessment_state(assessment_key: str, state: dict[str, Any]) -> dic
     return base_state
 
 
-def _calculate_summary_total(summary_config: dict[str, Any], state: dict[str, Any]) -> float | None:
+def _calculate_summary_total(summary_config: dict[str, Any], state: dict[str, Any]) -> Optional[float]:
     """Calculate summary total using the formula defined in config."""
     if not summary_config:
         return None
@@ -803,7 +803,7 @@ def _load_all_assessments(product_key: str) -> list[dict[str, Any]]:
     return assessments
 
 
-def _load_assessment_config(assessment_key: str, product_key: str) -> dict[str, Any] | None:
+def _load_assessment_config(assessment_key: str, product_key: str) -> Optional[dict[str, Any]]:
     """Load a specific assessment configuration."""
 
     # Load from modules/assessments/ directory (colocation with product code)

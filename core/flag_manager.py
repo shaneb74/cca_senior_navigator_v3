@@ -22,6 +22,7 @@ import json
 import os
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Optional, Dict, List
 
 import streamlit as st
 
@@ -408,7 +409,7 @@ def get_active() -> list[str]:
     return session.get("flags", {}).get("active", [])
 
 
-def get_provenance(flag_id: str) -> dict[str, str] | None:
+def get_provenance(flag_id: str) -> Optional[dict[str, str]]:
     """
     Get provenance metadata for a specific flag.
 

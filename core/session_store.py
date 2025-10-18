@@ -29,6 +29,7 @@ import time
 import uuid
 from contextlib import contextmanager
 from pathlib import Path
+from typing import Any, Optional, Dict
 from typing import Any
 
 try:
@@ -51,6 +52,9 @@ CACHE_DIR = Path(".cache")
 
 # Data directory for user profiles (persistent, cross-device)
 DATA_DIR = Path("data/users")
+
+# Demo profiles directory (read-only, protected from overwrite)
+DEMO_DIR = Path("data/users/demo")
 
 # Session file name pattern
 SESSION_FILE_PATTERN = "session_{session_id}.json"
@@ -77,6 +81,7 @@ def _ensure_directories() -> None:
     """Create cache and data directories if they don't exist."""
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     DATA_DIR.mkdir(parents=True, exist_ok=True)
+    DEMO_DIR.mkdir(parents=True, exist_ok=True)
 
 
 _ensure_directories()
@@ -168,7 +173,7 @@ def _atomic_write(path: Path, data: dict[str, Any], retries: int = MAX_RETRIES) 
     return False
 
 
-def _safe_read(path: Path) -> dict[str, Any] | None:
+def _safe_read(path: Path) -> Optional[Dict[str, Any]]:
     """Read JSON file safely with error handling.
 
     If file is corrupted or doesn't exist, returns None.
@@ -333,6 +338,33 @@ def cleanup_old_sessions(max_age_days: int = 7) -> int:
 # ====================================================================
 
 
+def is_demo_user(uid: str) -> bool:
+    """Check if user ID is a demo user.
+    
+    Demo users have UIDs starting with 'demo_'.
+    
+    Args:
+        uid: User identifier
+        
+    Returns:
+        True if demo user, False otherwise
+    """
+    return uid.startswith("demo_")
+
+
+def get_demo_path(uid: str) -> Path:
+    """Get path to demo profile file (read-only source).
+    
+    Args:
+        uid: User identifier
+        
+    Returns:
+        Path to demo profile JSON file
+    """
+    filename = USER_FILE_PATTERN.format(uid=uid)
+    return DEMO_DIR / filename
+
+
 def get_user_path(uid: str) -> Path:
     """Get path to user profile file.
 
@@ -348,6 +380,15 @@ def get_user_path(uid: str) -> Path:
 
 def load_user(uid: str) -> dict[str, Any]:
     """Load user profile and progress from disk.
+    
+    For demo users (UIDs starting with 'demo_'):
+    - First checks if demo profile exists in data/users/demo/
+    - If found, copies it to data/users/ for this session (fresh slate)
+    - If working copy exists in data/users/, uses that instead
+    - Demo profile in demo/ directory is never modified (protected)
+    
+    For regular users:
+    - Loads from data/users/ as normal
 
     User data includes:
     - profile: Name, age, location, etc.
@@ -362,6 +403,25 @@ def load_user(uid: str) -> dict[str, Any]:
         User data dict (empty default if not found)
     """
     path = get_user_path(uid)
+    
+    # Check if this is a demo user
+    if is_demo_user(uid):
+        demo_path = get_demo_path(uid)
+        
+        # Always refresh working copy from demo source if it exists
+        # This ensures demo users always start with clean, complete data
+        if demo_path.exists():
+            print(f"\n{'='*60}")
+            print(f"[DEMO] Loading fresh demo profile from: {demo_path}")
+            print(f"[DEMO] Creating/refreshing working copy at: {path}")
+            try:
+                import shutil
+                # Force overwrite even if working copy exists
+                shutil.copy2(demo_path, path)
+                print(f"[DEMO] ✅ Demo profile copied successfully!")
+                print(f"{'='*60}\n")
+            except Exception as e:
+                print(f"[ERROR] Failed to copy demo profile: {e}")
 
     with _file_lock(path):
         data = _safe_read(path)
@@ -379,7 +439,7 @@ def load_user(uid: str) -> dict[str, Any]:
             "tiles": {},
         }
 
-    # Ensure uid matches
+    return data
     data["uid"] = uid
     data["last_updated"] = time.time()
     return data
@@ -430,7 +490,7 @@ def delete_user(uid: str) -> bool:
 
 
 def user_exists(uid: str) -> bool:
-    """Check if user profile exists.
+    """Check if user profile file exists.
 
     Args:
         uid: User identifier
@@ -439,6 +499,43 @@ def user_exists(uid: str) -> bool:
         True if user file exists
     """
     return get_user_path(uid).exists()
+
+
+def reset_demo_user(uid: str) -> bool:
+    """Reset a demo user back to the original demo profile.
+    
+    This deletes the working copy in data/users/ so the next load
+    will copy a fresh version from data/users/demo/.
+    
+    Only works for demo users (UIDs starting with 'demo_').
+    
+    Args:
+        uid: User identifier
+        
+    Returns:
+        True if reset successful, False otherwise
+    """
+    if not is_demo_user(uid):
+        print(f"[ERROR] Cannot reset non-demo user: {uid}")
+        return False
+    
+    demo_path = get_demo_path(uid)
+    if not demo_path.exists():
+        print(f"[ERROR] Demo profile not found: {demo_path}")
+        return False
+    
+    user_path = get_user_path(uid)
+    if user_path.exists():
+        try:
+            user_path.unlink()
+            print(f"[INFO] Reset demo user: {uid}")
+            return True
+        except OSError as e:
+            print(f"[ERROR] Failed to delete user copy: {e}")
+            return False
+    else:
+        print(f"[INFO] Demo user already at clean state: {uid}")
+        return True
 
 
 # ====================================================================
@@ -465,6 +562,28 @@ USER_PERSIST_KEYS = {
     "preferences",
     "auth",
     "flags",
+    # Cost Planner v2 state keys
+    "cost_v2_step",
+    "cost_v2_guest_mode",
+    "cost_v2_triage",
+    "cost_v2_qualifiers",
+    "cost_v2_current_module",
+    "cost_v2_modules",  # Main assessment data
+    "cost_v2_income",
+    "cost_v2_assets",
+    "cost_v2_va_benefits",
+    "cost_v2_health_insurance",
+    "cost_v2_life_insurance",
+    "cost_v2_medicaid_navigation",
+    "cost_v2_advisor_notes",
+    "cost_v2_schedule_advisor",
+    "cost_v2_quick_estimate",
+    "cost_planner_v2_published",
+    "cost_planner_v2_complete",
+    # GCP v4 answer data
+    "gcp_care_recommendation",  # All GCP assessment answers
+    "gcp_v4_published",
+    "gcp_v4_complete",
 }
 
 
@@ -595,17 +714,24 @@ def safe_rerun():
     """
     import streamlit as st
 
-    # Save user data (persistent across sessions)
-    uid = get_or_create_user_id(st.session_state)
-    user_data = extract_user_state(st.session_state)
-    if user_data:
-        save_user(uid, user_data)
+    # Check if we should skip saving (e.g., on first render after loading data)
+    should_skip_save = st.session_state.get("skip_save_this_render", False)
+    
+    if not should_skip_save:
+        # Save user data (persistent across sessions)
+        uid = get_or_create_user_id(st.session_state)
+        user_data = extract_user_state(st.session_state)
+        if user_data:
+            save_user(uid, user_data)
 
-    # Save session data (browser-specific, temporary)
-    if "session_id" in st.session_state:
-        session_data = extract_session_state(st.session_state)
-        if session_data:
-            save_session(st.session_state["session_id"], session_data)
+        # Save session data (browser-specific, temporary)
+        if "session_id" in st.session_state:
+            session_data = extract_session_state(st.session_state)
+            if session_data:
+                save_session(st.session_state["session_id"], session_data)
+    else:
+        # Clear the flag so next rerun will save normally
+        st.session_state["skip_save_this_render"] = False
 
     # Now safe to rerun
     st.rerun()

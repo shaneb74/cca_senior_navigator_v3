@@ -4,7 +4,7 @@ import html as _html
 import os
 from collections.abc import Mapping
 from html import escape as H
-from typing import Any
+from typing import Optional,  Any
 
 import streamlit as st
 
@@ -23,7 +23,7 @@ def html_escape(s: str) -> str:
     return _html.escape(str(s), quote=True)
 
 
-def _normalize_img(path: str | None) -> str:
+def _normalize_img(path: Optional[str]) -> str:
     if not path:
         return ""
     s = path.strip().lstrip("/")
@@ -36,7 +36,7 @@ def _normalize_img(path: str | None) -> str:
     return f"static/images/{s}"
 
 
-def _resolve_img(img: str | None) -> tuple[str, str]:
+def _resolve_img(img: Optional[str]) -> tuple[str, str]:
     canonical = _normalize_img(img)
     if not canonical:
         return "", ""
@@ -190,10 +190,10 @@ class BaseTile:
         self.secondary_route = kwargs.get("secondary_route")
         self.secondary_go = kwargs.get("secondary_go")
         # None means “no linear status”; otherwise numeric progress
-        self.progress: float | None = kwargs.get(
+        self.progress: Optional[float] = kwargs.get(
             "progress", 0 if kwargs.get("progress") is not None else None
         )
-        self.status_text: str | None = kwargs.get("status_text")
+        self.status_text: Optional[str] = kwargs.get("status_text")
         self.order = int(kwargs.get("order", 100))
         self.visible = bool(kwargs.get("visible", True))
         self.locked = bool(kwargs.get("locked", False))
@@ -201,16 +201,16 @@ class BaseTile:
         self.bg_from = kwargs.get("bg_from")
         self.bg_to = kwargs.get("bg_to")
         self.border_color = kwargs.get("border_color")
-        self.image_square: str | None = kwargs.get("image_square")
-        self.lock_msg: str | None = kwargs.get("lock_msg")
+        self.image_square: Optional[str] = kwargs.get("image_square")
+        self.lock_msg: Optional[str] = kwargs.get("lock_msg")
         self.unlock_requires: list[str] = kwargs.get("unlock_requires") or []
-        self.recommended_order: int | None = kwargs.get("recommended_order")
-        self.recommended_total: int | None = kwargs.get("recommended_total")
-        self.recommended_in_hub: str | None = kwargs.get("recommended_in_hub")
-        self.recommended_reason: str | None = kwargs.get("recommended_reason")
-        self.cta_tooltip: str | None = kwargs.get("cta_tooltip")
+        self.recommended_order: Optional[int] = kwargs.get("recommended_order")
+        self.recommended_total: Optional[int] = kwargs.get("recommended_total")
+        self.recommended_in_hub: Optional[str] = kwargs.get("recommended_in_hub")
+        self.recommended_reason: Optional[str] = kwargs.get("recommended_reason")
+        self.cta_tooltip: Optional[str] = kwargs.get("cta_tooltip")
         self.is_next_step: bool = kwargs.get("is_next_step", False)  # NEW: for MCIP gradient
-        self.desc_html: str | None = kwargs.get("desc_html")  # NEW: for raw HTML in desc
+        self.desc_html: Optional[str] = kwargs.get("desc_html")  # NEW: for raw HTML in desc
         raw_badges = kwargs.get("badges") or []
         self.badges: list[Any] = raw_badges
 
@@ -325,7 +325,7 @@ class BaseTile:
         separator = "&" if "?" in href else "?"
         return f"{href}{separator}uid={uid}"
 
-    def _resolved_primary_label(self) -> str | None:
+    def _resolved_primary_label(self) -> Optional[str]:
         # If primary_label is explicitly set, use it (even if None)
         if self.primary_label:
             return str(self.primary_label)
