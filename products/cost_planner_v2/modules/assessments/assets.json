@@ -1,7 +1,7 @@
 {
   "key": "assets",
   "title": "Assets & Resources",
-  "icon": "🏦",
+  "icon": "\ud83c\udfe6",
   "description": "Available financial assets and resources",
   "estimated_time": "6-8 min",
   "required": true,
@@ -11,20 +11,20 @@
       "id": "intro",
       "type": "intro",
       "title": "Assets Assessment",
-      "icon": "🏦",
-      "help_text": "This helps me understand what savings, property, or other funds might help pay for care. Enter what you're comfortable sharing — I'll handle the math.",
+      "icon": "\ud83c\udfe6",
+      "help_text": "Estimate your assets. Basic gives a quick snapshot; Advanced lets you add detail.",
       "fields": [],
       "info_boxes": [
         {
           "type": "info",
-          "message": "💡 Inputs stay visible. Open a Quick Guide anytime for examples or definitions."
+          "message": "\ud83d\udca1 Inputs stay visible. You can save and come back anytime."
         }
       ]
     },
     {
       "id": "household_context",
       "title": "Household Context",
-      "icon": "👥",
+      "icon": "\ud83d\udc65",
       "help_text": "Let me know if anyone else shares ownership or limits how assets can be used.",
       "layout": "single_column",
       "fields": [
@@ -33,10 +33,20 @@
           "label": "Do you share assets with a spouse or partner?",
           "type": "select",
           "required": false,
+          "level": "basic",
           "options": [
-            {"value": "no_partner", "label": "No, assets are only in my name"},
-            {"value": "partner_separate", "label": "Yes, but we keep finances separate"},
-            {"value": "partner_shared", "label": "Yes, we pool assets for care decisions"}
+            {
+              "value": "no_partner",
+              "label": "No, assets are only in my name"
+            },
+            {
+              "value": "partner_separate",
+              "label": "Yes, but we keep finances separate"
+            },
+            {
+              "value": "partner_shared",
+              "label": "Yes, we pool assets for care decisions"
+            }
           ],
           "default": "no_partner",
           "help": "Helps me understand which resources are truly available for care."
@@ -46,6 +56,7 @@
           "label": "Any legal or family restrictions on using these assets?",
           "type": "textarea",
           "required": false,
+          "level": "advanced",
           "help": "Example: community property rules, assets earmarked for a spouse, or power-of-attorney considerations.",
           "visible_if": {
             "field": "asset_has_partner",
@@ -56,148 +67,198 @@
       "info_boxes": [
         {
           "type": "info",
-          "message": "👥 If assets are co-owned, note who must approve decisions. This prevents surprises when planning how to pay for care."
+          "message": "\ud83d\udc65 If assets are co-owned, note who must approve decisions. This prevents surprises when planning how to pay for care."
         }
       ]
     },
     {
       "id": "liquid_assets",
-      "title": "Primary Assets",
-      "icon": "🏦",
-      "help_text": "Checking, savings, and investment accounts",
+      "title": "Liquid Assets",
+      "icon": "\ud83c\udfe6",
+      "help_text": "Cash and easily accessible funds",
       "layout": "two_column",
       "fields": [
         {
-          "key": "checking_savings",
-          "label": "Checking & Savings",
+          "key": "cash_liquid_total",
+          "label": "Checking & Savings (Total)",
           "type": "currency",
           "required": false,
+          "level": "basic",
           "min": 0,
           "max": 10000000,
           "step": 1000,
           "default": 0,
-          "help": "Total balance in all checking and savings accounts",
+          "help": "Estimated current value of all checking and savings accounts",
           "column": 1
         },
         {
-          "key": "investment_accounts",
-          "label": "Investment Accounts",
+          "key": "checking_balance",
+          "label": "Checking",
           "type": "currency",
           "required": false,
+          "level": "advanced",
           "min": 0,
-          "max": 50000000,
-          "step": 5000,
+          "max": 10000000,
+          "step": 1000,
           "default": 0,
-          "help": "401(k), IRA, brokerage, stocks, bonds, mutual funds",
-          "column": 1
-        },
-        {
-          "key": "liquid_assets_has_loan",
-          "label": "Any loans or pledges against these accounts?",
-          "type": "checkbox",
-          "required": false,
-          "default": false,
-          "help": "Margin loans, pledged accounts, or other debts secured by these funds",
+          "help": "Total balance in checking accounts",
           "column": 2
         },
         {
-          "key": "liquid_assets_loan_balance",
-          "label": "Outstanding loan balance tied to these accounts",
+          "key": "savings_cds_balance",
+          "label": "Savings / CDs",
           "type": "currency",
           "required": false,
+          "level": "advanced",
           "min": 0,
           "max": 10000000,
           "step": 1000,
           "default": 0,
-          "help": "Enter the total balance owed that is secured by these liquid assets",
-          "column": 2,
-          "visible_if": {
-            "field": "liquid_assets_has_loan",
-            "equals": true
-          }
+          "help": "Total balance in savings accounts and certificates of deposit",
+          "column": 2
         }
       ],
       "info_boxes": [
         {
           "type": "info",
-          "message": "💰 Liquid assets are important for immediate care costs. Average for seniors: $100,000–$250,000 (varies widely). Medicaid allows up to $2,000 for individuals (2024)."
+          "message": "\ud83d\udcb0 Liquid assets are important for immediate care costs. Medicaid allows up to $2,000 for individuals (2024)."
         }
       ]
     },
     {
-      "id": "real_estate",
-      "title": "Property & Real Estate",
-      "icon": "🏠",
-      "help_text": "Your home and other real estate holdings",
+      "id": "investments",
+      "title": "Investments",
+      "icon": "\ud83d\udcc8",
+      "help_text": "Brokerage accounts and investment holdings",
       "layout": "two_column",
       "fields": [
         {
-          "key": "primary_residence_value",
-          "label": "Primary Residence Value",
+          "key": "brokerage_total",
+          "label": "Brokerage / Investments (Total)",
           "type": "currency",
           "required": false,
+          "level": "basic",
+          "min": 0,
+          "max": 50000000,
+          "step": 5000,
+          "default": 0,
+          "help": "Estimated current value of all brokerage holdings",
+          "column": 1
+        },
+        {
+          "key": "brokerage_mf_etf",
+          "label": "Brokerage - Mutual Funds / ETFs",
+          "type": "currency",
+          "required": false,
+          "level": "advanced",
+          "min": 0,
+          "max": 50000000,
+          "step": 5000,
+          "default": 0,
+          "help": "Value of mutual funds and ETFs",
+          "column": 2
+        },
+        {
+          "key": "brokerage_stocks_bonds",
+          "label": "Brokerage - Stocks / Bonds",
+          "type": "currency",
+          "required": false,
+          "level": "advanced",
+          "min": 0,
+          "max": 50000000,
+          "step": 5000,
+          "default": 0,
+          "help": "Value of individual stocks and bonds",
+          "column": 2
+        }
+      ],
+      "info_boxes": [
+        {
+          "type": "info",
+          "message": "\ud83d\udcc8 Investment accounts can provide flexibility for care costs. Note any restrictions or market timing concerns."
+        }
+      ]
+    },
+    {
+      "id": "retirement_accounts",
+      "title": "Retirement Accounts",
+      "icon": "\ud83c\udfe6",
+      "help_text": "IRAs, 401(k)s, and other retirement savings",
+      "layout": "two_column",
+      "fields": [
+        {
+          "key": "retirement_total",
+          "label": "Retirement Accounts (Total)",
+          "type": "currency",
+          "required": false,
+          "level": "basic",
+          "min": 0,
+          "max": 50000000,
+          "step": 5000,
+          "default": 0,
+          "help": "Total value of all retirement accounts",
+          "column": 1
+        },
+        {
+          "key": "retirement_traditional",
+          "label": "Traditional IRA / 401(k)",
+          "type": "currency",
+          "required": false,
+          "level": "advanced",
+          "min": 0,
+          "max": 50000000,
+          "step": 5000,
+          "default": 0,
+          "help": "Pre-tax retirement accounts",
+          "column": 2
+        },
+        {
+          "key": "retirement_roth",
+          "label": "Roth IRA",
+          "type": "currency",
+          "required": false,
+          "level": "advanced",
+          "min": 0,
+          "max": 50000000,
+          "step": 5000,
+          "default": 0,
+          "help": "After-tax Roth accounts",
+          "column": 2
+        }
+      ],
+      "info_boxes": [
+        {
+          "type": "info",
+          "message": "\ud83c\udfe6 Retirement accounts often have penalties for early withdrawal (before age 59\u00bd) and required minimum distributions (after age 73)."
+        }
+      ]
+    },
+    {
+      "id": "real_estate_other",
+      "title": "Real Estate & Other",
+      "icon": "\ud83c\udfe0",
+      "help_text": "Property, vehicles, and other valuable assets",
+      "layout": "two_column",
+      "fields": [
+        {
+          "key": "home_equity_estimate",
+          "label": "Home Equity (Estimate)",
+          "type": "currency",
+          "required": false,
+          "level": "basic",
           "min": 0,
           "max": 50000000,
           "step": 25000,
           "default": 0,
-          "help": "Estimated market value of your current home",
+          "help": "Estimated home value minus outstanding mortgage",
           "column": 1
         },
         {
-          "key": "primary_residence_has_debt",
-          "label": "Mortgage, HELOC, or other debt on this home?",
-          "type": "checkbox",
-          "required": false,
-          "default": false,
-          "help": "Check if you owe money against the primary residence",
-          "column": 1
-        },
-        {
-          "key": "primary_residence_mortgage_balance",
-          "label": "Outstanding balance on the primary residence",
+          "key": "real_estate_other",
+          "label": "Real Estate - Other Property",
           "type": "currency",
           "required": false,
-          "min": 0,
-          "max": 50000000,
-          "step": 25000,
-          "default": 0,
-          "help": "Remaining mortgage, HELOC, or reverse mortgage balance",
-          "column": 1,
-          "visible_if": {
-            "field": "primary_residence_has_debt",
-            "equals": true
-          }
-        },
-        {
-          "key": "home_sale_interest",
-          "label": "Interested in home sale or equity options?",
-          "type": "checkbox",
-          "required": false,
-          "default": false,
-          "help": "Check to explore selling, reverse mortgages, or HELOCs",
-          "column": 1
-        },
-        {
-          "key": "primary_residence_liquidity_window",
-          "label": "How quickly could you access funds from the home?",
-          "type": "select",
-          "required": false,
-          "options": [
-            {"value": "immediate", "label": "Already on the market / immediate"},
-            {"value": "under_6_months", "label": "Within 6 months"},
-            {"value": "six_to_twelve", "label": "6-12 months"},
-            {"value": "over_year", "label": "Would take more than a year"},
-            {"value": "not_planning", "label": "Not planning to use home equity"}
-          ],
-          "default": "under_6_months",
-          "help": "Gives a sense of liquidity for care planning timelines.",
-          "column": 1
-        },
-        {
-          "key": "other_real_estate",
-          "label": "Other Real Estate",
-          "type": "currency",
-          "required": false,
+          "level": "advanced",
           "min": 0,
           "max": 50000000,
           "step": 25000,
@@ -206,145 +267,23 @@
           "column": 2
         },
         {
-          "key": "other_real_estate_has_debt",
-          "label": "Debt on other real estate?",
-          "type": "checkbox",
+          "key": "life_insurance_cash_value",
+          "label": "Life Insurance Cash Value",
+          "type": "currency",
           "required": false,
-          "default": false,
-          "help": "Include mortgages or loans tied to rental/vacation properties",
+          "level": "advanced",
+          "min": 0,
+          "max": 10000000,
+          "step": 5000,
+          "default": 0,
+          "help": "Cash surrender value of life insurance policies",
           "column": 2
-        },
-        {
-          "key": "other_real_estate_debt_balance",
-          "label": "Outstanding balance on other real estate",
-          "type": "currency",
-          "required": false,
-          "min": 0,
-          "max": 50000000,
-          "step": 25000,
-          "default": 0,
-          "help": "Remaining mortgage or loan balances on other properties",
-          "column": 2,
-          "visible_if": {
-            "field": "other_real_estate_has_debt",
-            "equals": true
-          }
         }
       ],
       "info_boxes": [
         {
           "type": "info",
-          "message": "🏠 Median U.S. home value ~$420,000 (2024). Primary home is often Medicaid-exempt (up to equity limits), but outstanding loans reduce usable equity. Note timing or tenant issues that could slow access to funds."
-        }
-      ]
-    },
-    {
-      "id": "other_resources",
-      "title": "Other Resources",
-      "icon": "💎",
-      "help_text": "Vehicles, valuables, and other assets",
-      "layout": "single_column",
-      "fields": [
-        {
-          "key": "other_resources",
-          "label": "Vehicles / Valuables / Other Assets",
-          "type": "currency",
-          "required": false,
-          "min": 0,
-          "max": 10000000,
-          "step": 5000,
-          "default": 0,
-          "help": "Vehicles, jewelry, collectibles, business interests, etc."
-        }
-      ],
-      "info_boxes": [
-        {
-          "type": "info",
-          "message": "💎 Include: Vehicles (current market value), jewelry/collectibles (appraised value), business ownership stakes. Consider which assets could realistically be sold for care costs."
-        }
-      ]
-    },
-    {
-      "id": "asset_liabilities",
-      "title": "Outstanding Debts & Obligations",
-      "icon": "📉",
-      "help_text": "Debts reduce what you can put toward care. Capture anything tied to these assets.",
-      "layout": "two_column",
-      "fields": [
-        {
-          "key": "asset_secured_loans",
-          "label": "Loans secured by investments or insurance",
-          "type": "currency",
-          "required": false,
-          "min": 0,
-          "max": 10000000,
-          "step": 5000,
-          "default": 0,
-          "help": "Outstanding loans backed by brokerage accounts, annuities, or life insurance policies",
-          "column": 1
-        },
-        {
-          "key": "asset_other_debts",
-          "label": "Other debts impacting care budget",
-          "type": "currency",
-          "required": false,
-          "min": 0,
-          "max": 10000000,
-          "step": 5000,
-          "default": 0,
-          "help": "Credit lines, personal loans, or medical bills that must be paid before using assets for care",
-          "column": 2
-        },
-        {
-          "key": "asset_debt_notes",
-          "label": "Details about these debts",
-          "type": "textarea",
-          "required": false,
-          "help": "Include payoff timelines, co-signers, or anything that could complicate using assets for care.",
-          "column": 1
-        }
-      ],
-      "info_boxes": [
-        {
-          "type": "info",
-          "message": "📉 Knowing debts helps estimate net assets. Add payoff schedules so we can time care funding correctly."
-        }
-      ]
-    },
-    {
-      "id": "asset_access",
-      "title": "Access & Liquidity Notes",
-      "icon": "⏱️",
-      "help_text": "Share anything that affects how quickly these assets can support care.",
-      "layout": "single_column",
-      "fields": [
-        {
-          "key": "asset_liquidity_concerns",
-          "label": "Do you see any issues accessing these funds quickly?",
-          "type": "select",
-          "required": false,
-          "options": [
-            {"value": "no_concerns", "label": "No, funds are easy to access"},
-            {"value": "penalties", "label": "Withdrawal penalties or surrender charges"},
-            {"value": "market_risk", "label": "Need to wait for market timing"},
-            {"value": "family_needs", "label": "Family members rely on these assets"},
-            {"value": "other", "label": "Other limitations"}
-          ],
-          "default": "no_concerns",
-          "help": "Helps flag areas where we may need backup funding sources."
-        },
-        {
-          "key": "asset_liquidity_notes",
-          "label": "Liquidity or access details",
-          "type": "textarea",
-          "required": false,
-          "help": "Mention surrender periods, beneficiaries who must approve changes, or plans to keep certain assets untouched."
-        }
-      ],
-      "info_boxes": [
-        {
-          "type": "info",
-          "message": "⏱️ Provide context like “IRA has 10% penalty before age 59½” or “Rental home occupied by family until next year.”"
+          "message": "\ud83c\udfe0 Primary home is often Medicaid-exempt (up to equity limits). Consider timing and liquidity for accessing home equity."
         }
       ]
     },
@@ -352,37 +291,31 @@
       "id": "results",
       "type": "results",
       "title": "Assets Assessment Complete",
-      "icon": "✅",
+      "icon": "\u2705",
       "fields": []
     }
   ],
   "summary": {
     "type": "calculated",
-    "label": "Total Reported Asset Value (before debts)",
-    "formula": "sum(checking_savings, investment_accounts, primary_residence_value, other_real_estate, other_resources)",
+    "label": "Total Assets",
+    "formula": "sum(cash_liquid_total, brokerage_total, retirement_total, home_equity_estimate, checking_balance, savings_cds_balance, brokerage_mf_etf, brokerage_stocks_bonds, retirement_traditional, retirement_roth, real_estate_other, life_insurance_cash_value)",
     "display_format": "${:,.0f}"
   },
   "output_contract": {
     "asset_has_partner": "string",
     "asset_legal_restrictions": "string",
-    "checking_savings": "number",
-    "investment_accounts": "number",
-    "liquid_assets_has_loan": "boolean",
-    "liquid_assets_loan_balance": "number",
-    "primary_residence_value": "number",
-    "primary_residence_has_debt": "boolean",
-    "primary_residence_mortgage_balance": "number",
-    "home_sale_interest": "boolean",
-    "primary_residence_liquidity_window": "string",
-    "other_real_estate": "number",
-    "other_real_estate_has_debt": "boolean",
-    "other_real_estate_debt_balance": "number",
-    "other_resources": "number",
-    "asset_secured_loans": "number",
-    "asset_other_debts": "number",
-    "asset_debt_notes": "string",
-    "asset_liquidity_concerns": "string",
-    "asset_liquidity_notes": "string",
+    "cash_liquid_total": "number",
+    "checking_balance": "number",
+    "savings_cds_balance": "number",
+    "brokerage_total": "number",
+    "brokerage_mf_etf": "number",
+    "brokerage_stocks_bonds": "number",
+    "retirement_total": "number",
+    "retirement_traditional": "number",
+    "retirement_roth": "number",
+    "home_equity_estimate": "number",
+    "real_estate_other": "number",
+    "life_insurance_cash_value": "number",
     "total_asset_value": "calculated"
   }
 }

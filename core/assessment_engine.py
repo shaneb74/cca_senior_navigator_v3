@@ -226,7 +226,90 @@ def _render_section_header(
     )
 
 
-def _render_fields(section: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:
+def _render_view_mode_toggle(state_key: str) -> str:
+    """
+    Render Basic/Advanced toggle at top of assessment.
+    
+    Returns current view mode ('basic' or 'advanced').
+    Persists selection in session state under {state_key}.view_mode
+    """
+    view_mode_key = f"{state_key}.view_mode"
+    current_mode = st.session_state.get(view_mode_key, "basic")
+    
+    # Accessible label for toggle
+    st.markdown(
+        """
+        <div style="margin-bottom: 16px;">
+            <label style="
+                display: block;
+                font-size: 14px;
+                font-weight: 600;
+                color: #1e293b;
+                margin-bottom: 8px;
+            ">
+                Detail Level
+            </label>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    
+    # Radio button toggle with accessible design
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        selected_mode = st.radio(
+            label="Detail Level",
+            label_visibility="collapsed",
+            options=["basic", "advanced"],
+            format_func=lambda x: "✓ Basic" if x == "basic" else "✓ Advanced",
+            index=0 if current_mode == "basic" else 1,
+            horizontal=True,
+            key=f"{state_key}_view_mode_radio",
+            help="Basic shows essential fields only. Advanced shows all fields including detailed breakdowns."
+        )
+    
+    # Persist selection
+    st.session_state[view_mode_key] = selected_mode
+    
+    # Show guidance message
+    if selected_mode == "basic":
+        st.info("💡 **Basic Mode:** Quick, essential fields only. Switch to Advanced for detailed breakdowns.")
+    else:
+        st.info("🔬 **Advanced Mode:** All fields visible including detailed categories. Switch to Basic for a simpler view.")
+    
+    st.markdown("<div style='margin: 24px 0;'></div>", unsafe_allow_html=True)
+    
+    return selected_mode
+
+
+def _should_show_field(field: dict[str, Any], view_mode: str, state: dict[str, Any]) -> bool:
+    """
+    Check if field should be visible based on view mode and visibility conditions.
+    
+    Args:
+        field: Field configuration dict
+        view_mode: Current view mode ('basic' or 'advanced')
+        state: Current assessment state
+    
+    Returns:
+        True if field should be rendered, False otherwise
+    """
+    # Check visibility condition first
+    if not _is_field_visible(field, state):
+        return False
+    
+    # Check level-based visibility
+    field_level = field.get("level", "basic")  # Default to basic if not specified
+    
+    if view_mode == "basic":
+        # Basic mode: show only basic fields
+        return field_level == "basic"
+    else:
+        # Advanced mode: show all fields
+        return True
+
+
+def _render_fields(section: dict[str, Any], state: dict[str, Any], view_mode: str = "basic") -> dict[str, Any]:
     """
     Render form fields for current section.
 
@@ -236,13 +319,20 @@ def _render_fields(section: dict[str, Any], state: dict[str, Any]) -> dict[str, 
     - checkbox: st.checkbox
     - multiselect: st.multiselect
     - text: st.text_input
+    - textarea: st.text_area
     - date: st.date_input
 
     Handles:
     - visible_if conditions
+    - level-based filtering (basic/advanced)
     - default values
     - min/max constraints
     - help text
+    
+    Args:
+        section: Section configuration dict
+        state: Current assessment state
+        view_mode: Current view mode ('basic' or 'advanced')
     """
     new_values: dict[str, Any] = {}
     fields = section.get("fields", [])
@@ -257,8 +347,15 @@ def _render_fields(section: dict[str, Any], state: dict[str, Any]) -> dict[str, 
         columns = None
 
     for field in fields:
-        # Check visibility
-        if not _is_field_visible(field, state):
+        # Check visibility (including level-based filtering)
+        if not _should_show_field(field, view_mode, state):
+            # Field is hidden but preserve its value in state
+            key = field.get("key")
+            if key and key not in state:
+                # Initialize with default if not already in state
+                default = field.get("default")
+                if default is not None:
+                    state[key] = default
             continue
 
         # Get field properties
@@ -359,6 +456,16 @@ def _render_fields(section: dict[str, Any], state: dict[str, Any]) -> dict[str, 
                 label_visibility="collapsed",
                 options=option_labels,
                 default=current_value if isinstance(current_value, list) else [],
+                help=help_text,
+                key=f"field_{key}",
+            )
+            new_values[key] = value
+
+        elif field_type == "textarea":
+            value = container.text_area(
+                label=label,
+                label_visibility="collapsed",
+                value=str(current_value) if current_value else "",
                 help=help_text,
                 key=f"field_{key}",
             )
