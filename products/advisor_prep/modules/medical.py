@@ -218,7 +218,7 @@ def _save_medical_section(selected_conditions: list, selected_flags: list, medic
         flag_manager.activate(flag_key, source="advisor_prep.medical")
     
     for flag_key in flags_to_deactivate:
-        flag_manager.deactivate(flag_key)
+        flag_manager.deactivate(flag_key, source="advisor_prep.medical")
     
     # Save medical notes to session state
     st.session_state["advisor_prep"]["data"]["medical"] = {
