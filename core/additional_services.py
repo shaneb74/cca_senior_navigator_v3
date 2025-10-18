@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import streamlit as st
 
-Tile = Dict[str, Any]
-Rule = Dict[str, Any]
+Tile = dict[str, Any]
+Rule = dict[str, Any]
 
 # ==============================================================================
 # ADDITIONAL SERVICES CONFIGURATION
@@ -51,15 +51,15 @@ Rule = Dict[str, Any]
 PARTNERS_FILE = Path(__file__).resolve().parents[1] / "config" / "partners.json"
 
 
-def _load_partners() -> List[Dict[str, Any]]:
+def _load_partners() -> list[dict[str, Any]]:
     """Load partner configurations from partners.json.
-    
+
     Returns:
         List of partner dictionaries
     """
     if not PARTNERS_FILE.exists():
         return []
-    
+
     try:
         with PARTNERS_FILE.open() as f:
             return json.load(f)
@@ -68,26 +68,26 @@ def _load_partners() -> List[Dict[str, Any]]:
         return []
 
 
-def _parse_unlock_requirement(req: str, ctx: Dict[str, Any]) -> bool:
+def _parse_unlock_requirement(req: str, ctx: dict[str, Any]) -> bool:
     """Parse and evaluate a single unlock requirement.
-    
+
     Formats:
     - "gcp:complete" - GCP must be 100% complete
     - "gcp:>=50" - GCP must be at least 50% complete
     - "flag:flag_name" - Single flag must be True
     - "flag:flag1|flag2|flag3" - ANY of the flags must be True (OR logic)
-    
+
     Args:
         req: Unlock requirement string
         ctx: Context with progress and flags
-    
+
     Returns:
         True if requirement is met
     """
     if req.startswith("gcp:"):
         gcp_req = req.replace("gcp:", "")
         gcp_progress = _get(ctx, "progress.gcp", 0)
-        
+
         if gcp_req == "complete":
             return gcp_progress >= 100
         elif gcp_req.startswith(">="):
@@ -95,57 +95,57 @@ def _parse_unlock_requirement(req: str, ctx: Dict[str, Any]) -> bool:
             return gcp_progress >= threshold
         else:
             return False
-    
+
     elif req.startswith("flag:"):
         flag_expr = req.replace("flag:", "")
         flags = _get(ctx, "flags", {})
-        
+
         # Handle OR logic (flag1|flag2|flag3)
         if "|" in flag_expr:
             flag_names = flag_expr.split("|")
             return any(flags.get(flag_name.strip(), False) for flag_name in flag_names)
         else:
             return flags.get(flag_expr, False)
-    
+
     return False
 
 
-def _partner_unlocked(partner: Dict[str, Any], ctx: Dict[str, Any]) -> bool:
+def _partner_unlocked(partner: dict[str, Any], ctx: dict[str, Any]) -> bool:
     """Check if partner unlock requirements are met.
-    
+
     Args:
         partner: Partner configuration dict
         ctx: Context with progress and flags
-    
+
     Returns:
         True if ALL unlock requirements are met (AND logic across requirements)
     """
     unlock_requires = partner.get("unlock_requires", [])
-    
+
     # No requirements = always unlocked
     if not unlock_requires:
         return True
-    
+
     # ALL requirements must be met (AND logic)
     return all(_parse_unlock_requirement(req, ctx) for req in unlock_requires)
 
 
-def _convert_partner_to_tile(partner: Dict[str, Any], order: int) -> Tile:
+def _convert_partner_to_tile(partner: dict[str, Any], order: int) -> Tile:
     """Convert partner configuration to service tile format.
-    
+
     Args:
         partner: Partner dict from partners.json
         order: Display order for tile
-    
+
     Returns:
         Service tile dict
     """
     partner_id = partner.get("id", "unknown")
     primary_cta = partner.get("primary_cta", {})
-    
+
     # Extract route - handle both direct routes and /partner/connect URLs
     route = primary_cta.get("route", f"partner_{partner_id}")
-    
+
     return {
         "key": f"partner_{partner_id}",
         "type": "partner",
@@ -163,7 +163,7 @@ def _convert_partner_to_tile(partner: Dict[str, Any], order: int) -> Tile:
     }
 
 
-def _get(ctx: Dict[str, Any], dotted: str, default: Any = None) -> Any:
+def _get(ctx: dict[str, Any], dotted: str, default: Any = None) -> Any:
     cur: Any = ctx
     for part in dotted.split("."):
         if isinstance(cur, dict) and part in cur:
@@ -173,9 +173,9 @@ def _get(ctx: Dict[str, Any], dotted: str, default: Any = None) -> Any:
     return cur
 
 
-def _ctx() -> Dict[str, Any]:
+def _ctx() -> dict[str, Any]:
     """Build context from MCIP v2 and session state.
-    
+
     MCIP Integration:
     - Reads care recommendation from MCIP.get_care_recommendation()
     - Reads financial profile from MCIP.get_financial_profile()
@@ -183,12 +183,12 @@ def _ctx() -> Dict[str, Any]:
     - Falls back to legacy handoff for backwards compatibility
     """
     from core.mcip import MCIP
-    
+
     ss = st.session_state
-    
+
     # Get flags from MCIP v2 (primary source)
     all_flags = {}
-    
+
     # Primary: Get flags from MCIP CareRecommendation
     care_rec = MCIP.get_care_recommendation()
     if care_rec and care_rec.flags:
@@ -197,7 +197,7 @@ def _ctx() -> Dict[str, Any]:
             flag_id = flag.get("id")
             if flag_id:
                 all_flags[flag_id] = True
-    
+
     # Backwards compatibility: Merge with legacy handoff flags if present
     handoff = ss.get("handoff", {})
     for product_key, product_data in handoff.items():
@@ -205,21 +205,21 @@ def _ctx() -> Dict[str, Any]:
             product_flags = product_data.get("flags", {})
             if isinstance(product_flags, dict):
                 all_flags.update(product_flags)
-    
+
     # Build context with MCIP data
     financial_profile = MCIP.get_financial_profile()
-    
+
     # Get progress from MCIP journey state
     # GCP progress is 100 if complete, 0 otherwise (MCIP tracks completion not percentage)
     # For granular progress during GCP, we'd need to check module engine state
     gcp_complete = MCIP.is_product_complete("gcp")
     cost_complete = MCIP.is_product_complete("cost_planner")
-    
+
     progress = {
         "gcp": 100 if gcp_complete else 0,  # Binary: complete or not
         "cost": 100 if cost_complete else 0,
     }
-    
+
     return {
         "role": ss.get("role", "consumer"),
         "person_name": ss.get("person_name", ""),
@@ -232,13 +232,13 @@ def _ctx() -> Dict[str, Any]:
             "financial_profile": financial_profile,
             "tier": care_rec.tier if care_rec else None,
             "confidence": care_rec.confidence if care_rec else 0.0,
-        }
+        },
     }
 
 
-def _passes(rule: Rule, ctx: Dict[str, Any]) -> bool:
+def _passes(rule: Rule, ctx: dict[str, Any]) -> bool:
     """Check if a visibility rule passes.
-    
+
     Rule Types:
     - equals: path equals value
     - includes: value in container (list/dict)
@@ -250,11 +250,11 @@ def _passes(rule: Rule, ctx: Dict[str, Any]) -> bool:
     """
     if not rule:
         return True
-    
+
     if "equals" in rule:
         spec = rule["equals"]
         return _get(ctx, spec["path"]) == spec.get("value")
-    
+
     if "includes" in rule:
         spec = rule["includes"]
         # Handle both lists and dicts (for flags)
@@ -266,22 +266,22 @@ def _passes(rule: Rule, ctx: Dict[str, Any]) -> bool:
         elif isinstance(container, (list, tuple, set)):
             return value in container
         return False
-    
+
     if "exists" in rule:
         spec = rule["exists"]
         return _get(ctx, spec["path"]) is not None
-    
+
     if "min_progress" in rule:
         spec = rule["min_progress"]
         try:
             return float(_get(ctx, spec["path"], 0)) >= float(spec.get("value", 0))
         except Exception:
             return False
-    
+
     if "role_in" in rule:
         roles = rule["role_in"] or []
         return _get(ctx, "role") in roles
-    
+
     # MCIP Financial Profile Rules
     if "cost_gap" in rule:
         spec = rule["cost_gap"]
@@ -294,7 +294,7 @@ def _passes(rule: Rule, ctx: Dict[str, Any]) -> bool:
             return gap >= threshold
         except Exception:
             return False
-    
+
     if "runway_low" in rule:
         spec = rule["runway_low"]
         financial = _get(ctx, "mcip.financial_profile")
@@ -306,25 +306,25 @@ def _passes(rule: Rule, ctx: Dict[str, Any]) -> bool:
             return runway <= threshold
         except Exception:
             return False
-    
+
     return False
 
 
-def _visible(tile: Dict[str, Any], ctx: Dict[str, Any]) -> bool:
+def _visible(tile: dict[str, Any], ctx: dict[str, Any]) -> bool:
     rules = tile.get("visible_when", [])
-    
+
     if not rules:
         return True
-    
+
     # OR logic: Any rule satisfied → visible
     for rule in rules:
         if _passes(rule, ctx):
             return True
-    
+
     return False
 
 
-REGISTRY: List[Tile] = [
+REGISTRY: list[Tile] = [
     # === FLAG-BASED PARTNER SERVICES ===
     {
         "key": "omcare",
@@ -350,7 +350,6 @@ REGISTRY: List[Tile] = [
             {"includes": {"path": "flags", "value": "no_support"}},
             # Severe mobility limitations (can't get to pharmacy)
             {"includes": {"path": "flags", "value": "high_mobility_dependence"}},
-            
             # MEDIUM PRIORITY: Medication adherence risk factors
             # Early cognitive decline (preventive intervention)
             {"includes": {"path": "flags", "value": "mild_cognitive_decline"}},
@@ -385,7 +384,6 @@ REGISTRY: List[Tile] = [
             {"includes": {"path": "flags", "value": "mental_health_concern"}},
         ],
     },
-    
     # === PLACEHOLDER PARTNER SERVICES (DISABLED - NO CONTRACTS YET) ===
     # Uncomment and add to partners.json when contracts are in place
     # {
@@ -466,7 +464,6 @@ REGISTRY: List[Tile] = [
     #         {"includes": {"path": "flags", "value": "no_support"}},
     #     ],
     # },
-    
     # === PRODUCT RECOMMENDATIONS ===
     {
         "key": "cost_planner_recommend",
@@ -497,7 +494,6 @@ REGISTRY: List[Tile] = [
             {"min_progress": {"path": "cost.progress", "value": 100}},
         ],
     },
-    
     # === MODULE RECOMMENDATIONS ===
     {
         "key": "va_benefits_module",
@@ -530,7 +526,6 @@ REGISTRY: List[Tile] = [
             {"runway_low": {"value": 24}},
         ],
     },
-    
     # === FINANCIAL PLANNING SERVICES (MCIP Financial Profile Integration) ===
     {
         "key": "reverse_mortgage",
@@ -562,7 +557,6 @@ REGISTRY: List[Tile] = [
             {"cost_gap": {"value": 500}},
         ],
     },
-    
     # === ALWAYS-AVAILABLE SERVICES ===
     {
         "key": "learning_center",
@@ -588,10 +582,8 @@ REGISTRY: List[Tile] = [
             {"min_progress": {"path": "cost.progress", "value": 0}},
         ],
     },
-    
     # === FUTURE SERVICE CATEGORIES (Currently Disabled) ===
     # Uncomment when respective hubs are implemented
-    
     # Estate Planning Services (Future Hub: hubs/estate_planning.py)
     # {
     #     "key": "estate_planning_suite",
@@ -606,7 +598,6 @@ REGISTRY: List[Tile] = [
     #         {"runway_low": {"value": 60}},  # Have substantial assets (60+ months)
     #     ],
     # },
-    
     # Retirement Planning Services (Future Hub: hubs/retirement_planning.py)
     # {
     #     "key": "social_security_optimizer",
@@ -621,7 +612,6 @@ REGISTRY: List[Tile] = [
     #         {"includes": {"path": "flags", "value": "retirement_age"}},
     #     ],
     # },
-    
     # Care Coordination Services (Future Hub: hubs/care_coordination.py)
     # {
     #     "key": "professional_care_manager",
@@ -640,34 +630,34 @@ REGISTRY: List[Tile] = [
 ]
 
 
-def get_additional_services(hub: str = "concierge", limit: Optional[int] = None) -> List[Tile]:
+def get_additional_services(hub: str = "concierge", limit: int | None = None) -> list[Tile]:
     """Get additional service tiles for a hub, filtered by MCIP data and flags.
-    
+
     PARTNER INTEGRATION:
     - Dynamically loads partners from config/partners.json
     - Only includes partners matching hub and unlock requirements
     - Omcare and SeniorLife.AI loaded from partners.json (not REGISTRY)
     - Other services still loaded from REGISTRY
-    
+
     MCIP Integration:
     - Uses MCIP.get_care_recommendation() for tier and flags
     - Uses MCIP.get_financial_profile() for cost-based filtering
     - Personalizes subtitles with user name and care tier
     - Detects personalization: "personalized" if triggered by GCP flags, "navi" otherwise
     - Falls back to legacy handoff for backwards compatibility
-    
+
     Args:
         hub: Hub identifier (concierge, trusted_partners, etc.)
         limit: Optional max number of tiles to return
-    
+
     Returns:
         List of visible service tiles with personalization metadata
     """
     from core.mcip import MCIP
-    
+
     ctx = _ctx()
     name = ctx.get("person_name") or "your plan"
-    
+
     # Get recommendation from MCIP v2 (primary source)
     care_rec = MCIP.get_care_recommendation()
     if care_rec and care_rec.tier:
@@ -676,22 +666,24 @@ def get_additional_services(hub: str = "concierge", limit: Optional[int] = None)
         # Fall back to legacy handoff
         handoff = st.session_state.get("handoff", {}).get("gcp", {})
         recommendation = handoff.get("recommendation", "")
-        recommendation_display = recommendation.replace("_", " ").title() if recommendation else "personalized"
-    
-    tiles: List[Tile] = []
-    
+        recommendation_display = (
+            recommendation.replace("_", " ").title() if recommendation else "personalized"
+        )
+
+    tiles: list[Tile] = []
+
     # DYNAMIC PARTNERS: Load from partners.json
     partners = _load_partners()
     partner_order = 500  # Start partners at order 500
-    
+
     for partner in partners:
         partner_id = partner.get("id")
-        
+
         # Check visibility rules:
         # 1. If visible: false, only show if unlocked by flags
         # 2. If visible: true or missing, always check unlock_requires
         is_visible_by_default = partner.get("visible", True)
-        
+
         if not is_visible_by_default:
             # Hidden by default - only show if unlock requirements met
             if not _partner_unlocked(partner, ctx):
@@ -700,22 +692,22 @@ def get_additional_services(hub: str = "concierge", limit: Optional[int] = None)
             # Visible by default - still check unlock requirements (for progressive disclosure)
             if not _partner_unlocked(partner, ctx):
                 continue
-        
+
         # Convert partner to tile
         partner_tile = _convert_partner_to_tile(partner, partner_order)
         partner_order += 10
-        
+
         # Check hub filtering (partners appear in concierge and trusted_partners by default)
         tile_hubs = partner_tile.get("hubs", [])
         if tile_hubs and hub not in tile_hubs:
             continue
-        
+
         # Interpolate subtitle
         subtitle = partner_tile.get("subtitle", "")
         subtitle = subtitle.replace("{name}", name)
         subtitle = subtitle.replace("{recommendation}", recommendation_display)
         partner_tile["subtitle"] = subtitle
-        
+
         # Determine personalization:
         # CRITICAL: ONLY Omcare and SeniorLife.AI get "Navi Recommended" label
         # All other partners get no personalization label
@@ -723,9 +715,9 @@ def get_additional_services(hub: str = "concierge", limit: Optional[int] = None)
             partner_tile["personalization"] = "personalized"  # Flag-triggered, Navi Recommended
         else:
             partner_tile["personalization"] = None  # No label
-        
+
         tiles.append(partner_tile)
-    
+
     # STATIC SERVICES: Load from REGISTRY (non-partner services)
     for tile in REGISTRY:
         # Skip ALL partner services that are now dynamically loaded from partners.json
@@ -733,25 +725,27 @@ def get_additional_services(hub: str = "concierge", limit: Optional[int] = None)
         partner_keys = ["hpone", "omcare", "seniorlife_ai", "lantern", "ncoa", "home_instead"]
         if tile.get("key") in partner_keys:
             continue
-        
+
         hubs = tile.get("hubs")
         if hubs and hub not in hubs:
             continue
         if not _visible(tile, ctx):
             continue
-        
+
         # Interpolate subtitle with context
-        subtitle = (tile.get("subtitle") or "")
+        subtitle = tile.get("subtitle") or ""
         subtitle = subtitle.replace("{name}", name)
         subtitle = subtitle.replace("{recommendation}", recommendation_display)
-        
+
         # Detect personalization type
         personalization = _detect_personalization(tile, ctx)
-        
+
         tiles.append(
             {
                 "key": tile["key"],
-                "type": tile.get("type", "partner"),  # Default to partner for backwards compatibility
+                "type": tile.get(
+                    "type", "partner"
+                ),  # Default to partner for backwards compatibility
                 "title": tile["title"],
                 "subtitle": subtitle,
                 "cta": tile.get("cta", "Open"),
@@ -768,44 +762,44 @@ def get_additional_services(hub: str = "concierge", limit: Optional[int] = None)
         # Personalization priority: "personalized" = 0 (top), None = 1 (bottom)
         personalization_priority = 0 if tile.get("personalization") == "personalized" else 1
         return (personalization_priority, tile.get("order", 100), tile.get("title", "").casefold())
-    
+
     tiles.sort(key=sort_key)
     if limit is not None:
         tiles = tiles[:limit]
-    
+
     return tiles
 
 
-def _detect_personalization(tile: Dict[str, Any], ctx: Dict[str, Any]) -> Optional[str]:
+def _detect_personalization(tile: dict[str, Any], ctx: dict[str, Any]) -> str | None:
     """Detect whether a tile is Navi-recommended based on care/cost flags.
-    
+
     CRITICAL RULES:
     - Only flag-triggered services get "personalized" → Shows "Navi Recommended" label + blue gradient
     - General utilities (Learning Center, Care Network) → No label, no gradient
     - Care flags come from GCP care_recommendation
     - Cost flags will come from Cost Planner (not yet implemented)
-    
+
     Returns:
         - "personalized": Triggered by specific care/cost flags → "Navi Recommended"
         - None: General utility or always-visible service → No label/gradient
     """
     rules = tile.get("visible_when", [])
-    
+
     # No rules OR min_progress rules only → General utility (no label/gradient)
     if not rules:
         return None
-    
+
     # Check if ALL rules are just min_progress (utility services like care_network)
     if all("min_progress" in rule for rule in rules):
         return None
-    
+
     # CARE FLAGS (from GCP - these trigger personalized services)
     # These match the actual flag IDs in core/flags.py FLAG_REGISTRY
     # Source: products/gcp_v4/modules/care_recommendation/module.json
     care_flags = [
         # Cognitive & Memory
         "mild_cognitive_decline",
-        "moderate_cognitive_decline", 
+        "moderate_cognitive_decline",
         "severe_cognitive_risk",
         # Fall & Safety
         "moderate_safety_concern",
@@ -832,10 +826,10 @@ def _detect_personalization(tile: Dict[str, Any], ctx: Dict[str, Any]) -> Option
         "very_low_access",
         "geo_isolated",
     ]
-    
+
     # COST FLAGS (to be added later - cost-based personalization)
     cost_flag_rules = ["cost_gap", "runway_low"]
-    
+
     # Check if tile was triggered by care or cost flags
     for rule in rules:
         if "includes" in rule:
@@ -848,6 +842,6 @@ def _detect_personalization(tile: Dict[str, Any], ctx: Dict[str, Any]) -> Option
             # Financial triggers are also personalized
             if _passes(rule, ctx):
                 return "personalized"
-    
+
     # If tile is visible but not triggered by care/cost flags → No label (general utility)
     return None

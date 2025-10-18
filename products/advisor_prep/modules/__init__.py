@@ -1,5 +1,5 @@
 """Advisor Prep modules package."""
 
-from . import personal, financial, housing, medical
+from . import financial, housing, medical, personal
 
 __all__ = ["personal", "financial", "housing", "medical"]

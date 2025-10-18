@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from html import escape as html_escape
-from typing import Any, Dict, Optional
+from typing import Any
 
 import streamlit as st
+
 
 def _all_products_done(required: list[str]) -> bool:
     ss = st.session_state
@@ -16,7 +17,7 @@ def _all_products_done(required: list[str]) -> bool:
         return False
 
 
-def partners_intel_from_state(state: Dict[str, Any]) -> str:
+def partners_intel_from_state(state: dict[str, Any]) -> str:
     gcp = state.get("gcp", {}) or {}
     care = str(gcp.get("care_tier") or "").lower()
     flags = gcp.get("flags") or {}
@@ -42,10 +43,10 @@ def partners_intel_from_state(state: Dict[str, Any]) -> str:
 
 def compute_hub_guide(
     hub_key: str,
-    hub_order: Optional[Dict[str, Any]] = None,
+    hub_order: dict[str, Any] | None = None,
     *,
     mode: str = "auto",
-    extra_panel: Optional[str] = None,
+    extra_panel: str | None = None,
 ) -> str:
     required_products = list(hub_order.get("ordered_products") or []) if hub_order else []
     if mode == "full":
@@ -73,7 +74,9 @@ def compute_hub_guide(
                     step_txt += f" of {total}"
                 content.append(f'<div class="mcip-sub">{html_escape(step_txt)}</div>')
                 route = next_route or f"/product/{next_step}"
-                content.append(f'<a class="btn btn--primary" href="{html_escape(route)}">Continue</a>')
+                content.append(
+                    f'<a class="btn btn--primary" href="{html_escape(route)}">Continue</a>'
+                )
 
         if extra_panel:
             content.append(f'<div class="mcip-extra">{extra_panel}</div>')
@@ -86,7 +89,7 @@ def compute_hub_guide(
 
     content: list[str] = []
     person_name = st.session_state.get("person_name", "").strip()
-    
+
     # Use person's name if available, otherwise use neutral "your"
     person_possessive = html_escape(f"{person_name}'s") if person_name else "your"
 
@@ -112,10 +115,12 @@ def compute_hub_guide(
                 step_txt = f"You're on step {idx}"
                 if total:
                     step_txt += f" of {total}"
-                
+
                 # Only show Continue button if there's actual progress to resume
                 # (GCP has started - progress > 0)
-                gcp_prog = float(st.session_state.get("tiles", {}).get("gcp", {}).get("progress", 0))
+                gcp_prog = float(
+                    st.session_state.get("tiles", {}).get("gcp", {}).get("progress", 0)
+                )
                 if gcp_prog > 0 and gcp_prog < 100:
                     # In progress - show Continue
                     text = step_txt + ". Continue below to keep momentum."

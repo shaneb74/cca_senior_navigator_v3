@@ -4,23 +4,22 @@ from core.mcip import MCIP
 from core.nav import route_to
 from core.state import is_authenticated
 from pages.welcome import render_welcome_card
-from ui.header_simple import render_header_simple
 from ui.footer_simple import render_footer_simple
+from ui.header_simple import render_header_simple
 
 
 def _page_content(ctx=None):
     # Check if authenticated user already has planning context
     if is_authenticated():
-        has_context = (
-            st.session_state.get("planning_for_name")
-            or st.session_state.get("person_name")
+        has_context = st.session_state.get("planning_for_name") or st.session_state.get(
+            "person_name"
         )
         if has_context:
             # Skip contextual welcome - go directly to Navi's recommended route
             next_action = MCIP.get_recommended_next_action()
             route_to(next_action.get("route", "hub_concierge"))
             return
-    
+
     render_welcome_card(
         active="someone",
         title="We're here to help you find the support your loved ones need.",

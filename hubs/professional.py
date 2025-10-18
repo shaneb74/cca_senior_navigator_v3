@@ -1,21 +1,19 @@
 from __future__ import annotations
 
 from html import escape as html_escape
-from typing import Dict, List
 
 import streamlit as st
 
 from core.base_hub import render_dashboard_body
 from core.navi import render_navi_panel
 from core.product_tile import ProductTileHub
-from core.state import is_professional, switch_to_professional
-from ui.header_simple import render_header_simple
 from ui.footer_simple import render_footer_simple
+from ui.header_simple import render_header_simple
 
 __all__ = ["render"]
 
 
-def _to_tile(card: Dict[str, any], order: int) -> ProductTileHub:
+def _to_tile(card: dict[str, any], order: int) -> ProductTileHub:
     actions = card.get("actions", [])
     primary = actions[0] if actions else {}
     secondary = actions[1] if len(actions) > 1 else {}
@@ -98,7 +96,7 @@ def render(ctx=None) -> None:
     last_login = "2025-10-12 14:30"
 
     # 6 Professional product tiles as specified
-    raw_cards: List[Dict[str, any]] = [
+    raw_cards: list[dict[str, any]] = [
         {
             "title": "Professional Dashboard",
             "subtitle": "Overview and priorities",
@@ -192,7 +190,7 @@ def render(ctx=None) -> None:
     def render_content():
         # Render Navi panel (after header, before hub content)
         render_navi_panel(location="hub", hub_key="professional")
-        
+
         # Render hub body HTML WITHOUT title/subtitle (Navi replaces them)
         body_html = render_dashboard_body(
             title=None,

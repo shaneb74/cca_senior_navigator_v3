@@ -8,29 +8,30 @@ Converts sections-based schema to steps-based schema.
 import json
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
+
 from core.modules.schema import FieldDef, ModuleConfig, StepDef
 
 
 def get_config() -> ModuleConfig:
     """Load care_recommendation module configuration.
-    
+
     Converts sections-based module.json to steps-based ModuleConfig.
-    
+
     Returns:
         ModuleConfig object for module engine
     """
     raw = _load_module_json()
     module_meta = raw.get("module", {})
     sections = raw.get("sections", [])
-    
+
     # Convert sections to steps
     steps = []
     for section in sections:
         step = _convert_section_to_step(section)
         if step:
             steps.append(step)
-    
+
     return ModuleConfig(
         product="gcp_v4",
         version=module_meta.get("version", "v2025.10"),
@@ -41,17 +42,17 @@ def get_config() -> ModuleConfig:
     )
 
 
-def _convert_section_to_step(section: Dict[str, Any]) -> StepDef:
+def _convert_section_to_step(section: dict[str, Any]) -> StepDef:
     """Convert a section from module.json to a StepDef.
-    
+
     module.json sections can be:
     - "info" type: intro/outro pages
     - Question sections: contain questions array
     - "results" type: final results page
-    
+
     Args:
         section: Section dict from module.json
-    
+
     Returns:
         StepDef object for module engine
     """
@@ -60,7 +61,7 @@ def _convert_section_to_step(section: Dict[str, Any]) -> StepDef:
     title = section.get("title", "")
     description = section.get("description", "")
     navi_guidance = section.get("navi_guidance")  # Extract Navi guidance
-    
+
     # Handle info sections (intro pages)
     if section_type == "info":
         return StepDef(
@@ -77,7 +78,7 @@ def _convert_section_to_step(section: Dict[str, Any]) -> StepDef:
             summary_keys=None,
             navi_guidance=navi_guidance,  # Pass guidance to StepDef
         )
-    
+
     # Handle results section
     if section_type == "results":
         return StepDef(
@@ -93,11 +94,11 @@ def _convert_section_to_step(section: Dict[str, Any]) -> StepDef:
             summary_keys=None,
             navi_guidance=navi_guidance,  # Pass guidance to StepDef
         )
-    
+
     # Handle question sections
     questions = section.get("questions", [])
     fields = [_convert_question_to_field(q) for q in questions]
-    
+
     return StepDef(
         id=section_id,
         title=title,
@@ -113,12 +114,12 @@ def _convert_section_to_step(section: Dict[str, Any]) -> StepDef:
     )
 
 
-def _convert_question_to_field(question: Dict[str, Any]) -> FieldDef:
+def _convert_question_to_field(question: dict[str, Any]) -> FieldDef:
     """Convert a question from module.json to a FieldDef.
-    
+
     Args:
         question: Question dict from module.json
-    
+
     Returns:
         FieldDef object for module engine
     """
@@ -126,13 +127,13 @@ def _convert_question_to_field(question: Dict[str, Any]) -> FieldDef:
     question_type = question.get("type", "string")
     select_type = question.get("select", "single")
     ui_config = question.get("ui", {})
-    
+
     # Build effects from option flags
     effects = _build_effects_from_options(question.get("options", []))
-    
+
     # Handle visible_if condition
     visible_if = question.get("visible_if")
-    
+
     return FieldDef(
         key=question_id,
         label=question.get("label", ""),
@@ -155,26 +156,26 @@ def _convert_question_to_field(question: Dict[str, Any]) -> FieldDef:
     )
 
 
-def _convert_type(question_type: str, select_type: str, ui: Dict[str, Any] = None) -> str:
+def _convert_type(question_type: str, select_type: str, ui: dict[str, Any] = None) -> str:
     """Convert module.json type to FieldDef type.
-    
+
     Args:
         question_type: Type from module.json ("string", "number", etc.)
         select_type: Select type ("single", "multi")
         ui: UI configuration dict with widget preference
-    
+
     Returns:
         FieldDef type string matching component renderer names
     """
     # Check if UI specifies a widget type
     widget = (ui or {}).get("widget", "")
-    
+
     # Multi-select types
     if question_type == "string" and select_type == "multi":
         if widget == "multi_chip":
             return "chip_multi"
         return "multiselect"
-    
+
     # Single-select types - use UI widget to determine renderer
     elif question_type == "string" and select_type == "single":
         if widget == "chip":
@@ -183,33 +184,33 @@ def _convert_type(question_type: str, select_type: str, ui: Dict[str, Any] = Non
             return "dropdown"
         else:
             return "radio"  # Default to radio for single-select
-    
+
     # Number types
     elif question_type == "number":
         return "number"
-    
+
     # Boolean types
     elif question_type == "boolean":
         return "yesno"
-    
+
     # Default to text
     else:
         return "text"
 
 
-def _build_effects_from_options(options: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def _build_effects_from_options(options: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Build effects array from option flags.
-    
+
     Converts flags in options to effects that the module engine can process.
-    
+
     Args:
         options: List of option dicts from module.json
-    
+
     Returns:
         List of effect dicts
     """
     effects = []
-    
+
     for option in options:
         flags = option.get("flags", [])
         if flags:
@@ -217,21 +218,17 @@ def _build_effects_from_options(options: List[Dict[str, Any]]) -> List[Dict[str,
             if value:
                 # Create effect for each flag
                 for flag in flags:
-                    effects.append({
-                        "when_value_in": [value],
-                        "set_flag": flag,
-                        "flag_message": None
-                    })
-    
+                    effects.append(
+                        {"when_value_in": [value], "set_flag": flag, "flag_message": None}
+                    )
+
     return effects
 
 
-
-
 @lru_cache(maxsize=1)
-def _load_module_json() -> Dict[str, Any]:
+def _load_module_json() -> dict[str, Any]:
     """Load module.json from disk.
-    
+
     Returns:
         Module configuration dict
     """

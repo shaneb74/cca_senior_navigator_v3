@@ -14,50 +14,49 @@ Run at startup: Automatically in dev mode (app.py)
 
 import json
 from pathlib import Path
-from typing import Dict, List, Set, Tuple, Optional
 
 # Valid service types
 VALID_SERVICE_TYPES = {
-    "partner",      # External partner service (must exist in partners.json)
-    "internal",     # Internal app page/feature
-    "utility",      # Built-in tool (FAQ, Learning Center)
-    "placeholder"   # Coming soon (not visible in production)
+    "partner",  # External partner service (must exist in partners.json)
+    "internal",  # Internal app page/feature
+    "utility",  # Built-in tool (FAQ, Learning Center)
+    "placeholder",  # Coming soon (not visible in production)
 }
 
 # Valid deployment statuses
 VALID_DEPLOYMENT_STATUSES = {
-    "staging",      # Dev/QA only
-    "production",   # Live in production
-    "deprecated",   # Being phased out
-    "coming_soon"   # Approved but not yet launched
+    "staging",  # Dev/QA only
+    "production",  # Live in production
+    "deprecated",  # Being phased out
+    "coming_soon",  # Approved but not yet launched
 }
 
 
-def load_partner_registry() -> Dict[str, Dict]:
+def load_partner_registry() -> dict[str, dict]:
     """Load all valid partners from config/partners.json.
-    
+
     Returns:
         Dict mapping partner IDs to partner data
     """
     partners_file = Path("config/partners.json")
-    
+
     if not partners_file.exists():
         print(f"⚠️  WARNING: {partners_file} not found")
         return {}
-    
+
     try:
         with partners_file.open() as f:
             partners = json.load(f)
-        
+
         return {p["id"]: p for p in partners}
     except Exception as e:
         print(f"⚠️  ERROR loading partners.json: {e}")
         return {}
 
 
-def extract_partner_key(go_route: str) -> Optional[str]:
+def extract_partner_key(go_route: str) -> str | None:
     """Extract partner ID from a 'go' route.
-    
+
     Patterns:
     - "partner_omcare" → "omcare"
     - "svc_seniorlife_ai" → "seniorlife_ai"
@@ -67,74 +66,74 @@ def extract_partner_key(go_route: str) -> Optional[str]:
     """
     if not go_route:
         return None
-    
+
     # Handle URL routes
     if go_route.startswith("/partner/connect?id="):
         return go_route.split("id=")[-1]
-    
+
     # Skip internal routes
     if go_route.startswith("/") or go_route.startswith("http"):
         return None
-    
+
     # Handle prefixed keys
     if go_route.startswith("partner_"):
         return go_route.replace("partner_", "")
     elif go_route.startswith("svc_"):
         return go_route.replace("svc_", "")
-    
+
     # Direct partner key
     return go_route
 
 
-def build_service_registry_map(services: List[Dict]) -> Dict[str, List[str]]:
+def build_service_registry_map(services: list[dict]) -> dict[str, list[str]]:
     """Build map of partner_id → list of service keys that handle them.
-    
+
     Returns:
         Dict like {"omcare": ["omcare_meds", "omcare_telehealth"], ...}
     """
     registry_map = {}
-    
+
     for service in services:
         service_key = service.get("key", "unknown")
         go_route = service.get("go", "")
-        
+
         partner_id = extract_partner_key(go_route)
         if partner_id:
             if partner_id not in registry_map:
                 registry_map[partner_id] = []
             registry_map[partner_id].append(service_key)
-    
+
     return registry_map
 
 
-def validate_orphaned_partners(services: List[Dict]) -> Tuple[bool, List[str], List[str]]:
+def validate_orphaned_partners(services: list[dict]) -> tuple[bool, list[str], list[str]]:
     """INVERTED VALIDATION: Check if any partners lack service handlers.
-    
+
     This is the key governance check - prevents showing partners we can't deliver.
-    
+
     Returns:
         (is_valid, list_of_errors, list_of_warnings)
     """
     partner_registry = load_partner_registry()
     service_map = build_service_registry_map(services)
-    
+
     errors = []
     warnings = []
-    
+
     for partner_id, partner_data in partner_registry.items():
         partner_name = partner_data.get("name", partner_id)
         primary_cta = partner_data.get("primary_cta", {})
         route = primary_cta.get("route", "")
-        
+
         # Skip educational/external links (not our responsibility to "deliver")
         if route.startswith("http"):
             continue
-        
+
         # Check if any service handles this partner
         if partner_id not in service_map:
             # Check if partner has unlock requirements (if yes, it's critical)
             unlock_requires = partner_data.get("unlock_requires", [])
-            
+
             if unlock_requires:
                 errors.append(
                     f"ORPHANED PARTNER: '{partner_name}' ({partner_id}) has unlock requirements "
@@ -146,22 +145,22 @@ def validate_orphaned_partners(services: List[Dict]) -> Tuple[bool, List[str], L
                     f"Partner '{partner_name}' ({partner_id}) has no service handler for route '{route}'. "
                     f"Consider adding service or removing partner."
                 )
-    
+
     return len(errors) == 0, errors, warnings
 
 
-def validate_service_types(services: List[Dict]) -> Tuple[bool, List[str]]:
+def validate_service_types(services: list[dict]) -> tuple[bool, list[str]]:
     """Validate that all services have valid types.
-    
+
     Returns:
         (is_valid, list_of_errors)
     """
     errors = []
-    
+
     for service in services:
         service_key = service.get("key", "unknown")
         service_type = service.get("type")
-        
+
         # Type is required
         if not service_type:
             errors.append(
@@ -169,32 +168,32 @@ def validate_service_types(services: List[Dict]) -> Tuple[bool, List[str]]:
                 f"Must be one of: {', '.join(sorted(VALID_SERVICE_TYPES))}"
             )
             continue
-        
+
         # Type must be valid
         if service_type not in VALID_SERVICE_TYPES:
             errors.append(
                 f"Service '{service_key}' has invalid type '{service_type}'. "
                 f"Must be one of: {', '.join(sorted(VALID_SERVICE_TYPES))}"
             )
-    
+
     return len(errors) == 0, errors
 
 
-def validate_deployment_status(services: List[Dict]) -> Tuple[bool, List[str], Dict[str, int]]:
+def validate_deployment_status(services: list[dict]) -> tuple[bool, list[str], dict[str, int]]:
     """Validate deployment status fields.
-    
+
     Returns:
         (is_valid, list_of_warnings, status_counts)
     """
     warnings = []
-    status_counts = {status: 0 for status in VALID_DEPLOYMENT_STATUSES}
+    status_counts = dict.fromkeys(VALID_DEPLOYMENT_STATUSES, 0)
     status_counts["missing"] = 0
-    
+
     for service in services:
         service_key = service.get("key", "unknown")
         service_type = service.get("type", "partner")
         deployment_status = service.get("deployment_status")
-        
+
         # Partner services should have deployment status
         if service_type == "partner":
             if not deployment_status:
@@ -210,7 +209,7 @@ def validate_deployment_status(services: List[Dict]) -> Tuple[bool, List[str], D
                 )
             else:
                 status_counts[deployment_status] += 1
-        
+
         # Placeholders MUST have deployment status
         if service_type == "placeholder":
             if not deployment_status:
@@ -218,19 +217,19 @@ def validate_deployment_status(services: List[Dict]) -> Tuple[bool, List[str], D
                     f"Placeholder service '{service_key}' MUST have 'deployment_status' field"
                 )
                 status_counts["missing"] += 1
-    
+
     # Warnings don't fail validation (just informational)
     return True, warnings, status_counts
 
 
 def validate_service_registry() -> bool:
     """Run all validations on the service registry.
-    
+
     VALIDATION ORDER:
     1. Orphaned Partners (CRITICAL) - Partners without service handlers
     2. Service Types - All services have valid types
     3. Deployment Status - Recommended metadata present
-    
+
     Returns:
         True if all critical validations pass
     """
@@ -240,15 +239,15 @@ def validate_service_registry() -> bool:
     except ImportError:
         print("❌ ERROR: Could not import REGISTRY from core.additional_services")
         return False
-    
+
     print("=" * 60)
     print("ADDITIONAL SERVICES VALIDATION")
     print("=" * 60)
     print(f"Total services: {len(REGISTRY)}")
     print()
-    
+
     all_valid = True
-    
+
     # [1] CRITICAL: Validate no orphaned partners
     print("[1/3] Validating orphaned partners (CRITICAL)...")
     is_valid, errors, warnings = validate_orphaned_partners(REGISTRY)
@@ -265,7 +264,7 @@ def validate_service_registry() -> bool:
             print(f"    • {error}")
         all_valid = False
     print()
-    
+
     # [2] Validate service types
     print("[2/3] Validating service types...")
     is_valid, errors = validate_service_types(REGISTRY)
@@ -277,7 +276,7 @@ def validate_service_registry() -> bool:
             print(f"    • {error}")
         all_valid = False
     print()
-    
+
     # [3] Validate deployment status (warnings only)
     print("[3/3] Checking deployment status...")
     is_valid, warnings, status_counts = validate_deployment_status(REGISTRY)
@@ -287,7 +286,7 @@ def validate_service_registry() -> bool:
             print(f"    • {warning}")
     else:
         print("  ✅ All services have deployment status")
-    
+
     print()
     print("Deployment Status Summary:")
     for status, count in sorted(status_counts.items()):
@@ -295,21 +294,21 @@ def validate_service_registry() -> bool:
             icon = "⚠️ " if status == "missing" else "  "
             print(f"  {icon}{status}: {count}")
     print()
-    
+
     # Partner Coverage Report
     print("=" * 60)
     print("PARTNER COVERAGE REPORT")
     print("=" * 60)
     partner_registry = load_partner_registry()
     service_map = build_service_registry_map(REGISTRY)
-    
+
     covered_partners = [p for p in partner_registry.keys() if p in service_map]
     print(f"Partners with services: {len(covered_partners)}/{len(partner_registry)}")
     for partner_id in sorted(covered_partners):
         services = service_map[partner_id]
         partner_name = partner_registry[partner_id].get("name", partner_id)
         print(f"  ✅ {partner_name} → {', '.join(services)}")
-    
+
     uncovered = [p for p in partner_registry.keys() if p not in service_map]
     if uncovered:
         print(f"\nPartners without services: {len(uncovered)}")
@@ -321,7 +320,7 @@ def validate_service_registry() -> bool:
             else:
                 print(f"  ⚠️  {partner_name} (internal route - needs service)")
     print()
-    
+
     # Summary
     print("=" * 60)
     if all_valid:
@@ -340,11 +339,12 @@ def validate_service_registry() -> bool:
         print("     remove partners from config/partners.json")
         print("  3. Re-run validation: python3 -m core.service_validators")
     print("=" * 60)
-    
+
     return all_valid
 
 
 if __name__ == "__main__":
     import sys
+
     success = validate_service_registry()
     sys.exit(0 if success else 1)

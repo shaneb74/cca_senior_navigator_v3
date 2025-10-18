@@ -1,17 +1,16 @@
 from __future__ import annotations
 
 import importlib
+from collections.abc import Callable
 from dataclasses import dataclass
-from html import escape as html_escape
-from typing import Any, Callable, Dict, List
+from typing import Any
 
 import streamlit as st
 
 from core.forms import progress_rail, progress_steps
 from core.modules.base import load_module_manifest, render_module_inputs
-from core.products.contract import set_module_outcome, set_outcome, set_progress
 from core.nav import route_to
-from ui.product_layout import render_product_start, render_product_end
+from core.products.contract import set_module_outcome, set_outcome, set_progress
 
 
 @dataclass
@@ -35,8 +34,8 @@ class BaseProduct:
     def __init__(
         self,
         product: str,
-        modules: List[ModuleSpec],
-        aggregator: Callable[[Dict[str, Any]], Dict[str, Any]],
+        modules: list[ModuleSpec],
+        aggregator: Callable[[dict[str, Any]], dict[str, Any]],
         *,
         title: str = "",
     ):
@@ -50,7 +49,7 @@ class BaseProduct:
         )
 
     @property
-    def state(self) -> Dict[str, Any]:
+    def state(self) -> dict[str, Any]:
         return st.session_state[self.product]
 
     def render(self) -> None:
@@ -59,12 +58,12 @@ class BaseProduct:
         total_steps = len(self.modules) + 1
 
         render_shell_start(self.title, active_route=self.product)
-        
+
         # Calculate actual progress including current section fraction
         steps = len(self.modules)
         completed = min(step, steps)
         fraction = 0.0
-        
+
         if step >= steps:
             # On summary page - show 100%
             actual_progress = float(steps)
@@ -78,7 +77,7 @@ class BaseProduct:
         else:
             # Fallback
             actual_progress = float(completed)
-        
+
         # Progress bar fills based on module completion (summary = 100%)
         # total_steps includes summary, so we divide by module count, not total_steps
         progress_rail(actual_progress, steps)
@@ -142,11 +141,11 @@ class BaseProduct:
         else:
             # Non-form sections (info, results) are considered complete when viewed
             section_completion = 1.0
-        
+
         # Calculate overall module progress
         # fraction = (completed_sections + current_section_progress) / total_sections
         fraction = (index + section_completion) / total_sections if total_sections else 0.0
-        
+
         mod_state["progress"] = {
             "current": index,
             "total": total_sections,
@@ -277,8 +276,8 @@ class BaseProduct:
             st.markdown(f"- {point}")
 
     def _invoke_module(
-        self, spec: ModuleSpec, manifest: Dict[str, Any], answers: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, spec: ModuleSpec, manifest: dict[str, Any], answers: dict[str, Any]
+    ) -> dict[str, Any]:
         module = importlib.import_module(spec.plugin)
         fn = getattr(module, spec.func)
         return fn(manifest, answers, {"product": self.product})
@@ -287,7 +286,7 @@ class BaseProduct:
         self,
         slug: str,
         section_index: int,
-        actions: List[Dict[str, Any]],
+        actions: list[dict[str, Any]],
         *,
         disabled_next: bool,
     ) -> tuple[str, Any] | None:
@@ -329,7 +328,7 @@ class BaseProduct:
         set_progress(self.product, capped)
 
     @staticmethod
-    def _normalize_module_result(result: Any) -> Dict[str, Any]:
+    def _normalize_module_result(result: Any) -> dict[str, Any]:
         if not isinstance(result, dict):
             return {"tier": "N/A", "score": 0, "points": [str(result)]}
         tier = str(result.get("tier", "N/A"))
@@ -364,5 +363,9 @@ def _has_response(value: Any) -> bool:
     if isinstance(value, str):
         return value.strip() != ""
     if isinstance(value, (list, tuple, set, dict)):
-        return any(_has_response(v) for v in value) if isinstance(value, (list, tuple)) else bool(value)
+        return (
+            any(_has_response(v) for v in value)
+            if isinstance(value, (list, tuple))
+            else bool(value)
+        )
     return True

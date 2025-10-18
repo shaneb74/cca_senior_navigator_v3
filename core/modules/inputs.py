@@ -1,17 +1,18 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from collections.abc import Sequence
+from typing import Any
 
 import streamlit as st
 
 from core.forms import chip_group
 
 
-def _pairs(opts: Sequence[Dict[str, Any]]) -> List[Tuple[str, Any]]:
+def _pairs(opts: Sequence[dict[str, Any]]) -> list[tuple[str, Any]]:
     return [(opt.get("label", ""), opt.get("value")) for opt in (opts or [])]
 
 
-def render_input(q: Dict[str, Any], *, current: Optional[Any]) -> Any:
+def render_input(q: dict[str, Any], *, current: Any | None) -> Any:
     t = q.get("type", "string")
     sel = q.get("select", "single")
     ui = q.get("ui", {}) or {}
@@ -19,11 +20,11 @@ def render_input(q: Dict[str, Any], *, current: Optional[Any]) -> Any:
     label = q.get("label", "")
     help_text = q.get("help")
     options = q.get("options", [])
-    key = f"{st.session_state.get('_module_slug','mod')}.{q['key']}"
+    key = f"{st.session_state.get('_module_slug', 'mod')}.{q['key']}"
 
     # prepare value/label maps once
-    values: List[Any] = []
-    v2l: Dict[Any, str] = {}
+    values: list[Any] = []
+    v2l: dict[Any, str] = {}
     for opt in options:
         val = opt.get("value", opt.get("label"))
         values.append(val)
@@ -57,11 +58,13 @@ def render_input(q: Dict[str, Any], *, current: Optional[Any]) -> Any:
             return str(dt) if dt else None
 
         if widget == "currency":
-            val = st.number_input(label, value=float(current or 0), step=100.0, help=help_text, key=key)
+            val = st.number_input(
+                label, value=float(current or 0), step=100.0, help=help_text, key=key
+            )
             return round(val, 2)
 
         if widget == "number":
-            kwargs: Dict[str, Any] = {}
+            kwargs: dict[str, Any] = {}
             if "min" in ui:
                 kwargs["min_value"] = ui["min"]
             if "max" in ui:
@@ -70,7 +73,7 @@ def render_input(q: Dict[str, Any], *, current: Optional[Any]) -> Any:
                 kwargs["step"] = ui["step"]
             return st.number_input(label, value=current or 0, help=help_text, key=key, **kwargs)
 
-        if widget in ("text","textarea"):
+        if widget in ("text", "textarea"):
             fn = st.text_area if widget == "textarea" else st.text_input
             return fn(label, value=current or "", help=help_text, key=key)
 
@@ -86,7 +89,7 @@ def render_input(q: Dict[str, Any], *, current: Optional[Any]) -> Any:
         if not values:
             return []
         if current is None:
-            current_list: List[Any] = []
+            current_list: list[Any] = []
         elif isinstance(current, list):
             current_list = current
         else:

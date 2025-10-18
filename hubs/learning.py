@@ -1,22 +1,18 @@
 from __future__ import annotations
 
-import html
-from typing import Dict, List
-
 import streamlit as st
 
 from core.additional_services import get_additional_services
 from core.base_hub import render_dashboard_body
-from core.hub_guide import compute_hub_guide
 from core.navi import render_navi_panel
 from core.product_tile import ProductTileHub
-from ui.header_simple import render_header_simple
 from ui.footer_simple import render_footer_simple
+from ui.header_simple import render_header_simple
 
 __all__ = ["render"]
 
 
-def _legacy_actions_to_routes(actions: List[Dict[str, str]]) -> Dict[str, str]:
+def _legacy_actions_to_routes(actions: list[dict[str, str]]) -> dict[str, str]:
     primary = actions[0] if actions else {}
     secondary = actions[1] if len(actions) > 1 else {}
     return {
@@ -27,7 +23,7 @@ def _legacy_actions_to_routes(actions: List[Dict[str, str]]) -> Dict[str, str]:
     }
 
 
-def _card_to_tile(card: Dict[str, any], order: int) -> ProductTileHub:
+def _card_to_tile(card: dict[str, any], order: int) -> ProductTileHub:
     actions = _legacy_actions_to_routes(card.get("actions", []))
     meta = [str(line) for line in card.get("meta", [])]
     footnote = card.get("footnote")
@@ -52,7 +48,7 @@ def _card_to_tile(card: Dict[str, any], order: int) -> ProductTileHub:
 def render(ctx=None) -> None:
     person_name = st.session_state.get("person_name", "").strip()
     learning_progress = st.session_state.get("learning_progress", 0)
-    
+
     completed_resources = st.session_state.get("completed_resources", [])
 
     modules_viewed = len(completed_resources)
@@ -127,7 +123,7 @@ def render(ctx=None) -> None:
     def render_content():
         # Render Navi panel (after header, before hub content)
         render_navi_panel(location="hub", hub_key="learning")
-        
+
         # Render hub body HTML WITHOUT title/subtitle/chips (Navi replaces them)
         body_html = render_dashboard_body(
             title=None,

@@ -15,49 +15,38 @@ Key changes from v2:
 - Booking = complete (no multi-step progress tracking)
 """
 
-from datetime import datetime
-import streamlit as st
 import uuid
+from datetime import datetime
 
+import streamlit as st
+
+from core.events import log_event
 from core.mcip import MCIP, AdvisorAppointment
 from core.nav import route_to
 from core.navi import render_navi_panel
-from core.events import log_event
 
 
 def render():
     """Main entry point for PFMA v3."""
-    
+
     # Step 1: Check prerequisites via MCIP
     if not _check_prerequisites():
         # Render Navi for gate screen
-        render_navi_panel(
-            location="product",
-            product_key="pfma_v3",
-            module_config=None
-        )
+        render_navi_panel(location="product", product_key="pfma_v3", module_config=None)
         _render_gate()
         return
-    
+
     # Step 2: Check if already booked
     appt = MCIP.get_advisor_appointment()
     if appt and appt.scheduled:
         # Already booked - show confirmation and route options
-        render_navi_panel(
-            location="product",
-            product_key="pfma_v3",
-            module_config=None
-        )
+        render_navi_panel(location="product", product_key="pfma_v3", module_config=None)
         _render_confirmation(appt)
         return
-    
+
     # Step 3: Render Navi panel (single intelligence layer)
-    render_navi_panel(
-        location="product",
-        product_key="pfma_v3",
-        module_config=None
-    )
-    
+    render_navi_panel(location="product", product_key="pfma_v3", module_config=None)
+
     # Step 4: Render booking form
     _render_booking_form()
 
@@ -66,9 +55,10 @@ def render():
 # PREREQUISITE CHECKING (MCIP Integration)
 # =============================================================================
 
+
 def _check_prerequisites() -> bool:
     """Check if user has completed required products via MCIP.
-    
+
     Returns:
         True if prerequisites met, False otherwise
     """
@@ -80,38 +70,38 @@ def _check_prerequisites() -> bool:
 def _render_gate():
     """Show friendly gate requiring Cost Planner completion."""
     st.markdown("## 📅 Plan with My Advisor")
-    
+
     st.info(
         "**Ready to talk to a live advisor?**\n\n"
         "Before scheduling your appointment, please complete the **Cost Planner** "
         "so we can help you have the most productive conversation possible."
     )
-    
+
     # Show what user has completed
     st.markdown("#### Your Progress")
-    
+
     care_rec = MCIP.get_care_recommendation()
     financial = MCIP.get_financial_profile()
-    
+
     col1, col2 = st.columns(2)
-    
+
     with col1:
         if care_rec:
             st.success("✓ **Guided Care Plan** complete")
         else:
             st.warning("○ Guided Care Plan not started")
-    
+
     with col2:
         if financial:
             st.success("✓ **Cost Planner** complete")
         else:
             st.error("✗ **Cost Planner required**")
-    
+
     st.markdown("---")
-    
+
     if st.button("← Return to Hub", type="secondary"):
         route_to("hub_concierge")
-    
+
     if st.button("Go to Cost Planner →", type="primary"):
         route_to("cost_planner_v2")
 
@@ -120,63 +110,73 @@ def _render_gate():
 # BOOKING FORM
 # =============================================================================
 
+
 def _render_booking_form():
     """Render single-step appointment booking form."""
-    
+
     st.markdown("## 📅 Schedule Your Consultation")
-    
+
     st.markdown(
         "Book a **free 30-minute consultation** with a care advisor who will help you "
         "navigate options, coordinate benefits, and connect with trusted partners."
     )
-    
-    # Initialize form state
+
+    # Initialize form state with demo data for testing/demos
     if "pfma_v3_form" not in st.session_state:
-        st.session_state["pfma_v3_form"] = {}
+        # Prepopulate with dummy data for quick testing/demos
+        st.session_state["pfma_v3_form"] = {
+            "name": "Shane",
+            "email": "sarah@example.com",
+            "phone": "555-123-4567",
+            "timezone": "America/New_York",
+            "type": "video",
+            "preferred_time": "Morning (8am-12pm)",
+            "notes": "",
+        }
         log_event("pfma.booking.started", {})
-    
+
     form_data = st.session_state["pfma_v3_form"]
-    
+
     # Form fields
     st.markdown("### Your Information")
-    
+
     col1, col2 = st.columns(2)
-    
+
     with col1:
         name = st.text_input(
             "Full Name *",
             value=form_data.get("name", ""),
             placeholder="Sarah Johnson",
-            help="Your name as you'd like the advisor to address you"
+            help="Your name as you'd like the advisor to address you",
         )
         if name != form_data.get("name"):
             form_data["name"] = name
             log_event("pfma.booking.field_edited", {"field": "name"})
-    
+
     with col2:
         email = st.text_input(
             "Email Address",
             value=form_data.get("email", ""),
             placeholder="sarah@example.com",
-            help="We'll send your confirmation here (email OR phone required)"
+            help="We'll send your confirmation here (email OR phone required)",
         )
         if email != form_data.get("email"):
             form_data["email"] = email
             log_event("pfma.booking.field_edited", {"field": "email"})
-    
+
     col3, col4 = st.columns(2)
-    
+
     with col3:
         phone = st.text_input(
             "Phone Number",
             value=form_data.get("phone", ""),
             placeholder="555-123-4567",
-            help="For appointment reminders (email OR phone required)"
+            help="For appointment reminders (email OR phone required)",
         )
         if phone != form_data.get("phone"):
             form_data["phone"] = phone
             log_event("pfma.booking.field_edited", {"field": "phone"})
-    
+
     with col4:
         timezone = st.selectbox(
             "Timezone *",
@@ -187,61 +187,65 @@ def _render_booking_form():
                 "America/Los_Angeles",
                 "America/Phoenix",
                 "America/Anchorage",
-                "Pacific/Honolulu"
+                "Pacific/Honolulu",
             ],
             index=0,
             format_func=_format_timezone,
-            help="Your local timezone for scheduling"
+            help="Your local timezone for scheduling",
         )
         if timezone != form_data.get("timezone"):
             form_data["timezone"] = timezone
             log_event("pfma.booking.field_edited", {"field": "timezone"})
-    
+
     st.markdown("### Appointment Preferences")
-    
+
     col5, col6 = st.columns(2)
-    
+
     with col5:
         appointment_type = st.selectbox(
             "Appointment Type *",
             options=["video", "phone", "in_person"],
-            format_func=lambda x: {"video": "📹 Video Call", "phone": "📞 Phone Call", "in_person": "🏢 In-Person"}.get(x, x),
-            help="How would you like to meet with your advisor?"
+            format_func=lambda x: {
+                "video": "📹 Video Call",
+                "phone": "📞 Phone Call",
+                "in_person": "🏢 In-Person",
+            }.get(x, x),
+            help="How would you like to meet with your advisor?",
         )
         if appointment_type != form_data.get("type"):
             form_data["type"] = appointment_type
             log_event("pfma.booking.field_edited", {"field": "type"})
-    
+
     with col6:
         preferred_time = st.selectbox(
             "Preferred Time",
             options=["Morning (8am-12pm)", "Afternoon (12pm-5pm)", "Evening (5pm-8pm)", "Flexible"],
-            help="We'll do our best to match your preference"
+            help="We'll do our best to match your preference",
         )
         if preferred_time != form_data.get("preferred_time"):
             form_data["preferred_time"] = preferred_time
             log_event("pfma.booking.field_edited", {"field": "preferred_time"})
-    
+
     # Notes field
     notes = st.text_area(
         "Additional Notes (Optional)",
         value=form_data.get("notes", ""),
         placeholder="Any specific topics you'd like to discuss or scheduling constraints...",
         help="Share anything that will help us prepare for your consultation",
-        max_chars=500
+        max_chars=500,
     )
     if notes != form_data.get("notes"):
         form_data["notes"] = notes
         log_event("pfma.booking.field_edited", {"field": "notes"})
-    
+
     # Validation and submit
     st.markdown("---")
-    
+
     col_submit1, col_submit2 = st.columns([3, 1])
-    
+
     with col_submit1:
         st.caption("*Required fields. Email OR phone required for confirmation.")
-    
+
     with col_submit2:
         if st.button("📅 Book Appointment", type="primary", use_container_width=True):
             _handle_booking_submit(form_data)
@@ -256,29 +260,29 @@ def _format_timezone(tz: str) -> str:
         "America/Los_Angeles": "Pacific (PT)",
         "America/Phoenix": "Arizona (MST)",
         "America/Anchorage": "Alaska (AKT)",
-        "Pacific/Honolulu": "Hawaii (HST)"
+        "Pacific/Honolulu": "Hawaii (HST)",
     }
     return tz_map.get(tz, tz)
 
 
 def _handle_booking_submit(form_data: dict):
     """Validate and process booking submission."""
-    
+
     # Validate
     is_valid, errors = _validate_booking(form_data)
-    
+
     if not is_valid:
         # Log validation errors
         log_event("pfma.booking.validation_error", {"errors": errors})
-        
+
         # Show errors
         for error in errors:
             st.error(f"❌ {error}")
         return
-    
+
     # Create appointment
     confirmation_id = str(uuid.uuid4())[:8].upper()
-    
+
     appointment = AdvisorAppointment(
         scheduled=True,
         date=datetime.now().isoformat(),  # Will be updated by scheduling team
@@ -292,66 +296,68 @@ def _handle_booking_submit(form_data: dict):
         generated_at=datetime.now().isoformat(),
         status="scheduled",
         prep_sections_complete=[],
-        prep_progress=0
+        prep_progress=0,
     )
-    
+
     # Save to MCIP
     MCIP.set_advisor_appointment(appointment)
-    
+
     # Mark PFMA v3 complete
     MCIP.mark_product_complete("pfma_v3")
-    
+
     # Log events
-    log_event("pfma.booking.submitted", {
-        "appointment_type": appointment.type,
-        "timezone": appointment.timezone,
-        "has_email": bool(appointment.contact_email),
-        "has_phone": bool(appointment.contact_phone)
-    })
-    
-    log_event("pfma.appointment.requested", {
-        "confirmation_id": confirmation_id,
-        "type": appointment.type
-    })
-    
+    log_event(
+        "pfma.booking.submitted",
+        {
+            "appointment_type": appointment.type,
+            "timezone": appointment.timezone,
+            "has_email": bool(appointment.contact_email),
+            "has_phone": bool(appointment.contact_phone),
+        },
+    )
+
+    log_event(
+        "pfma.appointment.requested", {"confirmation_id": confirmation_id, "type": appointment.type}
+    )
+
     # Clear form
     st.session_state["pfma_v3_form"] = {}
-    
+
     # Force rerun to show confirmation
     st.rerun()
 
 
 def _validate_booking(form_data: dict) -> tuple[bool, list[str]]:
     """Validate booking form data.
-    
+
     Returns:
         (is_valid, errors) tuple
     """
     errors = []
-    
+
     # Name required
     if not form_data.get("name", "").strip():
         errors.append("Full Name is required")
-    
+
     # Email OR phone required (not both mandatory)
     email = form_data.get("email", "").strip()
     phone = form_data.get("phone", "").strip()
-    
+
     if not email and not phone:
         errors.append("Please provide either Email or Phone for confirmation")
-    
+
     # Email format validation (if provided)
     if email and "@" not in email:
         errors.append("Please provide a valid email address")
-    
+
     # Timezone required
     if not form_data.get("timezone"):
         errors.append("Timezone is required")
-    
+
     # Appointment type required
     if not form_data.get("type"):
         errors.append("Appointment type is required")
-    
+
     return (len(errors) == 0, errors)
 
 
@@ -359,63 +365,63 @@ def _validate_booking(form_data: dict) -> tuple[bool, list[str]]:
 # CONFIRMATION SCREEN
 # =============================================================================
 
+
 def _render_confirmation(appt: AdvisorAppointment):
     """Render confirmation screen for already-booked appointment."""
-    
+
     st.markdown("## ✅ Appointment Confirmed")
-    
+
     st.success(
-        f"**Your consultation is scheduled!**\n\n"
-        f"Confirmation ID: **{appt.confirmation_id}**"
+        f"**Your consultation is scheduled!**\n\nConfirmation ID: **{appt.confirmation_id}**"
     )
-    
+
     # Appointment details
     st.markdown("### Appointment Details")
-    
+
     col1, col2 = st.columns(2)
-    
+
     with col1:
         st.markdown(f"**Type:** {appt.type.title()}")
         st.markdown(f"**Timezone:** {_format_timezone(appt.timezone)}")
         if appt.contact_email:
             st.markdown(f"**Email:** {appt.contact_email}")
-    
+
     with col2:
         st.markdown(f"**Status:** {appt.status.title()}")
         st.markdown(f"**Preferred Time:** {appt.time}")
         if appt.contact_phone:
             st.markdown(f"**Phone:** {appt.contact_phone}")
-    
+
     if appt.notes:
         st.markdown("**Notes:**")
         st.info(appt.notes)
-    
+
     # Next steps
     st.markdown("---")
     st.markdown("### Next Steps")
-    
+
     st.markdown(
         "**While you wait for your appointment:**\n\n"
         "Visit the **Waiting Room** to prepare for your consultation. "
         "Complete optional prep sections to help your advisor provide personalized guidance."
     )
-    
+
     # Prep progress
     if appt.prep_progress > 0:
         st.progress(appt.prep_progress / 100, text=f"Advisor Prep: {appt.prep_progress}% complete")
-    
+
     # Action buttons
     col_btn1, col_btn2, col_btn3 = st.columns(3)
-    
+
     with col_btn1:
         if st.button("← Return to Hub", type="secondary", use_container_width=True):
             route_to("hub_concierge")
-    
+
     with col_btn2:
         if st.button("🎯 Prepare for Appointment", type="primary", use_container_width=True):
             log_event("waiting_room.unlocked", {"from_product": "pfma_v3"})
             route_to("advisor_prep")
-    
+
     with col_btn3:
         if st.button("Go to Waiting Room →", type="secondary", use_container_width=True):
             log_event("waiting_room.first_visit", {"from_product": "pfma_v3"})
