@@ -310,7 +310,8 @@ def _log_lead_locally(partner_id: str, fields: Dict[str, Any], payload: Dict[str
     
     st.session_state.partner_leads.append(lead_record)
     
-    # TODO: In production, write to database or log file
+    # Note: Currently stored in session state only
+    # Production implementation would persist to database or send to CRM API
 
 
 def _show_confirmation(confirmation_config: Dict[str, Any], partner_id: str) -> None:

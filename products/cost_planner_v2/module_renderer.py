@@ -119,8 +119,8 @@ def _is_section_visible(section: Dict[str, Any]) -> bool:
     
     # Simple condition evaluation
     condition = visible_if.get("condition", "")
-    # TODO: Implement condition parser
-    # For now, always visible
+    # Note: Advanced condition parsing not implemented yet
+    # Currently all sections are visible by default
     return True
 
 
@@ -333,7 +333,7 @@ def _evaluate_visible_if(visible_if: Optional[Dict[str, Any]]) -> bool:
         return True
     
     # Find the value in session state
-    # TODO: Implement proper state lookup across modules
+    # Simple state lookup - iterates through session state dicts
     for key, value in st.session_state.items():
         if isinstance(value, dict) and field_name in value:
             field_value = value[field_name]
@@ -473,8 +473,8 @@ def _render_insights(module_def: Dict[str, Any], data: Dict[str, Any]):
     for insight in module_def.get("insights", []):
         condition = insight.get("condition", "")
         
-        # Simple condition evaluation
-        # TODO: Implement proper condition parser
+        # Simple condition evaluation using string matching
+        # Advanced expression parser not implemented
         if "total_monthly_income > 0 AND total_assets > 0" in condition:
             if data.get("total_monthly_income", 0) > 0 and data.get("total_assets", 0) > 0:
                 msg = insight["message"].format(**data)

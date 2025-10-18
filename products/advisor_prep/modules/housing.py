@@ -125,8 +125,8 @@ def _get_prefill_value(field: dict):
     # Parse path (e.g., "gcp.results.recommendation")
     parts = prefill_path.split(".")
     
-    # For now, return None (prefill logic can be enhanced later)
-    # TODO: Implement actual prefill from GCP session data
+    # Prefill is currently handled by get_housing_prefill() function
+    # This fallback returns None for any fields not covered by that function
     return None
 
 
