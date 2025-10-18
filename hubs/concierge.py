@@ -7,6 +7,7 @@ Navi orchestrates journey coordination, Additional Services, and Q&A.
 """
 
 import html
+from typing import Optional
 
 import streamlit as st
 
@@ -423,7 +424,7 @@ def _build_navi_guide_block(ctx) -> str:
     )
 
 
-def _build_saved_progress_alert(save_msg: dict | None) -> str:
+def _build_saved_progress_alert(save_msg: Optional[dict]) -> str:
     if not save_msg:
         return ""
     product_name = {

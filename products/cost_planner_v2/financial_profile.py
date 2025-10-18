@@ -10,7 +10,7 @@ Output: Unified FinancialProfile ready for MCIP publishing and analysis
 """
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Optional, Dict
 
 import streamlit as st
 
@@ -44,6 +44,8 @@ class FinancialProfile:
     ltc_insurance_monthly: float = 0.0
     family_support_monthly: float = 0.0
     periodic_income_avg_monthly: float = 0.0
+    periodic_income_frequency: str = "annual"  # NEW: "monthly", "quarterly", "semi_annual", "annual", "as_needed"
+    periodic_income_notes: str = ""  # NEW: RMD schedules, dividend timing, asset sale plans
     other_income_monthly: float = 0.0
     total_monthly_income: float = 0.0
     income_breakdown: dict[str, float] = field(default_factory=dict)
@@ -77,8 +79,8 @@ class FinancialProfile:
     # ==== HEALTH INSURANCE ====
     has_medicare: bool = False
     medicare_parts: list = field(default_factory=list)
-    has_medicare_advantage: bool = False
-    has_medicare_supplement: bool = False
+    has_medicare_advantage: bool = False  # NEW: Was checkbox in JSON, not captured
+    has_medicare_supplement: bool = False  # NEW: Was checkbox in JSON, not captured
     medicare_premium_monthly: float = 0.0
 
     has_medicaid: bool = False
@@ -88,13 +90,14 @@ class FinancialProfile:
     ltc_daily_benefit: float = 0.0
     ltc_benefit_period_months: int = 0
     ltc_elimination_days: int = 0
+    ltc_monthly_premium: float = 0.0  # NEW: Monthly LTC insurance premium cost
 
     has_private_insurance: bool = False
     private_insurance_premium_monthly: float = 0.0
 
     # ==== LIFE INSURANCE ====
     has_life_insurance: str = "no"
-    life_insurance_type: str | None = None
+    life_insurance_type: Optional[str] = None
     life_insurance_face_value: float = 0.0
     life_insurance_cash_value: float = 0.0
     life_insurance_premium_monthly: float = 0.0
@@ -119,14 +122,18 @@ class FinancialProfile:
     # ==== MEDICAID PLANNING ====
     medicaid_status: str = "not_enrolled"
     interested_in_spend_down: bool = False
-    spend_down_timeline: str | None = None
+    spend_down_timeline: Optional[str] = None
     has_estate_plan: list = field(default_factory=list)
+    aware_of_asset_limits: str = "no"  # NEW: "no", "somewhat", "yes" - affects recommendations
+    current_asset_position: str = "unknown"  # NEW: "under_limit", "near_limit", "over_limit", "unknown" - CRITICAL for timeline
+    aware_of_estate_recovery: bool = False  # NEW: User awareness of Medicaid estate recovery
+    interested_in_elder_law: bool = False  # NEW: Referral intent for elder law attorney
 
     # ==== METADATA ====
     completeness_percentage: float = 0.0
     required_assessments_complete: bool = False
     optional_assessments_complete: dict = field(default_factory=dict)
-    last_updated: str | None = None
+    last_updated: Optional[str] = None
 
 
 def build_financial_profile(product_key: str = "cost_planner_v2") -> FinancialProfile:
@@ -166,6 +173,9 @@ def build_financial_profile(product_key: str = "cost_planner_v2") -> FinancialPr
         profile.periodic_income_avg_monthly = float(
             income_data.get("periodic_income_avg_monthly", 0.0)
         )
+        # NEW: Capture periodic income details
+        profile.periodic_income_frequency = income_data.get("periodic_income_frequency", "annual")
+        profile.periodic_income_notes = income_data.get("periodic_income_notes", "")
         profile.other_income_monthly = float(income_data.get("other_income_monthly", 0.0))
         profile.total_monthly_income = float(
             income_data.get("total_monthly_income", profile.total_monthly_income)
@@ -224,21 +234,30 @@ def build_financial_profile(product_key: str = "cost_planner_v2") -> FinancialPr
     # ==== HEALTH INSURANCE ASSESSMENT ====
     health_data = assessments_state.get("health_insurance", {})
     if health_data:
-        profile.has_medicare = bool(health_data.get("has_medicare", False))
+        # Fix: JSON sends "yes"/"no" strings, not booleans
+        has_medicare_val = health_data.get("has_medicare", "no")
+        profile.has_medicare = has_medicare_val == "yes"
         profile.medicare_parts = health_data.get("medicare_parts", [])
-        profile.has_medicare_advantage = bool(health_data.get("has_medicare_advantage", False))
-        profile.has_medicare_supplement = bool(health_data.get("has_medicare_supplement", False))
-        profile.medicare_premium_monthly = float(health_data.get("medicare_premium_monthly", 0))
+        profile.has_medicare_advantage = bool(health_data.get("medicare_advantage", False))
+        profile.has_medicare_supplement = bool(health_data.get("medicare_supplement", False))
+        # Fix: JSON key is medicare_monthly_premium, not medicare_premium_monthly
+        profile.medicare_premium_monthly = float(
+            health_data.get("medicare_monthly_premium", health_data.get("medicare_premium_monthly", 0))
+        )
 
-        profile.has_medicaid = bool(health_data.get("has_medicaid", False))
+        has_medicaid_val = health_data.get("has_medicaid", "no")
+        profile.has_medicaid = has_medicaid_val == "yes"
         profile.medicaid_covers_ltc = bool(health_data.get("medicaid_covers_ltc", False))
 
-        profile.has_ltc_insurance = bool(health_data.get("has_ltc_insurance", False))
+        has_ltc_val = health_data.get("has_ltc_insurance", "no")
+        profile.has_ltc_insurance = has_ltc_val == "yes"
         profile.ltc_daily_benefit = float(health_data.get("ltc_daily_benefit", 0))
         profile.ltc_benefit_period_months = int(health_data.get("ltc_benefit_period_months", 0))
         profile.ltc_elimination_days = int(health_data.get("ltc_elimination_days", 0))
+        profile.ltc_monthly_premium = float(health_data.get("ltc_monthly_premium", 0))  # NEW
 
-        profile.has_private_insurance = bool(health_data.get("has_private_insurance", False))
+        has_private_val = health_data.get("has_private_insurance", "no")
+        profile.has_private_insurance = has_private_val == "yes"
         profile.private_insurance_premium_monthly = float(
             health_data.get("private_insurance_premium_monthly", 0)
         )
@@ -267,13 +286,16 @@ def build_financial_profile(product_key: str = "cost_planner_v2") -> FinancialPr
     if va_data:
         profile.has_va_benefits = va_data.get("has_va_benefits", "no")
 
-        # Parse VA disability rating (comes as string like "50%" or "100%")
-        rating_str = va_data.get("va_disability_rating", "0")
-        try:
-            # Remove '%' if present and convert to int
-            profile.va_disability_rating = int(rating_str.replace("%", "")) if rating_str else 0
-        except (ValueError, AttributeError):
-            profile.va_disability_rating = 0
+        # Parse VA disability rating - JSON sends ranges like "10-30", "70-90", "100", "none"
+        rating_str = va_data.get("va_disability_rating", "none")
+        rating_map = {
+            "none": 0,
+            "10-30": 20,  # Use midpoint
+            "40-60": 50,  # Use midpoint
+            "70-90": 80,  # Use midpoint
+            "100": 100,
+        }
+        profile.va_disability_rating = rating_map.get(rating_str, 0)
 
         profile.va_disability_monthly = float(va_data.get("va_disability_monthly", 0))
         profile.va_pension_monthly = float(va_data.get("va_pension_monthly", 0))
@@ -296,6 +318,13 @@ def build_financial_profile(product_key: str = "cost_planner_v2") -> FinancialPr
         )
         profile.spend_down_timeline = medicaid_data.get("spend_down_timeline")
         profile.has_estate_plan = medicaid_data.get("has_estate_plan", [])
+        # NEW: Capture additional Medicaid planning context
+        profile.aware_of_asset_limits = medicaid_data.get("aware_of_asset_limits", "no")
+        profile.current_asset_position = medicaid_data.get("current_asset_position", "unknown")
+        profile.aware_of_estate_recovery = bool(
+            medicaid_data.get("aware_of_estate_recovery", False)
+        )
+        profile.interested_in_elder_law = bool(medicaid_data.get("interested_in_elder_law", False))
 
     # ==== CALCULATE METADATA ====
     profile.completeness_percentage = _calculate_completeness(assessments_state)
@@ -346,7 +375,7 @@ def _check_required_complete(assessments_state: dict[str, Any]) -> bool:
     return bool(assessments_state.get("income") and assessments_state.get("assets"))
 
 
-def get_financial_profile(product_key: str = "cost_planner_v2") -> FinancialProfile | None:
+def get_financial_profile(product_key: str = "cost_planner_v2") -> Optional[FinancialProfile]:
     """
     Get cached financial profile or build new one.
 

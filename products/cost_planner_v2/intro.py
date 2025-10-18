@@ -19,10 +19,12 @@ Workflow:
 5. CTA → Full Assessment (authentication)
 """
 
+from typing import Optional
 import streamlit as st
 
 from core.mcip import MCIP
 from products.cost_planner_v2.utils import CostCalculator
+from products.cost_planner_v2.utils.cost_calculator import CostEstimate
 
 
 def render():
@@ -133,7 +135,7 @@ def _render_quick_estimate_form():
         st.markdown("</div>", unsafe_allow_html=True)
 
 
-def _calculate_quick_estimate(care_tier: str, zip_code: str | None):
+def _calculate_quick_estimate(care_tier: str, zip_code: Optional[str]):
     """Calculate and store quick estimate.
 
     Args:
@@ -153,7 +155,7 @@ def _calculate_quick_estimate(care_tier: str, zip_code: str | None):
         )
 
         st.session_state.cost_v2_quick_estimate = {
-            "estimate": estimate,
+            "estimate": estimate.to_dict(),  # Convert to dict for JSON serialization
             "care_tier": care_tier,
             "zip_code": zip_code,
         }
@@ -171,7 +173,14 @@ def _render_quick_estimate_results():
     """
 
     data = st.session_state.cost_v2_quick_estimate
-    estimate = data["estimate"]
+    
+    # Reconstruct CostEstimate from dict (for backward compatibility and persistence)
+    estimate_data = data["estimate"]
+    if isinstance(estimate_data, dict):
+        estimate = CostEstimate.from_dict(estimate_data)
+    else:
+        # Legacy: already a CostEstimate object
+        estimate = estimate_data
 
     st.markdown("### 📊 Your Cost Estimate")
 

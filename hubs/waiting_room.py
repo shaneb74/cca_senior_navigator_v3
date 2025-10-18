@@ -1,5 +1,6 @@
 # hubs/waiting_room.py
 
+from typing import Optional
 import streamlit as st
 
 from core.additional_services import get_additional_services
@@ -69,7 +70,7 @@ def _get_trivia_progress():
     return int((completed_count / total_quizzes) * 100)
 
 
-def _build_advisor_prep_tile() -> ProductTileHub | None:
+def _build_advisor_prep_tile() -> Optional[ProductTileHub]:
     """Build Advisor Prep tile if PFMA booking exists.
 
     Returns:

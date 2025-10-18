@@ -142,8 +142,11 @@ else:
     # Add UID to query params for href persistence
     st.query_params["uid"] = uid
 
-# Load persisted data on first run
-if "persistence_loaded" not in st.session_state:
+# Load persisted data on first run OR when UID changes
+last_loaded_uid = st.session_state.get("_last_loaded_uid")
+needs_reload = "persistence_loaded" not in st.session_state or last_loaded_uid != uid
+
+if needs_reload:
     # Load session data (browser-specific, temporary)
     session_data = load_session(session_id)
     merge_into_state(st.session_state, session_data)
@@ -153,6 +156,11 @@ if "persistence_loaded" not in st.session_state:
     merge_into_state(st.session_state, user_data)
 
     st.session_state["persistence_loaded"] = True
+    st.session_state["_last_loaded_uid"] = uid
+    # CRITICAL: Skip saving on first render to prevent overwriting loaded data
+    # The module engine and MCIP.initialize() will set defaults that would
+    # overwrite the freshly loaded user data if we save immediately
+    st.session_state["skip_save_this_render"] = True
     log_event("session.loaded", {"session_id": session_id, "uid": uid})
 
 # Cleanup old session files periodically (1% chance per page load)
@@ -205,12 +213,18 @@ if not uses_layout_frame:
 # SESSION PERSISTENCE - Save state to disk after page render
 # ====================================================================
 
-# Save session data (browser-specific, temporary)
-session_state_to_save = extract_session_state(st.session_state)
-if session_state_to_save:
-    save_session(session_id, session_state_to_save)
+# Check if we should skip saving this render (prevents overwriting freshly loaded data)
+should_skip_save = st.session_state.get("skip_save_this_render", False)
+if should_skip_save:
+    # Clear the flag so next render will save normally
+    st.session_state["skip_save_this_render"] = False
+else:
+    # Save session data (browser-specific, temporary)
+    session_state_to_save = extract_session_state(st.session_state)
+    if session_state_to_save:
+        save_session(session_id, session_state_to_save)
 
-# Save user data (persistent, cross-device)
-user_state_to_save = extract_user_state(st.session_state)
-if user_state_to_save:
-    save_user(uid, user_state_to_save)
+    # Save user data (persistent, cross-device)
+    user_state_to_save = extract_user_state(st.session_state)
+    if user_state_to_save:
+        save_user(uid, user_state_to_save)

@@ -1,9 +1,10 @@
+from typing import Optional
 import streamlit as st
 
 from core.ui import img_src
 
 
-def _page(title: str, desc: str, ctas: list[tuple[str, str]] | None = None):
+def _page(title: str, desc: str, ctas: Optional[list[tuple[str, str]]] = None):
     # Apply consistent styling like other pages
     st.markdown(
         """<style>
@@ -58,6 +59,7 @@ def render_welcome():
     <p class="hero-sub">Expert advisors - no cost. Helping families navigate the most important senior living decisions with clarity and compassion.</p>
     <div class="cta-row">
       <a class="btn btn--primary" href="?page=welcome_contextual">Start Now</a>
+      <a class="btn btn--secondary" href="?page=login" style="margin-left: var(--space-3);">Demo/Test Login 🧪</a>
     </div>
   </div>
   <div>

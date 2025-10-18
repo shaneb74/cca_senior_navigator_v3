@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from html import escape as _escape
+from typing import Optional
 
 import streamlit as st
 
@@ -65,8 +66,8 @@ def chip_group(
     key: str,
     options: list[tuple[str, str]],
     *,
-    label: str | None = None,
-    help_text: str | None = None,
+    label: Optional[str] = None,
+    help_text: Optional[str] = None,
 ) -> str:
     """Render a single-select chip group using styled radio buttons (looks like pills)."""
     # Build label list and value mapping

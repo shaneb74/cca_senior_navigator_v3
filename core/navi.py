@@ -15,7 +15,7 @@ Navi replaces and deprecates:
 """
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional, Dict, List
 
 import streamlit as st
 
@@ -57,9 +57,9 @@ class NaviContext:
     next_action: dict[str, str]  # From MCIP.get_recommended_next_action()
 
     # Product outcomes
-    care_recommendation: Any | None = None
-    financial_profile: Any | None = None
-    advisor_appointment: Any | None = None
+    care_recommendation: Optional[Any] = None
+    financial_profile: Optional[Any] = None
+    advisor_appointment: Optional[Any] = None
 
     # Flags and context
     flags: dict[str, bool] = None
@@ -68,10 +68,10 @@ class NaviContext:
 
     # Location context
     location: str = "hub"  # "hub" or "product"
-    hub_key: str | None = None
-    product_key: str | None = None
-    module_step: int | None = None
-    module_total: int | None = None
+    hub_key: Optional[str] = None
+    product_key: Optional[str] = None
+    module_step: Optional[int] = None
+    module_total: Optional[int] = None
 
 
 class NaviOrchestrator:
@@ -80,9 +80,9 @@ class NaviOrchestrator:
     @staticmethod
     def get_context(
         location: str = "hub",
-        hub_key: str | None = None,
-        product_key: str | None = None,
-        module_config: Any | None = None,
+        hub_key: Optional[str] = None,
+        product_key: Optional[str] = None,
+        module_config: Optional[Any] = None,
     ) -> NaviContext:
         """Get complete Navi context for current location.
 
@@ -414,9 +414,9 @@ def _has_diabetes_condition() -> bool:
 
 def render_navi_panel(
     location: str = "hub",
-    hub_key: str | None = None,
-    product_key: str | None = None,
-    module_config: Any | None = None,
+    hub_key: Optional[str] = None,
+    product_key: Optional[str] = None,
+    module_config: Optional[Any] = None,
 ) -> NaviContext:
     """Render Navi panel at canonical location.
 

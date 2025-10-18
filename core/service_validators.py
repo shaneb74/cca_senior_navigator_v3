@@ -14,6 +14,7 @@ Run at startup: Automatically in dev mode (app.py)
 
 import json
 from pathlib import Path
+from typing import Optional, Dict, List, Any
 
 # Valid service types
 VALID_SERVICE_TYPES = {
@@ -54,7 +55,7 @@ def load_partner_registry() -> dict[str, dict]:
         return {}
 
 
-def extract_partner_key(go_route: str) -> str | None:
+def extract_partner_key(go_route: str) -> Optional[str]:
     """Extract partner ID from a 'go' route.
 
     Patterns:
