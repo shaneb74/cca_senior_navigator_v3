@@ -2,34 +2,30 @@
   "key": "medicaid_navigation",
   "title": "Medicaid Planning",
   "icon": "🏛️",
-  "description": "Long-term care Medicaid planning",
+  "description": "Long-term care Medicaid planning and eligibility",
   "estimated_time": "4-6 min",
   "required": false,
   "sort_order": 6,
-  "visible_if": {
-    "flag": "medicaid_planning_interest",
-    "equals": true
-  },
   "sections": [
     {
       "id": "intro",
       "type": "intro",
       "title": "Medicaid Planning Assessment",
       "icon": "🏛️",
-      "help_text": "Let's explore Medicaid long-term care benefits, eligibility requirements, and planning strategies.",
+      "help_text": "If you're pursuing Medicaid, record your status and any spend-down planning so we can align your eligibility with your financial timeline.",
       "fields": [],
       "info_boxes": [
         {
           "type": "info",
-          "message": "ℹ️ Medicaid covers long-term care (nursing home, some assisted living) when private funds are exhausted. Requires meeting income and asset limits, which vary by state."
+          "message": "💡 Medicaid covers long-term care costs when private funds are exhausted. Eligibility requires meeting income and asset limits that vary by state."
         }
       ]
     },
     {
-      "id": "medicaid_status",
-      "title": "Current Medicaid Status",
+      "id": "status_pathway",
+      "title": "Status & Pathway",
       "icon": "📋",
-      "help_text": "Your current Medicaid enrollment",
+      "help_text": "Your current Medicaid status and planning stage",
       "layout": "single_column",
       "fields": [
         {
@@ -38,167 +34,477 @@
           "type": "select",
           "required": false,
           "options": [
-            {"value": "not_enrolled", "label": "Not enrolled"},
-            {"value": "enrolled", "label": "Currently enrolled"},
-            {"value": "applied", "label": "Application pending"},
-            {"value": "interested", "label": "Interested in applying"}
+            {
+              "value": "not_enrolled",
+              "label": "Not enrolled / Not considering"
+            },
+            {
+              "value": "considering",
+              "label": "Considering or learning about Medicaid"
+            },
+            {
+              "value": "planning",
+              "label": "Actively planning for eligibility"
+            },
+            {
+              "value": "applied",
+              "label": "Application pending"
+            },
+            {
+              "value": "enrolled",
+              "label": "Currently enrolled"
+            }
           ],
           "default": "not_enrolled",
-          "help": "Current Medicaid enrollment status"
+          "help": "Where you are in the Medicaid journey affects our financial projections and recommendations."
+        },
+        {
+          "key": "state",
+          "label": "State of Residence",
+          "type": "select",
+          "required": false,
+          "options": [
+            {
+              "value": "AL",
+              "label": "Alabama"
+            },
+            {
+              "value": "AK",
+              "label": "Alaska"
+            },
+            {
+              "value": "AZ",
+              "label": "Arizona"
+            },
+            {
+              "value": "AR",
+              "label": "Arkansas"
+            },
+            {
+              "value": "CA",
+              "label": "California"
+            },
+            {
+              "value": "CO",
+              "label": "Colorado"
+            },
+            {
+              "value": "CT",
+              "label": "Connecticut"
+            },
+            {
+              "value": "DE",
+              "label": "Delaware"
+            },
+            {
+              "value": "FL",
+              "label": "Florida"
+            },
+            {
+              "value": "GA",
+              "label": "Georgia"
+            },
+            {
+              "value": "HI",
+              "label": "Hawaii"
+            },
+            {
+              "value": "ID",
+              "label": "Idaho"
+            },
+            {
+              "value": "IL",
+              "label": "Illinois"
+            },
+            {
+              "value": "IN",
+              "label": "Indiana"
+            },
+            {
+              "value": "IA",
+              "label": "Iowa"
+            },
+            {
+              "value": "KS",
+              "label": "Kansas"
+            },
+            {
+              "value": "KY",
+              "label": "Kentucky"
+            },
+            {
+              "value": "LA",
+              "label": "Louisiana"
+            },
+            {
+              "value": "ME",
+              "label": "Maine"
+            },
+            {
+              "value": "MD",
+              "label": "Maryland"
+            },
+            {
+              "value": "MA",
+              "label": "Massachusetts"
+            },
+            {
+              "value": "MI",
+              "label": "Michigan"
+            },
+            {
+              "value": "MN",
+              "label": "Minnesota"
+            },
+            {
+              "value": "MS",
+              "label": "Mississippi"
+            },
+            {
+              "value": "MO",
+              "label": "Missouri"
+            },
+            {
+              "value": "MT",
+              "label": "Montana"
+            },
+            {
+              "value": "NE",
+              "label": "Nebraska"
+            },
+            {
+              "value": "NV",
+              "label": "Nevada"
+            },
+            {
+              "value": "NH",
+              "label": "New Hampshire"
+            },
+            {
+              "value": "NJ",
+              "label": "New Jersey"
+            },
+            {
+              "value": "NM",
+              "label": "New Mexico"
+            },
+            {
+              "value": "NY",
+              "label": "New York"
+            },
+            {
+              "value": "NC",
+              "label": "North Carolina"
+            },
+            {
+              "value": "ND",
+              "label": "North Dakota"
+            },
+            {
+              "value": "OH",
+              "label": "Ohio"
+            },
+            {
+              "value": "OK",
+              "label": "Oklahoma"
+            },
+            {
+              "value": "OR",
+              "label": "Oregon"
+            },
+            {
+              "value": "PA",
+              "label": "Pennsylvania"
+            },
+            {
+              "value": "RI",
+              "label": "Rhode Island"
+            },
+            {
+              "value": "SC",
+              "label": "South Carolina"
+            },
+            {
+              "value": "SD",
+              "label": "South Dakota"
+            },
+            {
+              "value": "TN",
+              "label": "Tennessee"
+            },
+            {
+              "value": "TX",
+              "label": "Texas"
+            },
+            {
+              "value": "UT",
+              "label": "Utah"
+            },
+            {
+              "value": "VT",
+              "label": "Vermont"
+            },
+            {
+              "value": "VA",
+              "label": "Virginia"
+            },
+            {
+              "value": "WA",
+              "label": "Washington"
+            },
+            {
+              "value": "WV",
+              "label": "West Virginia"
+            },
+            {
+              "value": "WI",
+              "label": "Wisconsin"
+            },
+            {
+              "value": "WY",
+              "label": "Wyoming"
+            },
+            {
+              "value": "DC",
+              "label": "Washington, D.C."
+            }
+          ],
+          "default": "CA",
+          "help": "Medicaid rules and asset limits vary significantly by state."
         },
         {
           "key": "medicaid_covers_ltc",
-          "label": "Does Medicaid cover your long-term care?",
+          "label": "Does Medicaid currently cover your long-term care?",
           "type": "checkbox",
           "required": false,
           "default": false,
-          "help": "Check if Medicaid pays for nursing home or assisted living",
+          "help": "Check if Medicaid is already paying for nursing home or assisted living costs.",
           "visible_if": {
             "field": "medicaid_status",
             "equals": "enrolled"
           }
         }
-      ]
+      ],
+      "info_boxes": []
     },
     {
-      "id": "asset_awareness",
-      "title": "Asset & Income Limits",
+      "id": "income_assets_context",
+      "title": "Income & Assets Context",
       "icon": "💰",
-      "help_text": "Understanding Medicaid eligibility requirements",
+      "help_text": "Understanding your position relative to Medicaid eligibility limits",
       "layout": "single_column",
       "fields": [
         {
           "key": "aware_of_asset_limits",
-          "label": "Aware of Medicaid asset limits?",
+          "label": "How familiar are you with your state's Medicaid asset limits?",
           "type": "select",
           "required": false,
           "options": [
-            {"value": "no", "label": "No"},
-            {"value": "somewhat", "label": "Somewhat"},
-            {"value": "yes", "label": "Yes"}
+            {
+              "value": "no",
+              "label": "Not familiar"
+            },
+            {
+              "value": "somewhat",
+              "label": "Somewhat familiar"
+            },
+            {
+              "value": "yes",
+              "label": "Very familiar"
+            }
           ],
           "default": "no",
-          "help": "Understanding of state Medicaid asset limits ($2,000-$15,000 for individual)"
+          "help": "Most states have asset limits of $2,000-$15,000 for individuals (higher for couples)."
         },
         {
           "key": "current_asset_position",
-          "label": "Current Asset Position",
+          "label": "Current Position Relative to Asset Limits",
           "type": "select",
           "required": false,
           "options": [
-            {"value": "under_limit", "label": "Under Medicaid limit"},
-            {"value": "near_limit", "label": "Near limit (within 12 months)"},
-            {"value": "over_limit", "label": "Over limit"},
-            {"value": "unknown", "label": "Unsure"}
+            {
+              "value": "under_limit",
+              "label": "Under the limit (currently eligible)"
+            },
+            {
+              "value": "near_limit",
+              "label": "Near the limit (within 12 months)"
+            },
+            {
+              "value": "over_limit",
+              "label": "Over the limit"
+            },
+            {
+              "value": "unknown",
+              "label": "Unsure"
+            }
           ],
           "default": "unknown",
-          "help": "Position relative to state Medicaid asset limits"
-        }
-      ],
-      "info_boxes": [
-        {
-          "type": "warning",
-          "message": "⚠️ Medicaid asset limits: Typically $2,000-$15,000 for individuals (varies by state). Exempt assets: primary home (with equity limits), one vehicle, personal belongings, prepaid funeral. Spousal protections allow married couples to keep more assets."
-        }
-      ]
-    },
-    {
-      "id": "spend_down",
-      "title": "Spend-Down Strategies",
-      "icon": "📉",
-      "help_text": "Strategies to become Medicaid eligible",
-      "layout": "single_column",
-      "fields": [
-        {
-          "key": "interested_in_spend_down",
-          "label": "Interested in spend-down strategies?",
-          "type": "checkbox",
-          "required": false,
-          "default": false,
-          "help": "Learn about legal ways to reduce countable assets"
+          "help": "Your position relative to Medicaid asset limits affects timing and planning strategy."
         },
         {
-          "key": "spend_down_timeline",
-          "label": "Estimated Timeline to Need Medicaid",
-          "type": "select",
+          "key": "spend_down_plan",
+          "label": "Spend-Down Strategies Being Considered (Select all that apply)",
+          "type": "multiselect",
           "required": false,
           "options": [
-            {"value": "immediate", "label": "Immediately"},
-            {"value": "6_months", "label": "Within 6 months"},
-            {"value": "1_year", "label": "Within 1 year"},
-            {"value": "2_years", "label": "1-2 years"},
-            {"value": "3_plus_years", "label": "2+ years"},
-            {"value": "unknown", "label": "Unsure"}
+            {
+              "value": "none",
+              "label": "Not pursuing spend-down"
+            },
+            {
+              "value": "gifting",
+              "label": "Gifting / Asset transfers"
+            },
+            {
+              "value": "trusts",
+              "label": "Irrevocable trusts"
+            },
+            {
+              "value": "annuity",
+              "label": "Medicaid-compliant annuities"
+            },
+            {
+              "value": "home_improvements",
+              "label": "Home improvements / exempt asset purchases"
+            },
+            {
+              "value": "debt_payoff",
+              "label": "Debt payoff"
+            },
+            {
+              "value": "elder_law",
+              "label": "Working with elder law attorney"
+            },
+            {
+              "value": "other",
+              "label": "Other strategies"
+            }
           ],
-          "default": "unknown",
-          "help": "When you anticipate needing Medicaid LTC benefits",
-          "visible_if": {
-            "field": "interested_in_spend_down",
-            "equals": true
-          }
+          "default": [],
+          "help": "Legal spend-down strategies can help you qualify for Medicaid while protecting assets."
+        },
+        {
+          "key": "spend_down_notes",
+          "label": "Spend-Down Planning Notes (Optional)",
+          "type": "textarea",
+          "required": false,
+          "help": "Any details about your spend-down timeline, strategies, or legal assistance."
         }
       ],
       "info_boxes": [
         {
           "type": "info",
-          "message": "💡 Legal spend-down strategies: Pay off debt, home repairs/improvements, purchase exempt assets (prepaid funeral, wheelchair-accessible vehicle), convert countable assets to income (annuities with strict rules), spousal asset transfers. CAUTION: 5-year lookback period on gifts/transfers."
+          "message": "⚠️ Caution: Medicaid has a 5-year lookback period for asset transfers. Gifting or transfers made within 5 years of application can result in penalties. Consult an elder law attorney before making any transfers."
         }
       ]
     },
     {
-      "id": "estate_planning",
-      "title": "Estate Planning & Recovery",
-      "icon": "📜",
-      "help_text": "Protecting assets and understanding Medicaid estate recovery",
+      "id": "functional_clinical",
+      "title": "Functional / Clinical",
+      "icon": "🩺",
+      "help_text": "Care level and functional needs affecting Medicaid eligibility",
       "layout": "single_column",
       "fields": [
         {
-          "key": "has_estate_plan",
-          "label": "Current estate planning documents?",
+          "key": "level_of_care",
+          "label": "Expected or Current Level of Care",
+          "type": "select",
+          "required": false,
+          "options": [
+            {
+              "value": "nursing_home",
+              "label": "Nursing Home"
+            },
+            {
+              "value": "assisted_living",
+              "label": "Assisted Living"
+            },
+            {
+              "value": "memory_care",
+              "label": "Memory Care"
+            },
+            {
+              "value": "home_care",
+              "label": "Home Care / HCBS Waiver"
+            },
+            {
+              "value": "other",
+              "label": "Other"
+            },
+            {
+              "value": "unknown",
+              "label": "Not sure yet"
+            }
+          ],
+          "default": "unknown",
+          "help": "Medicaid coverage and requirements vary by level of care. Some states require nursing home level of care for coverage."
+        },
+        {
+          "key": "adl_dependency_count",
+          "label": "Number of ADLs with Dependency",
+          "type": "number",
+          "required": false,
+          "min": 0,
+          "max": 6,
+          "step": 1,
+          "default": 0,
+          "help": "Activities of Daily Living (ADLs): bathing, dressing, toileting, transferring, continence, eating. Medicaid often requires 2+ ADL dependencies."
+        },
+        {
+          "key": "iadl_support_needed",
+          "label": "IADLs Requiring Support (Select all that apply)",
           "type": "multiselect",
           "required": false,
           "options": [
-            {"value": "none", "label": "None"},
-            {"value": "will", "label": "Will"},
-            {"value": "trust", "label": "Trust"},
-            {"value": "poa", "label": "Power of Attorney"},
-            {"value": "healthcare_proxy", "label": "Healthcare Proxy"}
+            {
+              "value": "none",
+              "label": "None"
+            },
+            {
+              "value": "medications",
+              "label": "Medication management"
+            },
+            {
+              "value": "housekeeping",
+              "label": "Housekeeping"
+            },
+            {
+              "value": "meal_prep",
+              "label": "Meal preparation"
+            },
+            {
+              "value": "transportation",
+              "label": "Transportation"
+            },
+            {
+              "value": "shopping",
+              "label": "Shopping"
+            },
+            {
+              "value": "finances",
+              "label": "Financial management"
+            },
+            {
+              "value": "phone",
+              "label": "Phone use / communication"
+            }
           ],
           "default": [],
-          "help": "Current estate planning documents (select all that apply)"
-        },
-        {
-          "key": "aware_of_estate_recovery",
-          "label": "Aware of Medicaid estate recovery?",
-          "type": "checkbox",
-          "required": false,
-          "default": false,
-          "help": "Medicaid may seek repayment from estate after death"
-        },
-        {
-          "key": "interested_in_elder_law",
-          "label": "Interested in elder law attorney consultation?",
-          "type": "checkbox",
-          "required": false,
-          "default": false,
-          "help": "Elder law attorneys specialize in Medicaid planning"
+          "help": "Instrumental Activities of Daily Living (IADLs) may affect eligibility for home and community-based services waivers."
         }
       ],
       "info_boxes": [
         {
-          "type": "warning",
-          "message": "⚠️ Medicaid Estate Recovery: After death, states must attempt to recover LTC costs from your estate. Primary home usually protected if surviving spouse, disabled/blind child, or child under 21. Trusts and strategic planning can minimize recovery."
-        },
-        {
-          "type": "success",
-          "message": "✅ Elder law attorneys can help with: Medicaid qualification strategies, asset protection, spend-down planning, spousal protections, estate recovery avoidance, trust creation, and application assistance."
+          "type": "info",
+          "message": "💡 Medicaid eligibility often requires demonstrating functional need (ADL/IADL dependencies) in addition to meeting income and asset limits."
         }
       ]
     },
     {
       "id": "results",
       "type": "results",
-      "title": "Medicaid Planning Assessment Complete",
+      "title": "Medicaid Planning Summary",
       "icon": "✅",
       "fields": []
     }
@@ -206,18 +512,18 @@
   "summary": {
     "type": "text",
     "label": "Medicaid Planning Summary",
-    "text": "Assessment captures current Medicaid status, asset position awareness, spend-down interest, and estate planning needs."
+    "text": "Assessment captures current Medicaid status, asset position, spend-down strategies, and functional care needs for eligibility planning."
   },
   "output_contract": {
     "medicaid_status": "string",
+    "state": "string",
     "medicaid_covers_ltc": "boolean",
     "aware_of_asset_limits": "string",
     "current_asset_position": "string",
-    "interested_in_spend_down": "boolean",
-    "spend_down_timeline": "string",
-    "has_estate_plan": "array",
-    "aware_of_estate_recovery": "boolean",
-    "interested_in_elder_law": "boolean"
+    "spend_down_plan": "array",
+    "spend_down_notes": "string",
+    "level_of_care": "string",
+    "adl_dependency_count": "number",
+    "iadl_support_needed": "array"
   }
 }
-
