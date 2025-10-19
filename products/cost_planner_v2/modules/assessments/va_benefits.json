@@ -165,7 +165,7 @@
           "max": 10000,
           "step": 10,
           "default": 0,
-          "help": "Enter your current monthly VA disability payment. Check your bank statement or ebenefits.va.gov for the exact amount.",
+          "help": "This amount is automatically calculated based on your disability rating and dependents using 2025 official VA rates. You can adjust manually if needed.",
           "visible_if": {
             "field": "has_va_disability",
             "equals": "yes"
@@ -189,7 +189,7 @@
       "info_boxes": [
         {
           "type": "info",
-          "message": "💡 2025 VA Disability Rates (Veteran Only): 10%=$171, 20%=$338, 30%=$524, 40%=$755, 50%=$1,075, 60%=$1,361, 70%=$1,716, 80%=$1,995, 90%=$2,241, 100%=$3,737. Rates increase with dependents."
+          "message": "💡 2025 VA Disability Rates auto-populate based on your rating and dependents. Veteran only: 10%=$175.51, 20%=$346.95, 30%=$537.42, 50%=$1,102.04, 70%=$1,758.95, 100%=$3,831.73. With spouse: 30%=$601.42, 50%=$1,208.04, 70%=$1,908.95, 100%=$4,057.73. Source: VA.gov effective Dec 1, 2024."
         }
       ]
     },

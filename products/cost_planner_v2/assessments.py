@@ -27,6 +27,7 @@ from products.cost_planner_v2.utils.financial_helpers import (
     normalize_asset_data,
     normalize_income_data,
 )
+from products.cost_planner_v2.va_rates import get_monthly_va_disability
 
 _SINGLE_PAGE_ASSESSMENTS: dict[str, dict[str, Any]] = {
     "income": {
@@ -58,6 +59,66 @@ _SINGLE_PAGE_ASSESSMENTS: dict[str, dict[str, Any]] = {
         },
         "expert_requires": ["income", "assets"],
         "expert_disabled_text": "Complete the Income assessment to unlock Expert Review.",
+    },
+    "va_benefits": {
+        "save_label": "Save VA Benefits Information",
+        "success_message": "VA benefits information saved.",
+        "navi": {
+            "title": "VA Benefits",
+            "reason": "Review your VA disability and Aid & Attendance benefits. We'll calculate current rates based on your veteran status.",
+            "encouragement": {
+                "icon": "🎖️",
+                "text": "Benefit amounts will auto-populate based on official 2025 VA rates.",
+                "status": "getting_started",
+            },
+        },
+        "expert_requires": ["income", "assets"],
+        "expert_disabled_text": "Complete Income and Assets assessments to unlock Expert Review.",
+    },
+    "health_insurance": {
+        "save_label": "Save Health Insurance Information",
+        "success_message": "Health insurance details saved.",
+        "navi": {
+            "title": "Health Coverage",
+            "reason": "Review your health coverage so we can estimate out-of-pocket costs more accurately.",
+            "encouragement": {
+                "icon": "🏥",
+                "text": "Understanding your coverage helps us project realistic medical expenses.",
+                "status": "getting_started",
+            },
+        },
+        "expert_requires": ["income", "assets"],
+        "expert_disabled_text": "Complete Income and Assets assessments to unlock Expert Review.",
+    },
+    "life_insurance": {
+        "save_label": "Save Life Insurance & Annuity Information",
+        "success_message": "Life insurance and annuity details saved.",
+        "navi": {
+            "title": "Life Insurance & Annuities",
+            "reason": "Add any life insurance cash value or annuities that could help fund care.",
+            "encouragement": {
+                "icon": "📜",
+                "text": "Only permanent life insurance with cash value needs to be listed here.",
+                "status": "getting_started",
+            },
+        },
+        "expert_requires": ["income", "assets"],
+        "expert_disabled_text": "Complete Income and Assets assessments to unlock Expert Review.",
+    },
+    "medicaid_navigation": {
+        "save_label": "Save Medicaid Planning Information",
+        "success_message": "Medicaid planning details saved.",
+        "navi": {
+            "title": "Medicaid Planning",
+            "reason": "Record your Medicaid status and planning so we can align eligibility with your financial timeline.",
+            "encouragement": {
+                "icon": "🏛️",
+                "text": "Medicaid rules vary by state—we'll help you understand your position.",
+                "status": "getting_started",
+            },
+        },
+        "expert_requires": ["income", "assets"],
+        "expert_disabled_text": "Complete Income and Assets assessments to unlock Expert Review.",
     },
 }
 
@@ -662,9 +723,19 @@ def _render_section_content(
         unsafe_allow_html=True,
     )
 
+    # Auto-populate VA disability amount if this is the VA disability section
+    if assessment_key == "va_benefits" and section.get("id") == "va_disability":
+        _auto_populate_va_disability(state)
+
     new_values = _render_fields_for_page(section, state, view_mode)
     if new_values:
         state.update(new_values)
+        
+        # Re-calculate VA disability if rating or dependents changed
+        if assessment_key == "va_benefits" and section.get("id") == "va_disability":
+            if "va_disability_rating" in new_values or "va_dependents" in new_values:
+                _auto_populate_va_disability(state)
+        
         _persist_assessment_state(product_key, assessment_key, state)
 
     st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
@@ -716,6 +787,36 @@ def _augment_assessment_state(assessment_key: str, state: dict[str, Any]) -> dic
         return normalized
 
     return base_state
+
+
+def _auto_populate_va_disability(state: dict[str, Any]) -> None:
+    """
+    Auto-populate VA disability monthly amount based on rating and dependents.
+    
+    This function calculates the monthly VA disability compensation using official
+    2025 rates from the VA and updates the state with the calculated amount.
+    
+    Only calculates if:
+    - has_va_disability is "yes"
+    - va_disability_rating is set
+    - va_dependents is set
+    """
+    # Only auto-populate if veteran has VA disability
+    if state.get("has_va_disability") != "yes":
+        return
+    
+    rating = state.get("va_disability_rating")
+    dependents = state.get("va_dependents")
+    
+    if rating is None or dependents is None:
+        return
+    
+    # Calculate monthly amount using official rates
+    monthly_amount = get_monthly_va_disability(rating, dependents)
+    
+    if monthly_amount is not None:
+        # Update state with calculated amount
+        state["va_disability_monthly"] = monthly_amount
 
 
 def _calculate_summary_total(summary_config: dict[str, Any], state: dict[str, Any]) -> Optional[float]:
