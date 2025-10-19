@@ -404,6 +404,7 @@ def _render_fields(section: dict[str, Any], state: dict[str, Any], view_mode: st
             min_val = field.get("min", 0)
             max_val = field.get("max", 10000000)
             step = field.get("step", 100)
+            readonly = field.get("readonly", False)
             
             # Ensure all numeric values are the same type (float for currency to support cents)
             min_val = float(min_val)
@@ -426,6 +427,7 @@ def _render_fields(section: dict[str, Any], state: dict[str, Any], view_mode: st
                 format="%.2f",  # Support cents (e.g., $1,908.95)
                 help=help_text,
                 key=widget_key,  # Use widget_key variable
+                disabled=readonly,  # Make read-only if specified
             )
             new_values[key] = value
 
