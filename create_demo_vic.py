@@ -218,20 +218,25 @@ data = {
     # COST PLANNER V2 - QUICK ESTIMATE ONLY
     # =========================================================================
     "cost_v2_quick_estimate": {
-        "location": "Phoenix, AZ",
-        "tier": "in_home",
-        "tier_multiplier": 1.1,  # Phoenix is moderate cost
-        "base_cost": 4200,
-        "adjusted_cost": 4620,
-        "breakdown": {
-            "caregiver_hours": 3200,
-            "medication_management": 400,
-            "transportation": 350,
-            "meal_prep": 350,
-            "housekeeping": 220,
-            "personal_care": 100
+        "estimate": {
+            "monthly_base": 4200,
+            "monthly_adjusted": 4620.0,
+            "annual": 55440.0,
+            "three_year": 166320.0,
+            "five_year": 277200.0,
+            "multiplier": 1.1,
+            "region_name": "Phoenix, AZ",
+            "care_tier": "in_home",
+            "breakdown": {
+                "base_cost": 4200,
+                "regional_adjustment": 420.0,
+                "caregiver_hours_addon": 0,
+                "medication_management_addon": 0,
+                "transportation_addon": 0
+            }
         },
-        "created_at": TIMESTAMP
+        "care_tier": "in_home",
+        "zip_code": "85001"
     },
     
     # Cost Planner step - set to "welcome" (not started)
@@ -312,8 +317,8 @@ def main():
         print(f"   Status: {data['mcip_contracts']['care_recommendation']['status']}")
         print(f"   Note: Borderline case - Assisted Living scored {15.0}, In-Home scored {15.5}")
         print()
-        print(f"💰 Quick Estimate: ${data['cost_v2_quick_estimate']['adjusted_cost']:,}/month")
-        print(f"   Location multiplier: {data['cost_v2_quick_estimate']['tier_multiplier']}x")
+        print(f"💰 Quick Estimate: ${data['cost_v2_quick_estimate']['estimate']['monthly_adjusted']:,}/month")
+        print(f"   Location multiplier: {data['cost_v2_quick_estimate']['estimate']['multiplier']}x")
         print()
         print(f"🏁 Journey Status:")
         print(f"   Completed: {', '.join(data['mcip_contracts']['journey']['completed_products'])}")

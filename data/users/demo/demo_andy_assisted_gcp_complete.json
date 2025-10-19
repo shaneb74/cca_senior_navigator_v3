@@ -1,7 +1,7 @@
 {
   "uid": "demo_andy_assisted_gcp_complete",
-  "created_at": 1760891512.6491158,
-  "last_updated": 1760891512.6491158,
+  "created_at": 1760894198.255319,
+  "last_updated": 1760894198.255319,
   "auth": {
     "user_id": "demo_andy_assisted_gcp_complete",
     "is_authenticated": true,
@@ -143,16 +143,16 @@
         "Safety concerns warrant 24/7 staff availability",
         "VA benefits may help offset costs"
       ],
-      "generated_at": "2025-10-19T11:31:52.649122",
+      "generated_at": "2025-10-19T12:16:38.255324",
       "version": "4.0",
-      "input_snapshot_id": "andy_gcp_1760891512",
+      "input_snapshot_id": "andy_gcp_1760894198",
       "rule_set": "gcp_v4_standard",
       "next_step": {
         "product": "cost_planner",
         "label": "Explore Costs",
         "reason": "Review budget and payment options"
       },
-      "last_updated": "2025-10-19T11:31:52.649127",
+      "last_updated": "2025-10-19T12:16:38.255329",
       "needs_refresh": false
     },
     "journey": {
@@ -172,20 +172,25 @@
     }
   },
   "cost_v2_quick_estimate": {
-    "location": "San Francisco, CA",
-    "tier": "assisted_living",
-    "tier_multiplier": 1.4,
-    "base_cost": 5410,
-    "adjusted_cost": 7574,
-    "breakdown": {
-      "room_board": 4500,
-      "care_services": 1800,
-      "medication_management": 450,
-      "activities": 300,
-      "transportation": 250,
-      "personal_care": 274
+    "estimate": {
+      "monthly_base": 5410,
+      "monthly_adjusted": 7574.0,
+      "annual": 90888.0,
+      "three_year": 272664.0,
+      "five_year": 454440.0,
+      "multiplier": 1.4,
+      "region_name": "San Francisco, CA",
+      "care_tier": "assisted_living",
+      "breakdown": {
+        "base_cost": 5410,
+        "regional_adjustment": 1514.0,
+        "moderate_adl_support_addon": 350.0,
+        "medication_management_addon": 200.0,
+        "transportation_addon": 100.0
+      }
     },
-    "created_at": 1760891512.6491158
+    "care_tier": "assisted_living",
+    "zip_code": "94102"
   },
   "cost_v2_step": "welcome",
   "cost_v2_guest_mode": false,
@@ -198,12 +203,12 @@
       "tier": "assisted_living",
       "confidence": 0.73,
       "tier_score": 18,
-      "last_updated": 1760891512.6491158
+      "last_updated": 1760894198.255319
     },
     "cost_planner_v2": {
       "status": "not_started",
       "progress": 0,
-      "last_updated": 1760891512.6491158
+      "last_updated": 1760894198.255319
     }
   },
   "progress": {},
