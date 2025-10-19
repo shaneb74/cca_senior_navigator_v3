@@ -224,44 +224,27 @@ def calculate_total_asset_value(assets_data: dict[str, Any]) -> float:
     """
     Calculate gross asset value before debts.
     
-    Uses smart detection to avoid double-counting when both basic totals
-    and advanced breakdowns are present. Prioritizes whichever has data.
+    Uses detailed breakdown fields. Aggregate totals (cash_liquid_total, etc.)
+    are calculated display values only and not used in this calculation.
     """
     data = dict(assets_data or {})
     for key in ASSET_NUMERIC_FIELDS:
         data[key] = _to_float(data.get(key, 0.0))
 
-    # Detect which mode has data (basic totals vs advanced breakdowns)
-    basic_total = sum(data.get(field, 0.0) for field in ASSET_BASIC_FIELDS)
-    advanced_total = sum(data.get(field, 0.0) for field in ASSET_ADVANCED_FIELDS)
-    
-    # If both modes have data, prioritize advanced (more detailed)
-    # If only one mode has data, use that mode
-    # This prevents double-counting
-    if advanced_total > 0:
-        # Use advanced breakdown mode
-        liquid_assets = (
-            data.get("checking_balance", 0.0)
-            + data.get("savings_cds_balance", 0.0)
-        )
-        investments = (
-            data.get("brokerage_mf_etf", 0.0)
-            + data.get("brokerage_stocks_bonds", 0.0)
-        )
-        retirement = (
-            data.get("retirement_traditional", 0.0)
-            + data.get("retirement_roth", 0.0)
-        )
-        # Note: home_equity_estimate is net (no separate home_value field in advanced mode)
-        home_value = data.get("home_equity_estimate", 0.0)
-    else:
-        # Use basic total mode
-        liquid_assets = data.get("cash_liquid_total", 0.0)
-        investments = data.get("brokerage_total", 0.0)
-        retirement = data.get("retirement_total", 0.0)
-        home_value = data.get("home_equity_estimate", 0.0)
-    
-    # Add other assets (included in both modes)
+    # Calculate from detailed breakdown fields
+    liquid_assets = (
+        data.get("checking_balance", 0.0)
+        + data.get("savings_cds_balance", 0.0)
+    )
+    investments = (
+        data.get("brokerage_mf_etf", 0.0)
+        + data.get("brokerage_stocks_bonds", 0.0)
+    )
+    retirement = (
+        data.get("retirement_traditional", 0.0)
+        + data.get("retirement_roth", 0.0)
+    )
+    home_value = data.get("home_equity_estimate", 0.0)
     other_real_estate = data.get("real_estate_other", 0.0)
     life_insurance = data.get("life_insurance_cash_value", 0.0)
     
