@@ -226,91 +226,23 @@ def _render_section_header(
     )
 
 
-def _render_view_mode_toggle(state_key: str) -> str:
+def _should_show_field(field: dict[str, Any], state: dict[str, Any], new_values: dict[str, Any] = None) -> bool:
     """
-    Render Basic/Advanced toggle at top of assessment.
-    
-    Returns current view mode ('basic' or 'advanced').
-    Persists selection in session state under {state_key}.view_mode
-    """
-    view_mode_key = f"{state_key}.view_mode"
-    current_mode = st.session_state.get(view_mode_key, "basic")
-    
-    # Accessible label for toggle
-    st.markdown(
-        """
-        <div style="margin-bottom: 16px;">
-            <label style="
-                display: block;
-                font-size: 14px;
-                font-weight: 600;
-                color: #1e293b;
-                margin-bottom: 8px;
-            ">
-                Detail Level
-            </label>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-    
-    # Radio button toggle with accessible design
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        selected_mode = st.radio(
-            label="Detail Level",
-            label_visibility="collapsed",
-            options=["basic", "advanced"],
-            format_func=lambda x: "✓ Basic" if x == "basic" else "✓ Advanced",
-            index=0 if current_mode == "basic" else 1,
-            horizontal=True,
-            key=f"{state_key}_view_mode_radio",
-            help="Basic shows essential fields only. Advanced shows all fields including detailed breakdowns."
-        )
-    
-    # Persist selection
-    st.session_state[view_mode_key] = selected_mode
-    
-    # Show guidance message
-    if selected_mode == "basic":
-        st.info("💡 **Basic Mode:** Quick, essential fields only. Switch to Advanced for detailed breakdowns.")
-    else:
-        st.info("🔬 **Advanced Mode:** All fields visible including detailed categories. Switch to Basic for a simpler view.")
-    
-    st.markdown("<div style='margin: 24px 0;'></div>", unsafe_allow_html=True)
-    
-    return selected_mode
-
-
-def _should_show_field(field: dict[str, Any], view_mode: str, state: dict[str, Any], new_values: dict[str, Any] = None) -> bool:
-    """
-    Check if field should be visible based on view mode and visibility conditions.
+    Check if field should be visible based on visibility conditions.
     
     Args:
         field: Field configuration dict
-        view_mode: Current view mode ('basic' or 'advanced')
         state: Current assessment state
         new_values: Optional dict of newly rendered field values (converted from labels to values)
     
     Returns:
         True if field should be rendered, False otherwise
     """
-    # Check visibility condition first
-    if not _is_field_visible(field, state, new_values):
-        return False
-    
-    # Check level-based visibility
-    field_level = field.get("level", "basic")  # Default to basic if not specified
-    
-    if view_mode == "basic":
-        # Basic mode: show only basic fields
-        return field_level == "basic"
-    else:
-        # Advanced mode: show all fields
-        return True
+    # Check visibility condition
+    return _is_field_visible(field, state, new_values)
 
 
-def _render_fields(section: dict[str, Any], state: dict[str, Any], view_mode: str = "basic") -> dict[str, Any]:
+def _render_fields(section: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:
     """
     Render form fields for current section.
 
@@ -325,7 +257,6 @@ def _render_fields(section: dict[str, Any], state: dict[str, Any], view_mode: st
 
     Handles:
     - visible_if conditions
-    - level-based filtering (basic/advanced)
     - default values
     - min/max constraints
     - help text
@@ -333,7 +264,6 @@ def _render_fields(section: dict[str, Any], state: dict[str, Any], view_mode: st
     Args:
         section: Section configuration dict
         state: Current assessment state
-        view_mode: Current view mode ('basic' or 'advanced')
     """
     new_values: dict[str, Any] = {}
     fields = section.get("fields", [])
@@ -348,9 +278,9 @@ def _render_fields(section: dict[str, Any], state: dict[str, Any], view_mode: st
         columns = None
 
     for field in fields:
-        # Check visibility (including level-based filtering)
+        # Check visibility conditions
         # Pass new_values so visibility checks can see converted label→value mappings
-        if not _should_show_field(field, view_mode, state, new_values):
+        if not _should_show_field(field, state, new_values):
             # Field is hidden but preserve its value in state
             key = field.get("key")
             if key and key not in state:
@@ -417,6 +347,12 @@ def _render_fields(section: dict[str, Any], state: dict[str, Any], view_mode: st
             else:
                 current_value = min_val
 
+            # Define on_change callback to trigger immediate rerun for aggregate updates
+            def _on_currency_change():
+                """Callback to ensure UI updates immediately when currency field changes."""
+                # Force a rerun so aggregate totals update immediately
+                pass  # The act of having an on_change callback triggers the rerun
+            
             value = container.number_input(
                 label=label,  # Still need this for accessibility
                 label_visibility="collapsed",  # Hide Streamlit's label
@@ -428,6 +364,7 @@ def _render_fields(section: dict[str, Any], state: dict[str, Any], view_mode: st
                 help=help_text,
                 key=widget_key,  # Use widget_key variable
                 disabled=readonly,  # Make read-only if specified
+                on_change=_on_currency_change,  # Trigger rerun for immediate aggregate updates
             )
             new_values[key] = value
 
@@ -450,6 +387,11 @@ def _render_fields(section: dict[str, Any], state: dict[str, Any], view_mode: st
                         # Default to first option
                         current_index = 0
 
+            # Define on_change callback to trigger immediate rerun
+            def _on_select_change():
+                """Callback to ensure UI updates immediately when select field changes."""
+                pass  # The act of having an on_change callback triggers the rerun
+
             selected_label = container.selectbox(
                 label=label,  # Still need this for accessibility
                 label_visibility="collapsed",  # Hide Streamlit's label
@@ -457,6 +399,7 @@ def _render_fields(section: dict[str, Any], state: dict[str, Any], view_mode: st
                 index=current_index,
                 help=help_text,
                 key=widget_key,  # Use widget_key instead of f"field_{key}"
+                on_change=_on_select_change,  # Trigger rerun for immediate updates
             )
 
             # Map back to value - the selectbox returns the label
@@ -540,6 +483,56 @@ def _render_fields(section: dict[str, Any], state: dict[str, Any], view_mode: st
             
             # Don't include in new_values since it's display-only
             # (value already in state from auto-calculation)
+
+        elif field_type == "display_currency_aggregate":
+            # Display-only calculated total (sum of sub-fields)
+            # Always shows as a styled label, never editable
+            
+            sub_fields = field.get("aggregate_from", [])
+            
+            # Calculate aggregate from sub-fields
+            # CRITICAL: Read from st.session_state first for real-time updates
+            aggregate_total = 0.0
+            for sub_field_key in sub_fields:
+                sub_widget_key = f"field_{sub_field_key}"
+                sub_value = st.session_state.get(sub_widget_key)
+                if sub_value is None:
+                    sub_value = state.get(sub_field_key, 0.0)
+                
+                # Convert to float safely
+                if isinstance(sub_value, (int, float)):
+                    aggregate_total += float(sub_value)
+                elif isinstance(sub_value, str) and sub_value.strip():
+                    try:
+                        aggregate_total += float(sub_value.replace(',', '').replace('$', ''))
+                    except ValueError:
+                        pass  # Skip non-numeric values
+            
+            formatted_value = f"${aggregate_total:,.2f}"
+            
+            # Render as a styled aggregate display
+            container.markdown(
+                f"""
+                <div style="
+                    background: #f0f9ff;
+                    border: 2px solid #3b82f6;
+                    border-radius: 8px;
+                    padding: 10px 16px;
+                    font-size: 18px;
+                    font-weight: 700;
+                    color: #1e40af;
+                    text-align: right;
+                    margin-bottom: 8px;
+                ">
+                    <span style="font-size: 12px; font-weight: 500; color: #60a5fa; text-transform: uppercase; letter-spacing: 0.05em; margin-right: 8px;">Total:</span>
+                    {formatted_value}
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+            
+            # Store the calculated aggregate in state
+            state[key] = aggregate_total
 
         else:  # text
             value = container.text_input(
