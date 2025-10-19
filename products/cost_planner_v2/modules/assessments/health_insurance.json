@@ -2,7 +2,7 @@
   "key": "health_insurance",
   "title": "Health Insurance",
   "icon": "🏥",
-  "description": "Medicare, Medicaid, and supplemental coverage",
+  "description": "Medical coverage impacting out-of-pocket care costs",
   "estimated_time": "5-7 min",
   "required": false,
   "sort_order": 4,
@@ -12,267 +12,200 @@
       "type": "intro",
       "title": "Health Insurance Assessment",
       "icon": "🏥",
-      "help_text": "Let's review your health insurance coverage to understand potential care cost offsets and plan for coverage gaps.",
+      "help_text": "Review your health coverage so we can estimate out-of-pocket costs more accurately.",
       "fields": [],
       "info_boxes": [
         {
-          "type": "warning",
-          "message": "⚠️ Important: Medicare typically does NOT cover long-term care in assisted living or memory care. It may cover short-term skilled nursing after hospitalization."
+          "type": "info",
+          "message": "💡 Understanding your coverage helps us project realistic out-of-pocket medical expenses in your care budget."
         }
       ]
     },
     {
-      "id": "medicare",
-      "title": "Medicare Coverage",
-      "icon": "🏥",
-      "help_text": "Federal health insurance for seniors 65+",
+      "id": "medical_plan",
+      "title": "Medical Plan",
+      "icon": "📋",
+      "help_text": "Your primary health insurance coverage",
       "layout": "single_column",
       "fields": [
         {
-          "key": "has_medicare",
-          "label": "Enrolled in Medicare?",
+          "key": "plan_type",
+          "label": "Primary Health Insurance Type",
           "type": "select",
           "required": false,
           "options": [
-            {"value": "no", "label": "No"},
-            {"value": "yes", "label": "Yes"}
+            {
+              "value": "medicare_advantage",
+              "label": "Medicare Advantage"
+            },
+            {
+              "value": "medicare_medigap",
+              "label": "Medicare + Medigap"
+            },
+            {
+              "value": "employer",
+              "label": "Employer Plan"
+            },
+            {
+              "value": "marketplace",
+              "label": "Marketplace / ACA Plan"
+            },
+            {
+              "value": "medicaid",
+              "label": "Medicaid"
+            },
+            {
+              "value": "tricare",
+              "label": "TRICARE (Military)"
+            },
+            {
+              "value": "va_healthcare",
+              "label": "VA Healthcare"
+            },
+            {
+              "value": "other",
+              "label": "Other"
+            },
+            {
+              "value": "none",
+              "label": "No coverage"
+            }
           ],
-          "default": "no",
-          "help": "Are you enrolled in Medicare (age 65+ or eligible due to disability)?"
+          "default": "medicare_advantage",
+          "help": "Select your main health insurance type. This affects how we estimate medical costs."
         },
         {
-          "key": "medicare_parts",
-          "label": "Which Medicare Parts do you have?",
+          "key": "deductible_annual",
+          "label": "Annual Deductible",
+          "type": "currency",
+          "required": false,
+          "min": 0,
+          "max": 50000,
+          "step": 100,
+          "default": 0,
+          "help": "Amount you must pay out-of-pocket before insurance coverage begins each year."
+        },
+        {
+          "key": "oop_max_annual",
+          "label": "Annual Out-of-Pocket Maximum",
+          "type": "currency",
+          "required": false,
+          "min": 0,
+          "max": 100000,
+          "step": 100,
+          "default": 0,
+          "help": "The most you'll pay out-of-pocket for covered services in a year. After you reach this amount, insurance pays 100%."
+        },
+        {
+          "key": "monthly_premium",
+          "label": "Monthly Premium Cost",
+          "type": "currency",
+          "required": false,
+          "min": 0,
+          "max": 5000,
+          "step": 10,
+          "default": 0,
+          "help": "Your monthly health insurance premium payment."
+        }
+      ],
+      "info_boxes": []
+    },
+    {
+      "id": "supplemental_coverage",
+      "title": "Supplemental Coverage",
+      "icon": "🩺",
+      "help_text": "Additional coverage that may reduce out-of-pocket expenses",
+      "layout": "single_column",
+      "fields": [
+        {
+          "key": "supplemental_plans",
+          "label": "Supplemental Coverage Types (Select all that apply)",
           "type": "multiselect",
           "required": false,
           "options": [
-            {"value": "part_a", "label": "Part A (Hospital Insurance)"},
-            {"value": "part_b", "label": "Part B (Medical Insurance)"},
-            {"value": "part_d", "label": "Part D (Prescription Drug)"}
+            {
+              "value": "dental",
+              "label": "Dental"
+            },
+            {
+              "value": "vision",
+              "label": "Vision"
+            },
+            {
+              "value": "hearing",
+              "label": "Hearing"
+            },
+            {
+              "value": "prescription",
+              "label": "Prescription Drug Plan (Part D)"
+            },
+            {
+              "value": "ltc_insurance",
+              "label": "Long-Term Care Insurance"
+            },
+            {
+              "value": "critical_illness",
+              "label": "Critical Illness"
+            },
+            {
+              "value": "accident",
+              "label": "Accident Insurance"
+            },
+            {
+              "value": "other",
+              "label": "Other"
+            }
           ],
           "default": [],
-          "help": "Select all that apply",
+          "help": "Select any additional coverage you have that helps with specific healthcare costs."
+        },
+        {
+          "key": "ltc_insurance_details",
+          "label": "Long-Term Care Insurance Details",
+          "type": "textarea",
+          "required": false,
+          "help": "Include: daily benefit amount, benefit period, elimination period, and monthly premium if you have LTC insurance.",
           "visible_if": {
-            "field": "has_medicare",
-            "equals": "yes"
+            "field": "supplemental_plans",
+            "includes": "ltc_insurance"
           }
         },
         {
-          "key": "medicare_advantage",
-          "label": "Have Medicare Advantage (Part C)?",
-          "type": "checkbox",
+          "key": "supplemental_notes",
+          "label": "Additional Coverage Notes (Optional)",
+          "type": "textarea",
           "required": false,
-          "default": false,
-          "help": "Private plan that replaces Original Medicare",
-          "visible_if": {
-            "field": "has_medicare",
-            "equals": "yes"
-          }
-        },
-        {
-          "key": "medicare_supplement",
-          "label": "Have Medigap (Supplement) plan?",
-          "type": "checkbox",
-          "required": false,
-          "default": false,
-          "help": "Supplement that covers Medicare gaps",
-          "visible_if": {
-            "field": "has_medicare",
-            "equals": "yes"
-          }
-        },
-        {
-          "key": "medicare_monthly_premium",
-          "label": "Total Monthly Medicare Premiums",
-          "type": "currency",
-          "required": false,
-          "min": 0,
-          "max": 1000,
-          "step": 10,
-          "default": 0,
-          "help": "Total monthly premium for all Medicare coverage",
-          "visible_if": {
-            "field": "has_medicare",
-            "equals": "yes"
-          }
-        }
-      ]
-    },
-    {
-      "id": "medicaid",
-      "title": "Medicaid Coverage",
-      "icon": "🏛️",
-      "help_text": "State/federal health program for those with limited income",
-      "layout": "single_column",
-      "fields": [
-        {
-          "key": "has_medicaid",
-          "label": "Enrolled in Medicaid?",
-          "type": "select",
-          "required": false,
-          "options": [
-            {"value": "no", "label": "No"},
-            {"value": "yes", "label": "Yes"}
-          ],
-          "default": "no",
-          "help": "Medicaid can help cover long-term care costs"
-        },
-        {
-          "key": "medicaid_status",
-          "label": "Medicaid Status",
-          "type": "select",
-          "required": false,
-          "options": [
-            {"value": "enrolled", "label": "Currently enrolled"},
-            {"value": "pending", "label": "Application pending"},
-            {"value": "planning", "label": "Planning to apply"},
-            {"value": "not_eligible", "label": "Not eligible"}
-          ],
-          "default": "enrolled",
-          "help": "Current enrollment status",
-          "visible_if": {
-            "field": "has_medicaid",
-            "equals": "yes"
-          }
-        },
-        {
-          "key": "medicaid_covers_ltc",
-          "label": "Does Medicaid cover long-term care?",
-          "type": "checkbox",
-          "required": false,
-          "default": false,
-          "help": "Check if your Medicaid plan includes LTC coverage",
-          "visible_if": {
-            "field": "has_medicaid",
-            "equals": "yes"
-          }
-        }
-      ],
-      "info_boxes": [
-        {
-          "type": "success",
-          "message": "✅ Medicaid can cover assisted living and memory care in many states. Eligibility based on income and assets ($2,000 limit for individuals in most states)."
-        }
-      ]
-    },
-    {
-      "id": "ltc_insurance",
-      "title": "Long-Term Care Insurance",
-      "icon": "📋",
-      "help_text": "Private insurance for long-term care costs",
-      "layout": "single_column",
-      "fields": [
-        {
-          "key": "has_ltc_insurance",
-          "label": "Have Long-Term Care Insurance?",
-          "type": "select",
-          "required": false,
-          "options": [
-            {"value": "no", "label": "No"},
-            {"value": "yes", "label": "Yes"}
-          ],
-          "default": "no",
-          "help": "Dedicated LTC insurance policy"
-        },
-        {
-          "key": "ltc_daily_benefit",
-          "label": "Daily Benefit Amount",
-          "type": "currency",
-          "required": false,
-          "min": 0,
-          "max": 1000,
-          "step": 10,
-          "default": 0,
-          "help": "Maximum daily benefit your LTC policy pays",
-          "visible_if": {
-            "field": "has_ltc_insurance",
-            "equals": "yes"
-          }
-        },
-        {
-          "key": "ltc_monthly_premium",
-          "label": "Monthly LTC Premium",
-          "type": "currency",
-          "required": false,
-          "min": 0,
-          "max": 2000,
-          "step": 50,
-          "default": 0,
-          "help": "Monthly premium you pay for LTC insurance",
-          "visible_if": {
-            "field": "has_ltc_insurance",
-            "equals": "yes"
-          }
+          "help": "Any important details about your supplemental coverage: copays, coverage limits, or specific benefits."
         }
       ],
       "info_boxes": [
         {
           "type": "info",
-          "message": "💡 LTC insurance typically has elimination periods (30-90 days) before benefits start and may have benefit period limits (2-5 years or lifetime)."
-        }
-      ]
-    },
-    {
-      "id": "other_insurance",
-      "title": "Other Insurance",
-      "icon": "📄",
-      "help_text": "Employer coverage or other private insurance",
-      "layout": "single_column",
-      "fields": [
-        {
-          "key": "has_private_insurance",
-          "label": "Have Other Private Insurance?",
-          "type": "select",
-          "required": false,
-          "options": [
-            {"value": "no", "label": "No"},
-            {"value": "yes", "label": "Yes"}
-          ],
-          "default": "no",
-          "help": "Employer coverage, marketplace, or other private plans"
-        },
-        {
-          "key": "private_insurance_monthly_premium",
-          "label": "Monthly Premium",
-          "type": "currency",
-          "required": false,
-          "min": 0,
-          "max": 2000,
-          "step": 50,
-          "default": 0,
-          "help": "Monthly premium for private insurance",
-          "visible_if": {
-            "field": "has_private_insurance",
-            "equals": "yes"
-          }
+          "message": "💡 Long-term care insurance can significantly reduce care costs. If you have LTC insurance, include details above so we can factor it into your financial plan."
         }
       ]
     },
     {
       "id": "results",
       "type": "results",
-      "title": "Health Insurance Assessment Complete",
+      "title": "Health Insurance Summary",
       "icon": "✅",
       "fields": []
     }
   ],
   "summary": {
-    "type": "text",
-    "label": "Health Insurance Summary"
+    "type": "calculated",
+    "label": "Annual Out-of-Pocket Maximum",
+    "formula": "sum(oop_max_annual)",
+    "display_format": "${:,.0f}/year"
   },
   "output_contract": {
-    "has_medicare": "string",
-    "medicare_parts": "array",
-    "medicare_advantage": "boolean",
-    "medicare_supplement": "boolean",
-    "medicare_monthly_premium": "number",
-    "has_medicaid": "string",
-    "medicaid_status": "string",
-    "medicaid_covers_ltc": "boolean",
-    "has_ltc_insurance": "string",
-    "ltc_daily_benefit": "number",
-    "ltc_monthly_premium": "number",
-    "has_private_insurance": "string",
-    "private_insurance_monthly_premium": "number"
+    "plan_type": "string",
+    "deductible_annual": "number",
+    "oop_max_annual": "number",
+    "monthly_premium": "number",
+    "supplemental_plans": "array",
+    "ltc_insurance_details": "string",
+    "supplemental_notes": "string"
   }
 }
