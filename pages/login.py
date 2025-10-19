@@ -33,6 +33,12 @@ DEMO_USERS = {
         "uid": "demo_andy_assisted_gcp_complete",
         "description": "Assisted Living - GCP complete with VA A&A eligibility flag",
     },
+    "demo_vic": {
+        "name": "Veteran Vic",
+        "email": "vic@demo.test",
+        "uid": "demo_vic_veteran_borderline",
+        "description": "Borderline In-Home/Assisted Living - Service-connected veteran",
+    },
 }
 
 
