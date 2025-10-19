@@ -410,8 +410,8 @@ def render_assessment_page(assessment_key: str, product_key: str = "cost_planner
 
         # Use expander for each section (collapsed by default except first)
         with st.expander(f"{section_icon} {section_title}", expanded=(idx == 0)):
-            # Render fields for this section (default to basic mode for this legacy function)
-            new_values = _render_fields_for_page(section, state, view_mode="basic")
+            # Render fields for this section
+            new_values = _render_fields_for_page(section, state)
             if new_values:
                 state.update(new_values)
 
