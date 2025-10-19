@@ -724,28 +724,37 @@ def _render_section_content(
     )
 
     # Auto-populate VA disability amount if this is the VA disability section
+    # CRITICAL: This runs BEFORE widgets are rendered, so calculated values appear immediately
     if assessment_key == "va_benefits" and section.get("id") == "va_disability":
-        import logging
-        logger = logging.getLogger(__name__)
-        logger.info(f"VA section detected - calling auto-populate. State: {state}")
-        _auto_populate_va_disability(state)
+        has_disability = state.get("has_va_disability") == "yes"
+        rating = state.get("va_disability_rating")
+        dependents = state.get("va_dependents")
+        current_amount = state.get("va_disability_monthly")
+        
+        # Check if we should calculate/recalculate
+        # Calculate if: has disability + rating + dependents are set
+        # Also recalculate if rating/dependents changed (detected via session state tracking)
+        should_calculate = has_disability and rating is not None and dependents is not None
+        
+        if should_calculate:
+            # Track previous values to detect changes
+            prev_rating = st.session_state.get("_va_prev_rating")
+            prev_dependents = st.session_state.get("_va_prev_dependents")
+            
+            # Calculate if never calculated OR if inputs changed
+            if current_amount is None or rating != prev_rating or dependents != prev_dependents:
+                _auto_populate_va_disability(state)
+                
+                # Update tracking variables
+                st.session_state["_va_prev_rating"] = rating
+                st.session_state["_va_prev_dependents"] = dependents
 
     new_values = _render_fields_for_page(section, state, view_mode)
     if new_values:
-        import logging
-        logger = logging.getLogger(__name__)
-        logger.info(f"New values from fields: {new_values}")
         state.update(new_values)
         
-        # Re-calculate VA disability if rating or dependents changed
-        if assessment_key == "va_benefits" and section.get("id") == "va_disability":
-            if "va_disability_rating" in new_values or "va_dependents" in new_values:
-                logger.info("Rating or dependents changed - triggering auto-populate and rerun")
-                _auto_populate_va_disability(state)
-                _persist_assessment_state(product_key, assessment_key, state)
-                # Trigger rerun to update the UI with auto-populated value
-                safe_rerun()
-                return
+        # VA disability auto-population now happens BEFORE widgets render (see above)
+        # This ensures calculated values appear immediately in the form
         
         _persist_assessment_state(product_key, assessment_key, state)
 
@@ -812,34 +821,37 @@ def _auto_populate_va_disability(state: dict[str, Any]) -> None:
     - va_disability_rating is set
     - va_dependents is set
     """
-    import logging
-    logger = logging.getLogger(__name__)
+    import streamlit as st
     
     # Only auto-populate if veteran has VA disability
     has_disability = state.get("has_va_disability")
-    logger.info(f"VA auto-populate: has_va_disability = {has_disability}")
-    
     if has_disability != "yes":
         return
     
     rating = state.get("va_disability_rating")
     dependents = state.get("va_dependents")
     
-    logger.info(f"VA auto-populate: rating = {rating}, dependents = {dependents}")
-    
     if rating is None or dependents is None:
-        logger.info("VA auto-populate: Skipping - rating or dependents not set")
         return
     
-    # Calculate monthly amount using official rates
-    monthly_amount = get_monthly_va_disability(rating, dependents)
-    
-    logger.info(f"VA auto-populate: Calculated amount = {monthly_amount}")
-    
-    if monthly_amount is not None:
-        # Update state with calculated amount
-        state["va_disability_monthly"] = monthly_amount
-        logger.info(f"VA auto-populate: Updated state with {monthly_amount}")
+    try:
+        # Calculate monthly amount using official rates
+        monthly_amount = get_monthly_va_disability(rating, dependents)
+        
+        if monthly_amount is not None:
+            # Update state dict with calculated amount
+            state["va_disability_monthly"] = monthly_amount
+            
+            # CRITICAL: Also update the widget's session state value
+            # This ensures the number_input widget displays the calculated value
+            widget_key = "field_va_disability_monthly"
+            st.session_state[widget_key] = monthly_amount
+            
+            st.toast(f"✅ Calculated VA benefit: ${monthly_amount:,.2f}/month", icon="💰")
+        else:
+            st.toast("⚠️ Could not calculate VA benefit - please enter manually", icon="⚠️")
+    except Exception as e:
+        st.error(f"Error calculating VA disability: {e}")
 
 
 def _calculate_summary_total(summary_config: dict[str, Any], state: dict[str, Any]) -> Optional[float]:
