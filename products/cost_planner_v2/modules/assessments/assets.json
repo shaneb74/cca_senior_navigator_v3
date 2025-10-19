@@ -283,7 +283,78 @@
       "info_boxes": [
         {
           "type": "info",
-          "message": "\ud83c\udfe0 Primary home is often Medicaid-exempt (up to equity limits). Consider timing and liquidity for accessing home equity."
+          "message": "🏠 Primary home is often Medicaid-exempt (up to equity limits). Consider timing and liquidity for accessing home equity."
+        }
+      ]
+    },
+    {
+      "id": "debts_obligations",
+      "title": "Debts & Obligations",
+      "icon": "💳",
+      "help_text": "Outstanding debts and financial obligations",
+      "layout": "two_column",
+      "fields": [
+        {
+          "key": "primary_residence_mortgage",
+          "label": "Primary Residence Mortgage Balance",
+          "type": "currency",
+          "required": false,
+          "level": "basic",
+          "min": 0,
+          "max": 10000000,
+          "step": 5000,
+          "default": 0,
+          "help": "Outstanding mortgage balance on your primary residence (if home_equity_estimate already accounts for this, leave at $0)",
+          "column": 1
+        },
+        {
+          "key": "other_real_estate_debt",
+          "label": "Other Real Estate Debt",
+          "type": "currency",
+          "required": false,
+          "level": "basic",
+          "min": 0,
+          "max": 10000000,
+          "step": 5000,
+          "default": 0,
+          "help": "Mortgages or loans on rental properties, vacation homes, etc.",
+          "column": 1
+        },
+        {
+          "key": "secured_loans",
+          "label": "Secured Loans",
+          "type": "currency",
+          "required": false,
+          "level": "advanced",
+          "min": 0,
+          "max": 5000000,
+          "step": 1000,
+          "default": 0,
+          "help": "Auto loans, boat loans, equipment loans, home equity lines of credit, etc.",
+          "column": 2
+        },
+        {
+          "key": "unsecured_debt",
+          "label": "Unsecured Debt",
+          "type": "currency",
+          "required": false,
+          "level": "advanced",
+          "min": 0,
+          "max": 1000000,
+          "step": 500,
+          "default": 0,
+          "help": "Credit card balances, personal loans, medical debt, etc.",
+          "column": 2
+        }
+      ],
+      "info_boxes": [
+        {
+          "type": "info",
+          "message": "💡 Debts reduce your net worth available for care. Medicaid asset limits consider net value after debts."
+        },
+        {
+          "type": "warning",
+          "message": "⚠️ If your home_equity_estimate already subtracts the mortgage, set primary_residence_mortgage to $0 to avoid double-counting."
         }
       ]
     },
@@ -291,15 +362,16 @@
       "id": "results",
       "type": "results",
       "title": "Assets Assessment Complete",
-      "icon": "\u2705",
+      "icon": "✅",
       "fields": []
     }
   ],
   "summary": {
     "type": "calculated",
-    "label": "Total Assets",
-    "formula": "sum(cash_liquid_total, brokerage_total, retirement_total, home_equity_estimate, checking_balance, savings_cds_balance, brokerage_mf_etf, brokerage_stocks_bonds, retirement_traditional, retirement_roth, real_estate_other, life_insurance_cash_value)",
-    "display_format": "${:,.0f}"
+    "label": "Net Assets",
+    "formula": "calculated_by_engine",
+    "display_format": "${:,.0f}",
+    "help": "Total assets minus total debts. Calculation automatically uses basic totals OR advanced breakdowns to avoid double-counting."
   },
   "output_contract": {
     "asset_has_partner": "string",
@@ -316,6 +388,12 @@
     "home_equity_estimate": "number",
     "real_estate_other": "number",
     "life_insurance_cash_value": "number",
-    "total_asset_value": "calculated"
+    "primary_residence_mortgage": "number",
+    "other_real_estate_debt": "number",
+    "secured_loans": "number",
+    "unsecured_debt": "number",
+    "total_asset_value": "calculated",
+    "total_asset_debt": "calculated",
+    "net_asset_value": "calculated"
   }
 }
