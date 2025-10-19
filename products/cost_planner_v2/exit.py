@@ -151,10 +151,10 @@ def _calculate_completion_metrics() -> dict:
         va_monthly_benefit = (
             va_data.get("va_disability_monthly", 0.0)
             + va_data.get("aid_attendance_monthly", 0.0)
-            + va_data.get("va_pension_monthly", 0.0)
         )
 
-    total_monthly_income = base_monthly_income
+    # Include VA benefits in total monthly income
+    total_monthly_income = base_monthly_income + va_monthly_benefit
 
     total_assets = calculate_total_asset_value(normalized_assets)
     total_asset_debt = calculate_total_asset_debt(normalized_assets)

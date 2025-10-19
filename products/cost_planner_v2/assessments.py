@@ -858,7 +858,12 @@ def _auto_populate_va_disability(state: dict[str, Any]) -> None:
 
 
 def _calculate_summary_total(summary_config: dict[str, Any], state: dict[str, Any]) -> Optional[float]:
-    """Calculate summary total using the formula defined in config."""
+    """
+    Calculate summary total using the formula defined in config.
+    
+    Special handling for "calculated_by_engine" which uses helper functions
+    to avoid double-counting in basic/advanced field modes.
+    """
     if not summary_config:
         return None
 
@@ -867,6 +872,22 @@ def _calculate_summary_total(summary_config: dict[str, Any], state: dict[str, An
         return None
 
     try:
+        # Special case: Use calculation helpers for complex logic
+        if formula == "calculated_by_engine":
+            # Determine assessment type from state or config
+            # For assets: use calculate_total_asset_value and subtract debts
+            if "cash_liquid_total" in state or "checking_balance" in state:
+                # This is the assets assessment
+                from products.cost_planner_v2.utils.financial_helpers import (
+                    calculate_total_asset_value,
+                    calculate_total_asset_debt,
+                )
+                gross_assets = calculate_total_asset_value(state)
+                total_debt = calculate_total_asset_debt(state)
+                return max(gross_assets - total_debt, 0.0)
+            return None
+        
+        # Standard sum() formula
         if formula.startswith("sum(") and formula.endswith(")"):
             field_names = [f.strip() for f in formula[4:-1].split(",") if f.strip()]
             total = 0.0
