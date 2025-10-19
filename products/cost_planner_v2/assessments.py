@@ -735,6 +735,10 @@ def _render_section_content(
         if assessment_key == "va_benefits" and section.get("id") == "va_disability":
             if "va_disability_rating" in new_values or "va_dependents" in new_values:
                 _auto_populate_va_disability(state)
+                _persist_assessment_state(product_key, assessment_key, state)
+                # Trigger rerun to update the UI with auto-populated value
+                safe_rerun()
+                return
         
         _persist_assessment_state(product_key, assessment_key, state)
 
