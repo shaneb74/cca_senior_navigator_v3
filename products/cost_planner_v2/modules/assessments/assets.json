@@ -1,7 +1,7 @@
 {
   "key": "assets",
   "title": "Assets & Resources",
-  "icon": "\ud83c\udfe6",
+  "icon": "🏦",
   "description": "Available financial assets and resources",
   "estimated_time": "6-8 min",
   "required": true,
@@ -11,20 +11,20 @@
       "id": "intro",
       "type": "intro",
       "title": "Assets Assessment",
-      "icon": "\ud83c\udfe6",
-      "help_text": "Estimate your assets. Basic gives a quick snapshot; Advanced lets you add detail.",
+      "icon": "🏦",
+      "help_text": "Enter your asset details. All fields are optional - skip any that don't apply.",
       "fields": [],
       "info_boxes": [
         {
           "type": "info",
-          "message": "\ud83d\udca1 Inputs stay visible. You can save and come back anytime."
+          "message": "💡 Inputs stay visible. You can save and come back anytime."
         }
       ]
     },
     {
       "id": "household_context",
       "title": "Household Context",
-      "icon": "\ud83d\udc65",
+      "icon": "👥",
       "help_text": "Let me know if anyone else shares ownership or limits how assets can be used.",
       "layout": "single_column",
       "fields": [
@@ -33,7 +33,6 @@
           "label": "Do you share assets with a spouse or partner?",
           "type": "select",
           "required": false,
-          "level": "basic",
           "options": [
             {
               "value": "no_partner",
@@ -56,7 +55,6 @@
           "label": "Any legal or family restrictions on using these assets?",
           "type": "textarea",
           "required": false,
-          "level": "advanced",
           "help": "Example: community property rules, assets earmarked for a spouse, or power-of-attorney considerations.",
           "visible_if": {
             "field": "asset_has_partner",
@@ -67,28 +65,31 @@
       "info_boxes": [
         {
           "type": "info",
-          "message": "\ud83d\udc65 If assets are co-owned, note who must approve decisions. This prevents surprises when planning how to pay for care."
+          "message": "👥 If assets are co-owned, note who must approve decisions. This prevents surprises when planning how to pay for care."
         }
       ]
     },
     {
       "id": "liquid_assets",
       "title": "Liquid Assets",
-      "icon": "\ud83c\udfe6",
+      "icon": "🏦",
       "help_text": "Cash and easily accessible funds",
       "layout": "two_column",
       "fields": [
         {
           "key": "cash_liquid_total",
           "label": "Checking & Savings (Total)",
-          "type": "currency",
+          "type": "display_currency_aggregate",
           "required": false,
-          "level": "basic",
           "min": 0,
           "max": 10000000,
           "step": 1000,
           "default": 0,
-          "help": "Estimated current value of all checking and savings accounts",
+          "help": "Automatically calculated from Checking + Savings/CDs below.",
+          "aggregate_from": [
+            "checking_balance",
+            "savings_cds_balance"
+          ],
           "column": 1
         },
         {
@@ -96,7 +97,6 @@
           "label": "Checking",
           "type": "currency",
           "required": false,
-          "level": "advanced",
           "min": 0,
           "max": 10000000,
           "step": 1000,
@@ -109,7 +109,6 @@
           "label": "Savings / CDs",
           "type": "currency",
           "required": false,
-          "level": "advanced",
           "min": 0,
           "max": 10000000,
           "step": 1000,
@@ -121,28 +120,31 @@
       "info_boxes": [
         {
           "type": "info",
-          "message": "\ud83d\udcb0 Liquid assets are important for immediate care costs. Medicaid allows up to $2,000 for individuals (2024)."
+          "message": "💰 Liquid assets are important for immediate care costs. Medicaid allows up to $2,000 for individuals (2024)."
         }
       ]
     },
     {
       "id": "investments",
       "title": "Investments",
-      "icon": "\ud83d\udcc8",
+      "icon": "📈",
       "help_text": "Brokerage accounts and investment holdings",
       "layout": "two_column",
       "fields": [
         {
           "key": "brokerage_total",
           "label": "Brokerage / Investments (Total)",
-          "type": "currency",
+          "type": "display_currency_aggregate",
           "required": false,
-          "level": "basic",
           "min": 0,
           "max": 50000000,
           "step": 5000,
           "default": 0,
-          "help": "Estimated current value of all brokerage holdings",
+          "help": "Automatically calculated from Mutual Funds/ETFs + Stocks/Bonds below.",
+          "aggregate_from": [
+            "brokerage_mf_etf",
+            "brokerage_stocks_bonds"
+          ],
           "column": 1
         },
         {
@@ -150,7 +152,6 @@
           "label": "Brokerage - Mutual Funds / ETFs",
           "type": "currency",
           "required": false,
-          "level": "advanced",
           "min": 0,
           "max": 50000000,
           "step": 5000,
@@ -163,7 +164,6 @@
           "label": "Brokerage - Stocks / Bonds",
           "type": "currency",
           "required": false,
-          "level": "advanced",
           "min": 0,
           "max": 50000000,
           "step": 5000,
@@ -175,28 +175,31 @@
       "info_boxes": [
         {
           "type": "info",
-          "message": "\ud83d\udcc8 Investment accounts can provide flexibility for care costs. Note any restrictions or market timing concerns."
+          "message": "📈 Investment accounts can provide flexibility for care costs. Note any restrictions or market timing concerns."
         }
       ]
     },
     {
       "id": "retirement_accounts",
       "title": "Retirement Accounts",
-      "icon": "\ud83c\udfe6",
+      "icon": "🏦",
       "help_text": "IRAs, 401(k)s, and other retirement savings",
       "layout": "two_column",
       "fields": [
         {
           "key": "retirement_total",
           "label": "Retirement Accounts (Total)",
-          "type": "currency",
+          "type": "display_currency_aggregate",
           "required": false,
-          "level": "basic",
           "min": 0,
           "max": 50000000,
           "step": 5000,
           "default": 0,
-          "help": "Total value of all retirement accounts",
+          "help": "Automatically calculated from Traditional IRA/401(k) + Roth IRA below.",
+          "aggregate_from": [
+            "retirement_traditional",
+            "retirement_roth"
+          ],
           "column": 1
         },
         {
@@ -204,7 +207,6 @@
           "label": "Traditional IRA / 401(k)",
           "type": "currency",
           "required": false,
-          "level": "advanced",
           "min": 0,
           "max": 50000000,
           "step": 5000,
@@ -217,7 +219,6 @@
           "label": "Roth IRA",
           "type": "currency",
           "required": false,
-          "level": "advanced",
           "min": 0,
           "max": 50000000,
           "step": 5000,
@@ -229,14 +230,14 @@
       "info_boxes": [
         {
           "type": "info",
-          "message": "\ud83c\udfe6 Retirement accounts often have penalties for early withdrawal (before age 59\u00bd) and required minimum distributions (after age 73)."
+          "message": "🏦 Retirement accounts often have penalties for early withdrawal (before age 59½) and required minimum distributions (after age 73)."
         }
       ]
     },
     {
       "id": "real_estate_other",
       "title": "Real Estate & Other",
-      "icon": "\ud83c\udfe0",
+      "icon": "🏠",
       "help_text": "Property, vehicles, and other valuable assets",
       "layout": "two_column",
       "fields": [
@@ -245,7 +246,6 @@
           "label": "Home Equity (Estimate)",
           "type": "currency",
           "required": false,
-          "level": "basic",
           "min": 0,
           "max": 50000000,
           "step": 25000,
@@ -258,7 +258,6 @@
           "label": "Real Estate - Other Property",
           "type": "currency",
           "required": false,
-          "level": "advanced",
           "min": 0,
           "max": 50000000,
           "step": 25000,
@@ -271,7 +270,6 @@
           "label": "Life Insurance Cash Value",
           "type": "currency",
           "required": false,
-          "level": "advanced",
           "min": 0,
           "max": 10000000,
           "step": 5000,
@@ -283,7 +281,74 @@
       "info_boxes": [
         {
           "type": "info",
-          "message": "\ud83c\udfe0 Primary home is often Medicaid-exempt (up to equity limits). Consider timing and liquidity for accessing home equity."
+          "message": "🏠 Primary home is often Medicaid-exempt (up to equity limits). Consider timing and liquidity for accessing home equity."
+        }
+      ]
+    },
+    {
+      "id": "debts_obligations",
+      "title": "Debts & Obligations",
+      "icon": "💳",
+      "help_text": "Outstanding debts and financial obligations",
+      "layout": "two_column",
+      "fields": [
+        {
+          "key": "primary_residence_mortgage",
+          "label": "Primary Residence Mortgage Balance",
+          "type": "currency",
+          "required": false,
+          "min": 0,
+          "max": 10000000,
+          "step": 5000,
+          "default": 0,
+          "help": "Outstanding mortgage balance on your primary residence (if home_equity_estimate already accounts for this, leave at $0)",
+          "column": 1
+        },
+        {
+          "key": "other_real_estate_debt",
+          "label": "Other Real Estate Debt",
+          "type": "currency",
+          "required": false,
+          "min": 0,
+          "max": 10000000,
+          "step": 5000,
+          "default": 0,
+          "help": "Mortgages or loans on rental properties, vacation homes, etc.",
+          "column": 1
+        },
+        {
+          "key": "secured_loans",
+          "label": "Secured Loans",
+          "type": "currency",
+          "required": false,
+          "min": 0,
+          "max": 5000000,
+          "step": 1000,
+          "default": 0,
+          "help": "Auto loans, boat loans, equipment loans, home equity lines of credit, etc.",
+          "column": 2
+        },
+        {
+          "key": "unsecured_debt",
+          "label": "Unsecured Debt",
+          "type": "currency",
+          "required": false,
+          "min": 0,
+          "max": 1000000,
+          "step": 500,
+          "default": 0,
+          "help": "Credit card balances, personal loans, medical debt, etc.",
+          "column": 2
+        }
+      ],
+      "info_boxes": [
+        {
+          "type": "info",
+          "message": "💡 Debts reduce your net worth available for care. Medicaid asset limits consider net value after debts."
+        },
+        {
+          "type": "warning",
+          "message": "⚠️ If your home_equity_estimate already subtracts the mortgage, set primary_residence_mortgage to $0 to avoid double-counting."
         }
       ]
     },
@@ -291,15 +356,16 @@
       "id": "results",
       "type": "results",
       "title": "Assets Assessment Complete",
-      "icon": "\u2705",
+      "icon": "✅",
       "fields": []
     }
   ],
   "summary": {
     "type": "calculated",
-    "label": "Total Assets",
-    "formula": "sum(cash_liquid_total, brokerage_total, retirement_total, home_equity_estimate, checking_balance, savings_cds_balance, brokerage_mf_etf, brokerage_stocks_bonds, retirement_traditional, retirement_roth, real_estate_other, life_insurance_cash_value)",
-    "display_format": "${:,.0f}"
+    "label": "Net Assets",
+    "formula": "calculated_by_engine",
+    "display_format": "${:,.0f}",
+    "help": "Total assets minus total debts. Calculated automatically from the values you entered above."
   },
   "output_contract": {
     "asset_has_partner": "string",
@@ -316,6 +382,12 @@
     "home_equity_estimate": "number",
     "real_estate_other": "number",
     "life_insurance_cash_value": "number",
-    "total_asset_value": "calculated"
+    "primary_residence_mortgage": "number",
+    "other_real_estate_debt": "number",
+    "secured_loans": "number",
+    "unsecured_debt": "number",
+    "total_asset_value": "calculated",
+    "total_asset_debt": "calculated",
+    "net_asset_value": "calculated"
   }
 }
