@@ -840,12 +840,8 @@ def _auto_populate_va_disability(state: dict[str, Any]) -> None:
         
         if monthly_amount is not None:
             # Update state dict with calculated amount
+            # The assessment engine will pick this up and pass it to the widget's value parameter
             state["va_disability_monthly"] = monthly_amount
-            
-            # CRITICAL: Also update the widget's session state value
-            # This ensures the number_input widget displays the calculated value
-            widget_key = "field_va_disability_monthly"
-            st.session_state[widget_key] = monthly_amount
             
             st.toast(f"✅ Calculated VA benefit: ${monthly_amount:,.2f}/month", icon="💰")
         else:
