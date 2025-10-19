@@ -411,15 +411,10 @@ def load_user(uid: str) -> dict[str, Any]:
         # Always refresh working copy from demo source if it exists
         # This ensures demo users always start with clean, complete data
         if demo_path.exists():
-            print(f"\n{'='*60}")
-            print(f"[DEMO] Loading fresh demo profile from: {demo_path}")
-            print(f"[DEMO] Creating/refreshing working copy at: {path}")
             try:
                 import shutil
                 # Force overwrite even if working copy exists
                 shutil.copy2(demo_path, path)
-                print(f"[DEMO] ✅ Demo profile copied successfully!")
-                print(f"{'='*60}\n")
             except Exception as e:
                 print(f"[ERROR] Failed to copy demo profile: {e}")
 
@@ -569,17 +564,18 @@ USER_PERSIST_KEYS = {
     "cost_v2_qualifiers",
     "cost_v2_current_module",
     "cost_v2_modules",  # Main assessment data
-    "cost_v2_income",
-    "cost_v2_assets",
-    "cost_v2_va_benefits",
-    "cost_v2_health_insurance",
-    "cost_v2_life_insurance",
-    "cost_v2_medicaid_navigation",
     "cost_v2_advisor_notes",
     "cost_v2_schedule_advisor",
     "cost_v2_quick_estimate",
     "cost_planner_v2_published",
     "cost_planner_v2_complete",
+    # Cost Planner v2 assessment state keys (CORRECTED naming)
+    "cost_planner_v2_income",  # Income assessment state
+    "cost_planner_v2_assets",  # Assets assessment state
+    "cost_planner_v2_va_benefits",  # VA benefits assessment state
+    "cost_planner_v2_health_insurance",  # Health insurance assessment state
+    "cost_planner_v2_life_insurance",  # Life insurance assessment state
+    "cost_planner_v2_medicaid_navigation",  # Medicaid navigation assessment state
     # GCP v4 answer data
     "gcp_care_recommendation",  # All GCP assessment answers
     "gcp_v4_published",

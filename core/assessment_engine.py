@@ -282,7 +282,7 @@ def _render_view_mode_toggle(state_key: str) -> str:
     return selected_mode
 
 
-def _should_show_field(field: dict[str, Any], view_mode: str, state: dict[str, Any]) -> bool:
+def _should_show_field(field: dict[str, Any], view_mode: str, state: dict[str, Any], new_values: dict[str, Any] = None) -> bool:
     """
     Check if field should be visible based on view mode and visibility conditions.
     
@@ -290,12 +290,13 @@ def _should_show_field(field: dict[str, Any], view_mode: str, state: dict[str, A
         field: Field configuration dict
         view_mode: Current view mode ('basic' or 'advanced')
         state: Current assessment state
+        new_values: Optional dict of newly rendered field values (converted from labels to values)
     
     Returns:
         True if field should be rendered, False otherwise
     """
     # Check visibility condition first
-    if not _is_field_visible(field, state):
+    if not _is_field_visible(field, state, new_values):
         return False
     
     # Check level-based visibility
@@ -348,7 +349,8 @@ def _render_fields(section: dict[str, Any], state: dict[str, Any], view_mode: st
 
     for field in fields:
         # Check visibility (including level-based filtering)
-        if not _should_show_field(field, view_mode, state):
+        # Pass new_values so visibility checks can see converted label→value mappings
+        if not _should_show_field(field, view_mode, state, new_values):
             # Field is hidden but preserve its value in state
             key = field.get("key")
             if key and key not in state:
@@ -366,8 +368,11 @@ def _render_fields(section: dict[str, Any], state: dict[str, Any], view_mode: st
         help_text = field.get("help")
         default = field.get("default")
 
-        # Get current value or default
+        # Get current value from state dict (from persistence) or default
         current_value = state.get(key, default)
+        
+        # Generate unique widget key
+        widget_key = f"field_{key}"
 
         # RENDER CUSTOM HTML LABEL (visible regardless of CSS)
         label_html = f"""
@@ -420,7 +425,7 @@ def _render_fields(section: dict[str, Any], state: dict[str, Any], view_mode: st
                 step=step,
                 format="%.2f",  # Support cents (e.g., $1,908.95)
                 help=help_text,
-                key=f"field_{key}",
+                key=widget_key,  # Use widget_key variable
             )
             new_values[key] = value
 
@@ -429,11 +434,19 @@ def _render_fields(section: dict[str, Any], state: dict[str, Any], view_mode: st
             option_labels = [opt.get("label", opt.get("value")) for opt in options]
             option_values = [opt.get("value", opt.get("label")) for opt in options]
 
-            # Find current index
-            try:
-                current_index = option_values.index(current_value) if current_value else 0
-            except ValueError:
-                current_index = 0
+            # Find current index based on current_value (which might be a value or label)
+            current_index = 0
+            if current_value is not None:
+                # Try to find in values first (most common case)
+                try:
+                    current_index = option_values.index(current_value)
+                except ValueError:
+                    # Maybe it's a label instead?
+                    try:
+                        current_index = option_labels.index(current_value)
+                    except ValueError:
+                        # Default to first option
+                        current_index = 0
 
             selected_label = container.selectbox(
                 label=label,  # Still need this for accessibility
@@ -441,12 +454,17 @@ def _render_fields(section: dict[str, Any], state: dict[str, Any], view_mode: st
                 options=option_labels,
                 index=current_index,
                 help=help_text,
-                key=f"field_{key}",
+                key=widget_key,  # Use widget_key instead of f"field_{key}"
             )
 
-            # Map back to value
-            selected_index = option_labels.index(selected_label)
-            value = option_values[selected_index]
+            # Map back to value - the selectbox returns the label
+            try:
+                selected_index = option_labels.index(selected_label)
+                value = option_values[selected_index]
+            except (ValueError, IndexError):
+                # Fallback: use first option's value
+                value = option_values[0] if option_values else None
+            
             new_values[key] = value
 
         elif field_type == "checkbox":
@@ -454,7 +472,7 @@ def _render_fields(section: dict[str, Any], state: dict[str, Any], view_mode: st
                 label=label,  # Checkbox labels should remain visible
                 value=bool(current_value),
                 help=help_text,
-                key=f"field_{key}",
+                key=widget_key,  # Use widget_key variable
             )
             new_values[key] = value
 
@@ -468,7 +486,7 @@ def _render_fields(section: dict[str, Any], state: dict[str, Any], view_mode: st
                 options=option_labels,
                 default=current_value if isinstance(current_value, list) else [],
                 help=help_text,
-                key=f"field_{key}",
+                key=widget_key,  # Use widget_key variable
             )
             new_values[key] = value
 
@@ -478,7 +496,7 @@ def _render_fields(section: dict[str, Any], state: dict[str, Any], view_mode: st
                 label_visibility="collapsed",
                 value=str(current_value) if current_value else "",
                 help=help_text,
-                key=f"field_{key}",
+                key=widget_key,  # Use widget_key variable
             )
             new_values[key] = value
 
@@ -488,7 +506,7 @@ def _render_fields(section: dict[str, Any], state: dict[str, Any], view_mode: st
                 label_visibility="collapsed",
                 value=current_value,
                 help=help_text,
-                key=f"field_{key}",
+                key=widget_key,  # Use widget_key variable
             )
             new_values[key] = value
 
@@ -498,15 +516,25 @@ def _render_fields(section: dict[str, Any], state: dict[str, Any], view_mode: st
                 label_visibility="collapsed",
                 value=str(current_value) if current_value else "",
                 help=help_text,
-                key=f"field_{key}",
+                key=widget_key,  # Use widget_key variable
             )
             new_values[key] = value
 
     return new_values
 
 
-def _is_field_visible(field: dict[str, Any], state: dict[str, Any]) -> bool:
-    """Check if field should be visible based on visible_if condition."""
+def _is_field_visible(field: dict[str, Any], state: dict[str, Any], new_values: dict[str, Any] = None) -> bool:
+    """
+    Check if field should be visible based on visible_if condition.
+    
+    Args:
+        field: Field configuration dict
+        state: Current assessment state
+        new_values: Optional dict of newly rendered field values (label→value conversions)
+    
+    Returns:
+        True if field passes visibility check, False otherwise
+    """
     visible_if = field.get("visible_if")
     if not visible_if:
         return True
@@ -516,7 +544,14 @@ def _is_field_visible(field: dict[str, Any], state: dict[str, Any]) -> bool:
     if not check_field:
         return True
 
-    current_value = state.get(check_field)
+    # CRITICAL FIX: Check in this priority order:
+    # 1. new_values (has converted label→value for current render)
+    # 2. state dict (has persisted values from previous renders)
+    # This ensures conditional fields appear immediately when parent field changes
+    if new_values and check_field in new_values:
+        current_value = new_values[check_field]
+    else:
+        current_value = state.get(check_field)
 
     # Check equals condition
     if "equals" in visible_if:
