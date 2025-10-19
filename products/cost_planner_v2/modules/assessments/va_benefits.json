@@ -159,13 +159,9 @@
         {
           "key": "va_disability_monthly",
           "label": "Monthly VA Disability Payment",
-          "type": "currency",
+          "type": "display_currency",
           "required": false,
-          "min": 0,
-          "max": 10000,
-          "step": 10,
           "default": 0,
-          "readonly": true,
           "help": "This amount is automatically calculated based on your disability rating and dependents using 2025 official VA rates.",
           "visible_if": {
             "field": "has_va_disability",
