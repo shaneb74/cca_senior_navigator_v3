@@ -1,0 +1,226 @@
+{
+  "uid": "demo_vic_veteran_borderline",
+  "created_at": 1760894198.279099,
+  "last_updated": 1760894198.279099,
+  "auth": {
+    "user_id": "demo_vic_veteran_borderline",
+    "is_authenticated": true,
+    "name": "Veteran Vic",
+    "email": "vic@demo.test"
+  },
+  "profile": {
+    "name": "Vic",
+    "age_range": "75-84",
+    "location": "Phoenix, AZ",
+    "zip_code": "85001",
+    "relationship": "self",
+    "qualifiers": {
+      "is_veteran": true,
+      "service_connected_disability": true,
+      "has_spouse": false,
+      "spouse_needs_care": false
+    }
+  },
+  "cost_v2_qualifiers": {
+    "is_veteran": true,
+    "service_connected_disability": true,
+    "has_spouse": false,
+    "spouse_needs_care": false
+  },
+  "flags": {
+    "is_veteran": true,
+    "veteran_service_connected": true,
+    "enable_cost_planner_v2": true
+  },
+  "gcp_care_recommendation": {
+    "tier": "in_home",
+    "tier_score": 15.5,
+    "confidence": 0.78,
+    "status": "complete",
+    "progress": 100,
+    "assessment": {
+      "age_range": "75-84",
+      "conditions": [
+        "mobility_issues",
+        "mild_cognitive_impairment",
+        "arthritis"
+      ],
+      "adl_count": 1,
+      "iadl_count": 2,
+      "cognitive_decline": true,
+      "wandering_risk": false,
+      "safety_concerns": true,
+      "living_situation": "alone",
+      "primary_caregiver": "family_visits",
+      "caregiver_hours": 10,
+      "professional_help": false
+    },
+    "flags": {
+      "veteran_benefits": true,
+      "mobility_issues": true,
+      "cognitive_decline_mild": true,
+      "falls_risk": true,
+      "medication_management": true,
+      "transportation_needs": true,
+      "part_time_support": true
+    },
+    "rationale": "Borderline case between in-home care and assisted living. Mobility and mild cognitive issues suggest need for support, but family involvement and part-time help may be sufficient for in-home care.",
+    "next_step": "Explore both in-home care options and assisted living facilities to compare."
+  },
+  "gcp_v4_published": true,
+  "mcip_contracts": {
+    "care_recommendation": {
+      "tier": "in_home",
+      "tier_score": 15.5,
+      "tier_rankings": [
+        [
+          "memory_care_high_acuity",
+          65.0
+        ],
+        [
+          "memory_care",
+          28.0
+        ],
+        [
+          "assisted_living",
+          15.0
+        ],
+        [
+          "in_home",
+          15.5
+        ],
+        [
+          "no_care_needed",
+          5.0
+        ]
+      ],
+      "confidence": 0.78,
+      "status": "complete",
+      "flags": [
+        {
+          "id": "veteran_service_connected",
+          "label": "Service-Connected Veteran",
+          "description": "Eligible for enhanced VA benefits due to service-connected disability",
+          "tone": "success",
+          "priority": 1,
+          "cta": {
+            "label": "Check VA Benefits",
+            "route": "learning",
+            "filter": "va_benefits"
+          }
+        },
+        {
+          "id": "mobility_issues",
+          "label": "Mobility Challenges",
+          "description": "Limited mobility requiring assistance with movement",
+          "tone": "warning",
+          "priority": 2,
+          "cta": {
+            "label": "Explore Mobility Support",
+            "route": "learning",
+            "filter": "mobility_support"
+          }
+        },
+        {
+          "id": "cognitive_decline_mild",
+          "label": "Mild Cognitive Impairment",
+          "description": "Early cognitive changes requiring monitoring",
+          "tone": "info",
+          "priority": 2,
+          "cta": {
+            "label": "Learn About Memory Support",
+            "route": "learning",
+            "filter": "cognitive_support"
+          }
+        },
+        {
+          "id": "borderline_case",
+          "label": "Borderline Care Level",
+          "description": "Needs assessment suggests options in both in-home and assisted living",
+          "tone": "info",
+          "priority": 3,
+          "cta": {
+            "label": "Compare Care Options",
+            "route": "learning",
+            "filter": "care_options"
+          }
+        }
+      ],
+      "rationale": [
+        "Borderline case between in-home care and assisted living",
+        "Mobility issues and mild cognitive impairment suggest need for support",
+        "Family involvement (10 hrs/week) may enable in-home care",
+        "Service-connected veteran status provides enhanced VA benefits",
+        "Consider both options based on family capacity and budget"
+      ],
+      "generated_at": "2025-10-19T12:16:38.279104",
+      "version": "4.0",
+      "input_snapshot_id": "vic_gcp_1760894198",
+      "rule_set": "gcp_v4_standard",
+      "next_step": {
+        "product": "cost_planner",
+        "label": "Compare Costs",
+        "reason": "Evaluate cost difference between in-home care and assisted living"
+      },
+      "last_updated": "2025-10-19T12:16:38.279111",
+      "needs_refresh": false
+    },
+    "journey": {
+      "current_hub": "concierge",
+      "completed_products": [
+        "gcp"
+      ],
+      "unlocked_products": [
+        "cost_planner",
+        "facility_finder"
+      ],
+      "recommended_next": "cost_planner"
+    },
+    "waiting_room": {
+      "status": "available",
+      "appointment_scheduled": false
+    }
+  },
+  "cost_v2_quick_estimate": {
+    "estimate": {
+      "monthly_base": 4200,
+      "monthly_adjusted": 4620.0,
+      "annual": 55440.0,
+      "three_year": 166320.0,
+      "five_year": 277200.0,
+      "multiplier": 1.1,
+      "region_name": "Phoenix, AZ",
+      "care_tier": "in_home",
+      "breakdown": {
+        "base_cost": 4200,
+        "regional_adjustment": 420.0,
+        "caregiver_hours_addon": 0,
+        "medication_management_addon": 0,
+        "transportation_addon": 0
+      }
+    },
+    "care_tier": "in_home",
+    "zip_code": "85001"
+  },
+  "cost_v2_step": "welcome",
+  "cost_v2_guest_mode": false,
+  "cost_v2_triage": {},
+  "cost_v2_modules": {},
+  "tiles": {
+    "gcp_v4": {
+      "status": "done",
+      "progress": 100.0,
+      "tier": "in_home",
+      "confidence": 0.78,
+      "tier_score": 15.5,
+      "last_updated": 1760894198.279099
+    },
+    "cost_planner_v2": {
+      "status": "not_started",
+      "progress": 0,
+      "last_updated": 1760894198.279099
+    }
+  },
+  "progress": {},
+  "preferences": {}
+}

@@ -249,6 +249,12 @@ def _handle_restart_if_needed(config: ModuleConfig) -> None:
     Args:
         config: Module configuration
     """
+    # CRITICAL FIX: Only restart if user explicitly requested it via query param
+    # Don't auto-restart just because step is 0 - that's the default on fresh login!
+    restart_requested = st.query_params.get("restart") == "true"
+    if not restart_requested:
+        return  # No explicit restart request, preserve existing state
+    
     # Check if GCP is complete
     try:
         from core.mcip import MCIP
