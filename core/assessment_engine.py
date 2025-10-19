@@ -404,6 +404,7 @@ def _render_fields(section: dict[str, Any], state: dict[str, Any], view_mode: st
             min_val = field.get("min", 0)
             max_val = field.get("max", 10000000)
             step = field.get("step", 100)
+            readonly = field.get("readonly", False)
             
             # Ensure all numeric values are the same type (float for currency to support cents)
             min_val = float(min_val)
@@ -426,6 +427,7 @@ def _render_fields(section: dict[str, Any], state: dict[str, Any], view_mode: st
                 format="%.2f",  # Support cents (e.g., $1,908.95)
                 help=help_text,
                 key=widget_key,  # Use widget_key variable
+                disabled=readonly,  # Make read-only if specified
             )
             new_values[key] = value
 
@@ -509,6 +511,35 @@ def _render_fields(section: dict[str, Any], state: dict[str, Any], view_mode: st
                 key=widget_key,  # Use widget_key variable
             )
             new_values[key] = value
+
+        elif field_type == "display_currency":
+            # Display-only currency label (no input, just shows formatted value)
+            # Value comes from state (e.g., auto-calculated VA disability amount)
+            display_value = float(current_value) if current_value is not None else 0.0
+            formatted_value = f"${display_value:,.2f}"
+            
+            # Render as a styled display box
+            container.markdown(
+                f"""
+                <div style="
+                    background: #f8fafc;
+                    border: 1px solid #e2e8f0;
+                    border-radius: 8px;
+                    padding: 12px 16px;
+                    font-size: 24px;
+                    font-weight: 600;
+                    color: #0f172a;
+                    text-align: left;
+                    margin-bottom: 8px;
+                ">
+                    {formatted_value}
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+            
+            # Don't include in new_values since it's display-only
+            # (value already in state from auto-calculation)
 
         else:  # text
             value = container.text_input(

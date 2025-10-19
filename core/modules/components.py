@@ -108,22 +108,20 @@ def input_pill(field: FieldDef, current: Any = None) -> Any:
 
     radio_key = f"{field.key}_pill"
 
-    # Calculate index - DON'T pre-select on first render to prevent ghost button
-    if radio_key in st.session_state:
-        # User has interacted - use current value
-        if current_label in labels:
-            default_index = labels.index(current_label)
-        else:
-            default_index = 0
+    # Calculate index - use current value if available, otherwise default to first option
+    # Note: st.radio requires a valid integer index, not None
+    if current_label in labels:
+        default_index = labels.index(current_label)
     else:
-        # First render - no pre-selection to avoid ghost button
-        default_index = None
+        # No current value - default to first option
+        # This ensures single-click selection works for all options
+        default_index = 0
 
     # Use native st.radio with horizontal layout
     choice_label = st.radio(
         label=label,
         options=labels,
-        index=default_index,  # Explicit valid index prevents blank option
+        index=default_index,  # Must be valid integer for single-click selection
         horizontal=True,
         label_visibility="collapsed",
         key=radio_key,
