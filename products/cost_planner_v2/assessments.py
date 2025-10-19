@@ -659,6 +659,10 @@ def _render_single_page_assessment(
                     log_event("assessment.updated", event_payload)
                 else:
                     log_event("assessment.completed", event_payload)
+                
+                # Navigate back to Financial Assessment Hub
+                st.session_state.cost_v2_step = "assessments"
+                st.session_state.pop(f"{product_key}_current_assessment", None)
             safe_rerun()
 
     with col3:
