@@ -727,41 +727,14 @@ def _render_section_content(
         unsafe_allow_html=True,
     )
 
-    # Auto-populate VA disability amount if this is the VA disability section
-    # CRITICAL: This runs BEFORE widgets are rendered, so calculated values appear immediately
-    if assessment_key == "va_benefits" and section.get("id") == "va_disability":
-        has_disability = state.get("has_va_disability") == "yes"
-        rating = state.get("va_disability_rating")
-        dependents = state.get("va_dependents")
-        current_amount = state.get("va_disability_monthly")
-        
-        # Check if we should calculate/recalculate
-        # Calculate if: has disability + rating + dependents are set
-        # Also recalculate if rating/dependents changed (detected via session state tracking)
-        should_calculate = has_disability and rating is not None and dependents is not None
-        
-        if should_calculate:
-            # Track previous values to detect changes
-            prev_rating = st.session_state.get("_va_prev_rating")
-            prev_dependents = st.session_state.get("_va_prev_dependents")
-            
-            # Calculate if never calculated OR if inputs changed
-            if current_amount is None or rating != prev_rating or dependents != prev_dependents:
-                _auto_populate_va_disability(state)
-                
-                # Update tracking variables
-                st.session_state["_va_prev_rating"] = rating
-                st.session_state["_va_prev_dependents"] = dependents
-                
-                # Trigger rerun so the widget displays the calculated value
-                st.rerun()
-
+    # Render fields
     new_values = _render_fields_for_page(section, state, view_mode)
     if new_values:
         state.update(new_values)
         
-        # VA disability auto-population now happens BEFORE widgets render (see above)
-        # This ensures calculated values appear immediately in the form
+        # Auto-calculate VA disability if relevant fields changed
+        if assessment_key == "va_benefits" and section.get("id") == "va_disability":
+            _auto_populate_va_disability(state)
         
         _persist_assessment_state(product_key, assessment_key, state)
 
@@ -823,21 +796,28 @@ def _auto_populate_va_disability(state: dict[str, Any]) -> None:
     This function calculates the monthly VA disability compensation using official
     2025 rates from the VA and updates the state with the calculated amount.
     
-    Only calculates if:
-    - has_va_disability is "yes"
-    - va_disability_rating is set
-    - va_dependents is set
+    Handles all cases:
+    - has_va_disability is "no" → sets amount to 0
+    - has_va_disability is "yes" + rating + dependents set → calculates amount
+    - Missing data → does nothing
     """
     import streamlit as st
     
-    # Only auto-populate if veteran has VA disability
     has_disability = state.get("has_va_disability")
+    
+    # If no disability, set amount to 0
+    if has_disability == "no":
+        state["va_disability_monthly"] = 0.0
+        return
+    
+    # Only calculate if veteran has VA disability
     if has_disability != "yes":
         return
     
     rating = state.get("va_disability_rating")
     dependents = state.get("va_dependents")
     
+    # Need both rating and dependents to calculate
     if rating is None or dependents is None:
         return
     
@@ -847,12 +827,12 @@ def _auto_populate_va_disability(state: dict[str, Any]) -> None:
         
         if monthly_amount is not None:
             # Update state dict with calculated amount
-            # The assessment engine will pick this up and pass it to the widget's value parameter
             state["va_disability_monthly"] = monthly_amount
             
+            # Show toast notification on calculation
             st.toast(f"✅ Calculated VA benefit: ${monthly_amount:,.2f}/month", icon="💰")
         else:
-            st.toast("⚠️ Could not calculate VA benefit - please enter manually", icon="⚠️")
+            st.toast("⚠️ Could not calculate VA benefit - please verify rating and dependents", icon="⚠️")
     except Exception as e:
         st.error(f"Error calculating VA disability: {e}")
 

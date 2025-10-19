@@ -417,6 +417,12 @@ def _render_fields(section: dict[str, Any], state: dict[str, Any], view_mode: st
             else:
                 current_value = min_val
 
+            # Define on_change callback to trigger immediate rerun for aggregate updates
+            def _on_currency_change():
+                """Callback to ensure UI updates immediately when currency field changes."""
+                # Force a rerun so aggregate totals update immediately
+                pass  # The act of having an on_change callback triggers the rerun
+            
             value = container.number_input(
                 label=label,  # Still need this for accessibility
                 label_visibility="collapsed",  # Hide Streamlit's label
@@ -428,6 +434,7 @@ def _render_fields(section: dict[str, Any], state: dict[str, Any], view_mode: st
                 help=help_text,
                 key=widget_key,  # Use widget_key variable
                 disabled=readonly,  # Make read-only if specified
+                on_change=_on_currency_change,  # Trigger rerun for immediate aggregate updates
             )
             new_values[key] = value
 
@@ -450,6 +457,11 @@ def _render_fields(section: dict[str, Any], state: dict[str, Any], view_mode: st
                         # Default to first option
                         current_index = 0
 
+            # Define on_change callback to trigger immediate rerun
+            def _on_select_change():
+                """Callback to ensure UI updates immediately when select field changes."""
+                pass  # The act of having an on_change callback triggers the rerun
+
             selected_label = container.selectbox(
                 label=label,  # Still need this for accessibility
                 label_visibility="collapsed",  # Hide Streamlit's label
@@ -457,6 +469,7 @@ def _render_fields(section: dict[str, Any], state: dict[str, Any], view_mode: st
                 index=current_index,
                 help=help_text,
                 key=widget_key,  # Use widget_key instead of f"field_{key}"
+                on_change=_on_select_change,  # Trigger rerun for immediate updates
             )
 
             # Map back to value - the selectbox returns the label
@@ -540,6 +553,56 @@ def _render_fields(section: dict[str, Any], state: dict[str, Any], view_mode: st
             
             # Don't include in new_values since it's display-only
             # (value already in state from auto-calculation)
+
+        elif field_type == "display_currency_aggregate":
+            # Display-only calculated total (sum of sub-fields)
+            # Always shows as a styled label, never editable
+            
+            sub_fields = field.get("aggregate_from", [])
+            
+            # Calculate aggregate from sub-fields
+            # CRITICAL: Read from st.session_state first for real-time updates
+            aggregate_total = 0.0
+            for sub_field_key in sub_fields:
+                sub_widget_key = f"field_{sub_field_key}"
+                sub_value = st.session_state.get(sub_widget_key)
+                if sub_value is None:
+                    sub_value = state.get(sub_field_key, 0.0)
+                
+                # Convert to float safely
+                if isinstance(sub_value, (int, float)):
+                    aggregate_total += float(sub_value)
+                elif isinstance(sub_value, str) and sub_value.strip():
+                    try:
+                        aggregate_total += float(sub_value.replace(',', '').replace('$', ''))
+                    except ValueError:
+                        pass  # Skip non-numeric values
+            
+            formatted_value = f"${aggregate_total:,.2f}"
+            
+            # Render as a styled aggregate display
+            container.markdown(
+                f"""
+                <div style="
+                    background: #f0f9ff;
+                    border: 2px solid #3b82f6;
+                    border-radius: 8px;
+                    padding: 10px 16px;
+                    font-size: 18px;
+                    font-weight: 700;
+                    color: #1e40af;
+                    text-align: right;
+                    margin-bottom: 8px;
+                ">
+                    <span style="font-size: 12px; font-weight: 500; color: #60a5fa; text-transform: uppercase; letter-spacing: 0.05em; margin-right: 8px;">Total:</span>
+                    {formatted_value}
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+            
+            # Store the calculated aggregate in state
+            state[key] = aggregate_total
 
         else:  # text
             value = container.text_input(
