@@ -399,15 +399,26 @@ def _render_fields(section: dict[str, Any], state: dict[str, Any], view_mode: st
             min_val = field.get("min", 0)
             max_val = field.get("max", 10000000)
             step = field.get("step", 100)
+            
+            # Ensure all numeric values are the same type (float for currency to support cents)
+            min_val = float(min_val)
+            max_val = float(max_val)
+            step = float(step)
+            
+            # Handle current value - convert to float if present, otherwise use min_val
+            if current_value is not None:
+                current_value = float(current_value)
+            else:
+                current_value = min_val
 
             value = container.number_input(
                 label=label,  # Still need this for accessibility
                 label_visibility="collapsed",  # Hide Streamlit's label
                 min_value=min_val,
                 max_value=max_val,
-                value=current_value if current_value is not None else min_val,
+                value=current_value,
                 step=step,
-                format="%d",
+                format="%.2f",  # Support cents (e.g., $1,908.95)
                 help=help_text,
                 key=f"field_{key}",
             )
