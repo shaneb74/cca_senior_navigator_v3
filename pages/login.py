@@ -27,6 +27,18 @@ DEMO_USERS = {
         "uid": "demo_mary_full_data",
         "description": "Complete assessments - for expert review testing",
     },
+    "demo_andy": {
+        "name": "Andy Assisted GCP Complete",
+        "email": "andy@demo.test",
+        "uid": "demo_andy_assisted_gcp_complete",
+        "description": "Assisted Living - GCP complete with VA A&A eligibility flag",
+    },
+    "demo_vic": {
+        "name": "Veteran Vic",
+        "email": "vic@demo.test",
+        "uid": "demo_vic_veteran_borderline",
+        "description": "Borderline In-Home/Assisted Living - Service-connected veteran",
+    },
 }
 
 
@@ -208,6 +220,7 @@ def render():
     Sarah Demo  → demo_sarah_test_001
     John Test   → demo_john_cost_planner
     Mary Complete → demo_mary_full_data
+    Andy Assisted GCP Complete → demo_andy_assisted_gcp_complete
     ```
     """)
     
