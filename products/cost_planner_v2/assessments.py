@@ -748,6 +748,9 @@ def _render_section_content(
                 # Update tracking variables
                 st.session_state["_va_prev_rating"] = rating
                 st.session_state["_va_prev_dependents"] = dependents
+                
+                # Trigger rerun so the widget displays the calculated value
+                st.rerun()
 
     new_values = _render_fields_for_page(section, state, view_mode)
     if new_values:
