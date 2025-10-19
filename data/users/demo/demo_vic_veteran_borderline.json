@@ -1,7 +1,7 @@
 {
   "uid": "demo_vic_veteran_borderline",
-  "created_at": 1760892168.920192,
-  "last_updated": 1760892168.920192,
+  "created_at": 1760894198.279099,
+  "last_updated": 1760894198.279099,
   "auth": {
     "user_id": "demo_vic_veteran_borderline",
     "is_authenticated": true,
@@ -153,16 +153,16 @@
         "Service-connected veteran status provides enhanced VA benefits",
         "Consider both options based on family capacity and budget"
       ],
-      "generated_at": "2025-10-19T11:42:48.920198",
+      "generated_at": "2025-10-19T12:16:38.279104",
       "version": "4.0",
-      "input_snapshot_id": "vic_gcp_1760892168",
+      "input_snapshot_id": "vic_gcp_1760894198",
       "rule_set": "gcp_v4_standard",
       "next_step": {
         "product": "cost_planner",
         "label": "Compare Costs",
         "reason": "Evaluate cost difference between in-home care and assisted living"
       },
-      "last_updated": "2025-10-19T11:42:48.920204",
+      "last_updated": "2025-10-19T12:16:38.279111",
       "needs_refresh": false
     },
     "journey": {
@@ -182,20 +182,25 @@
     }
   },
   "cost_v2_quick_estimate": {
-    "location": "Phoenix, AZ",
-    "tier": "in_home",
-    "tier_multiplier": 1.1,
-    "base_cost": 4200,
-    "adjusted_cost": 4620,
-    "breakdown": {
-      "caregiver_hours": 3200,
-      "medication_management": 400,
-      "transportation": 350,
-      "meal_prep": 350,
-      "housekeeping": 220,
-      "personal_care": 100
+    "estimate": {
+      "monthly_base": 4200,
+      "monthly_adjusted": 4620.0,
+      "annual": 55440.0,
+      "three_year": 166320.0,
+      "five_year": 277200.0,
+      "multiplier": 1.1,
+      "region_name": "Phoenix, AZ",
+      "care_tier": "in_home",
+      "breakdown": {
+        "base_cost": 4200,
+        "regional_adjustment": 420.0,
+        "caregiver_hours_addon": 0,
+        "medication_management_addon": 0,
+        "transportation_addon": 0
+      }
     },
-    "created_at": 1760892168.920192
+    "care_tier": "in_home",
+    "zip_code": "85001"
   },
   "cost_v2_step": "welcome",
   "cost_v2_guest_mode": false,
@@ -208,12 +213,12 @@
       "tier": "in_home",
       "confidence": 0.78,
       "tier_score": 15.5,
-      "last_updated": 1760892168.920192
+      "last_updated": 1760894198.279099
     },
     "cost_planner_v2": {
       "status": "not_started",
       "progress": 0,
-      "last_updated": 1760892168.920192
+      "last_updated": 1760894198.279099
     }
   },
   "progress": {},
