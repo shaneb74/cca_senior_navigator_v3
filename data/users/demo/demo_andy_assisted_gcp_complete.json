@@ -1,0 +1,211 @@
+{
+  "uid": "demo_andy_assisted_gcp_complete",
+  "created_at": 1760891512.6491158,
+  "last_updated": 1760891512.6491158,
+  "auth": {
+    "user_id": "demo_andy_assisted_gcp_complete",
+    "is_authenticated": true,
+    "name": "Andy Assisted GCP Complete",
+    "email": "andy@demo.test"
+  },
+  "profile": {
+    "name": "Andy",
+    "age_range": "75-84",
+    "location": "San Francisco, CA",
+    "zip_code": "94102",
+    "relationship": "self",
+    "qualifiers": {
+      "is_veteran": true,
+      "service_connected_disability": false,
+      "has_spouse": false,
+      "spouse_needs_care": false
+    }
+  },
+  "cost_v2_qualifiers": {
+    "is_veteran": true,
+    "service_connected_disability": false,
+    "has_spouse": false,
+    "spouse_needs_care": false
+  },
+  "flags": {
+    "is_veteran": true,
+    "veteran_aanda_risk": true,
+    "enable_cost_planner_v2": true
+  },
+  "gcp_care_recommendation": {
+    "tier": "assisted_living",
+    "tier_score": 18,
+    "confidence": 0.73,
+    "status": "complete",
+    "progress": 100,
+    "assessment": {
+      "age_range": "75-84",
+      "conditions": [
+        "arthritis",
+        "diabetes",
+        "hypertension"
+      ],
+      "adl_count": 2,
+      "iadl_count": 3,
+      "cognitive_decline": false,
+      "wandering_risk": false,
+      "safety_concerns": true,
+      "living_situation": "alone",
+      "primary_caregiver": "none",
+      "caregiver_hours": 0,
+      "professional_help": false
+    },
+    "flags": {
+      "veteran_aanda_risk": true,
+      "no_support": true,
+      "safety_risk": true,
+      "falls_risk": true,
+      "medication_management": true,
+      "nutrition_risk": true,
+      "isolation_risk": true,
+      "transportation_needs": true,
+      "financial_stress": true,
+      "housing_instability": false
+    },
+    "rationale": "Based on assessment, assisted living recommended due to ADL support needs, IADL assistance requirements, and lack of family support system. Safety concerns and living alone are contributing factors.",
+    "next_step": "Review cost estimates and explore facility options in San Francisco area."
+  },
+  "gcp_v4_published": true,
+  "mcip_contracts": {
+    "care_recommendation": {
+      "tier": "assisted_living",
+      "tier_score": 18.0,
+      "tier_rankings": [
+        [
+          "memory_care_high_acuity",
+          70.0
+        ],
+        [
+          "memory_care",
+          32.0
+        ],
+        [
+          "assisted_living",
+          18.0
+        ],
+        [
+          "in_home",
+          12.5
+        ],
+        [
+          "no_care_needed",
+          4.0
+        ]
+      ],
+      "confidence": 0.73,
+      "status": "complete",
+      "flags": [
+        {
+          "id": "veteran_aanda_risk",
+          "label": "VA A&A Eligible",
+          "description": "May qualify for VA Aid & Attendance benefits",
+          "tone": "success",
+          "priority": 1,
+          "cta": {
+            "label": "Check VA Benefits",
+            "route": "learning",
+            "filter": "va_benefits"
+          }
+        },
+        {
+          "id": "no_support",
+          "label": "Limited Support System",
+          "description": "Living alone with no regular caregiver support",
+          "tone": "warning",
+          "priority": 2,
+          "cta": {
+            "label": "Explore Care Options",
+            "route": "partners",
+            "filter": "assisted_living"
+          }
+        },
+        {
+          "id": "safety_risk",
+          "label": "Safety Concerns",
+          "description": "Multiple safety factors identified",
+          "tone": "warning",
+          "priority": 2,
+          "cta": {
+            "label": "Learn About Safety",
+            "route": "learning",
+            "filter": "safety"
+          }
+        }
+      ],
+      "rationale": [
+        "Assisted living recommended based on moderate ADL/IADL needs",
+        "Lack of family support system increases care requirements",
+        "Safety concerns warrant 24/7 staff availability",
+        "VA benefits may help offset costs"
+      ],
+      "generated_at": "2025-10-19T11:31:52.649122",
+      "version": "4.0",
+      "input_snapshot_id": "andy_gcp_1760891512",
+      "rule_set": "gcp_v4_standard",
+      "next_step": {
+        "product": "cost_planner",
+        "label": "Explore Costs",
+        "reason": "Review budget and payment options"
+      },
+      "last_updated": "2025-10-19T11:31:52.649127",
+      "needs_refresh": false
+    },
+    "journey": {
+      "current_hub": "concierge",
+      "completed_products": [
+        "gcp"
+      ],
+      "unlocked_products": [
+        "cost_planner",
+        "facility_finder"
+      ],
+      "recommended_next": "cost_planner"
+    },
+    "waiting_room": {
+      "status": "available",
+      "appointment_scheduled": false
+    }
+  },
+  "cost_v2_quick_estimate": {
+    "location": "San Francisco, CA",
+    "tier": "assisted_living",
+    "tier_multiplier": 1.4,
+    "base_cost": 5410,
+    "adjusted_cost": 7574,
+    "breakdown": {
+      "room_board": 4500,
+      "care_services": 1800,
+      "medication_management": 450,
+      "activities": 300,
+      "transportation": 250,
+      "personal_care": 274
+    },
+    "created_at": 1760891512.6491158
+  },
+  "cost_v2_step": "welcome",
+  "cost_v2_guest_mode": false,
+  "cost_v2_triage": {},
+  "cost_v2_modules": {},
+  "tiles": {
+    "gcp_v4": {
+      "status": "done",
+      "progress": 100.0,
+      "tier": "assisted_living",
+      "confidence": 0.73,
+      "tier_score": 18,
+      "last_updated": 1760891512.6491158
+    },
+    "cost_planner_v2": {
+      "status": "not_started",
+      "progress": 0,
+      "last_updated": 1760891512.6491158
+    }
+  },
+  "progress": {},
+  "preferences": {}
+}
