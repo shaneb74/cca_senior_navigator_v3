@@ -284,7 +284,8 @@ def _build_cost_planner_tile(
         desc_html = f'<span class="tile-recommendation">{summary["summary_line"]}</span>'
         progress = 100
         status_text = summary["summary_line"]
-        button_label = None  # Will use default "View" or similar
+        button_label = "👁️ Review Assessment"  # Primary button shows Review when complete
+        primary_route_override = "?page=cost_review"  # Link to review page
     elif in_financial_assessment:
         # User has started Financial Assessment - show Resume
         desc = "Continue your financial assessment"
@@ -292,24 +293,28 @@ def _build_cost_planner_tile(
         progress = cost_prog if cost_prog > 0 else 25  # Show some progress
         status_text = None
         button_label = "Resume"
+        primary_route_override = None
     elif is_in_progress:
         desc = f"Resume planner ({cost_prog:.0f}% complete)"
         desc_html = None
         progress = cost_prog
         status_text = None
         button_label = "Resume"
+        primary_route_override = None
     elif is_locked:
         desc = summary["summary_line"]
         desc_html = None
         progress = 0
         status_text = None
         button_label = None
+        primary_route_override = None
     else:
         desc = summary["summary_line"]
         desc_html = None
         progress = 0
         status_text = None
         button_label = "Get a Quick Cost Estimate"
+        primary_route_override = None
 
     return ProductTileHub(
         key="cost_v2",
@@ -319,10 +324,8 @@ def _build_cost_planner_tile(
         blurb="Project expenses, compare living options, and see how long current funds will last.",
         image_square="cp.png",
         meta_lines=["≈10–15 min • Auto-saves"],
-        primary_route=f"?page={summary['route']}"
-        if (summary["route"] and not is_complete)
-        else None,
-        primary_go="cost_v2" if not is_complete else None,
+        primary_route=primary_route_override if is_complete else (f"?page={summary['route']}" if summary["route"] else None),
+        primary_go=None if is_complete else ("cost_v2" if not is_complete else None),
         primary_label=button_label,
         secondary_route=f"?page={summary['route']}" if (summary["route"] and is_complete) else None,
         secondary_go="cost_v2" if is_complete else None,  # Restart uses secondary (ghost) button

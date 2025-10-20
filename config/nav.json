@@ -130,6 +130,12 @@
           "hidden": true
         },
         {
+          "key": "cost_review",
+          "label": "Cost Planner Review",
+          "module": "pages.cost_review:render",
+          "hidden": true
+        },
+        {
           "key": "pfma_v3",
           "label": "Plan with My Advisor",
           "module": "products.pfma_v3.product:render",
