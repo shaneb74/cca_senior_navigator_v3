@@ -99,7 +99,7 @@ def run_assessment(
     # ========================================================================
     # MODE TOGGLE (if section supports Basic/Advanced modes)
     # ========================================================================
-    current_mode = "advanced"  # Default mode
+    current_mode = "basic"  # Default mode - always start in Basic for simplicity
     if not is_intro and not is_results:
         mode_config = current_section.get("mode_config", {})
         if mode_config.get("supports_basic_advanced"):
@@ -258,7 +258,7 @@ def _should_show_field(field: dict[str, Any], state: dict[str, Any], new_values:
     return _is_field_visible(field, state, new_values)
 
 
-def _render_fields(section: dict[str, Any], state: dict[str, Any], mode: str = "advanced") -> dict[str, Any]:
+def _render_fields(section: dict[str, Any], state: dict[str, Any], mode: str = "basic") -> dict[str, Any]:
     """
     Render form fields for current section.
 
