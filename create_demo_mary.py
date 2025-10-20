@@ -252,8 +252,8 @@ data = {
         "advisor_appointment": None,
         "journey": {
             "current_hub": "concierge",
-            "completed_products": ["gcp", "cost_planner"],
-            "unlocked_products": ["gcp", "cost_planner", "facility_finder", "pfma"],
+            "completed_products": ["gcp", "gcp_v4", "cost_planner", "cost_v2"],
+            "unlocked_products": ["gcp", "gcp_v4", "cost_planner", "cost_v2", "facility_finder", "pfma"],
             "recommended_next": "facility_finder"
         },
         "waiting_room": {

@@ -16,8 +16,13 @@ from core.ui import img_src
 def render():
     """Render Cost Planner review page."""
     
-    # Check if Cost Planner is complete
-    if not MCIP.is_product_complete("cost_v2"):
+    # Check if Cost Planner is complete (check both cost_v2 and legacy cost_planner)
+    is_complete = MCIP.is_product_complete("cost_v2") or MCIP.is_product_complete("cost_planner")
+    
+    # Also check if we have financial profile data
+    has_financial_data = MCIP.get_financial_profile() is not None
+    
+    if not is_complete and not has_financial_data:
         st.warning("⚠️ Complete the Cost Planner first to view your assessment review.")
         if st.button("← Back to Concierge", key="review_back_incomplete"):
             st.query_params["page"] = "concierge"
@@ -28,13 +33,30 @@ def render():
     quick_estimate = st.session_state.get("cost_v2_quick_estimate", {})
     qualifiers = st.session_state.get("cost_v2_qualifiers", {})
     
-    # Get assessment data
+    # Get assessment data - check both new format (cost_planner_v2_*) and legacy format (cost_v2_modules)
+    # New format (active assessments)
     income_data = st.session_state.get("cost_planner_v2_income", {})
     assets_data = st.session_state.get("cost_planner_v2_assets", {})
     va_benefits_data = st.session_state.get("cost_planner_v2_va_benefits", {})
     health_insurance_data = st.session_state.get("cost_planner_v2_health_insurance", {})
     life_insurance_data = st.session_state.get("cost_planner_v2_life_insurance", {})
     medicaid_data = st.session_state.get("cost_planner_v2_medicaid", {})
+    
+    # Legacy format (demo profiles) - fallback if new format is empty
+    if not income_data or not assets_data:
+        cost_v2_modules = st.session_state.get("cost_v2_modules", {})
+        if not income_data and "income" in cost_v2_modules:
+            income_data = cost_v2_modules["income"].get("data", {})
+        if not assets_data and "assets" in cost_v2_modules:
+            assets_data = cost_v2_modules["assets"].get("data", {})
+        if not va_benefits_data and "va_benefits" in cost_v2_modules:
+            va_benefits_data = cost_v2_modules["va_benefits"].get("data", {})
+        if not health_insurance_data and "health_insurance" in cost_v2_modules:
+            health_insurance_data = cost_v2_modules["health_insurance"].get("data", {})
+        if not life_insurance_data and "life_insurance" in cost_v2_modules:
+            life_insurance_data = cost_v2_modules["life_insurance"].get("data", {})
+        if not medicaid_data and "medicaid" in cost_v2_modules:
+            medicaid_data = cost_v2_modules["medicaid"].get("data", {})
     
     # Get expert review analysis
     product_summary = MCIP.get_product_summary("cost_v2")
