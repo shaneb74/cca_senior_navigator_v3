@@ -157,10 +157,6 @@ if needs_reload:
 
     st.session_state["persistence_loaded"] = True
     st.session_state["_last_loaded_uid"] = uid
-    # CRITICAL: Skip saving on first render to prevent overwriting loaded data
-    # The module engine and MCIP.initialize() will set defaults that would
-    # overwrite the freshly loaded user data if we save immediately
-    st.session_state["skip_save_this_render"] = True
     log_event("session.loaded", {"session_id": session_id, "uid": uid})
 
 # Cleanup old session files periodically (1% chance per page load)
@@ -177,20 +173,6 @@ from core.mcip_events import register_default_listeners
 
 MCIP.initialize()
 register_default_listeners()
-
-# CRITICAL FIX: If we just loaded data, we need to save it now after MCIP.initialize()
-# has potentially filled in missing keys. This ensures state is persisted before navigation.
-if st.session_state.get("skip_save_this_render"):
-    # Do an immediate save to ensure loaded+merged state is persisted
-    session_state_to_save = extract_session_state(st.session_state)
-    if session_state_to_save:
-        save_session(session_id, session_state_to_save)
-    
-    user_state_to_save = extract_user_state(st.session_state)
-    if user_state_to_save:
-        save_user(uid, user_state_to_save)
-    
-    log_event("session.immediate_save_after_load", {"session_id": session_id, "uid": uid})
 
 ctx = get_user_ctx()
 PAGES = load_nav(ctx)
@@ -227,18 +209,15 @@ if not uses_layout_frame:
 # SESSION PERSISTENCE - Save state to disk after page render
 # ====================================================================
 
-# Check if we should skip saving this render (prevents overwriting freshly loaded data)
-should_skip_save = st.session_state.get("skip_save_this_render", False)
-if should_skip_save:
-    # Clear the flag so next render will save normally
-    st.session_state["skip_save_this_render"] = False
-else:
-    # Save session data (browser-specific, temporary)
-    session_state_to_save = extract_session_state(st.session_state)
-    if session_state_to_save:
-        save_session(session_id, session_state_to_save)
+# Always save state after render to ensure latest changes are persisted
+# This is critical for href-based navigation which restarts the app
 
-    # Save user data (persistent, cross-device)
-    user_state_to_save = extract_user_state(st.session_state)
-    if user_state_to_save:
-        save_user(uid, user_state_to_save)
+# Save session data (browser-specific, temporary)
+session_state_to_save = extract_session_state(st.session_state)
+if session_state_to_save:
+    save_session(session_id, session_state_to_save)
+
+# Save user data (persistent, cross-device)
+user_state_to_save = extract_user_state(st.session_state)
+if user_state_to_save:
+    save_user(uid, user_state_to_save)
