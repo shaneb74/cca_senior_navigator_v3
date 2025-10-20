@@ -66,8 +66,8 @@ def _render_navi_guidance(recommendation):
     tier_name = tier_display.get(recommendation.tier, recommendation.tier.replace("_", " ").title())
     confidence_pct = int(recommendation.confidence * 100)
     
-    # Simple Navi-style banner (no st.info, just styled HTML)
-    st.markdown(f"""
+    # Simple Navi-style banner
+    banner_html = f"""
 <div style="background: #f0f9ff; border-left: 4px solid #3b82f6; border-radius: 8px; padding: 16px 20px; margin-bottom: 24px;">
     <div style="display: flex; align-items: start; gap: 12px;">
         <span style="font-size: 24px;">📋</span>
@@ -80,7 +80,8 @@ def _render_navi_guidance(recommendation):
         </div>
     </div>
 </div>
-    """, unsafe_allow_html=True)
+"""
+    st.markdown(banner_html, unsafe_allow_html=True)
 
 
 def _render_review_content(recommendation, assessment_data):
