@@ -53,20 +53,21 @@ def render_header_simple(active_route: str | None = None) -> None:
         item for item in all_nav_items if nav_visibility.get(item["route"], {}).get("visible", True)
     ]
 
-    # Build nav links HTML - use onclick for session-safe navigation
+    # Build nav links HTML with UID preservation
     nav_links_html = []
     for item in nav_items:
         is_active = active_route == item["route"]
         active_class = " active" if is_active else ""
         aria_current = ' aria-current="page"' if is_active else ""
 
-        # Use data attribute and onclick instead of href for session-safe navigation
+        href_with_uid = add_uid_to_href(f"?page={item['route']}")
         nav_links_html.append(
-            f'<a href="#" class="nav-link{active_class}"{aria_current} data-route="{item["route"]}" onclick="return false;">{item["label"]}</a>'
+            f'<a href="{href_with_uid}" class="nav-link{active_class}"{aria_current}>{item["label"]}</a>'
         )
 
     # Login link (always shown for now)
-    nav_links_html.append(f'<a href="#" class="nav-link nav-link--login" data-route="login" onclick="return false;">Log In</a>')
+    login_href = add_uid_to_href("?page=login")
+    nav_links_html.append(f'<a href="{login_href}" class="nav-link nav-link--login">Log In</a>')
 
     nav_html = "\n          ".join(nav_links_html)
 
@@ -204,7 +205,7 @@ def render_header_simple(active_route: str | None = None) -> None:
         f"""
         <header class="sn-header">
           <div class="sn-header__inner">
-            <a href="#" class="sn-header__brand" data-route="welcome" onclick="return false;" style="display: flex !important; align-items: center; gap: 12px;">
+            <a href="{add_uid_to_href("?page=welcome")}" class="sn-header__brand" style="display: flex !important; align-items: center; gap: 12px;">
               <img src="{logo_url}" alt="CCA Logo" class="sn-header__logo" style="height: 48px !important; width: auto !important; display: block !important; visibility: visible !important; opacity: 1 !important;" />
               <span class="sn-header__brand-text" style="font-size: 1.25rem; font-weight: 700; color: #1e3a8a; display: inline-block;">Senior Navigator</span>
             </a>
@@ -219,52 +220,6 @@ def render_header_simple(active_route: str | None = None) -> None:
     # Render CSS first, then HTML separately (like hub pages do)
     st.markdown(css, unsafe_allow_html=True)
     st.markdown(html, unsafe_allow_html=True)
-    
-    # Add JavaScript to handle navigation by updating URL query params
-    # This triggers Streamlit's query params change detection
-    nav_script = """
-    <script>
-    (function() {
-      function wireUpNavigation() {
-        // Get all nav links
-        const navLinks = document.querySelectorAll('.nav-link, .sn-header__brand');
-        
-        navLinks.forEach(link => {
-          link.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            const route = this.getAttribute('data-route');
-            if (!route) return;
-            
-            // Update URL query params directly (triggers Streamlit rerun)
-            const url = new URL(window.location.href);
-            url.searchParams.set('page', route);
-            
-            // Use history.replaceState to avoid pushState rate limiting
-            window.history.replaceState({}, '', url);
-            
-            // Trigger Streamlit to detect the query param change
-            window.parent.postMessage({
-              type: 'streamlit:setQueryParams',
-              queryParams: { page: route }
-            }, '*');
-            
-            return false;
-          });
-        });
-      }
-      
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', wireUpNavigation);
-      } else {
-        wireUpNavigation();
-      }
-    })();
-    </script>
-    """
-    
-    st.markdown(nav_script, unsafe_allow_html=True)
 
 
 __all__ = ["render_header_simple"]
