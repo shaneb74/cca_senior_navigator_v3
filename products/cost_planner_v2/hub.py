@@ -845,31 +845,28 @@ def _render_summary():
             st.metric(
                 "Liquid Assets",
                 f"${breakdown.get('liquid_assets', 0.0):,.0f}",
-                help="Cash, checking, and savings balances",
+                help="Checking, savings, and cash on hand",
             )
 
         with col2:
             st.metric(
-                "Investment Accounts",
+                "Investments",
                 f"${breakdown.get('investment_accounts', 0.0):,.0f}",
-                help="401(k), IRA, brokerage, and other investment accounts",
+                help="Stocks, bonds, mutual funds, ETFs, and other investments",
             )
 
         with col3:
-            real_estate_total = breakdown.get("primary_residence", 0.0) + breakdown.get(
-                "other_real_estate", 0.0
-            )
             st.metric(
-                "Real Estate",
-                f"${real_estate_total:,.0f}",
-                help="Primary residence and other properties",
+                "Retirement Accounts",
+                f"${breakdown.get('retirement_accounts', 0.0):,.0f}",
+                help="Traditional IRA, Roth IRA, 401(k), and pension values",
             )
 
         with col4:
             st.metric(
-                "Other Resources",
-                f"${breakdown.get('other_resources', 0.0):,.0f}",
-                help="Vehicles, valuables, business interests, and other assets",
+                "Real Estate & Other",
+                f"${breakdown.get('real_estate', 0.0) + breakdown.get('life_insurance', 0.0):,.0f}",
+                help="Home equity, other property, and life insurance cash value",
             )
 
         if total_debt > 0:
@@ -878,7 +875,7 @@ def _render_summary():
                 st.metric(
                     "Debts Against Assets",
                     f"-${total_debt:,.0f}",
-                    help="Loans secured by assets, mortgages, and other obligations",
+                    help="Mortgages, secured loans, and other debt obligations",
                 )
             with net_col:
                 st.metric(
