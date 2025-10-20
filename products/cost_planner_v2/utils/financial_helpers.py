@@ -41,12 +41,18 @@ ASSET_BASIC_FIELDS = [
 
 # Advanced breakdown fields (mutually exclusive with basic totals)
 ASSET_ADVANCED_FIELDS = [
+    # Liquid Assets (3 fields)
     "checking_balance",
     "savings_cds_balance",
-    "brokerage_mf_etf",
+    "cash_on_hand",
+    # Investments (3 fields)
     "brokerage_stocks_bonds",
+    "brokerage_mf_etf",
+    "brokerage_other",
+    # Retirement (3 fields)
     "retirement_traditional",
     "retirement_roth",
+    "retirement_pension_value",
 ]
 
 # Additional asset fields (included in both modes)
@@ -224,28 +230,43 @@ def calculate_total_asset_value(assets_data: dict[str, Any]) -> float:
     """
     Calculate gross asset value before debts.
     
-    Uses detailed breakdown fields. Aggregate totals (cash_liquid_total, etc.)
-    are calculated display values only and not used in this calculation.
+    Uses all detailed breakdown fields from restored asset sections:
+    - Liquid Assets: checking_balance, savings_cds_balance, cash_on_hand
+    - Investments: brokerage_stocks_bonds, brokerage_mf_etf, brokerage_other
+    - Retirement: retirement_traditional, retirement_roth, retirement_pension_value
+    - Real Estate: home_equity_estimate, real_estate_other
+    - Other: life_insurance_cash_value
     """
     data = dict(assets_data or {})
     for key in ASSET_NUMERIC_FIELDS:
         data[key] = _to_float(data.get(key, 0.0))
 
-    # Calculate from detailed breakdown fields
+    # Liquid Assets (3 fields)
     liquid_assets = (
         data.get("checking_balance", 0.0)
         + data.get("savings_cds_balance", 0.0)
+        + data.get("cash_on_hand", 0.0)
     )
+    
+    # Investments (3 fields)
     investments = (
-        data.get("brokerage_mf_etf", 0.0)
-        + data.get("brokerage_stocks_bonds", 0.0)
+        data.get("brokerage_stocks_bonds", 0.0)
+        + data.get("brokerage_mf_etf", 0.0)
+        + data.get("brokerage_other", 0.0)
     )
+    
+    # Retirement Accounts (3 fields)
     retirement = (
         data.get("retirement_traditional", 0.0)
         + data.get("retirement_roth", 0.0)
+        + data.get("retirement_pension_value", 0.0)
     )
+    
+    # Real Estate (from Real Estate section - mode toggle enabled)
     home_value = data.get("home_equity_estimate", 0.0)
     other_real_estate = data.get("real_estate_other", 0.0)
+    
+    # Other Assets
     life_insurance = data.get("life_insurance_cash_value", 0.0)
     
     return sum([
@@ -279,15 +300,50 @@ def calculate_total_asset_debt(assets_data: dict[str, Any]) -> float:
 
 
 def asset_breakdown(assets_data: dict[str, Any]) -> dict[str, float]:
-    """Return categorical breakdown of assets and debts."""
+    """
+    Return categorical breakdown of assets and debts for display in Financial Review.
+    
+    Uses restored field structure:
+    - liquid_assets: checking + savings + cash_on_hand
+    - investment_accounts: stocks/bonds + mutual funds + other
+    - retirement_accounts: traditional + roth + pension
+    - real_estate: home equity + other property
+    - life_insurance: cash value
+    """
     data = normalize_asset_data(assets_data)
 
+    # Calculate subcategories from detailed fields
+    liquid_assets = (
+        data.get("checking_balance", 0.0)
+        + data.get("savings_cds_balance", 0.0)
+        + data.get("cash_on_hand", 0.0)
+    )
+    
+    investment_accounts = (
+        data.get("brokerage_stocks_bonds", 0.0)
+        + data.get("brokerage_mf_etf", 0.0)
+        + data.get("brokerage_other", 0.0)
+    )
+    
+    retirement_accounts = (
+        data.get("retirement_traditional", 0.0)
+        + data.get("retirement_roth", 0.0)
+        + data.get("retirement_pension_value", 0.0)
+    )
+    
+    real_estate = (
+        data.get("home_equity_estimate", 0.0)
+        + data.get("real_estate_other", 0.0)
+    )
+    
+    life_insurance = data.get("life_insurance_cash_value", 0.0)
+
     breakdown = {
-        "liquid_assets": data.get("checking_savings", 0.0),
-        "investment_accounts": data.get("investment_accounts", 0.0),
-        "primary_residence": data.get("primary_residence_value", 0.0),
-        "other_real_estate": data.get("other_real_estate", 0.0),
-        "other_resources": data.get("other_resources", 0.0),
+        "liquid_assets": liquid_assets,
+        "investment_accounts": investment_accounts,
+        "retirement_accounts": retirement_accounts,
+        "real_estate": real_estate,
+        "life_insurance": life_insurance,
     }
     breakdown["total"] = sum(breakdown.values())
     breakdown["total_debt"] = data.get("total_asset_debt", 0.0)
