@@ -26,7 +26,8 @@
         "visible": true
       },
       "about": {
-        "visible": true
+        "visible": false,
+        "note": "Hidden until content is developed and role-based headers are implemented"
       }
     }
   }
