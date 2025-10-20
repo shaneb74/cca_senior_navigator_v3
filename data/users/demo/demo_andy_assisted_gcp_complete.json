@@ -1,7 +1,7 @@
 {
   "uid": "demo_andy_assisted_gcp_complete",
-  "created_at": 1760894198.255319,
-  "last_updated": 1760894198.255319,
+  "created_at": 1760974788.7686799,
+  "last_updated": 1760974788.7686799,
   "auth": {
     "user_id": "demo_andy_assisted_gcp_complete",
     "is_authenticated": true,
@@ -11,8 +11,8 @@
   "profile": {
     "name": "Andy",
     "age_range": "75-84",
-    "location": "San Francisco, CA",
-    "zip_code": "94102",
+    "location": "Seattle, WA",
+    "zip_code": "98101",
     "relationship": "self",
     "qualifiers": {
       "is_veteran": true,
@@ -30,12 +30,13 @@
   "flags": {
     "is_veteran": true,
     "veteran_aanda_risk": true,
+    "moderate_cognitive_decline": true,
     "enable_cost_planner_v2": true
   },
   "gcp_care_recommendation": {
     "tier": "assisted_living",
-    "tier_score": 18,
-    "confidence": 0.73,
+    "tier_score": 23,
+    "confidence": 0.85,
     "status": "complete",
     "progress": 100,
     "assessment": {
@@ -43,12 +44,14 @@
       "conditions": [
         "arthritis",
         "diabetes",
-        "hypertension"
+        "hypertension",
+        "heart_disease"
       ],
-      "adl_count": 2,
-      "iadl_count": 3,
-      "cognitive_decline": false,
+      "adl_count": 3,
+      "iadl_count": 4,
+      "cognitive_decline": "moderate",
       "wandering_risk": false,
+      "behavioral_issues": false,
       "safety_concerns": true,
       "living_situation": "alone",
       "primary_caregiver": "none",
@@ -57,24 +60,26 @@
     },
     "flags": {
       "veteran_aanda_risk": true,
+      "moderate_cognitive_decline": true,
       "no_support": true,
       "safety_risk": true,
-      "falls_risk": true,
+      "falls_multiple": true,
       "medication_management": true,
       "nutrition_risk": true,
       "isolation_risk": true,
       "transportation_needs": true,
       "financial_stress": true,
+      "moderate_dependence": true,
       "housing_instability": false
     },
-    "rationale": "Based on assessment, assisted living recommended due to ADL support needs, IADL assistance requirements, and lack of family support system. Safety concerns and living alone are contributing factors.",
-    "next_step": "Review cost estimates and explore facility options in San Francisco area."
+    "rationale": "Borderline case: 23 points places Andy at the upper end of Assisted Living (17-24). He has moderate memory concerns and significant ADL/IADL dependencies, but lacks severe cognitive impairment or behavioral issues that would require Memory Care. Assisted living with enhanced services recommended.",
+    "next_step": "Review costs for assisted living facilities with memory support programs."
   },
   "gcp_v4_published": true,
   "mcip_contracts": {
     "care_recommendation": {
       "tier": "assisted_living",
-      "tier_score": 18.0,
+      "tier_score": 23.0,
       "tier_rankings": [
         [
           "memory_care_high_acuity",
@@ -82,11 +87,11 @@
         ],
         [
           "memory_care",
-          32.0
+          25.0
         ],
         [
           "assisted_living",
-          18.0
+          23.0
         ],
         [
           "in_home",
@@ -97,7 +102,7 @@
           4.0
         ]
       ],
-      "confidence": 0.73,
+      "confidence": 0.85,
       "status": "complete",
       "flags": [
         {
@@ -113,8 +118,32 @@
           }
         },
         {
+          "id": "moderate_cognitive_decline",
+          "label": "Moderate Memory Concerns",
+          "description": "Noticeable memory or thinking difficulties requiring support",
+          "tone": "warning",
+          "priority": 1,
+          "cta": {
+            "label": "Find Memory Support",
+            "route": "partners",
+            "filter": "memory_care"
+          }
+        },
+        {
+          "id": "falls_multiple",
+          "label": "Multiple Falls",
+          "description": "Multiple recent falls creating safety concerns",
+          "tone": "warning",
+          "priority": 2,
+          "cta": {
+            "label": "Learn About Fall Prevention",
+            "route": "learning",
+            "filter": "safety"
+          }
+        },
+        {
           "id": "no_support",
-          "label": "Limited Support System",
+          "label": "No Family Support",
           "description": "Living alone with no regular caregiver support",
           "tone": "warning",
           "priority": 2,
@@ -125,34 +154,38 @@
           }
         },
         {
-          "id": "safety_risk",
-          "label": "Safety Concerns",
-          "description": "Multiple safety factors identified",
-          "tone": "warning",
-          "priority": 2,
+          "id": "moderate_dependence",
+          "label": "Significant ADL/IADL Needs",
+          "description": "Needs regular assistance with 3 ADLs and 4 IADLs",
+          "tone": "info",
+          "priority": 3,
           "cta": {
-            "label": "Learn About Safety",
+            "label": "Learn About Personal Care",
             "route": "learning",
-            "filter": "safety"
+            "filter": "daily_living"
           }
         }
       ],
       "rationale": [
-        "Assisted living recommended based on moderate ADL/IADL needs",
-        "Lack of family support system increases care requirements",
-        "Safety concerns warrant 24/7 staff availability",
+        "Based on 23 points, we recommend: Assisted Living (borderline case)",
+        "Borderline: Only 2 points below Memory Care threshold (25)",
+        "Moderate memory concerns emerging - monitor for progression",
+        "Significant ADL/IADL dependencies (3 ADLs + 4 IADLs)",
+        "Multiple falls and safety risks",
+        "Living alone with no family support",
+        "Assisted living with enhanced memory support recommended",
         "VA benefits may help offset costs"
       ],
-      "generated_at": "2025-10-19T12:16:38.255324",
+      "generated_at": "2025-10-20T10:39:48.768686",
       "version": "4.0",
-      "input_snapshot_id": "andy_gcp_1760894198",
+      "input_snapshot_id": "andy_borderline_1760974788",
       "rule_set": "gcp_v4_standard",
       "next_step": {
         "product": "cost_planner",
         "label": "Explore Costs",
-        "reason": "Review budget and payment options"
+        "reason": "Calculate costs for assisted living with memory support"
       },
-      "last_updated": "2025-10-19T12:16:38.255329",
+      "last_updated": "2025-10-20T10:39:48.768692",
       "needs_refresh": false
     },
     "journey": {
@@ -173,24 +206,25 @@
   },
   "cost_v2_quick_estimate": {
     "estimate": {
-      "monthly_base": 5410,
-      "monthly_adjusted": 7574.0,
-      "annual": 90888.0,
-      "three_year": 272664.0,
-      "five_year": 454440.0,
-      "multiplier": 1.4,
-      "region_name": "San Francisco, CA",
+      "monthly_base": 4500,
+      "monthly_adjusted": 7200.0,
+      "annual": 86400.0,
+      "three_year": 259200.0,
+      "five_year": 432000.0,
+      "multiplier": 1.15,
+      "region_name": "Seattle, WA (Downtown)",
       "care_tier": "assisted_living",
       "breakdown": {
-        "base_cost": 5410,
-        "regional_adjustment": 1514.0,
-        "moderate_adl_support_addon": 350.0,
-        "medication_management_addon": 200.0,
-        "transportation_addon": 100.0
+        "base_cost": 4500,
+        "regional_adjustment": 675.0,
+        "memory_support_addon": 800.0,
+        "moderate_adl_support_addon": 600.0,
+        "medication_management_addon": 300.0,
+        "falls_prevention_addon": 325.0
       }
     },
     "care_tier": "assisted_living",
-    "zip_code": "94102"
+    "zip_code": "98101"
   },
   "cost_v2_step": "welcome",
   "cost_v2_guest_mode": false,
@@ -201,14 +235,14 @@
       "status": "done",
       "progress": 100.0,
       "tier": "assisted_living",
-      "confidence": 0.73,
-      "tier_score": 18,
-      "last_updated": 1760894198.255319
+      "confidence": 0.85,
+      "tier_score": 23,
+      "last_updated": 1760974788.7686799
     },
     "cost_planner_v2": {
       "status": "not_started",
       "progress": 0,
-      "last_updated": 1760894198.255319
+      "last_updated": 1760974788.7686799
     }
   },
   "progress": {},
