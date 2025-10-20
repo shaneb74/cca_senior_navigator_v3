@@ -60,47 +60,58 @@ def get_financial_prefill() -> dict[str, Any]:
     cp_tiles = tiles.get("cost_planner_v2", {})
     assessments = cp_tiles.get("assessments", {})
 
-    # Get income data
+    # Get income data - use current field names from Cost Planner
     income_data = assessments.get("income", {})
     if income_data:
-        # Sum up all income sources
+        # Calculate total monthly income from all sources
         monthly_income = 0.0
-        for key, value in income_data.items():
-            if key.startswith(
-                ("social_security", "pension", "employment", "investment", "annuity", "other")
-            ):
-                if isinstance(value, (int, float)):
-                    monthly_income += value
+        
+        # Core income sources
+        monthly_income += income_data.get("ss_monthly", 0.0)
+        monthly_income += income_data.get("pension_monthly", 0.0)
+        monthly_income += income_data.get("employment_income", 0.0)
+        monthly_income += income_data.get("other_income", 0.0)
+        monthly_income += income_data.get("partner_income_monthly", 0.0)
+        
+        # Additional income sources (Advanced mode)
+        monthly_income += income_data.get("annuity_monthly", 0.0)
+        monthly_income += income_data.get("retirement_distributions_monthly", 0.0)
+        monthly_income += income_data.get("dividends_interest_monthly", 0.0)
+        monthly_income += income_data.get("rental_income_monthly", 0.0)
+        monthly_income += income_data.get("alimony_support_monthly", 0.0)
+        monthly_income += income_data.get("ltc_insurance_monthly", 0.0)
+        monthly_income += income_data.get("family_support_monthly", 0.0)
 
         if monthly_income > 0:
             result["monthly_income"] = monthly_income
 
-    # Get assets data
+    # Get assets data - use restored field structure from Cost Planner
     assets_data = assessments.get("assets", {})
     if assets_data:
-        # Sum up all asset categories
+        # Calculate total assets using restored field names
         total_assets = 0.0
-        for key, value in assets_data.items():
-            if key.startswith(
-                (
-                    "savings",
-                    "checking",
-                    "cd",
-                    "money_market",
-                    "401k",
-                    "ira",
-                    "pension_value",
-                    "stocks",
-                    "bonds",
-                    "mutual_funds",
-                    "home_value",
-                    "rental",
-                    "life_insurance",
-                    "annuity_value",
-                )
-            ):
-                if isinstance(value, (int, float)):
-                    total_assets += value
+        
+        # Liquid Assets (3 fields)
+        total_assets += assets_data.get("checking_balance", 0.0)
+        total_assets += assets_data.get("savings_cds_balance", 0.0)
+        total_assets += assets_data.get("cash_on_hand", 0.0)
+        
+        # Investments (3 fields)
+        total_assets += assets_data.get("brokerage_stocks_bonds", 0.0)
+        total_assets += assets_data.get("brokerage_mf_etf", 0.0)
+        total_assets += assets_data.get("brokerage_other", 0.0)
+        
+        # Retirement (3 fields)
+        total_assets += assets_data.get("retirement_traditional", 0.0)
+        total_assets += assets_data.get("retirement_roth", 0.0)
+        total_assets += assets_data.get("retirement_pension_value", 0.0)
+        
+        # Real Estate (2 fields - Advanced mode)
+        total_assets += assets_data.get("home_equity_estimate", 0.0)
+        total_assets += assets_data.get("real_estate_other", 0.0)
+        
+        # Life Insurance (1 field)
+        total_assets += assets_data.get("life_insurance_cash_value", 0.0)
 
         if total_assets > 0:
             result["total_assets"] = total_assets

@@ -8,19 +8,19 @@
       "key": "monthly_income",
       "label": "Approximate Monthly Income",
       "type": "number",
-      "prefill_from": "cost_planner.income_assets.monthly_income",
+      "prefill_from": "cost_planner.income.total_monthly_income",
       "prefill_hint": true,
       "required": false,
-      "help": "Total monthly income from all sources"
+      "help": "Total monthly income from all sources (Social Security, pensions, employment, investments, family support, etc.)"
     },
     {
       "key": "total_assets",
       "label": "Approximate Total Assets",
       "type": "number",
-      "prefill_from": "cost_planner.income_assets.total_assets",
+      "prefill_from": "cost_planner.assets.total_asset_value",
       "prefill_hint": true,
       "required": false,
-      "help": "Savings, investments, property value, etc."
+      "help": "Total value of liquid assets (checking, savings, cash), investments (stocks, bonds, funds), retirement accounts (IRA, 401k, pension), real estate equity, and life insurance cash value"
     },
     {
       "key": "insurance_coverage",
