@@ -284,8 +284,19 @@ def _build_cost_planner_tile(
         desc_html = f'<span class="tile-recommendation">{summary["summary_line"]}</span>'
         progress = 100
         status_text = summary["summary_line"]
-        button_label = "👁️ Review Assessment"  # Primary button shows Review when complete
-        primary_route_override = "?page=cost_review"  # Link to review page
+        # Three buttons when complete:
+        # 1. Primary: View My Plan (go back to assessments to review/modify)
+        button_label = "View My Plan"
+        # Set step to assessments, then navigate to cost_v2
+        # The _handle_restart_if_needed will detect we're not at intro and won't reset
+        primary_route_override = "?page=cost_v2&step=assessments"
+        # 2. Secondary: Review Assessment (QA/debugging view)
+        secondary_button_label = "👁️ Review Assessment"
+        secondary_route_override = "?page=cost_review"
+        # 3. Tertiary: Restart (go back to quick estimate)
+        tertiary_button_label = "↻ Restart"
+        # Set step to intro to trigger fresh start with quick estimate
+        tertiary_route_override = "?page=cost_v2&step=intro"
     elif in_financial_assessment:
         # User has started Financial Assessment - show Resume
         desc = "Continue your financial assessment"
@@ -294,6 +305,10 @@ def _build_cost_planner_tile(
         status_text = None
         button_label = "Resume"
         primary_route_override = None
+        secondary_button_label = None
+        secondary_route_override = None
+        tertiary_button_label = None
+        tertiary_route_override = None
     elif is_in_progress:
         desc = f"Resume planner ({cost_prog:.0f}% complete)"
         desc_html = None
@@ -301,6 +316,10 @@ def _build_cost_planner_tile(
         status_text = None
         button_label = "Resume"
         primary_route_override = None
+        secondary_button_label = None
+        secondary_route_override = None
+        tertiary_button_label = None
+        tertiary_route_override = None
     elif is_locked:
         desc = summary["summary_line"]
         desc_html = None
@@ -308,6 +327,10 @@ def _build_cost_planner_tile(
         status_text = None
         button_label = None
         primary_route_override = None
+        secondary_button_label = None
+        secondary_route_override = None
+        tertiary_button_label = None
+        tertiary_route_override = None
     else:
         desc = summary["summary_line"]
         desc_html = None
@@ -315,6 +338,10 @@ def _build_cost_planner_tile(
         status_text = None
         button_label = "Get a Quick Cost Estimate"
         primary_route_override = None
+        secondary_button_label = None
+        secondary_route_override = None
+        tertiary_button_label = None
+        tertiary_route_override = None
 
     return ProductTileHub(
         key="cost_v2",
@@ -324,12 +351,15 @@ def _build_cost_planner_tile(
         blurb="Project expenses, compare living options, and see how long current funds will last.",
         image_square="cp.png",
         meta_lines=["≈10–15 min • Auto-saves"],
-        primary_route=primary_route_override if is_complete else (f"?page={summary['route']}" if summary["route"] else None),
-        primary_go=None if is_complete else ("cost_v2" if not is_complete else None),
+        primary_route=primary_route_override if primary_route_override else (f"?page={summary['route']}" if summary["route"] else None),
+        primary_go=None if primary_route_override else ("cost_v2" if not is_complete else None),
         primary_label=button_label,
-        secondary_route=f"?page={summary['route']}" if (summary["route"] and is_complete) else None,
-        secondary_go="cost_v2" if is_complete else None,  # Restart uses secondary (ghost) button
-        secondary_label="↻ Restart" if is_complete else None,  # Ghost button styling for restart
+        secondary_route=secondary_route_override if secondary_route_override else None,
+        secondary_go="cost_v2" if (is_complete and not secondary_route_override) else None,
+        secondary_label=secondary_button_label if secondary_button_label else None,
+        tertiary_route=tertiary_route_override if tertiary_route_override else None,
+        tertiary_go="cost_v2" if (is_complete and not tertiary_route_override) else None,
+        tertiary_label=tertiary_button_label if tertiary_button_label else None,
         progress=progress,
         status_text=status_text,
         variant="brand",
