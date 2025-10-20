@@ -22,10 +22,10 @@ DEMO_USERS = {
         "description": "Assisted Living (10+ years) - complete GCP + Cost Planner",
     },
     "demo_mary": {
-        "name": "Mary Complete",
-        "email": "mary@demo.test",
-        "uid": "demo_mary_full_data",
-        "description": "Complete assessments - for expert review testing",
+        "name": "Mary Memory Care",
+        "email": "mary.memorycare@demo.test",
+        "uid": "demo_mary_memory_care",
+        "description": "Memory Care High Acuity - Well-funded, 15yr+ timeline",
     },
     "demo_andy": {
         "name": "Andy Assisted GCP Complete",
@@ -219,8 +219,9 @@ def render():
     ```
     Sarah Demo  → demo_sarah_test_001
     John Test   → demo_john_cost_planner
-    Mary Complete → demo_mary_full_data
+    Mary Memory Care → demo_mary_memory_care
     Andy Assisted GCP Complete → demo_andy_assisted_gcp_complete
+    Veteran Vic → demo_vic_veteran_borderline
     ```
     """)
     

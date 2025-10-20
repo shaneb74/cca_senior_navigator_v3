@@ -74,47 +74,40 @@
       "title": "Liquid Assets",
       "icon": "🏦",
       "help_text": "Cash and easily accessible funds",
-      "layout": "two_column",
+      "layout": "single_column",
       "fields": [
         {
-          "key": "cash_liquid_total",
-          "label": "Checking & Savings (Total)",
-          "type": "display_currency_aggregate",
-          "required": false,
-          "min": 0,
-          "max": 10000000,
-          "step": 1000,
-          "default": 0,
-          "help": "Automatically calculated from Checking + Savings/CDs below.",
-          "aggregate_from": [
-            "checking_balance",
-            "savings_cds_balance"
-          ],
-          "column": 1
-        },
-        {
           "key": "checking_balance",
-          "label": "Checking",
+          "label": "Checking Accounts",
           "type": "currency",
           "required": false,
           "min": 0,
           "max": 10000000,
           "step": 1000,
           "default": 0,
-          "help": "Total balance in checking accounts",
-          "column": 2
+          "help": "Total balance across all checking accounts"
         },
         {
           "key": "savings_cds_balance",
-          "label": "Savings / CDs",
+          "label": "Savings & CDs",
           "type": "currency",
           "required": false,
           "min": 0,
           "max": 10000000,
           "step": 1000,
           "default": 0,
-          "help": "Total balance in savings accounts and certificates of deposit",
-          "column": 2
+          "help": "Savings accounts, money market accounts, certificates of deposit"
+        },
+        {
+          "key": "cash_on_hand",
+          "label": "Cash on Hand",
+          "type": "currency",
+          "required": false,
+          "min": 0,
+          "max": 100000,
+          "step": 100,
+          "default": 0,
+          "help": "Physical cash kept at home or in a safe"
         }
       ],
       "info_boxes": [
@@ -129,47 +122,40 @@
       "title": "Investments",
       "icon": "📈",
       "help_text": "Brokerage accounts and investment holdings",
-      "layout": "two_column",
+      "layout": "single_column",
       "fields": [
         {
-          "key": "brokerage_total",
-          "label": "Brokerage / Investments (Total)",
-          "type": "display_currency_aggregate",
+          "key": "brokerage_stocks_bonds",
+          "label": "Stocks & Bonds",
+          "type": "currency",
           "required": false,
           "min": 0,
           "max": 50000000,
           "step": 5000,
           "default": 0,
-          "help": "Automatically calculated from Mutual Funds/ETFs + Stocks/Bonds below.",
-          "aggregate_from": [
-            "brokerage_mf_etf",
-            "brokerage_stocks_bonds"
-          ],
-          "column": 1
+          "help": "Individual stocks, bonds, and treasuries"
         },
         {
           "key": "brokerage_mf_etf",
-          "label": "Brokerage - Mutual Funds / ETFs",
+          "label": "Mutual Funds & ETFs",
           "type": "currency",
           "required": false,
           "min": 0,
           "max": 50000000,
           "step": 5000,
           "default": 0,
-          "help": "Value of mutual funds and ETFs",
-          "column": 2
+          "help": "Mutual funds, exchange-traded funds, index funds"
         },
         {
-          "key": "brokerage_stocks_bonds",
-          "label": "Brokerage - Stocks / Bonds",
+          "key": "brokerage_other",
+          "label": "Other Investments",
           "type": "currency",
           "required": false,
           "min": 0,
           "max": 50000000,
           "step": 5000,
           "default": 0,
-          "help": "Value of individual stocks and bonds",
-          "column": 2
+          "help": "Options, commodities, cryptocurrency, or other investment vehicles"
         }
       ],
       "info_boxes": [
@@ -184,24 +170,8 @@
       "title": "Retirement Accounts",
       "icon": "🏦",
       "help_text": "IRAs, 401(k)s, and other retirement savings",
-      "layout": "two_column",
+      "layout": "single_column",
       "fields": [
-        {
-          "key": "retirement_total",
-          "label": "Retirement Accounts (Total)",
-          "type": "display_currency_aggregate",
-          "required": false,
-          "min": 0,
-          "max": 50000000,
-          "step": 5000,
-          "default": 0,
-          "help": "Automatically calculated from Traditional IRA/401(k) + Roth IRA below.",
-          "aggregate_from": [
-            "retirement_traditional",
-            "retirement_roth"
-          ],
-          "column": 1
-        },
         {
           "key": "retirement_traditional",
           "label": "Traditional IRA / 401(k)",
@@ -211,20 +181,29 @@
           "max": 50000000,
           "step": 5000,
           "default": 0,
-          "help": "Pre-tax retirement accounts",
-          "column": 2
+          "help": "Pre-tax retirement accounts (Traditional IRA, 401(k), 403(b), SEP-IRA, etc.)"
         },
         {
           "key": "retirement_roth",
-          "label": "Roth IRA",
+          "label": "Roth IRA / Roth 401(k)",
           "type": "currency",
           "required": false,
           "min": 0,
           "max": 50000000,
           "step": 5000,
           "default": 0,
-          "help": "After-tax Roth accounts",
-          "column": 2
+          "help": "Post-tax retirement accounts (Roth IRA, Roth 401(k))"
+        },
+        {
+          "key": "retirement_pension_value",
+          "label": "Pension Plan Value",
+          "type": "currency",
+          "required": false,
+          "min": 0,
+          "max": 50000000,
+          "step": 10000,
+          "default": 0,
+          "help": "Current lump-sum value of pension (if applicable and accessible)"
         }
       ],
       "info_boxes": [
@@ -239,8 +218,55 @@
       "title": "Real Estate & Other",
       "icon": "🏠",
       "help_text": "Property, vehicles, and other valuable assets",
-      "layout": "two_column",
+      "layout": "single_column",
+      "mode_config": {
+        "supports_basic_advanced": true,
+        "basic_mode_aggregate": "real_estate_total",
+        "advanced_mode_fields": [
+          "home_equity_estimate",
+          "real_estate_other"
+        ]
+      },
       "fields": [
+        {
+          "key": "real_estate_total",
+          "label": "Real Estate (Total)",
+          "type": "aggregate_input",
+          "required": false,
+          "min": 0,
+          "max": 50000000,
+          "step": 25000,
+          "default": 0,
+          "help": "Enter total real estate value in Basic mode. Calculated automatically in Advanced mode.",
+          "aggregate_from": [
+            "home_equity_estimate",
+            "real_estate_other"
+          ],
+          "mode_behavior": {
+            "basic": {
+              "display": "input",
+              "editable": true,
+              "distribution_strategy": "even",
+              "help": "Enter your total real estate value. We'll split it evenly across primary home and other property."
+            },
+            "advanced": {
+              "display": "calculated_label",
+              "editable": false,
+              "help": "Automatically calculated from home equity and other real estate below."
+            }
+          },
+          "unallocated": {
+            "enabled": true,
+            "show_in_mode": "advanced",
+            "actions": [
+              "clear_original",
+              "move_to_other"
+            ],
+            "other_field_key": "real_estate_other",
+            "label": "Unallocated Real Estate",
+            "help": "Difference between your original estimate and allocated amounts. Not included in calculations."
+          }
+        },
         {
           "key": "home_equity_estimate",
           "label": "Home Equity (Estimate)",
@@ -251,7 +277,9 @@
           "step": 25000,
           "default": 0,
           "help": "Estimated home value minus outstanding mortgage",
-          "column": 1
+          "visible_in_modes": [
+            "advanced"
+          ]
         },
         {
           "key": "real_estate_other",
@@ -263,7 +291,9 @@
           "step": 25000,
           "default": 0,
           "help": "Rental properties, vacation homes, land, etc.",
-          "column": 2
+          "visible_in_modes": [
+            "advanced"
+          ]
         },
         {
           "key": "life_insurance_cash_value",
@@ -274,8 +304,7 @@
           "max": 10000000,
           "step": 5000,
           "default": 0,
-          "help": "Cash surrender value of life insurance policies",
-          "column": 2
+          "help": "Cash surrender value of life insurance policies"
         }
       ],
       "info_boxes": [
@@ -290,8 +319,59 @@
       "title": "Debts & Obligations",
       "icon": "💳",
       "help_text": "Outstanding debts and financial obligations",
-      "layout": "two_column",
+      "layout": "single_column",
+      "mode_config": {
+        "supports_basic_advanced": true,
+        "basic_mode_aggregate": "total_debts",
+        "advanced_mode_fields": [
+          "primary_residence_mortgage",
+          "other_real_estate_debt",
+          "secured_loans",
+          "unsecured_debt"
+        ]
+      },
       "fields": [
+        {
+          "key": "total_debts",
+          "label": "Total Debts (All)",
+          "type": "aggregate_input",
+          "required": false,
+          "min": 0,
+          "max": 10000000,
+          "step": 5000,
+          "default": 0,
+          "help": "Enter total debt in Basic mode. Calculated automatically in Advanced mode.",
+          "aggregate_from": [
+            "primary_residence_mortgage",
+            "other_real_estate_debt",
+            "secured_loans",
+            "unsecured_debt"
+          ],
+          "mode_behavior": {
+            "basic": {
+              "display": "input",
+              "editable": true,
+              "distribution_strategy": "even",
+              "help": "Enter your total debt. We'll split it evenly across mortgage, other real estate debt, secured loans, and unsecured debt."
+            },
+            "advanced": {
+              "display": "calculated_label",
+              "editable": false,
+              "help": "Automatically calculated from all debt categories below."
+            }
+          },
+          "unallocated": {
+            "enabled": true,
+            "show_in_mode": "advanced",
+            "actions": [
+              "clear_original",
+              "move_to_other"
+            ],
+            "other_field_key": "unsecured_debt",
+            "label": "Unallocated Debt",
+            "help": "Difference between your original estimate and allocated amounts. Not included in calculations."
+          }
+        },
         {
           "key": "primary_residence_mortgage",
           "label": "Primary Residence Mortgage Balance",
@@ -302,7 +382,9 @@
           "step": 5000,
           "default": 0,
           "help": "Outstanding mortgage balance on your primary residence (if home_equity_estimate already accounts for this, leave at $0)",
-          "column": 1
+          "visible_in_modes": [
+            "advanced"
+          ]
         },
         {
           "key": "other_real_estate_debt",
@@ -314,7 +396,9 @@
           "step": 5000,
           "default": 0,
           "help": "Mortgages or loans on rental properties, vacation homes, etc.",
-          "column": 1
+          "visible_in_modes": [
+            "advanced"
+          ]
         },
         {
           "key": "secured_loans",
@@ -326,7 +410,9 @@
           "step": 1000,
           "default": 0,
           "help": "Auto loans, boat loans, equipment loans, home equity lines of credit, etc.",
-          "column": 2
+          "visible_in_modes": [
+            "advanced"
+          ]
         },
         {
           "key": "unsecured_debt",
@@ -338,7 +424,9 @@
           "step": 500,
           "default": 0,
           "help": "Credit card balances, personal loans, medical debt, etc.",
-          "column": 2
+          "visible_in_modes": [
+            "advanced"
+          ]
         }
       ],
       "info_boxes": [
@@ -370,18 +458,20 @@
   "output_contract": {
     "asset_has_partner": "string",
     "asset_legal_restrictions": "string",
-    "cash_liquid_total": "number",
     "checking_balance": "number",
     "savings_cds_balance": "number",
-    "brokerage_total": "number",
-    "brokerage_mf_etf": "number",
+    "cash_on_hand": "number",
     "brokerage_stocks_bonds": "number",
-    "retirement_total": "number",
+    "brokerage_mf_etf": "number",
+    "brokerage_other": "number",
     "retirement_traditional": "number",
     "retirement_roth": "number",
+    "retirement_pension_value": "number",
+    "real_estate_total": "number",
     "home_equity_estimate": "number",
     "real_estate_other": "number",
     "life_insurance_cash_value": "number",
+    "total_debts": "number",
     "primary_residence_mortgage": "number",
     "other_real_estate_debt": "number",
     "secured_loans": "number",
