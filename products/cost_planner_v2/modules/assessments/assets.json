@@ -346,7 +346,52 @@
       "icon": "🏠",
       "help_text": "Property, vehicles, and other valuable assets",
       "layout": "two_column",
+      "mode_config": {
+        "supports_basic_advanced": true,
+        "basic_mode_aggregate": "real_estate_total",
+        "advanced_mode_fields": [
+          "home_equity_estimate",
+          "real_estate_other"
+        ]
+      },
       "fields": [
+        {
+          "key": "real_estate_total",
+          "label": "Real Estate (Total)",
+          "type": "aggregate_input",
+          "required": false,
+          "min": 0,
+          "max": 50000000,
+          "step": 25000,
+          "default": 0,
+          "help": "Enter total real estate value in Basic mode. Calculated automatically in Advanced mode.",
+          "aggregate_from": [
+            "home_equity_estimate",
+            "real_estate_other"
+          ],
+          "mode_behavior": {
+            "basic": {
+              "display": "input",
+              "editable": true,
+              "distribution_strategy": "even",
+              "help": "Enter your total real estate value. We'll split it evenly across primary home and other property."
+            },
+            "advanced": {
+              "display": "calculated_label",
+              "editable": false,
+              "help": "Automatically calculated from home equity and other real estate below."
+            }
+          },
+          "unallocated": {
+            "enabled": true,
+            "show_in_mode": "advanced",
+            "actions": ["clear_original", "move_to_other"],
+            "other_field_key": "real_estate_other",
+            "label": "Unallocated Real Estate",
+            "help": "Difference between your original estimate and allocated amounts. Not included in calculations."
+          },
+          "column": 1
+        },
         {
           "key": "home_equity_estimate",
           "label": "Home Equity (Estimate)",
@@ -357,6 +402,7 @@
           "step": 25000,
           "default": 0,
           "help": "Estimated home value minus outstanding mortgage",
+          "visible_in_modes": ["advanced"],
           "column": 1
         },
         {
@@ -369,6 +415,7 @@
           "step": 25000,
           "default": 0,
           "help": "Rental properties, vacation homes, land, etc.",
+          "visible_in_modes": ["advanced"],
           "column": 2
         },
         {
@@ -397,7 +444,56 @@
       "icon": "💳",
       "help_text": "Outstanding debts and financial obligations",
       "layout": "two_column",
+      "mode_config": {
+        "supports_basic_advanced": true,
+        "basic_mode_aggregate": "total_debts",
+        "advanced_mode_fields": [
+          "primary_residence_mortgage",
+          "other_real_estate_debt",
+          "secured_loans",
+          "unsecured_debt"
+        ]
+      },
       "fields": [
+        {
+          "key": "total_debts",
+          "label": "Total Debts (All)",
+          "type": "aggregate_input",
+          "required": false,
+          "min": 0,
+          "max": 10000000,
+          "step": 5000,
+          "default": 0,
+          "help": "Enter total debt in Basic mode. Calculated automatically in Advanced mode.",
+          "aggregate_from": [
+            "primary_residence_mortgage",
+            "other_real_estate_debt",
+            "secured_loans",
+            "unsecured_debt"
+          ],
+          "mode_behavior": {
+            "basic": {
+              "display": "input",
+              "editable": true,
+              "distribution_strategy": "even",
+              "help": "Enter your total debt. We'll split it evenly across mortgage, other real estate debt, secured loans, and unsecured debt."
+            },
+            "advanced": {
+              "display": "calculated_label",
+              "editable": false,
+              "help": "Automatically calculated from all debt categories below."
+            }
+          },
+          "unallocated": {
+            "enabled": true,
+            "show_in_mode": "advanced",
+            "actions": ["clear_original", "move_to_other"],
+            "other_field_key": "unsecured_debt",
+            "label": "Unallocated Debt",
+            "help": "Difference between your original estimate and allocated amounts. Not included in calculations."
+          },
+          "column": 1
+        },
         {
           "key": "primary_residence_mortgage",
           "label": "Primary Residence Mortgage Balance",
@@ -408,6 +504,7 @@
           "step": 5000,
           "default": 0,
           "help": "Outstanding mortgage balance on your primary residence (if home_equity_estimate already accounts for this, leave at $0)",
+          "visible_in_modes": ["advanced"],
           "column": 1
         },
         {
@@ -420,6 +517,7 @@
           "step": 5000,
           "default": 0,
           "help": "Mortgages or loans on rental properties, vacation homes, etc.",
+          "visible_in_modes": ["advanced"],
           "column": 1
         },
         {
@@ -432,6 +530,7 @@
           "step": 1000,
           "default": 0,
           "help": "Auto loans, boat loans, equipment loans, home equity lines of credit, etc.",
+          "visible_in_modes": ["advanced"],
           "column": 2
         },
         {
@@ -444,6 +543,7 @@
           "step": 500,
           "default": 0,
           "help": "Credit card balances, personal loans, medical debt, etc.",
+          "visible_in_modes": ["advanced"],
           "column": 2
         }
       ],
@@ -479,15 +579,18 @@
     "cash_liquid_total": "number",
     "checking_balance": "number",
     "savings_cds_balance": "number",
+    "liquid_assets_other": "number",
     "brokerage_total": "number",
     "brokerage_mf_etf": "number",
     "brokerage_stocks_bonds": "number",
     "retirement_total": "number",
     "retirement_traditional": "number",
     "retirement_roth": "number",
+    "real_estate_total": "number",
     "home_equity_estimate": "number",
     "real_estate_other": "number",
     "life_insurance_cash_value": "number",
+    "total_debts": "number",
     "primary_residence_mortgage": "number",
     "other_real_estate_debt": "number",
     "secured_loans": "number",
