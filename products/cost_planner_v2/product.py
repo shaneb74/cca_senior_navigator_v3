@@ -381,7 +381,7 @@ def _handle_restart_if_needed() -> None:
     if "cost_v2_step" in st.session_state:
         st.session_state.cost_v2_step = "intro"
 
-    # 2. Clear financial module states
+    # 2. Clear financial module states AND quick estimate
     module_keys = [
         "cost_v2_current_module",
         "cost_v2_guest_mode",
@@ -393,6 +393,9 @@ def _handle_restart_if_needed() -> None:
         "cost_v2_medicaid",
         "cost_v2_modules_complete",
         "cost_v2_expert_review",
+        "cost_v2_quick_estimate",  # Clear quick estimate to force fresh calculation
+        "cost_v2_triage",
+        "cost_v2_qualifiers",
     ]
     for key in module_keys:
         if key in st.session_state:
