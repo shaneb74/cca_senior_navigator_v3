@@ -20,6 +20,14 @@ import streamlit as st
 from core.events import log_event
 from core.session_store import safe_rerun
 from core.ui import render_navi_panel_v2
+from core.mode_engine import (
+    render_mode_toggle,
+    show_mode_guidance,
+    show_mode_change_feedback,
+    get_visible_fields,
+    render_aggregate_field,
+    calculate_aggregate,
+)
 
 
 def run_assessment(
@@ -91,10 +99,26 @@ def run_assessment(
     )
 
     # ========================================================================
+    # MODE TOGGLE (if section supports Basic/Advanced modes)
+    # ========================================================================
+    current_mode = "advanced"  # Default mode
+    if not is_intro and not is_results:
+        mode_config = current_section.get("mode_config", {})
+        if mode_config.get("supports_basic_advanced"):
+            # Render mode toggle
+            current_mode = render_mode_toggle(f"{assessment_key}_{current_section['id']}")
+            
+            # Show mode guidance
+            show_mode_guidance(current_mode)
+            
+            # Show feedback if mode just changed
+            show_mode_change_feedback(f"{assessment_key}_{current_section['id']}", current_mode)
+
+    # ========================================================================
     # FIELDS RENDERING
     # ========================================================================
     if not is_results:
-        new_values = _render_fields(current_section, state)
+        new_values = _render_fields(current_section, state, current_mode)
         if new_values:
             state.update(new_values)
 
@@ -242,7 +266,7 @@ def _should_show_field(field: dict[str, Any], state: dict[str, Any], new_values:
     return _is_field_visible(field, state, new_values)
 
 
-def _render_fields(section: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:
+def _render_fields(section: dict[str, Any], state: dict[str, Any], mode: str = "advanced") -> dict[str, Any]:
     """
     Render form fields for current section.
 
@@ -254,19 +278,28 @@ def _render_fields(section: dict[str, Any], state: dict[str, Any]) -> dict[str, 
     - text: st.text_input
     - textarea: st.text_area
     - date: st.date_input
+    - aggregate_input: Mode-aware aggregate field (Basic: input, Advanced: calculated label)
 
     Handles:
     - visible_if conditions
     - default values
     - min/max constraints
     - help text
+    - mode-based visibility (Basic/Advanced)
     
     Args:
         section: Section configuration dict
         state: Current assessment state
+        mode: Current mode ("basic" or "advanced")
     """
     new_values: dict[str, Any] = {}
-    fields = section.get("fields", [])
+    
+    # Get mode-filtered fields if section supports modes
+    mode_config = section.get("mode_config", {})
+    if mode_config.get("supports_basic_advanced"):
+        fields = get_visible_fields(section, mode)
+    else:
+        fields = section.get("fields", [])
 
     # Check if section uses two-column layout
     layout = section.get("layout", "simple")
@@ -329,8 +362,14 @@ def _render_fields(section: dict[str, Any], state: dict[str, Any]) -> dict[str, 
         # Show custom label
         container.markdown(label_html, unsafe_allow_html=True)
 
-        # Render appropriate widget
-        if field_type == "currency":
+        # Render appropriate widget based on field type
+        if field_type == "aggregate_input":
+            # NEW: Mode-aware aggregate field (uses mode_engine)
+            updates = render_aggregate_field(field, state, mode, container)
+            if updates:
+                new_values.update(updates)
+        
+        elif field_type == "currency":
             min_val = field.get("min", 0)
             max_val = field.get("max", 10000000)
             step = field.get("step", 100)
