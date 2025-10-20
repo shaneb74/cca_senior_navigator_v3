@@ -70,9 +70,12 @@ def _get_trivia_progress():
     return int((completed_count / total_quizzes) * 100)
 
 
-def _build_advisor_prep_tile() -> Optional[ProductTileHub]:
+def _build_advisor_prep_tile(is_next_recommended: bool) -> Optional[ProductTileHub]:
     """Build Advisor Prep tile if PFMA booking exists.
-
+    
+    Args:
+        is_next_recommended: True if this is the MCIP-recommended next action
+    
     Returns:
         ProductTileHub or None if not available
     """
@@ -104,13 +107,16 @@ def _build_advisor_prep_tile() -> Optional[ProductTileHub]:
     elif progress > 0:
         badges = [{"label": f"{len(sections_complete)}/4", "tone": "info"}]
 
+    # Variant: gradient brand if recommended, purple otherwise
+    variant = "brand" if is_next_recommended else "purple"
+
     return ProductTileHub(
         key="advisor_prep",
         title="Advisor Prep",
         desc=desc,
-        blurb=appt_context,
+        blurb=appt_context or "Prepare for your upcoming consultation with your advisor",
         badge_text="OPTIONAL",
-        image_square="advisor_prep.png",  # Note: image file needs to be added
+        image_square="advisor_prep.png",
         meta_lines=["4 sections • 5-10 min total"],
         badges=badges,
         primary_label=primary_label,
@@ -120,21 +126,124 @@ def _build_advisor_prep_tile() -> Optional[ProductTileHub]:
         secondary_go=None,
         progress=progress,
         status_text="✓ Complete" if progress == 100 else None,
-        variant="purple",
-        order=6,  # After Trivia (5), before Appointment (10)
+        variant=variant,  # Gradient if recommended
+        order=1,  # FIRST in Waiting Room (MCIP-driven)
         locked=False,
         recommended_in_hub="waiting_room",
-        recommended_total=3,
-        recommended_order=1,  # Recommend first after booking
+        recommended_total=5,  # Total activities in Waiting Room
+        recommended_order=1,  # First recommendation
+        is_next_step=is_next_recommended,  # Enables gradient styling
     )
 
 
-def render(ctx=None) -> None:
-    person_name = st.session_state.get("person_name", "").strip()
-    # Use person's name if available, otherwise use neutral "you"
-    person = person_name if person_name else "you"
+def _build_trivia_tile(is_next_recommended: bool) -> ProductTileHub:
+    """Build Senior Trivia tile.
+    
+    Args:
+        is_next_recommended: True if this is the MCIP-recommended next action
+    
+    Returns:
+        ProductTileHub
+    """
+    trivia_badges = _get_trivia_badges()
+    trivia_progress = _get_trivia_progress()
+    
+    # Variant: gradient brand if recommended, teal otherwise
+    variant = "brand" if is_next_recommended else "teal"
 
-    # Pull state safely with fallbacks
+    return ProductTileHub(
+        key="senior_trivia",
+        title="Senior Trivia & Brain Games",
+        desc="Test your knowledge with fun, educational trivia",
+        blurb="Play solo or with family! Topics include senior living myths, music nostalgia, Medicare, healthy habits, and family fun.",
+        primary_label="Play Trivia",
+        primary_go="senior_trivia",
+        secondary_label=None,
+        secondary_go=None,
+        progress=trivia_progress,
+        badges=trivia_badges,
+        variant=variant,  # Gradient if recommended
+        order=2,  # SECOND in Waiting Room (MCIP-driven)
+        recommended_in_hub="waiting_room",
+        recommended_total=5,
+        recommended_order=2,
+        is_next_step=is_next_recommended,
+    )
+
+
+def _build_featured_partners_tile(is_next_recommended: bool) -> ProductTileHub:
+    """Build Featured Partners tile.
+    
+    Args:
+        is_next_recommended: True if this is the MCIP-recommended next action
+    
+    Returns:
+        ProductTileHub
+    """
+    # Variant: gradient brand if recommended, default brand otherwise
+    variant = "brand" if is_next_recommended else "brand"
+
+    return ProductTileHub(
+        key="partners_spotlight",
+        title="Featured Partners",
+        desc="Tailored recommendations for home care, tech, and more",
+        blurb="Browse verified providers spotlighted for your plan.",
+        primary_label="Browse Partners",
+        primary_go="partners_spotlight_carousel",
+        progress=None,
+        badges=["verified"],
+        variant=variant,
+        order=3,  # THIRD in Waiting Room (MCIP-driven)
+        recommended_in_hub="waiting_room",
+        recommended_total=5,
+        recommended_order=3,
+        is_next_step=is_next_recommended,
+    )
+
+
+def _determine_next_recommendation() -> str:
+    """Determine next recommended activity using MCIP logic.
+    
+    Priority order:
+    1. Advisor Prep (if appointment booked and not complete)
+    2. Senior Trivia (if no badges earned)
+    3. Featured Partners (default)
+    
+    Returns:
+        Key of recommended tile ("advisor_prep", "senior_trivia", "partners_spotlight")
+    """
+    # Check waiting room state from MCIP
+    waiting_room_state = MCIP.get_waiting_room_state()
+    current_focus = waiting_room_state.get("current_focus", "advisor_prep")
+    
+    # Get advisor prep summary
+    prep_summary = MCIP.get_advisor_prep_summary()
+    advisor_prep_available = prep_summary.get("available", False)
+    advisor_prep_progress = prep_summary.get("progress", 0)
+    
+    # Priority 1: Advisor Prep if available and not complete
+    if advisor_prep_available and advisor_prep_progress < 100:
+        return "advisor_prep"
+    
+    # Priority 2: Senior Trivia if no progress
+    trivia_progress = _get_trivia_progress()
+    if trivia_progress == 0:
+        return "senior_trivia"
+    
+    # Priority 3: Featured Partners (default)
+    return "partners_spotlight"
+
+
+def render(ctx=None) -> None:
+    """Render Waiting Room Hub with MCIP-driven tile ordering and styling."""
+    
+    # Initialize MCIP
+    MCIP.initialize()
+    
+    # Determine next recommended activity
+    next_recommendation = _determine_next_recommendation()
+    
+    # Pull state safely with fallbacks for remaining tiles
     appt = st.session_state.get("appointment", {}) or {}
     appointment_summary = appt.get("summary", "No appointment scheduled")
     appointment_countdown = appt.get("countdown", "No date")
@@ -142,31 +251,24 @@ def render(ctx=None) -> None:
     gamification_progress = float(
         (st.session_state.get("gamification", {}) or {}).get("progress", 0)
     )
-
-    # Dynamically add Senior Trivia tile with earned badges (FIRST TILE - order=5)
-    trivia_badges = _get_trivia_badges()
-    trivia_progress = _get_trivia_progress()
-
-    # Build advisor prep tile (conditional on PFMA booking)
-    advisor_prep_tile = _build_advisor_prep_tile()
-
+    
+    # Build MCIP-driven tiles (orders 1-3)
+    advisor_prep_tile = _build_advisor_prep_tile(
+        is_next_recommended=(next_recommendation == "advisor_prep")
+    )
+    trivia_tile = _build_trivia_tile(
+        is_next_recommended=(next_recommendation == "senior_trivia")
+    )
+    partners_tile = _build_featured_partners_tile(
+        is_next_recommended=(next_recommendation == "partners_spotlight")
+    )
+    
+    # Assemble tiles in MCIP-driven order
     cards = [
-        ProductTileHub(
-            key="senior_trivia",
-            title="Senior Trivia & Brain Games",
-            desc="Test your knowledge with fun, educational trivia",
-            blurb="Play solo or with family! Topics include senior living myths, music nostalgia, Medicare, healthy habits, and family fun.",
-            primary_label="Play Trivia",
-            primary_go="senior_trivia",
-            secondary_label=None,
-            secondary_go=None,
-            progress=trivia_progress,  # Progress based on completed quizzes
-            badges=trivia_badges,  # Dynamic badges from earned achievements
-            variant="teal",
-            order=5,  # First tile
-        ),
-        # Conditionally add Advisor Prep tile (order=6)
-        advisor_prep_tile,
+        advisor_prep_tile,  # Order 1 (if available)
+        trivia_tile,         # Order 2
+        partners_tile,       # Order 3
+        # Remaining tiles (legacy order values)
         ProductTileHub(
             key="appointment",
             title="Your Upcoming Appointment",
@@ -176,23 +278,11 @@ def render(ctx=None) -> None:
             primary_go="appointment_details",
             secondary_label="Reschedule",
             secondary_go="appointment_reschedule",
-            progress=None,  # no pill; explicit status below
+            progress=None,
             status_text="Scheduled",
             badges=["countdown"],
             variant="warn",
             order=10,
-        ),
-        ProductTileHub(
-            key="partners_spotlight",
-            title="Featured Partners",
-            desc="Tailored recommendations for home care, tech, and more",
-            blurb="Browse verified providers spotlighted for your plan.",
-            primary_label="Browse partners",
-            primary_go="partners_spotlight_carousel",
-            progress=None,
-            badges=["verified"],
-            variant="brand",
-            order=20,
         ),
         ProductTileHub(
             key="educational_feed",
@@ -224,8 +314,10 @@ def render(ctx=None) -> None:
 
     # Filter out None tiles (Advisor Prep may be None if appointment not booked)
     cards = [c for c in cards if c is not None]
+    
+    # Sort by order (MCIP-driven)
+    cards.sort(key=lambda c: c.order)
 
-    guide = compute_hub_guide("waiting_room")
     additional = get_additional_services("waiting_room")
 
     # Use callback pattern to render Navi AFTER header
