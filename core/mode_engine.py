@@ -210,7 +210,8 @@ def distribute_aggregate(
 def render_aggregate_field(
     field: Dict[str, Any], 
     state: Dict[str, Any], 
-    mode: str
+    mode: str,
+    container: Any = None
 ) -> Optional[Dict[str, float]]:
     """
     Render an aggregate field based on current mode.
@@ -219,10 +220,14 @@ def render_aggregate_field(
         field: Field config from JSON
         state: Current assessment state
         mode: Current mode ("basic" or "advanced")
+        container: Streamlit container (st, col1, col2, etc.) - defaults to st
         
     Returns:
         Dict of state updates, or None if no changes
     """
+    if container is None:
+        container = st
+    
     field_key = field["key"]
     mode_behavior = field.get("mode_behavior", {}).get(mode, {})
     display_type = mode_behavior.get("display", "input")
@@ -233,7 +238,7 @@ def render_aggregate_field(
         # Basic mode: show editable input
         help_text = mode_behavior.get("help", field.get("help", ""))
         
-        value = st.number_input(
+        value = container.number_input(
             label=field.get("label", field_key),
             min_value=field.get("min", 0.0),
             max_value=field.get("max", 100000000.0),
