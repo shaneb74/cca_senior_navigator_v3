@@ -361,7 +361,13 @@ def _handle_restart_if_needed() -> None:
 
     Clears Cost Planner state to start fresh, but preserves GCP recommendation.
     Only triggers when Cost Planner is complete and user is at intro step.
+    
+    Uses a flag to prevent clearing state on every render - only on first load.
     """
+    # Check if we've already handled restart in this session
+    if st.session_state.get("_cost_v2_restart_handled", False):
+        return  # Already restarted, don't clear state again
+    
     # Check if Cost Planner is complete
     try:
         from core.mcip import MCIP
@@ -377,6 +383,11 @@ def _handle_restart_if_needed() -> None:
         return  # Not at intro, don't auto-restart
 
     # RESTART: Clear Cost Planner state but preserve GCP
+    print("[COST_PLANNER] Handling restart - clearing state...")
+    
+    # Set flag FIRST to prevent re-clearing on next render
+    st.session_state._cost_v2_restart_handled = True
+    
     # 1. Clear cost planner step state
     if "cost_v2_step" in st.session_state:
         st.session_state.cost_v2_step = "intro"
@@ -396,6 +407,19 @@ def _handle_restart_if_needed() -> None:
         "cost_v2_quick_estimate",  # Clear quick estimate to force fresh calculation
         "cost_v2_triage",
         "cost_v2_qualifiers",
+        # Clear quick estimate form widget keys
+        "cost_v2_quick_zip",
+        "cost_v2_quick_care_type",
+        "calc_estimate_btn",
+        # Clear assessment state
+        "cost_planner_v2_current_assessment",
+        # Clear persisted assessment data
+        "cost_planner_v2_income",
+        "cost_planner_v2_assets",
+        "cost_planner_v2_va_benefits",
+        "cost_planner_v2_health_insurance",
+        "cost_planner_v2_life_insurance",
+        "cost_planner_v2_medicaid_navigation",
     ]
     for key in module_keys:
         if key in st.session_state:
