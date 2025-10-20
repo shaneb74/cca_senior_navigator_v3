@@ -154,11 +154,11 @@ def calculate_aggregate(field: Dict[str, Any], state: Dict[str, Any]) -> float:
         state: Current assessment state
         
     Returns:
-        Sum of detail fields
+        Sum of detail fields (always float)
     """
     detail_keys = field.get("aggregate_from", [])
-    total = sum(state.get(key, 0.0) for key in detail_keys)
-    return float(total)
+    total = sum(float(state.get(key, 0.0) or 0.0) for key in detail_keys)
+    return total
 
 
 def distribute_aggregate(
@@ -183,21 +183,21 @@ def distribute_aggregate(
     
     if strategy == "even":
         # Split evenly across all fields
-        per_field = total_value / len(detail_keys) if detail_keys else 0
-        return {key: per_field for key in detail_keys}
+        per_field = float(total_value) / len(detail_keys) if detail_keys else 0.0
+        return {key: float(per_field) for key in detail_keys}
     
     elif strategy == "proportional":
         # Split based on existing proportions
-        current_total = sum(state.get(key, 0.0) for key in detail_keys)
+        current_total = sum(float(state.get(key, 0.0) or 0.0) for key in detail_keys)
         
         if current_total == 0:
             # No existing data, fall back to even split
-            per_field = total_value / len(detail_keys) if detail_keys else 0
-            return {key: per_field for key in detail_keys}
+            per_field = float(total_value) / len(detail_keys) if detail_keys else 0.0
+            return {key: float(per_field) for key in detail_keys}
         else:
             # Maintain current proportions
             return {
-                key: total_value * (state.get(key, 0.0) / current_total)
+                key: float(total_value * (float(state.get(key, 0.0) or 0.0) / current_total))
                 for key in detail_keys
             }
     
@@ -238,12 +238,18 @@ def render_aggregate_field(
         # Basic mode: show editable input
         help_text = mode_behavior.get("help", field.get("help", ""))
         
+        # Get current value and ensure it's a float (JSON may have integers)
+        current_val = state.get(field_key, field.get("default", 0.0))
+        if current_val is None:
+            current_val = 0.0
+        current_val = float(current_val)
+        
         value = container.number_input(
             label=field.get("label", field_key),
-            min_value=field.get("min", 0.0),
-            max_value=field.get("max", 100000000.0),
-            step=field.get("step", 1000.0),
-            value=state.get(field_key, field.get("default", 0.0)),
+            min_value=float(field.get("min", 0.0)),
+            max_value=float(field.get("max", 100000000.0)),
+            step=float(field.get("step", 1000.0)),
+            value=current_val,
             help=help_text,
             key=f"input_{field_key}",
             format="%.2f"
