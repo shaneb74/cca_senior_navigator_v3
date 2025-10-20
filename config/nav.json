@@ -118,6 +118,12 @@
           "hidden": true
         },
         {
+          "key": "gcp_review",
+          "label": "GCP Assessment Review",
+          "module": "pages.gcp_review:render",
+          "hidden": true
+        },
+        {
           "key": "cost_v2",
           "label": "Cost Planner v2",
           "module": "products.cost_planner_v2.product:render",
