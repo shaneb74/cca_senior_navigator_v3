@@ -221,15 +221,49 @@ def _render_income_section(income_data):
             st.markdown("_No income data recorded._")
             return
         
-        # Monthly Income Sources
-        st.markdown("#### Monthly Income Sources")
-        
+        # Check if using array format (new) or flat format (legacy)
         sources = income_data.get("income_sources", [])
+        
         if sources:
+            # New format: income_sources array
+            st.markdown("#### Monthly Income Sources")
             for idx, source in enumerate(sources, 1):
                 source_type = source.get("type", "Unknown")
                 amount = source.get("amount", 0)
                 st.markdown(f"{idx}. **{source_type}:** ${amount:,.2f}/month")
+        else:
+            # Legacy format: flat fields
+            st.markdown("#### Monthly Income Sources")
+            
+            income_items = []
+            if income_data.get("ss_monthly", 0) > 0:
+                income_items.append(("Social Security", income_data["ss_monthly"]))
+            if income_data.get("pension_monthly", 0) > 0:
+                income_items.append(("Pension", income_data["pension_monthly"]))
+            if income_data.get("retirement_distributions_monthly", 0) > 0:
+                income_items.append(("Retirement Distributions", income_data["retirement_distributions_monthly"]))
+            if income_data.get("employment_income", 0) > 0:
+                income_items.append(("Employment Income", income_data["employment_income"]))
+            if income_data.get("annuity_monthly", 0) > 0:
+                income_items.append(("Annuity", income_data["annuity_monthly"]))
+            if income_data.get("dividends_interest_monthly", 0) > 0:
+                income_items.append(("Dividends & Interest", income_data["dividends_interest_monthly"]))
+            if income_data.get("rental_income_monthly", 0) > 0:
+                income_items.append(("Rental Income", income_data["rental_income_monthly"]))
+            if income_data.get("alimony_support_monthly", 0) > 0:
+                income_items.append(("Alimony/Support", income_data["alimony_support_monthly"]))
+            if income_data.get("ltc_insurance_monthly", 0) > 0:
+                income_items.append(("LTC Insurance", income_data["ltc_insurance_monthly"]))
+            if income_data.get("family_support_monthly", 0) > 0:
+                income_items.append(("Family Support", income_data["family_support_monthly"]))
+            if income_data.get("other_income", 0) > 0:
+                income_items.append(("Other Income", income_data["other_income"]))
+            
+            for idx, (source_name, amount) in enumerate(income_items, 1):
+                st.markdown(f"{idx}. **{source_name}:** ${amount:,.2f}/month")
+            
+            if not income_items:
+                st.markdown("_No income sources recorded._")
         
         # Total Monthly Income
         if "total_monthly_income" in income_data:
@@ -239,28 +273,98 @@ def _render_income_section(income_data):
 
 def _render_assets_section(assets_data):
     """Render assets assessment data."""
-    with st.expander("🏦 **Assets Assessment**", expanded=False):
+    with st.expander("🏦 **Assets & Resources**", expanded=False):
         if not assets_data:
             st.markdown("_No asset data recorded._")
             return
         
-        # Assets
-        st.markdown("#### Assets")
+        # Check if using array format (new) or flat format (legacy)
         assets = assets_data.get("assets", [])
+        
         if assets:
+            # New format: assets array
+            st.markdown("#### Assets")
             for idx, asset in enumerate(assets, 1):
                 asset_type = asset.get("type", "Unknown")
                 value = asset.get("value", 0)
                 debt = asset.get("debt", 0)
                 st.markdown(f"{idx}. **{asset_type}:** ${value:,.2f} (Debt: ${debt:,.2f})")
+        else:
+            # Legacy format: flat fields organized by category
+            
+            # Liquid Assets
+            liquid_items = []
+            if assets_data.get("checking_balance", 0) > 0:
+                liquid_items.append(("Checking Account", assets_data["checking_balance"]))
+            if assets_data.get("savings_cds_balance", 0) > 0:
+                liquid_items.append(("Savings/CDs", assets_data["savings_cds_balance"]))
+            if assets_data.get("cash_on_hand", 0) > 0:
+                liquid_items.append(("Cash on Hand", assets_data["cash_on_hand"]))
+            
+            if liquid_items:
+                st.markdown("#### 💵 Liquid Assets")
+                for name, value in liquid_items:
+                    st.markdown(f"- **{name}:** ${value:,.2f}")
+                st.markdown("")
+            
+            # Investments
+            investment_items = []
+            if assets_data.get("brokerage_stocks_bonds", 0) > 0:
+                investment_items.append(("Stocks & Bonds", assets_data["brokerage_stocks_bonds"]))
+            if assets_data.get("brokerage_mf_etf", 0) > 0:
+                investment_items.append(("Mutual Funds/ETFs", assets_data["brokerage_mf_etf"]))
+            if assets_data.get("brokerage_other", 0) > 0:
+                investment_items.append(("Other Brokerage", assets_data["brokerage_other"]))
+            
+            if investment_items:
+                st.markdown("#### 📈 Investments")
+                for name, value in investment_items:
+                    st.markdown(f"- **{name}:** ${value:,.2f}")
+                st.markdown("")
+            
+            # Retirement Accounts
+            retirement_items = []
+            if assets_data.get("retirement_traditional", 0) > 0:
+                retirement_items.append(("Traditional IRA/401(k)", assets_data["retirement_traditional"]))
+            if assets_data.get("retirement_roth", 0) > 0:
+                retirement_items.append(("Roth IRA/401(k)", assets_data["retirement_roth"]))
+            if assets_data.get("retirement_pension_value", 0) > 0:
+                retirement_items.append(("Pension Value", assets_data["retirement_pension_value"]))
+            
+            if retirement_items:
+                st.markdown("#### 🏦 Retirement Accounts")
+                for name, value in retirement_items:
+                    st.markdown(f"- **{name}:** ${value:,.2f}")
+                st.markdown("")
+            
+            # Real Estate
+            real_estate_items = []
+            if assets_data.get("home_equity_estimate", 0) > 0:
+                real_estate_items.append(("Home Equity", assets_data["home_equity_estimate"]))
+            if assets_data.get("real_estate_other", 0) > 0:
+                real_estate_items.append(("Other Real Estate", assets_data["real_estate_other"]))
+            
+            if real_estate_items:
+                st.markdown("#### 🏠 Real Estate")
+                for name, value in real_estate_items:
+                    st.markdown(f"- **{name}:** ${value:,.2f}")
+                st.markdown("")
+            
+            # Life Insurance
+            if assets_data.get("life_insurance_cash_value", 0) > 0:
+                st.markdown("#### 💼 Life Insurance")
+                st.markdown(f"- **Cash Value:** ${assets_data['life_insurance_cash_value']:,.2f}")
+                st.markdown("")
         
         # Totals
+        st.markdown("---")
         if "total_asset_value" in assets_data:
-            st.markdown("")
             st.markdown(f"**Total Asset Value:** ${assets_data['total_asset_value']:,.2f}")
         if "total_asset_debt" in assets_data:
             st.markdown(f"**Total Debt:** ${assets_data['total_asset_debt']:,.2f}")
-        if "net_worth" in assets_data:
+        if "net_asset_value" in assets_data:
+            st.markdown(f"**Net Asset Value:** ${assets_data['net_asset_value']:,.2f}")
+        elif "net_worth" in assets_data:
             st.markdown(f"**Net Worth:** ${assets_data['net_worth']:,.2f}")
 
 
