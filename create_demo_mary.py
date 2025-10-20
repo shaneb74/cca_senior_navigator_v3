@@ -152,6 +152,7 @@ data = {
                 "status": "done",
                 "completed_at": "2025-01-20 10:05:00",
                 "total_asset_value": 1950000.0,
+                "total_asset_debt": 0.0,
                 "net_asset_value": 1950000.0
             }
         }
@@ -298,6 +299,7 @@ data = {
                     "life_insurance_cash_value": 50000.0,
                     "status": "done",
                     "total_asset_value": 1950000.0,
+                    "total_asset_debt": 0.0,
                     "net_asset_value": 1950000.0
                 }
             }
