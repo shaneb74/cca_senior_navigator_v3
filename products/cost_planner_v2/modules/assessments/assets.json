@@ -77,15 +77,37 @@
       "layout": "single_column",
       "fields": [
         {
-          "key": "cash_liquid_total",
-          "label": "Total Cash & Savings",
+          "key": "checking_balance",
+          "label": "Checking Accounts",
           "type": "currency",
           "required": false,
           "min": 0,
           "max": 10000000,
           "step": 1000,
           "default": 0,
-          "help": "Total of all checking, savings, money market, and CD accounts"
+          "help": "Total balance across all checking accounts"
+        },
+        {
+          "key": "savings_cds_balance",
+          "label": "Savings & CDs",
+          "type": "currency",
+          "required": false,
+          "min": 0,
+          "max": 10000000,
+          "step": 1000,
+          "default": 0,
+          "help": "Savings accounts, money market accounts, certificates of deposit"
+        },
+        {
+          "key": "cash_on_hand",
+          "label": "Cash on Hand",
+          "type": "currency",
+          "required": false,
+          "min": 0,
+          "max": 100000,
+          "step": 100,
+          "default": 0,
+          "help": "Physical cash kept at home or in a safe"
         }
       ],
       "info_boxes": [
@@ -103,15 +125,37 @@
       "layout": "single_column",
       "fields": [
         {
-          "key": "brokerage_total",
-          "label": "Total Investments / Brokerage",
+          "key": "brokerage_stocks_bonds",
+          "label": "Stocks & Bonds",
           "type": "currency",
           "required": false,
           "min": 0,
           "max": 50000000,
           "step": 5000,
           "default": 0,
-          "help": "Total value of all brokerage accounts, stocks, bonds, mutual funds, ETFs, etc."
+          "help": "Individual stocks, bonds, and treasuries"
+        },
+        {
+          "key": "brokerage_mf_etf",
+          "label": "Mutual Funds & ETFs",
+          "type": "currency",
+          "required": false,
+          "min": 0,
+          "max": 50000000,
+          "step": 5000,
+          "default": 0,
+          "help": "Mutual funds, exchange-traded funds, index funds"
+        },
+        {
+          "key": "brokerage_other",
+          "label": "Other Investments",
+          "type": "currency",
+          "required": false,
+          "min": 0,
+          "max": 50000000,
+          "step": 5000,
+          "default": 0,
+          "help": "Options, commodities, cryptocurrency, or other investment vehicles"
         }
       ],
       "info_boxes": [
@@ -129,15 +173,37 @@
       "layout": "single_column",
       "fields": [
         {
-          "key": "retirement_total",
-          "label": "Total Retirement Savings",
+          "key": "retirement_traditional",
+          "label": "Traditional IRA / 401(k)",
           "type": "currency",
           "required": false,
           "min": 0,
           "max": 50000000,
           "step": 5000,
           "default": 0,
-          "help": "Total value of all IRA, 401(k), 403(b), and other retirement accounts (Traditional and Roth combined)"
+          "help": "Pre-tax retirement accounts (Traditional IRA, 401(k), 403(b), SEP-IRA, etc.)"
+        },
+        {
+          "key": "retirement_roth",
+          "label": "Roth IRA / Roth 401(k)",
+          "type": "currency",
+          "required": false,
+          "min": 0,
+          "max": 50000000,
+          "step": 5000,
+          "default": 0,
+          "help": "Post-tax retirement accounts (Roth IRA, Roth 401(k))"
+        },
+        {
+          "key": "retirement_pension_value",
+          "label": "Pension Plan Value",
+          "type": "currency",
+          "required": false,
+          "min": 0,
+          "max": 50000000,
+          "step": 10000,
+          "default": 0,
+          "help": "Current lump-sum value of pension (if applicable and accessible)"
         }
       ],
       "info_boxes": [
@@ -392,9 +458,15 @@
   "output_contract": {
     "asset_has_partner": "string",
     "asset_legal_restrictions": "string",
-    "cash_liquid_total": "number",
-    "brokerage_total": "number",
-    "retirement_total": "number",
+    "checking_balance": "number",
+    "savings_cds_balance": "number",
+    "cash_on_hand": "number",
+    "brokerage_stocks_bonds": "number",
+    "brokerage_mf_etf": "number",
+    "brokerage_other": "number",
+    "retirement_traditional": "number",
+    "retirement_roth": "number",
+    "retirement_pension_value": "number",
     "real_estate_total": "number",
     "home_equity_estimate": "number",
     "real_estate_other": "number",
