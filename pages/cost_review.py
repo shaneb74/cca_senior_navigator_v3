@@ -25,7 +25,7 @@ def render():
     if not is_complete and not has_financial_data:
         st.warning("⚠️ Complete the Cost Planner first to view your assessment review.")
         if st.button("← Back to Concierge", key="review_back_incomplete"):
-            st.query_params["page"] = "concierge"
+            st.query_params["page"] = "hub_concierge"
             st.rerun()
         return
     
@@ -618,7 +618,7 @@ def _render_navigation():
     
     with col1:
         if st.button("← Back to Concierge", key="review_back_to_hub", use_container_width=True):
-            st.query_params["page"] = "concierge"
+            st.query_params["page"] = "hub_concierge"
             st.rerun()
     
     with col2:

@@ -27,12 +27,10 @@ def render():
     
     if not recommendation or not recommendation.tier:
         # No completed assessment found
-        st.warning("⚠️ No completed assessment found")
-        st.markdown("""
-        You haven't completed the Guided Care Plan yet.
-        
-        [← Back to Concierge Hub](?page=hub_concierge)
-        """)
+        st.warning("⚠️ No completed assessment found. You haven't completed the Guided Care Plan yet.")
+        if st.button("← Back to Concierge", key="gcp_review_back_incomplete"):
+            st.query_params["page"] = "hub_concierge"
+            st.rerun()
         return
     
     # Check if we have the assessment data
@@ -66,21 +64,21 @@ def _render_navi_guidance(recommendation):
     tier_name = tier_display.get(recommendation.tier, recommendation.tier.replace("_", " ").title())
     confidence_pct = int(recommendation.confidence * 100)
     
-    # Simple Navi-style banner
-    banner_html = f"""
-<div style="background: #f0f9ff; border-left: 4px solid #3b82f6; border-radius: 8px; padding: 16px 20px; margin-bottom: 24px;">
-    <div style="display: flex; align-items: start; gap: 12px;">
-        <span style="font-size: 24px;">📋</span>
-        <div style="flex: 1;">
-            <div style="font-weight: 700; color: #1e40af; font-size: 16px; margin-bottom: 4px;">Your Assessment Results</div>
-            <div style="color: #1e3a8a; font-size: 14px; line-height: 1.5;">
-                Based on your responses, we recommend <strong>{tier_name}</strong> with {confidence_pct}% confidence. 
-                This page shows how we arrived at your care recommendation.
-            </div>
-        </div>
-    </div>
-</div>
-"""
+    # Simple Navi-style banner (using string concatenation to avoid f-string issues)
+    banner_html = (
+        '<div style="background: #f0f9ff; border-left: 4px solid #3b82f6; border-radius: 8px; padding: 16px 20px; margin-bottom: 24px;">'
+        '    <div style="display: flex; align-items: start; gap: 12px;">'
+        '        <span style="font-size: 24px;">📋</span>'
+        '        <div style="flex: 1;">'
+        '            <div style="font-weight: 700; color: #1e40af; font-size: 16px; margin-bottom: 4px;">Your Assessment Results</div>'
+        '            <div style="color: #1e3a8a; font-size: 14px; line-height: 1.5;">'
+        '                Based on your responses, we recommend <strong>' + tier_name + '</strong> with ' + str(confidence_pct) + '% confidence. '
+        '                This page shows how we arrived at your care recommendation.'
+        '            </div>'
+        '        </div>'
+        '    </div>'
+        '</div>'
+    )
     st.markdown(banner_html, unsafe_allow_html=True)
 
 
