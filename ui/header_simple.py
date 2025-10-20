@@ -220,62 +220,51 @@ def render_header_simple(active_route: str | None = None) -> None:
     st.markdown(css, unsafe_allow_html=True)
     st.markdown(html, unsafe_allow_html=True)
     
-    # Check if a navigation was triggered via session state
-    if "nav_clicked" in st.session_state and st.session_state.nav_clicked:
-        route = st.session_state.nav_clicked
-        st.session_state.nav_clicked = None  # Clear it
-        st.query_params["page"] = route
-        st.rerun()
-    
-    # Add JavaScript to set session state when links are clicked
-    # Use Streamlit's component system to communicate back
-    import streamlit.components.v1 as components
-    
-    nav_routes = [item["route"] for item in nav_items] + ["login", "welcome"]
-    
-    nav_script = f"""
+    # Add JavaScript to handle navigation by updating URL query params
+    # This triggers Streamlit's query params change detection
+    nav_script = """
     <script>
-    // Wait for page to load
-    (function() {{
-      function wireUpNavigation() {{
+    (function() {
+      function wireUpNavigation() {
         // Get all nav links
         const navLinks = document.querySelectorAll('.nav-link, .sn-header__brand');
         
-        navLinks.forEach(link => {{
-          link.addEventListener('click', function(e) {{
+        navLinks.forEach(link => {
+          link.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
             
             const route = this.getAttribute('data-route');
             if (!route) return;
             
-            // Send message to Streamlit to trigger navigation
-            window.parent.postMessage({{
-              type: 'streamlit:setComponentValue',
-              value: route
-            }}, '*');
+            // Update URL query params directly (triggers Streamlit rerun)
+            const url = new URL(window.location.href);
+            url.searchParams.set('page', route);
+            
+            // Use history.replaceState to avoid pushState rate limiting
+            window.history.replaceState({}, '', url);
+            
+            // Trigger Streamlit to detect the query param change
+            window.parent.postMessage({
+              type: 'streamlit:setQueryParams',
+              queryParams: { page: route }
+            }, '*');
             
             return false;
-          }});
-        }});
-      }}
+          });
+        });
+      }
       
-      if (document.readyState === 'loading') {{
+      if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', wireUpNavigation);
-      }} else {{
+      } else {
         wireUpNavigation();
-      }}
-    }})();
+      }
+    })();
     </script>
     """
     
-    # Render the navigation handler component
-    clicked_route = components.html(nav_script, height=0)
-    
-    # If a route was clicked, navigate to it
-    if clicked_route:
-        st.query_params["page"] = clicked_route
-        st.rerun()
+    st.markdown(nav_script, unsafe_allow_html=True)
 
 
 __all__ = ["render_header_simple"]
