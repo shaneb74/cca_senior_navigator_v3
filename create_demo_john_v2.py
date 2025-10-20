@@ -8,9 +8,14 @@ demo user with complete GCP and Cost Planner data.
 This profile contains:
 - Assisted Living recommendation (18 points)
 - 9 care flags including veteran benefits, cognitive concerns, mobility
-- Complete Income & Assets assessments  
+- Complete Income & Assets assessments (using restored field structure)
 - Total monthly income: $6,200
-- Net assets: $195,000 (liquid: $30k, home: $175k, other: $5k, debt: -$10k)
+- Total assets: $205,000
+  - Liquid Assets: $5,000 (checking: $2k, savings: $3k, cash: $0)
+  - Investments: $20,000 (stocks/bonds: $5k, funds: $15k, other: $0)
+  - Retirement: $0 (traditional: $0, roth: $0, pension: $0)
+  - Real Estate: $175,000 (home equity: $175k, other: $0)
+  - Life Insurance: $5,000
 
 Usage:
     python3 create_demo_john_v2.py
@@ -104,17 +109,22 @@ data = {
             "data": {
                 "asset_has_partner": "no_partner",
                 "asset_legal_restrictions": "",
-                "cash_liquid_total": 5000.0,
+                # Liquid Assets (3 fields) = $5,000
                 "checking_balance": 2000.0,
                 "savings_cds_balance": 3000.0,
-                "brokerage_total": 20000.0,
-                "brokerage_mf_etf": 15000.0,
+                "cash_on_hand": 0.0,  # RESTORED FIELD
+                # Investments (3 fields) = $20,000
                 "brokerage_stocks_bonds": 5000.0,
-                "retirement_total": 0.0,
+                "brokerage_mf_etf": 15000.0,
+                "brokerage_other": 0.0,  # RESTORED FIELD
+                # Retirement (3 fields) = $0
                 "retirement_traditional": 0.0,
                 "retirement_roth": 0.0,
+                "retirement_pension_value": 0.0,  # RESTORED FIELD
+                # Real Estate (2 fields - Advanced mode) = $175,000
                 "home_equity_estimate": 175000.0,
                 "real_estate_other": 0.0,
+                # Life Insurance (1 field) = $5,000
                 "life_insurance_cash_value": 5000.0,
                 "status": "done",
                 "completed_at": "2025-10-18 15:12:13",
@@ -370,17 +380,22 @@ data = {
                 "assets": {
                     "asset_has_partner": "no_partner",
                     "asset_legal_restrictions": "",
-                    "cash_liquid_total": 5000.0,
+                    # Liquid Assets (3 fields) = $5,000
                     "checking_balance": 2000.0,
                     "savings_cds_balance": 3000.0,
-                    "brokerage_total": 20000.0,
-                    "brokerage_mf_etf": 15000.0,
+                    "cash_on_hand": 0.0,
+                    # Investments (3 fields) = $20,000
                     "brokerage_stocks_bonds": 5000.0,
-                    "retirement_total": 0.0,
+                    "brokerage_mf_etf": 15000.0,
+                    "brokerage_other": 0.0,
+                    # Retirement (3 fields) = $0
                     "retirement_traditional": 0.0,
                     "retirement_roth": 0.0,
+                    "retirement_pension_value": 0.0,
+                    # Real Estate (2 fields - Advanced mode) = $175,000
                     "home_equity_estimate": 175000.0,
                     "real_estate_other": 0.0,
+                    # Life Insurance (1 field) = $5,000
                     "life_insurance_cash_value": 5000.0,
                     "status": "done",
                     "completed_at": "2025-10-18 15:12:13",
