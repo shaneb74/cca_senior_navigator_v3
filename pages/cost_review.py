@@ -78,6 +78,12 @@ def render():
     
     st.markdown("---")
     
+    # Financial Timeline & Runway section
+    financial_profile = MCIP.get_financial_profile()
+    if financial_profile:
+        _render_financial_timeline_section(financial_profile, income_data, assets_data)
+        st.markdown("---")
+    
     # Quick Estimate section
     if quick_estimate:
         _render_quick_estimate_section(quick_estimate)
@@ -175,6 +181,119 @@ def _render_summary_section(product_summary):
             
             if "coverage_percentage" in details:
                 st.markdown(f"**Income Coverage:** {details['coverage_percentage']:.0f}% of estimated care costs")
+
+
+def _render_financial_timeline_section(financial_profile, income_data, assets_data):
+    """Render financial timeline and runway projection."""
+    with st.expander("📅 **Financial Timeline & Runway Projection**", expanded=True):
+        st.markdown("#### Financial Overview")
+        
+        # Monthly breakdown
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.markdown("**💵 Monthly Income**")
+            monthly_income = income_data.get("total_monthly_income", 0)
+            st.markdown(f"${monthly_income:,.2f}")
+        
+        with col2:
+            st.markdown("**💰 Monthly Care Cost**")
+            monthly_cost = financial_profile.estimated_monthly_cost
+            st.markdown(f"${monthly_cost:,.2f}")
+        
+        with col3:
+            st.markdown("**📊 Monthly Gap**")
+            gap = financial_profile.gap_amount
+            if gap > 0:
+                st.markdown(f'<span style="color: #dc2626;">-${gap:,.2f}</span>', unsafe_allow_html=True)
+            else:
+                st.markdown(f'<span style="color: #16a34a;">${abs(gap):,.2f} surplus</span>', unsafe_allow_html=True)
+        
+        st.markdown("")
+        st.markdown("---")
+        st.markdown("")
+        
+        # Coverage analysis
+        st.markdown("#### Coverage Analysis")
+        coverage_pct = financial_profile.coverage_percentage
+        
+        # Progress bar for coverage
+        st.markdown(f"**Income covers {coverage_pct:.1f}% of monthly care costs**")
+        st.progress(min(coverage_pct / 100, 1.0))
+        
+        st.markdown("")
+        
+        # Runway projection
+        st.markdown("#### 🛤️ Financial Runway")
+        
+        runway_months = financial_profile.runway_months
+        runway_years = runway_months / 12
+        
+        total_assets = assets_data.get("total_asset_value", 0) or assets_data.get("net_asset_value", 0)
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("**Total Available Assets**")
+            st.markdown(f"${total_assets:,.2f}")
+        
+        with col2:
+            st.markdown("**Estimated Runway**")
+            if runway_years >= 1:
+                st.markdown(f"**{runway_months} months** ({runway_years:.1f} years)")
+            else:
+                st.markdown(f"**{runway_months} months**")
+        
+        st.markdown("")
+        
+        # Runway explanation
+        if gap > 0:
+            annual_gap = gap * 12
+            st.info(
+                f"💡 **Projection:** With a monthly gap of ${gap:,.2f}, your assets can cover care costs for approximately "
+                f"**{runway_years:.1f} years** before additional funding sources are needed. "
+                f"This assumes an annual shortfall of ${annual_gap:,.2f}."
+            )
+        else:
+            st.success(
+                f"✅ **Excellent Position:** Your monthly income fully covers your care costs with a surplus of ${abs(gap):,.2f}. "
+                f"Your assets of ${total_assets:,.2f} remain protected and can be preserved for legacy or emergency needs."
+            )
+        
+        st.markdown("")
+        st.markdown("---")
+        st.markdown("")
+        
+        # Future projection table
+        st.markdown("#### 📈 Multi-Year Projection")
+        
+        if gap > 0:
+            # Calculate cumulative asset depletion
+            projections = []
+            remaining_assets = total_assets
+            
+            for year in [1, 3, 5, 10, 15]:
+                if year * 12 <= runway_months:
+                    annual_spend = gap * 12
+                    assets_after = remaining_assets - (annual_spend * year)
+                    projections.append({
+                        "Year": f"Year {year}",
+                        "Assets Remaining": f"${max(0, assets_after):,.0f}",
+                        "Annual Gap": f"${annual_spend:,.0f}"
+                    })
+            
+            if projections:
+                # Create simple table
+                for proj in projections:
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        st.markdown(f"**{proj['Year']}**")
+                    with col2:
+                        st.markdown(proj['Assets Remaining'])
+                    with col3:
+                        st.markdown(f"_Gap: {proj['Annual Gap']}_")
+        else:
+            st.markdown("_With income covering all costs, assets remain stable over time._")
 
 
 def _render_quick_estimate_section(quick_estimate):
