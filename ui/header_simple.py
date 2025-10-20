@@ -196,12 +196,6 @@ def render_header_simple(active_route: str | None = None) -> None:
             font-size: 0.875rem;
           }
         }
-        
-        /* Hide navigation buttons (used only for session-safe routing) */
-        button[data-testid*="nav_"],
-        button[data-testid*="nav-"] {
-          display: none !important;
-        }
         </style>
         """
     )
@@ -226,65 +220,62 @@ def render_header_simple(active_route: str | None = None) -> None:
     st.markdown(css, unsafe_allow_html=True)
     st.markdown(html, unsafe_allow_html=True)
     
-    # Add invisible buttons for session-safe navigation
-    # When nav link is clicked, trigger the corresponding button
-    for item in nav_items:
-        if st.button(
-            item["label"],
-            key=f"nav_{item['route']}",
-            type="secondary" if active_route == item["route"] else "primary",
-            disabled=False,
-            use_container_width=False,
-        ):
-            st.query_params["page"] = item["route"]
-            st.rerun()
-    
-    # Login button
-    if st.button("Log In", key="nav_login", type="primary"):
-        st.query_params["page"] = "login"
+    # Check if a navigation was triggered via session state
+    if "nav_clicked" in st.session_state and st.session_state.nav_clicked:
+        route = st.session_state.nav_clicked
+        st.session_state.nav_clicked = None  # Clear it
+        st.query_params["page"] = route
         st.rerun()
     
-    # Add JavaScript to wire up link clicks to button clicks
-    nav_script = """
+    # Add JavaScript to set session state when links are clicked
+    # Use Streamlit's component system to communicate back
+    import streamlit.components.v1 as components
+    
+    nav_routes = [item["route"] for item in nav_items] + ["login", "welcome"]
+    
+    nav_script = f"""
     <script>
     // Wait for page to load
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', wireUpNavigation);
-    } else {
-      wireUpNavigation();
-    }
-    
-    function wireUpNavigation() {
-      // Get all nav links
-      const navLinks = document.querySelectorAll('.nav-link, .sn-header__brand');
+    (function() {{
+      function wireUpNavigation() {{
+        // Get all nav links
+        const navLinks = document.querySelectorAll('.nav-link, .sn-header__brand');
+        
+        navLinks.forEach(link => {{
+          link.addEventListener('click', function(e) {{
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const route = this.getAttribute('data-route');
+            if (!route) return;
+            
+            // Send message to Streamlit to trigger navigation
+            window.parent.postMessage({{
+              type: 'streamlit:setComponentValue',
+              value: route
+            }}, '*');
+            
+            return false;
+          }});
+        }});
+      }}
       
-      navLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
-          e.preventDefault();
-          e.stopPropagation();
-          
-          const route = this.getAttribute('data-route');
-          if (!route) return;
-          
-          // Find the corresponding Streamlit button and click it
-          const buttons = window.parent.document.querySelectorAll('button');
-          for (let button of buttons) {
-            // Match button text to route or find by key
-            const buttonKey = button.getAttribute('data-testid');
-            if (buttonKey && buttonKey.includes(route)) {
-              button.click();
-              break;
-            }
-          }
-          
-          return false;
-        });
-      });
-    }
+      if (document.readyState === 'loading') {{
+        document.addEventListener('DOMContentLoaded', wireUpNavigation);
+      }} else {{
+        wireUpNavigation();
+      }}
+    }})();
     </script>
     """
     
-    st.markdown(nav_script, unsafe_allow_html=True)
+    # Render the navigation handler component
+    clicked_route = components.html(nav_script, height=0)
+    
+    # If a route was clicked, navigate to it
+    if clicked_route:
+        st.query_params["page"] = clicked_route
+        st.rerun()
 
 
 __all__ = ["render_header_simple"]
