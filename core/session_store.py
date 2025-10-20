@@ -408,14 +408,25 @@ def load_user(uid: str) -> dict[str, Any]:
     if is_demo_user(uid):
         demo_path = get_demo_path(uid)
         
-        # Only copy demo profile if working copy doesn't exist yet
-        # This ensures demo users start with clean data, but progress persists across sessions
-        if demo_path.exists() and not path.exists():
+        # Check if fresh load is requested via query param
+        # Usage: ?uid=demo_mary_memory_care&fresh=true
+        import streamlit as st
+        force_fresh = st.query_params.get("fresh", "").lower() == "true"
+        
+        # Copy demo profile if:
+        # 1. Working copy doesn't exist yet (first load), OR
+        # 2. Fresh load is explicitly requested (?fresh=true)
+        should_copy = demo_path.exists() and (not path.exists() or force_fresh)
+        
+        if should_copy:
             try:
                 import shutil
-                # Copy demo profile to create initial working copy
+                # Copy demo profile to create/refresh working copy
                 shutil.copy2(demo_path, path)
-                print(f"[INFO] Created working copy for demo user {uid}")
+                if force_fresh:
+                    print(f"[INFO] Fresh demo reload for {uid} (fresh=true)")
+                else:
+                    print(f"[INFO] Created working copy for demo user {uid}")
             except Exception as e:
                 print(f"[ERROR] Failed to copy demo profile: {e}")
 
