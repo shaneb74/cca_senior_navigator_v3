@@ -1,4 +1,4 @@
-"""Simple header component - no layout.py, no session state manipulation."""
+"""Simple header component with session-safe navigation."""
 
 from __future__ import annotations
 
@@ -9,15 +9,14 @@ from textwrap import dedent
 import streamlit as st
 
 from core.ui import img_src
-from core.url_helpers import add_uid_to_href
 
 
 def render_header_simple(active_route: str | None = None) -> None:
     """
     Render a clean, single-line header with logo and navigation links.
 
-    Uses plain <a href="?page=X"> links for instant navigation without reruns.
-    No session state writes, no st.button() complexity.
+    Uses Streamlit buttons with session-safe navigation (st.query_params + st.rerun)
+    to prevent session state from being cleared during navigation.
 
     Args:
         active_route: Current page route (e.g., 'welcome', 'hub_concierge')
@@ -53,24 +52,8 @@ def render_header_simple(active_route: str | None = None) -> None:
         item for item in all_nav_items if nav_visibility.get(item["route"], {}).get("visible", True)
     ]
 
-    # Build nav links HTML with UID preservation
-    nav_links_html = []
-    for item in nav_items:
-        is_active = active_route == item["route"]
-        active_class = " active" if is_active else ""
-        aria_current = ' aria-current="page"' if is_active else ""
-
-        href_with_uid = add_uid_to_href(f"?page={item['route']}")
-        nav_links_html.append(
-            f'<a href="{href_with_uid}" class="nav-link{active_class}"{aria_current}>{item["label"]}</a>'
-        )
-
-    # Login link (always shown for now)
-    login_href = add_uid_to_href("?page=login")
-    nav_links_html.append(f'<a href="{login_href}" class="nav-link nav-link--login">Log In</a>')
-
-    nav_html = "\n          ".join(nav_links_html)
-
+    # Render header with Streamlit columns for session-safe navigation
+    # CSS for header styling
     css = dedent(
         """
         <style>
@@ -197,29 +180,80 @@ def render_header_simple(active_route: str | None = None) -> None:
             font-size: 0.875rem;
           }
         }
+        
+        /* Button styling for session-safe navigation */
+        .stButton > button {
+          border: none;
+          background: transparent;
+          padding: 8px 16px;
+          border-radius: 8px;
+          font-size: 0.9375rem;
+          font-weight: 600;
+          color: var(--ink-600, #475569);
+          transition: all 0.15s ease;
+          white-space: nowrap;
+        }
+        
+        .stButton > button:hover {
+          background: rgba(37, 99, 235, 0.08) !important;
+          color: var(--brand-600, #2563eb) !important;
+          border: none !important;
+        }
+        
+        /* Active button style */
+        div[data-testid="stHorizontalBlock"] .stButton > button[kind="secondary"] {
+          background: rgba(37, 99, 235, 0.12);
+          color: var(--brand-700, #1d4ed8);
+          font-weight: 700;
+        }
         </style>
         """
     )
 
-    html = dedent(
+    # Render CSS
+    st.markdown(css, unsafe_allow_html=True)
+    
+    # Render header HTML (logo and brand)
+    header_html = dedent(
         f"""
         <header class="sn-header">
           <div class="sn-header__inner">
-            <a href="{add_uid_to_href("?page=welcome")}" class="sn-header__brand" style="display: flex !important; align-items: center; gap: 12px;">
+            <div class="sn-header__brand" style="display: flex !important; align-items: center; gap: 12px; margin-bottom: 8px;">
               <img src="{logo_url}" alt="CCA Logo" class="sn-header__logo" style="height: 48px !important; width: auto !important; display: block !important; visibility: visible !important; opacity: 1 !important;" />
               <span class="sn-header__brand-text" style="font-size: 1.25rem; font-weight: 700; color: #1e3a8a; display: inline-block;">Senior Navigator</span>
-            </a>
-            <nav class="sn-header__nav">
-              {nav_html}
-            </nav>
+            </div>
           </div>
         </header>
         """
     )
-
-    # Render CSS first, then HTML separately (like hub pages do)
-    st.markdown(css, unsafe_allow_html=True)
-    st.markdown(html, unsafe_allow_html=True)
+    st.markdown(header_html, unsafe_allow_html=True)
+    
+    # Render navigation buttons using columns for horizontal layout
+    # Calculate number of columns needed (nav items + login button)
+    total_buttons = len(nav_items) + 1  # +1 for login
+    
+    # Create columns for navigation buttons
+    cols = st.columns([1] * total_buttons)
+    
+    # Render navigation buttons
+    for idx, item in enumerate(nav_items):
+        with cols[idx]:
+            button_type = "secondary" if active_route == item["route"] else "primary"
+            if st.button(
+                item["label"],
+                key=f"nav_{item['route']}",
+                type=button_type,
+                use_container_width=True,
+            ):
+                # Session-safe navigation
+                st.query_params["page"] = item["route"]
+                st.rerun()
+    
+    # Login button in last column
+    with cols[-1]:
+        if st.button("Log In", key="nav_login", type="primary", use_container_width=True):
+            st.query_params["page"] = "login"
+            st.rerun()
 
 
 __all__ = ["render_header_simple"]
