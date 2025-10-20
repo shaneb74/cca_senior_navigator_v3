@@ -75,95 +75,17 @@
       "icon": "🏦",
       "help_text": "Cash and easily accessible funds",
       "layout": "single_column",
-      "mode_config": {
-        "supports_basic_advanced": true,
-        "basic_mode_aggregate": "cash_liquid_total",
-        "advanced_mode_fields": [
-          "checking_balance",
-          "savings_cds_balance"
-        ]
-      },
       "fields": [
         {
           "key": "cash_liquid_total",
-          "label": "Checking & Savings (Total)",
-          "type": "aggregate_input",
-          "required": false,
-          "min": 0,
-          "max": 10000000,
-          "step": 1000,
-          "default": 0,
-          "help": "Enter total here in Basic mode. Calculated automatically in Advanced mode.",
-          "aggregate_from": [
-            "checking_balance",
-            "savings_cds_balance"
-          ],
-          "mode_behavior": {
-            "basic": {
-              "display": "input",
-              "editable": true,
-              "distribution_strategy": "even",
-              "help": "Enter your total liquid assets. We'll split it evenly across checking and savings."
-            },
-            "advanced": {
-              "display": "calculated_label",
-              "editable": false,
-              "help": "Automatically calculated from checking and savings below."
-            }
-          },
-          "unallocated": {
-            "enabled": true,
-            "show_in_mode": "advanced",
-            "actions": [
-              "clear_original",
-              "move_to_other"
-            ],
-            "other_field_key": "liquid_assets_other",
-            "label": "Unallocated Liquid Assets",
-            "help": "Difference between your original estimate and allocated amounts. Not included in calculations."
-          }
-        },
-        {
-          "key": "checking_balance",
-          "label": "Checking",
+          "label": "Total Cash & Savings",
           "type": "currency",
           "required": false,
           "min": 0,
           "max": 10000000,
           "step": 1000,
           "default": 0,
-          "help": "Primary checking account balance",
-          "visible_in_modes": [
-            "advanced"
-          ]
-        },
-        {
-          "key": "savings_cds_balance",
-          "label": "Savings/CDs",
-          "type": "currency",
-          "required": false,
-          "min": 0,
-          "max": 10000000,
-          "step": 1000,
-          "default": 0,
-          "help": "Savings accounts, money market, CDs",
-          "visible_in_modes": [
-            "advanced"
-          ]
-        },
-        {
-          "key": "liquid_assets_other",
-          "label": "Other Liquid Assets",
-          "type": "currency",
-          "required": false,
-          "min": 0,
-          "max": 10000000,
-          "step": 1000,
-          "default": 0,
-          "help": "Any other easily accessible cash",
-          "visible_in_modes": [
-            "advanced"
-          ]
+          "help": "Total of all checking, savings, money market, and CD accounts"
         }
       ],
       "info_boxes": [
@@ -179,81 +101,17 @@
       "icon": "📈",
       "help_text": "Brokerage accounts and investment holdings",
       "layout": "single_column",
-      "mode_config": {
-        "supports_basic_advanced": true,
-        "basic_mode_aggregate": "brokerage_total",
-        "advanced_mode_fields": [
-          "brokerage_mf_etf",
-          "brokerage_stocks_bonds"
-        ]
-      },
       "fields": [
         {
           "key": "brokerage_total",
-          "label": "Brokerage / Investments (Total)",
-          "type": "aggregate_input",
-          "required": false,
-          "min": 0,
-          "max": 50000000,
-          "step": 5000,
-          "default": 0,
-          "help": "Enter total investments in Basic mode. Calculated automatically in Advanced mode.",
-          "aggregate_from": [
-            "brokerage_mf_etf",
-            "brokerage_stocks_bonds"
-          ],
-          "mode_behavior": {
-            "basic": {
-              "display": "input",
-              "editable": true,
-              "distribution_strategy": "even",
-              "help": "Enter your total investment value. We'll split it evenly across funds and stocks/bonds."
-            },
-            "advanced": {
-              "display": "calculated_label",
-              "editable": false,
-              "help": "Automatically calculated from mutual funds/ETFs and stocks/bonds below."
-            }
-          },
-          "unallocated": {
-            "enabled": true,
-            "show_in_mode": "advanced",
-            "actions": [
-              "clear_original",
-              "move_to_other"
-            ],
-            "other_field_key": "brokerage_stocks_bonds",
-            "label": "Unallocated Investments",
-            "help": "Difference between your original estimate and allocated amounts. Not included in calculations."
-          }
-        },
-        {
-          "key": "brokerage_mf_etf",
-          "label": "Brokerage - Mutual Funds / ETFs",
+          "label": "Total Investments / Brokerage",
           "type": "currency",
           "required": false,
           "min": 0,
           "max": 50000000,
           "step": 5000,
           "default": 0,
-          "help": "Value of mutual funds and ETFs",
-          "visible_in_modes": [
-            "advanced"
-          ]
-        },
-        {
-          "key": "brokerage_stocks_bonds",
-          "label": "Brokerage - Stocks / Bonds",
-          "type": "currency",
-          "required": false,
-          "min": 0,
-          "max": 50000000,
-          "step": 5000,
-          "default": 0,
-          "help": "Value of individual stocks and bonds",
-          "visible_in_modes": [
-            "advanced"
-          ]
+          "help": "Total value of all brokerage accounts, stocks, bonds, mutual funds, ETFs, etc."
         }
       ],
       "info_boxes": [
@@ -269,81 +127,17 @@
       "icon": "🏦",
       "help_text": "IRAs, 401(k)s, and other retirement savings",
       "layout": "single_column",
-      "mode_config": {
-        "supports_basic_advanced": true,
-        "basic_mode_aggregate": "retirement_total",
-        "advanced_mode_fields": [
-          "retirement_traditional",
-          "retirement_roth"
-        ]
-      },
       "fields": [
         {
           "key": "retirement_total",
-          "label": "Retirement Accounts (Total)",
-          "type": "aggregate_input",
-          "required": false,
-          "min": 0,
-          "max": 50000000,
-          "step": 5000,
-          "default": 0,
-          "help": "Enter total retirement savings in Basic mode. Calculated automatically in Advanced mode.",
-          "aggregate_from": [
-            "retirement_traditional",
-            "retirement_roth"
-          ],
-          "mode_behavior": {
-            "basic": {
-              "display": "input",
-              "editable": true,
-              "distribution_strategy": "even",
-              "help": "Enter your total retirement account balance. We'll split it evenly across Traditional and Roth."
-            },
-            "advanced": {
-              "display": "calculated_label",
-              "editable": false,
-              "help": "Automatically calculated from Traditional and Roth accounts below."
-            }
-          },
-          "unallocated": {
-            "enabled": true,
-            "show_in_mode": "advanced",
-            "actions": [
-              "clear_original",
-              "move_to_other"
-            ],
-            "other_field_key": "retirement_traditional",
-            "label": "Unallocated Retirement Funds",
-            "help": "Difference between your original estimate and allocated amounts. Not included in calculations."
-          }
-        },
-        {
-          "key": "retirement_traditional",
-          "label": "Traditional IRA / 401(k)",
+          "label": "Total Retirement Savings",
           "type": "currency",
           "required": false,
           "min": 0,
           "max": 50000000,
           "step": 5000,
           "default": 0,
-          "help": "Pre-tax retirement accounts",
-          "visible_in_modes": [
-            "advanced"
-          ]
-        },
-        {
-          "key": "retirement_roth",
-          "label": "Roth IRA",
-          "type": "currency",
-          "required": false,
-          "min": 0,
-          "max": 50000000,
-          "step": 5000,
-          "default": 0,
-          "help": "Post-tax retirement accounts",
-          "visible_in_modes": [
-            "advanced"
-          ]
+          "help": "Total value of all IRA, 401(k), 403(b), and other retirement accounts (Traditional and Roth combined)"
         }
       ],
       "info_boxes": [
@@ -599,15 +393,8 @@
     "asset_has_partner": "string",
     "asset_legal_restrictions": "string",
     "cash_liquid_total": "number",
-    "checking_balance": "number",
-    "savings_cds_balance": "number",
-    "liquid_assets_other": "number",
     "brokerage_total": "number",
-    "brokerage_mf_etf": "number",
-    "brokerage_stocks_bonds": "number",
     "retirement_total": "number",
-    "retirement_traditional": "number",
-    "retirement_roth": "number",
     "real_estate_total": "number",
     "home_equity_estimate": "number",
     "real_estate_other": "number",
