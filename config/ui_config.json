@@ -19,8 +19,8 @@
         "visible": true
       },
       "hub_trusted": {
-        "visible": false,
-        "note": "Temporarily hidden for demo - flip to true to restore"
+        "visible": true,
+        "note": "Re-enabled for production after demo"
       },
       "hub_professional": {
         "visible": true
