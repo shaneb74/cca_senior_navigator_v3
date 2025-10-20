@@ -93,54 +93,7 @@
       "icon": "🏛️",
       "help_text": "Monthly Social Security and pension income",
       "layout": "single_column",
-      "mode_config": {
-        "supports_basic_advanced": true,
-        "basic_mode_aggregate": "retirement_income_total",
-        "advanced_mode_fields": [
-          "ss_monthly",
-          "pension_monthly"
-        ]
-      },
       "fields": [
-        {
-          "key": "retirement_income_total",
-          "label": "Retirement Income (Total Monthly)",
-          "type": "aggregate_input",
-          "required": false,
-          "min": 0,
-          "max": 25000,
-          "step": 100,
-          "default": 0,
-          "help": "Enter total monthly retirement income in Basic mode. Calculated automatically in Advanced mode.",
-          "aggregate_from": [
-            "ss_monthly",
-            "pension_monthly"
-          ],
-          "mode_behavior": {
-            "basic": {
-              "display": "input",
-              "editable": true,
-              "distribution_strategy": "even",
-              "help": "Enter your total monthly retirement income. We'll split it evenly between Social Security and pension."
-            },
-            "advanced": {
-              "display": "calculated_label",
-              "editable": false,
-              "help": "Automatically calculated from Social Security and pension below."
-            }
-          },
-          "unallocated": {
-            "enabled": true,
-            "show_in_mode": "advanced",
-            "actions": [
-              "clear_original",
-              "move_to_other"
-            ],
-            "other_field_key": "pension_monthly",
-            "label": "Unallocated Retirement Income",
-            "help": "Difference between your original estimate and allocated amounts. Not included in calculations."
-          }
-        },
         {
           "key": "ss_monthly",
           "label": "Social Security (Monthly)",
@@ -150,10 +103,7 @@
           "max": 5000,
           "step": 10,
           "default": 0,
-          "help": "Total monthly benefits after deductions",
-          "visible_in_modes": [
-            "advanced"
-          ]
+          "help": "Total monthly Social Security benefits after deductions"
         },
         {
           "key": "pension_monthly",
@@ -164,10 +114,7 @@
           "max": 20000,
           "step": 100,
           "default": 0,
-          "help": "Monthly pension income",
-          "visible_in_modes": [
-            "advanced"
-          ]
+          "help": "Total monthly pension income from all sources"
         }
       ],
       "info_boxes": [
@@ -183,82 +130,7 @@
       "icon": "💼",
       "help_text": "Current employment and other regular monthly income",
       "layout": "single_column",
-      "mode_config": {
-        "supports_basic_advanced": true,
-        "basic_mode_aggregate": "employment_other_total",
-        "advanced_mode_fields": [
-          "employment_income",
-          "other_income"
-        ]
-      },
       "fields": [
-        {
-          "key": "employment_other_total",
-          "label": "Employment & Other (Total Monthly)",
-          "type": "aggregate_input",
-          "required": false,
-          "min": 0,
-          "max": 100000,
-          "step": 100,
-          "default": 0,
-          "help": "Enter total monthly employment and other income in Basic mode. Calculated automatically in Advanced mode.",
-          "aggregate_from": [
-            "employment_income",
-            "other_income"
-          ],
-          "mode_behavior": {
-            "basic": {
-              "display": "input",
-              "editable": true,
-              "distribution_strategy": "even",
-              "help": "Enter your total monthly employment and other income. We'll split it evenly."
-            },
-            "advanced": {
-              "display": "calculated_label",
-              "editable": false,
-              "help": "Automatically calculated from employment and other income below."
-            }
-          },
-          "unallocated": {
-            "enabled": true,
-            "show_in_mode": "advanced",
-            "actions": [
-              "clear_original",
-              "move_to_other"
-            ],
-            "other_field_key": "other_income",
-            "label": "Unallocated Employment/Other Income",
-            "help": "Difference between your original estimate and allocated amounts. Not included in calculations."
-          }
-        },
-        {
-          "key": "employment_income",
-          "label": "Employment Income (Monthly)",
-          "type": "currency",
-          "required": false,
-          "min": 0,
-          "max": 50000,
-          "step": 100,
-          "default": 0,
-          "help": "Net monthly income from employment or self-employment",
-          "visible_in_modes": [
-            "advanced"
-          ]
-        },
-        {
-          "key": "other_income",
-          "label": "Other Monthly Income",
-          "type": "currency",
-          "required": false,
-          "min": 0,
-          "max": 50000,
-          "step": 100,
-          "default": 0,
-          "help": "Any other regular monthly income not listed above",
-          "visible_in_modes": [
-            "advanced"
-          ]
-        },
         {
           "key": "employment_status",
           "label": "Employment Status",
@@ -284,6 +156,28 @@
           ],
           "default": "not_employed",
           "help": "Current employment situation"
+        },
+        {
+          "key": "employment_income",
+          "label": "Employment Income (Monthly)",
+          "type": "currency",
+          "required": false,
+          "min": 0,
+          "max": 50000,
+          "step": 100,
+          "default": 0,
+          "help": "Net monthly income from employment or self-employment"
+        },
+        {
+          "key": "other_income",
+          "label": "Other Monthly Income",
+          "type": "currency",
+          "required": false,
+          "min": 0,
+          "max": 50000,
+          "step": 100,
+          "default": 0,
+          "help": "Any other regular monthly income not listed elsewhere"
         }
       ],
       "info_boxes": [
@@ -481,10 +375,8 @@
     "has_partner": "string",
     "partner_income_monthly": "number",
     "shared_finance_notes": "string",
-    "retirement_income_total": "number",
     "ss_monthly": "number",
     "pension_monthly": "number",
-    "employment_other_total": "number",
     "employment_status": "string",
     "employment_income": "number",
     "other_income": "number",
