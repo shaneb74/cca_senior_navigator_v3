@@ -74,7 +74,7 @@
       "title": "Liquid Assets",
       "icon": "🏦",
       "help_text": "Cash and easily accessible funds",
-      "layout": "two_column",
+      "layout": "single_column",
       "mode_config": {
         "supports_basic_advanced": true,
         "basic_mode_aggregate": "cash_liquid_total",
@@ -119,7 +119,6 @@
             "label": "Unallocated Liquid Assets",
             "help": "Difference between your original estimate and allocated amounts. Not included in calculations."
           },
-          "column": 1
         },
         {
           "key": "checking_balance",
@@ -132,7 +131,6 @@
           "default": 0,
           "help": "Primary checking account balance",
           "visible_in_modes": ["advanced"],
-          "column": 1
         },
         {
           "key": "savings_cds_balance",
@@ -145,7 +143,6 @@
           "default": 0,
           "help": "Savings accounts, money market, CDs",
           "visible_in_modes": ["advanced"],
-          "column": 2
         },
         {
           "key": "liquid_assets_other",
@@ -158,7 +155,6 @@
           "default": 0,
           "help": "Any other easily accessible cash",
           "visible_in_modes": ["advanced"],
-          "column": 2
         }
       ],
       "info_boxes": [
@@ -173,7 +169,7 @@
       "title": "Investments",
       "icon": "📈",
       "help_text": "Brokerage accounts and investment holdings",
-      "layout": "two_column",
+      "layout": "single_column",
       "mode_config": {
         "supports_basic_advanced": true,
         "basic_mode_aggregate": "brokerage_total",
@@ -218,7 +214,6 @@
             "label": "Unallocated Investments",
             "help": "Difference between your original estimate and allocated amounts. Not included in calculations."
           },
-          "column": 1
         },
         {
           "key": "brokerage_mf_etf",
@@ -231,7 +226,6 @@
           "default": 0,
           "help": "Value of mutual funds and ETFs",
           "visible_in_modes": ["advanced"],
-          "column": 2
         },
         {
           "key": "brokerage_stocks_bonds",
@@ -244,7 +238,6 @@
           "default": 0,
           "help": "Value of individual stocks and bonds",
           "visible_in_modes": ["advanced"],
-          "column": 2
         }
       ],
       "info_boxes": [
@@ -259,7 +252,7 @@
       "title": "Retirement Accounts",
       "icon": "🏦",
       "help_text": "IRAs, 401(k)s, and other retirement savings",
-      "layout": "two_column",
+      "layout": "single_column",
       "mode_config": {
         "supports_basic_advanced": true,
         "basic_mode_aggregate": "retirement_total",
@@ -304,7 +297,6 @@
             "label": "Unallocated Retirement Funds",
             "help": "Difference between your original estimate and allocated amounts. Not included in calculations."
           },
-          "column": 1
         },
         {
           "key": "retirement_traditional",
@@ -317,7 +309,6 @@
           "default": 0,
           "help": "Pre-tax retirement accounts",
           "visible_in_modes": ["advanced"],
-          "column": 2
         },
         {
           "key": "retirement_roth",
@@ -330,7 +321,6 @@
           "default": 0,
           "help": "Post-tax retirement accounts",
           "visible_in_modes": ["advanced"],
-          "column": 2
         }
       ],
       "info_boxes": [
@@ -345,7 +335,7 @@
       "title": "Real Estate & Other",
       "icon": "🏠",
       "help_text": "Property, vehicles, and other valuable assets",
-      "layout": "two_column",
+      "layout": "single_column",
       "mode_config": {
         "supports_basic_advanced": true,
         "basic_mode_aggregate": "real_estate_total",
@@ -390,7 +380,6 @@
             "label": "Unallocated Real Estate",
             "help": "Difference between your original estimate and allocated amounts. Not included in calculations."
           },
-          "column": 1
         },
         {
           "key": "home_equity_estimate",
@@ -403,7 +392,6 @@
           "default": 0,
           "help": "Estimated home value minus outstanding mortgage",
           "visible_in_modes": ["advanced"],
-          "column": 1
         },
         {
           "key": "real_estate_other",
@@ -416,7 +404,6 @@
           "default": 0,
           "help": "Rental properties, vacation homes, land, etc.",
           "visible_in_modes": ["advanced"],
-          "column": 2
         },
         {
           "key": "life_insurance_cash_value",
@@ -428,7 +415,6 @@
           "step": 5000,
           "default": 0,
           "help": "Cash surrender value of life insurance policies",
-          "column": 2
         }
       ],
       "info_boxes": [
@@ -443,7 +429,7 @@
       "title": "Debts & Obligations",
       "icon": "💳",
       "help_text": "Outstanding debts and financial obligations",
-      "layout": "two_column",
+      "layout": "single_column",
       "mode_config": {
         "supports_basic_advanced": true,
         "basic_mode_aggregate": "total_debts",
@@ -492,7 +478,6 @@
             "label": "Unallocated Debt",
             "help": "Difference between your original estimate and allocated amounts. Not included in calculations."
           },
-          "column": 1
         },
         {
           "key": "primary_residence_mortgage",
@@ -505,7 +490,6 @@
           "default": 0,
           "help": "Outstanding mortgage balance on your primary residence (if home_equity_estimate already accounts for this, leave at $0)",
           "visible_in_modes": ["advanced"],
-          "column": 1
         },
         {
           "key": "other_real_estate_debt",
@@ -518,7 +502,6 @@
           "default": 0,
           "help": "Mortgages or loans on rental properties, vacation homes, etc.",
           "visible_in_modes": ["advanced"],
-          "column": 1
         },
         {
           "key": "secured_loans",
@@ -531,7 +514,6 @@
           "default": 0,
           "help": "Auto loans, boat loans, equipment loans, home equity lines of credit, etc.",
           "visible_in_modes": ["advanced"],
-          "column": 2
         },
         {
           "key": "unsecured_debt",
@@ -544,7 +526,6 @@
           "default": 0,
           "help": "Credit card balances, personal loans, medical debt, etc.",
           "visible_in_modes": ["advanced"],
-          "column": 2
         }
       ],
       "info_boxes": [

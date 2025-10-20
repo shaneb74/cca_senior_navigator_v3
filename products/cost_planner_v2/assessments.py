@@ -22,10 +22,9 @@ from core.session_store import safe_rerun
 from core.ui import render_navi_panel_v2
 from core.mode_engine import (
     render_mode_toggle,
-    show_mode_guidance,
-    show_mode_change_feedback,
     get_visible_fields,
     render_aggregate_field,
+    render_unallocated_field,
 )
 from products.cost_planner_v2.utils.financial_helpers import (
     calculate_total_asset_debt,
@@ -563,19 +562,18 @@ def _render_single_page_assessment(
         st.markdown("<div style='margin: 12px 0 24px 0;'></div>", unsafe_allow_html=True)
 
     if field_sections:
-        for row_index in range(0, len(field_sections), 2):
-            row_sections = field_sections[row_index : row_index + 2]
-            row_cols = st.columns(2, gap="large")
-            for col_index in range(2):
-                if col_index < len(row_sections):
-                    section = row_sections[col_index]
-                    with row_cols[col_index]:
-                        _render_section_content(section, state, product_key, assessment_key)
-                else:
-                    with row_cols[col_index]:
-                        st.write("")
-            if row_index + 2 < len(field_sections):
-                st.markdown("<div style='margin: 24px 0;'></div>", unsafe_allow_html=True)
+        # Render sections vertically for mobile-friendly single-column layout
+        for section in field_sections:
+            # Use expander for collapsible sections
+            section_title = section.get("title", "Section")
+            section_icon = section.get("icon", "📋")
+            
+            # Determine if section should be expanded by default
+            # First section expanded, others collapsed
+            is_first = field_sections.index(section) == 0
+            
+            with st.expander(f"{section_icon} {section_title}", expanded=is_first):
+                _render_section_content(section, state, product_key, assessment_key)
     else:
         st.write("No sections configured.")
 
@@ -712,21 +710,16 @@ def _render_single_page_assessment(
 def _render_section_content(
     section: dict[str, Any], state: dict[str, Any], product_key: str, assessment_key: str
 ) -> None:
-    """Render a section's heading and fields inside a single column."""
+    """Render a section's content inside an expander."""
 
-    section_icon = section.get("icon", "📝")
-    section_title = section.get("title", "Section")
     help_text = section.get("help_text")
 
-    st.markdown(
-        f"""
-        <div style="display:flex; flex-direction:column; gap:6px; margin-bottom:12px;">
-            <div style="font-size:20px; font-weight:600; color:#0f172a;">{section_icon} {section_title}</div>
-            {f"<div style='font-size:14px; color:#475569;'>{help_text}</div>" if help_text else ""}
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    # Show help text if provided
+    if help_text:
+        st.markdown(
+            f"<div style='font-size:14px; color:#64748b; margin-bottom:16px;'>{help_text}</div>",
+            unsafe_allow_html=True,
+        )
 
     # Check if section supports Basic/Advanced modes
     mode_config = section.get("mode_config", {})
@@ -736,12 +729,6 @@ def _render_section_content(
         # Render mode toggle
         mode_toggle_key = f"{assessment_key}_{section['id']}"
         current_mode = render_mode_toggle(mode_toggle_key)
-        
-        # Show mode guidance
-        show_mode_guidance(current_mode)
-        
-        # Show feedback if mode just changed
-        show_mode_change_feedback(mode_toggle_key, current_mode)
 
     # Render fields with mode awareness
     new_values = _render_fields_for_page(section, state, current_mode)
