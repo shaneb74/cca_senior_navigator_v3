@@ -16,6 +16,7 @@ Route: ?page=gcp_review
 
 import streamlit as st
 from core.mcip import MCIP
+from core.navi import render_navi_panel
 from layout import render_page
 
 
@@ -38,21 +39,56 @@ def render():
     # Check if we have the assessment data
     assessment_data = st.session_state.get("gcp_care_recommendation", {})
     
-    render_page(
-        content=_render_review_content,
-        recommendation=recommendation,
-        assessment_data=assessment_data,
-        show_header=True,
-        show_footer=True,
-        title="Your Care Assessment Review"
+    # Render with header
+    from ui.product_shell import product_shell_start, product_shell_end
+    
+    product_shell_start()
+    
+    # Render Navi panel for context
+    _render_navi_guidance(recommendation)
+    
+    # Render main content
+    _render_review_content(recommendation, assessment_data)
+    
+    product_shell_end()
+
+
+def _render_navi_guidance(recommendation):
+    """Render Navi panel with succinct guidance."""
+    tier_display = {
+        "no_care_needed": "No Care Needed",
+        "in_home": "In-Home Care",
+        "in_home_care": "In-Home Care",
+        "assisted_living": "Assisted Living",
+        "memory_care": "Memory Care",
+        "memory_care_high_acuity": "Memory Care (High Acuity)"
+    }
+    
+    tier_name = tier_display.get(recommendation.tier, recommendation.tier.replace("_", " ").title())
+    confidence_pct = int(recommendation.confidence * 100)
+    
+    render_navi_panel(
+        location="product",
+        product_key="gcp_v4",
+        module_config=None,
+        custom_message={
+            "title": "Your Assessment Results",
+            "reason": f"Based on your responses, we recommend **{tier_name}** with {confidence_pct}% confidence.",
+            "encouragement": {
+                "icon": "📋",
+                "status": "info",
+                "text": "This page shows how we arrived at your care recommendation. Use these insights to explore costs and discuss options with family."
+            }
+        }
     )
 
 
 def _render_review_content(recommendation, assessment_data):
     """Render the main review content."""
     
-    # Header message
-    st.info("📋 Here's your responses and how we arrived at your Care Recommendation.")
+    # Title
+    st.markdown("## Your Care Assessment Review")
+    st.markdown("Here's your responses and how we arrived at your Care Recommendation.")
     
     st.markdown("---")
     
@@ -153,15 +189,15 @@ def _render_score_range_visual(score, tier):
     else:
         range_text = f"{min_score}-{max_score} points"
     
-    st.info(f"""
-    **Your score of {score} points** falls within the **{tier.replace('_', ' ').title()}** range ({range_text}).
-    
-    📊 **All Care Level Ranges:**
-    - No Care Needed: 0-8 points
-    - In-Home Care: 9-16 points
-    - Assisted Living: 17-24 points
-    - Memory Care: 25-39 points
-    - Memory Care (High Acuity): 40+ points
+    st.markdown(f"""
+**Your score of {score} points** falls within the **{tier.replace('_', ' ').title()}** range ({range_text}).
+
+**All Care Level Ranges:**
+- No Care Needed: 0-8 points
+- In-Home Care: 9-16 points
+- Assisted Living: 17-24 points
+- Memory Care: 25-39 points
+- Memory Care (High Acuity): 40+ points
     """)
 
 
@@ -170,7 +206,7 @@ def _render_assessment_responses(assessment_data):
     st.markdown("### 📝 Your Assessment Responses")
     
     if not assessment_data:
-        st.info("Assessment response details are not available in this session.")
+        st.markdown("_Assessment response details are not available in this session._")
         return
     
     # Display key assessment fields in a structured way
@@ -302,9 +338,9 @@ def _render_score_breakdown(recommendation, assessment_data):
             with col2:
                 st.markdown(f"**+{points:.0f}** pts")
     else:
-        st.info("Detailed scoring breakdown is not available for this assessment.")
+        st.markdown("_Detailed scoring breakdown is not available for this assessment._")
     
-    st.markdown("---")
+    st.markdown("")
     st.caption("Note: Score breakdown is approximate based on typical scoring patterns. Individual question responses may vary.")
 
 
@@ -314,32 +350,32 @@ def _render_confidence_section(recommendation):
         confidence_pct = int(recommendation.confidence * 100)
         
         st.markdown(f"""
-        ### Confidence Score: {confidence_pct}%
-        
-        The confidence score reflects how complete and clear your assessment was.
-        
-        **What affects confidence:**
-        - ✅ **Completeness:** How many questions were answered
-        - ✅ **Consistency:** How well responses align with each other
-        - ✅ **Clarity:** How definitive your score is within the tier range
-        
-        **Confidence Levels:**
-        - **90-100%:** Very high confidence - clear and complete assessment
-        - **75-89%:** Good confidence - most key questions answered
-        - **60-74%:** Moderate confidence - some gaps in information
-        - **Below 60%:** Lower confidence - consider retaking with more detail
-        
-        **Your {confidence_pct}% confidence means:**
+### Confidence Score: {confidence_pct}%
+
+The confidence score reflects how complete and clear your assessment was.
+
+**What affects confidence:**
+- ✅ **Completeness:** How many questions were answered
+- ✅ **Consistency:** How well responses align with each other
+- ✅ **Clarity:** How definitive your score is within the tier range
+
+**Confidence Levels:**
+- **90-100%:** Very high confidence - clear and complete assessment
+- **75-89%:** Good confidence - most key questions answered
+- **60-74%:** Moderate confidence - some gaps in information
+- **Below 60%:** Lower confidence - consider retaking with more detail
+
+**Your {confidence_pct}% confidence means:**
         """)
         
         if confidence_pct >= 90:
-            st.success("Your assessment was very thorough and provides a clear picture of care needs.")
+            st.markdown("✅ Your assessment was very thorough and provides a clear picture of care needs.")
         elif confidence_pct >= 75:
-            st.info("Your assessment provides a good basis for care planning.")
+            st.markdown("✅ Your assessment provides a good basis for care planning.")
         elif confidence_pct >= 60:
-            st.warning("Your assessment is reasonably complete, but adding more details could improve accuracy.")
+            st.markdown("⚠️ Your assessment is reasonably complete, but adding more details could improve accuracy.")
         else:
-            st.warning("Consider retaking the assessment with more detailed responses for better accuracy.")
+            st.markdown("⚠️ Consider retaking the assessment with more detailed responses for better accuracy.")
 
 
 # Helper functions for formatting
