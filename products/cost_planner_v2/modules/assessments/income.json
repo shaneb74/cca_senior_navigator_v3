@@ -1,7 +1,7 @@
 {
   "key": "income",
   "title": "Income Sources",
-  "icon": "\ud83d\udcb0",
+  "icon": "💰",
   "description": "Monthly income from all sources",
   "estimated_time": "5-7 min",
   "required": true,
@@ -11,20 +11,20 @@
       "id": "intro",
       "type": "intro",
       "title": "Income Assessment",
-      "icon": "\ud83d\udcb0",
+      "icon": "💰",
       "help_text": "Let's capture your income. Use Basic for a quick total or Advanced if you want to break it down.",
       "fields": [],
       "info_boxes": [
         {
           "type": "info",
-          "message": "\ud83d\udca1 You can save and come back anytime. Your progress is automatically tracked."
+          "message": "💡 You can save and come back anytime. Your progress is automatically tracked."
         }
       ]
     },
     {
       "id": "household_context",
       "title": "Household Context",
-      "icon": "\ud83d\udc65",
+      "icon": "👥",
       "help_text": "Tell me about anyone who shares income or expenses with you.",
       "layout": "single_column",
       "fields": [
@@ -83,14 +83,14 @@
       "info_boxes": [
         {
           "type": "info",
-          "message": "\ud83d\udc65 If you keep finances separate, note what is realistically available for care so we can build the right plan."
+          "message": "👥 If you keep finances separate, note what is realistically available for care so we can build the right plan."
         }
       ]
     },
     {
       "id": "social_security_pensions",
       "title": "Social Security & Pensions",
-      "icon": "\ud83c\udfdb\ufe0f",
+      "icon": "🏛️",
       "help_text": "Monthly Social Security and pension income",
       "layout": "single_column",
       "mode_config": {
@@ -132,7 +132,10 @@
           "unallocated": {
             "enabled": true,
             "show_in_mode": "advanced",
-            "actions": ["clear_original", "move_to_other"],
+            "actions": [
+              "clear_original",
+              "move_to_other"
+            ],
             "other_field_key": "pension_monthly",
             "label": "Unallocated Retirement Income",
             "help": "Difference between your original estimate and allocated amounts. Not included in calculations."
@@ -148,7 +151,9 @@
           "step": 10,
           "default": 0,
           "help": "Total monthly benefits after deductions",
-          "visible_in_modes": ["advanced"]
+          "visible_in_modes": [
+            "advanced"
+          ]
         },
         {
           "key": "pension_monthly",
@@ -160,20 +165,22 @@
           "step": 100,
           "default": 0,
           "help": "Monthly pension income",
-          "visible_in_modes": ["advanced"]
+          "visible_in_modes": [
+            "advanced"
+          ]
         }
       ],
       "info_boxes": [
         {
           "type": "info",
-          "message": "\ud83d\udcca Social Security: Age 62 (reduced) vs. 66-67 (full) vs. 70 (max, up to 30% more). Average 2024: $1,907/month. Pension: Lifetime guaranteed income is valuable for care planning."
+          "message": "📊 Social Security: Age 62 (reduced) vs. 66-67 (full) vs. 70 (max, up to 30% more). Average 2024: $1,907/month. Pension: Lifetime guaranteed income is valuable for care planning."
         }
       ]
     },
     {
       "id": "employment_other",
       "title": "Employment & Other Income",
-      "icon": "\ud83d\udcbc",
+      "icon": "💼",
       "help_text": "Current employment and other regular monthly income",
       "layout": "single_column",
       "mode_config": {
@@ -215,7 +222,10 @@
           "unallocated": {
             "enabled": true,
             "show_in_mode": "advanced",
-            "actions": ["clear_original", "move_to_other"],
+            "actions": [
+              "clear_original",
+              "move_to_other"
+            ],
             "other_field_key": "other_income",
             "label": "Unallocated Employment/Other Income",
             "help": "Difference between your original estimate and allocated amounts. Not included in calculations."
@@ -231,7 +241,9 @@
           "step": 100,
           "default": 0,
           "help": "Net monthly income from employment or self-employment",
-          "visible_in_modes": ["advanced"]
+          "visible_in_modes": [
+            "advanced"
+          ]
         },
         {
           "key": "other_income",
@@ -243,7 +255,9 @@
           "step": 100,
           "default": 0,
           "help": "Any other regular monthly income not listed above",
-          "visible_in_modes": ["advanced"]
+          "visible_in_modes": [
+            "advanced"
+          ]
         },
         {
           "key": "employment_status",
@@ -275,14 +289,14 @@
       "info_boxes": [
         {
           "type": "info",
-          "message": "\u26a0\ufe0f Social Security impact: Earnings above $22,320 (2024) may reduce SS benefits if claiming before full retirement age."
+          "message": "⚠️ Social Security impact: Earnings above $22,320 (2024) may reduce SS benefits if claiming before full retirement age."
         }
       ]
     },
     {
       "id": "additional_income",
       "title": "Additional Income (Advanced)",
-      "icon": "\ud83d\udcb5",
+      "icon": "💵",
       "help_text": "Detailed breakdown of additional income sources",
       "layout": "single_column",
       "mode_config": {
@@ -334,11 +348,14 @@
           "unallocated": {
             "enabled": true,
             "show_in_mode": "advanced",
-            "actions": ["clear_original", "move_to_other"],
+            "actions": [
+              "clear_original",
+              "move_to_other"
+            ],
             "other_field_key": "dividends_interest_monthly",
             "label": "Unallocated Additional Income",
             "help": "Difference between your original estimate and allocated amounts. Not included in calculations."
-          },
+          }
         },
         {
           "key": "annuity_monthly",
@@ -350,7 +367,9 @@
           "step": 100,
           "default": 0,
           "help": "Monthly annuity payments",
-          "visible_in_modes": ["advanced"],
+          "visible_in_modes": [
+            "advanced"
+          ]
         },
         {
           "key": "retirement_distributions_monthly",
@@ -362,7 +381,9 @@
           "step": 100,
           "default": 0,
           "help": "Monthly withdrawals from retirement accounts",
-          "visible_in_modes": ["advanced"],
+          "visible_in_modes": [
+            "advanced"
+          ]
         },
         {
           "key": "dividends_interest_monthly",
@@ -374,7 +395,9 @@
           "step": 100,
           "default": 0,
           "help": "Monthly income from investments",
-          "visible_in_modes": ["advanced"],
+          "visible_in_modes": [
+            "advanced"
+          ]
         },
         {
           "key": "rental_income_monthly",
@@ -386,7 +409,9 @@
           "step": 100,
           "default": 0,
           "help": "Net monthly income from rental properties",
-          "visible_in_modes": ["advanced"],
+          "visible_in_modes": [
+            "advanced"
+          ]
         },
         {
           "key": "alimony_support_monthly",
@@ -398,7 +423,9 @@
           "step": 100,
           "default": 0,
           "help": "Monthly alimony or support payments received",
-          "visible_in_modes": ["advanced"],
+          "visible_in_modes": [
+            "advanced"
+          ]
         },
         {
           "key": "ltc_insurance_monthly",
@@ -410,7 +437,9 @@
           "step": 100,
           "default": 0,
           "help": "Monthly payout from long-term care insurance",
-          "visible_in_modes": ["advanced"],
+          "visible_in_modes": [
+            "advanced"
+          ]
         },
         {
           "key": "family_support_monthly",
@@ -422,13 +451,15 @@
           "step": 100,
           "default": 0,
           "help": "Contributions from family for care costs",
-          "visible_in_modes": ["advanced"],
+          "visible_in_modes": [
+            "advanced"
+          ]
         }
       ],
       "info_boxes": [
         {
           "type": "info",
-          "message": "\ud83d\udca1 Breaking down income sources helps identify guaranteed vs. variable income for better care planning."
+          "message": "💡 Breaking down income sources helps identify guaranteed vs. variable income for better care planning."
         }
       ]
     },
@@ -436,7 +467,7 @@
       "id": "results",
       "type": "results",
       "title": "Income Assessment Complete",
-      "icon": "\u2705",
+      "icon": "✅",
       "fields": []
     }
   ],
