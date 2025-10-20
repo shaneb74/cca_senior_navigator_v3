@@ -59,8 +59,12 @@ def render():
 
     # Initialize step state - check if user has progressed past intro
     if "cost_v2_step" not in st.session_state:
+        # Check query params for explicit step override (from tile buttons)
+        step_from_query = st.query_params.get("step")
+        if step_from_query in ["intro", "auth", "triage", "assessments", "modules", "expert_review", "exit"]:
+            st.session_state.cost_v2_step = step_from_query
         # Check if user has completed intro by checking for assessment state
-        if "cost_v2_income" in st.session_state or "cost_v2_assets" in st.session_state:
+        elif "cost_v2_income" in st.session_state or "cost_v2_assets" in st.session_state:
             # User has been to Financial Assessment - resume there
             st.session_state.cost_v2_step = "assessments"
         elif "cost_v2_qualifiers" in st.session_state:
@@ -69,6 +73,13 @@ def render():
         else:
             # First time - start at intro
             st.session_state.cost_v2_step = "intro"
+    else:
+        # If step is already in session_state, check if query param wants to override
+        step_from_query = st.query_params.get("step")
+        if step_from_query in ["intro", "auth", "triage", "assessments", "modules", "expert_review", "exit"]:
+            # Allow query param to override current step (for tile buttons)
+            if st.session_state.cost_v2_step != step_from_query:
+                st.session_state.cost_v2_step = step_from_query
 
     current_step = st.session_state.cost_v2_step
 
