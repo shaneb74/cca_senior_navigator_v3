@@ -20,6 +20,13 @@ from core.assessment_engine import run_assessment
 from core.events import log_event
 from core.session_store import safe_rerun
 from core.ui import render_navi_panel_v2
+from core.mode_engine import (
+    render_mode_toggle,
+    show_mode_guidance,
+    show_mode_change_feedback,
+    get_visible_fields,
+    render_aggregate_field,
+)
 from products.cost_planner_v2.utils.financial_helpers import (
     calculate_total_asset_debt,
     calculate_total_asset_value,
@@ -721,8 +728,23 @@ def _render_section_content(
         unsafe_allow_html=True,
     )
 
-    # Render fields
-    new_values = _render_fields_for_page(section, state)
+    # Check if section supports Basic/Advanced modes
+    mode_config = section.get("mode_config", {})
+    current_mode = "advanced"  # Default mode
+    
+    if mode_config.get("supports_basic_advanced"):
+        # Render mode toggle
+        mode_toggle_key = f"{assessment_key}_{section['id']}"
+        current_mode = render_mode_toggle(mode_toggle_key)
+        
+        # Show mode guidance
+        show_mode_guidance(current_mode)
+        
+        # Show feedback if mode just changed
+        show_mode_change_feedback(mode_toggle_key, current_mode)
+
+    # Render fields with mode awareness
+    new_values = _render_fields_for_page(section, state, current_mode)
     if new_values:
         state.update(new_values)
         
@@ -995,7 +1017,7 @@ def _get_assessment_progress(assessment_key: str, product_key: str) -> int:
     return min(progress, 100)
 
 
-def _render_fields_for_page(section: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:
+def _render_fields_for_page(section: dict[str, Any], state: dict[str, Any], mode: str = "advanced") -> dict[str, Any]:
     """
     Render fields for a section in page mode (all fields visible at once).
     Returns dict of updated field values.
@@ -1003,11 +1025,12 @@ def _render_fields_for_page(section: dict[str, Any], state: dict[str, Any]) -> d
     Args:
         section: Section configuration dict
         state: Current assessment state
+        mode: Current mode ("basic" or "advanced")
     """
     from core.assessment_engine import _render_fields
 
-    # Use _render_fields to render all visible fields
-    return _render_fields(section, state)
+    # Use _render_fields with mode support to render all visible fields
+    return _render_fields(section, state, mode)
 
 
 def _render_single_info_box(info_box: dict[str, Any]) -> None:
