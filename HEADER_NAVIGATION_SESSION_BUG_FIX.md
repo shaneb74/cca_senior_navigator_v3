@@ -3,6 +3,7 @@
 **Date:** October 20, 2025
 **Branch:** feature/visual-restyling
 **Status:** ✅ Complete - Ready for Testing
+**Version:** 2.0 - Hybrid Approach (Original Styling + Session-Safe Navigation)
 
 ## Problem Description
 
@@ -23,7 +24,7 @@ When navigating from the Waiting Room to the Concierge Hub (or between any hubs)
 
 ### The Problem with `<a href>` Links
 
-The original `header_simple.py` used standard HTML anchor links:
+The original `header_simple.py` used standard HTML anchor links which triggered full browser page reloads, clearing Streamlit's session state.
 
 ```python
 # OLD CODE (PROBLEMATIC)
@@ -58,11 +59,55 @@ The bug occurred because:
 - App reloads from disk → **old data** (before PFMA completion)
 - Changes not yet saved to disk are **lost**
 
-## Solution Implemented
+## Solution Implemented (V2 - Hybrid Approach)
 
-### Session-Safe Navigation Pattern
+### Design Goal
+Keep the EXACT original styling (clean HTML/CSS nav links) while implementing session-safe navigation.
 
-Replaced HTML `<a href>` links with Streamlit buttons using the session-safe pattern:
+### Hybrid Solution
+
+Instead of replacing HTML links with Streamlit buttons (which changed the styling), we:
+
+1. **Keep the HTML/CSS navigation links** - Preserves original visual design
+2. **Prevent default href behavior** - Use `onclick="return false;"` to stop page reload
+3. **Add invisible Streamlit buttons** - Hidden with CSS, used only for routing
+4. **Wire them together with JavaScript** - Link clicks trigger button clicks
+
+**Implementation:**
+
+```python
+# HTML links look the same but don't navigate
+nav_links_html.append(
+    f'<a href="#" class="nav-link{active_class}" data-route="{item["route"]}" onclick="return false;">{item["label"]}</a>'
+)
+
+# Invisible Streamlit buttons handle actual navigation
+for item in nav_items:
+    if st.button(item["label"], key=f"nav_{item['route']}", ...):
+        st.query_params["page"] = item["route"]
+        st.rerun()
+
+# CSS hides the buttons
+button[data-testid*="nav_"] {
+  display: none !important;
+}
+
+# JavaScript wires link clicks to button clicks
+link.addEventListener('click', function(e) {
+  const route = this.getAttribute('data-route');
+  // Find and click corresponding Streamlit button
+  button.click();
+});
+```
+
+**Why this works:**
+
+1. **Original Styling Preserved** ✅ - HTML links render with exact same CSS
+2. **No Page Reload** ✅ - `onclick="return false"` prevents href navigation  
+3. **Session State Preserved** ✅ - Streamlit buttons use `st.query_params` + `st.rerun()`
+4. **Best of Both Worlds** ✅ - Visual design + functional navigation
+
+### Implementation Changes (V2)
 
 ```python
 # NEW CODE (FIXED)
