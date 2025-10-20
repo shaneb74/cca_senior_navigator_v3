@@ -362,9 +362,9 @@ def _render_fields(section: dict[str, Any], state: dict[str, Any], mode: str = "
                 new_values.update(updates)
         
         elif field_type == "currency":
-            min_val = field.get("min", 0)
-            max_val = field.get("max", 10000000)
-            step = field.get("step", 100)
+            min_val = field.get("min", 0.0)
+            max_val = field.get("max", 10000000.0)
+            step = field.get("step", 100.0)
             readonly = field.get("readonly", False)
             
             # Ensure all numeric values are the same type (float for currency to support cents)
@@ -372,11 +372,11 @@ def _render_fields(section: dict[str, Any], state: dict[str, Any], mode: str = "
             max_val = float(max_val)
             step = float(step)
             
-            # Handle current value - convert to float if present, otherwise use min_val
+            # Handle current value - convert to float if present, otherwise use min_val (already float)
             if current_value is not None:
                 current_value = float(current_value)
             else:
-                current_value = min_val
+                current_value = min_val  # Already converted to float above
 
             # Define on_change callback to trigger immediate rerun for aggregate updates
             def _on_currency_change():
