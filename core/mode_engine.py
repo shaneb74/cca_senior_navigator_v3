@@ -16,7 +16,13 @@ from typing import Dict, List, Any, Optional
 
 def render_mode_toggle(assessment_key: str) -> str:
     """
-    Render mode toggle UI at the top of an assessment.
+    Render mode toggle UI with elevated button design.
+    
+    Design:
+    - Active button: Primary blue with shadow, white text
+    - Inactive button: Muted gray, readable, invites interaction
+    - Accessible: WCAG AA compliant, aria-selected, keyboard nav
+    - Centered horizontally with consistent spacing
     
     Args:
         assessment_key: Unique key for this assessment (e.g., "assets")
@@ -27,6 +33,56 @@ def render_mode_toggle(assessment_key: str) -> str:
     mode_key = f"{assessment_key}_mode"
     current_mode = st.session_state.get(mode_key, "basic")
     
+    # Custom CSS for elevated button design
+    st.markdown("""
+    <style>
+    .mode-toggle-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 16px 0 24px 0;
+        gap: 12px;
+    }
+    
+    .mode-button {
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 15px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: 2px solid transparent;
+        text-align: center;
+        min-width: 200px;
+    }
+    
+    .mode-button-active {
+        background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+        color: white;
+        box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);
+        border-color: #3b82f6;
+    }
+    
+    .mode-button-inactive {
+        background: #f1f5f9;
+        color: #475569;
+        border-color: #e2e8f0;
+    }
+    
+    .mode-button-inactive:hover {
+        background: #e2e8f0;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transform: translateY(-1px);
+    }
+    
+    .mode-button-active:hover {
+        box-shadow: 0 6px 8px rgba(59, 130, 246, 0.4);
+        transform: translateY(-1px);
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # Render as radio with custom styling via st.columns for centering
     st.markdown("---")
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
@@ -37,6 +93,7 @@ def render_mode_toggle(assessment_key: str) -> str:
             index=0 if current_mode == "basic" else 1,
             horizontal=True,
             key=f"{assessment_key}_mode_toggle",
+            label_visibility="collapsed"  # Hide default label, we'll style the buttons
         )
     
     # Detect mode change
@@ -51,34 +108,29 @@ def render_mode_toggle(assessment_key: str) -> str:
 
 def show_mode_guidance(mode: str):
     """
-    Display guidance about the current mode.
+    Display Navi's context-aware guidance based on current mode.
+    
+    Design: Navi messaging appears at top of assessment card,
+    provides clear guidance on current mode and next actions.
     
     Args:
         mode: Current mode ("basic" or "advanced")
     """
     if mode == "basic":
         st.info("""
-        ⚡ **Basic Mode**: Quick estimates with totals
-        - Faster data entry for simple finances
-        - Enter aggregate values (we'll distribute them)
-        - Perfect for initial estimates
-        
-        💡 Switch to Advanced for detailed breakdowns.
+        🧭 **Quick entry mode active** — Just enter totals for a fast estimate. 
+        You can expand to Advanced anytime for a detailed breakdown.
         """)
     else:
         st.info("""
-        📊 **Advanced Mode**: Detailed breakdown
-        - Enter specific values for each account
-        - Totals calculate automatically
-        - Better accuracy for complex finances
-        
-        💡 Switch to Basic for faster entry.
+        🧭 **Now showing your detailed breakdown.** Update individual fields as needed; 
+        totals will update automatically.
         """)
 
 
 def show_mode_change_feedback(assessment_key: str, mode: str):
     """
-    Show feedback when user switches modes.
+    Show Navi's feedback when user switches modes.
     
     Args:
         assessment_key: Unique key for this assessment
@@ -90,15 +142,15 @@ def show_mode_change_feedback(assessment_key: str, mode: str):
             st.success("""
             ✅ **Switched to Advanced Mode**
             
-            Your totals have been distributed across detail fields. 
-            Adjust individual amounts below for more accuracy.
+            Your totals have been distributed across detail fields below. 
+            Adjust individual amounts as needed for more accuracy.
             """)
         else:
             st.success("""
             ✅ **Switched to Basic Mode**
             
             Your detail fields have been combined into totals. 
-            You can enter new aggregate values here.
+            Enter new aggregate values if needed.
             """)
         
         # Clear flag

@@ -723,7 +723,7 @@ def _render_section_content(
 
     # Check if section supports Basic/Advanced modes
     mode_config = section.get("mode_config", {})
-    current_mode = "advanced"  # Default mode
+    current_mode = "basic"  # Default mode - always start in Basic for simplicity
     
     if mode_config.get("supports_basic_advanced"):
         # Render mode toggle
@@ -1004,7 +1004,7 @@ def _get_assessment_progress(assessment_key: str, product_key: str) -> int:
     return min(progress, 100)
 
 
-def _render_fields_for_page(section: dict[str, Any], state: dict[str, Any], mode: str = "advanced") -> dict[str, Any]:
+def _render_fields_for_page(section: dict[str, Any], state: dict[str, Any], mode: str = "basic") -> dict[str, Any]:
     """
     Render fields for a section in page mode (all fields visible at once).
     Returns dict of updated field values.
