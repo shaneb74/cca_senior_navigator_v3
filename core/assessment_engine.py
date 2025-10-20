@@ -22,11 +22,9 @@ from core.session_store import safe_rerun
 from core.ui import render_navi_panel_v2
 from core.mode_engine import (
     render_mode_toggle,
-    show_mode_guidance,
-    show_mode_change_feedback,
     get_visible_fields,
     render_aggregate_field,
-    calculate_aggregate,
+    render_unallocated_field,
 )
 
 
@@ -107,12 +105,6 @@ def run_assessment(
         if mode_config.get("supports_basic_advanced"):
             # Render mode toggle
             current_mode = render_mode_toggle(f"{assessment_key}_{current_section['id']}")
-            
-            # Show mode guidance
-            show_mode_guidance(current_mode)
-            
-            # Show feedback if mode just changed
-            show_mode_change_feedback(f"{assessment_key}_{current_section['id']}", current_mode)
 
     # ========================================================================
     # FIELDS RENDERING

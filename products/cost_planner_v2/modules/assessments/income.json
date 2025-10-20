@@ -284,7 +284,7 @@
       "title": "Additional Income (Advanced)",
       "icon": "\ud83d\udcb5",
       "help_text": "Detailed breakdown of additional income sources",
-      "layout": "two_column",
+      "layout": "single_column",
       "mode_config": {
         "supports_basic_advanced": true,
         "basic_mode_aggregate": "additional_income_total",
@@ -339,7 +339,6 @@
             "label": "Unallocated Additional Income",
             "help": "Difference between your original estimate and allocated amounts. Not included in calculations."
           },
-          "column": 1
         },
         {
           "key": "annuity_monthly",
@@ -352,7 +351,6 @@
           "default": 0,
           "help": "Monthly annuity payments",
           "visible_in_modes": ["advanced"],
-          "column": 1
         },
         {
           "key": "retirement_distributions_monthly",
@@ -365,7 +363,6 @@
           "default": 0,
           "help": "Monthly withdrawals from retirement accounts",
           "visible_in_modes": ["advanced"],
-          "column": 1
         },
         {
           "key": "dividends_interest_monthly",
@@ -378,7 +375,6 @@
           "default": 0,
           "help": "Monthly income from investments",
           "visible_in_modes": ["advanced"],
-          "column": 2
         },
         {
           "key": "rental_income_monthly",
@@ -391,7 +387,6 @@
           "default": 0,
           "help": "Net monthly income from rental properties",
           "visible_in_modes": ["advanced"],
-          "column": 2
         },
         {
           "key": "alimony_support_monthly",
@@ -404,7 +399,6 @@
           "default": 0,
           "help": "Monthly alimony or support payments received",
           "visible_in_modes": ["advanced"],
-          "column": 1
         },
         {
           "key": "ltc_insurance_monthly",
@@ -417,7 +411,6 @@
           "default": 0,
           "help": "Monthly payout from long-term care insurance",
           "visible_in_modes": ["advanced"],
-          "column": 2
         },
         {
           "key": "family_support_monthly",
@@ -430,7 +423,6 @@
           "default": 0,
           "help": "Contributions from family for care costs",
           "visible_in_modes": ["advanced"],
-          "column": 1
         }
       ],
       "info_boxes": [
