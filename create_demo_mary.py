@@ -169,7 +169,12 @@ data = {
             "five_year": 720000.0,
             "multiplier": 1.26,
             "region_name": "Newport Beach CA Coastal Orange County",
-            "care_tier": "memory_care_high_acuity"
+            "care_tier": "memory_care_high_acuity",
+            "breakdown": {
+                "base_cost": 9500,
+                "regional_adjustment": 2470.0,
+                "high_acuity_addon": 30.0
+            }
         },
         "care_tier": "memory_care_high_acuity",
         "zip_code": "92660"
