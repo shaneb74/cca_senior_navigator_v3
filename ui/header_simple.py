@@ -62,12 +62,12 @@ def render_header_simple(active_route: str | None = None) -> None:
 
         href_with_uid = add_uid_to_href(f"?page={item['route']}")
         nav_links_html.append(
-            f'<a href="{href_with_uid}" class="nav-link{active_class}"{aria_current}>{item["label"]}</a>'
+            f'<a href="{href_with_uid}" class="nav-link{active_class}"{aria_current} target="_self">{item["label"]}</a>'
         )
 
     # Login link (always shown for now)
     login_href = add_uid_to_href("?page=login")
-    nav_links_html.append(f'<a href="{login_href}" class="nav-link nav-link--login">Log In</a>')
+    nav_links_html.append(f'<a href="{login_href}" class="nav-link nav-link--login" target="_self">Log In</a>')
 
     nav_html = "\n          ".join(nav_links_html)
 
@@ -205,7 +205,7 @@ def render_header_simple(active_route: str | None = None) -> None:
         f"""
         <header class="sn-header">
           <div class="sn-header__inner">
-            <a href="{add_uid_to_href("?page=welcome")}" class="sn-header__brand" style="display: flex !important; align-items: center; gap: 12px;">
+            <a href="{add_uid_to_href("?page=welcome")}" class="sn-header__brand" target="_self" style="display: flex !important; align-items: center; gap: 12px;">
               <img src="{logo_url}" alt="CCA Logo" class="sn-header__logo" style="height: 48px !important; width: auto !important; display: block !important; visibility: visible !important; opacity: 1 !important;" />
               <span class="sn-header__brand-text" style="font-size: 1.25rem; font-weight: 700; color: #1e3a8a; display: inline-block;">Senior Navigator</span>
             </a>
@@ -218,6 +218,7 @@ def render_header_simple(active_route: str | None = None) -> None:
     )
 
     # Render CSS first, then HTML separately (like hub pages do)
+    # Add target="_self" to all links to force same-tab navigation
     st.markdown(css, unsafe_allow_html=True)
     st.markdown(html, unsafe_allow_html=True)
 

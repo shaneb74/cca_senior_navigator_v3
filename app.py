@@ -178,6 +178,20 @@ from core.mcip_events import register_default_listeners
 MCIP.initialize()
 register_default_listeners()
 
+# CRITICAL FIX: If we just loaded data, we need to save it now after MCIP.initialize()
+# has potentially filled in missing keys. This ensures state is persisted before navigation.
+if st.session_state.get("skip_save_this_render"):
+    # Do an immediate save to ensure loaded+merged state is persisted
+    session_state_to_save = extract_session_state(st.session_state)
+    if session_state_to_save:
+        save_session(session_id, session_state_to_save)
+    
+    user_state_to_save = extract_user_state(st.session_state)
+    if user_state_to_save:
+        save_user(uid, user_state_to_save)
+    
+    log_event("session.immediate_save_after_load", {"session_id": session_id, "uid": uid})
+
 ctx = get_user_ctx()
 PAGES = load_nav(ctx)
 route = current_route("welcome", PAGES)
