@@ -314,13 +314,13 @@ def render_aggregate_field(
         distributed = distribute_aggregate(field, value, state)
         updates.update(distributed)
         
-        # Show distribution preview
+        # Show distribution preview (use container to respect column context)
         if value > 0:
-            with st.expander("📋 Distribution Preview", expanded=False):
-                st.write("This total will be split as:")
+            with container.expander("📋 Distribution Preview", expanded=False):
+                container.write("This total will be split as:")
                 for key, val in distributed.items():
                     label = _get_field_label_from_section(key, field.get("aggregate_from", []))
-                    st.write(f"- {label}: ${val:,.2f}")
+                    container.write(f"- {label}: ${val:,.2f}")
     
     elif display_type == "calculated_label" and mode == "advanced":
         # Advanced mode: show calculated total (read-only)
