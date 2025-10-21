@@ -217,6 +217,36 @@ def normalize_asset_data(assets_data: dict[str, Any]) -> dict[str, Any]:
         normalized.get("primary_residence_liquidity_window") or "under_6_months"
     )
 
+    # NEW: Aggregate detailed fields into simplified fields for FinancialProfile
+    # This allows FinancialProfile to access aggregated values directly
+    normalized["checking_savings"] = (
+        normalized.get("checking_balance", 0.0)
+        + normalized.get("savings_cds_balance", 0.0)
+        + normalized.get("cash_on_hand", 0.0)
+    )
+    
+    normalized["investment_accounts"] = (
+        normalized.get("brokerage_stocks_bonds", 0.0)
+        + normalized.get("brokerage_mf_etf", 0.0)
+        + normalized.get("brokerage_other", 0.0)
+    )
+    
+    # Primary residence uses home_equity_estimate from assessment
+    normalized["primary_residence_value"] = normalized.get("home_equity_estimate", 0.0)
+    
+    # Other real estate
+    normalized["other_real_estate"] = normalized.get("real_estate_other", 0.0)
+    
+    # Life insurance cash value (already a single field)
+    # normalized["life_insurance_cash_value"] already exists
+    
+    # Retirement accounts total (for reference, though not currently in FinancialProfile)
+    normalized["retirement_accounts_total"] = (
+        normalized.get("retirement_traditional", 0.0)
+        + normalized.get("retirement_roth", 0.0)
+        + normalized.get("retirement_pension_value", 0.0)
+    )
+
     normalized["total_asset_value"] = calculate_total_asset_value(normalized)
     normalized["total_asset_debt"] = calculate_total_asset_debt(normalized)
     normalized["net_asset_value"] = max(

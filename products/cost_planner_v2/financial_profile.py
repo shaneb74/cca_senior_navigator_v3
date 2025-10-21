@@ -53,6 +53,7 @@ class FinancialProfile:
     # ==== ASSETS & RESOURCES ====
     checking_savings: float = 0.0
     investment_accounts: float = 0.0
+    retirement_accounts_total: float = 0.0  # NEW: Sum of traditional, Roth, pension value
     primary_residence_value: float = 0.0
     primary_residence_has_debt: bool = False
     primary_residence_mortgage_balance: float = 0.0
@@ -190,6 +191,7 @@ def build_financial_profile(product_key: str = "cost_planner_v2") -> FinancialPr
         profile.asset_legal_restrictions = assets_data.get("asset_legal_restrictions", "")
         profile.checking_savings = float(assets_data.get("checking_savings", 0.0))
         profile.investment_accounts = float(assets_data.get("investment_accounts", 0.0))
+        profile.retirement_accounts_total = float(assets_data.get("retirement_accounts_total", 0.0))  # NEW
         profile.liquid_assets_has_loan = bool(assets_data.get("liquid_assets_has_loan", False))
         profile.liquid_assets_loan_balance = float(
             assets_data.get("liquid_assets_loan_balance", 0.0)
