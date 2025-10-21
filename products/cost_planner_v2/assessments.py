@@ -555,6 +555,9 @@ def _render_single_page_assessment(
     # Log final state
     if state:
         print(f"[ASSESSMENT] {assessment_key} final state has {len(state)} fields")
+        # Log first few fields to see actual data
+        sample_keys = list(state.keys())[:5]
+        print(f"[ASSESSMENT] Sample fields: {[f'{k}={state[k]}' for k in sample_keys]}")
     else:
         print(f"[ASSESSMENT] {assessment_key} final state is EMPTY")
 
