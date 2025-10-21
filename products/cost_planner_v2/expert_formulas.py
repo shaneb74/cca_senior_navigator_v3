@@ -556,9 +556,25 @@ def calculate_asset_breakdown(
         )
     
     # ==== 2. RETIREMENT ACCOUNTS ====
-    retirement_balance = 0  # Profile doesn't have direct retirement field yet
-    # Future: Would pull from separate retirement assessment
-    # For now, we can note this in documentation
+    retirement_balance = profile.retirement_accounts_total
+    if retirement_balance > 0:
+        # Retirement accounts face taxes + potential early withdrawal penalty (if under 59.5)
+        # Assume age 62+ (no penalty), but still face ordinary income tax (~32% avg effective)
+        # Accessible value: 68% (32% tax withholding)
+        accessible = retirement_balance * 0.68
+        
+        categories["retirement_accounts"] = AssetCategory(
+            name="retirement_accounts",
+            display_name="🏦 Retirement Accounts",
+            current_balance=retirement_balance,
+            accessible_value=accessible,
+            is_liquid=False,
+            liquidation_timeframe="1-3_months",
+            recommended=True,
+            recommendation_reason="Taxable as income, but accessible for care costs",
+            tax_implications="ordinary_income",
+            notes="Traditional IRA, 401(k), Roth IRA (after age 59.5)",
+        )
     
     # ==== 3. LIFE INSURANCE CASH VALUE ====
     if profile.life_insurance_cash_value > 0:
@@ -679,14 +695,15 @@ def calculate_recommended_funding_order(
         - funding_notes: Dict of category name -> explanation
     """
     
-    # Default conservative order
+    # Default conservative order (liquidity first, tax-efficient, then less liquid)
     default_order = [
-        "liquid_assets",
-        "life_insurance",
-        "other_real_estate",
-        "annuities",
-        "other_resources",
-        "home_equity",  # Last for in-home care, earlier for facility
+        "liquid_assets",          # 1. Most liquid, no tax
+        "life_insurance",         # 2. Tax-free loans, relatively quick
+        "retirement_accounts",    # 3. Taxable, but accessible
+        "other_real_estate",      # 4. Illiquid, capital gains
+        "annuities",              # 5. Surrender charges, keep for income
+        "other_resources",        # 6. Varies by type
+        "home_equity",            # 7. Last for in-home care (needed), earlier for facility
     ]
     
     # Filter to only categories that exist
@@ -698,10 +715,11 @@ def calculate_recommended_funding_order(
         funding_order = [
             "liquid_assets",
             "life_insurance",
+            "retirement_accounts",  # Countable for Medicaid
             "annuities",
             "other_real_estate",
             "other_resources",
-            # Note: Primary residence often exempt
+            # Note: Primary residence often exempt (up to certain value)
         ]
     
     # Generate notes for each category
