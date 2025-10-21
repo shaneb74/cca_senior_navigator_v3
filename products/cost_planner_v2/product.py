@@ -458,9 +458,14 @@ def _handle_restart_if_needed() -> None:
     # This ensures the cleared keys are saved to the user file
     # so they don't get reloaded on next page navigation
     try:
-        from core.session_store import save_session
-        save_session()
-        print("[COST_PLANNER] Cleared state persisted to disk")
+        from core.session_store import save_user, extract_user_state, get_or_create_user_id
+        
+        uid = get_or_create_user_id(st.session_state)
+        user_data = extract_user_state(st.session_state)
+        if save_user(uid, user_data):
+            print("[COST_PLANNER] Cleared state persisted to disk")
+        else:
+            print("[COST_PLANNER] Warning: Failed to persist cleared state")
     except Exception as e:
         print(f"[COST_PLANNER] Warning: Could not persist cleared state: {e}")
 
