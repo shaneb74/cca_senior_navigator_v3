@@ -290,9 +290,9 @@ def _render_financial_summary_banner(analysis, profile):
     surplus_label = "Monthly Surplus" if analysis.monthly_gap < 0 else "Monthly Shortfall"
     surplus_color = "var(--success-fg)" if analysis.monthly_gap < 0 else "var(--error-fg)"
     
-    # Coverage percentage color
+    # Coverage percentage color - using solid colors for visibility
     coverage_pct = min(analysis.coverage_percentage, 100)
-    progress_color = "var(--success-fg)" if coverage_pct >= 80 else "var(--warning-fg)" if coverage_pct >= 50 else "var(--error-fg)"
+    progress_color = "#16a34a" if coverage_pct >= 80 else "#f59e0b" if coverage_pct >= 50 else "#dc2626"
     
     # Build asset contribution line if applicable
     asset_line = f'<div style="font-size: 13px; color: var(--success-fg); margin-top: 8px; font-weight: 600;">+ Assets: ${total_selected:,.0f}</div>' if total_selected > 0 else ''
@@ -401,9 +401,9 @@ def _render_income_cost_snapshot(analysis):
     
     st.markdown(html_content, unsafe_allow_html=True)
     
-    # Enhanced progress bar with bold label
+    # Enhanced progress bar with bold label - using solid colors for visibility
     coverage_pct = min(analysis.coverage_percentage, 100)  # Cap at 100% for display
-    progress_color = "var(--success-fg)" if coverage_pct >= 80 else "var(--warning-fg)" if coverage_pct >= 50 else "var(--error-fg)"
+    progress_color = "#16a34a" if coverage_pct >= 80 else "#f59e0b" if coverage_pct >= 50 else "#dc2626"
     
     progress_html = f"""
 <div style="margin-top: 8px;">
