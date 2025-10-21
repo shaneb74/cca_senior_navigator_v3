@@ -189,7 +189,10 @@ class BaseTile:
         self.secondary_label = kwargs.get("secondary_label")
         self.secondary_route = kwargs.get("secondary_route")
         self.secondary_go = kwargs.get("secondary_go")
-        # None means “no linear status”; otherwise numeric progress
+        self.tertiary_label = kwargs.get("tertiary_label")
+        self.tertiary_route = kwargs.get("tertiary_route")
+        self.tertiary_go = kwargs.get("tertiary_go")
+        # None means "no linear status"; otherwise numeric progress
         self.progress: Optional[float] = kwargs.get(
             "progress", 0 if kwargs.get("progress") is not None else None
         )
@@ -280,6 +283,18 @@ class BaseTile:
                     f'<a class="dashboard-cta dashboard-cta--ghost" href="{href}" target="_self">'
                     f"{html_escape(self.secondary_label)}</a>"
                 )
+        if self.tertiary_label:
+            if self.locked:
+                buttons.append(
+                    '<span class="dashboard-cta dashboard-cta--ghost is-disabled" aria-disabled="true">'
+                    f"{html_escape(self.tertiary_label)}</span>"
+                )
+            else:
+                href = html_escape(self._tertiary_href())
+                buttons.append(
+                    f'<a class="dashboard-cta dashboard-cta--ghost" href="{href}" target="_self">'
+                    f"{html_escape(self.tertiary_label)}</a>"
+                )
         return f'<div class="tile-actions">{"".join(buttons)}</div>' if buttons else ""
 
     def _primary_href(self) -> str:
@@ -300,6 +315,18 @@ class BaseTile:
             href = self.secondary_route
         elif self.secondary_go:
             href = f"?page={self.secondary_go}"
+        else:
+            return "#"
+
+        # CRITICAL: Preserve UID in href to maintain session across navigation
+        return self._add_uid_to_href(href)
+
+    def _tertiary_href(self) -> str:
+        href = ""
+        if self.tertiary_route:
+            href = self.tertiary_route
+        elif self.tertiary_go:
+            href = f"?page={self.tertiary_go}"
         else:
             return "#"
 
