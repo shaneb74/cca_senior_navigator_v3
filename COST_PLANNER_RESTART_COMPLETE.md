@@ -19,7 +19,21 @@ Fixed Cost Planner restart functionality and implemented demo user assessment pr
 
 ---
 
-### 2. Assessment Forms Not Pre-Populating for Demo Users (FIXED ✅)
+### 2. Continue to Expert Review Button Not Working (FIXED ✅)
+**Problem:** After completing assessments and clicking "Review Assessment" tile, the "Continue to Expert Review" button didn't respond.
+
+**Root Cause:** The "Review Assessment" tile navigates with `?step=assessments` query parameter. When Expert Review button set session step to "expert_review", the query param overrode it back to "assessments".
+
+**Solution:** Clear the `step` query parameter when navigating to expert_review (all 3 button locations).
+
+**Files Changed:**
+- `products/cost_planner_v2/assessments.py`: Added query param clearing to all Expert Review buttons
+
+**Commit:** `49cf6fd` - "fix: Clear step query param when navigating to expert_review"
+
+---
+
+### 3. Assessment Forms Not Pre-Populating for Demo Users (FIXED ✅)
 **Problem:** When loading demo users (e.g., Mary), the Income and Assets assessment forms showed blank fields instead of pre-filled data from the demo file.
 
 **Root Cause:** Pre-population logic was added to `render_assessment_page()`, but Income and Assets assessments use `_render_single_page_assessment()` instead. The data existed in `cost_v2_modules` but wasn't being loaded into the assessment state.
@@ -38,12 +52,18 @@ Fixed Cost Planner restart functionality and implemented demo user assessment pr
 ## How It Works
 
 ### Query Parameter Navigation Fix
+**Pattern used in 4 locations:**
+1. Intro → Auth (Continue to Full Assessment)
+2. Assessments Hub → Expert Review (bottom CTA)
+3. Single-page Assessment → Expert Review (page navigation)
+4. Assessment Page → Expert Review (navigation button)
+
 ```python
-# Before navigating to auth, clear any step query param
+# Before navigating, clear any step query param that would override
 if "step" in st.query_params:
     del st.query_params["step"]
 
-st.session_state.cost_v2_step = "auth"
+st.session_state.cost_v2_step = "target_step"
 st.rerun()
 ```
 
@@ -74,7 +94,15 @@ if assessment_key in modules:
 4. Click "Continue to Full Assessment"
 5. ✅ Should navigate to auth step (query param cleared)
 
-### Test Scenario 3: Demo User Pre-Population
+### Test Scenario 3: Expert Review Button After Review Assessment
+1. Complete Cost Planner (Income + Assets)
+2. Click "Continue to Expert Review" from assessments hub
+3. ✅ Should navigate to expert review step
+4. From completed tile, click "Review Assessment"
+5. Click "Continue to Expert Review" again
+6. ✅ Should navigate to expert review (not stay on assessments)
+
+### Test Scenario 4: Demo User Pre-Population
 1. Load demo user with existing assessment data
 2. Click Restart → Calculate → Continue → Sign In
 3. Navigate to Income or Assets assessment
@@ -110,9 +138,9 @@ When assessment loads, you'll see:
 
 ## Files Modified
 
-1. `products/cost_planner_v2/intro.py` - Query param clearing
-2. `products/cost_planner_v2/auth.py` - Removed debug logs
-3. `products/cost_planner_v2/assessments.py` - Pre-population logic
+1. `products/cost_planner_v2/intro.py` - Query param clearing (Continue button)
+2. `products/cost_planner_v2/assessments.py` - Query param clearing (3 Expert Review buttons) + Pre-population logic
+3. `products/cost_planner_v2/auth.py` - Removed debug logs
 
 ## Related Documents
 
