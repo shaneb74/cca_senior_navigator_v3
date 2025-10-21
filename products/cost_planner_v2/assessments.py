@@ -365,8 +365,18 @@ def render_assessment_page(assessment_key: str, product_key: str = "cost_planner
         st.error(f"⚠️ Assessment '{assessment_key}' not found.")
         return
 
-    # Initialize state
+    # Initialize state - load from cost_v2_modules if available (e.g., demo users)
     state_key = f"{product_key}_{assessment_key}"
+    
+    # Check if we have pre-existing data from cost_v2_modules (demo users or previously saved)
+    if state_key not in st.session_state:
+        modules = st.session_state.get("cost_v2_modules", {})
+        if assessment_key in modules:
+            module_data = modules[assessment_key].get("data", {})
+            if module_data:
+                print(f"[ASSESSMENT] Pre-populating {assessment_key} from cost_v2_modules: {len(module_data)} fields")
+                st.session_state[state_key] = module_data.copy()
+    
     st.session_state.setdefault(state_key, {})
     state = st.session_state[state_key]
 
