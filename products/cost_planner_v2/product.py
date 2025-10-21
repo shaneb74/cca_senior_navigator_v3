@@ -35,6 +35,8 @@ def render():
     but accessed separately via navigation, not forced in flow.
     """
 
+    print(f"[COST_PLANNER] render() called, current step in session: {st.session_state.get('cost_v2_step', 'NOT SET')}")
+
     # Check for restart intent (when complete and re-entering at intro)
     _handle_restart_if_needed()
 
@@ -82,6 +84,8 @@ def render():
                 st.session_state.cost_v2_step = step_from_query
 
     current_step = st.session_state.cost_v2_step
+    
+    print(f"[COST_PLANNER] Routing to step: {current_step}")
 
     # Render Navi panel with dynamic guidance based on step
     # Skip for module_active, expert_review, exit, and when inside an assessment
@@ -92,19 +96,26 @@ def render():
 
     # Route to appropriate step
     if current_step == "intro":
+        print("[COST_PLANNER] Rendering intro step")
         _render_intro_step()
     elif current_step == "auth":
+        print("[COST_PLANNER] Rendering auth step")
         _render_auth_step()
     elif current_step == "triage":
+        print("[COST_PLANNER] Rendering triage step")
         _render_triage_step()
     elif current_step in ["modules", "assessments"]:
+        print(f"[COST_PLANNER] Rendering assessments step (step={current_step})")
         # Support both old "modules" and new "assessments" step names for backward compatibility
         _render_assessments_step()
     elif current_step == "expert_review":
+        print("[COST_PLANNER] Rendering expert_review step")
         _render_expert_review_step()
     elif current_step == "exit":
+        print("[COST_PLANNER] Rendering exit step")
         _render_exit_step()
     else:
+        print(f"[COST_PLANNER] Unknown step '{current_step}', falling back to intro")
         # Fallback to intro
         st.session_state.cost_v2_step = "intro"
         st.rerun()
