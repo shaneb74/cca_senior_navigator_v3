@@ -28,3 +28,6 @@ archive/
 dev_tools/
 _archive_debug_docs/
 .DS_Store
+
+# Documentation - local only, not committed to origin
+Documentation/
