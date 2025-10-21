@@ -71,22 +71,17 @@ def render():
         unsafe_allow_html=True,
     )
 
-    # 1. Coverage Impact Visualization (NEW POSITION - right after Navi)
-    if analysis.asset_categories:
-        _render_coverage_impact_visualization(analysis, profile)
-        st.markdown('<div style="margin: 32px 0;"></div>', unsafe_allow_html=True)
-
-    # 2. Income vs Cost Snapshot (simplified card with progress bar)
-    _render_income_cost_snapshot(analysis)
+    # 1. Financial Summary Banner (consolidated metrics)
+    _render_financial_summary_banner(analysis)
 
     st.markdown('<div style="margin: 32px 0;"></div>', unsafe_allow_html=True)
 
-    # 3. Available Resources (expandable cards per category)
+    # 2. Available Resources (expandable cards per category)
     if analysis.asset_categories:
         _render_available_resources_cards(analysis, profile)
         st.markdown('<div style="margin: 32px 0;"></div>', unsafe_allow_html=True)
 
-    # 5. Recommended Actions & Resources
+    # 3. Recommended Actions & Resources
     _render_recommended_actions(analysis)
 
     st.markdown('<div style="margin: 48px 0;"></div>', unsafe_allow_html=True)
@@ -214,6 +209,148 @@ def _render_navi_guidance(analysis, profile):
         primary_action={"label": "", "route": ""},
         variant="module",
     )
+
+
+def _render_financial_summary_banner(analysis):
+    """
+    Render unified Financial Summary banner with all key metrics.
+    
+    Displays:
+    - Coverage Duration (prominent)
+    - Estimated Care Cost
+    - Monthly Income
+    - Monthly Shortfall
+    - Coverage from Income (with visual progress bar)
+    """
+    
+    from products.cost_planner_v2.expert_formulas import calculate_extended_runway
+    
+    # Calculate coverage duration (with selected assets if any)
+    selected_assets = st.session_state.get("expert_review_selected_assets", {})
+    extended_runway = calculate_extended_runway(
+        analysis.monthly_gap if analysis.monthly_gap > 0 else 0,
+        selected_assets,
+        analysis.asset_categories,
+    )
+    
+    # Determine which coverage duration to show
+    if extended_runway and extended_runway > 0:
+        display_months = extended_runway
+        duration_label = "New Coverage Duration"
+    elif analysis.runway_months and analysis.runway_months > 0:
+        display_months = analysis.runway_months
+        duration_label = "Coverage Duration"
+    elif analysis.monthly_gap <= 0:
+        display_months = None
+        duration_label = "Coverage Duration"
+    else:
+        display_months = 0
+        duration_label = "Coverage Duration"
+    
+    # Format coverage duration
+    if display_months is None:
+        coverage_duration = "Indefinite"
+    elif display_months > 0:
+        years = int(display_months / 12)
+        months = int(display_months % 12)
+        if years > 0:
+            coverage_duration = f"{years} year{'s' if years != 1 else ''}"
+            if months > 0:
+                coverage_duration += f", {months} month{'s' if months != 1 else ''}"
+        else:
+            coverage_duration = f"{int(display_months)} month{'s' if display_months != 1 else ''}"
+    else:
+        coverage_duration = "Immediate action needed"
+    
+    # Calculate total selected assets value
+    total_selected = sum(
+        analysis.asset_categories.get(name, type('obj', (), {'accessible_value': 0})).accessible_value
+        for name, selected in selected_assets.items()
+        if selected and name in analysis.asset_categories
+    )
+    
+    # Determine surplus/shortfall label and color
+    surplus_label = "Monthly Surplus" if analysis.monthly_gap < 0 else "Monthly Shortfall"
+    surplus_color = "var(--success-fg)" if analysis.monthly_gap < 0 else "var(--error-fg)"
+    
+    # Coverage percentage color
+    coverage_pct = min(analysis.coverage_percentage, 100)
+    progress_color = "var(--success-fg)" if coverage_pct >= 80 else "var(--warning-fg)" if coverage_pct >= 50 else "var(--error-fg)"
+    
+    # Build unified banner
+    banner_html = f"""
+<div style="background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); border-radius: 16px; padding: 32px; border: 2px solid var(--border-primary); box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 8px;">
+    <div style="display: flex; align-items: center; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 2px solid var(--border-secondary);">
+        <div style="font-size: 18px; font-weight: 700; color: var(--text-primary); text-transform: uppercase; letter-spacing: 1px;">
+            💰 Financial Summary
+        </div>
+    </div>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 28px;">
+        <div style="background: rgba(255,255,255,0.7); padding: 20px; border-radius: 12px; border: 1px solid var(--border-secondary);">
+            <div style="font-size: 12px; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 10px;">
+                {duration_label}
+            </div>
+            <div style="font-size: 36px; font-weight: 700; color: var(--primary-fg); line-height: 1.1;">
+                {coverage_duration}
+            </div>
+            {f'<div style="font-size: 13px; color: var(--success-fg); margin-top: 8px; font-weight: 600;">+ Assets: ${total_selected:,.0f}</div>' if total_selected > 0 else ''}
+        </div>
+        
+        <div style="background: rgba(255,255,255,0.7); padding: 20px; border-radius: 12px; border: 1px solid var(--border-secondary);">
+            <div style="font-size: 12px; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 10px;">
+                Estimated Care Cost
+            </div>
+            <div style="font-size: 36px; font-weight: 700; color: var(--text-primary); line-height: 1.1;">
+                ${analysis.estimated_monthly_cost:,.0f}
+            </div>
+            <div style="font-size: 13px; color: var(--text-secondary); margin-top: 4px; font-weight: 500;">per month</div>
+        </div>
+    </div>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 28px;">
+        <div style="background: rgba(255,255,255,0.7); padding: 20px; border-radius: 12px; border: 1px solid var(--border-secondary);">
+            <div style="font-size: 12px; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 10px;">
+                Monthly Income
+            </div>
+            <div style="font-size: 32px; font-weight: 700; color: var(--text-primary); line-height: 1.1;">
+                ${analysis.total_monthly_income + analysis.total_monthly_benefits:,.0f}
+            </div>
+            <div style="font-size: 13px; color: var(--text-secondary); margin-top: 4px; font-weight: 500;">per month</div>
+        </div>
+        
+        <div style="background: rgba(255,255,255,0.7); padding: 20px; border-radius: 12px; border: 1px solid var(--border-secondary);">
+            <div style="font-size: 12px; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 10px;">
+                {surplus_label}
+            </div>
+            <div style="font-size: 32px; font-weight: 700; color: {surplus_color}; line-height: 1.1;">
+                ${abs(analysis.monthly_gap):,.0f}
+            </div>
+            <div style="font-size: 13px; color: var(--text-secondary); margin-top: 4px; font-weight: 500;">per month</div>
+        </div>
+    </div>
+    
+    <div style="padding: 20px; background: rgba(255,255,255,0.7); border-radius: 12px; border: 1px solid var(--border-secondary);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <span style="font-size: 14px; font-weight: 700; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.5px;">
+                Coverage from Income
+            </span>
+            <span style="font-size: 20px; font-weight: 700; color: {progress_color};">
+                {analysis.coverage_percentage:.0f}%
+            </span>
+        </div>
+        <div style="width: 100%; background: var(--surface-secondary); border-radius: 12px; height: 32px; position: relative; overflow: hidden; box-shadow: inset 0 2px 6px rgba(0,0,0,0.1);">
+            <div style="width: {coverage_pct}%; background: linear-gradient(90deg, {progress_color} 0%, {progress_color}dd 100%); height: 100%; border-radius: 12px; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); display: flex; align-items: center; justify-content: flex-end; padding-right: 12px;">
+                <span style="font-size: 13px; font-weight: 700; color: white; text-shadow: 0 1px 3px rgba(0,0,0,0.3);">
+                    {coverage_pct:.0f}%
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+"""
+    
+    st.markdown(banner_html, unsafe_allow_html=True)
 
 
 def _render_income_cost_snapshot(analysis):
