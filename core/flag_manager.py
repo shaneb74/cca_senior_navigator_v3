@@ -20,7 +20,7 @@ API:
 
 import json
 import os
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional, Dict, List
 
@@ -119,7 +119,7 @@ def _save_user_session(session: dict) -> None:
 
 def _get_timestamp() -> str:
     """Get current UTC timestamp in ISO 8601 format"""
-    return datetime.now(UTC).isoformat().replace("+00:00", "Z")
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 def _normalize_legacy_flags(session: dict) -> dict[str, any]:
