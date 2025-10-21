@@ -368,17 +368,38 @@ def render_assessment_page(assessment_key: str, product_key: str = "cost_planner
     # Initialize state - load from cost_v2_modules if available (e.g., demo users)
     state_key = f"{product_key}_{assessment_key}"
     
-    # Check if we have pre-existing data from cost_v2_modules (demo users or previously saved)
-    if state_key not in st.session_state:
-        modules = st.session_state.get("cost_v2_modules", {})
-        if assessment_key in modules:
-            module_data = modules[assessment_key].get("data", {})
-            if module_data:
-                print(f"[ASSESSMENT] Pre-populating {assessment_key} from cost_v2_modules: {len(module_data)} fields")
-                st.session_state[state_key] = module_data.copy()
+    print(f"[ASSESSMENT] Initializing {assessment_key}")
+    print(f"[ASSESSMENT]   state_key: {state_key}")
+    print(f"[ASSESSMENT]   state_key in session_state: {state_key in st.session_state}")
+    
+    # Always check if we have pre-existing data from cost_v2_modules first
+    # This handles both initial load (demo users) and restart scenarios
+    modules = st.session_state.get("cost_v2_modules", {})
+    print(f"[ASSESSMENT]   cost_v2_modules exists: {'cost_v2_modules' in st.session_state}")
+    print(f"[ASSESSMENT]   cost_v2_modules keys: {list(modules.keys())}")
+    
+    if assessment_key in modules:
+        module_data = modules[assessment_key].get("data", {})
+        print(f"[ASSESSMENT]   Found {assessment_key} in modules with {len(module_data)} fields")
+        if module_data and state_key not in st.session_state:
+            # Only pre-populate if assessment state doesn't already exist
+            print(f"[ASSESSMENT]   ✅ Pre-populating {assessment_key} from cost_v2_modules")
+            st.session_state[state_key] = module_data.copy()
+        elif module_data and state_key in st.session_state:
+            print(f"[ASSESSMENT]   ⚠️  State key already exists, not overwriting")
+        else:
+            print(f"[ASSESSMENT]   ⚠️  Module data is empty")
+    else:
+        print(f"[ASSESSMENT]   ❌ {assessment_key} NOT found in modules")
     
     st.session_state.setdefault(state_key, {})
     state = st.session_state[state_key]
+    
+    # Log what we have in state for debugging
+    if state:
+        print(f"[ASSESSMENT] {assessment_key} final state has {len(state)} fields")
+    else:
+        print(f"[ASSESSMENT] {assessment_key} final state is EMPTY")
 
     # Get assessment metadata
     title = assessment_config.get("title", "Assessment")
