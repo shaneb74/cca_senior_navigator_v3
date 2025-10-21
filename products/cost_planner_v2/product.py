@@ -35,7 +35,6 @@ def render():
     but accessed separately via navigation, not forced in flow.
     """
 
-    print(f"[COST_PLANNER] render() called, current step in session: {st.session_state.get('cost_v2_step', 'NOT SET')}")
 
     # Check for restart intent (when complete and re-entering at intro)
     _handle_restart_if_needed()
@@ -54,53 +53,35 @@ def render():
             journey["unlocked_products"].append("cost_v2")
         # Save the updated journey state
         MCIP._save_contracts_for_persistence()
-        print("[COST_PLANNER] Auto-unlocked cost_planner and cost_v2")
-        print(f"[COST_PLANNER] Updated unlocked_products: {journey['unlocked_products']}")
 
     product_shell_start()
 
     # Initialize step state - check if user has progressed past intro
-    print(f"[COST_PLANNER] Step initialization: cost_v2_step in session_state = {'cost_v2_step' in st.session_state}")
-    if "cost_v2_step" in st.session_state:
-        print(f"[COST_PLANNER] Current cost_v2_step value: {st.session_state.cost_v2_step}")
-    
     if "cost_v2_step" not in st.session_state:
-        print("[COST_PLANNER] Step not set, initializing...")
         # Check query params for explicit step override (from tile buttons)
         step_from_query = st.query_params.get("step")
         if step_from_query in ["intro", "auth", "triage", "assessments", "modules", "expert_review", "exit"]:
             st.session_state.cost_v2_step = step_from_query
-            print(f"[COST_PLANNER] Set step from query param: {step_from_query}")
         # Check if user has completed intro by checking for assessment state
         elif "cost_v2_income" in st.session_state or "cost_v2_assets" in st.session_state:
             # User has been to Financial Assessment - resume there
             st.session_state.cost_v2_step = "assessments"
-            print("[COST_PLANNER] Found assessment data, setting step to assessments")
         elif "cost_v2_qualifiers" in st.session_state:
             # User has completed qualifiers - resume at assessments
             st.session_state.cost_v2_step = "assessments"
-            print("[COST_PLANNER] Found qualifiers, setting step to assessments")
         else:
             # First time - start at intro
             st.session_state.cost_v2_step = "intro"
-            print("[COST_PLANNER] No prior state, setting step to intro")
     else:
-        print("[COST_PLANNER] Step already set, checking for query param override...")
         # If step is already in session_state, check if query param wants to override
         step_from_query = st.query_params.get("step")
         if step_from_query in ["intro", "auth", "triage", "assessments", "modules", "expert_review", "exit"]:
             # Allow query param to override current step (for tile buttons)
             if st.session_state.cost_v2_step != step_from_query:
-                print(f"[COST_PLANNER] Query param override: {st.session_state.cost_v2_step} -> {step_from_query}")
                 st.session_state.cost_v2_step = step_from_query
-            else:
-                print(f"[COST_PLANNER] Query param matches current step: {step_from_query}")
-        else:
-            print(f"[COST_PLANNER] No query param override, keeping step: {st.session_state.cost_v2_step}")
 
     current_step = st.session_state.cost_v2_step
     
-    print(f"[COST_PLANNER] Routing to step: {current_step}")
 
     # Render Navi panel with dynamic guidance based on step
     # Skip for module_active, expert_review, exit, and when inside an assessment
@@ -111,26 +92,19 @@ def render():
 
     # Route to appropriate step
     if current_step == "intro":
-        print("[COST_PLANNER] Rendering intro step")
         _render_intro_step()
     elif current_step == "auth":
-        print("[COST_PLANNER] Rendering auth step")
         _render_auth_step()
     elif current_step == "triage":
-        print("[COST_PLANNER] Rendering triage step")
         _render_triage_step()
     elif current_step in ["modules", "assessments"]:
-        print(f"[COST_PLANNER] Rendering assessments step (step={current_step})")
         # Support both old "modules" and new "assessments" step names for backward compatibility
         _render_assessments_step()
     elif current_step == "expert_review":
-        print("[COST_PLANNER] Rendering expert_review step")
         _render_expert_review_step()
     elif current_step == "exit":
-        print("[COST_PLANNER] Rendering exit step")
         _render_exit_step()
     else:
-        print(f"[COST_PLANNER] Unknown step '{current_step}', falling back to intro")
         # Fallback to intro
         st.session_state.cost_v2_step = "intro"
         st.rerun()
@@ -409,7 +383,6 @@ def _handle_restart_if_needed() -> None:
         return  # Not at intro, don't auto-restart
 
     # RESTART: Clear Cost Planner state but preserve GCP
-    print("[COST_PLANNER] Handling restart - clearing state...")
     
     # Set flag FIRST to prevent re-clearing on next render
     st.session_state._cost_v2_restart_handled = True
@@ -488,11 +461,8 @@ def _handle_restart_if_needed() -> None:
         
         uid = get_or_create_user_id(st.session_state)
         user_data = extract_user_state(st.session_state)
-        if save_user(uid, user_data):
-            print("[COST_PLANNER] Cleared state persisted to disk")
-        else:
-            print("[COST_PLANNER] Warning: Failed to persist cleared state")
+        save_user(uid, user_data)
     except Exception as e:
-        print(f"[COST_PLANNER] Warning: Could not persist cleared state: {e}")
+        pass  # Silently handle persistence errors
 
     # Note: GCP state and recommendation preserved automatically

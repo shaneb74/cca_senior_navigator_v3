@@ -143,22 +143,18 @@ def _calculate_quick_estimate(care_tier: str, zip_code: Optional[str]):
         zip_code: 5-digit ZIP code (optional)
     """
     
-    print(f"[QUICK_ESTIMATE] Button clicked - care_tier: {care_tier}, zip_code: {zip_code}")
 
     # Validate ZIP code
     if zip_code and len(zip_code) != 5:
         st.error("Please enter a valid 5-digit ZIP code, or leave it blank.")
-        print(f"[QUICK_ESTIMATE] Invalid ZIP code: {zip_code}")
         return
 
     # Calculate estimate with line-item breakdown
     try:
-        print(f"[QUICK_ESTIMATE] Calculating estimate...")
         estimate = CostCalculator.calculate_quick_estimate_with_breakdown(
             care_tier=care_tier, zip_code=zip_code
         )
 
-        print(f"[QUICK_ESTIMATE] Estimate calculated: ${estimate.monthly_adjusted:,.2f}/month")
         
         st.session_state.cost_v2_quick_estimate = {
             "estimate": estimate.to_dict(),  # Convert to dict for JSON serialization
@@ -166,11 +162,9 @@ def _calculate_quick_estimate(care_tier: str, zip_code: Optional[str]):
             "zip_code": zip_code,
         }
 
-        print(f"[QUICK_ESTIMATE] Estimate saved to session_state, triggering rerun...")
         st.rerun()
 
     except Exception as e:
-        print(f"[QUICK_ESTIMATE] ERROR: {str(e)}")
         import traceback
         traceback.print_exc()
         st.error(f"Error calculating estimate: {str(e)}")
