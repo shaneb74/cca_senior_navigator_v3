@@ -371,38 +371,19 @@ def render_assessment_page(assessment_key: str, product_key: str = "cost_planner
     # Initialize state - load from cost_v2_modules if available (e.g., demo users)
     state_key = f"{product_key}_{assessment_key}"
     
-    print(f"[ASSESSMENT] Initializing {assessment_key}")
-    print(f"[ASSESSMENT]   state_key: {state_key}")
-    print(f"[ASSESSMENT]   state_key in session_state: {state_key in st.session_state}")
     
-    # Always check if we have pre-existing data from cost_v2_modules first
+    # Initialize state - load from cost_v2_modules if available (e.g., demo users)
     # This handles both initial load (demo users) and restart scenarios
     modules = st.session_state.get("cost_v2_modules", {})
-    print(f"[ASSESSMENT]   cost_v2_modules exists: {'cost_v2_modules' in st.session_state}")
-    print(f"[ASSESSMENT]   cost_v2_modules keys: {list(modules.keys())}")
     
     if assessment_key in modules:
         module_data = modules[assessment_key].get("data", {})
-        print(f"[ASSESSMENT]   Found {assessment_key} in modules with {len(module_data)} fields")
         if module_data and state_key not in st.session_state:
-            # Only pre-populate if assessment state doesn't already exist
-            print(f"[ASSESSMENT]   ✅ Pre-populating {assessment_key} from cost_v2_modules")
+            # Pre-populate from saved data
             st.session_state[state_key] = module_data.copy()
-        elif module_data and state_key in st.session_state:
-            print(f"[ASSESSMENT]   ⚠️  State key already exists, not overwriting")
-        else:
-            print(f"[ASSESSMENT]   ⚠️  Module data is empty")
-    else:
-        print(f"[ASSESSMENT]   ❌ {assessment_key} NOT found in modules")
     
     st.session_state.setdefault(state_key, {})
     state = st.session_state[state_key]
-    
-    # Log what we have in state for debugging
-    if state:
-        print(f"[ASSESSMENT] {assessment_key} final state has {len(state)} fields")
-    else:
-        print(f"[ASSESSMENT] {assessment_key} final state is EMPTY")
 
     # Get assessment metadata
     title = assessment_config.get("title", "Assessment")
@@ -531,38 +512,15 @@ def _render_single_page_assessment(
 
     state_key = f"{product_key}_{assessment_key}"
     
-    # PRE-POPULATE from cost_v2_modules if available (demo users, restart scenarios)
-    print(f"[ASSESSMENT] Initializing {assessment_key}")
-    print(f"[ASSESSMENT]   state_key: {state_key}")
-    print(f"[ASSESSMENT]   state_key in session_state: {state_key in st.session_state}")
-    
+    # Pre-populate from cost_v2_modules if available (demo users, restart scenarios)
     modules = st.session_state.get("cost_v2_modules", {})
-    print(f"[ASSESSMENT]   cost_v2_modules exists: {'cost_v2_modules' in st.session_state}")
-    print(f"[ASSESSMENT]   cost_v2_modules keys: {list(modules.keys())}")
     
     if assessment_key in modules:
         module_data = modules[assessment_key].get("data", {})
-        print(f"[ASSESSMENT]   Found {assessment_key} in modules with {len(module_data)} fields")
         if module_data and state_key not in st.session_state:
-            print(f"[ASSESSMENT]   ✅ Pre-populating {assessment_key} from cost_v2_modules")
             st.session_state[state_key] = module_data.copy()
-        elif module_data and state_key in st.session_state:
-            print(f"[ASSESSMENT]   ⚠️  State key already exists, not overwriting")
-        else:
-            print(f"[ASSESSMENT]   ⚠️  Module data is empty")
-    else:
-        print(f"[ASSESSMENT]   ❌ {assessment_key} NOT found in modules")
     
     state = st.session_state.setdefault(state_key, {})
-    
-    # Log final state
-    if state:
-        print(f"[ASSESSMENT] {assessment_key} final state has {len(state)} fields")
-        # Log first few fields to see actual data
-        sample_keys = list(state.keys())[:5]
-        print(f"[ASSESSMENT] Sample fields: {[f'{k}={state[k]}' for k in sample_keys]}")
-    else:
-        print(f"[ASSESSMENT] {assessment_key} final state is EMPTY")
 
     success_flash_key = f"{state_key}._flash_success"
     error_flash_key = f"{state_key}._flash_error"
