@@ -411,6 +411,9 @@ def _handle_restart_if_needed() -> None:
         "cost_v2_quick_zip",
         "cost_v2_quick_care_type",
         "calc_estimate_btn",
+        "continue_full_assessment",  # Clear continue button state
+        "recalculate",  # Clear recalculate button state
+        "intro_back_hub",  # Clear back button state
         # Clear assessment state
         "cost_planner_v2_current_assessment",
         # Clear persisted assessment data
@@ -450,5 +453,15 @@ def _handle_restart_if_needed() -> None:
                 MCIP._data["journey_progress"]["cost_v2"] = 0
     except Exception:
         pass  # If MCIP clear fails, state is already cleared above
+
+    # 5. Persist the cleared state to disk
+    # This ensures the cleared keys are saved to the user file
+    # so they don't get reloaded on next page navigation
+    try:
+        from core.session_store import save_session
+        save_session()
+        print("[COST_PLANNER] Cleared state persisted to disk")
+    except Exception as e:
+        print(f"[COST_PLANNER] Warning: Could not persist cleared state: {e}")
 
     # Note: GCP state and recommendation preserved automatically
