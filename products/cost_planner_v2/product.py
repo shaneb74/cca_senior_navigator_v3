@@ -60,28 +60,43 @@ def render():
     product_shell_start()
 
     # Initialize step state - check if user has progressed past intro
+    print(f"[COST_PLANNER] Step initialization: cost_v2_step in session_state = {'cost_v2_step' in st.session_state}")
+    if "cost_v2_step" in st.session_state:
+        print(f"[COST_PLANNER] Current cost_v2_step value: {st.session_state.cost_v2_step}")
+    
     if "cost_v2_step" not in st.session_state:
+        print("[COST_PLANNER] Step not set, initializing...")
         # Check query params for explicit step override (from tile buttons)
         step_from_query = st.query_params.get("step")
         if step_from_query in ["intro", "auth", "triage", "assessments", "modules", "expert_review", "exit"]:
             st.session_state.cost_v2_step = step_from_query
+            print(f"[COST_PLANNER] Set step from query param: {step_from_query}")
         # Check if user has completed intro by checking for assessment state
         elif "cost_v2_income" in st.session_state or "cost_v2_assets" in st.session_state:
             # User has been to Financial Assessment - resume there
             st.session_state.cost_v2_step = "assessments"
+            print("[COST_PLANNER] Found assessment data, setting step to assessments")
         elif "cost_v2_qualifiers" in st.session_state:
             # User has completed qualifiers - resume at assessments
             st.session_state.cost_v2_step = "assessments"
+            print("[COST_PLANNER] Found qualifiers, setting step to assessments")
         else:
             # First time - start at intro
             st.session_state.cost_v2_step = "intro"
+            print("[COST_PLANNER] No prior state, setting step to intro")
     else:
+        print("[COST_PLANNER] Step already set, checking for query param override...")
         # If step is already in session_state, check if query param wants to override
         step_from_query = st.query_params.get("step")
         if step_from_query in ["intro", "auth", "triage", "assessments", "modules", "expert_review", "exit"]:
             # Allow query param to override current step (for tile buttons)
             if st.session_state.cost_v2_step != step_from_query:
+                print(f"[COST_PLANNER] Query param override: {st.session_state.cost_v2_step} -> {step_from_query}")
                 st.session_state.cost_v2_step = step_from_query
+            else:
+                print(f"[COST_PLANNER] Query param matches current step: {step_from_query}")
+        else:
+            print(f"[COST_PLANNER] No query param override, keeping step: {st.session_state.cost_v2_step}")
 
     current_step = st.session_state.cost_v2_step
     
