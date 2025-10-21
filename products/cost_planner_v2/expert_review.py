@@ -58,7 +58,8 @@ def render():
     # Publish summary to MCIP
     publish_to_mcip(analysis, profile)
 
-    # Render Navi guidance
+    # NEW FLOW: Render sections in logical decision order
+    # 1. Navi guidance with coverage duration headline
     _render_navi_guidance(analysis, profile)
 
     # Main content container
@@ -70,23 +71,23 @@ def render():
         unsafe_allow_html=True,
     )
 
-    # Coverage summary (clean, minimal)
-    _render_coverage_summary(analysis)
+    # 2. Income vs Cost Snapshot (simplified card with progress bar)
+    _render_income_cost_snapshot(analysis)
 
     st.markdown('<div style="margin: 32px 0;"></div>', unsafe_allow_html=True)
 
-    # Financial details (simple list)
-    _render_financial_details(analysis, profile)
-
-    st.markdown('<div style="margin: 32px 0;"></div>', unsafe_allow_html=True)
-
-    # NEW: Available Resources Section
+    # 3. Available Resources (expandable cards per category)
     if analysis.asset_categories:
-        _render_asset_resources_section(analysis, profile)
+        _render_available_resources_cards(analysis, profile)
         st.markdown('<div style="margin: 32px 0;"></div>', unsafe_allow_html=True)
 
-    # Action items (clean list)
-    _render_action_items(analysis)
+    # 4. Coverage Impact Visualization (dynamic, updates with selections)
+    if analysis.asset_categories:
+        _render_coverage_impact_visualization(analysis, profile)
+        st.markdown('<div style="margin: 32px 0;"></div>', unsafe_allow_html=True)
+
+    # 5. Recommended Actions & Resources
+    _render_recommended_actions(analysis)
 
     st.markdown('<div style="margin: 48px 0;"></div>', unsafe_allow_html=True)
 
@@ -132,65 +133,75 @@ def _render_incomplete_state():
 
 
 def _render_navi_guidance(analysis, profile):
-    """Render Navi panel with contextual guidance based on analysis."""
+    """
+    Render Navi panel with contextual guidance based on analysis.
+    
+    NEW: Lead with coverage duration as primary metric, income coverage as submetric.
+    """
+
+    # Calculate coverage duration in human-friendly format
+    if analysis.runway_months is not None and analysis.runway_months > 0:
+        years = int(analysis.runway_months / 12)
+        months = int(analysis.runway_months % 12)
+        if years > 0:
+            coverage_duration = f"{years} year{'s' if years != 1 else ''}"
+            if months > 0:
+                coverage_duration += f", {months} month{'s' if months != 1 else ''}"
+        else:
+            coverage_duration = f"{int(analysis.runway_months)} month{'s' if analysis.runway_months != 1 else ''}"
+    elif analysis.monthly_gap <= 0:
+        coverage_duration = "Indefinite"
+    else:
+        coverage_duration = "Immediate action needed"
 
     # Determine message based on coverage tier
     if analysis.coverage_tier == "excellent":
         title = "Excellent Financial Position"
-        reason = "Your income and benefits fully cover your estimated care costs. You're well-prepared financially."
+        reason = f"🔹 **Coverage Duration:** {coverage_duration}  \n{analysis.coverage_percentage:.0f}% of monthly costs covered by income.\n\nYour income and benefits cover your estimated care costs. Let's review your options to extend your care plan."
         encouragement = {
             "icon": "✅",
-            "text": "Review the recommendations below to optimize your financial strategy.",
+            "text": "You're in great shape! Explore how your resources can strengthen your plan.",
             "status": "complete",
         }
 
     elif analysis.coverage_tier == "good":
         title = "Strong Financial Foundation"
-        reason = f"Your income covers {analysis.coverage_percentage:.0f}% of estimated care costs. You have a solid foundation with manageable gaps."
+        reason = f"🔹 **Coverage Duration:** {coverage_duration}  \n{analysis.coverage_percentage:.0f}% of monthly costs covered by income.\n\nYou have a solid foundation with a manageable gap. Let's explore your resources."
         encouragement = {
             "icon": "👍",
-            "text": "Review the action items below to address the small remaining gap.",
+            "text": "You're close! Here's how we can close the gap and secure your care plan.",
             "status": "active",
         }
 
     elif analysis.coverage_tier == "moderate":
         title = "Strategic Planning Recommended"
-        reason = f"Your income covers {analysis.coverage_percentage:.0f}% of estimated costs. A strategic plan will help bridge the gap."
+        reason = f"🔹 **Coverage Duration:** {coverage_duration}  \n{analysis.coverage_percentage:.0f}% of monthly costs covered by income.\n\nA strategic plan will help you bridge the gap and fund your care."
         encouragement = {
             "icon": "📊",
-            "text": "Focus on the action items below to develop your financial strategy.",
+            "text": "Let's develop a funding strategy using your available resources.",
             "status": "active",
         }
 
     elif analysis.coverage_tier == "concerning":
         title = "Action Needed Soon"
-        reason = f"Your income covers {analysis.coverage_percentage:.0f}% of estimated costs. Planning is important to secure sustainable care."
+        reason = f"🔹 **Coverage Duration:** {coverage_duration}  \n{analysis.coverage_percentage:.0f}% of monthly costs covered by income.\n\nPlanning is important to secure sustainable care. We'll help you explore all options."
         encouragement = {
             "icon": "⚠️",
-            "text": "Prioritize the action items below—time is important.",
+            "text": "Let's prioritize actions to address the gap—time is important.",
             "status": "warning",
         }
 
     else:  # critical
         title = "Immediate Planning Essential"
-        reason = f"Your income covers {analysis.coverage_percentage:.0f}% of estimated costs. Immediate action is needed to secure care."
+        reason = f"🔹 **Coverage Duration:** {coverage_duration}  \n{analysis.coverage_percentage:.0f}% of monthly costs covered by income.\n\nImmediate action is needed. We'll guide you through available resources and assistance programs."
         encouragement = {
             "icon": "🚨",
-            "text": "Follow the action items below urgently—help is available.",
+            "text": "Help is available—let's find solutions urgently.",
             "status": "warning",
         }
 
-    # Context chips
+    # Context chips - removed (info now in reason text)
     context_chips = []
-    if analysis.runway_months is not None:
-        if analysis.runway_months >= 36:
-            runway_label = f"{int(analysis.runway_months)} months coverage"
-        elif analysis.runway_months >= 12:
-            runway_label = f"{int(analysis.runway_months)} months runway"
-        else:
-            runway_label = f"{int(analysis.runway_months)} months remaining"
-
-        context_chips.append({"label": runway_label, "sublabel": None})
 
     render_navi_panel_v2(
         title=title,
@@ -200,6 +211,84 @@ def _render_navi_guidance(analysis, profile):
         primary_action={"label": "", "route": ""},
         variant="module",
     )
+
+
+def _render_income_cost_snapshot(analysis):
+    """
+    Render Income vs Cost Snapshot with progress bar.
+    
+    Simplified card showing: cost, income, shortfall, and visual progress bar.
+    """
+    
+    st.markdown("### 💰 Financial Snapshot")
+    
+    # Create clean card with background
+    st.markdown('<div style="background: var(--surface-primary); border-radius: 12px; padding: 24px; border: 1px solid var(--border-primary);">', unsafe_allow_html=True)
+    
+    # Three-column layout for main metrics
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.markdown(
+            f"""
+            <div style="text-align: center;">
+                <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; font-weight: 500;">Estimated Monthly Care Cost</div>
+                <div style="font-size: 28px; font-weight: 700; color: var(--text-primary);">${analysis.estimated_monthly_cost:,.0f}</div>
+                <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">/month</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    
+    with col2:
+        st.markdown(
+            f"""
+            <div style="text-align: center;">
+                <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; font-weight: 500;">Monthly Income</div>
+                <div style="font-size: 28px; font-weight: 700; color: var(--text-primary);">${analysis.total_monthly_income + analysis.total_monthly_benefits:,.0f}</div>
+                <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">/month</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    
+    with col3:
+        shortfall_label = "Surplus" if analysis.monthly_gap < 0 else "Monthly Shortfall"
+        shortfall_color = "var(--success-fg)" if analysis.monthly_gap < 0 else "var(--error-fg)"
+        st.markdown(
+            f"""
+            <div style="text-align: center;">
+                <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; font-weight: 500;">{shortfall_label}</div>
+                <div style="font-size: 28px; font-weight: 700; color: {shortfall_color};">${abs(analysis.monthly_gap):,.0f}</div>
+                <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">/month</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    
+    # Progress bar showing coverage from income
+    st.markdown('<div style="margin-top: 24px;">', unsafe_allow_html=True)
+    st.markdown(
+        f'<div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; font-weight: 500;">Coverage From Income</div>',
+        unsafe_allow_html=True,
+    )
+    
+    coverage_pct = min(analysis.coverage_percentage, 100)  # Cap at 100% for display
+    progress_color = "var(--success-fg)" if coverage_pct >= 80 else "var(--warning-fg)" if coverage_pct >= 50 else "var(--error-fg)"
+    
+    st.markdown(
+        f"""
+        <div style="width: 100%; background: var(--surface-secondary); border-radius: 8px; height: 32px; position: relative; overflow: hidden;">
+            <div style="width: {coverage_pct}%; background: {progress_color}; height: 100%; border-radius: 8px; transition: width 0.3s ease;"></div>
+            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 14px; font-weight: 600; color: var(--text-primary);">
+                {analysis.coverage_percentage:.0f}%
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    
+    st.markdown('</div></div>', unsafe_allow_html=True)
 
 
 def _render_coverage_summary(analysis):
@@ -373,19 +462,18 @@ def _render_financial_details(analysis, profile):
             )
 
 
-def _render_asset_resources_section(analysis, profile):
+def _render_available_resources_cards(analysis, profile):
     """
-    Render available resources section with asset breakdown and selection.
+    Render available resources as expandable cards - one per category.
     
-    Shows all asset categories with:
-    - Current balance
-    - Accessible value
-    - Selection checkbox
-    - Smart recommendations
-    - Extended coverage calculation
+    NEW APPROACH: Each asset category is an expander with:
+    - Balance summary in header
+    - Availability status (Ready now, Taxed as income, etc.)
+    - Checkbox to include in care funding plan
+    - Helpful tooltip explaining the asset type
     """
     
-    st.markdown("### 💰 Available Resources to Cover Care Costs")
+    st.markdown("### 🏦 Available Resources to Cover Care Costs")
     
     # Only show if there are assets
     if not analysis.asset_categories:
@@ -403,108 +491,91 @@ def _render_asset_resources_section(analysis, profile):
     # Guidance text based on context
     if analysis.monthly_gap > 0:
         st.markdown(
-            f"<div style='color: var(--text-secondary); font-size: 14px; margin-bottom: 16px;'>"
-            f"Select which assets you'd like to use to cover the ${analysis.monthly_gap:,.0f}/month shortfall. "
-            f"We've recommended a priority order based on liquidity and cost-effectiveness."
+            f"<div style='color: var(--text-secondary); font-size: 14px; margin-bottom: 20px;'>"
+            f"Select which resources you'd like to include in your care funding plan. "
+            f"We'll show how they extend your years of coverage."
             f"</div>",
             unsafe_allow_html=True,
         )
     else:
         st.markdown(
-            f"<div style='color: var(--text-secondary); font-size: 14px; margin-bottom: 16px;'>"
+            f"<div style='color: var(--text-secondary); font-size: 14px; margin-bottom: 20px;'>"
             f"Your income fully covers estimated care costs. These assets are available as reserves if needed."
             f"</div>",
             unsafe_allow_html=True,
         )
     
-    # Asset selection table
-    st.markdown("#### Asset Categories")
-    
     # Track if any selection changed
     selection_changed = False
     
-    # Render each asset category
+    # Render each asset category as expandable card
     for cat_name in analysis.recommended_funding_order:
         if cat_name not in analysis.asset_categories:
             continue
             
         category = analysis.asset_categories[cat_name]
         
-        # Create columns: checkbox | name | balance | accessible | notes
-        col1, col2, col3, col4 = st.columns([0.5, 2, 1.5, 2.5])
+        # Build expander label with balance and status
+        status_icon = "✅" if category.recommended else "⚠️"
+        expander_label = f"{category.display_name} — ${category.current_balance:,.0f}"
         
-        with col1:
-            # Checkbox for selection
-            current_selection = st.session_state.expert_review_selected_assets.get(cat_name, False)
-            new_selection = st.checkbox(
-                "Use",
-                value=current_selection,
-                key=f"asset_select_{cat_name}",
-                label_visibility="collapsed",
-                disabled=not category.recommended,  # Disable if not recommended
-            )
+        with st.expander(expander_label, expanded=False):
+            # Two columns: info | checkbox
+            info_col, checkbox_col = st.columns([4, 1])
             
-            if new_selection != current_selection:
-                st.session_state.expert_review_selected_assets[cat_name] = new_selection
-                selection_changed = True
-        
-        with col2:
-            # Asset name with icon
-            icon_color = "var(--success-fg)" if category.recommended else "var(--text-secondary)"
-            st.markdown(
-                f"<div style='font-weight: 600; color: {icon_color};'>{category.display_name}</div>",
-                unsafe_allow_html=True,
-            )
-            
-            # Show funding order note
-            if cat_name in analysis.funding_notes:
-                note = analysis.funding_notes[cat_name]
-                st.markdown(
-                    f"<div style='font-size: 12px; color: var(--text-secondary);'>{note}</div>",
-                    unsafe_allow_html=True,
-                )
-        
-        with col3:
-            # Balance and accessible value
-            st.markdown(
-                f"<div style='font-size: 14px;'>${category.current_balance:,.0f}</div>",
-                unsafe_allow_html=True,
-            )
-            if category.accessible_value != category.current_balance:
-                st.markdown(
-                    f"<div style='font-size: 12px; color: var(--text-secondary);'>Available: ${category.accessible_value:,.0f}</div>",
-                    unsafe_allow_html=True,
-                )
-        
-        with col4:
-            # Timeframe and tax implications
-            timeframe_map = {
-                "immediate": "✅ Ready now",
-                "1-3_months": "⏱️ 1-3 months",
-                "3-6_months": "📅 3-6 months",
-                "6-12_months": "📆 6-12 months",
-            }
-            timeframe_text = timeframe_map.get(category.liquidation_timeframe, category.liquidation_timeframe)
-            
-            st.markdown(
-                f"<div style='font-size: 13px;'>{timeframe_text}</div>",
-                unsafe_allow_html=True,
-            )
-            
-            # Tax implications warning
-            if category.tax_implications != "none":
-                tax_icons = {
-                    "ordinary_income": "💼 Taxed as income",
-                    "capital_gains": "📊 Capital gains tax",
-                    "penalty": "⚠️ Early withdrawal penalty",
+            with info_col:
+                # Current balance
+                st.markdown(f"**Current Balance:** ${category.current_balance:,.0f}")
+                
+                # Available amount if different
+                if category.accessible_value != category.current_balance:
+                    diff_pct = (category.accessible_value / category.current_balance) * 100
+                    st.markdown(f"**Available Now:** ${category.accessible_value:,.0f} ({diff_pct:.0f}% accessible)")
+                else:
+                    st.markdown(f"**Available Now:** ${category.accessible_value:,.0f}")
+                
+                # Availability status
+                timeframe_map = {
+                    "immediate": "✅ Ready to Use",
+                    "1-3_months": "⏱️ Available in 1-3 Months",
+                    "3-6_months": "📅 Available in 3-6 Months",
+                    "6-12_months": "📆 Available in 6-12 Months",
                 }
-                tax_text = tax_icons.get(category.tax_implications, category.tax_implications)
-                st.markdown(
-                    f"<div style='font-size: 12px; color: var(--warning-fg);'>{tax_text}</div>",
-                    unsafe_allow_html=True,
+                timeframe_text = timeframe_map.get(category.liquidation_timeframe, category.liquidation_timeframe)
+                st.markdown(f"**Status:** {timeframe_text}")
+                
+                # Tax implications if applicable
+                if category.tax_implications != "none":
+                    tax_labels = {
+                        "ordinary_income": "⚙️ **Note:** Taxed as ordinary income when withdrawn",
+                        "capital_gains": "📊 **Note:** Subject to capital gains tax",
+                        "penalty": "⚠️ **Note:** Early withdrawal penalty may apply",
+                    }
+                    tax_text = tax_labels.get(category.tax_implications, category.tax_implications)
+                    st.markdown(tax_text)
+                
+                # Recommendation note
+                if cat_name in analysis.funding_notes:
+                    note = analysis.funding_notes[cat_name]
+                    st.info(f"💡 {note}")
+                
+                # Additional notes
+                if category.notes:
+                    st.markdown(f"<div style='font-size: 13px; color: var(--text-secondary); margin-top: 8px;'>{category.notes}</div>", unsafe_allow_html=True)
+            
+            with checkbox_col:
+                # Checkbox for selection
+                current_selection = st.session_state.expert_review_selected_assets.get(cat_name, False)
+                new_selection = st.checkbox(
+                    "Include in Care Funding Plan",
+                    value=current_selection,
+                    key=f"asset_select_{cat_name}",
+                    disabled=not category.recommended,  # Disable if not recommended
                 )
-        
-        st.markdown('<div style="margin: 8px 0; border-bottom: 1px solid var(--border-primary);"></div>', unsafe_allow_html=True)
+                
+                if new_selection != current_selection:
+                    st.session_state.expert_review_selected_assets[cat_name] = new_selection
+                    selection_changed = True
     
     # Calculate extended coverage with selected assets
     from products.cost_planner_v2.expert_formulas import calculate_extended_runway
@@ -592,25 +663,160 @@ def _render_asset_resources_section(analysis, profile):
         st.rerun()
 
 
-def _render_action_items(analysis):
-    """Render action items as clean, simple list."""
+def _render_coverage_impact_visualization(analysis, profile):
+    """
+    Render Coverage Impact Visualization showing how selected assets extend care funding.
+    
+    Shows:
+    - Total Selected Assets
+    - Extended Coverage Duration
+    - Coverage Improvement
+    - Visual timeline representation
+    """
+    
+    from products.cost_planner_v2.expert_formulas import calculate_extended_runway
+    
+    st.markdown("### 📊 Coverage Analysis (Dynamic)")
+    
+    # Get current selections
+    selected_assets = st.session_state.get("expert_review_selected_assets", {})
+    
+    # Calculate extended runway
+    extended_runway = calculate_extended_runway(
+        analysis.monthly_gap if analysis.monthly_gap > 0 else 0,
+        selected_assets,
+        analysis.asset_categories,
+    )
+    
+    # Calculate total selected value
+    total_selected = sum(
+        analysis.asset_categories[name].accessible_value
+        for name, selected in selected_assets.items()
+        if selected and name in analysis.asset_categories
+    )
+    
+    # Create card background
+    st.markdown('<div style="background: var(--surface-primary); border-radius: 12px; padding: 24px; border: 1px solid var(--border-primary);">', unsafe_allow_html=True)
+    
+    # Three-column metrics
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.metric(
+            label="Total Selected Assets",
+            value=f"${total_selected:,.0f}",
+        )
+    
+    with col2:
+        if analysis.monthly_gap > 0 and total_selected > 0:
+            # Show how gap is covered
+            gap_covered_pct = min((total_selected / (analysis.monthly_gap * 12)) * 100, 999)
+            st.metric(
+                label="First Year Gap Coverage",
+                value=f"{gap_covered_pct:.0f}%",
+            )
+        else:
+            st.metric(
+                label="Monthly Shortfall",
+                value="$0" if analysis.monthly_gap <= 0 else f"${abs(analysis.monthly_gap):,.0f}",
+            )
+    
+    with col3:
+        if extended_runway is not None and extended_runway > 0:
+            years = int(extended_runway / 12)
+            months = int(extended_runway % 12)
+            
+            if years > 0:
+                runway_display = f"{years} years"
+                if months > 0:
+                    runway_display += f", {months} months"
+            else:
+                runway_display = f"{int(extended_runway)} months"
+            
+            # Calculate improvement over base runway
+            if analysis.runway_months and analysis.runway_months > 0:
+                improvement_months = extended_runway - analysis.runway_months
+                improvement_years = improvement_months / 12
+                delta_text = f"+{improvement_years:.1f} years"
+            else:
+                delta_text = "With selected assets"
+            
+            st.metric(
+                label="New Coverage Duration",
+                value=runway_display,
+                delta=delta_text,
+                delta_color="normal",
+            )
+        elif analysis.monthly_gap <= 0:
+            st.metric(
+                label="Coverage Duration",
+                value="Indefinite",
+                delta="Income covers costs",
+                delta_color="normal",
+            )
+        else:
+            st.metric(
+                label="Extended Duration",
+                value="Select assets above",
+                delta="to calculate",
+            )
+    
+    # Visual timeline bar (simplified for now - can enhance with actual timeline viz)
+    if extended_runway and extended_runway > 0:
+        st.markdown('<div style="margin-top: 24px;">', unsafe_allow_html=True)
+        st.markdown('<div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 8px;">Coverage Timeline</div>', unsafe_allow_html=True)
+        
+        # Show income coverage portion vs asset coverage portion
+        if analysis.runway_months and analysis.runway_months > 0:
+            income_portion = (analysis.runway_months / extended_runway) * 100
+            asset_portion = ((extended_runway - analysis.runway_months) / extended_runway) * 100
+        else:
+            income_portion = 0
+            asset_portion = 100
+        
+        st.markdown(
+            f"""
+            <div style="width: 100%; height: 40px; display: flex; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-primary);">
+                <div style="width: {income_portion}%; background: var(--primary-bg); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: white;">
+                    Income ({analysis.runway_months:.0f}mo)
+                </div>
+                <div style="width: {asset_portion}%; background: var(--success-bg); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: white;">
+                    + Assets ({extended_runway - (analysis.runway_months or 0):.0f}mo)
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown("### Recommended Actions")
 
-    # Primary recommendation
+def _render_recommended_actions(analysis):
+    """
+    Render Recommended Actions & Helpful Resources section.
+    
+    Clear, numbered list of 3-5 key actions with supporting resources below.
+    """
+
+    st.markdown("### 🪄 Recommended Actions")
+    
+    # Primary recommendation in a highlighted box
+    st.markdown('<div style="background: var(--surface-primary); border-left: 4px solid var(--primary-bg); padding: 16px; border-radius: 8px; margin-bottom: 20px;">', unsafe_allow_html=True)
     st.markdown(f"**{analysis.primary_recommendation}**")
+    st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown('<div style="margin: 16px 0;"></div>', unsafe_allow_html=True)
-
-    # Action items
+    # Action items as numbered list
     if analysis.action_items:
         for i, action in enumerate(analysis.action_items, 1):
-            st.markdown(f"{i}. {action}")
+            st.markdown(f"**{i}.** {action}")
 
-    # Resources (if any)
+    # Resources section (if any)
     if analysis.resources:
-        st.markdown('<div style="margin: 24px 0;"></div>', unsafe_allow_html=True)
-        st.markdown("**Helpful Resources:**")
+        st.markdown('<div style="margin-top: 32px;"></div>', unsafe_allow_html=True)
+        st.markdown("### 📚 Helpful Resources")
+        
+        # Display as clean bullet list
         for resource in analysis.resources:
             st.markdown(f"• {resource}")
 
