@@ -312,16 +312,12 @@ def _render_quick_estimate_results():
             use_container_width=True,
             key="continue_full_assessment",
         ):
-            print("[COST_PLANNER] Continue to Full Assessment button clicked")
-            
             # Clear the step query parameter to prevent it from overriding our navigation
             if "step" in st.query_params:
-                print(f"[COST_PLANNER] Clearing query param 'step' (was: {st.query_params.get('step')})")
                 del st.query_params["step"]
             
             # Start authentication flow (if not logged in) then go to Full Assessment
             st.session_state.cost_v2_step = "auth"
-            print(f"[COST_PLANNER] Set cost_v2_step to 'auth', triggering rerun...")
             st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
 
