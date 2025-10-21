@@ -142,6 +142,7 @@ def _calculate_quick_estimate(care_tier: str, zip_code: Optional[str]):
         care_tier: Internal tier key (e.g., "memory_care")
         zip_code: 5-digit ZIP code (optional)
     """
+    
 
     # Validate ZIP code
     if zip_code and len(zip_code) != 5:
@@ -154,6 +155,7 @@ def _calculate_quick_estimate(care_tier: str, zip_code: Optional[str]):
             care_tier=care_tier, zip_code=zip_code
         )
 
+        
         st.session_state.cost_v2_quick_estimate = {
             "estimate": estimate.to_dict(),  # Convert to dict for JSON serialization
             "care_tier": care_tier,
@@ -163,6 +165,8 @@ def _calculate_quick_estimate(care_tier: str, zip_code: Optional[str]):
         st.rerun()
 
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         st.error(f"Error calculating estimate: {str(e)}")
 
 
@@ -302,6 +306,10 @@ def _render_quick_estimate_results():
             use_container_width=True,
             key="continue_full_assessment",
         ):
+            # Clear the step query parameter to prevent it from overriding our navigation
+            if "step" in st.query_params:
+                del st.query_params["step"]
+            
             # Start authentication flow (if not logged in) then go to Full Assessment
             st.session_state.cost_v2_step = "auth"
             st.rerun()

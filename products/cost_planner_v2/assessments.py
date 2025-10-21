@@ -227,6 +227,9 @@ def _render_assessment_grid(assessments: list[dict[str, Any]], product_key: str)
             use_container_width=True,
             key="goto_expert_review_bottom",
         ):
+            # Clear step query param to prevent override
+            if "step" in st.query_params:
+                del st.query_params["step"]
             st.session_state.cost_v2_step = "expert_review"
             st.rerun()
 
@@ -365,8 +368,20 @@ def render_assessment_page(assessment_key: str, product_key: str = "cost_planner
         st.error(f"⚠️ Assessment '{assessment_key}' not found.")
         return
 
-    # Initialize state
+    # Initialize state - load from cost_v2_modules if available (e.g., demo users)
     state_key = f"{product_key}_{assessment_key}"
+    
+    
+    # Initialize state - load from cost_v2_modules if available (e.g., demo users)
+    # This handles both initial load (demo users) and restart scenarios
+    modules = st.session_state.get("cost_v2_modules", {})
+    
+    if assessment_key in modules:
+        module_data = modules[assessment_key].get("data", {})
+        if module_data and state_key not in st.session_state:
+            # Pre-populate from saved data
+            st.session_state[state_key] = module_data.copy()
+    
     st.session_state.setdefault(state_key, {})
     state = st.session_state[state_key]
 
@@ -496,6 +511,15 @@ def _render_single_page_assessment(
     """Render designated assessments on a single page with streamlined styling."""
 
     state_key = f"{product_key}_{assessment_key}"
+    
+    # Pre-populate from cost_v2_modules if available (demo users, restart scenarios)
+    modules = st.session_state.get("cost_v2_modules", {})
+    
+    if assessment_key in modules:
+        module_data = modules[assessment_key].get("data", {})
+        if module_data and state_key not in st.session_state:
+            st.session_state[state_key] = module_data.copy()
+    
     state = st.session_state.setdefault(state_key, {})
 
     success_flash_key = f"{state_key}._flash_success"
@@ -682,6 +706,9 @@ def _render_single_page_assessment(
                 use_container_width=True,
                 key=f"{assessment_key}_expert",
             ):
+                # Clear step query param to prevent override
+                if "step" in st.query_params:
+                    del st.query_params["step"]
                 st.session_state.cost_v2_step = "expert_review"
                 st.session_state.pop(f"{product_key}_current_assessment", None)
                 safe_rerun()
@@ -1059,6 +1086,9 @@ def _render_page_navigation(
     with col2:
         if required_complete:
             if st.button("🚀 Expert Review →", use_container_width=True, type="primary"):
+                # Clear step query param to prevent override
+                if "step" in st.query_params:
+                    del st.query_params["step"]
                 st.session_state.cost_v2_step = "expert_review"
                 st.rerun()
         else:
