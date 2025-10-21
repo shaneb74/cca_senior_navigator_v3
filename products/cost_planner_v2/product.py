@@ -35,6 +35,7 @@ def render():
     but accessed separately via navigation, not forced in flow.
     """
 
+
     # Check for restart intent (when complete and re-entering at intro)
     _handle_restart_if_needed()
 
@@ -52,15 +53,17 @@ def render():
             journey["unlocked_products"].append("cost_v2")
         # Save the updated journey state
         MCIP._save_contracts_for_persistence()
-        print("[COST_PLANNER] Auto-unlocked cost_planner and cost_v2")
-        print(f"[COST_PLANNER] Updated unlocked_products: {journey['unlocked_products']}")
 
     product_shell_start()
 
     # Initialize step state - check if user has progressed past intro
     if "cost_v2_step" not in st.session_state:
+        # Check query params for explicit step override (from tile buttons)
+        step_from_query = st.query_params.get("step")
+        if step_from_query in ["intro", "auth", "triage", "assessments", "modules", "expert_review", "exit"]:
+            st.session_state.cost_v2_step = step_from_query
         # Check if user has completed intro by checking for assessment state
-        if "cost_v2_income" in st.session_state or "cost_v2_assets" in st.session_state:
+        elif "cost_v2_income" in st.session_state or "cost_v2_assets" in st.session_state:
             # User has been to Financial Assessment - resume there
             st.session_state.cost_v2_step = "assessments"
         elif "cost_v2_qualifiers" in st.session_state:
@@ -69,8 +72,16 @@ def render():
         else:
             # First time - start at intro
             st.session_state.cost_v2_step = "intro"
+    else:
+        # If step is already in session_state, check if query param wants to override
+        step_from_query = st.query_params.get("step")
+        if step_from_query in ["intro", "auth", "triage", "assessments", "modules", "expert_review", "exit"]:
+            # Allow query param to override current step (for tile buttons)
+            if st.session_state.cost_v2_step != step_from_query:
+                st.session_state.cost_v2_step = step_from_query
 
     current_step = st.session_state.cost_v2_step
+    
 
     # Render Navi panel with dynamic guidance based on step
     # Skip for module_active, expert_review, exit, and when inside an assessment
@@ -350,7 +361,13 @@ def _handle_restart_if_needed() -> None:
 
     Clears Cost Planner state to start fresh, but preserves GCP recommendation.
     Only triggers when Cost Planner is complete and user is at intro step.
+    
+    Uses a flag to prevent clearing state on every render - only on first load.
     """
+    # Check if we've already handled restart in this session
+    if st.session_state.get("_cost_v2_restart_handled", False):
+        return  # Already restarted, don't clear state again
+    
     # Check if Cost Planner is complete
     try:
         from core.mcip import MCIP
@@ -366,11 +383,15 @@ def _handle_restart_if_needed() -> None:
         return  # Not at intro, don't auto-restart
 
     # RESTART: Clear Cost Planner state but preserve GCP
+    
+    # Set flag FIRST to prevent re-clearing on next render
+    st.session_state._cost_v2_restart_handled = True
+    
     # 1. Clear cost planner step state
     if "cost_v2_step" in st.session_state:
         st.session_state.cost_v2_step = "intro"
 
-    # 2. Clear financial module states
+    # 2. Clear financial module states AND quick estimate
     module_keys = [
         "cost_v2_current_module",
         "cost_v2_guest_mode",
@@ -382,6 +403,25 @@ def _handle_restart_if_needed() -> None:
         "cost_v2_medicaid",
         "cost_v2_modules_complete",
         "cost_v2_expert_review",
+        "cost_v2_quick_estimate",  # Clear quick estimate to force fresh calculation
+        "cost_v2_triage",
+        "cost_v2_qualifiers",
+        # Clear quick estimate form widget keys
+        "cost_v2_quick_zip",
+        "cost_v2_quick_care_type",
+        "calc_estimate_btn",
+        "continue_full_assessment",  # Clear continue button state
+        "recalculate",  # Clear recalculate button state
+        "intro_back_hub",  # Clear back button state
+        # Clear assessment state
+        "cost_planner_v2_current_assessment",
+        # Clear persisted assessment data
+        "cost_planner_v2_income",
+        "cost_planner_v2_assets",
+        "cost_planner_v2_va_benefits",
+        "cost_planner_v2_health_insurance",
+        "cost_planner_v2_life_insurance",
+        "cost_planner_v2_medicaid_navigation",
     ]
     for key in module_keys:
         if key in st.session_state:
@@ -412,5 +452,17 @@ def _handle_restart_if_needed() -> None:
                 MCIP._data["journey_progress"]["cost_v2"] = 0
     except Exception:
         pass  # If MCIP clear fails, state is already cleared above
+
+    # 5. Persist the cleared state to disk
+    # This ensures the cleared keys are saved to the user file
+    # so they don't get reloaded on next page navigation
+    try:
+        from core.session_store import save_user, extract_user_state, get_or_create_user_id
+        
+        uid = get_or_create_user_id(st.session_state)
+        user_data = extract_user_state(st.session_state)
+        save_user(uid, user_data)
+    except Exception as e:
+        pass  # Silently handle persistence errors
 
     # Note: GCP state and recommendation preserved automatically

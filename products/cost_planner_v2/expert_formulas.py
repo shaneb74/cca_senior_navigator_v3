@@ -10,13 +10,36 @@ Calculates:
 - Coverage percentage (how much of care cost is covered by income/benefits)
 - Monthly gap amount (shortfall between cost and income)
 - Runway months (how long assets will last)
+- Asset breakdown with liquidation strategies
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional
 
 from core.mcip import CareRecommendation
 from products.cost_planner_v2.financial_profile import FinancialProfile
+
+
+@dataclass
+class AssetCategory:
+    """
+    Individual asset category with actionability assessment.
+    
+    Represents a category of assets (liquid, retirement, home equity, etc.)
+    with metadata about how it can be used to fund care.
+    """
+    
+    name: str  # Internal key (e.g., "liquid_assets")
+    display_name: str  # User-friendly name (e.g., "💵 Liquid Assets")
+    current_balance: float  # Gross balance
+    accessible_value: float  # After penalties/taxes/fees
+    is_liquid: bool  # Can be accessed quickly
+    liquidation_timeframe: str  # "immediate", "1-3_months", "3-6_months", "6-12_months"
+    recommended: bool  # Smart exclusion logic - should user consider this?
+    recommendation_reason: str  # Why recommended or excluded
+    tax_implications: str  # "none", "ordinary_income", "capital_gains", "penalty"
+    notes: str  # Additional context (e.g., "Reverse mortgage available")
+    selected: bool = False  # User selection state
 
 
 @dataclass
@@ -50,6 +73,13 @@ class ExpertReviewAnalysis:
     primary_recommendation: str
     action_items: list
     resources: list
+    
+    # NEW: Asset breakdown and selection
+    asset_categories: dict[str, AssetCategory] = field(default_factory=dict)
+    selected_assets_value: float = 0.0  # Total value of user-selected assets
+    extended_runway_months: Optional[float] = None  # Runway with selected assets
+    recommended_funding_order: list[str] = field(default_factory=list)  # Priority order
+    funding_notes: dict[str, str] = field(default_factory=dict)  # Category-specific notes
 
 
 def calculate_expert_review(
@@ -131,6 +161,14 @@ def calculate_expert_review(
     else:
         runway_months = 0  # No assets, immediate shortfall
 
+    # ==== NEW STEP 8b: Calculate asset breakdown ====
+    asset_categories = calculate_asset_breakdown(profile, care_recommendation)
+    
+    # ==== NEW STEP 8c: Calculate recommended funding order ====
+    recommended_funding_order, funding_notes = calculate_recommended_funding_order(
+        asset_categories, care_recommendation, profile
+    )
+
     # ==== STEP 9: Categorize coverage tier ====
     coverage_tier = _categorize_coverage(coverage_percentage, runway_months)
 
@@ -163,6 +201,12 @@ def calculate_expert_review(
         primary_recommendation=primary_recommendation,
         action_items=action_items,
         resources=resources,
+        # NEW: Asset breakdown
+        asset_categories=asset_categories,
+        selected_assets_value=0.0,  # Will be calculated based on user selection
+        extended_runway_months=None,  # Will be calculated based on user selection
+        recommended_funding_order=recommended_funding_order,
+        funding_notes=funding_notes,
     )
 
 
@@ -463,3 +507,267 @@ def _generate_recommendations(
         action_items.append("⚠️ Review asset liquidity constraints before relying on reserves")
 
     return primary_recommendation, action_items, resources
+
+
+def calculate_asset_breakdown(
+    profile: FinancialProfile,
+    care_recommendation: Optional[CareRecommendation] = None,
+) -> dict[str, AssetCategory]:
+    """
+    Calculate detailed asset breakdown with accessibility analysis.
+    
+    Creates AssetCategory objects for each major asset type with:
+    - Current balance
+    - Accessible value (after taxes/penalties)
+    - Liquidation timeframe
+    - Smart exclusions based on care type
+    
+    Args:
+        profile: FinancialProfile from assessments
+        care_recommendation: GCP care recommendation for smart exclusions
+        
+    Returns:
+        dict[str, AssetCategory] - Keyed by asset category name
+    """
+    
+    categories = {}
+    
+    # Determine care type for smart exclusions
+    care_tier = getattr(care_recommendation, "tier", "moderate") if care_recommendation else "moderate"
+    is_in_home_care = care_tier in ["minimal", "low"] or (
+        hasattr(care_recommendation, "care_type") and 
+        "in_home" in getattr(care_recommendation, "care_type", "")
+    )
+    
+    # ==== 1. LIQUID ASSETS ====
+    liquid_balance = profile.checking_savings + profile.investment_accounts
+    if liquid_balance > 0:
+        categories["liquid_assets"] = AssetCategory(
+            name="liquid_assets",
+            display_name="💵 Liquid Assets",
+            current_balance=liquid_balance,
+            accessible_value=liquid_balance * 0.98,  # 2% for transaction fees/timing
+            is_liquid=True,
+            liquidation_timeframe="immediate",
+            recommended=True,
+            recommendation_reason="Ready to use - lowest cost option",
+            tax_implications="none",
+            notes="Checking, savings, CDs, brokerage accounts",
+        )
+    
+    # ==== 2. RETIREMENT ACCOUNTS ====
+    retirement_balance = profile.retirement_accounts_total
+    if retirement_balance > 0:
+        # Retirement accounts face taxes + potential early withdrawal penalty (if under 59.5)
+        # Assume age 62+ (no penalty), but still face ordinary income tax (~32% avg effective)
+        # Accessible value: 68% (32% tax withholding)
+        accessible = retirement_balance * 0.68
+        
+        categories["retirement_accounts"] = AssetCategory(
+            name="retirement_accounts",
+            display_name="🏦 Retirement Accounts",
+            current_balance=retirement_balance,
+            accessible_value=accessible,
+            is_liquid=False,
+            liquidation_timeframe="1-3_months",
+            recommended=True,
+            recommendation_reason="Taxable as income, but accessible for care costs",
+            tax_implications="ordinary_income",
+            notes="Traditional IRA, 401(k), Roth IRA (after age 59.5)",
+        )
+    
+    # ==== 3. LIFE INSURANCE CASH VALUE ====
+    if profile.life_insurance_cash_value > 0:
+        # Cash value can be borrowed against (no tax up to basis)
+        accessible = profile.life_insurance_cash_value * 0.95  # 5% for loan fees
+        
+        categories["life_insurance"] = AssetCategory(
+            name="life_insurance",
+            display_name="📜 Life Insurance Cash Value",
+            current_balance=profile.life_insurance_cash_value,
+            accessible_value=accessible,
+            is_liquid=False,
+            liquidation_timeframe="1-3_months",
+            recommended=True,
+            recommendation_reason="Can borrow against cash value (tax-free loan)",
+            tax_implications="none",
+            notes="Policy loans available up to cash value",
+        )
+    
+    # ==== 4. ANNUITIES ====
+    if profile.annuity_current_value > 0:
+        # Annuities have surrender charges (assume 7% avg) + tax on gains
+        accessible = profile.annuity_current_value * 0.85  # 15% haircut for surrender + tax
+        
+        categories["annuities"] = AssetCategory(
+            name="annuities",
+            display_name="💼 Annuities",
+            current_balance=profile.annuity_current_value,
+            accessible_value=accessible,
+            is_liquid=False,
+            liquidation_timeframe="1-3_months",
+            recommended=False,  # Usually better to keep annuity income stream
+            recommendation_reason="Surrender charges apply - consider keeping for income",
+            tax_implications="ordinary_income",
+            notes="Provides monthly income stream if not surrendered",
+        )
+    
+    # ==== 5. HOME EQUITY ====
+    home_equity = profile.primary_residence_value - profile.primary_residence_mortgage_balance
+    if home_equity > 50000:  # Only show if substantial equity
+        # Reverse mortgage typically provides ~60% of home value (age 62+)
+        # Assume user is 62+ for now (would use actual age in production)
+        accessible = home_equity * 0.60
+        
+        # Smart exclusion: Don't recommend selling home for in-home care
+        if is_in_home_care:
+            recommended = False
+            reason = "❌ Not recommended - home needed for in-home care"
+        else:
+            recommended = True
+            reason = "Reverse mortgage or sale available for facility care"
+        
+        categories["home_equity"] = AssetCategory(
+            name="home_equity",
+            display_name="🏠 Home Equity",
+            current_balance=home_equity,
+            accessible_value=accessible,
+            is_liquid=False,
+            liquidation_timeframe="3-6_months",
+            recommended=recommended,
+            recommendation_reason=reason,
+            tax_implications="none",
+            notes="Reverse mortgage, HELOC, or sale options",
+        )
+    
+    # ==== 6. OTHER REAL ESTATE ====
+    other_re_equity = profile.other_real_estate - profile.other_real_estate_debt_balance
+    if other_re_equity > 0:
+        # Assume 10% transaction costs + capital gains
+        accessible = other_re_equity * 0.80
+        
+        categories["other_real_estate"] = AssetCategory(
+            name="other_real_estate",
+            display_name="🏘️ Other Real Estate",
+            current_balance=other_re_equity,
+            accessible_value=accessible,
+            is_liquid=False,
+            liquidation_timeframe="3-6_months",
+            recommended=True,
+            recommendation_reason="Can be sold or used as collateral",
+            tax_implications="capital_gains",
+            notes="Rental property, land, vacation homes",
+        )
+    
+    # ==== 7. OTHER RESOURCES ====
+    if profile.other_resources > 0:
+        categories["other_resources"] = AssetCategory(
+            name="other_resources",
+            display_name="💎 Other Resources",
+            current_balance=profile.other_resources,
+            accessible_value=profile.other_resources * 0.90,
+            is_liquid=False,
+            liquidation_timeframe="1-3_months",
+            recommended=True,
+            recommendation_reason="Additional resources available",
+            tax_implications="none",
+            notes="Trusts, collectibles, other assets",
+        )
+    
+    return categories
+
+
+def calculate_recommended_funding_order(
+    asset_categories: dict[str, AssetCategory],
+    care_recommendation: Optional[CareRecommendation] = None,
+    profile: Optional[FinancialProfile] = None,
+) -> tuple[list[str], dict[str, str]]:
+    """
+    Determine recommended order for using assets based on:
+    - Liquidity (liquid first)
+    - Tax efficiency (tax-free before taxable)
+    - Cost (lowest cost first)
+    - Care type (smart exclusions)
+    
+    Returns:
+        (funding_order, funding_notes)
+        - funding_order: List of asset category names in recommended order
+        - funding_notes: Dict of category name -> explanation
+    """
+    
+    # Default conservative order (liquidity first, tax-efficient, then less liquid)
+    default_order = [
+        "liquid_assets",          # 1. Most liquid, no tax
+        "life_insurance",         # 2. Tax-free loans, relatively quick
+        "retirement_accounts",    # 3. Taxable, but accessible
+        "other_real_estate",      # 4. Illiquid, capital gains
+        "annuities",              # 5. Surrender charges, keep for income
+        "other_resources",        # 6. Varies by type
+        "home_equity",            # 7. Last for in-home care (needed), earlier for facility
+    ]
+    
+    # Filter to only categories that exist
+    funding_order = [cat for cat in default_order if cat in asset_categories]
+    
+    # Adjust for Medicaid planning context
+    if profile and profile.interested_in_spend_down:
+        # Medicaid planning: Liquidate non-exempt assets ASAP
+        funding_order = [
+            "liquid_assets",
+            "life_insurance",
+            "retirement_accounts",  # Countable for Medicaid
+            "annuities",
+            "other_real_estate",
+            "other_resources",
+            # Note: Primary residence often exempt (up to certain value)
+        ]
+    
+    # Generate notes for each category
+    funding_notes = {}
+    for i, cat_name in enumerate(funding_order, 1):
+        category = asset_categories[cat_name]
+        
+        if i == 1:
+            funding_notes[cat_name] = f"⭐ Start here - {category.recommendation_reason}"
+        elif category.recommended:
+            funding_notes[cat_name] = f"#{i} - {category.recommendation_reason}"
+        else:
+            funding_notes[cat_name] = f"Consider later - {category.recommendation_reason}"
+    
+    return funding_order, funding_notes
+
+
+def calculate_extended_runway(
+    monthly_gap: float,
+    selected_assets: dict[str, bool],
+    asset_categories: dict[str, AssetCategory],
+) -> Optional[float]:
+    """
+    Calculate how long care can be funded with selected assets.
+    
+    Args:
+        monthly_gap: Monthly shortfall (positive number)
+        selected_assets: Dict of asset_name -> bool (selected)
+        asset_categories: Asset category details
+        
+    Returns:
+        Extended runway in months, or None if no gap/indefinite coverage
+    """
+    
+    if monthly_gap <= 0:
+        return None  # No gap = indefinite coverage
+    
+    # Sum accessible value of selected assets
+    total_selected = sum(
+        asset_categories[name].accessible_value
+        for name, selected in selected_assets.items()
+        if selected and name in asset_categories
+    )
+    
+    if total_selected == 0:
+        return 0.0  # No assets selected
+    
+    # Calculate months of coverage
+    extended_runway = total_selected / monthly_gap
+    
+    return extended_runway

@@ -143,7 +143,10 @@ class CostEstimate:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "CostEstimate":
-        """Reconstruct from dict loaded from persistence."""
+        """Reconstruct from dict loaded from persistence.
+        
+        Handles backward compatibility for data without breakdown field.
+        """
         return cls(
             monthly_base=data["monthly_base"],
             monthly_adjusted=data["monthly_adjusted"],
@@ -153,7 +156,7 @@ class CostEstimate:
             multiplier=data["multiplier"],
             region_name=data["region_name"],
             care_tier=data["care_tier"],
-            breakdown=data["breakdown"],
+            breakdown=data.get("breakdown", {}),  # Default to empty dict if missing
         )
 
 
