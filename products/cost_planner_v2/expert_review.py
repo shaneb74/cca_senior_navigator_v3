@@ -241,6 +241,9 @@ def _render_financial_summary_banner(analysis, profile):
     )
     total_debt = profile.total_asset_debt if hasattr(profile, 'total_asset_debt') else 0.0
     net_assets = max(total_gross_assets - total_debt, 0.0)
+    
+    # ALWAYS use extended_runway with current selections (don't fall back to analysis.runway_months)
+    # This ensures consistency: duration reflects ONLY what user has checked
     extended_runway = calculate_extended_runway(
         analysis.monthly_gap if analysis.monthly_gap > 0 else 0,
         selected_assets,
@@ -248,16 +251,16 @@ def _render_financial_summary_banner(analysis, profile):
     )
     
     # Determine which coverage duration to show
-    if extended_runway and extended_runway > 0:
-        display_months = extended_runway
-        duration_label = "New Coverage Duration"
-    elif analysis.runway_months and analysis.runway_months > 0:
-        display_months = analysis.runway_months
-        duration_label = "Coverage Duration"
-    elif analysis.monthly_gap <= 0:
+    if analysis.monthly_gap <= 0:
+        # No gap - indefinite coverage
         display_months = None
         duration_label = "Coverage Duration"
+    elif extended_runway and extended_runway > 0:
+        # User has assets selected
+        display_months = extended_runway
+        duration_label = "Coverage Duration"
     else:
+        # No assets selected or gap too large
         display_months = 0
         duration_label = "Coverage Duration"
     
@@ -613,9 +616,10 @@ def _render_available_resources_cards(analysis, profile):
     
     # Initialize selection state if not exists
     if "expert_review_selected_assets" not in st.session_state:
-        # Default: Select liquid assets only
+        # Default: Select liquid assets + retirement accounts (most common scenario)
+        # User can adjust from here
         st.session_state.expert_review_selected_assets = {
-            name: category.is_liquid
+            name: name in ["liquid_assets", "retirement_accounts"]
             for name, category in analysis.asset_categories.items()
         }
     
