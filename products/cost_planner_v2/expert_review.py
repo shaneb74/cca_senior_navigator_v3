@@ -277,78 +277,50 @@ def _render_financial_summary_banner(analysis):
     coverage_pct = min(analysis.coverage_percentage, 100)
     progress_color = "var(--success-fg)" if coverage_pct >= 80 else "var(--warning-fg)" if coverage_pct >= 50 else "var(--error-fg)"
     
-    # Build unified banner
-    banner_html = f"""
-<div style="background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); border-radius: 16px; padding: 32px; border: 2px solid var(--border-primary); box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 8px;">
-    <div style="display: flex; align-items: center; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 2px solid var(--border-secondary);">
-        <div style="font-size: 18px; font-weight: 700; color: var(--text-primary); text-transform: uppercase; letter-spacing: 1px;">
-            💰 Financial Summary
-        </div>
-    </div>
+    # Build asset contribution line if applicable
+    asset_line = f'<div style="font-size: 13px; color: var(--success-fg); margin-top: 8px; font-weight: 600;">+ Assets: ${total_selected:,.0f}</div>' if total_selected > 0 else ''
     
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 28px;">
-        <div style="background: rgba(255,255,255,0.7); padding: 20px; border-radius: 12px; border: 1px solid var(--border-secondary);">
-            <div style="font-size: 12px; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 10px;">
-                {duration_label}
-            </div>
-            <div style="font-size: 36px; font-weight: 700; color: var(--primary-fg); line-height: 1.1;">
-                {coverage_duration}
-            </div>
-            {f'<div style="font-size: 13px; color: var(--success-fg); margin-top: 8px; font-weight: 600;">+ Assets: ${total_selected:,.0f}</div>' if total_selected > 0 else ''}
-        </div>
-        
-        <div style="background: rgba(255,255,255,0.7); padding: 20px; border-radius: 12px; border: 1px solid var(--border-secondary);">
-            <div style="font-size: 12px; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 10px;">
-                Estimated Care Cost
-            </div>
-            <div style="font-size: 36px; font-weight: 700; color: var(--text-primary); line-height: 1.1;">
-                ${analysis.estimated_monthly_cost:,.0f}
-            </div>
-            <div style="font-size: 13px; color: var(--text-secondary); margin-top: 4px; font-weight: 500;">per month</div>
-        </div>
-    </div>
-    
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 28px;">
-        <div style="background: rgba(255,255,255,0.7); padding: 20px; border-radius: 12px; border: 1px solid var(--border-secondary);">
-            <div style="font-size: 12px; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 10px;">
-                Monthly Income
-            </div>
-            <div style="font-size: 32px; font-weight: 700; color: var(--text-primary); line-height: 1.1;">
-                ${analysis.total_monthly_income + analysis.total_monthly_benefits:,.0f}
-            </div>
-            <div style="font-size: 13px; color: var(--text-secondary); margin-top: 4px; font-weight: 500;">per month</div>
-        </div>
-        
-        <div style="background: rgba(255,255,255,0.7); padding: 20px; border-radius: 12px; border: 1px solid var(--border-secondary);">
-            <div style="font-size: 12px; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 10px;">
-                {surplus_label}
-            </div>
-            <div style="font-size: 32px; font-weight: 700; color: {surplus_color}; line-height: 1.1;">
-                ${abs(analysis.monthly_gap):,.0f}
-            </div>
-            <div style="font-size: 13px; color: var(--text-secondary); margin-top: 4px; font-weight: 500;">per month</div>
-        </div>
-    </div>
-    
-    <div style="padding: 20px; background: rgba(255,255,255,0.7); border-radius: 12px; border: 1px solid var(--border-secondary);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-            <span style="font-size: 14px; font-weight: 700; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.5px;">
-                Coverage from Income
-            </span>
-            <span style="font-size: 20px; font-weight: 700; color: {progress_color};">
-                {analysis.coverage_percentage:.0f}%
-            </span>
-        </div>
-        <div style="width: 100%; background: var(--surface-secondary); border-radius: 12px; height: 32px; position: relative; overflow: hidden; box-shadow: inset 0 2px 6px rgba(0,0,0,0.1);">
-            <div style="width: {coverage_pct}%; background: linear-gradient(90deg, {progress_color} 0%, {progress_color}dd 100%); height: 100%; border-radius: 12px; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); display: flex; align-items: center; justify-content: flex-end; padding-right: 12px;">
-                <span style="font-size: 13px; font-weight: 700; color: white; text-shadow: 0 1px 3px rgba(0,0,0,0.3);">
-                    {coverage_pct:.0f}%
-                </span>
-            </div>
-        </div>
-    </div>
+    # Build unified banner HTML (NO leading whitespace)
+    banner_html = f"""<div style="background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); border-radius: 16px; padding: 32px; border: 2px solid var(--border-primary); box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 8px;">
+<div style="display: flex; align-items: center; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 2px solid var(--border-secondary);">
+<div style="font-size: 18px; font-weight: 700; color: var(--text-primary); text-transform: uppercase; letter-spacing: 1px;">💰 Financial Summary</div>
 </div>
-"""
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 28px;">
+<div style="background: rgba(255,255,255,0.7); padding: 20px; border-radius: 12px; border: 1px solid var(--border-secondary);">
+<div style="font-size: 12px; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 10px;">{duration_label}</div>
+<div style="font-size: 36px; font-weight: 700; color: var(--primary-fg); line-height: 1.1;">{coverage_duration}</div>
+{asset_line}
+</div>
+<div style="background: rgba(255,255,255,0.7); padding: 20px; border-radius: 12px; border: 1px solid var(--border-secondary);">
+<div style="font-size: 12px; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 10px;">Estimated Care Cost</div>
+<div style="font-size: 36px; font-weight: 700; color: var(--text-primary); line-height: 1.1;">${analysis.estimated_monthly_cost:,.0f}</div>
+<div style="font-size: 13px; color: var(--text-secondary); margin-top: 4px; font-weight: 500;">per month</div>
+</div>
+</div>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 28px;">
+<div style="background: rgba(255,255,255,0.7); padding: 20px; border-radius: 12px; border: 1px solid var(--border-secondary);">
+<div style="font-size: 12px; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 10px;">Monthly Income</div>
+<div style="font-size: 32px; font-weight: 700; color: var(--text-primary); line-height: 1.1;">${analysis.total_monthly_income + analysis.total_monthly_benefits:,.0f}</div>
+<div style="font-size: 13px; color: var(--text-secondary); margin-top: 4px; font-weight: 500;">per month</div>
+</div>
+<div style="background: rgba(255,255,255,0.7); padding: 20px; border-radius: 12px; border: 1px solid var(--border-secondary);">
+<div style="font-size: 12px; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 10px;">{surplus_label}</div>
+<div style="font-size: 32px; font-weight: 700; color: {surplus_color}; line-height: 1.1;">${abs(analysis.monthly_gap):,.0f}</div>
+<div style="font-size: 13px; color: var(--text-secondary); margin-top: 4px; font-weight: 500;">per month</div>
+</div>
+</div>
+<div style="padding: 20px; background: rgba(255,255,255,0.7); border-radius: 12px; border: 1px solid var(--border-secondary);">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+<span style="font-size: 14px; font-weight: 700; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.5px;">Coverage from Income</span>
+<span style="font-size: 20px; font-weight: 700; color: {progress_color};">{analysis.coverage_percentage:.0f}%</span>
+</div>
+<div style="width: 100%; background: var(--surface-secondary); border-radius: 12px; height: 32px; position: relative; overflow: hidden; box-shadow: inset 0 2px 6px rgba(0,0,0,0.1);">
+<div style="width: {coverage_pct}%; background: linear-gradient(90deg, {progress_color} 0%, {progress_color}dd 100%); height: 100%; border-radius: 12px; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); display: flex; align-items: center; justify-content: flex-end; padding-right: 12px;">
+<span style="font-size: 13px; font-weight: 700; color: white; text-shadow: 0 1px 3px rgba(0,0,0,0.3);">{coverage_pct:.0f}%</span>
+</div>
+</div>
+</div>
+</div>"""
     
     st.markdown(banner_html, unsafe_allow_html=True)
 
