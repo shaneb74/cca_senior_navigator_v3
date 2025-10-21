@@ -127,76 +127,151 @@ def _render_incomplete_state():
     st.markdown("</div>", unsafe_allow_html=True)
 
 
+def _get_dynamic_coverage_label(selected_assets, asset_categories):
+    """
+    Generate dynamic coverage label based on selected resources.
+    
+    Examples:
+    - No assets: "Coverage from Income"
+    - Liquid only: "Coverage from Income and Liquid Assets"
+    - Retirement only: "Coverage from Income and Retirement Accounts"
+    - Both: "Coverage from Income, Liquid Assets, and Retirement Accounts"
+    """
+    # Asset name to friendly label mapping
+    friendly_names = {
+        "liquid_assets": "Liquid Assets",
+        "retirement_accounts": "Retirement Accounts",
+        "life_insurance": "Life Insurance",
+        "annuities": "Annuities",
+        "home_equity": "Home Equity",
+        "other_real_estate": "Real Estate"
+    }
+    
+    # Get selected asset names
+    selected_names = [
+        friendly_names.get(name, name.replace("_", " ").title())
+        for name, selected in selected_assets.items()
+        if selected and name in asset_categories
+    ]
+    
+    # Build label
+    if not selected_names:
+        return "Coverage from Income"
+    elif len(selected_names) == 1:
+        return f"Coverage from Income and {selected_names[0]}"
+    else:
+        # Join with commas and "and" before last item
+        all_but_last = ", ".join(selected_names[:-1])
+        return f"Coverage from Income, {all_but_last}, and {selected_names[-1]}"
+
+
 def _render_navi_guidance(analysis, profile):
     """
     Render Navi panel with contextual guidance based on analysis.
     
-    NEW: Lead with coverage duration as primary metric, income coverage as submetric.
+    Dynamic messaging based on:
+    - Current coverage percentage from income
+    - Selected assets and resulting coverage duration
+    - Coverage adequacy tiers
     """
-
+    
+    from products.cost_planner_v2.expert_formulas import calculate_extended_runway
+    
+    # Get current selections
+    selected_assets = st.session_state.get("expert_review_selected_assets", {})
+    
+    # Calculate extended runway with selections
+    extended_runway = calculate_extended_runway(
+        analysis.monthly_gap if analysis.monthly_gap > 0 else 0,
+        selected_assets,
+        analysis.asset_categories,
+    )
+    
     # Calculate coverage duration in human-friendly format
-    if analysis.runway_months is not None and analysis.runway_months > 0:
-        years = int(analysis.runway_months / 12)
-        months = int(analysis.runway_months % 12)
+    display_months = extended_runway if extended_runway and extended_runway > 0 else 0
+    
+    if analysis.monthly_gap <= 0:
+        coverage_duration = "Indefinite"
+        coverage_years = 999  # Treat as excellent
+    elif display_months > 0:
+        years = int(display_months / 12)
+        months = int(display_months % 12)
         if years > 0:
             coverage_duration = f"{years} year{'s' if years != 1 else ''}"
             if months > 0:
                 coverage_duration += f", {months} month{'s' if months != 1 else ''}"
         else:
-            coverage_duration = f"{int(analysis.runway_months)} month{'s' if analysis.runway_months != 1 else ''}"
-    elif analysis.monthly_gap <= 0:
-        coverage_duration = "Indefinite"
+            coverage_duration = f"{int(display_months)} month{'s' if display_months != 1 else ''}"
+        coverage_years = display_months / 12
     else:
         coverage_duration = "Immediate action needed"
-
-    # Calculate coverage years for context-aware messaging
-    coverage_years = (analysis.runway_months or 0) / 12 if analysis.runway_months else 0
+        coverage_years = 0
     
-    # Determine message based on coverage tier WITH intelligent, contextual guidance
-    if analysis.coverage_tier == "excellent" or coverage_years >= 10:
+    # Count selected assets
+    selected_count = sum(1 for selected in selected_assets.values() if selected)
+    
+    # DYNAMIC MESSAGING based on coverage adequacy and selections
+    income_coverage_pct = analysis.coverage_percentage
+    
+    # Excellent coverage (income alone ≥90% OR total duration >10 years)
+    if income_coverage_pct >= 90 or coverage_years >= 10:
         title = "Excellent Financial Position"
-        reason = f"🔹 **Coverage Duration:** {coverage_duration}  \n{analysis.coverage_percentage:.0f}% of monthly costs covered by income.\n\nYour income and benefits cover your estimated care costs. Let's review your options to extend your care plan."
-        encouragement = {
-            "icon": "✅",
-            "text": "You're in great shape! Let's make sure you keep some liquidity for unexpected costs.",
-            "status": "complete",
-        }
-
-    elif analysis.coverage_tier == "good" or (5 <= coverage_years < 10):
+        reason = f"🔹 **Coverage Duration:** {coverage_duration}  \n{income_coverage_pct:.0f}% of monthly costs covered by income.\n\nYour income and benefits cover your estimated care costs. Let's review your options to extend your care plan."
+        
+        if coverage_years >= 10:
+            encouragement = {
+                "icon": "✅",
+                "text": "You're in great shape! Your care plan is sustainable long-term.",
+                "status": "complete",
+            }
+        else:
+            encouragement = {
+                "icon": "✅",
+                "text": "Excellent financial position. You're well-prepared for ongoing care.",
+                "status": "complete",
+            }
+    
+    # Good coverage (income 50-89%)
+    elif 50 <= income_coverage_pct < 90:
         title = "Strong Financial Foundation"
-        reason = f"🔹 **Coverage Duration:** {coverage_duration}  \n{analysis.coverage_percentage:.0f}% of monthly costs covered by income.\n\nYou have a solid foundation with a manageable gap. Let's explore your resources."
-        encouragement = {
-            "icon": "👍",
-            "text": "Strong foundation! A few adjustments to your plan can extend your care coverage.",
-            "status": "active",
-        }
-
-    elif analysis.coverage_tier == "moderate" or (2 <= coverage_years < 5):
+        reason = f"🔹 **Coverage Duration:** {coverage_duration}  \n{income_coverage_pct:.0f}% of monthly costs covered by income.\n\nYou have a solid foundation with a manageable gap. Let's explore your resources."
+        
+        if selected_count > 0:
+            encouragement = {
+                "icon": "👍",
+                "text": "Good progress! Adding assets extends your coverage significantly.",
+                "status": "active",
+            }
+        else:
+            encouragement = {
+                "icon": "📊",
+                "text": "Strong foundation. Consider adding liquid assets or retirement funds to close your coverage gap.",
+                "status": "active",
+            }
+    
+    # Concerning coverage (income <50%)
+    else:
         title = "Strategic Planning Recommended"
-        reason = f"🔹 **Coverage Duration:** {coverage_duration}  \n{analysis.coverage_percentage:.0f}% of monthly costs covered by income.\n\nA strategic plan will help you bridge the gap and fund your care."
-        encouragement = {
-            "icon": "📊",
-            "text": "You have a strong start. Let's explore how additional assets or benefits can help close the gap.",
-            "status": "active",
-        }
-
-    elif analysis.coverage_tier == "concerning" or (0.5 <= coverage_years < 2):
-        title = "Action Needed Soon"
-        reason = f"🔹 **Coverage Duration:** {coverage_duration}  \n{analysis.coverage_percentage:.0f}% of monthly costs covered by income.\n\nPlanning is important to secure sustainable care. We'll help you explore all options."
-        encouragement = {
-            "icon": "⚠️",
-            "text": "Let's prioritize building a sustainable funding plan—time is important.",
-            "status": "warning",
-        }
-
-    else:  # critical or very short runway
-        title = "Immediate Planning Essential"
-        reason = f"🔹 **Coverage Duration:** {coverage_duration}  \n{analysis.coverage_percentage:.0f}% of monthly costs covered by income.\n\nImmediate action is needed. We'll guide you through available resources and assistance programs."
-        encouragement = {
-            "icon": "🚨",
-            "text": "Help is available. Let's explore benefit programs and community resources urgently.",
-            "status": "warning",
-        }
+        reason = f"🔹 **Coverage Duration:** {coverage_duration}  \n{income_coverage_pct:.0f}% of monthly costs covered by income.\n\nA strategic plan will help you bridge the gap and fund your care."
+        
+        if selected_count > 0 and coverage_years >= 5:
+            encouragement = {
+                "icon": "�",
+                "text": "Excellent progress! Your combined resources create a sustainable plan.",
+                "status": "active",
+            }
+        elif selected_count > 0:
+            encouragement = {
+                "icon": "📊",
+                "text": "You're building a stronger plan. Consider additional resources to extend coverage further.",
+                "status": "active",
+            }
+        else:
+            encouragement = {
+                "icon": "⚠️",
+                "text": "Your income doesn't fully cover your care costs. Add your liquid assets or retirement accounts to strengthen your plan.",
+                "status": "warning",
+            }
 
     # Context chips - removed (info now in reason text)
     context_chips = []
@@ -294,6 +369,9 @@ def _render_financial_summary_banner(analysis, profile):
     coverage_pct = min(analysis.coverage_percentage, 100)
     progress_color = "#16a34a" if coverage_pct >= 80 else "#f59e0b" if coverage_pct >= 50 else "#dc2626"
     
+    # Get dynamic coverage label based on selected resources
+    coverage_label = _get_dynamic_coverage_label(selected_assets, analysis.asset_categories)
+    
     # Build asset contribution line if applicable
     asset_line = f'<div style="font-size: 13px; color: var(--success-fg); margin-top: 8px; font-weight: 600;">+ Assets: ${total_selected:,.0f}</div>' if total_selected > 0 else ''
     
@@ -351,7 +429,7 @@ def _render_financial_summary_banner(analysis, profile):
 {debt_section}
 <div style="padding: 20px; background: rgba(255,255,255,0.7); border-radius: 12px; border: 1px solid var(--border-secondary);">
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-<span style="font-size: 14px; font-weight: 700; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.5px;">Coverage from Income</span>
+<span style="font-size: 14px; font-weight: 700; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.5px;">{coverage_label}</span>
 <span style="font-size: 20px; font-weight: 700; color: {progress_color};">{analysis.coverage_percentage:.0f}%</span>
 </div>
 <div style="width: 100%; background: #e8e8e8; border-radius: 12px; height: 32px; position: relative; overflow: hidden; box-shadow: inset 0 2px 6px rgba(0,0,0,0.1);">
