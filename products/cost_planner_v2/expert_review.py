@@ -71,6 +71,11 @@ def render():
         unsafe_allow_html=True,
     )
 
+    # 1. Coverage Impact Visualization (NEW POSITION - right after Navi)
+    if analysis.asset_categories:
+        _render_coverage_impact_visualization(analysis, profile)
+        st.markdown('<div style="margin: 32px 0;"></div>', unsafe_allow_html=True)
+
     # 2. Income vs Cost Snapshot (simplified card with progress bar)
     _render_income_cost_snapshot(analysis)
 
@@ -79,11 +84,6 @@ def render():
     # 3. Available Resources (expandable cards per category)
     if analysis.asset_categories:
         _render_available_resources_cards(analysis, profile)
-        st.markdown('<div style="margin: 32px 0;"></div>', unsafe_allow_html=True)
-
-    # 4. Coverage Impact Visualization (dynamic, updates with selections)
-    if analysis.asset_categories:
-        _render_coverage_impact_visualization(analysis, profile)
         st.markdown('<div style="margin: 32px 0;"></div>', unsafe_allow_html=True)
 
     # 5. Recommended Actions & Resources
@@ -227,54 +227,52 @@ def _render_income_cost_snapshot(analysis):
     st.markdown('<div style="background: var(--surface-primary); border-radius: 12px; padding: 32px; border: 1px solid var(--border-primary); box-shadow: 0 2px 8px rgba(0,0,0,0.05);">', unsafe_allow_html=True)
     
     # Three-column layout with visual dividers
-    st.markdown(
-        f"""
-        <div style="display: flex; justify-content: space-between; align-items: stretch; gap: 24px; margin-bottom: 32px;">
-            <div style="flex: 1; text-align: center; padding: 20px; background: rgba(255,255,255,0.5); border-radius: 10px; border: 1px solid var(--border-secondary);">
-                <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Estimated Care Cost</div>
-                <div style="font-size: 32px; font-weight: 700; color: var(--text-primary); line-height: 1.2;">${analysis.estimated_monthly_cost:,.0f}</div>
-                <div style="font-size: 13px; color: var(--text-secondary); margin-top: 6px; font-weight: 500;">/month</div>
-            </div>
-            
-            <div style="flex: 1; text-align: center; padding: 20px; background: rgba(255,255,255,0.5); border-radius: 10px; border: 1px solid var(--border-secondary);">
-                <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Monthly Income</div>
-                <div style="font-size: 32px; font-weight: 700; color: var(--text-primary); line-height: 1.2;">${analysis.total_monthly_income + analysis.total_monthly_benefits:,.0f}</div>
-                <div style="font-size: 13px; color: var(--text-secondary); margin-top: 6px; font-weight: 500;">/month</div>
-            </div>
-            
-            <div style="flex: 1; text-align: center; padding: 20px; background: rgba(255,255,255,0.5); border-radius: 10px; border: 1px solid var(--border-secondary);">
-                <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">{"Surplus" if analysis.monthly_gap < 0 else "Monthly Shortfall"}</div>
-                <div style="font-size: 32px; font-weight: 700; color: {'var(--success-fg)' if analysis.monthly_gap < 0 else 'var(--error-fg)'}; line-height: 1.2;">${abs(analysis.monthly_gap):,.0f}</div>
-                <div style="font-size: 13px; color: var(--text-secondary); margin-top: 6px; font-weight: 500;">/month</div>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    surplus_label = "Surplus" if analysis.monthly_gap < 0 else "Monthly Shortfall"
+    surplus_color = "var(--success-fg)" if analysis.monthly_gap < 0 else "var(--error-fg)"
+    
+    html_content = f"""
+<div style="display: flex; justify-content: space-between; align-items: stretch; gap: 24px; margin-bottom: 32px;">
+    <div style="flex: 1; text-align: center; padding: 20px; background: rgba(255,255,255,0.5); border-radius: 10px; border: 1px solid var(--border-secondary);">
+        <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Estimated Care Cost</div>
+        <div style="font-size: 32px; font-weight: 700; color: var(--text-primary); line-height: 1.2;">${analysis.estimated_monthly_cost:,.0f}</div>
+        <div style="font-size: 13px; color: var(--text-secondary); margin-top: 6px; font-weight: 500;">/month</div>
+    </div>
+    <div style="flex: 1; text-align: center; padding: 20px; background: rgba(255,255,255,0.5); border-radius: 10px; border: 1px solid var(--border-secondary);">
+        <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Monthly Income</div>
+        <div style="font-size: 32px; font-weight: 700; color: var(--text-primary); line-height: 1.2;">${analysis.total_monthly_income + analysis.total_monthly_benefits:,.0f}</div>
+        <div style="font-size: 13px; color: var(--text-secondary); margin-top: 6px; font-weight: 500;">/month</div>
+    </div>
+    <div style="flex: 1; text-align: center; padding: 20px; background: rgba(255,255,255,0.5); border-radius: 10px; border: 1px solid var(--border-secondary);">
+        <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">{surplus_label}</div>
+        <div style="font-size: 32px; font-weight: 700; color: {surplus_color}; line-height: 1.2;">${abs(analysis.monthly_gap):,.0f}</div>
+        <div style="font-size: 13px; color: var(--text-secondary); margin-top: 6px; font-weight: 500;">/month</div>
+    </div>
+</div>
+"""
+    
+    st.markdown(html_content, unsafe_allow_html=True)
     
     # Enhanced progress bar with bold label
     coverage_pct = min(analysis.coverage_percentage, 100)  # Cap at 100% for display
     progress_color = "var(--success-fg)" if coverage_pct >= 80 else "var(--warning-fg)" if coverage_pct >= 50 else "var(--error-fg)"
     
-    st.markdown(
-        f"""
-        <div style="margin-top: 8px;">
-            <div style="font-size: 15px; color: var(--text-primary); margin-bottom: 12px; font-weight: 700; display: flex; justify-content: space-between; align-items: center;">
-                <span>Coverage From Income</span>
-                <span style="color: {progress_color};">{analysis.coverage_percentage:.0f}%</span>
-            </div>
-            <div style="width: 100%; background: var(--surface-secondary); border-radius: 10px; height: 40px; position: relative; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);">
-                <div style="width: {coverage_pct}%; background: {progress_color}; height: 100%; border-radius: 10px; transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); position: relative;">
-                    <div style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 14px; font-weight: 700; color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">
-                        {analysis.coverage_percentage:.0f}%
-                    </div>
-                </div>
+    progress_html = f"""
+<div style="margin-top: 8px;">
+    <div style="font-size: 15px; color: var(--text-primary); margin-bottom: 12px; font-weight: 700; display: flex; justify-content: space-between; align-items: center;">
+        <span>Coverage From Income</span>
+        <span style="color: {progress_color};">{analysis.coverage_percentage:.0f}%</span>
+    </div>
+    <div style="width: 100%; background: var(--surface-secondary); border-radius: 10px; height: 40px; position: relative; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);">
+        <div style="width: {coverage_pct}%; background: {progress_color}; height: 100%; border-radius: 10px; transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); position: relative;">
+            <div style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 14px; font-weight: 700; color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">
+                {analysis.coverage_percentage:.0f}%
             </div>
         </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    </div>
+</div>
+"""
     
+    st.markdown(progress_html, unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
 
