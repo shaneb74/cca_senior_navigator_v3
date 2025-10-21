@@ -72,7 +72,7 @@ def render():
     )
 
     # 1. Financial Summary Banner (consolidated metrics)
-    _render_financial_summary_banner(analysis)
+    _render_financial_summary_banner(analysis, profile)
 
     st.markdown('<div style="margin: 32px 0;"></div>', unsafe_allow_html=True)
 
@@ -211,7 +211,7 @@ def _render_navi_guidance(analysis, profile):
     )
 
 
-def _render_financial_summary_banner(analysis):
+def _render_financial_summary_banner(analysis, profile):
     """
     Render unified Financial Summary banner with all key metrics.
     
@@ -220,6 +220,7 @@ def _render_financial_summary_banner(analysis):
     - Estimated Care Cost
     - Monthly Income
     - Monthly Shortfall
+    - Total Assets / Debts / Net Available (if debt exists)
     - Coverage from Income (with visual progress bar)
     """
     
@@ -227,6 +228,19 @@ def _render_financial_summary_banner(analysis):
     
     # Calculate coverage duration (with selected assets if any)
     selected_assets = st.session_state.get("expert_review_selected_assets", {})
+    extended_runway = calculate_extended_runway(
+        analysis.monthly_gap if analysis.monthly_gap > 0 else 0,
+        selected_assets,
+        analysis.asset_categories,
+    )
+    
+    # Calculate total gross and net assets
+    total_gross_assets = sum(
+        cat.current_balance 
+        for cat in analysis.asset_categories.values()
+    )
+    total_debt = profile.total_asset_debt if hasattr(profile, 'total_asset_debt') else 0.0
+    net_assets = max(total_gross_assets - total_debt, 0.0)
     extended_runway = calculate_extended_runway(
         analysis.monthly_gap if analysis.monthly_gap > 0 else 0,
         selected_assets,
@@ -280,6 +294,28 @@ def _render_financial_summary_banner(analysis):
     # Build asset contribution line if applicable
     asset_line = f'<div style="font-size: 13px; color: var(--success-fg); margin-top: 8px; font-weight: 600;">+ Assets: ${total_selected:,.0f}</div>' if total_selected > 0 else ''
     
+    # Build debt section if applicable
+    debt_section = ""
+    if total_debt > 0:
+        debt_section = f"""
+<div style="background: rgba(255,245,235,0.7); padding: 16px 20px; border-radius: 12px; border: 1px solid #ffc107; margin-bottom: 24px;">
+<div style="font-size: 12px; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 12px;">Asset Debt Considerations</div>
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+<span style="font-size: 14px; color: var(--text-primary);">Total Assets (Gross)</span>
+<span style="font-size: 16px; font-weight: 600; color: var(--text-primary);">${total_gross_assets:,.0f}</span>
+</div>
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+<span style="font-size: 14px; color: var(--error-fg);">Less: Debts Against Assets</span>
+<span style="font-size: 16px; font-weight: 600; color: var(--error-fg);">-${total_debt:,.0f}</span>
+</div>
+<div style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 2px solid var(--border-secondary);">
+<span style="font-size: 14px; font-weight: 700; color: var(--text-primary);">Net Available Assets</span>
+<span style="font-size: 18px; font-weight: 700; color: var(--primary-fg);">${net_assets:,.0f}</span>
+</div>
+<div style="font-size: 12px; color: var(--text-secondary); margin-top: 8px; font-style: italic;">💡 Calculations use net values after debt obligations</div>
+</div>
+"""
+    
     # Build unified banner HTML (NO leading whitespace)
     banner_html = f"""<div style="background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); border-radius: 16px; padding: 32px; border: 2px solid var(--border-primary); box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 8px;">
 <div style="display: flex; align-items: center; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 2px solid var(--border-secondary);">
@@ -309,13 +345,14 @@ def _render_financial_summary_banner(analysis):
 <div style="font-size: 13px; color: var(--text-secondary); margin-top: 4px; font-weight: 500;">per month</div>
 </div>
 </div>
+{debt_section}
 <div style="padding: 20px; background: rgba(255,255,255,0.7); border-radius: 12px; border: 1px solid var(--border-secondary);">
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
 <span style="font-size: 14px; font-weight: 700; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.5px;">Coverage from Income</span>
 <span style="font-size: 20px; font-weight: 700; color: {progress_color};">{analysis.coverage_percentage:.0f}%</span>
 </div>
-<div style="width: 100%; background: var(--surface-secondary); border-radius: 12px; height: 32px; position: relative; overflow: hidden; box-shadow: inset 0 2px 6px rgba(0,0,0,0.1);">
-<div style="width: {coverage_pct}%; background: linear-gradient(90deg, {progress_color} 0%, {progress_color}dd 100%); height: 100%; border-radius: 12px; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); display: flex; align-items: center; justify-content: flex-end; padding-right: 12px;">
+<div style="width: 100%; background: #e8e8e8; border-radius: 12px; height: 32px; position: relative; overflow: hidden; box-shadow: inset 0 2px 6px rgba(0,0,0,0.1);">
+<div style="width: {max(coverage_pct, 1)}%; background: linear-gradient(90deg, {progress_color} 0%, {progress_color}dd 100%); min-width: 2px; height: 100%; border-radius: 12px; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); display: flex; align-items: center; justify-content: flex-end; padding-right: 12px;">
 <span style="font-size: 13px; font-weight: 700; color: white; text-shadow: 0 1px 3px rgba(0,0,0,0.3);">{coverage_pct:.0f}%</span>
 </div>
 </div>
