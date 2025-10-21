@@ -22,13 +22,18 @@ def render():
 
     Future: Replace with real OAuth/email authentication.
     """
+    
+    print("[COST_PLANNER_AUTH] Auth step rendering...")
 
     # AUTO-ADVANCE: If already authenticated, skip this step
     if is_authenticated():
+        print("[COST_PLANNER_AUTH] User already authenticated, auto-advancing to triage...")
         # User is logged in - go directly to next step
         st.session_state.cost_v2_step = "triage"
         st.rerun()
         return
+    
+    print("[COST_PLANNER_AUTH] User not authenticated, showing sign-in form...")
 
     # Not authenticated - show sign-in only (no guest mode in MVP)
     st.title("🔐 Sign In to Continue")
