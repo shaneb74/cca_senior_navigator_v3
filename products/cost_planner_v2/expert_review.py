@@ -223,8 +223,6 @@ def _render_income_cost_snapshot(analysis):
     Simplified card showing: cost, income, shortfall, and visual progress bar.
     """
     
-    st.markdown("### 💰 Financial Snapshot")
-    
     # Create clean card with background and subtle shadow
     st.markdown('<div style="background: var(--surface-primary); border-radius: 12px; padding: 32px; border: 1px solid var(--border-primary); box-shadow: 0 2px 8px rgba(0,0,0,0.05);">', unsafe_allow_html=True)
     
@@ -232,21 +230,18 @@ def _render_income_cost_snapshot(analysis):
     st.markdown(
         f"""
         <div style="display: flex; justify-content: space-between; align-items: stretch; gap: 24px; margin-bottom: 32px;">
-            <!-- Column 1: Estimated Cost -->
             <div style="flex: 1; text-align: center; padding: 20px; background: rgba(255,255,255,0.5); border-radius: 10px; border: 1px solid var(--border-secondary);">
                 <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Estimated Care Cost</div>
                 <div style="font-size: 32px; font-weight: 700; color: var(--text-primary); line-height: 1.2;">${analysis.estimated_monthly_cost:,.0f}</div>
                 <div style="font-size: 13px; color: var(--text-secondary); margin-top: 6px; font-weight: 500;">/month</div>
             </div>
             
-            <!-- Column 2: Monthly Income -->
             <div style="flex: 1; text-align: center; padding: 20px; background: rgba(255,255,255,0.5); border-radius: 10px; border: 1px solid var(--border-secondary);">
                 <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Monthly Income</div>
                 <div style="font-size: 32px; font-weight: 700; color: var(--text-primary); line-height: 1.2;">${analysis.total_monthly_income + analysis.total_monthly_benefits:,.0f}</div>
                 <div style="font-size: 13px; color: var(--text-secondary); margin-top: 6px; font-weight: 500;">/month</div>
             </div>
             
-            <!-- Column 3: Monthly Shortfall -->
             <div style="flex: 1; text-align: center; padding: 20px; background: rgba(255,255,255,0.5); border-radius: 10px; border: 1px solid var(--border-secondary);">
                 <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">{"Surplus" if analysis.monthly_gap < 0 else "Monthly Shortfall"}</div>
                 <div style="font-size: 32px; font-weight: 700; color: {'var(--success-fg)' if analysis.monthly_gap < 0 else 'var(--error-fg)'}; line-height: 1.2;">${abs(analysis.monthly_gap):,.0f}</div>
@@ -613,87 +608,6 @@ def _render_available_resources_cards(analysis, profile):
                 st.markdown(f"<div style='font-size: 13px; color: var(--text-secondary); margin-top: 8px;'>{category.notes}</div>", unsafe_allow_html=True)
         
         st.markdown('</div>', unsafe_allow_html=True)
-    
-    # Calculate extended coverage with selected assets
-    from products.cost_planner_v2.expert_formulas import calculate_extended_runway
-    
-    selected_assets = st.session_state.expert_review_selected_assets
-    extended_runway = calculate_extended_runway(
-        analysis.monthly_gap if analysis.monthly_gap > 0 else 0,
-        selected_assets,
-        analysis.asset_categories,
-    )
-    
-    # Show coverage analysis
-    st.markdown('<div style="margin: 24px 0;"></div>', unsafe_allow_html=True)
-    st.markdown("#### 📊 Coverage Analysis with Selected Assets")
-    
-    # Calculate total selected value
-    total_selected = sum(
-        analysis.asset_categories[name].accessible_value
-        for name, selected in selected_assets.items()
-        if selected and name in analysis.asset_categories
-    )
-    
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        st.metric(
-            label="Total Selected Assets",
-            value=f"${total_selected:,.0f}",
-        )
-    
-    with col2:
-        if analysis.monthly_gap > 0 and total_selected > 0:
-            # Show how gap is covered
-            gap_covered_pct = min((total_selected / (analysis.monthly_gap * 12)) * 100, 999)
-            st.metric(
-                label="First Year Gap Coverage",
-                value=f"{gap_covered_pct:.0f}%",
-            )
-        else:
-            st.metric(
-                label="Monthly Gap",
-                value="$0" if analysis.monthly_gap <= 0 else f"${analysis.monthly_gap:,.0f}",
-            )
-    
-    with col3:
-        if extended_runway is not None and extended_runway > 0:
-            years = int(extended_runway / 12)
-            months = int(extended_runway % 12)
-            
-            if years > 0:
-                runway_display = f"{years}y {months}m" if months > 0 else f"{years} years"
-            else:
-                runway_display = f"{int(extended_runway)} months"
-            
-            # Color based on length
-            if extended_runway >= 36:
-                delta_color = "normal"
-            elif extended_runway >= 12:
-                delta_color = "inverse"
-            else:
-                delta_color = "off"
-            
-            st.metric(
-                label="Extended Coverage Runway",
-                value=runway_display,
-                delta="With selected assets",
-                delta_color=delta_color,
-            )
-        elif analysis.monthly_gap <= 0:
-            st.metric(
-                label="Coverage Runway",
-                value="Indefinite",
-                delta="Income covers costs",
-                delta_color="normal",
-            )
-        else:
-            st.metric(
-                label="Extended Runway",
-                value="Select assets",
-                delta="to calculate",
-            )
     
     # Rerun if selection changed (to update calculations)
     if selection_changed:
