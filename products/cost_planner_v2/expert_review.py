@@ -213,48 +213,64 @@ def _render_navi_guidance(analysis, profile):
     # DYNAMIC MESSAGING based on coverage adequacy and selections
     income_coverage_pct = analysis.coverage_percentage
     
-    # Excellent coverage (income alone ≥90% OR total duration >10 years)
-    if income_coverage_pct >= 90 or coverage_years >= 10:
+    # Fully funded (30+ years OR income alone ≥90%)
+    if coverage_years >= 30 or income_coverage_pct >= 90:
         title = "Excellent Financial Position"
-        reason = f"🔹 **Coverage Duration:** {coverage_duration}  \n{income_coverage_pct:.0f}% of monthly costs covered by income.\n\nYour income and benefits cover your estimated care costs. Let's review your options to extend your care plan."
+        reason = f"🔹 **Coverage Duration:** {coverage_duration}  \n\nYour income and resources cover your estimated care costs for the long term."
+        encouragement = {
+            "icon": "✅",
+            "text": "Excellent. Your income and resources cover your care for 30 years or more.",
+            "status": "complete",
+        }
+    
+    # Very strong coverage (15-29 years)
+    elif 15 <= coverage_years < 30:
+        title = "Strong Financial Security"
+        reason = f"🔹 **Coverage Duration:** {coverage_duration}  \n\nYou have substantial coverage that funds care well into the future."
         
-        if coverage_years >= 10:
+        if selected_count > 0:
             encouragement = {
                 "icon": "✅",
-                "text": "You're in great shape! Your care plan is sustainable long-term.",
+                "text": "You're in good shape. Your resources fund care for nearly two decades.",
                 "status": "complete",
             }
         else:
             encouragement = {
-                "icon": "✅",
-                "text": "Excellent financial position. You're well-prepared for ongoing care.",
-                "status": "complete",
+                "icon": "👍",
+                "text": "Strong foundation. Your income provides excellent long-term coverage.",
+                "status": "active",
             }
     
-    # Good coverage (income 50-89%)
-    elif 50 <= income_coverage_pct < 90:
-        title = "Strong Financial Foundation"
-        reason = f"🔹 **Coverage Duration:** {coverage_duration}  \n{income_coverage_pct:.0f}% of monthly costs covered by income.\n\nYou have a solid foundation with a manageable gap. Let's explore your resources."
+    # Moderate coverage (5-14 years)
+    elif 5 <= coverage_years < 15:
+        title = "Solid Financial Foundation"
+        reason = f"🔹 **Coverage Duration:** {coverage_duration}  \n\nYour resources provide meaningful coverage. Let's review options to extend your plan."
         
-        if selected_count > 0:
+        if selected_count > 0 and coverage_years >= 10:
             encouragement = {
                 "icon": "👍",
-                "text": "Good progress! Adding assets extends your coverage significantly.",
+                "text": "You're building a sustainable plan. Your combined resources provide strong coverage.",
+                "status": "active",
+            }
+        elif selected_count > 0:
+            encouragement = {
+                "icon": "�",
+                "text": "Good progress. Adding resources extends your coverage meaningfully.",
                 "status": "active",
             }
         else:
             encouragement = {
                 "icon": "📊",
-                "text": "Strong foundation. Consider adding liquid assets or retirement funds to close your coverage gap.",
+                "text": "Your income provides a strong foundation. Adding available resources can extend your plan.",
                 "status": "active",
             }
     
-    # Concerning coverage (income <50%)
+    # Limited coverage (under 5 years)
     else:
-        title = "Strategic Planning Recommended"
-        reason = f"🔹 **Coverage Duration:** {coverage_duration}  \n{income_coverage_pct:.0f}% of monthly costs covered by income.\n\nA strategic plan will help you bridge the gap and fund your care."
+        title = "Planning Opportunity"
+        reason = f"🔹 **Coverage Duration:** {coverage_duration}  \n\nLet's work together to build a sustainable care funding strategy."
         
-        if selected_count > 0 and coverage_years >= 5:
+        if selected_count > 0 and coverage_years >= 2:
             encouragement = {
                 "icon": "�",
                 "text": "Excellent progress! Your combined resources create a sustainable plan.",
@@ -262,14 +278,14 @@ def _render_navi_guidance(analysis, profile):
             }
         elif selected_count > 0:
             encouragement = {
-                "icon": "📊",
-                "text": "You're building a stronger plan. Consider additional resources to extend coverage further.",
+                "icon": "📋",
+                "text": "Your income provides partial coverage. Adding more resources will help extend your plan.",
                 "status": "active",
             }
         else:
             encouragement = {
-                "icon": "⚠️",
-                "text": "Your income doesn't fully cover your care costs. Add your liquid assets or retirement accounts to strengthen your plan.",
+                "icon": "📋",
+                "text": "Your income provides a foundation. Adding available resources can extend your coverage.",
                 "status": "warning",
             }
 
@@ -286,6 +302,63 @@ def _render_navi_guidance(analysis, profile):
     )
 
 
+def _calculate_timeline_segments(analysis, selected_assets):
+    """
+    Calculate timeline segments for Genworth-style visualization.
+    
+    Returns:
+    - income_years: Years covered by income alone
+    - asset_years: Additional years covered by assets
+    - total_years: Total coverage years
+    - timeline_max: Fixed horizon (30 years)
+    """
+    from products.cost_planner_v2.expert_formulas import calculate_extended_runway
+    
+    timeline_max = 30  # Fixed 30-year horizon
+    
+    # Calculate income-only coverage
+    if analysis.monthly_gap <= 0:
+        # Income covers everything
+        income_years = timeline_max
+        asset_years = 0
+        total_years = timeline_max
+    elif analysis.monthly_gap > 0:
+        # Calculate how long income alone would last (infinite if no gap)
+        # Since there's a gap, income alone provides 0 additional runway
+        # The coverage_percentage tells us what portion of costs income covers
+        income_coverage_ratio = analysis.coverage_percentage / 100.0
+        
+        # If monthly_gap > 0, income alone doesn't sustain care
+        # But we need to show the partial coverage it provides
+        # Use the total extended runway and back out the asset contribution
+        
+        total_months = calculate_extended_runway(
+            analysis.monthly_gap,
+            selected_assets,
+            analysis.asset_categories,
+        ) or 0
+        
+        # Calculate with no assets to get income-only baseline
+        no_assets = {name: False for name in selected_assets.keys()}
+        income_only_months = calculate_extended_runway(
+            analysis.monthly_gap,
+            no_assets,
+            analysis.asset_categories,
+        ) or 0
+        
+        income_years = min(income_only_months / 12.0, timeline_max)
+        total_years = min(total_months / 12.0, timeline_max)
+        asset_years = max(total_years - income_years, 0)
+    
+    return {
+        "income_years": income_years,
+        "asset_years": asset_years,
+        "total_years": total_years,
+        "timeline_max": timeline_max,
+        "exceeds_timeline": total_years >= timeline_max
+    }
+
+
 def _render_financial_summary_banner(analysis, profile):
     """
     Render unified Financial Summary banner with all key metrics.
@@ -296,7 +369,7 @@ def _render_financial_summary_banner(analysis, profile):
     - Monthly Income
     - Monthly Shortfall
     - Total Assets / Debts / Net Available (if debt exists)
-    - Coverage from Income (with visual progress bar)
+    - Years of Coverage Timeline (Genworth-style visualization)
     """
     
     from products.cost_planner_v2.expert_formulas import calculate_extended_runway
@@ -365,12 +438,31 @@ def _render_financial_summary_banner(analysis, profile):
     surplus_label = "Monthly Surplus" if analysis.monthly_gap < 0 else "Monthly Shortfall"
     surplus_color = "var(--success-fg)" if analysis.monthly_gap < 0 else "var(--error-fg)"
     
-    # Coverage percentage color - using solid colors for visibility
-    coverage_pct = min(analysis.coverage_percentage, 100)
-    progress_color = "#16a34a" if coverage_pct >= 80 else "#f59e0b" if coverage_pct >= 50 else "#dc2626"
+    # Calculate timeline segments for Genworth-style visualization
+    timeline = _calculate_timeline_segments(analysis, selected_assets)
     
     # Get dynamic coverage label based on selected resources
     coverage_label = _get_dynamic_coverage_label(selected_assets, analysis.asset_categories)
+    
+    # Format timeline display text
+    total_years_int = int(timeline["total_years"])
+    total_months_remainder = int((timeline["total_years"] - total_years_int) * 12)
+    
+    if timeline["exceeds_timeline"]:
+        timeline_headline = f"Your resources fully fund care for 30+ years"
+    elif total_years_int > 0:
+        if total_months_remainder > 0:
+            timeline_headline = f"Your {coverage_label.lower().replace('coverage from ', '')} funds care for {total_years_int} year{'s' if total_years_int != 1 else ''}, {total_months_remainder} month{'s' if total_months_remainder != 1 else ''}"
+        else:
+            timeline_headline = f"Your {coverage_label.lower().replace('coverage from ', '')} funds care for {total_years_int} year{'s' if total_years_int != 1 else ''}"
+    else:
+        timeline_headline = f"Your current income provides partial coverage"
+    
+    # Calculate percentages for timeline bar segments
+    income_pct = (timeline["income_years"] / timeline["timeline_max"]) * 100
+    asset_pct = (timeline["asset_years"] / timeline["timeline_max"]) * 100
+    total_pct = min((timeline["total_years"] / timeline["timeline_max"]) * 100, 100)
+    gap_pct = max(100 - total_pct, 0)
     
     # Build asset contribution line if applicable
     asset_line = f'<div style="font-size: 13px; color: var(--success-fg); margin-top: 8px; font-weight: 600;">+ Assets: ${total_selected:,.0f}</div>' if total_selected > 0 else ''
@@ -427,15 +519,35 @@ def _render_financial_summary_banner(analysis, profile):
 </div>
 </div>
 {debt_section}
-<div style="padding: 20px; background: rgba(255,255,255,0.7); border-radius: 12px; border: 1px solid var(--border-secondary);">
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-<span style="font-size: 14px; font-weight: 700; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.5px;">{coverage_label}</span>
-<span style="font-size: 20px; font-weight: 700; color: {progress_color};">{analysis.coverage_percentage:.0f}%</span>
+<div style="padding: 24px; background: rgba(255,255,255,0.7); border-radius: 12px; border: 1px solid var(--border-secondary);">
+<div style="margin-bottom: 20px;">
+<div style="font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; line-height: 1.4;">{timeline_headline}</div>
+<div style="font-size: 13px; color: var(--text-secondary); font-weight: 500;">{coverage_label}</div>
 </div>
-<div style="width: 100%; background: #e8e8e8; border-radius: 12px; height: 32px; position: relative; overflow: hidden; box-shadow: inset 0 2px 6px rgba(0,0,0,0.1);">
-<div style="width: {max(coverage_pct, 1)}%; background: linear-gradient(90deg, {progress_color} 0%, {progress_color}dd 100%); min-width: 2px; height: 100%; border-radius: 12px; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); display: flex; align-items: center; justify-content: flex-end; padding-right: 12px;">
-<span style="font-size: 13px; font-weight: 700; color: white; text-shadow: 0 1px 3px rgba(0,0,0,0.3);">{coverage_pct:.0f}%</span>
+<div style="position: relative; width: 100%; height: 50px; background: #f5f5f5; border-radius: 8px; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.08);">
+<div style="position: absolute; left: 0; top: 0; width: {income_pct}%; height: 100%; background: linear-gradient(90deg, #fbbf24 0%, #f59e0b 100%); transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);"></div>
+<div style="position: absolute; left: {income_pct}%; top: 0; width: {asset_pct}%; height: 100%; background: linear-gradient(90deg, #34d399 0%, #10b981 100%); transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1), left 0.6s cubic-bezier(0.4, 0, 0.2, 1);"></div>
+<div style="position: absolute; left: {total_pct}%; top: 0; width: {gap_pct}%; height: 100%; background: #e5e7eb;"></div>
+<div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: space-between; align-items: center; padding: 0 12px; pointer-events: none;">
+<span style="font-size: 11px; font-weight: 600; color: #6b7280;">0y</span>
+<span style="font-size: 11px; font-weight: 600; color: #6b7280;">5y</span>
+<span style="font-size: 11px; font-weight: 600; color: #6b7280;">10y</span>
+<span style="font-size: 11px; font-weight: 600; color: #6b7280;">15y</span>
+<span style="font-size: 11px; font-weight: 600; color: #6b7280;">20y</span>
+<span style="font-size: 11px; font-weight: 600; color: #6b7280;">25y</span>
+<span style="font-size: 11px; font-weight: 600; color: #6b7280;">30y</span>
 </div>
+</div>
+<div style="display: flex; gap: 20px; margin-top: 16px; flex-wrap: wrap;">
+<div style="display: flex; align-items: center; gap: 8px;">
+<div style="width: 16px; height: 16px; background: linear-gradient(90deg, #fbbf24 0%, #f59e0b 100%); border-radius: 3px;"></div>
+<span style="font-size: 12px; color: var(--text-secondary); font-weight: 500;">Income Coverage ({timeline["income_years"]:.1f} years)</span>
+</div>
+<div style="display: flex; align-items: center; gap: 8px;">
+<div style="width: 16px; height: 16px; background: linear-gradient(90deg, #34d399 0%, #10b981 100%); border-radius: 3px;"></div>
+<span style="font-size: 12px; color: var(--text-secondary); font-weight: 500;">Assets Coverage ({timeline["asset_years"]:.1f} years)</span>
+</div>
+{f'<div style="display: flex; align-items: center; gap: 8px;"><div style="width: 16px; height: 16px; background: #e5e7eb; border-radius: 3px;"></div><span style="font-size: 12px; color: var(--text-secondary); font-weight: 500;">Funding Gap</span></div>' if gap_pct > 0 else ''}
 </div>
 </div>
 </div>"""
