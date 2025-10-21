@@ -227,6 +227,9 @@ def _render_assessment_grid(assessments: list[dict[str, Any]], product_key: str)
             use_container_width=True,
             key="goto_expert_review_bottom",
         ):
+            # Clear step query param to prevent override
+            if "step" in st.query_params:
+                del st.query_params["step"]
             st.session_state.cost_v2_step = "expert_review"
             st.rerun()
 
@@ -745,6 +748,9 @@ def _render_single_page_assessment(
                 use_container_width=True,
                 key=f"{assessment_key}_expert",
             ):
+                # Clear step query param to prevent override
+                if "step" in st.query_params:
+                    del st.query_params["step"]
                 st.session_state.cost_v2_step = "expert_review"
                 st.session_state.pop(f"{product_key}_current_assessment", None)
                 safe_rerun()
@@ -1122,6 +1128,9 @@ def _render_page_navigation(
     with col2:
         if required_complete:
             if st.button("🚀 Expert Review →", use_container_width=True, type="primary"):
+                # Clear step query param to prevent override
+                if "step" in st.query_params:
+                    del st.query_params["step"]
                 st.session_state.cost_v2_step = "expert_review"
                 st.rerun()
         else:
