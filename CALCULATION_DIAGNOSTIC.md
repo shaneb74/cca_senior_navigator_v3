@@ -228,9 +228,59 @@ if profile.total_asset_debt > 0:
 ---
 
 ## Next Steps:
-1. Fix progress bar CSS (min-width, background color)
-2. Add debug logging to asset selection
-3. Test extended_runway calculation with checkbox changes
-4. Add debt display section to banner
-5. Verify all calculations with Mary's data
-6. Test with debt > $0 scenario
+1. ✅ Fix progress bar CSS (min-width, background color)
+2. ✅ Add debt display section to banner
+3. ✅ CRITICAL BUG FOUND: Asset category mismatch between base and extended calculations
+4. ⚠️ Test checkbox behavior with new default selections
+5. ⚠️ Verify calculations match expectations
+
+---
+
+## CRITICAL BUG DISCOVERED
+
+**Root Cause**: Mismatch between base `runway_months` and `extended_runway` calculations
+
+### Base Calculation (`analysis.runway_months`):
+```python
+total_liquid_assets = (
+    profile.checking_savings
+    + profile.investment_accounts
+    + profile.other_real_estate          # ← INCLUDED!
+    + profile.other_resources
+    + profile.total_accessible_life_value
+)
+runway_months = total_liquid_assets / monthly_gap
+```
+
+### Asset Categories ("Liquid Assets" checkbox):
+```python
+liquid_balance = profile.checking_savings + profile.investment_accounts
+# ← Does NOT include other_real_estate!
+```
+
+**Problem**: `analysis.runway_months` (9y 11m) includes MORE assets than just "Liquid Assets" checkbox.
+
+**Fix Applied**:
+1. Changed banner to ALWAYS use `extended_runway` (checkbox-based calculation)
+2. Removed fallback to `analysis.runway_months` (inconsistent definition)
+3. Default selections: Liquid Assets + Retirement Accounts checked
+4. This makes the calculation transparent: duration = selected assets / gap
+
+**Expected Behavior After Fix**:
+- Page loads: Liquid + Retirement checked → Duration shows combined value
+- Uncheck Liquid: Duration decreases (only retirement counted)
+- Uncheck Retirement: Duration decreases further (only liquid counted)
+- Check both: Duration increases (both counted)
+
+**Test Scenario** (Mary):
+- Monthly Gap: $7,972
+- Liquid Assets: $950,000 × 0.98 = $931,000
+- Retirement: $500,000 × 0.68 = $340,000
+- Combined: $1,271,000
+- Expected Duration: 1,271,000 / 7,972 = 159.4 months = **13 years, 3 months**
+
+If only Liquid checked:
+- 931,000 / 7,972 = 116.8 months = **9 years, 9 months**
+
+If only Retirement checked:
+- 340,000 / 7,972 = 42.7 months = **3 years, 7 months**
