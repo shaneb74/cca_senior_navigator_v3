@@ -81,6 +81,10 @@ def render():
         # and outcomes in st.session_state[f"{config.state_key}._outcomes"]
         module_state = run_module(config)
 
+        # HOURS/DAY SUGGESTION: Recompute if user changed their selection
+        # This detects changes and updates the suggestion accordingly
+        _recompute_hours_suggestion_if_needed(config, module_state)
+
         # HOURS/DAY SUGGESTION: Render suggestion hint if on daily_living section in assist mode
         # This must come AFTER run_module so the question is already rendered
         _render_hours_suggestion_if_needed(config, current_step_index)
@@ -263,6 +267,84 @@ def _build_next_step_reason(outcome: dict) -> str:
         return f"Calculate financial impact of {tier} care"
     else:
         return "Complete your care assessment for a personalized recommendation"
+
+
+def _recompute_hours_suggestion_if_needed(config: ModuleConfig, module_state: dict) -> None:
+    """Recompute hours/day suggestion when user changes their selection.
+    
+    Called after run_module to detect changes in hours_per_day answer
+    and recompute the baseline + LLM suggestion.
+    
+    Args:
+        config: Module configuration
+        module_state: Current module state with answers
+    """
+    try:
+        from products.gcp_v4.modules.care_recommendation.logic import gcp_hours_mode
+        
+        mode = gcp_hours_mode()
+        if mode not in {"shadow", "assist"}:
+            return  # Feature disabled
+        
+        # Get current user selection
+        current_hours = module_state.get("hours_per_day")
+        
+        # Check if selection changed
+        last_hours = st.session_state.get("_last_hours_selection")
+        if current_hours == last_hours and "_hours_suggestion" in st.session_state:
+            return  # No change, skip recompute
+        
+        # Store current selection for next comparison
+        st.session_state["_last_hours_selection"] = current_hours
+        st.session_state["gcp_hours_user_choice"] = current_hours
+        
+        # Recompute suggestion
+        from products.gcp_v4.modules.care_recommendation.logic import _build_hours_context
+        from ai.hours_engine import baseline_hours, generate_hours_advice
+        
+        answers = module_state
+        flags = module_state.get("_flags", [])
+        
+        # Build context
+        hours_ctx = _build_hours_context(answers, flags)
+        
+        # Get baseline
+        baseline = baseline_hours(hours_ctx)
+        
+        # Get LLM refinement
+        ok, advice = generate_hours_advice(hours_ctx, mode)
+        
+        # Store suggestion in session state
+        st.session_state["_hours_suggestion"] = {
+            "band": advice.band if (ok and advice) else baseline,
+            "base": baseline,
+            "conf": advice.confidence if (ok and advice) else None,
+            "reasons": advice.reasons if (ok and advice) else [],
+            "mode": mode,
+        }
+        
+        # Log (dev-only) - include user selection
+        user_choice = hours_ctx.current_hours or "-"
+        if ok and advice:
+            print(f"[GCP_HOURS_{mode.upper()}_RECOMPUTE] base={baseline} user={user_choice} llm={advice.band} conf={advice.confidence:.2f}")
+        else:
+            print(f"[GCP_HOURS_{mode.upper()}_RECOMPUTE] base={baseline} user={user_choice} llm=None (fallback to baseline)")
+        
+        # Log case for offline analysis (training data)
+        try:
+            from tools.log_hours import log_hours_case
+            log_hours_case(
+                context=hours_ctx,
+                base_band=baseline,
+                llm_band=advice.band if (ok and advice) else None,
+                llm_conf=advice.confidence if (ok and advice) else None,
+                mode=mode
+            )
+        except Exception as log_err:
+            print(f"[HOURS_LOG_ERROR] Failed to log case during recompute: {log_err}")
+    
+    except Exception as e:
+        print(f"[GCP_HOURS_RECOMPUTE_ERROR] Failed to recompute hours suggestion: {e}")
 
 
 def _render_hours_suggestion_if_needed(config: ModuleConfig, current_step_index: int) -> None:

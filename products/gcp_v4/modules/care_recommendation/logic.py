@@ -560,8 +560,14 @@ def _build_hours_context(answers: dict[str, Any], flags: list[str]) -> Any:
     
     # Overnight needed (heuristic: help_overall == "full_support" or 24h current)
     help_overall = answers.get("help_overall", "independent")
-    current_hours = answers.get("hours_per_day")
-    overnight_needed = (help_overall == "full_support" or current_hours == "24h")
+    raw_hours = answers.get("hours_per_day")
+    overnight_needed = (help_overall == "full_support" or raw_hours == "24h")
+    
+    # Get user's current hours selection (validate it's a valid band)
+    import streamlit as st
+    current = raw_hours or st.session_state.get("gcp_hours_user_choice")
+    valid_bands = {"<1h", "1-3h", "4-8h", "24h"}
+    current_hours = current if current in valid_bands else None
     
     return HoursContext(
         badls_count=badls_count,
@@ -689,11 +695,25 @@ def derive_outcome(
             except Exception:
                 pass
             
-            # Log (dev-only)
+            # Log (dev-only) - include user selection
+            user_choice = hours_ctx.current_hours or "-"
             if ok and advice:
-                print(f"[GCP_HOURS_{hours_mode.upper()}] base={baseline} llm={advice.band} conf={advice.confidence:.2f}")
+                print(f"[GCP_HOURS_{hours_mode.upper()}] base={baseline} user={user_choice} llm={advice.band} conf={advice.confidence:.2f}")
             else:
-                print(f"[GCP_HOURS_{hours_mode.upper()}] base={baseline} llm=None (fallback to baseline)")
+                print(f"[GCP_HOURS_{hours_mode.upper()}] base={baseline} user={user_choice} llm=None (fallback to baseline)")
+            
+            # Log case for offline analysis (training data)
+            try:
+                from tools.log_hours import log_hours_case
+                log_hours_case(
+                    context=hours_ctx,
+                    base_band=baseline,
+                    llm_band=advice.band if (ok and advice) else None,
+                    llm_conf=advice.confidence if (ok and advice) else None,
+                    mode=hours_mode
+                )
+            except Exception as log_err:
+                print(f"[HOURS_LOG_ERROR] Failed to log case: {log_err}")
         
         except Exception as e:
             print(f"[GCP_HOURS_WARN] Hours suggestion failed: {e}")
