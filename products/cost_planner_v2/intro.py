@@ -19,12 +19,10 @@ Workflow:
 5. CTA → Full Assessment (authentication)
 """
 
-from typing import Optional
 import streamlit as st
 
 from core.mcip import MCIP
-from products.cost_planner_v2 import comparison_view
-from products.cost_planner_v2 import prepare_quick_estimate
+from products.cost_planner_v2 import comparison_view, prepare_quick_estimate
 
 
 def render():
@@ -44,17 +42,17 @@ def render():
     rec_tier = None
     if gcp_rec and hasattr(gcp_rec, 'tier'):
         rec_tier = gcp_rec.tier
-    
+
     # Show prepare gate first
     is_ready = prepare_quick_estimate.render_prepare_gate(
         recommendation_context=rec_tier
     )
-    
+
     # Show comparison view when gate is complete
     if is_ready:
         st.markdown("---")
         zip_code = st.session_state.get("cost_v2_quick_zip")
-        
+
         if zip_code:
             comparison_view.render_comparison_view(zip_code=zip_code)
         else:

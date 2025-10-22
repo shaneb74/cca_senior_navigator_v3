@@ -12,9 +12,9 @@ Output: data/users/demo/demo_vic_veteran_borderline.json
 """
 
 import json
-from pathlib import Path
 import time
 from datetime import datetime
+from pathlib import Path
 
 # Current timestamp for created_at/last_updated
 TIMESTAMP = time.time()
@@ -29,7 +29,7 @@ data = {
     "uid": UID,
     "created_at": TIMESTAMP,
     "last_updated": TIMESTAMP,
-    
+
     # Auth block - required for authenticated demo user
     "auth": {
         "user_id": UID,
@@ -37,7 +37,7 @@ data = {
         "name": "Veteran Vic",
         "email": "vic@demo.test"
     },
-    
+
     # =========================================================================
     # PROFILE & QUALIFIERS
     # =========================================================================
@@ -54,7 +54,7 @@ data = {
             "spouse_needs_care": False
         }
     },
-    
+
     # Duplicate qualifiers for Cost Planner compatibility
     "cost_v2_qualifiers": {
         "is_veteran": True,
@@ -62,7 +62,7 @@ data = {
         "has_spouse": False,
         "spouse_needs_care": False
     },
-    
+
     # =========================================================================
     # FEATURE FLAGS
     # =========================================================================
@@ -71,7 +71,7 @@ data = {
         "veteran_service_connected": True,
         "enable_cost_planner_v2": True
     },
-    
+
     # =========================================================================
     # GCP CARE RECOMMENDATION
     # =========================================================================
@@ -106,10 +106,10 @@ data = {
         "rationale": "Borderline case between in-home care and assisted living. Mobility and mild cognitive issues suggest need for support, but family involvement and part-time help may be sufficient for in-home care.",
         "next_step": "Explore both in-home care options and assisted living facilities to compare."
     },
-    
+
     # Mark GCP as published
     "gcp_v4_published": True,
-    
+
     # =========================================================================
     # MCIP CONTRACTS
     # =========================================================================
@@ -196,9 +196,9 @@ data = {
             "last_updated": datetime.now().isoformat(),
             "needs_refresh": False
         },
-        
+
         # NO financial_profile - Vic hasn't done Cost Planner yet
-        
+
         # Journey tracking
         "journey": {
             "current_hub": "concierge",
@@ -206,14 +206,14 @@ data = {
             "unlocked_products": ["cost_planner", "facility_finder"],
             "recommended_next": "cost_planner"
         },
-        
+
         # Waiting room (for advisor appointments)
         "waiting_room": {
             "status": "available",
             "appointment_scheduled": False
         }
     },
-    
+
     # =========================================================================
     # COST PLANNER V2 - QUICK ESTIMATE ONLY (NOT STARTED)
     # =========================================================================
@@ -238,17 +238,17 @@ data = {
         "care_tier": "in_home",
         "zip_code": "85001"
     },
-    
+
     # Cost Planner step - set to "welcome" (not started)
     "cost_v2_step": "welcome",
-    
+
     # Guest mode and triage - include even if empty
     "cost_v2_guest_mode": False,
     "cost_v2_triage": {},
-    
+
     # Modules - empty (Vic hasn't started Cost Planner)
     "cost_v2_modules": {},
-    
+
     # =========================================================================
     # TILES
     # =========================================================================
@@ -267,10 +267,10 @@ data = {
             "last_updated": TIMESTAMP
         }
     },
-    
+
     # Progress - empty unless using product-wide meters
     "progress": {},
-    
+
     # Preferences - empty unless specific UI defaults needed
     "preferences": {}
 }
@@ -281,10 +281,10 @@ def main():
     # Ensure demo directory exists
     demo_dir = Path("data/users/demo")
     demo_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # Output file path (in protected demo directory)
     output_file = demo_dir / f"{UID}.json"
-    
+
     # Check if app is running (file might be locked)
     if output_file.exists():
         print(f"⚠️  Profile file already exists: {output_file}")
@@ -292,24 +292,24 @@ def main():
         if response not in ["yes", "y"]:
             print("❌ Aborted.")
             return
-    
+
     # Write profile to file
     try:
         with open(output_file, 'w') as f:
             json.dump(data, f, indent=2)
-        
+
         # Get file size
         file_size = output_file.stat().st_size
         line_count = len(output_file.read_text().splitlines())
-        
-        print(f"✅ Profile created successfully!")
+
+        print("✅ Profile created successfully!")
         print(f"   File: {output_file}")
         print(f"   Size: {file_size:,} bytes ({file_size/1024:.1f} KB)")
         print(f"   Lines: {line_count:,}")
         print()
         print(f"👤 UID: {data['uid']}")
         print(f"📍 Location: {data['profile']['location']} (ZIP: {data['profile']['zip_code']})")
-        print(f"🎖️  Veteran: Service-connected disability")
+        print("🎖️  Veteran: Service-connected disability")
         print()
         print(f"🏥 Care Recommendation: {data['mcip_contracts']['care_recommendation']['tier'].upper().replace('_', ' ')}")
         print(f"   Score: {data['mcip_contracts']['care_recommendation']['tier_score']} points")
@@ -320,11 +320,11 @@ def main():
         print(f"💰 Quick Estimate: ${data['cost_v2_quick_estimate']['estimate']['monthly_adjusted']:,}/month")
         print(f"   Location multiplier: {data['cost_v2_quick_estimate']['estimate']['multiplier']}x")
         print()
-        print(f"🏁 Journey Status:")
+        print("🏁 Journey Status:")
         print(f"   Completed: {', '.join(data['mcip_contracts']['journey']['completed_products'])}")
         print(f"   Unlocked: {', '.join(data['mcip_contracts']['journey']['unlocked_products'])}")
         print()
-        print(f"🚩 Key Flags:")
+        print("🚩 Key Flags:")
         for flag in data['mcip_contracts']['care_recommendation']['flags']:
             print(f"   ✓ {flag['label']} ({flag['id']})")
         print()
@@ -355,7 +355,7 @@ def main():
         print("   - Note borderline scoring in care recommendation")
         print()
         print("=" * 60)
-        
+
     except Exception as e:
         print(f"❌ Error writing profile: {e}")
         return

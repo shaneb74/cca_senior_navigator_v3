@@ -11,13 +11,13 @@ Architecture:
 - Returns True when ready to show Quick Estimate
 """
 
-from typing import Optional, Any
+from typing import Any
+
 import streamlit as st
 
 from core.mcip import MCIP
-from products.cost_planner_v2.utils.regional_data import RegionalDataProvider
 from products.cost_planner_v2 import comparison_calcs
-
+from products.cost_planner_v2.utils.regional_data import RegionalDataProvider
 
 # ==============================================================================
 # SESSION STATE KEYS
@@ -50,7 +50,7 @@ def _get_spouse_or_partner_present() -> bool:
     gcp_rec = MCIP.get_care_recommendation()
     if gcp_rec and hasattr(gcp_rec, 'spouse_or_partner_present'):
         return gcp_rec.spouse_or_partner_present
-    
+
     # Fallback: check session state directly (in case MCIP not yet initialized)
     gcp_data = st.session_state.get("gcp_care_recommendation", {})
     return gcp_data.get("spouse_or_partner_present", False)
@@ -60,7 +60,7 @@ def _get_spouse_or_partner_present() -> bool:
 # MAIN ENTRY POINT
 # ==============================================================================
 
-def render_prepare_gate(recommendation_context: Optional[Any] = None) -> bool:
+def render_prepare_gate(recommendation_context: Any | None = None) -> bool:
     """Render the preparation gate and return completion status.
     
     Args:
@@ -69,27 +69,27 @@ def render_prepare_gate(recommendation_context: Optional[Any] = None) -> bool:
     Returns:
         True if all required fields are complete and user clicked CTA
     """
-    
+
     # Initialize session state
     _init_session_state(recommendation_context)
-    
+
     # DEV LOGGING: Verify three-layer storage of spouse flag
     if st.session_state.get("debug_mode", False):
         st.markdown("---")
         st.markdown("### 🔍 Spouse/Partner Flag Verification")
-        
+
         # Layer 1: Session State
         session_value = st.session_state.get("spouse_or_partner_present", None)
-        
+
         # Layer 2: MCIP Global Context
         gcp_rec = MCIP.get_care_recommendation()
         mcip_value = getattr(gcp_rec, 'spouse_or_partner_present', None) if gcp_rec else None
-        
+
         # Layer 3: Will be persisted (preview what will be saved)
         from core.session_store import extract_user_state
         user_data_preview = extract_user_state(st.session_state)
         persisted_value = user_data_preview.get("spouse_or_partner_present", None)
-        
+
         st.json({
             "layer_1_session_state": session_value,
             "layer_2_mcip_context": mcip_value,
@@ -97,10 +97,10 @@ def render_prepare_gate(recommendation_context: Optional[Any] = None) -> bool:
             "all_layers_match": (session_value == mcip_value == persisted_value),
         })
         st.markdown("---")
-    
+
     # Get current recommendation
     rec_tier = st.session_state.get(SESSION_KEYS["care_recommendation"])
-    
+
     # Render gate UI
     st.markdown("### Let's personalize your estimate")
     st.markdown(
@@ -109,21 +109,21 @@ def render_prepare_gate(recommendation_context: Optional[Any] = None) -> bool:
         </div>""",
         unsafe_allow_html=True
     )
-    
+
     # Question 1: ZIP code (everyone)
     _render_zip_question()
-    
+
     # Question 2 & 3: Home carry and comparison (based on recommendation)
     if rec_tier:
         if rec_tier == "in_home_care":
             _render_inhome_questions()
         else:
             _render_facility_questions()
-    
+
     # CTA button
     st.markdown("")
     is_valid = _validate_inputs()
-    
+
     if st.button(
         "🎯 See My Estimate",
         type="primary",
@@ -135,7 +135,7 @@ def render_prepare_gate(recommendation_context: Optional[Any] = None) -> bool:
         # Sync to comparison_view session keys
         _sync_to_comparison_view()
         st.rerun()
-    
+
     # Return completion status
     return st.session_state.get(SESSION_KEYS["is_complete"], False)
 
@@ -146,10 +146,10 @@ def render_prepare_gate(recommendation_context: Optional[Any] = None) -> bool:
 
 def _render_zip_question():
     """Render ZIP code input for everyone."""
-    
+
     st.markdown("#### Where will this care be provided?")
     st.caption("💡 Costs vary by region, so we use ZIP to localize rates.")
-    
+
     zip_code = st.text_input(
         "ZIP Code",
         max_chars=5,
@@ -158,12 +158,12 @@ def _render_zip_question():
         key="prepare_qe_zip_input",
         label_visibility="collapsed"
     )
-    
+
     # Update session state and resolve region
     if zip_code and len(zip_code) == 5:
         st.session_state[SESSION_KEYS["zip"]] = zip_code
         _resolve_region(zip_code)
-        
+
         # Show resolved region
         region_label = st.session_state.get(SESSION_KEYS["region_label"])
         if region_label:
@@ -171,16 +171,16 @@ def _render_zip_question():
     elif zip_code:
         st.session_state[SESSION_KEYS["zip"]] = None
         st.warning("⚠️ Please enter a valid 5-digit ZIP code")
-    
+
     st.markdown("")
 
 
 def _render_inhome_questions():
     """Render questions for in-home care recommendation (staying at home)."""
-    
+
     # RULE 1: For in-home, keep_home is locked to True (home costs are inherent)
     st.session_state[SESSION_KEYS["keep_home"]] = True
-    
+
     # [CP_DEBUG] Log context on mount
     if st.session_state.get("debug_mode", False):
         import sys
@@ -191,22 +191,22 @@ def _render_inhome_questions():
             f"keep_home=True, locked=True",
             file=sys.stderr
         )
-    
+
     # Show explanatory note (no toggle control)
     st.info("🏠 **Home costs are included while care is provided at home.**")
     st.markdown("")
-    
+
     # Home Carry Cost (always included for in-home)
     st.markdown("#### What are your monthly household costs?")
     st.caption(
         "💡 Typical monthly cost to keep the household running "
         "(mortgage/rent, utilities, insurance, groceries)."
     )
-    
+
     # Get default with regional scaling if ZIP entered
     zip_code = st.session_state.get(SESSION_KEYS["zip"])
     default_home_carry = _get_default_home_carry(zip_code)
-    
+
     home_carry = st.number_input(
         "Monthly Home Carry Cost",
         min_value=0,
@@ -216,17 +216,17 @@ def _render_inhome_questions():
         key="prepare_qe_home_carry_inhome",
         label_visibility="collapsed"
     )
-    
+
     # Track if user edited the value
     if home_carry != default_home_carry:
         st.session_state[SESSION_KEYS["home_carry_source"]] = "user"
     else:
         st.session_state[SESSION_KEYS["home_carry_source"]] = "default"
-    
+
     st.session_state[SESSION_KEYS["home_carry_base"]] = float(home_carry)
-    
+
     st.markdown("")
-    
+
     # Optional: Show Assisted Living comparison
     st.markdown("#### Would you also like to see an Assisted Living comparison side-by-side?")
     show_comparison = st.checkbox(
@@ -235,29 +235,29 @@ def _render_inhome_questions():
         key="prepare_qe_show_al_comparison"
     )
     st.session_state[SESSION_KEYS["show_comparison"]] = show_comparison
-    
+
     st.markdown("")
 
 
 def _render_facility_questions():
     """Render questions for facility care recommendation (AL/MC/MC-HA)."""
-    
+
     # Get context from GCP
     spouse_or_partner_present = st.session_state.get("spouse_or_partner_present", False)
     rec_tier = st.session_state.get(SESSION_KEYS["care_recommendation"], "assisted_living")
-    
+
     # [CP_DEBUG] Log context on mount
     if st.session_state.get("debug_mode", False):
         import sys
         print(f"[CP_DEBUG] CP Intro Mount: category={rec_tier}, has_partner={spouse_or_partner_present}", file=sys.stderr)
-    
+
     # RULE 2 & 3: Default keep_home based on has_partner, but editable
     # Check if user has already set a value (don't override on revisit)
     if SESSION_KEYS["keep_home"] not in st.session_state:
         # First visit: set default based on has_partner
         default_keep_home = spouse_or_partner_present
         st.session_state[SESSION_KEYS["keep_home"]] = default_keep_home
-    
+
     # Keep Home question with context-aware copy
     if spouse_or_partner_present:
         # RULE 2: With partner, default Yes, partner-specific copy
@@ -273,7 +273,7 @@ def _render_facility_questions():
             "💡 If the home will be sold or no longer maintained, select **No**. "
             "Only include home expenses if someone continues living there."
         )
-    
+
     keep_home_options = ["No", "Yes"]
     current_keep_home = st.session_state.get(SESSION_KEYS["keep_home"], spouse_or_partner_present)
     keep_home_choice = st.radio(
@@ -284,10 +284,10 @@ def _render_facility_questions():
         key="prepare_qe_keep_home_radio",
         label_visibility="collapsed"
     )
-    
+
     keep_home = (keep_home_choice == "Yes")
     st.session_state[SESSION_KEYS["keep_home"]] = keep_home
-    
+
     # [CP_DEBUG] Log applied values
     if st.session_state.get("debug_mode", False):
         import sys
@@ -297,9 +297,9 @@ def _render_facility_questions():
             f"locked={locked}, default_was={spouse_or_partner_present}",
             file=sys.stderr
         )
-    
+
     st.markdown("")
-    
+
     # Home Carry input (only if keep_home=Yes)
     if keep_home:
         st.markdown("##### Monthly Home Carry Cost")
@@ -307,11 +307,11 @@ def _render_facility_questions():
             "💡 Typical monthly cost to keep the household running. "
             "Adjust if needed."
         )
-        
+
         # Get default with regional scaling if ZIP entered
         zip_code = st.session_state.get(SESSION_KEYS["zip"])
         default_home_carry = _get_default_home_carry(zip_code)
-        
+
         home_carry = st.number_input(
             "Home Carry Cost",
             min_value=0,
@@ -321,20 +321,20 @@ def _render_facility_questions():
             key="prepare_qe_home_carry_facility",
             label_visibility="collapsed"
         )
-        
+
         # Track if user edited the value
         if home_carry != default_home_carry:
             st.session_state[SESSION_KEYS["home_carry_source"]] = "user"
         else:
             st.session_state[SESSION_KEYS["home_carry_source"]] = "default"
-        
+
         st.session_state[SESSION_KEYS["home_carry_base"]] = float(home_carry)
         st.markdown("")
     else:
         # Clear home carry if not keeping home
         st.session_state[SESSION_KEYS["home_carry_base"]] = None
         st.session_state[SESSION_KEYS["home_carry_source"]] = None
-    
+
     # Show In-Home comparison
     st.markdown("#### Would you like to see an In-Home Care comparison side-by-side?")
     show_comparison = st.checkbox(
@@ -343,7 +343,7 @@ def _render_facility_questions():
         key="prepare_qe_show_inhome_comparison"
     )
     st.session_state[SESSION_KEYS["show_comparison"]] = show_comparison
-    
+
     st.markdown("")
 
 
@@ -351,9 +351,9 @@ def _render_facility_questions():
 # HELPERS
 # ==============================================================================
 
-def _init_session_state(recommendation_context: Optional[Any]):
+def _init_session_state(recommendation_context: Any | None):
     """Initialize session state with defaults."""
-    
+
     # Get GCP recommendation if available
     if recommendation_context is None:
         gcp_rec = MCIP.get_care_recommendation()
@@ -361,49 +361,49 @@ def _init_session_state(recommendation_context: Optional[Any]):
             recommendation_context = gcp_rec.tier
         else:
             recommendation_context = "assisted_living"  # Default fallback
-    
+
     # Initialize all keys if not present
     if SESSION_KEYS["care_recommendation"] not in st.session_state:
         st.session_state[SESSION_KEYS["care_recommendation"]] = recommendation_context
-    
+
     if SESSION_KEYS["is_complete"] not in st.session_state:
         st.session_state[SESSION_KEYS["is_complete"]] = False
-    
+
     if SESSION_KEYS["show_comparison"] not in st.session_state:
         # Default: False for in-home, True for facility
         rec_tier = st.session_state.get(SESSION_KEYS["care_recommendation"])
         st.session_state[SESSION_KEYS["show_comparison"]] = (rec_tier != "in_home_care")
-    
+
     # LAYER 1: Session state - Store spouse/partner flag
     if "spouse_or_partner_present" not in st.session_state:
         spouse_flag = _get_spouse_or_partner_present()
         st.session_state["spouse_or_partner_present"] = spouse_flag
-        
+
         # LAYER 2: User data persistence - will auto-save via USER_PERSIST_KEYS
         # (No additional code needed - session_store.py handles it)
-        
+
         # LAYER 3: MCIP global context - already published via CareRecommendation
         # (No additional code needed - MCIP.publish_care_recommendation handles it)
 
 
 def _resolve_region(zip_code: str):
     """Resolve region label and multiplier from ZIP code."""
-    
+
     regional = RegionalDataProvider.get_multiplier(zip_code=zip_code)
-    
+
     st.session_state[SESSION_KEYS["region_label"]] = regional.region_name
     st.session_state[SESSION_KEYS["regional_multiplier"]] = regional.multiplier
 
 
-def _get_default_home_carry(zip_code: Optional[str]) -> float:
+def _get_default_home_carry(zip_code: str | None) -> float:
     """Get default home carry cost with regional scaling.
     
     Uses dampened regional multiplier (50% deviation) same as comparison_calcs.
     """
-    
+
     if not zip_code:
         return comparison_calcs.HOME_CARRY_BASE
-    
+
     return comparison_calcs.get_home_carry_effective(zip_code, user_override=None)
 
 
@@ -413,27 +413,27 @@ def _validate_inputs() -> bool:
     Returns:
         True if valid, False otherwise
     """
-    
+
     # ZIP is always required
     zip_code = st.session_state.get(SESSION_KEYS["zip"])
     if not zip_code or len(zip_code) != 5:
         return False
-    
+
     # For facility with keep_home=True, need home_carry_base
     keep_home = st.session_state.get(SESSION_KEYS["keep_home"])
     rec_tier = st.session_state.get(SESSION_KEYS["care_recommendation"])
-    
+
     if rec_tier != "in_home_care" and keep_home:
         home_carry = st.session_state.get(SESSION_KEYS["home_carry_base"])
         if home_carry is None:
             return False
-    
+
     # For in-home, home_carry_base is always required
     if rec_tier == "in_home_care":
         home_carry = st.session_state.get(SESSION_KEYS["home_carry_base"])
         if home_carry is None:
             return False
-    
+
     return True
 
 
@@ -442,20 +442,20 @@ def _sync_to_comparison_view():
     
     This bridges the prepare gate to the comparison view component.
     """
-    
+
     # ZIP code (used by comparison_view)
     st.session_state["cost_v2_quick_zip"] = st.session_state.get(SESSION_KEYS["zip"])
-    
+
     # Home carry cost
     home_carry = st.session_state.get(SESSION_KEYS["home_carry_base"])
     if home_carry is not None:
         st.session_state["comparison_home_carry_cost"] = home_carry
-    
+
     # Keep home flag
     keep_home = st.session_state.get(SESSION_KEYS["keep_home"])
     if keep_home is not None:
         st.session_state["comparison_keep_home"] = keep_home
-    
+
     # Show comparison flag
     # Note: comparison_view doesn't currently read this, but we store it for future use
     st.session_state["comparison_show_both"] = st.session_state.get(
@@ -472,7 +472,7 @@ def reset_prepare_gate():
     
     Use this when user navigates away or starts over.
     """
-    
+
     for key in SESSION_KEYS.values():
         if key in st.session_state:
             del st.session_state[key]

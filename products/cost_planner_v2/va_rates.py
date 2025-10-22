@@ -9,10 +9,9 @@ VA disability rates update annually on December 1st based on Social Security COL
 Update config/va_disability_rates_2025.json when new rates are published.
 """
 import json
+import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -29,11 +28,11 @@ def load_va_rates() -> dict:
         json.JSONDecodeError: If config file has invalid JSON
     """
     config_path = Path(__file__).parent.parent.parent / "config" / "va_disability_rates_2025.json"
-    
+
     try:
-        with open(config_path, "r") as f:
+        with open(config_path) as f:
             rates = json.load(f)
-            
+
         # Check if rates might be stale (optional warning)
         effective_date = rates.get("effective_date", "")
         if effective_date:
@@ -41,7 +40,7 @@ def load_va_rates() -> dict:
                 effective_dt = datetime.strptime(effective_date, "%Y-%m-%d")
                 current_dt = datetime.now()
                 days_old = (current_dt - effective_dt).days
-                
+
                 # Warn if rates are over 400 days old (should update annually)
                 if days_old > 400:
                     logger.warning(
@@ -51,7 +50,7 @@ def load_va_rates() -> dict:
                     )
             except ValueError:
                 pass  # Invalid date format, skip check
-                
+
         return rates
     except FileNotFoundError:
         logger.error(f"VA rates config file not found: {config_path}")
@@ -64,7 +63,7 @@ def load_va_rates() -> dict:
 def get_monthly_va_disability(
     rating: int,
     dependents: str = "none"
-) -> Optional[float]:
+) -> float | None:
     """
     Calculate monthly VA disability compensation based on rating and dependents.
     
@@ -88,29 +87,29 @@ def get_monthly_va_disability(
     """
     try:
         rates = load_va_rates()
-        
+
         # Normalize rating to string
         rating_str = str(int(rating))
-        
+
         # Normalize dependents key (handle both naming conventions)
         if dependents == "spouse_multiple_children":
             dependents = "spouse_two_plus_children"
-        
+
         # Look up rate in mapping
         rate_mapping = rates.get("dependents_mapping", {})
         rate_key = rate_mapping.get(dependents)
-        
+
         if not rate_key:
             logger.warning(f"Invalid dependents value: {dependents}")
             return None
-        
+
         # Get monthly amount
         rating_data = rates.get("rates", {}).get(rating_str, {})
         monthly_amount = rating_data.get(rate_key)
-        
+
         if monthly_amount is None:
             logger.warning(f"No rate found for rating={rating}, dependents={dependents}")
-        
+
         return monthly_amount
     except Exception as e:
         # Catch all errors (file not found, JSON parse, key errors, etc.)
@@ -127,7 +126,7 @@ def format_va_disability_info(rating: int, dependents: str) -> str:
     amount = get_monthly_va_disability(rating, dependents)
     if amount is None:
         return "Unable to calculate rate"
-    
+
     dependents_display = {
         "none": "Veteran only (no dependents)",
         "spouse": "Veteran with spouse",
@@ -136,5 +135,5 @@ def format_va_disability_info(rating: int, dependents: str) -> str:
         "spouse_multiple_children": "Veteran with spouse and 2+ children",
         "children_only": "Veteran with child(ren) only"
     }.get(dependents, dependents)
-    
+
     return f"{rating}% disability, {dependents_display}: ${amount:,.2f}/month (2025 rate)"

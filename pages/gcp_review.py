@@ -15,16 +15,16 @@ Route: ?page=gcp_review
 """
 
 import streamlit as st
+
 from core.mcip import MCIP
-from layout import render_page
 
 
 def render():
     """Render the GCP Assessment Review page."""
-    
+
     # Get care recommendation from MCIP
     recommendation = MCIP.get_care_recommendation()
-    
+
     if not recommendation or not recommendation.tier:
         # No completed assessment found
         st.warning("⚠️ No completed assessment found. You haven't completed the Guided Care Plan yet.")
@@ -32,21 +32,21 @@ def render():
             st.query_params["page"] = "hub_concierge"
             st.rerun()
         return
-    
+
     # Check if we have the assessment data
     assessment_data = st.session_state.get("gcp_care_recommendation", {})
-    
+
     # Render with header
-    from ui.product_shell import product_shell_start, product_shell_end
-    
+    from ui.product_shell import product_shell_end, product_shell_start
+
     product_shell_start()
-    
+
     # Render succinct Navi-style guidance at top
     _render_navi_guidance(recommendation)
-    
+
     # Render main content
     _render_review_content(recommendation, assessment_data)
-    
+
     product_shell_end()
 
 
@@ -60,10 +60,10 @@ def _render_navi_guidance(recommendation):
         "memory_care": "Memory Care",
         "memory_care_high_acuity": "Memory Care (High Acuity)"
     }
-    
+
     tier_name = tier_display.get(recommendation.tier, recommendation.tier.replace("_", " ").title())
     confidence_pct = int(recommendation.confidence * 100)
-    
+
     # Simple Navi-style banner (using string concatenation to avoid f-string issues)
     banner_html = (
         '<div style="background: #f0f9ff; border-left: 4px solid #3b82f6; border-radius: 8px; padding: 16px 20px; margin-bottom: 24px;">'
@@ -84,45 +84,45 @@ def _render_navi_guidance(recommendation):
 
 def _render_review_content(recommendation, assessment_data):
     """Render the main review content."""
-    
+
     # Title
     st.markdown("## Your Care Assessment Review")
     st.markdown("Here's your responses and how we arrived at your Care Recommendation.")
-    
+
     st.markdown("---")
-    
+
     # SECTION 1: Care Recommendation Summary
     _render_recommendation_summary(recommendation)
-    
+
     st.markdown("---")
-    
+
     # SECTION 2: Assessment Responses
     _render_assessment_responses(assessment_data)
-    
+
     st.markdown("---")
-    
+
     # SECTION 3: Score Breakdown (detailed)
     _render_score_breakdown(recommendation, assessment_data)
-    
+
     st.markdown("---")
-    
+
     # SECTION 4: Confidence Score (collapsible)
     _render_confidence_section(recommendation)
-    
+
     st.markdown("---")
-    
+
     # Navigation buttons
     col1, col2, col3 = st.columns([1, 1, 1])
     with col1:
         if st.button("← Back to Concierge", use_container_width=True):
             st.query_params["page"] = "hub_concierge"
             st.rerun()
-    
+
     with col2:
         if st.button("💰 View Costs", type="primary", use_container_width=True):
             st.query_params["page"] = "cost_v2"
             st.rerun()
-    
+
     with col3:
         if st.button("🔁 Retake Assessment", use_container_width=True):
             st.query_params["page"] = "gcp_v4"
@@ -132,7 +132,7 @@ def _render_review_content(recommendation, assessment_data):
 def _render_recommendation_summary(recommendation):
     """Render the care recommendation summary at the top."""
     st.markdown("### 🎯 Your Care Recommendation")
-    
+
     # Tier display names
     tier_display = {
         "no_care_needed": "No Care Needed",
@@ -142,11 +142,11 @@ def _render_recommendation_summary(recommendation):
         "memory_care": "Memory Care",
         "memory_care_high_acuity": "Memory Care (High Acuity)"
     }
-    
+
     tier_name = tier_display.get(recommendation.tier, recommendation.tier.replace("_", " ").title())
     score = recommendation.tier_score
     confidence_pct = int(recommendation.confidence * 100)
-    
+
     # Show recommendation with visual indicator
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -155,10 +155,10 @@ def _render_recommendation_summary(recommendation):
         st.metric("Assessment Score", f"{score} points")
     with col3:
         st.metric("Confidence", f"{confidence_pct}%")
-    
+
     # Score range context
     _render_score_range_visual(score, recommendation.tier)
-    
+
     # Rationale
     if recommendation.rationale:
         st.markdown("#### Why This Recommendation?")
@@ -169,7 +169,7 @@ def _render_recommendation_summary(recommendation):
 def _render_score_range_visual(score, tier):
     """Render a visual showing where the score falls in the tier ranges."""
     st.markdown("#### Score Range Context")
-    
+
     # Tier thresholds (from logic.py)
     thresholds = {
         "no_care_needed": (0, 8),
@@ -178,16 +178,16 @@ def _render_score_range_visual(score, tier):
         "memory_care": (25, 39),
         "memory_care_high_acuity": (40, float('inf'))
     }
-    
+
     # Get current tier range
     tier_key = tier if tier != "in_home_care" else "in_home"
     min_score, max_score = thresholds.get(tier_key, (0, 0))
-    
+
     if max_score == float('inf'):
         range_text = f"{min_score}+ points"
     else:
         range_text = f"{min_score}-{max_score} points"
-    
+
     st.markdown(f"""
 **Your score of {score} points** falls within the **{tier.replace('_', ' ').title()}** range ({range_text}).
 
@@ -203,11 +203,11 @@ def _render_score_range_visual(score, tier):
 def _render_assessment_responses(assessment_data):
     """Render the user's assessment responses organized by section."""
     st.markdown("### 📝 Your Assessment Responses")
-    
+
     if not assessment_data:
         st.markdown("_Assessment response details are not available in this session._")
         return
-    
+
     # Display key assessment fields in a structured way
     sections = [
         {
@@ -259,7 +259,7 @@ def _render_assessment_responses(assessment_data):
             }
         },
     ]
-    
+
     # Render each section
     for section in sections:
         with st.expander(f"**{section['title']}**", expanded=True):
@@ -271,29 +271,29 @@ def _render_assessment_responses(assessment_data):
 def _render_score_breakdown(recommendation, assessment_data):
     """Render detailed score breakdown by category."""
     st.markdown("### 📊 Score Breakdown by Category")
-    
-    st.markdown("""
-    Your total score of **{score} points** comes from the following categories:
-    """.format(score=recommendation.tier_score))
-    
+
+    st.markdown(f"""
+    Your total score of **{recommendation.tier_score} points** comes from the following categories:
+    """)
+
     # Calculate approximate contribution by category
     # Note: This is a simplified breakdown since we don't have the exact
     # per-question scoring stored in the assessment data
-    
+
     categories = []
-    
+
     # ADLs contribution
     adl_count = assessment_data.get("adl_count", 0)
     if adl_count > 0:
         adl_points = min(adl_count * 2, 6)  # Approximate: 2 points per ADL, max 6
         categories.append(("Activities of Daily Living (ADLs)", adl_points, adl_count))
-    
+
     # IADLs contribution
     iadl_count = assessment_data.get("iadl_count", 0)
     if iadl_count > 0:
         iadl_points = min(iadl_count * 1.5, 8)  # Approximate: 1.5 points per IADL, max 8
         categories.append(("Instrumental Activities (IADLs)", iadl_points, iadl_count))
-    
+
     # Cognitive decline
     cognitive = assessment_data.get("cognitive_decline")
     if cognitive and cognitive != "none" and cognitive != False:
@@ -306,7 +306,7 @@ def _render_score_breakdown(recommendation, assessment_data):
         else:
             cog_points = 2
         categories.append(("Cognitive/Memory Concerns", cog_points, cognitive))
-    
+
     # Safety and behavioral
     safety_points = 0
     if assessment_data.get("safety_concerns"):
@@ -317,7 +317,7 @@ def _render_score_breakdown(recommendation, assessment_data):
         safety_points += 3
     if safety_points > 0:
         categories.append(("Safety & Behavioral Concerns", safety_points, None))
-    
+
     # Support system
     support_points = 0
     if assessment_data.get("primary_caregiver") == "none":
@@ -326,7 +326,7 @@ def _render_score_breakdown(recommendation, assessment_data):
         support_points += 1
     if support_points > 0:
         categories.append(("Support System", support_points, None))
-    
+
     # Display categories
     if categories:
         for category, points, detail in categories:
@@ -338,7 +338,7 @@ def _render_score_breakdown(recommendation, assessment_data):
                 st.markdown(f"**+{points:.0f}** pts")
     else:
         st.markdown("_Detailed scoring breakdown is not available for this assessment._")
-    
+
     st.markdown("")
     st.caption("Note: Score breakdown is approximate based on typical scoring patterns. Individual question responses may vary.")
 
@@ -347,7 +347,7 @@ def _render_confidence_section(recommendation):
     """Render collapsible confidence score section."""
     with st.expander("ℹ️ **Understanding Your Confidence Score**", expanded=False):
         confidence_pct = int(recommendation.confidence * 100)
-        
+
         st.markdown(f"""
 ### Confidence Score: {confidence_pct}%
 
@@ -366,7 +366,7 @@ The confidence score reflects how complete and clear your assessment was.
 
 **Your {confidence_pct}% confidence means:**
         """)
-        
+
         if confidence_pct >= 90:
             st.markdown("✅ Your assessment was very thorough and provides a clear picture of care needs.")
         elif confidence_pct >= 75:

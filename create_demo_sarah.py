@@ -21,7 +21,7 @@ from pathlib import Path
 
 def create_sarah_profile():
     """Create Sarah's complete demo profile."""
-    
+
     # GCP Assessment Data - Memory Care tier
     # Higher scores in memory, safety, and ADL categories
     gcp_assessment = {
@@ -66,7 +66,7 @@ def create_sarah_profile():
             "depression_anxiety": "yes"  # Mental health concerns
         }
     }
-    
+
     # Calculate GCP scores for Memory Care tier
     # Memory Care typically requires: 20-28+ points with high memory/safety flags
     gcp_scores = {
@@ -78,7 +78,7 @@ def create_sarah_profile():
         "safety_score": 5,  # High safety concerns
         "social_score": 0
     }
-    
+
     gcp_flags = {
         "memory_issues_moderate_severe": True,  # KEY flag
         "multiple_adl_limitations": True,  # 3+ ADLs
@@ -91,7 +91,7 @@ def create_sarah_profile():
         "social_isolation": True,
         "caregiver_stress": False  # Has support
     }
-    
+
     # Care Recommendation - Memory Care (with all required MCIP fields)
     care_recommendation = {
         # Core MCIP CareRecommendation fields
@@ -130,13 +130,13 @@ def create_sarah_profile():
         "status": "complete",
         "last_updated": "2025-10-18T10:30:00Z",
         "needs_refresh": False,
-        
+
         # Extra fields for demo/debugging (not in MCIP contract)
         "tier_label": "Memory Care",
         "assessment_data": gcp_assessment,
         "scores": gcp_scores
     }
-    
+
     # Financial Profile - 8.5 years timeline
     financial_profile = {
         # Core MCIP FinancialProfile fields
@@ -147,7 +147,7 @@ def create_sarah_profile():
         "confidence": 0.85,  # 85% confidence
         "generated_at": "2025-10-18T10:35:00Z",
         "status": "complete",
-        
+
         # Extra fields for demo/debugging (not in MCIP contract)
         "monthly_income": 4800,
         "total_liquid_assets": 142000,
@@ -155,7 +155,7 @@ def create_sarah_profile():
         "timeline_category": "medium_term",
         "funding_strategy": "spend_down"
     }
-    
+
     # Cost Planner Assessment Data
     cost_planner_modules = {
         "income": {
@@ -217,7 +217,7 @@ def create_sarah_profile():
             "data": financial_profile
         }
     }
-    
+
     # MCIP Contracts - Complete data structure
     mcip_contracts = {
         "care_recommendation": care_recommendation,
@@ -229,7 +229,7 @@ def create_sarah_profile():
             "last_activity": "2025-10-18T10:35:00Z"
         }
     }
-    
+
     # Tiles - Product completion status
     tiles = {
         "gcp_v4": {
@@ -253,7 +253,7 @@ def create_sarah_profile():
             }
         }
     }
-    
+
     # Complete user profile
     profile = {
         "uid": "demo_sarah_cost_planner",
@@ -272,7 +272,7 @@ def create_sarah_profile():
         "preferences": {},
         "progress": {}
     }
-    
+
     return profile
 
 
@@ -281,15 +281,15 @@ def save_demo_profile(profile: dict) -> None:
     # Ensure demo directory exists
     demo_dir = Path("data/users/demo")
     demo_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # Save to protected demo directory
     output_file = demo_dir / "demo_sarah_cost_planner.json"
-    
+
     with open(output_file, "w", encoding="utf-8") as f:
         json.dump(profile, f, indent=2, ensure_ascii=False)
-    
+
     file_size = output_file.stat().st_size
-    
+
     print("\n" + "="*60)
     print("✅ Sarah Demo Profile Created Successfully!")
     print("="*60)

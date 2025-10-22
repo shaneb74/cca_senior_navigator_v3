@@ -65,14 +65,14 @@ def get_financial_prefill() -> dict[str, Any]:
     if income_data:
         # Calculate total monthly income from all sources
         monthly_income = 0.0
-        
+
         # Core income sources
         monthly_income += income_data.get("ss_monthly", 0.0)
         monthly_income += income_data.get("pension_monthly", 0.0)
         monthly_income += income_data.get("employment_income", 0.0)
         monthly_income += income_data.get("other_income", 0.0)
         monthly_income += income_data.get("partner_income_monthly", 0.0)
-        
+
         # Additional income sources (Advanced mode)
         monthly_income += income_data.get("annuity_monthly", 0.0)
         monthly_income += income_data.get("retirement_distributions_monthly", 0.0)
@@ -90,26 +90,26 @@ def get_financial_prefill() -> dict[str, Any]:
     if assets_data:
         # Calculate total assets using restored field names
         total_assets = 0.0
-        
+
         # Liquid Assets (3 fields)
         total_assets += assets_data.get("checking_balance", 0.0)
         total_assets += assets_data.get("savings_cds_balance", 0.0)
         total_assets += assets_data.get("cash_on_hand", 0.0)
-        
+
         # Investments (3 fields)
         total_assets += assets_data.get("brokerage_stocks_bonds", 0.0)
         total_assets += assets_data.get("brokerage_mf_etf", 0.0)
         total_assets += assets_data.get("brokerage_other", 0.0)
-        
+
         # Retirement (3 fields)
         total_assets += assets_data.get("retirement_traditional", 0.0)
         total_assets += assets_data.get("retirement_roth", 0.0)
         total_assets += assets_data.get("retirement_pension_value", 0.0)
-        
+
         # Real Estate (2 fields - Advanced mode)
         total_assets += assets_data.get("home_equity_estimate", 0.0)
         total_assets += assets_data.get("real_estate_other", 0.0)
-        
+
         # Life Insurance (1 field)
         total_assets += assets_data.get("life_insurance_cash_value", 0.0)
 

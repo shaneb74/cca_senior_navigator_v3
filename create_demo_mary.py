@@ -320,22 +320,22 @@ def main():
     demo_dir = Path("data/users/demo")
     demo_dir.mkdir(parents=True, exist_ok=True)
     output_file = demo_dir / f"{UID}.json"
-    
+
     if output_file.exists():
         print(f"Warning Profile file already exists: {output_file}")
         response = input("Overwrite yes or no: ").strip().lower()
         if response not in ["yes", "y"]:
             print("Aborted")
             return
-    
+
     try:
         with open(output_file, 'w') as f:
             json.dump(data, f, indent=2)
-        
+
         file_size = output_file.stat().st_size
         line_count = len(output_file.read_text().splitlines())
-        
-        print(f"Profile created successfully")
+
+        print("Profile created successfully")
         print(f"File: {output_file}")
         print(f"Size: {file_size} bytes")
         print(f"Lines: {line_count}")
@@ -350,7 +350,7 @@ def main():
         print(f"Runway: {data['mcip_contracts']['financial_profile']['runway_months']} months 15 years")
         print(f"Protected source: {output_file}")
         print("Working copy: data/users/demo_mary_memory_care.json")
-        
+
     except PermissionError:
         print("ERROR Could not write file Is the app running")
         return

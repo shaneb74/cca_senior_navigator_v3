@@ -197,9 +197,9 @@ with open(output_path, 'w') as f:
 print("✅ Profile updated successfully!")
 
 # Verify it's valid JSON
-with open(output_path, 'r') as f:
+with open(output_path) as f:
     verified = json.load(f)
-    
+
 print(f"✅ Verified: Profile has {len(verified)} top-level keys")
 print(f"✅ GCP status: {verified['mcip_contracts']['care_recommendation']['status']}")
 print(f"✅ GCP tier: {verified['mcip_contracts']['care_recommendation']['tier']}")

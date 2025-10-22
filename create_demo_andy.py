@@ -13,9 +13,9 @@ Output: data/users/demo/demo_andy_assisted_gcp_complete.json
 """
 
 import json
-from pathlib import Path
 import time
 from datetime import datetime
+from pathlib import Path
 
 # Current timestamp for created_at/last_updated
 TIMESTAMP = time.time()
@@ -30,7 +30,7 @@ data = {
     "uid": UID,
     "created_at": TIMESTAMP,
     "last_updated": TIMESTAMP,
-    
+
     # Auth block - required for authenticated demo user
     "auth": {
         "user_id": UID,
@@ -38,7 +38,7 @@ data = {
         "name": "Andy Assisted GCP Complete",
         "email": "andy@demo.test"
     },
-    
+
     # =========================================================================
     # PROFILE & QUALIFIERS
     # =========================================================================
@@ -55,7 +55,7 @@ data = {
             "spouse_needs_care": False
         }
     },
-    
+
     # Duplicate qualifiers for Cost Planner compatibility
     "cost_v2_qualifiers": {
         "is_veteran": True,
@@ -63,7 +63,7 @@ data = {
         "has_spouse": False,
         "spouse_needs_care": False
     },
-    
+
     # =========================================================================
     # FEATURE FLAGS
     # =========================================================================
@@ -72,7 +72,7 @@ data = {
         "veteran_aanda_risk": True,
         "enable_cost_planner_v2": True
     },
-    
+
     # =========================================================================
     # GCP CARE RECOMMENDATION
     # =========================================================================
@@ -110,10 +110,10 @@ data = {
         "rationale": "Based on assessment, assisted living recommended due to ADL support needs, IADL assistance requirements, and lack of family support system. Safety concerns and living alone are contributing factors.",
         "next_step": "Review cost estimates and explore facility options in San Francisco area."
     },
-    
+
     # Mark GCP as published
     "gcp_v4_published": True,
-    
+
     # =========================================================================
     # MCIP CONTRACTS
     # =========================================================================
@@ -187,10 +187,10 @@ data = {
             "last_updated": datetime.now().isoformat(),
             "needs_refresh": False
         },
-        
+
         # NO financial_profile - Andy hasn't done Cost Planner yet
         # This will be created when/if Andy completes Cost Planner
-        
+
         # Journey tracking
         "journey": {
             "current_hub": "concierge",
@@ -198,14 +198,14 @@ data = {
             "unlocked_products": ["cost_planner", "facility_finder"],
             "recommended_next": "cost_planner"
         },
-        
+
         # Waiting room (for advisor appointments)
         "waiting_room": {
             "status": "available",
             "appointment_scheduled": False
         }
     },
-    
+
     # =========================================================================
     # COST PLANNER V2 - QUICK ESTIMATE ONLY
     # =========================================================================
@@ -230,17 +230,17 @@ data = {
         "care_tier": "assisted_living",
         "zip_code": "94102"
     },
-    
+
     # Cost Planner step - set to "exit" to show completed summary
     "cost_v2_step": "welcome",
-    
+
     # Guest mode and triage - include even if empty
     "cost_v2_guest_mode": False,
     "cost_v2_triage": {},
-    
+
     # Modules - empty for now (Andy only has quick estimate)
     "cost_v2_modules": {},
-    
+
     # =========================================================================
     # TILES
     # =========================================================================
@@ -259,10 +259,10 @@ data = {
             "last_updated": TIMESTAMP
         }
     },
-    
+
     # Progress - empty unless using product-wide meters
     "progress": {},
-    
+
     # Preferences - empty unless specific UI defaults needed
     "preferences": {}
 }
@@ -273,10 +273,10 @@ def main():
     # Ensure demo directory exists
     demo_dir = Path("data/users/demo")
     demo_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # Output file path (in protected demo directory)
     output_file = demo_dir / f"{UID}.json"
-    
+
     # Check if app is running (file might be locked)
     if output_file.exists():
         print(f"⚠️  Profile file already exists: {output_file}")
@@ -284,17 +284,17 @@ def main():
         if response not in ["yes", "y"]:
             print("❌ Aborted.")
             return
-    
+
     # Write profile to file
     try:
         with open(output_file, 'w') as f:
             json.dump(data, f, indent=2)
-        
+
         # Get file size
         file_size = output_file.stat().st_size
         line_count = len(output_file.read_text().splitlines())
-        
-        print(f"✅ Profile created successfully!")
+
+        print("✅ Profile created successfully!")
         print(f"   File: {output_file}")
         print(f"   Size: {file_size:,} bytes ({file_size/1024:.1f} KB)")
         print(f"   Lines: {line_count:,}")
@@ -310,7 +310,7 @@ def main():
         print(f"💰 Quick Estimate: ${data['cost_v2_quick_estimate']['estimate']['monthly_adjusted']:,}/month")
         print(f"   Location multiplier: {data['cost_v2_quick_estimate']['estimate']['multiplier']}x")
         print()
-        print(f"🏁 Journey Status:")
+        print("🏁 Journey Status:")
         print(f"   Completed: {', '.join(data['mcip_contracts']['journey']['completed_products'])}")
         print(f"   Unlocked: {', '.join(data['mcip_contracts']['journey']['unlocked_products'])}")
         print()
@@ -344,7 +344,7 @@ def main():
         print("   - Verify GCP tile shows: '✅ Assisted Living (73% confidence)'")
         print()
         print("=" * 60)
-        
+
     except Exception as e:
         print(f"❌ Error writing profile: {e}")
         return

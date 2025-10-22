@@ -35,9 +35,9 @@ Prerequisites:
 """
 
 import json
-from pathlib import Path
-from datetime import datetime
 import time
+from datetime import datetime
+from pathlib import Path
 
 # Current timestamp
 TIMESTAMP = time.time()
@@ -80,7 +80,7 @@ data = {
         "moderate_cognitive_decline": True,  # NEW - pushing toward Memory Care
         "enable_cost_planner_v2": True
     },
-    
+
     # =========================================================================
     # GCP CARE RECOMMENDATION - BORDERLINE ASSISTED LIVING (23 points)
     # =========================================================================
@@ -121,10 +121,10 @@ data = {
         "rationale": "Borderline case: 23 points places Andy at the upper end of Assisted Living (17-24). He has moderate memory concerns and significant ADL/IADL dependencies, but lacks severe cognitive impairment or behavioral issues that would require Memory Care. Assisted living with enhanced services recommended.",
         "next_step": "Review costs for assisted living facilities with memory support programs."
     },
-    
+
     # Mark GCP as published
     "gcp_v4_published": True,
-    
+
     # =========================================================================
     # MCIP CONTRACTS
     # =========================================================================
@@ -237,7 +237,7 @@ data = {
             "appointment_scheduled": False
         }
     },
-    
+
     # =========================================================================
     # COST PLANNER QUICK ESTIMATE (Seattle, not started)
     # =========================================================================
@@ -263,13 +263,13 @@ data = {
         "care_tier": "assisted_living",
         "zip_code": "98101"
     },
-    
+
     # Cost Planner not started
     "cost_v2_step": "welcome",
     "cost_v2_guest_mode": False,
     "cost_v2_triage": {},
     "cost_v2_modules": {},
-    
+
     # =========================================================================
     # TILES
     # =========================================================================
@@ -288,7 +288,7 @@ data = {
             "last_updated": TIMESTAMP
         }
     },
-    
+
     "progress": {},
     "preferences": {}
 }
@@ -299,10 +299,10 @@ def main():
     # Ensure demo directory exists
     demo_dir = Path("data/users/demo")
     demo_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # Output file path (in protected demo directory)
     output_file = demo_dir / f"{UID}.json"
-    
+
     # Check if file exists
     if output_file.exists():
         print(f"⚠️  Profile file already exists: {output_file}")
@@ -310,16 +310,16 @@ def main():
         if response not in ["yes", "y"]:
             print("❌ Aborted.")
             return
-    
+
     # Write profile to file
     try:
         with open(output_file, 'w') as f:
             json.dump(data, f, indent=2)
-        
+
         # Get file size
         file_size = output_file.stat().st_size
         line_count = len(output_file.read_text().splitlines())
-        
+
         print("\n" + "=" * 70)
         print("✅ Andy Borderline Profile Updated Successfully!")
         print("=" * 70)
@@ -329,26 +329,26 @@ def main():
         print(f"\n👤 UID: {data['uid']}")
         print(f"📍 Location: {data['profile']['location']} (ZIP: {data['profile']['zip_code']})")
         print(f"👴 Age Range: {data['profile']['age_range']}")
-        print(f"\n🏥 Care Recommendation: Assisted Living (BORDERLINE)")
+        print("\n🏥 Care Recommendation: Assisted Living (BORDERLINE)")
         print(f"   Score: {data['gcp_care_recommendation']['tier_score']} points")
-        print(f"   Memory Care Threshold: 25 points (only 2 points away!)")
-        print(f"   Range: 17-24 (Assisted Living)")
+        print("   Memory Care Threshold: 25 points (only 2 points away!)")
+        print("   Range: 17-24 (Assisted Living)")
         print(f"   Confidence: {data['gcp_care_recommendation']['confidence']:.0%}")
         print(f"   Status: {data['gcp_care_recommendation']['status']}")
-        print(f"\n🎯 Borderline Factors:")
-        print(f"   ✓ Moderate memory concerns (pushing toward Memory Care)")
-        print(f"   ✓ 3 ADLs + 4 IADLs (significant dependencies)")
-        print(f"   ✓ Multiple falls (safety concerns)")
-        print(f"   ✓ Lives alone, no family support")
-        print(f"   ✓ Veteran - VA A&A eligible")
-        print(f"   ✗ No severe cognitive impairment (keeping in AL)")
-        print(f"   ✗ No wandering/behavioral issues (keeping in AL)")
-        print(f"\n💰 Quick Estimate:")
+        print("\n🎯 Borderline Factors:")
+        print("   ✓ Moderate memory concerns (pushing toward Memory Care)")
+        print("   ✓ 3 ADLs + 4 IADLs (significant dependencies)")
+        print("   ✓ Multiple falls (safety concerns)")
+        print("   ✓ Lives alone, no family support")
+        print("   ✓ Veteran - VA A&A eligible")
+        print("   ✗ No severe cognitive impairment (keeping in AL)")
+        print("   ✗ No wandering/behavioral issues (keeping in AL)")
+        print("\n💰 Quick Estimate:")
         print(f"   Seattle Assisted Living: ${data['cost_v2_quick_estimate']['estimate']['monthly_adjusted']:,.0f}/month")
-        print(f"   Includes: Memory support program, fall prevention")
-        print(f"\n📋 Next: Cost Planner (not started)")
-        print(f"\n" + "=" * 70 + "\n")
-        
+        print("   Includes: Memory support program, fall prevention")
+        print("\n📋 Next: Cost Planner (not started)")
+        print("\n" + "=" * 70 + "\n")
+
     except PermissionError:
         print("❌ ERROR: Could not write file. Is the app running?")
         print("   Stop the app first: pkill -9 streamlit")

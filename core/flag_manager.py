@@ -20,9 +20,8 @@ API:
 
 import json
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Optional, Dict, List
 
 import streamlit as st
 
@@ -119,7 +118,7 @@ def _save_user_session(session: dict) -> None:
 
 def _get_timestamp() -> str:
     """Get current UTC timestamp in ISO 8601 format"""
-    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    return datetime.now(UTC).isoformat().replace("+00:00", "Z")
 
 
 def _normalize_legacy_flags(session: dict) -> dict[str, any]:
@@ -409,7 +408,7 @@ def get_active() -> list[str]:
     return session.get("flags", {}).get("active", [])
 
 
-def get_provenance(flag_id: str) -> Optional[dict[str, str]]:
+def get_provenance(flag_id: str) -> dict[str, str] | None:
     """
     Get provenance metadata for a specific flag.
 

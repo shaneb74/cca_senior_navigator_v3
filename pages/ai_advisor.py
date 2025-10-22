@@ -15,7 +15,7 @@ DESIGN PRINCIPLES:
 
 import random
 import time
-from typing import Any, Optional, Dict, List
+from typing import Any
 
 import streamlit as st
 
@@ -370,7 +370,7 @@ I'm still learning, but here's what I can help with:
 # ==============================================================================
 
 
-def _match_question(user_input: str) -> Optional[dict[str, Any]]:
+def _match_question(user_input: str) -> dict[str, Any] | None:
     """Match user input to a question in the database.
 
     Args:
@@ -478,7 +478,7 @@ def _get_suggested_questions(exclude: list[str] = None) -> list[str]:
     return [QUESTION_DATABASE[key]["question"] for key in selected_keys]
 
 
-def _find_question_key(question_text: str) -> Optional[str]:
+def _find_question_key(question_text: str) -> str | None:
     """Find the database key for a question text.
 
     Args:

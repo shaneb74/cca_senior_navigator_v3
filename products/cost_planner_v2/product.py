@@ -81,7 +81,7 @@ def render():
                 st.session_state.cost_v2_step = step_from_query
 
     current_step = st.session_state.cost_v2_step
-    
+
 
     # Render Navi panel with dynamic guidance based on step
     # Skip for module_active, expert_review, exit, and when inside an assessment
@@ -367,7 +367,7 @@ def _handle_restart_if_needed() -> None:
     # Check if we've already handled restart in this session
     if st.session_state.get("_cost_v2_restart_handled", False):
         return  # Already restarted, don't clear state again
-    
+
     # Check if Cost Planner is complete
     try:
         from core.mcip import MCIP
@@ -383,10 +383,10 @@ def _handle_restart_if_needed() -> None:
         return  # Not at intro, don't auto-restart
 
     # RESTART: Clear Cost Planner state but preserve GCP
-    
+
     # Set flag FIRST to prevent re-clearing on next render
     st.session_state._cost_v2_restart_handled = True
-    
+
     # 1. Clear cost planner step state
     if "cost_v2_step" in st.session_state:
         st.session_state.cost_v2_step = "intro"
@@ -457,12 +457,12 @@ def _handle_restart_if_needed() -> None:
     # This ensures the cleared keys are saved to the user file
     # so they don't get reloaded on next page navigation
     try:
-        from core.session_store import save_user, extract_user_state, get_or_create_user_id
-        
+        from core.session_store import extract_user_state, get_or_create_user_id, save_user
+
         uid = get_or_create_user_id(st.session_state)
         user_data = extract_user_state(st.session_state)
         save_user(uid, user_data)
-    except Exception as e:
+    except Exception:
         pass  # Silently handle persistence errors
 
     # Note: GCP state and recommendation preserved automatically

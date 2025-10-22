@@ -14,7 +14,6 @@ Calculates:
 """
 
 from dataclasses import dataclass, field
-from typing import Optional
 
 from core.mcip import CareRecommendation
 from products.cost_planner_v2.financial_profile import FinancialProfile
@@ -28,7 +27,7 @@ class AssetCategory:
     Represents a category of assets (liquid, retirement, home equity, etc.)
     with metadata about how it can be used to fund care.
     """
-    
+
     name: str  # Internal key (e.g., "liquid_assets")
     display_name: str  # User-friendly name (e.g., "💵 Liquid Assets")
     current_balance: float  # Gross balance
@@ -57,7 +56,7 @@ class ExpertReviewAnalysis:
     # Calculated metrics
     coverage_percentage: float  # 0-100+
     monthly_gap: float  # Can be negative (surplus) or positive (shortfall)
-    runway_months: Optional[float]  # None if gap <= 0 (covered indefinitely)
+    runway_months: float | None  # None if gap <= 0 (covered indefinitely)
 
     # Categorization
     coverage_tier: str  # "excellent", "good", "moderate", "concerning", "critical"
@@ -73,20 +72,20 @@ class ExpertReviewAnalysis:
     primary_recommendation: str
     action_items: list
     resources: list
-    
+
     # NEW: Asset breakdown and selection
     asset_categories: dict[str, AssetCategory] = field(default_factory=dict)
     selected_assets_value: float = 0.0  # Total value of user-selected assets
-    extended_runway_months: Optional[float] = None  # Runway with selected assets
+    extended_runway_months: float | None = None  # Runway with selected assets
     recommended_funding_order: list[str] = field(default_factory=list)  # Priority order
     funding_notes: dict[str, str] = field(default_factory=dict)  # Category-specific notes
 
 
 def calculate_expert_review(
     profile: FinancialProfile,
-    care_recommendation: Optional[CareRecommendation] = None,
-    zip_code: Optional[str] = None,
-    estimated_monthly_cost: Optional[float] = None,
+    care_recommendation: CareRecommendation | None = None,
+    zip_code: str | None = None,
+    estimated_monthly_cost: float | None = None,
 ) -> ExpertReviewAnalysis:
     """
     Perform comprehensive expert financial review analysis.
@@ -106,10 +105,10 @@ def calculate_expert_review(
         # Use the estimate from intro page (preferred - already has all modifiers applied)
         care_flags_modifier = 1.0  # Already included in intro estimate
         regional_modifier = 1.0  # Already included in intro estimate
-        print(f"\n[FA_DEBUG] ========== EXPERT FORMULAS: USING ESTIMATE ==========")
-        print(f"[FA_DEBUG] Source: Quick Estimate (passed from comparison_view)")
+        print("\n[FA_DEBUG] ========== EXPERT FORMULAS: USING ESTIMATE ==========")
+        print("[FA_DEBUG] Source: Quick Estimate (passed from comparison_view)")
         print(f"[FA_DEBUG] Estimated Monthly Cost: ${estimated_monthly_cost:,.0f}")
-        print(f"[FA_DEBUG] ===================================================\n")
+        print("[FA_DEBUG] ===================================================\n")
     else:
         # Fallback: Calculate from scratch
         base_monthly_cost = _get_base_care_cost(care_recommendation)
@@ -121,13 +120,13 @@ def calculate_expert_review(
         # Apply regional modifier
         regional_modifier = _get_regional_modifier(zip_code)
         estimated_monthly_cost = adjusted_monthly_cost * regional_modifier
-        
-        print(f"\n[FA_DEBUG] ========== EXPERT FORMULAS: USING FALLBACK ==========")
-        print(f"[FA_DEBUG] Source: GCP-based calculation (no Quick Estimate)")
+
+        print("\n[FA_DEBUG] ========== EXPERT FORMULAS: USING FALLBACK ==========")
+        print("[FA_DEBUG] Source: GCP-based calculation (no Quick Estimate)")
         print(f"[FA_DEBUG] Base Monthly Cost: ${base_monthly_cost:,.0f}")
         print(f"[FA_DEBUG] After Care Flags (×{care_flags_modifier:.2f}): ${adjusted_monthly_cost:,.0f}")
         print(f"[FA_DEBUG] After Regional (×{regional_modifier:.2f}): ${estimated_monthly_cost:,.0f}")
-        print(f"[FA_DEBUG] ====================================================\n")
+        print("[FA_DEBUG] ====================================================\n")
 
     # ==== STEP 2: Apply LTC Insurance Benefits ====
     ltc_monthly_coverage = 0.0
@@ -174,7 +173,7 @@ def calculate_expert_review(
 
     # ==== NEW STEP 8b: Calculate asset breakdown ====
     asset_categories = calculate_asset_breakdown(profile, care_recommendation)
-    
+
     # ==== NEW STEP 8c: Calculate recommended funding order ====
     recommended_funding_order, funding_notes = calculate_recommended_funding_order(
         asset_categories, care_recommendation, profile
@@ -221,7 +220,7 @@ def calculate_expert_review(
     )
 
 
-def _get_base_care_cost(care_recommendation: Optional[CareRecommendation]) -> float:
+def _get_base_care_cost(care_recommendation: CareRecommendation | None) -> float:
     """
     Get base monthly care cost based on GCP recommendation.
 
@@ -265,7 +264,7 @@ def _get_base_care_cost(care_recommendation: Optional[CareRecommendation]) -> fl
     return tier_to_cost.get(care_tier, 4500)
 
 
-def _calculate_care_flags_modifier(care_recommendation: Optional[CareRecommendation]) -> float:
+def _calculate_care_flags_modifier(care_recommendation: CareRecommendation | None) -> float:
     """
     Calculate cost modifier based on GCP care flags.
 
@@ -306,7 +305,7 @@ def _calculate_care_flags_modifier(care_recommendation: Optional[CareRecommendat
     return min(modifier, 1.5)
 
 
-def _get_regional_modifier(zip_code: Optional[str]) -> float:
+def _get_regional_modifier(zip_code: str | None) -> float:
     """
     Get regional cost modifier based on ZIP code.
 
@@ -324,7 +323,7 @@ def _get_regional_modifier(zip_code: Optional[str]) -> float:
     return 1.0
 
 
-def _categorize_coverage(coverage_percentage: float, runway_months: Optional[float]) -> str:
+def _categorize_coverage(coverage_percentage: float, runway_months: float | None) -> str:
     """
     Categorize coverage into tiers for user-friendly display.
 
@@ -364,7 +363,7 @@ def _categorize_coverage(coverage_percentage: float, runway_months: Optional[flo
 
 
 def _determine_recommendation_level(
-    coverage_percentage: float, runway_months: Optional[float], profile: FinancialProfile
+    coverage_percentage: float, runway_months: float | None, profile: FinancialProfile
 ) -> str:
     """
     Determine recommendation priority level.
@@ -401,9 +400,9 @@ def _determine_recommendation_level(
 def _generate_recommendations(
     coverage_percentage: float,
     monthly_gap: float,
-    runway_months: Optional[float],
+    runway_months: float | None,
     profile: FinancialProfile,
-    care_recommendation: Optional[CareRecommendation],
+    care_recommendation: CareRecommendation | None,
 ) -> tuple[str, list, list]:
     """
     Generate personalized recommendations based on financial analysis.
@@ -522,7 +521,7 @@ def _generate_recommendations(
 
 def calculate_asset_breakdown(
     profile: FinancialProfile,
-    care_recommendation: Optional[CareRecommendation] = None,
+    care_recommendation: CareRecommendation | None = None,
 ) -> dict[str, AssetCategory]:
     """
     Calculate detailed asset breakdown with accessibility analysis.
@@ -540,16 +539,16 @@ def calculate_asset_breakdown(
     Returns:
         dict[str, AssetCategory] - Keyed by asset category name
     """
-    
+
     categories = {}
-    
+
     # Determine care type for smart exclusions
     care_tier = getattr(care_recommendation, "tier", "moderate") if care_recommendation else "moderate"
     is_in_home_care = care_tier in ["minimal", "low"] or (
-        hasattr(care_recommendation, "care_type") and 
+        hasattr(care_recommendation, "care_type") and
         "in_home" in getattr(care_recommendation, "care_type", "")
     )
-    
+
     # ==== 1. LIQUID ASSETS ====
     liquid_balance = profile.checking_savings + profile.investment_accounts
     if liquid_balance > 0:
@@ -565,7 +564,7 @@ def calculate_asset_breakdown(
             tax_implications="none",
             notes="Checking, savings, CDs, brokerage accounts",
         )
-    
+
     # ==== 2. RETIREMENT ACCOUNTS ====
     retirement_balance = profile.retirement_accounts_total
     if retirement_balance > 0:
@@ -573,7 +572,7 @@ def calculate_asset_breakdown(
         # Assume age 62+ (no penalty), but still face ordinary income tax (~32% avg effective)
         # Accessible value: 68% (32% tax withholding)
         accessible = retirement_balance * 0.68
-        
+
         categories["retirement_accounts"] = AssetCategory(
             name="retirement_accounts",
             display_name="🏦 Retirement Accounts",
@@ -586,12 +585,12 @@ def calculate_asset_breakdown(
             tax_implications="ordinary_income",
             notes="Traditional IRA, 401(k), Roth IRA (after age 59.5)",
         )
-    
+
     # ==== 3. LIFE INSURANCE CASH VALUE ====
     if profile.life_insurance_cash_value > 0:
         # Cash value can be borrowed against (no tax up to basis)
         accessible = profile.life_insurance_cash_value * 0.95  # 5% for loan fees
-        
+
         categories["life_insurance"] = AssetCategory(
             name="life_insurance",
             display_name="📜 Life Insurance Cash Value",
@@ -604,12 +603,12 @@ def calculate_asset_breakdown(
             tax_implications="none",
             notes="Policy loans available up to cash value",
         )
-    
+
     # ==== 4. ANNUITIES ====
     if profile.annuity_current_value > 0:
         # Annuities have surrender charges (assume 7% avg) + tax on gains
         accessible = profile.annuity_current_value * 0.85  # 15% haircut for surrender + tax
-        
+
         categories["annuities"] = AssetCategory(
             name="annuities",
             display_name="💼 Annuities",
@@ -622,14 +621,14 @@ def calculate_asset_breakdown(
             tax_implications="ordinary_income",
             notes="Provides monthly income stream if not surrendered",
         )
-    
+
     # ==== 5. HOME EQUITY ====
     home_equity = profile.primary_residence_value - profile.primary_residence_mortgage_balance
     if home_equity > 50000:  # Only show if substantial equity
         # Reverse mortgage typically provides ~60% of home value (age 62+)
         # Assume user is 62+ for now (would use actual age in production)
         accessible = home_equity * 0.60
-        
+
         # Smart exclusion: Don't recommend selling home for in-home care
         if is_in_home_care:
             recommended = False
@@ -637,7 +636,7 @@ def calculate_asset_breakdown(
         else:
             recommended = True
             reason = "Reverse mortgage or sale available for facility care"
-        
+
         categories["home_equity"] = AssetCategory(
             name="home_equity",
             display_name="🏠 Home Equity",
@@ -650,13 +649,13 @@ def calculate_asset_breakdown(
             tax_implications="none",
             notes="Reverse mortgage, HELOC, or sale options",
         )
-    
+
     # ==== 6. OTHER REAL ESTATE ====
     other_re_equity = profile.other_real_estate - profile.other_real_estate_debt_balance
     if other_re_equity > 0:
         # Assume 10% transaction costs + capital gains
         accessible = other_re_equity * 0.80
-        
+
         categories["other_real_estate"] = AssetCategory(
             name="other_real_estate",
             display_name="🏘️ Other Real Estate",
@@ -669,7 +668,7 @@ def calculate_asset_breakdown(
             tax_implications="capital_gains",
             notes="Rental property, land, vacation homes",
         )
-    
+
     # ==== 7. OTHER RESOURCES ====
     if profile.other_resources > 0:
         categories["other_resources"] = AssetCategory(
@@ -684,14 +683,14 @@ def calculate_asset_breakdown(
             tax_implications="none",
             notes="Trusts, collectibles, other assets",
         )
-    
+
     return categories
 
 
 def calculate_recommended_funding_order(
     asset_categories: dict[str, AssetCategory],
-    care_recommendation: Optional[CareRecommendation] = None,
-    profile: Optional[FinancialProfile] = None,
+    care_recommendation: CareRecommendation | None = None,
+    profile: FinancialProfile | None = None,
 ) -> tuple[list[str], dict[str, str]]:
     """
     Determine recommended order for using assets based on:
@@ -705,7 +704,7 @@ def calculate_recommended_funding_order(
         - funding_order: List of asset category names in recommended order
         - funding_notes: Dict of category name -> explanation
     """
-    
+
     # Default conservative order (liquidity first, tax-efficient, then less liquid)
     default_order = [
         "liquid_assets",          # 1. Most liquid, no tax
@@ -716,10 +715,10 @@ def calculate_recommended_funding_order(
         "other_resources",        # 6. Varies by type
         "home_equity",            # 7. Last for in-home care (needed), earlier for facility
     ]
-    
+
     # Filter to only categories that exist
     funding_order = [cat for cat in default_order if cat in asset_categories]
-    
+
     # Adjust for Medicaid planning context
     if profile and profile.interested_in_spend_down:
         # Medicaid planning: Liquidate non-exempt assets ASAP
@@ -732,19 +731,19 @@ def calculate_recommended_funding_order(
             "other_resources",
             # Note: Primary residence often exempt (up to certain value)
         ]
-    
+
     # Generate notes for each category
     funding_notes = {}
     for i, cat_name in enumerate(funding_order, 1):
         category = asset_categories[cat_name]
-        
+
         if i == 1:
             funding_notes[cat_name] = f"⭐ Start here - {category.recommendation_reason}"
         elif category.recommended:
             funding_notes[cat_name] = f"#{i} - {category.recommendation_reason}"
         else:
             funding_notes[cat_name] = f"Consider later - {category.recommendation_reason}"
-    
+
     return funding_order, funding_notes
 
 
@@ -752,7 +751,7 @@ def calculate_extended_runway(
     monthly_gap: float,
     selected_assets: dict[str, bool],
     asset_categories: dict[str, AssetCategory],
-) -> Optional[float]:
+) -> float | None:
     """
     Calculate how long care can be funded with selected assets.
     
@@ -764,21 +763,21 @@ def calculate_extended_runway(
     Returns:
         Extended runway in months, or None if no gap/indefinite coverage
     """
-    
+
     if monthly_gap <= 0:
         return None  # No gap = indefinite coverage
-    
+
     # Sum accessible value of selected assets
     total_selected = sum(
         asset_categories[name].accessible_value
         for name, selected in selected_assets.items()
         if selected and name in asset_categories
     )
-    
+
     if total_selected == 0:
         return 0.0  # No assets selected
-    
+
     # Calculate months of coverage
     extended_runway = total_selected / monthly_gap
-    
+
     return extended_runway

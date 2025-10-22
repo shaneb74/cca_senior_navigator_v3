@@ -3,7 +3,6 @@ from __future__ import annotations
 import html
 from collections.abc import Sequence
 from textwrap import dedent
-from typing import Optional, Dict
 
 import streamlit as st
 
@@ -297,7 +296,7 @@ def _inject_welcome_css() -> None:
     st.session_state[_CSS_FLAG] = True
 
 
-def _go_to(page_path: Optional[str], fallback_route: Optional[str]) -> None:
+def _go_to(page_path: str | None, fallback_route: str | None) -> None:
     # Always use route_to() for consistent navigation behavior
     # This ensures UID is preserved and navigation stays in same tab
     if fallback_route:
@@ -314,7 +313,7 @@ def render_welcome_card(
     placeholder: str,
     note: str,
     image_path: str,
-    submit_route: Optional[str] = "hub_concierge",
+    submit_route: str | None = "hub_concierge",
 ) -> None:
     _inject_welcome_css()
 
@@ -552,7 +551,7 @@ def _welcome_body(
     )
 
 
-def render(ctx: Optional[dict] = None) -> None:
+def render(ctx: dict | None = None) -> None:
     """Render welcome page with adaptive behavior based on auth state."""
     # ============================================================
     # AUTHENTICATION DISABLED FOR DEVELOPMENT TESTING

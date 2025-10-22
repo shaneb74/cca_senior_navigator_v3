@@ -26,7 +26,6 @@ Prerequisites:
 """
 
 import json
-import os
 from pathlib import Path
 
 # EXACT profile data from user's working session
@@ -440,10 +439,10 @@ def main():
     # Ensure demo directory exists
     demo_dir = Path("data/users/demo")
     demo_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # Output file path (in protected demo directory)
     output_file = demo_dir / "demo_john_cost_planner.json"
-    
+
     # Check if app is running (file might be locked)
     if output_file.exists():
         print(f"⚠️  Profile file already exists: {output_file}")
@@ -451,17 +450,17 @@ def main():
         if response not in ["yes", "y"]:
             print("❌ Aborted.")
             return
-    
+
     # Write profile to file
     try:
         with open(output_file, 'w') as f:
             json.dump(data, f, indent=2)
-        
+
         # Get file size
         file_size = output_file.stat().st_size
         line_count = len(output_file.read_text().splitlines())
-        
-        print(f"✅ Profile created successfully!")
+
+        print("✅ Profile created successfully!")
         print(f"   File: {output_file}")
         print(f"   Size: {file_size:,} bytes ({file_size/1024:.1f} KB)")
         print(f"   Lines: {line_count:,}")
@@ -493,7 +492,7 @@ def main():
         print("   • Each login starts with fresh copy from demo/")
         print("   • Changes saved to working copy during session")
         print("   • Source in demo/ is never modified")
-        
+
     except PermissionError:
         print("❌ ERROR: Could not write file. Is the app running?")
         print("   Stop the app first: pkill -9 streamlit")

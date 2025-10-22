@@ -14,7 +14,6 @@ IMPORTANT: All flags must be registered in FLAG_REGISTRY below.
 If a module tries to set an undefined flag, a validation warning will appear.
 """
 
-from typing import Optional, Dict, List, Any
 
 import streamlit as st
 
@@ -241,7 +240,7 @@ COST_MODEL_FLAGS: list[str] = [
 ]
 
 
-def get_flag_info(flag_id: str) -> Optional[dict[str, str]]:
+def get_flag_info(flag_id: str) -> dict[str, str] | None:
     """Get metadata for a specific flag.
 
     Args:

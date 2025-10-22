@@ -80,7 +80,7 @@ def render():
         # The engine stores state in st.session_state[config.state_key]
         # and outcomes in st.session_state[f"{config.state_key}._outcomes"]
         module_state = run_module(config)
-        
+
         # MID-FLOW COMPUTATION: After Daily Living section, compute recommendation
         # This enables conditional rendering of Move Preferences section
         current_step_index = module_state.get("_step", 0)
@@ -90,7 +90,9 @@ def render():
             if current_step_index >= 4 and not st.session_state.get("gcp_recommendation_category"):
                 # Daily Living complete, compute recommendation for conditional gating
                 try:
-                    from products.gcp_v4.modules.care_recommendation.logic import compute_recommendation_category
+                    from products.gcp_v4.modules.care_recommendation.logic import (
+                        compute_recommendation_category,
+                    )
                     compute_recommendation_category(module_state, persist_to_state=True)
                 except Exception:
                     pass  # Don't fail the flow if mid-computation fails
@@ -268,7 +270,7 @@ def _handle_restart_if_needed(config: ModuleConfig) -> None:
     restart_requested = st.query_params.get("restart") == "true"
     if not restart_requested:
         return  # No explicit restart request, preserve existing state
-    
+
     # Check if GCP is complete
     try:
         from core.mcip import MCIP

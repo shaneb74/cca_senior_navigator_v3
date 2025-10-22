@@ -12,20 +12,17 @@ State Management: Tracks completion status and progress
 import json
 import time
 from pathlib import Path
-from typing import Any, Optional, Dict
+from typing import Any
 
 import streamlit as st
 
 from core.assessment_engine import run_assessment
 from core.events import log_event
-from core.session_store import safe_rerun
-from core.ui import render_navi_panel_v2
 from core.mode_engine import (
     render_mode_toggle,
-    get_visible_fields,
-    render_aggregate_field,
-    render_unallocated_field,
 )
+from core.session_store import safe_rerun
+from core.ui import render_navi_panel_v2
 from products.cost_planner_v2.utils.financial_helpers import (
     calculate_total_asset_debt,
     calculate_total_asset_value,
@@ -370,18 +367,18 @@ def render_assessment_page(assessment_key: str, product_key: str = "cost_planner
 
     # Initialize state - load from cost_v2_modules if available (e.g., demo users)
     state_key = f"{product_key}_{assessment_key}"
-    
-    
+
+
     # Initialize state - load from cost_v2_modules if available (e.g., demo users)
     # This handles both initial load (demo users) and restart scenarios
     modules = st.session_state.get("cost_v2_modules", {})
-    
+
     if assessment_key in modules:
         module_data = modules[assessment_key].get("data", {})
         if module_data and state_key not in st.session_state:
             # Pre-populate from saved data
             st.session_state[state_key] = module_data.copy()
-    
+
     st.session_state.setdefault(state_key, {})
     state = st.session_state[state_key]
 
@@ -511,15 +508,15 @@ def _render_single_page_assessment(
     """Render designated assessments on a single page with streamlined styling."""
 
     state_key = f"{product_key}_{assessment_key}"
-    
+
     # Pre-populate from cost_v2_modules if available (demo users, restart scenarios)
     modules = st.session_state.get("cost_v2_modules", {})
-    
+
     if assessment_key in modules:
         module_data = modules[assessment_key].get("data", {})
         if module_data and state_key not in st.session_state:
             st.session_state[state_key] = module_data.copy()
-    
+
     state = st.session_state.setdefault(state_key, {})
 
     success_flash_key = f"{state_key}._flash_success"
@@ -591,11 +588,11 @@ def _render_single_page_assessment(
             # Use expander for collapsible sections
             section_title = section.get("title", "Section")
             section_icon = section.get("icon", "📋")
-            
+
             # Determine if section should be expanded by default
             # First section expanded, others collapsed
             is_first = field_sections.index(section) == 0
-            
+
             with st.expander(f"{section_icon} {section_title}", expanded=is_first):
                 _render_section_content(section, state, product_key, assessment_key)
     else:
@@ -682,7 +679,7 @@ def _render_single_page_assessment(
                     log_event("assessment.updated", event_payload)
                 else:
                     log_event("assessment.completed", event_payload)
-                
+
                 # Navigate back to Financial Assessment Hub
                 st.session_state.cost_v2_step = "assessments"
                 st.session_state.pop(f"{product_key}_current_assessment", None)
@@ -751,7 +748,7 @@ def _render_section_content(
     # Check if section supports Basic/Advanced modes
     mode_config = section.get("mode_config", {})
     current_mode = "basic"  # Default mode - always start in Basic for simplicity
-    
+
     if mode_config.get("supports_basic_advanced"):
         # Render mode toggle
         mode_toggle_key = f"{assessment_key}_{section['id']}"
@@ -761,11 +758,11 @@ def _render_section_content(
     new_values = _render_fields_for_page(section, state, current_mode)
     if new_values:
         state.update(new_values)
-        
+
         # Auto-calculate VA disability if relevant fields changed
         if assessment_key == "va_benefits" and section.get("id") == "va_disability":
             _auto_populate_va_disability(state)
-        
+
         _persist_assessment_state(product_key, assessment_key, state)
 
     st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
@@ -832,33 +829,33 @@ def _auto_populate_va_disability(state: dict[str, Any]) -> None:
     - Missing data → does nothing
     """
     import streamlit as st
-    
+
     has_disability = state.get("has_va_disability")
-    
+
     # If no disability, set amount to 0
     if has_disability == "no":
         state["va_disability_monthly"] = 0.0
         return
-    
+
     # Only calculate if veteran has VA disability
     if has_disability != "yes":
         return
-    
+
     rating = state.get("va_disability_rating")
     dependents = state.get("va_dependents")
-    
+
     # Need both rating and dependents to calculate
     if rating is None or dependents is None:
         return
-    
+
     try:
         # Calculate monthly amount using official rates
         monthly_amount = get_monthly_va_disability(rating, dependents)
-        
+
         if monthly_amount is not None:
             # Update state dict with calculated amount
             state["va_disability_monthly"] = monthly_amount
-            
+
             # Show toast notification on calculation
             st.toast(f"✅ Calculated VA benefit: ${monthly_amount:,.2f}/month", icon="💰")
         else:
@@ -867,7 +864,7 @@ def _auto_populate_va_disability(state: dict[str, Any]) -> None:
         st.error(f"Error calculating VA disability: {e}")
 
 
-def _calculate_summary_total(summary_config: dict[str, Any], state: dict[str, Any]) -> Optional[float]:
+def _calculate_summary_total(summary_config: dict[str, Any], state: dict[str, Any]) -> float | None:
     """
     Calculate summary total using the formula defined in config.
     
@@ -889,14 +886,14 @@ def _calculate_summary_total(summary_config: dict[str, Any], state: dict[str, An
             if "cash_liquid_total" in state or "checking_balance" in state:
                 # This is the assets assessment
                 from products.cost_planner_v2.utils.financial_helpers import (
-                    calculate_total_asset_value,
                     calculate_total_asset_debt,
+                    calculate_total_asset_value,
                 )
                 gross_assets = calculate_total_asset_value(state)
                 total_debt = calculate_total_asset_debt(state)
                 return max(gross_assets - total_debt, 0.0)
             return None
-        
+
         # Standard sum() formula
         if formula.startswith("sum(") and formula.endswith(")"):
             field_names = [f.strip() for f in formula[4:-1].split(",") if f.strip()]
@@ -965,7 +962,7 @@ def _load_all_assessments(product_key: str) -> list[dict[str, Any]]:
     return assessments
 
 
-def _load_assessment_config(assessment_key: str, product_key: str) -> Optional[dict[str, Any]]:
+def _load_assessment_config(assessment_key: str, product_key: str) -> dict[str, Any] | None:
     """Load a specific assessment configuration."""
 
     # Load from modules/assessments/ directory (colocation with product code)

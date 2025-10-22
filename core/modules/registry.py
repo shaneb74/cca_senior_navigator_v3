@@ -19,12 +19,12 @@ Example usage:
 """
 
 from collections.abc import Callable
-from typing import Any, Optional, Dict
+from typing import Any
 
 # Type alias for renderer function signature
 # Args: (config: ModuleConfig, step: StepDef, step_index: int, state: dict)
 # Returns: Optional dict with state updates
-StepRenderer = Callable[[Any, Any, int, Dict[str, Any]], Optional[Dict[str, Any]]]
+StepRenderer = Callable[[Any, Any, int, dict[str, Any]], dict[str, Any] | None]
 
 # Global registry of custom renderers
 _CUSTOM_RENDERERS: dict[str, StepRenderer] = {}

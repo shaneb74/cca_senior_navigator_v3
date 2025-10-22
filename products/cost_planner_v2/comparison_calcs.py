@@ -17,11 +17,10 @@ DOES NOT:
 """
 
 from dataclasses import dataclass
-from typing import Optional, List, Dict, Any
+from typing import Any
 
 from core.mcip import MCIP
 from products.cost_planner_v2.utils.regional_data import RegionalDataProvider
-
 
 # ==============================================================================
 # BASE RATES
@@ -106,7 +105,7 @@ class BreakdownLine:
     """Single line item in cost breakdown."""
     label: str
     value: float
-    pct: Optional[float] = None  # Percentage if applicable (e.g., 0.20 for 20%)
+    pct: float | None = None  # Percentage if applicable (e.g., 0.20 for 20%)
     applied: bool = True  # Whether this line is included in total
 
 
@@ -118,14 +117,14 @@ class ScenarioBreakdown:
     monthly_total: float
     annual_total: float
     three_year_total: float
-    lines: List[BreakdownLine]
-    
+    lines: list[BreakdownLine]
+
 
 # ==============================================================================
 # HELPER FUNCTIONS
 # ==============================================================================
 
-def get_home_carry_effective(zip_code: Optional[str], user_override: Optional[float] = None) -> float:
+def get_home_carry_effective(zip_code: str | None, user_override: float | None = None) -> float:
     """Calculate effective home carry cost with regional scaling.
     
     Args:
@@ -137,22 +136,22 @@ def get_home_carry_effective(zip_code: Optional[str], user_override: Optional[fl
     """
     # Start with user override or base
     base_amount = user_override if user_override is not None else HOME_CARRY_BASE
-    
+
     # Apply regional multiplier (same as care costs)
     regional = RegionalDataProvider.get_multiplier(zip_code=zip_code)
-    
+
     # Home costs scale similarly to care costs but may be less sensitive
     # Use a dampened multiplier (50% of care multiplier deviation from 1.0)
     # Example: If care multiplier is 1.30 (+30%), home multiplier is 1.15 (+15%)
     deviation = regional.multiplier - 1.0
     dampened_multiplier = 1.0 + (deviation * 0.5)
-    
+
     effective_amount = base_amount * dampened_multiplier
-    
+
     return round(effective_amount, 2)
 
 
-def get_active_flags() -> List[str]:
+def get_active_flags() -> list[str]:
     """Get active flags from GCP recommendation.
     
     Returns:
@@ -161,7 +160,7 @@ def get_active_flags() -> List[str]:
     gcp_rec = MCIP.get_care_recommendation()
     if not gcp_rec or not hasattr(gcp_rec, "flags"):
         return []
-    
+
     # Extract flag IDs
     flags = []
     for flag in gcp_rec.flags:
@@ -171,7 +170,7 @@ def get_active_flags() -> List[str]:
                 flags.append(flag_id)
         elif isinstance(flag, str):
             flags.append(flag)
-    
+
     return flags
 
 
@@ -211,9 +210,9 @@ def get_modifier_label(care_type: str, flag_id: str) -> str:
 
 def calculate_facility_scenario(
     care_type: str,
-    zip_code: Optional[str],
+    zip_code: str | None,
     keep_home: bool,
-    home_carry_override: Optional[float] = None
+    home_carry_override: float | None = None
 ) -> ScenarioBreakdown:
     """Calculate facility care scenario (AL, MC, MC-HA).
     
@@ -227,7 +226,7 @@ def calculate_facility_scenario(
         ScenarioBreakdown with complete calculation breakdown
     """
     lines = []
-    
+
     # 1. Base cost
     base_cost = FACILITY_BASE_RATES.get(care_type, 4500)
     lines.append(BreakdownLine(
@@ -235,12 +234,12 @@ def calculate_facility_scenario(
         value=base_cost,
         applied=True
     ))
-    
+
     # 2. Regional adjustment
     regional = RegionalDataProvider.get_multiplier(zip_code=zip_code)
     regional_adj = base_cost * (regional.multiplier - 1.0)
     regional_pct = (regional.multiplier - 1.0) * 100
-    
+
     if abs(regional_adj) > 0.01:
         sign = "+" if regional_adj > 0 else ""
         lines.append(BreakdownLine(
@@ -249,118 +248,14 @@ def calculate_facility_scenario(
             pct=regional.multiplier - 1.0,
             applied=True
         ))
-    
+
     # Running total after base + regional
     running_total = base_cost * regional.multiplier
-    
+
     # 3. Care modifiers (cumulative application)
     active_flags = get_active_flags()
-    
+
     # Standard modifiers
-    for flag_id in ["memory_support", "mobility_limited", "adl_support_high", 
-                    "medication_management", "behavioral_concerns", "falls_risk", 
-                    "chronic_conditions"]:
-        if flag_id in active_flags:
-            pct = get_modifier_pct(care_type, flag_id)
-            if pct > 0:
-                amount = running_total * pct
-                label = get_modifier_label(care_type, flag_id)
-                lines.append(BreakdownLine(
-                    label=f"{label} (+{pct*100:.0f}%)",
-                    value=amount,
-                    pct=pct,
-                    applied=True
-                ))
-                running_total += amount
-    
-    # High-acuity tier adjustment (always applied for memory_care_high_acuity)
-    if care_type == "memory_care_high_acuity":
-        pct = 0.25
-        amount = running_total * pct
-        lines.append(BreakdownLine(
-            label=f"High-Acuity Intensive Care (+{pct*100:.0f}%)",
-            value=amount,
-            pct=pct,
-            applied=True
-        ))
-        running_total += amount
-    
-    # 4. Home carry cost (optional)
-    home_carry_effective = get_home_carry_effective(zip_code, home_carry_override)
-    lines.append(BreakdownLine(
-        label="Home Carry Cost",
-        value=home_carry_effective,
-        applied=keep_home
-    ))
-    
-    if keep_home:
-        running_total += home_carry_effective
-    
-    # Final totals
-    monthly_total = round(running_total, 0)
-    annual_total = round(monthly_total * 12, 0)
-    three_year_total = round(annual_total * 3, 0)
-    
-    return ScenarioBreakdown(
-        care_type=care_type,
-        location_label=regional.region_name,
-        monthly_total=monthly_total,
-        annual_total=annual_total,
-        three_year_total=three_year_total,
-        lines=lines
-    )
-
-
-def calculate_inhome_scenario(
-    zip_code: Optional[str],
-    hours_per_day: float = 8.0,
-    home_carry_override: Optional[float] = None
-) -> ScenarioBreakdown:
-    """Calculate in-home care scenario.
-    
-    Args:
-        zip_code: ZIP code for regional adjustment
-        hours_per_day: Hours of care per day (default 8)
-        home_carry_override: User-specified home carry amount
-        
-    Returns:
-        ScenarioBreakdown with complete calculation breakdown
-    """
-    lines = []
-    
-    # 1. Hourly rate (regionally adjusted)
-    regional = RegionalDataProvider.get_multiplier(zip_code=zip_code)
-    hourly_rate = INHOME_HOURLY_BASE * regional.multiplier
-    
-    # 2. Hours per month (30.4 days average)
-    hours_per_month = hours_per_day * 30.4
-    
-    # 3. Base care cost
-    base_cost = hourly_rate * hours_per_month
-    lines.append(BreakdownLine(
-        label=f"Base Cost ({hours_per_day}hrs/day × ${hourly_rate:.2f}/hr)",
-        value=base_cost,
-        applied=True
-    ))
-    
-    # 4. Regional adjustment (already applied to hourly rate, show for transparency)
-    regional_pct = (regional.multiplier - 1.0) * 100
-    if abs(regional_pct) > 0.01:
-        regional_adj = (INHOME_HOURLY_BASE * hours_per_month) * (regional.multiplier - 1.0)
-        sign = "+" if regional_adj > 0 else ""
-        lines.append(BreakdownLine(
-            label=f"Regional Adjustment ({sign}{regional_pct:.0f}%)",
-            value=regional_adj,
-            pct=regional.multiplier - 1.0,
-            applied=True
-        ))
-    
-    running_total = base_cost
-    
-    # 5. Care modifiers (cumulative application)
-    active_flags = get_active_flags()
-    care_type = "in_home_care"
-    
     for flag_id in ["memory_support", "mobility_limited", "adl_support_high",
                     "medication_management", "behavioral_concerns", "falls_risk",
                     "chronic_conditions"]:
@@ -376,7 +271,111 @@ def calculate_inhome_scenario(
                     applied=True
                 ))
                 running_total += amount
+
+    # High-acuity tier adjustment (always applied for memory_care_high_acuity)
+    if care_type == "memory_care_high_acuity":
+        pct = 0.25
+        amount = running_total * pct
+        lines.append(BreakdownLine(
+            label=f"High-Acuity Intensive Care (+{pct*100:.0f}%)",
+            value=amount,
+            pct=pct,
+            applied=True
+        ))
+        running_total += amount
+
+    # 4. Home carry cost (optional)
+    home_carry_effective = get_home_carry_effective(zip_code, home_carry_override)
+    lines.append(BreakdownLine(
+        label="Home Carry Cost",
+        value=home_carry_effective,
+        applied=keep_home
+    ))
+
+    if keep_home:
+        running_total += home_carry_effective
+
+    # Final totals
+    monthly_total = round(running_total, 0)
+    annual_total = round(monthly_total * 12, 0)
+    three_year_total = round(annual_total * 3, 0)
+
+    return ScenarioBreakdown(
+        care_type=care_type,
+        location_label=regional.region_name,
+        monthly_total=monthly_total,
+        annual_total=annual_total,
+        three_year_total=three_year_total,
+        lines=lines
+    )
+
+
+def calculate_inhome_scenario(
+    zip_code: str | None,
+    hours_per_day: float = 8.0,
+    home_carry_override: float | None = None
+) -> ScenarioBreakdown:
+    """Calculate in-home care scenario.
     
+    Args:
+        zip_code: ZIP code for regional adjustment
+        hours_per_day: Hours of care per day (default 8)
+        home_carry_override: User-specified home carry amount
+        
+    Returns:
+        ScenarioBreakdown with complete calculation breakdown
+    """
+    lines = []
+
+    # 1. Hourly rate (regionally adjusted)
+    regional = RegionalDataProvider.get_multiplier(zip_code=zip_code)
+    hourly_rate = INHOME_HOURLY_BASE * regional.multiplier
+
+    # 2. Hours per month (30.4 days average)
+    hours_per_month = hours_per_day * 30.4
+
+    # 3. Base care cost
+    base_cost = hourly_rate * hours_per_month
+    lines.append(BreakdownLine(
+        label=f"Base Cost ({hours_per_day}hrs/day × ${hourly_rate:.2f}/hr)",
+        value=base_cost,
+        applied=True
+    ))
+
+    # 4. Regional adjustment (already applied to hourly rate, show for transparency)
+    regional_pct = (regional.multiplier - 1.0) * 100
+    if abs(regional_pct) > 0.01:
+        regional_adj = (INHOME_HOURLY_BASE * hours_per_month) * (regional.multiplier - 1.0)
+        sign = "+" if regional_adj > 0 else ""
+        lines.append(BreakdownLine(
+            label=f"Regional Adjustment ({sign}{regional_pct:.0f}%)",
+            value=regional_adj,
+            pct=regional.multiplier - 1.0,
+            applied=True
+        ))
+
+    running_total = base_cost
+
+    # 5. Care modifiers (cumulative application)
+    active_flags = get_active_flags()
+    care_type = "in_home_care"
+
+    for flag_id in ["memory_support", "mobility_limited", "adl_support_high",
+                    "medication_management", "behavioral_concerns", "falls_risk",
+                    "chronic_conditions"]:
+        if flag_id in active_flags:
+            pct = get_modifier_pct(care_type, flag_id)
+            if pct > 0:
+                amount = running_total * pct
+                label = get_modifier_label(care_type, flag_id)
+                lines.append(BreakdownLine(
+                    label=f"{label} (+{pct*100:.0f}%)",
+                    value=amount,
+                    pct=pct,
+                    applied=True
+                ))
+                running_total += amount
+
     # 6. Home carry cost (always included for in-home)
     home_carry_effective = get_home_carry_effective(zip_code, home_carry_override)
     lines.append(BreakdownLine(
@@ -385,12 +384,12 @@ def calculate_inhome_scenario(
         applied=True
     ))
     running_total += home_carry_effective
-    
+
     # Final totals
     monthly_total = round(running_total, 0)
     annual_total = round(monthly_total * 12, 0)
     three_year_total = round(annual_total * 3, 0)
-    
+
     return ScenarioBreakdown(
         care_type="in_home_care",
         location_label=regional.region_name,
@@ -405,7 +404,7 @@ def calculate_inhome_scenario(
 # BREAKDOWN TO DICT (for UI rendering)
 # ==============================================================================
 
-def breakdown_to_dict(breakdown: ScenarioBreakdown) -> Dict[str, Any]:
+def breakdown_to_dict(breakdown: ScenarioBreakdown) -> dict[str, Any]:
     """Convert ScenarioBreakdown to dict for JSON serialization and UI rendering.
     
     Args:

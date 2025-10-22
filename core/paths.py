@@ -1,8 +1,5 @@
 """Path resolution helpers for static assets and configs."""
-import os
 from pathlib import Path
-from typing import Optional
-
 
 # Repository root (parent of this file's directory)
 REPO_ROOT = Path(__file__).parent.parent
@@ -24,11 +21,11 @@ def get_static(relpath: str) -> str:
     """
     static_dir = REPO_ROOT / "static"
     asset_path = static_dir / relpath
-    
+
     if not asset_path.exists():
         # Don't fail silently - warn but return path anyway
         print(f"⚠️ Static asset not found: {asset_path}")
-    
+
     return str(asset_path)
 
 
@@ -74,10 +71,10 @@ def get_config_path(relpath: str) -> str:
     """
     config_dir = REPO_ROOT / "config"
     config_path = config_dir / relpath
-    
+
     if not config_path.exists():
         print(f"⚠️ Config file not found: {config_path}")
-    
+
     return str(config_path)
 
 
@@ -98,10 +95,10 @@ def get_data_path(relpath: str, create_dirs: bool = False) -> str:
     """
     data_dir = REPO_ROOT / "data"
     data_path = data_dir / relpath
-    
+
     if create_dirs:
         data_path.parent.mkdir(parents=True, exist_ok=True)
-    
+
     return str(data_path)
 
 

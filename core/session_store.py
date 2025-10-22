@@ -29,7 +29,6 @@ import time
 import uuid
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Optional, Dict
 from typing import Any
 
 try:
@@ -173,7 +172,7 @@ def _atomic_write(path: Path, data: dict[str, Any], retries: int = MAX_RETRIES) 
     return False
 
 
-def _safe_read(path: Path) -> Optional[Dict[str, Any]]:
+def _safe_read(path: Path) -> dict[str, Any] | None:
     """Read JSON file safely with error handling.
 
     If file is corrupted or doesn't exist, returns None.
@@ -403,21 +402,21 @@ def load_user(uid: str) -> dict[str, Any]:
         User data dict (empty default if not found)
     """
     path = get_user_path(uid)
-    
+
     # Check if this is a demo user
     if is_demo_user(uid):
         demo_path = get_demo_path(uid)
-        
+
         # Check if fresh load is requested via query param
         # Usage: ?uid=demo_mary_memory_care&fresh=true
         import streamlit as st
         force_fresh = st.query_params.get("fresh", "").lower() == "true"
-        
+
         # Copy demo profile if:
         # 1. Working copy doesn't exist yet (first load), OR
         # 2. Fresh load is explicitly requested (?fresh=true)
         should_copy = demo_path.exists() and (not path.exists() or force_fresh)
-        
+
         if should_copy:
             try:
                 import shutil
@@ -525,12 +524,12 @@ def reset_demo_user(uid: str) -> bool:
     if not is_demo_user(uid):
         print(f"[ERROR] Cannot reset non-demo user: {uid}")
         return False
-    
+
     demo_path = get_demo_path(uid)
     if not demo_path.exists():
         print(f"[ERROR] Demo profile not found: {demo_path}")
         return False
-    
+
     user_path = get_user_path(uid)
     if user_path.exists():
         try:
@@ -724,7 +723,7 @@ def safe_rerun():
 
     # Check if we should skip saving (e.g., on first render after loading data)
     should_skip_save = st.session_state.get("skip_save_this_render", False)
-    
+
     if not should_skip_save:
         # Save user data (persistent across sessions)
         uid = get_or_create_user_id(st.session_state)

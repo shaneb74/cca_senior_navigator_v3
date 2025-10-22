@@ -7,7 +7,6 @@ Navi orchestrates journey coordination, Additional Services, and Q&A.
 """
 
 import html
-from typing import Optional
 
 import streamlit as st
 
@@ -224,7 +223,7 @@ def _build_gcp_tile(hub_order: dict, ordered_index: dict, next_action: dict) -> 
         blurb="Answer a few short questions about your daily needs, health, and safety. We'll create a personal care plan to help you take the next step with confidence. Everything saves automatically, and it only takes about 2 minutes.",
         image_square="gcp.png",
         meta_lines=["≈2 min • Auto-saves"],
-        primary_route=f"?page=gcp_review"
+        primary_route="?page=gcp_review"
         if is_complete
         else (f"?page={summary['route']}" if not is_complete else None),
         primary_label="👁️ Review Assessment" if is_complete else None,
@@ -459,7 +458,7 @@ def _build_navi_guide_block(ctx) -> str:
     )
 
 
-def _build_saved_progress_alert(save_msg: Optional[dict]) -> str:
+def _build_saved_progress_alert(save_msg: dict | None) -> str:
     if not save_msg:
         return ""
     product_name = {

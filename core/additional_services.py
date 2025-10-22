@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Optional,  Any
+from typing import Any
 
 import streamlit as st
 
@@ -630,7 +630,7 @@ REGISTRY: list[Tile] = [
 ]
 
 
-def get_additional_services(hub: str = "concierge", limit: Optional[int] = None) -> list[Tile]:
+def get_additional_services(hub: str = "concierge", limit: int | None = None) -> list[Tile]:
     """Get additional service tiles for a hub, filtered by MCIP data and flags.
 
     PARTNER INTEGRATION:
@@ -770,7 +770,7 @@ def get_additional_services(hub: str = "concierge", limit: Optional[int] = None)
     return tiles
 
 
-def _detect_personalization(tile: dict[str, Any], ctx: dict[str, Any]) -> Optional[str]:
+def _detect_personalization(tile: dict[str, Any], ctx: dict[str, Any]) -> str | None:
     """Detect whether a tile is Navi-recommended based on care/cost flags.
 
     CRITICAL RULES:

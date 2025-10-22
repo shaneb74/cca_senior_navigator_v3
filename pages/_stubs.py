@@ -1,10 +1,10 @@
-from typing import Optional
+
 import streamlit as st
 
 from core.ui import img_src
 
 
-def _page(title: str, desc: str, ctas: Optional[list[tuple[str, str]]] = None):
+def _page(title: str, desc: str, ctas: list[tuple[str, str]] | None = None):
     # Apply consistent styling like other pages
     st.markdown(
         """<style>

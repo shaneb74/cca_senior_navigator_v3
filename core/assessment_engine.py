@@ -18,14 +18,13 @@ from typing import Any
 import streamlit as st
 
 from core.events import log_event
-from core.session_store import safe_rerun
-from core.ui import render_navi_panel_v2
 from core.mode_engine import (
-    render_mode_toggle,
     get_visible_fields,
     render_aggregate_field,
-    render_unallocated_field,
+    render_mode_toggle,
 )
+from core.session_store import safe_rerun
+from core.ui import render_navi_panel_v2
 
 
 def run_assessment(
@@ -285,7 +284,7 @@ def _render_fields(section: dict[str, Any], state: dict[str, Any], mode: str = "
         mode: Current mode ("basic" or "advanced")
     """
     new_values: dict[str, Any] = {}
-    
+
     # Get mode-filtered fields if section supports modes
     mode_config = section.get("mode_config", {})
     if mode_config.get("supports_basic_advanced"):
@@ -325,7 +324,7 @@ def _render_fields(section: dict[str, Any], state: dict[str, Any], mode: str = "
 
         # Get current value from state dict (from persistence) or default
         current_value = state.get(key, default)
-        
+
         # Generate unique widget key
         widget_key = f"field_{key}"
 
@@ -360,18 +359,18 @@ def _render_fields(section: dict[str, Any], state: dict[str, Any], mode: str = "
             updates = render_aggregate_field(field, state, mode, container)
             if updates:
                 new_values.update(updates)
-        
+
         elif field_type == "currency":
             min_val = field.get("min", 0.0)
             max_val = field.get("max", 10000000.0)
             step = field.get("step", 100.0)
             readonly = field.get("readonly", False)
-            
+
             # Ensure all numeric values are the same type (float for currency to support cents)
             min_val = float(min_val)
             max_val = float(max_val)
             step = float(step)
-            
+
             # Handle current value - convert to float if present, otherwise use min_val (already float)
             if current_value is not None:
                 current_value = float(current_value)
@@ -383,7 +382,7 @@ def _render_fields(section: dict[str, Any], state: dict[str, Any], mode: str = "
                 """Callback to ensure UI updates immediately when currency field changes."""
                 # Force a rerun so aggregate totals update immediately
                 pass  # The act of having an on_change callback triggers the rerun
-            
+
             value = container.number_input(
                 label=label,  # Still need this for accessibility
                 label_visibility="collapsed",  # Hide Streamlit's label
@@ -440,7 +439,7 @@ def _render_fields(section: dict[str, Any], state: dict[str, Any], mode: str = "
             except (ValueError, IndexError):
                 # Fallback: use first option's value
                 value = option_values[0] if option_values else None
-            
+
             new_values[key] = value
 
         elif field_type == "checkbox":
@@ -491,7 +490,7 @@ def _render_fields(section: dict[str, Any], state: dict[str, Any], mode: str = "
             # Value comes from state (e.g., auto-calculated VA disability amount)
             display_value = float(current_value) if current_value is not None else 0.0
             formatted_value = f"${display_value:,.2f}"
-            
+
             # Render as a styled display box
             container.markdown(
                 f"""
@@ -511,16 +510,16 @@ def _render_fields(section: dict[str, Any], state: dict[str, Any], mode: str = "
                 """,
                 unsafe_allow_html=True,
             )
-            
+
             # Don't include in new_values since it's display-only
             # (value already in state from auto-calculation)
 
         elif field_type == "display_currency_aggregate":
             # Display-only calculated total (sum of sub-fields)
             # Always shows as a styled label, never editable
-            
+
             sub_fields = field.get("aggregate_from", [])
-            
+
             # Calculate aggregate from sub-fields
             # CRITICAL: Read from st.session_state first for real-time updates
             aggregate_total = 0.0
@@ -529,7 +528,7 @@ def _render_fields(section: dict[str, Any], state: dict[str, Any], mode: str = "
                 sub_value = st.session_state.get(sub_widget_key)
                 if sub_value is None:
                     sub_value = state.get(sub_field_key, 0.0)
-                
+
                 # Convert to float safely
                 if isinstance(sub_value, (int, float)):
                     aggregate_total += float(sub_value)
@@ -538,9 +537,9 @@ def _render_fields(section: dict[str, Any], state: dict[str, Any], mode: str = "
                         aggregate_total += float(sub_value.replace(',', '').replace('$', ''))
                     except ValueError:
                         pass  # Skip non-numeric values
-            
+
             formatted_value = f"${aggregate_total:,.2f}"
-            
+
             # Render as a styled aggregate display
             container.markdown(
                 f"""
@@ -561,7 +560,7 @@ def _render_fields(section: dict[str, Any], state: dict[str, Any], mode: str = "
                 """,
                 unsafe_allow_html=True,
             )
-            
+
             # Store the calculated aggregate in state
             state[key] = aggregate_total
 

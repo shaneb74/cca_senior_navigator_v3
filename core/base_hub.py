@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from html import escape as html_escape
 from pathlib import Path
-from typing import Optional,  Any
+from typing import Any
 
 import streamlit as st
 
@@ -55,12 +55,12 @@ def _inject_hub_css_once() -> None:
 def render_dashboard_body(
     *,
     title: str = "",
-    subtitle: Optional[str] = None,
+    subtitle: str | None = None,
     chips: list[dict[str, str]] | None = None,
-    hub_guide_block: Optional[Any] = None,
+    hub_guide_block: Any | None = None,
     hub_order: dict[str, Any] | None = None,
     cards: list[Any] | None = None,
-    cards_html: Optional[str] = None,
+    cards_html: str | None = None,
     series_steps: list[dict[str, Any]] | None = None,
     additional_services: list[dict[str, Any]] | None = None,
 ) -> str:

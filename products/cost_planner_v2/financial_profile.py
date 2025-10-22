@@ -10,7 +10,7 @@ Output: Unified FinancialProfile ready for MCIP publishing and analysis
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Optional, Dict
+from typing import Any
 
 import streamlit as st
 
@@ -98,7 +98,7 @@ class FinancialProfile:
 
     # ==== LIFE INSURANCE ====
     has_life_insurance: str = "no"
-    life_insurance_type: Optional[str] = None
+    life_insurance_type: str | None = None
     life_insurance_face_value: float = 0.0
     life_insurance_cash_value: float = 0.0
     life_insurance_premium_monthly: float = 0.0
@@ -123,7 +123,7 @@ class FinancialProfile:
     # ==== MEDICAID PLANNING ====
     medicaid_status: str = "not_enrolled"
     interested_in_spend_down: bool = False
-    spend_down_timeline: Optional[str] = None
+    spend_down_timeline: str | None = None
     has_estate_plan: list = field(default_factory=list)
     aware_of_asset_limits: str = "no"  # NEW: "no", "somewhat", "yes" - affects recommendations
     current_asset_position: str = "unknown"  # NEW: "under_limit", "near_limit", "over_limit", "unknown" - CRITICAL for timeline
@@ -134,7 +134,7 @@ class FinancialProfile:
     completeness_percentage: float = 0.0
     required_assessments_complete: bool = False
     optional_assessments_complete: dict = field(default_factory=dict)
-    last_updated: Optional[str] = None
+    last_updated: str | None = None
 
 
 def build_financial_profile(product_key: str = "cost_planner_v2") -> FinancialProfile:
@@ -377,7 +377,7 @@ def _check_required_complete(assessments_state: dict[str, Any]) -> bool:
     return bool(assessments_state.get("income") and assessments_state.get("assets"))
 
 
-def get_financial_profile(product_key: str = "cost_planner_v2") -> Optional[FinancialProfile]:
+def get_financial_profile(product_key: str = "cost_planner_v2") -> FinancialProfile | None:
     """
     Get cached financial profile or build new one.
 

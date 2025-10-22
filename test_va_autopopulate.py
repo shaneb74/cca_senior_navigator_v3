@@ -5,6 +5,7 @@ Run this to see what's happening without needing the full Streamlit app
 """
 
 import sys
+
 sys.path.insert(0, 'products/cost_planner_v2')
 
 from va_rates import get_monthly_va_disability
