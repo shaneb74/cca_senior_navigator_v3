@@ -249,3 +249,186 @@ def reconcile_with_deterministic(
     
     # Deterministic always wins
     return det_tier
+
+
+def generate_section_advice(
+    context: GCPContext,
+    section: str,
+    mode: Literal["off", "shadow", "assist"] = "off",
+) -> Tuple[bool, Optional[GCPAdvice]]:
+    """Generate contextual Navi advice after a GCP section completes.
+    
+    This function provides incremental feedback as the user progresses through
+    the assessment, computing a running tier estimate based on answers so far.
+    
+    Args:
+        context: GCPContext with answers completed so far (may be partial)
+        section: Section name (about_you, health_safety, daily_living, etc.)
+        mode: Generation mode (off, shadow, or assist)
+    
+    Returns:
+        Tuple of (success: bool, advice: Optional[GCPAdvice])
+    """
+    # Mode validation
+    if mode == "off":
+        return (False, None)
+    
+    if mode not in ("off", "shadow", "assist"):
+        print(f"[GCP_LLM_SECTION] Invalid mode: {mode}. Using 'off'.")
+        return (False, None)
+    
+    # Get LLM client
+    client = get_client()
+    if client is None:
+        print(f"[GCP_LLM_SECTION] Could not create LLM client - skipping section={section}")
+        return (False, None)
+    
+    try:
+        # Build section-specific prompt
+        system_prompt = _build_section_system_prompt(section)
+        user_prompt = _build_section_user_prompt(context, section)
+        
+        # Generate JSON response with 5s timeout
+        response_text = client.generate_json(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+        )
+        
+        if response_text is None:
+            print(f"[GCP_LLM_SECTION] LLM returned None - section={section}")
+            return (False, None)
+        
+        # Parse JSON
+        try:
+            response_data = json.loads(response_text)
+        except json.JSONDecodeError as e:
+            print(f"[GCP_LLM_SECTION] Failed to parse JSON - section={section}: {e}")
+            return (False, None)
+        
+        # Validate with Pydantic
+        try:
+            advice = GCPAdvice(**response_data)
+            
+            # Post-guard: Verify tier is canonical
+            if advice.tier not in CANONICAL_TIERS:
+                print(f"[GCP_LLM_SECTION] Non-canonical tier '{advice.tier}' rejected - section={section}")
+                return (False, None)
+            
+            # Post-guard: Filter forbidden terms
+            advice = _filter_forbidden_terms(advice)
+            
+            # Log section completion
+            print(
+                f"[GCP_LLM_SECTION] section={section} tier={advice.tier} "
+                f"conf={advice.confidence:.2f} msgs={len(advice.navi_messages)} "
+                f"reasons={len(advice.reasons)}"
+            )
+            
+            return (True, advice)
+        
+        except Exception as e:
+            print(f"[GCP_LLM_SECTION] Pydantic validation failed - section={section}: {e}")
+            return (False, None)
+    
+    except Exception as e:
+        print(f"[GCP_LLM_SECTION] Unexpected error - section={section}: {e}")
+        return (False, None)
+
+
+def _build_section_system_prompt(section: str) -> str:
+    """Build section-specific system prompt.
+    
+    Tailors the base system prompt to focus on the specific section context.
+    
+    Args:
+        section: Section name
+    
+    Returns:
+        System prompt string
+    """
+    base_prompt = GCP_NAVI_SYSTEM_PROMPT
+    
+    section_context = {
+        "about_you": "Focus on demographic factors, living situation, and partner support. This is early in the assessment.",
+        "health_safety": "Focus on medication complexity, mobility, fall risk, and safety concerns. Consider these health indicators carefully.",
+        "daily_living": "Focus on ADL/IADL challenges, which are strong indicators of care needs. This is a critical section.",
+        "cognition_behavior": "Focus on memory changes and behaviors, which may indicate need for specialized memory care.",
+        "move_preferences": "Focus on user's timeline and readiness to move, which affects care planning urgency.",
+    }
+    
+    context_note = section_context.get(section, "Provide contextual feedback based on information gathered so far.")
+    
+    return f"""{base_prompt}
+
+SECTION CONTEXT:
+You are providing feedback after the "{section}" section.
+{context_note}
+
+Remember: This is a running assessment. The user hasn't completed all sections yet, so your tier estimate is preliminary based on available information."""
+
+
+def _build_section_user_prompt(context: GCPContext, section: str) -> str:
+    """Build section-specific user prompt.
+    
+    Only includes fields that have been answered so far (non-default values).
+    
+    Args:
+        context: GCPContext (may be partial)
+        section: Section name
+    
+    Returns:
+        User prompt string
+    """
+    # Build minimal context dict with only answered fields
+    context_dict = {}
+    
+    # Always include these if available
+    if context.age_range and context.age_range != "unknown":
+        context_dict["age_range"] = context.age_range
+    if context.living_situation and context.living_situation != "unknown":
+        context_dict["living_situation"] = context.living_situation
+    
+    context_dict["has_partner"] = context.has_partner
+    
+    # Add fields based on section progress
+    if context.meds_complexity and context.meds_complexity != "simple":
+        context_dict["meds_complexity"] = context.meds_complexity
+    if context.mobility and context.mobility != "independent":
+        context_dict["mobility"] = context.mobility
+    if context.falls and context.falls != "no_falls":
+        context_dict["falls"] = context.falls
+    
+    if context.badls:
+        context_dict["badls"] = context.badls
+    if context.iadls:
+        context_dict["iadls"] = context.iadls
+    
+    if context.memory_changes and context.memory_changes != "no_changes":
+        context_dict["memory_changes"] = context.memory_changes
+    if context.behaviors:
+        context_dict["behaviors"] = context.behaviors
+    
+    if context.isolation and context.isolation != "minimal":
+        context_dict["isolation"] = context.isolation
+    
+    if context.move_preference is not None:
+        context_dict["move_preference"] = context.move_preference
+    
+    if context.flags:
+        context_dict["flags"] = context.flags
+    
+    prompt = f"""SECTION: {section}
+
+CONTEXT SO FAR (partial assessment):
+{json.dumps(context_dict, indent=2)}
+
+Based on the information gathered in this section and prior sections, provide your preliminary care tier estimate and contextual feedback.
+
+Remember:
+1. This is a running assessment - more sections may follow
+2. Provide a preliminary tier based on available information
+3. Include 1-2 supportive Navi messages appropriate to this stage
+4. Suggest 1-2 clarifying questions if needed"""
+    
+    return prompt
+

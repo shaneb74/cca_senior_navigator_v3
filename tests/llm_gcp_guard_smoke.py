@@ -6,9 +6,14 @@ Validates that the guarded GCP integration:
 2. Handles tier normalization correctly
 3. Filters forbidden terms from all output
 4. Reconciles with deterministic recommendations correctly
+5. Provides per-section feedback with running tier estimates
 """
 
-from ai.gcp_navi_engine import generate_gcp_advice, reconcile_with_deterministic
+from ai.gcp_navi_engine import (
+    generate_gcp_advice,
+    generate_section_advice,
+    reconcile_with_deterministic,
+)
 from ai.gcp_schemas import CANONICAL_TIERS, FORBIDDEN_TERMS, GCPContext, normalize_tier
 
 
@@ -230,12 +235,130 @@ def test_reconciliation():
     print("="*60)
 
 
+def test_per_section_feedback():
+    """Test per-section LLM feedback with partial contexts."""
+    
+    print("\n" + "="*60)
+    print("PER-SECTION FEEDBACK TEST")
+    print("="*60)
+    
+    # Test 1: About You section (minimal context)
+    print("\n[Test 1] About You section (minimal context)...")
+    context_about_you = GCPContext(
+        age_range="75-84",
+        living_situation="alone_in_house",
+        has_partner=False,
+        meds_complexity="simple",  # Not answered yet
+        mobility="independent",  # Not answered yet
+        falls="no_falls",  # Not answered yet
+        memory_changes="no_changes",  # Not answered yet
+        isolation="minimal",  # Not answered yet
+    )
+    
+    ok, advice = generate_section_advice(context_about_you, "about_you", mode="shadow")
+    if ok and advice:
+        print(f"  ✅ Success - Tier: {advice.tier} (conf: {advice.confidence:.2f})")
+        assert advice.tier in CANONICAL_TIERS, f"Non-canonical tier: {advice.tier}"
+        print(f"  ✅ Tier is canonical")
+    else:
+        print("  ⚠️  No advice generated")
+    
+    # Test 2: Health & Safety section (more data)
+    print("\n[Test 2] Health & Safety section (moderate complexity)...")
+    context_health = GCPContext(
+        age_range="75-84",
+        living_situation="alone_in_house",
+        has_partner=False,
+        meds_complexity="moderate",  # 4-6 meds
+        mobility="walker",
+        falls="1_fall_last_6mo",
+        badls=[],  # Not answered yet
+        iadls=[],  # Not answered yet
+        memory_changes="no_changes",
+        behaviors=[],
+        isolation="moderate",
+    )
+    
+    ok, advice = generate_section_advice(context_health, "health_safety", mode="shadow")
+    if ok and advice:
+        print(f"  ✅ Success - Tier: {advice.tier} (conf: {advice.confidence:.2f})")
+        assert advice.tier in CANONICAL_TIERS, f"Non-canonical tier: {advice.tier}"
+        print(f"  ✅ Tier is canonical")
+        
+        # Show sample messages
+        if advice.navi_messages:
+            print(f"  Sample message: {advice.navi_messages[0][:60]}...")
+    else:
+        print("  ⚠️  No advice generated")
+    
+    # Test 3: Daily Living section (significant challenges)
+    print("\n[Test 3] Daily Living section (significant ADL challenges)...")
+    context_daily = GCPContext(
+        age_range="75-84",
+        living_situation="alone_in_house",
+        has_partner=False,
+        meds_complexity="moderate",
+        mobility="walker",
+        falls="1_fall_last_6mo",
+        badls=["bathing", "dressing"],
+        iadls=["meal_prep", "housekeeping", "transportation"],
+        memory_changes="mild_forgetfulness",
+        behaviors=[],
+        isolation="moderate",
+    )
+    
+    ok, advice = generate_section_advice(context_daily, "daily_living", mode="shadow")
+    if ok and advice:
+        print(f"  ✅ Success - Tier: {advice.tier} (conf: {advice.confidence:.2f})")
+        assert advice.tier in CANONICAL_TIERS, f"Non-canonical tier: {advice.tier}"
+        print(f"  ✅ Tier is canonical")
+        
+        # Tier should likely be assisted_living or higher given the challenges
+        if advice.tier in ["assisted_living", "memory_care"]:
+            print(f"  ✅ Tier appropriate for ADL challenges: {advice.tier}")
+    else:
+        print("  ⚠️  No advice generated")
+    
+    # Test 4: Cognition section (memory concerns)
+    print("\n[Test 4] Cognition section (memory care indicators)...")
+    context_cognition = GCPContext(
+        age_range="85+",
+        living_situation="alone_in_apartment",
+        has_partner=False,
+        meds_complexity="complex",
+        mobility="wheelchair",
+        falls="multiple_falls",
+        badls=["bathing", "dressing", "toileting"],
+        iadls=["meal_prep", "housekeeping", "medication", "finances"],
+        memory_changes="moderate_impairment",
+        behaviors=["wandering", "confusion"],
+        isolation="severe",
+    )
+    
+    ok, advice = generate_section_advice(context_cognition, "cognition_behavior", mode="shadow")
+    if ok and advice:
+        print(f"  ✅ Success - Tier: {advice.tier} (conf: {advice.confidence:.2f})")
+        assert advice.tier in CANONICAL_TIERS, f"Non-canonical tier: {advice.tier}"
+        print(f"  ✅ Tier is canonical")
+        
+        # Tier should likely be memory_care given the indicators
+        if advice.tier in ["memory_care", "memory_care_high_acuity"]:
+            print(f"  ✅ Tier appropriate for memory concerns: {advice.tier}")
+    else:
+        print("  ⚠️  No advice generated")
+    
+    print("\n" + "="*60)
+    print("PER-SECTION FEEDBACK TESTS COMPLETE")
+    print("="*60)
+
+
 if __name__ == "__main__":
     # Run all guard tests
     test_gcp_canonical_tiers()
     test_tier_alias_normalization()
     test_forbidden_terms_filter()
     test_reconciliation()
+    test_per_section_feedback()
     
     print("\n" + "="*60)
     print("🎯 GCP LLM GUARD TESTS COMPLETE")

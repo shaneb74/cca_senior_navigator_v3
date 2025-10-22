@@ -108,6 +108,58 @@ def compute_recommendation_category(answers: dict[str, Any], persist_to_state: b
     return tier
 
 
+def compute_section_feedback(
+    answers: dict[str, Any],
+    section_name: str,
+    context: dict[str, Any] = None,
+) -> None:
+    """Generate LLM feedback after a section completes (shadow/assist mode only).
+    
+    Builds a partial GCPContext from answers so far and calls the LLM to
+    generate contextual Navi advice and a running tier estimate.
+    
+    Stores result in session state for potential UI use (assist mode).
+    In shadow mode, only logs results without affecting UI.
+    
+    Args:
+        answers: Current user responses (partial)
+        section_name: Section identifier (about_you, health_safety, daily_living, etc.)
+        context: Context dict from module engine
+    """
+    try:
+        from ai.llm_client import get_feature_gcp_mode
+        llm_mode = get_feature_gcp_mode()
+        
+        if llm_mode not in ("shadow", "assist"):
+            return  # Off mode, skip LLM
+        
+        # Build partial GCP context from answers so far
+        from ai.gcp_navi_engine import generate_section_advice
+        from ai.gcp_schemas import GCPContext
+        
+        gcp_context = _build_gcp_context(answers, context or {})
+        
+        # Generate section advice
+        ok, advice = generate_section_advice(gcp_context, section_name, mode=llm_mode)
+        
+        if ok and advice:
+            # Store in session state for potential UI use
+            import streamlit as st
+            session_key = f"_gcp_llm_section_{section_name}"
+            st.session_state[session_key] = {
+                "tier": advice.tier,
+                "reasons": advice.reasons,
+                "risks": advice.risks,
+                "navi_messages": advice.navi_messages,
+                "questions_next": advice.questions_next,
+                "confidence": advice.confidence,
+            }
+    
+    except Exception as e:
+        # Silent failure - LLM must not affect flow
+        print(f"[GCP_LLM_SECTION] Exception (silent) - section={section_name}: {e}")
+
+
 def _build_gcp_context(answers: dict[str, Any], context: dict[str, Any]) -> Any:
     """Build GCPContext from GCP answers for LLM analysis.
     
@@ -260,13 +312,11 @@ def derive_outcome(
                 # Store advice for UI rendering (assist mode only)
                 llm_advice = advice
                 
-                # Dev logging
+                # Final recommendation logging (det vs llm)
                 print(
-                    f"[GCP_LLM_{llm_mode.upper()}] ok={ok} tier_llm={advice.tier} "
-                    f"reasons={len(advice.reasons)} "
-                    f"msgs={len(advice.navi_messages)} "
-                    f"qnext={len(advice.questions_next)} "
-                    f"conf={advice.confidence:.2f}"
+                    f"[GCP_LLM_FINAL] det={tier} llm={advice.tier} "
+                    f"conf={advice.confidence:.2f} "
+                    f"msgs={len(advice.navi_messages)} reasons={len(advice.reasons)}"
                 )
             else:
                 print(f"[GCP_LLM_{llm_mode.upper()}] ok=False (generation failed)")
