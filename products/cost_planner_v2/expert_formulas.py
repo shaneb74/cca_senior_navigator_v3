@@ -105,10 +105,11 @@ def calculate_expert_review(
         # Use the estimate from intro page (preferred - already has all modifiers applied)
         care_flags_modifier = 1.0  # Already included in intro estimate
         regional_modifier = 1.0  # Already included in intro estimate
-        print("\n[FA_DEBUG] ========== EXPERT FORMULAS: USING ESTIMATE ==========")
-        print("[FA_DEBUG] Source: Quick Estimate (passed from comparison_view)")
-        print(f"[FA_DEBUG] Estimated Monthly Cost: ${estimated_monthly_cost:,.0f}")
-        print("[FA_DEBUG] ===================================================\n")
+        # [FA_DEBUG] Source: Quick Estimate (quieted - uncomment block below to see details)
+        # print("\n[FA_DEBUG] ========== EXPERT FORMULAS: USING ESTIMATE ==========")
+        # print("[FA_DEBUG] Source: Quick Estimate (passed from comparison_view)")
+        # print(f"[FA_DEBUG] Estimated Monthly Cost: ${estimated_monthly_cost:,.0f}")
+        # print("[FA_DEBUG] ===================================================\n")
     else:
         # Fallback: Calculate from scratch
         base_monthly_cost = _get_base_care_cost(care_recommendation)
@@ -121,12 +122,13 @@ def calculate_expert_review(
         regional_modifier = _get_regional_modifier(zip_code)
         estimated_monthly_cost = adjusted_monthly_cost * regional_modifier
 
-        print("\n[FA_DEBUG] ========== EXPERT FORMULAS: USING FALLBACK ==========")
-        print("[FA_DEBUG] Source: GCP-based calculation (no Quick Estimate)")
-        print(f"[FA_DEBUG] Base Monthly Cost: ${base_monthly_cost:,.0f}")
-        print(f"[FA_DEBUG] After Care Flags (×{care_flags_modifier:.2f}): ${adjusted_monthly_cost:,.0f}")
-        print(f"[FA_DEBUG] After Regional (×{regional_modifier:.2f}): ${estimated_monthly_cost:,.0f}")
-        print("[FA_DEBUG] ====================================================\n")
+        # [FA_DEBUG] Source: Fallback (quieted - uncomment block below to see details)
+        # print("\n[FA_DEBUG] ========== EXPERT FORMULAS: USING FALLBACK ==========")
+        # print("[FA_DEBUG] Source: GCP-based calculation (no Quick Estimate)")
+        # print(f"[FA_DEBUG] Base Monthly Cost: ${base_monthly_cost:,.0f}")
+        # print(f"[FA_DEBUG] After Care Flags (×{care_flags_modifier:.2f}): ${adjusted_monthly_cost:,.0f}")
+        # print(f"[FA_DEBUG] After Regional (×{regional_modifier:.2f}): ${estimated_monthly_cost:,.0f}")
+        # print("[FA_DEBUG] ====================================================\n")
 
     # ==== STEP 2: Apply LTC Insurance Benefits ====
     ltc_monthly_coverage = 0.0

@@ -795,22 +795,23 @@ def _render_plan_selection_and_cta(recommended_tier: str, show_both: bool):
                             care_cost_monthly -= line.value
                             break
 
-                # [FA_DEBUG] Log what we're passing
-                print("\n[FA_DEBUG] ========== QUICK ESTIMATE → FA HANDOFF ==========")
-                print(f"[FA_DEBUG] Selected Plan: {selected_plan_key}")
-                print(f"[FA_DEBUG] Care Type: {selected_breakdown.care_type}")
-                print(f"[FA_DEBUG] Is Facility: {is_facility}")
-                print(f"[FA_DEBUG] Monthly Total: ${selected_breakdown.monthly_total:,.0f}")
-                print(f"[FA_DEBUG] Home Carry Cost: ${home_carry_monthly:,.0f}")
-                if is_facility:
-                    print(f"[FA_DEBUG] Care Cost (facility only, home excluded): ${care_cost_monthly:,.0f}")
-                else:
-                    print(f"[FA_DEBUG] Care Cost (in-home, includes home): ${care_cost_monthly:,.0f}")
-                print("[FA_DEBUG] ")
-                print("[FA_DEBUG] Breakdown lines:")
-                for line in selected_breakdown.lines:
-                    print(f"[FA_DEBUG]   - {line.label}: ${line.value:,.0f} (applied: {line.applied})")
-                print("[FA_DEBUG] =====================================================")
+                # [FA_DEBUG] Log what we're passing (quieted - uncomment block below to see details)
+                print("[FA_DEBUG] FA_DEBUG AVAILABLE - uncomment in comparison_view.py:799 for details")
+                # print("\n[FA_DEBUG] ========== QUICK ESTIMATE → FA HANDOFF ==========")
+                # print(f"[FA_DEBUG] Selected Plan: {selected_plan_key}")
+                # print(f"[FA_DEBUG] Care Type: {selected_breakdown.care_type}")
+                # print(f"[FA_DEBUG] Is Facility: {is_facility}")
+                # print(f"[FA_DEBUG] Monthly Total: ${selected_breakdown.monthly_total:,.0f}")
+                # print(f"[FA_DEBUG] Home Carry Cost: ${home_carry_monthly:,.0f}")
+                # if is_facility:
+                #     print(f"[FA_DEBUG] Care Cost (facility only, home excluded): ${care_cost_monthly:,.0f}")
+                # else:
+                #     print(f"[FA_DEBUG] Care Cost (in-home, includes home): ${care_cost_monthly:,.0f}")
+                # print("[FA_DEBUG] ")
+                # print("[FA_DEBUG] Breakdown lines:")
+                # for line in selected_breakdown.lines:
+                #     print(f"[FA_DEBUG]   - {line.label}: ${line.value:,.0f} (applied: {line.applied})")
+                # print("[FA_DEBUG] =====================================================")
 
                 # Store in expected format for expert_review.py
                 st.session_state.cost_v2_quick_estimate = {

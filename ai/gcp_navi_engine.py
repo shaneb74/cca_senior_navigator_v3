@@ -149,7 +149,7 @@ def generate_gcp_advice(
         system_prompt = GCP_NAVI_SYSTEM_PROMPT + "\n\n" + GCP_NAVI_DEVELOPER_PROMPT
         user_prompt = _build_gcp_prompt(context)
         
-        # Generate JSON response with 5s timeout
+        # Generate JSON response (uses client's configured timeout, currently 10s)
         response_text = client.generate_json(
             system_prompt=system_prompt,
             user_prompt=user_prompt,
@@ -288,7 +288,7 @@ def generate_section_advice(
         system_prompt = _build_section_system_prompt(section)
         user_prompt = _build_section_user_prompt(context, section)
         
-        # Generate JSON response with 5s timeout
+        # Generate JSON response (uses client's configured timeout, currently 10s)
         response_text = client.generate_json(
             system_prompt=system_prompt,
             user_prompt=user_prompt,

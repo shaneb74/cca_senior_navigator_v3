@@ -44,7 +44,7 @@ _K4 = "lgHkciXwvJASAs0p4QTe8BmwHrOnVcT0vZ5FT_7t8uHE0uOx_GrkudnKlOAw4MA"
 # ====================================================================
 
 DEFAULT_MODEL = "gpt-4o-mini"  # Fast, cost-effective for shadow mode
-DEFAULT_TIMEOUT = 5  # seconds
+DEFAULT_TIMEOUT = 10  # seconds (increased from 5s to handle complex prompts)
 DEFAULT_MAX_RETRIES = 2
 DEFAULT_TEMPERATURE = 0.2  # Low temperature for consistent, factual responses
 
