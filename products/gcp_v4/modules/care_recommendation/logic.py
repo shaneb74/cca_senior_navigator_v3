@@ -37,6 +37,24 @@ TIER_THRESHOLDS = {
 VALID_TIERS = set(TIER_THRESHOLDS.keys())
 
 
+def _derive_move_preference(answers: dict[str, Any]) -> int | None:
+    """Extract and derive move_preference value from answers.
+    
+    Args:
+        answers: User responses
+        
+    Returns:
+        Integer 1-4 representing move willingness, or None if not answered
+    """
+    move_pref = answers.get("move_preference")
+    if move_pref is not None:
+        try:
+            return int(move_pref)
+        except (ValueError, TypeError):
+            pass
+    return None
+
+
 def _persist_recommendation_category(tier: str) -> None:
     """Persist recommendation category to session state for conditional rendering.
     
@@ -140,11 +158,19 @@ def derive_outcome(
     # Build rationale from high-scoring areas
     rationale = _build_rationale(scoring_details, tier, total_score)
 
+    # Derive move preference values if present
+    move_preference_value = _derive_move_preference(answers)
+    
     # Extract flag IDs from answers (module engine already set these)
     # The flags are stored in the answers dict under a "flags" key if present
     flag_ids = _extract_flags_from_state(answers)
     if not flag_ids:
         flag_ids = _extract_flags_from_answers(answers, module_data)
+    
+    # Add derived flag for move flexibility
+    if move_preference_value is not None and move_preference_value >= 3:
+        flag_ids.append("is_move_flexible")
+    
     flags = build_flags(flag_ids)
 
     # Persist flags via Flag Manager (CHECKPOINT 2 integration)
@@ -153,6 +179,12 @@ def derive_outcome(
 
     # Determine suggested next product
     suggested_next = _determine_next_product(tier, confidence)
+    
+    # Build derived data (for summary display)
+    derived = {}
+    if move_preference_value is not None:
+        derived["move_preference"] = move_preference_value
+        derived["is_move_flexible"] = move_preference_value >= 3
 
     return {
         "tier": tier,
@@ -162,6 +194,7 @@ def derive_outcome(
         "flags": flags,
         "rationale": rationale,
         "suggested_next_product": suggested_next,
+        "derived": derived,
     }
 
 

@@ -200,6 +200,12 @@ FLAG_REGISTRY: dict[str, dict[str, str]] = {
         "severity": "moderate",
         "description": "Limited caregiver support (1-3 hours/day)",
     },
+    # MOVE PREFERENCE FLAGS
+    "is_move_flexible": {
+        "category": "preferences",
+        "severity": "low",
+        "description": "Willing to move to facility care (move_preference >= 3)",
+    },
     # GEOGRAPHIC FLAGS
     "low_access": {
         "category": "geographic",

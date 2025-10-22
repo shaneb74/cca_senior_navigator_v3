@@ -380,6 +380,40 @@
       ]
     },
     {
+      "id": "move_preferences",
+      "title": "Move Preferences",
+      "description": "Help us understand this person's openness to moving to a care facility.",
+      "show_if": {
+        "any": [
+          { "key": "gcp_recommendation_category", "equals": "assisted_living" },
+          { "key": "gcp_recommendation_category", "equals": "memory_care" },
+          { "key": "gcp_recommendation_category", "equals": "memory_care_high_acuity" }
+        ]
+      },
+      "navi_guidance": {
+        "section_purpose": "Understand willingness to relocate for facility-based care",
+        "why_this_matters": "Willingness to move affects care planning and family dynamics",
+        "encouragement": "There's no right or wrong answer - just be honest about comfort level with change"
+      },
+      "questions": [
+        {
+          "id": "move_preference",
+          "type": "integer",
+          "select": "single",
+          "label": "How willing is this person to move to a care facility?",
+          "required": true,
+          "default": 2,
+          "options": [
+            { "label": "1 – Strong preference to stay home", "value": 1, "score": 0 },
+            { "label": "2 – Uncertain or need more information", "value": 2, "score": 0 },
+            { "label": "3 – Open if it improves my care plan", "value": 3, "score": 0 },
+            { "label": "4 – Comfortable with the idea of moving", "value": 4, "score": 0 }
+          ],
+          "ui": { "widget": "chip", "orientation": "vertical" }
+        }
+      ]
+    },
+    {
       "id": "results",
       "title": "",
       "type": "results",
