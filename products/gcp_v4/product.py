@@ -81,9 +81,14 @@ def render():
         # and outcomes in st.session_state[f"{config.state_key}._outcomes"]
         module_state = run_module(config)
 
+        # PER-SECTION LLM SHADOW FEEDBACK
+        # Track section completion and trigger LLM feedback for each section
+        current_step_index = module_state.get("_step", 0)
+        if current_step_index > 0:  # Past the intro
+            _trigger_section_llm_feedback(config, module_state, current_step_index)
+
         # MID-FLOW COMPUTATION: After Daily Living section, compute recommendation
         # This enables conditional rendering of Move Preferences section
-        current_step_index = module_state.get("_step", 0)
         if current_step_index > 0:  # Past the intro
             # Check if we're past Daily Living (section index 3 in the flow)
             # Sections: 0=intro, 1=about_you, 2=health_safety, 3=daily_living, 4=move_preferences, 5=results
@@ -254,6 +259,78 @@ def _build_next_step_reason(outcome: dict) -> str:
         return f"Calculate financial impact of {tier} care"
     else:
         return "Complete your care assessment for a personalized recommendation"
+
+
+def _trigger_section_llm_feedback(config: ModuleConfig, module_state: dict, current_step_index: int) -> None:
+    """Trigger per-section LLM shadow feedback.
+    
+    Calls LLM after each section completes to generate partial recommendation.
+    Only runs in shadow or assist mode. Never blocks navigation on errors.
+    
+    Args:
+        config: Module configuration
+        module_state: Current module state with answers
+        current_step_index: Current step index (0-based)
+    """
+    try:
+        # Get LLM mode
+        from ai.llm_client import get_feature_gcp_mode
+        llm_mode = get_feature_gcp_mode()
+        
+        # Only run in shadow or assist mode
+        if llm_mode not in ("shadow", "assist"):
+            return
+        
+        # Get current section ID
+        if current_step_index < 0 or current_step_index >= len(config.steps):
+            return
+        
+        current_step = config.steps[current_step_index]
+        section_id = current_step.id
+        
+        # Skip intro and results
+        if section_id in ("intro", "results"):
+            return
+        
+        # Track which sections we've already processed (avoid re-running on re-render)
+        processed_key = f"_gcp_llm_sections_processed"
+        processed = st.session_state.setdefault(processed_key, set())
+        
+        # Build a unique key for this section at this step
+        section_key = f"{section_id}_{current_step_index}"
+        
+        if section_key in processed:
+            return  # Already processed this section
+        
+        # Mark as processed
+        processed.add(section_key)
+        
+        # Build partial context
+        from products.gcp_v4.modules.care_recommendation.logic import build_partial_gcp_context
+        from products.gcp_v4.modules.care_recommendation.flags import build_flags
+        
+        answers = module_state
+        flags = build_flags(answers)
+        
+        partial_context = build_partial_gcp_context(section_id, answers, flags)
+        
+        # Generate LLM advice
+        from ai.gcp_navi_engine import generate_gcp_advice
+        
+        ok, advice = generate_gcp_advice(partial_context, mode=llm_mode)
+        
+        # Log result
+        if ok and advice:
+            print(
+                f"[GCP_LLM_SECTION] section={section_id} ok={ok} tier_llm={advice.tier} "
+                f"msgs={len(advice.navi_messages)} reasons={len(advice.reasons)} conf={advice.confidence:.2f}"
+            )
+        else:
+            print(f"[GCP_LLM_SECTION] section={section_id} ok={ok} tier_llm=None msgs=0 reasons=0 conf=0.00")
+    
+    except Exception as e:
+        # Never fail the flow - just log
+        print(f"[GCP_LLM_SECTION_ERROR] section={current_step_index}: {e}")
 
 
 def _handle_restart_if_needed(config: ModuleConfig) -> None:

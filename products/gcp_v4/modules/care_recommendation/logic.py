@@ -160,6 +160,71 @@ def compute_section_feedback(
         print(f"[GCP_LLM_SECTION] Exception (silent) - section={section_name}: {e}")
 
 
+def build_partial_gcp_context(section_id: str, answers: dict[str, Any], flags: list[str]) -> Any:
+    """Build partial GCPContext for per-section LLM feedback.
+    
+    Constructs a GCPContext with only fields relevant to the completed section.
+    Uses safe defaults for fields not yet answered.
+    
+    Args:
+        section_id: Section identifier (e.g., "about_you", "medication_mobility")
+        answers: User responses collected so far
+        flags: Flags set by completed sections
+    
+    Returns:
+        GCPContext instance with partial data
+    """
+    from ai.gcp_schemas import GCPContext
+    
+    # Build partial context based on section
+    # Use safe defaults for unanswered fields
+    
+    ctx_data = {
+        "age_range": answers.get("age_range", "75-84"),
+        "living_situation": answers.get("living_situation", "unknown"),
+        "has_partner": answers.get("living_situation") == "with_spouse_or_partner",
+        "meds_complexity": answers.get("medications", "none"),
+        "mobility": answers.get("mobility", "independent"),
+        "falls": answers.get("falls", "none"),
+        "badls": answers.get("badls", []),
+        "iadls": answers.get("iadls", []),
+        "memory_changes": answers.get("memory_changes", "none"),
+        "behaviors": answers.get("behaviors", []),
+        "isolation": answers.get("isolation", "moderate"),
+        "move_preference": None,  # Only set after move_preferences section
+        "flags": flags,
+    }
+    
+    # Override defaults with actual answers for this section
+    if section_id == "about_you":
+        # Only age_range, living_situation, isolation are valid
+        pass  # Already populated above
+    
+    elif section_id == "medication_mobility":
+        # meds_complexity, mobility, falls, chronic_conditions are valid
+        pass  # Already populated above
+    
+    elif section_id == "cognition_mental_health":
+        # memory_changes, mood, behaviors are valid
+        ctx_data["memory_changes"] = answers.get("memory_changes", "none")
+        ctx_data["behaviors"] = answers.get("behaviors", [])
+    
+    elif section_id == "daily_living":
+        # badls, iadls are valid
+        pass  # Already populated above
+    
+    elif section_id == "move_preferences":
+        # move_preference is valid
+        move_pref = answers.get("move_preference")
+        if move_pref is not None:
+            try:
+                ctx_data["move_preference"] = int(move_pref)
+            except (ValueError, TypeError):
+                ctx_data["move_preference"] = None
+    
+    return GCPContext(**ctx_data)
+
+
 def _build_gcp_context(answers: dict[str, Any], context: dict[str, Any]) -> Any:
     """Build GCPContext from GCP answers for LLM analysis.
     
