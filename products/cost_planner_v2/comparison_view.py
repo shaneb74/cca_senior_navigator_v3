@@ -1,77 +1,40 @@
-""""""
+"""
+Cost Planner v2 - Comparison View (Phase 2)
 
-Compatibility stub for comparison_view.Cost Planner v2 - Comparison View (Phase 2)
-
-
-
-This module was part of the Cost Planner v2 UI snapshot but the fullSide-by-side comparison of Recommended Plan vs In-Home Care.
-
-implementation doesn't exist in origin/dev. This stub provides minimalUses care-type-specific modifiers and real calculations.
-
-functionality to prevent ImportError."""
-
+Side-by-side comparison of Recommended Plan vs In-Home Care.
+Uses care-type-specific modifiers and real calculations.
 """
 
 from typing import Optional
-
-from typing import Optionalimport streamlit as st
-
 import streamlit as st
 
-from products.cost_planner_v2.utils.cost_calculator import CostEstimatefrom core.mcip import MCIP
-
+from core.mcip import MCIP
 from products.cost_planner_v2 import comparison_calcs
-
 from products.cost_planner_v2.comparison_calcs import ScenarioBreakdown
 
-def render_comparison_view(zip_code: Optional[str] = None):
 
-    """Render a simple cost comparison view.
+# ==============================================================================
+# GCP HOURS MAPPING
+# ==============================================================================
 
-    # ==============================================================================
-
-    This is a compatibility stub. The full comparison UI was part of# GCP HOURS MAPPING
-
-    the snapshot but doesn't exist in origin/dev's Financial Assessment logic.# ==============================================================================
-
+def _get_gcp_hours_per_day() -> float:
+    """Get hours per day from GCP recommendation, with categorical mapping.
     
-
-    Args:def _get_gcp_hours_per_day() -> float:
-
-        zip_code: ZIP code for cost estimation    """Get hours per day from GCP recommendation, with categorical mapping.
-
-    """    
-
-        GCP provides categorical answers which map to numeric hours:
-
-    st.info("🚧 **Quick Estimate Coming Soon**")    - "Less than 1 hour" → 1
-
-    st.markdown("""    - "1–3 hours" → 2
-
-    The quick estimate feature is being integrated with the Financial Assessment module.    - "4–8 hours" → 8
-
-        - "24-hour support" → 24
-
-    For now, please proceed to the full Financial Assessment to get detailed cost projections.    
-
-    """)    Returns:
-
-            Float hours per day (default: 8.0 if not found)
-
-    # CTA to continue    """
-
-    st.markdown("---")    # Try to get from GCP data structure
-
-    if st.button("Continue to Financial Assessment ▶", type="primary", use_container_width=True):    gcp_data = st.session_state.get("gcp_care_recommendation", {})
-
-        if "step" in st.query_params:    hours_category = gcp_data.get("hours_per_day", "")
-
-            del st.query_params["step"]    
-
-        st.session_state.cost_v2_step = "assessments"    # Mapping dictionary (handles various formats)
-
-        st.rerun()    hours_map = {
-
+    GCP provides categorical answers which map to numeric hours:
+    - "Less than 1 hour" → 1
+    - "1–3 hours" → 2
+    - "4–8 hours" → 8
+    - "24-hour support" → 24
+    
+    Returns:
+        Float hours per day (default: 8.0 if not found)
+    """
+    # Try to get from GCP data structure
+    gcp_data = st.session_state.get("gcp_care_recommendation", {})
+    hours_category = gcp_data.get("hours_per_day", "")
+    
+    # Mapping dictionary (handles various formats)
+    hours_map = {
         # Standard formats
         "less than 1 hour": 1.0,
         "<1h": 1.0,
