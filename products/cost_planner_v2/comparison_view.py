@@ -83,6 +83,12 @@ def render_comparison_view(zip_code: str):
     if "comparison_inhome_breakdown" not in st.session_state:
         st.session_state.comparison_inhome_breakdown = None
     
+    # Initialize home carry cost and keep home flag
+    if "comparison_home_carry_cost" not in st.session_state:
+        st.session_state.comparison_home_carry_cost = 0
+    if "comparison_keep_home" not in st.session_state:
+        st.session_state.comparison_keep_home = False
+    
     # Initialize hours from GCP (only on first load)
     if "comparison_inhome_hours" not in st.session_state:
         gcp_hours = _get_gcp_hours_per_day()
