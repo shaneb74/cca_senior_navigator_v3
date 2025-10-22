@@ -85,7 +85,7 @@ def render_comparison_view(zip_code: str):
     
     # Initialize home carry cost and keep home flag
     if "comparison_home_carry_cost" not in st.session_state:
-        st.session_state.comparison_home_carry_cost = 0
+        st.session_state.comparison_home_carry_cost = 0.0
     if "comparison_keep_home" not in st.session_state:
         st.session_state.comparison_keep_home = False
     
