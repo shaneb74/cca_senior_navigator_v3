@@ -62,22 +62,26 @@ def _get_gcp_hours_per_day() -> float:
 # MAIN ENTRY POINT
 # ==============================================================================
 
-def render_comparison_view(zip_code: Optional[str] = None):
-    """Render side-by-side comparison of recommended plan vs in-home care.
+def render_comparison_view(zip_code: str):
+    """
+    Render comparison view with side-by-side cost breakdowns.
+    
+    Shows facility (left) vs in-home (right) based on GCP recommendation.
+    Includes interactive sliders for home carry cost and in-home hours.
     
     Args:
-        zip_code: Optional ZIP code for regional adjustment
+        zip_code: ZIP code for regional pricing
     """
     
-    # Initialize session state with GCP-derived hours
-    if "comparison_home_carry_cost" not in st.session_state:
-        st.session_state.comparison_home_carry_cost = 4500.0
-    
-    if "comparison_keep_home" not in st.session_state:
-        st.session_state.comparison_keep_home = False
-    
+    # Initialize session state for selected plan
     if "comparison_selected_plan" not in st.session_state:
         st.session_state.comparison_selected_plan = None
+    
+    # Initialize storage for calculated scenarios (for later handoff to FA)
+    if "comparison_facility_breakdown" not in st.session_state:
+        st.session_state.comparison_facility_breakdown = None
+    if "comparison_inhome_breakdown" not in st.session_state:
+        st.session_state.comparison_inhome_breakdown = None
     
     # Initialize hours from GCP (only on first load)
     if "comparison_inhome_hours" not in st.session_state:
@@ -153,11 +157,13 @@ def render_comparison_view(zip_code: Optional[str] = None):
         # In-home is recommended
         st.markdown("### 🔍 Debug: Calculating In-Home Scenario (Recommended)")
         inhome_breakdown = _calculate_inhome_scenario(zip_code, debug_label="LEFT_CARD (Recommended)")
+        st.session_state.comparison_inhome_breakdown = inhome_breakdown  # Store for handoff
         
         if show_both:
             # User wants to see AL comparison
             st.markdown("### 🔍 Debug: Calculating AL Comparison")
             al_breakdown = _calculate_facility_scenario("assisted_living", zip_code, debug_label="RIGHT_CARD (Comparison)")
+            st.session_state.comparison_facility_breakdown = al_breakdown  # Store for handoff
             
             # Development logging for consistency check
             _log_calculation_inputs("LEFT (In-Home)", zip_code, inhome_breakdown)
@@ -176,11 +182,13 @@ def render_comparison_view(zip_code: Optional[str] = None):
         # Facility is recommended (AL, MC, MC-HA)
         st.markdown("### 🔍 Debug: Calculating Facility Scenario (Recommended)")
         facility_breakdown = _calculate_facility_scenario(recommended_tier, zip_code, debug_label="LEFT_CARD (Recommended)")
+        st.session_state.comparison_facility_breakdown = facility_breakdown  # Store for handoff
         
         if show_both:
             # Show facility + in-home comparison
             st.markdown("### 🔍 Debug: Calculating In-Home Comparison")
             inhome_breakdown = _calculate_inhome_scenario(zip_code, debug_label="RIGHT_CARD (Comparison)")
+            st.session_state.comparison_inhome_breakdown = inhome_breakdown  # Store for handoff
             
             # Development logging for consistency check
             _log_calculation_inputs("LEFT (Facility)", zip_code, facility_breakdown)
@@ -759,6 +767,45 @@ def _render_plan_selection_and_cta(recommended_tier: str, show_both: bool):
             if st.session_state.comparison_selected_plan is None and show_both:
                 st.error("Please select which plan you'd like to explore.")
             else:
+                # [FA_DEBUG] Handoff: Store selected plan's care cost for Financial Assessment
+                selected_plan_key = st.session_state.comparison_selected_plan
+                
+                # Determine which breakdown to use based on selection
+                if selected_plan_key.startswith("facility_"):
+                    selected_breakdown = st.session_state.comparison_facility_breakdown
+                else:  # inhome_*
+                    selected_breakdown = st.session_state.comparison_inhome_breakdown
+                
+                # Calculate care-only cost (exclude home carry)
+                care_only_monthly = selected_breakdown.monthly_total
+                home_carry_monthly = 0.0
+                
+                # Subtract home carry if present
+                for line in selected_breakdown.lines:
+                    if line.label == "Home Carry Cost" and line.applied:
+                        home_carry_monthly = line.value
+                        care_only_monthly -= line.value
+                        break
+                
+                # [FA_DEBUG] Log what we're passing
+                print(f"\n[FA_DEBUG] ========== QUICK ESTIMATE → FA HANDOFF ==========")
+                print(f"[FA_DEBUG] Selected Plan: {selected_plan_key}")
+                print(f"[FA_DEBUG] Care Type: {selected_breakdown.care_type}")
+                print(f"[FA_DEBUG] Monthly Total (including home): ${selected_breakdown.monthly_total:,.0f}")
+                print(f"[FA_DEBUG] Home Carry Cost: ${home_carry_monthly:,.0f}")
+                print(f"[FA_DEBUG] Care-Only Monthly (HANDOFF VALUE): ${care_only_monthly:,.0f}")
+                print(f"[FA_DEBUG] =====================================================\n")
+                
+                # Store in expected format for expert_review.py
+                st.session_state.cost_v2_quick_estimate = {
+                    "estimate": {
+                        "monthly_adjusted": care_only_monthly,
+                        "monthly_total": selected_breakdown.monthly_total,
+                        "care_type": selected_breakdown.care_type,
+                        "selected_plan": selected_plan_key,
+                    }
+                }
+                
                 # Navigate to financial assessment
                 if "step" in st.query_params:
                     del st.query_params["step"]
