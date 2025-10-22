@@ -779,27 +779,35 @@ def _render_plan_selection_and_cta(recommended_tier: str, show_both: bool):
                 # Determine which breakdown to use based on selection
                 if selected_plan_key.startswith("facility_"):
                     selected_breakdown = st.session_state.comparison_facility_breakdown
+                    is_facility = True
                 else:  # inhome_*
                     selected_breakdown = st.session_state.comparison_inhome_breakdown
+                    is_facility = False
                 
-                # Calculate care-only cost (exclude home carry)
-                care_only_monthly = selected_breakdown.monthly_total
+                # For FACILITY care: exclude home carry (it's optional, user choice to keep home)
+                # For IN-HOME care: include home carry (it's inherent to the scenario)
+                care_cost_monthly = selected_breakdown.monthly_total
                 home_carry_monthly = 0.0
                 
-                # Subtract home carry if present
-                for line in selected_breakdown.lines:
-                    if line.label == "Home Carry Cost" and line.applied:
-                        home_carry_monthly = line.value
-                        care_only_monthly -= line.value
-                        break
+                if is_facility:
+                    # Subtract home carry if present (for facility care only)
+                    for line in selected_breakdown.lines:
+                        if line.label == "Home Carry Cost" and line.applied:
+                            home_carry_monthly = line.value
+                            care_cost_monthly -= line.value
+                            break
                 
                 # [FA_DEBUG] Log what we're passing
                 print(f"\n[FA_DEBUG] ========== QUICK ESTIMATE → FA HANDOFF ==========")
                 print(f"[FA_DEBUG] Selected Plan: {selected_plan_key}")
                 print(f"[FA_DEBUG] Care Type: {selected_breakdown.care_type}")
-                print(f"[FA_DEBUG] Monthly Total (including home): ${selected_breakdown.monthly_total:,.0f}")
+                print(f"[FA_DEBUG] Is Facility: {is_facility}")
+                print(f"[FA_DEBUG] Monthly Total: ${selected_breakdown.monthly_total:,.0f}")
                 print(f"[FA_DEBUG] Home Carry Cost: ${home_carry_monthly:,.0f}")
-                print(f"[FA_DEBUG] Care-Only Monthly (HANDOFF VALUE): ${care_only_monthly:,.0f}")
+                if is_facility:
+                    print(f"[FA_DEBUG] Care Cost (facility only, home excluded): ${care_cost_monthly:,.0f}")
+                else:
+                    print(f"[FA_DEBUG] Care Cost (in-home, includes home): ${care_cost_monthly:,.0f}")
                 print(f"[FA_DEBUG] ")
                 print(f"[FA_DEBUG] Breakdown lines:")
                 for line in selected_breakdown.lines:
@@ -809,7 +817,7 @@ def _render_plan_selection_and_cta(recommended_tier: str, show_both: bool):
                 # Store in expected format for expert_review.py
                 st.session_state.cost_v2_quick_estimate = {
                     "estimate": {
-                        "monthly_adjusted": care_only_monthly,
+                        "monthly_adjusted": care_cost_monthly,
                         "monthly_total": selected_breakdown.monthly_total,
                         "care_type": selected_breakdown.care_type,
                         "selected_plan": selected_plan_key,
