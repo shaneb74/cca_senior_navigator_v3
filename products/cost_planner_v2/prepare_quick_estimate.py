@@ -161,8 +161,24 @@ def _render_zip_question():
 
     # Update session state and resolve region
     if zip_code and len(zip_code) == 5:
+        # Check if ZIP changed
+        previous_zip = st.session_state.get(SESSION_KEYS["zip"])
+        zip_changed = (previous_zip != zip_code)
+        
         st.session_state[SESSION_KEYS["zip"]] = zip_code
         _resolve_region(zip_code)
+
+        # If ZIP changed and user hasn't manually edited home carry, update it with new ZIP lookup
+        if zip_changed:
+            home_carry_source = st.session_state.get(SESSION_KEYS["home_carry_source"])
+            if home_carry_source != "user":  # Only update if not manually edited
+                new_default = _get_default_home_carry(zip_code)
+                # Update both widget keys (one will be active depending on care type)
+                st.session_state["prepare_qe_home_carry_inhome"] = int(new_default)
+                st.session_state["prepare_qe_home_carry_facility"] = int(new_default)
+                st.session_state[SESSION_KEYS["home_carry_base"]] = float(new_default)
+                st.session_state[SESSION_KEYS["home_carry_source"]] = "default"
+                print(f"[ZIP_UPDATE] ZIP changed to {zip_code}, updated home_carry to ${new_default:,.0f}")
 
         # Show resolved region
         region_label = st.session_state.get(SESSION_KEYS["region_label"])
