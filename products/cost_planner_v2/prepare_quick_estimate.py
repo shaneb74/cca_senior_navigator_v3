@@ -178,6 +178,24 @@ def _render_zip_question():
 def _render_inhome_questions():
     """Render questions for in-home care recommendation (staying at home)."""
     
+    # RULE 1: For in-home, keep_home is locked to True (home costs are inherent)
+    st.session_state[SESSION_KEYS["keep_home"]] = True
+    
+    # [CP_DEBUG] Log context on mount
+    if st.session_state.get("debug_mode", False):
+        import sys
+        rec_tier = st.session_state.get(SESSION_KEYS["care_recommendation"], "in_home_care")
+        has_partner = st.session_state.get("spouse_or_partner_present", False)
+        print(
+            f"[CP_DEBUG] CP Intro Mount: category={rec_tier}, has_partner={has_partner}, "
+            f"keep_home=True, locked=True",
+            file=sys.stderr
+        )
+    
+    # Show explanatory note (no toggle control)
+    st.info("🏠 **Home costs are included while care is provided at home.**")
+    st.markdown("")
+    
     # Home Carry Cost (always included for in-home)
     st.markdown("#### What are your monthly household costs?")
     st.caption(
@@ -206,7 +224,6 @@ def _render_inhome_questions():
         st.session_state[SESSION_KEYS["home_carry_source"]] = "default"
     
     st.session_state[SESSION_KEYS["home_carry_base"]] = float(home_carry)
-    st.session_state[SESSION_KEYS["keep_home"]] = True  # Always True for in-home
     
     st.markdown("")
     
@@ -225,29 +242,44 @@ def _render_inhome_questions():
 def _render_facility_questions():
     """Render questions for facility care recommendation (AL/MC/MC-HA)."""
     
-    # Get spouse/partner flag from session state
+    # Get context from GCP
     spouse_or_partner_present = st.session_state.get("spouse_or_partner_present", False)
+    rec_tier = st.session_state.get(SESSION_KEYS["care_recommendation"], "assisted_living")
     
-    # Keep Home question
-    st.markdown("#### Will the household continue to be maintained after the move?")
+    # [CP_DEBUG] Log context on mount
+    if st.session_state.get("debug_mode", False):
+        import sys
+        print(f"[CP_DEBUG] CP Intro Mount: category={rec_tier}, has_partner={spouse_or_partner_present}", file=sys.stderr)
     
-    # Show context-aware helper text
+    # RULE 2 & 3: Default keep_home based on has_partner, but editable
+    # Check if user has already set a value (don't override on revisit)
+    if SESSION_KEYS["keep_home"] not in st.session_state:
+        # First visit: set default based on has_partner
+        default_keep_home = spouse_or_partner_present
+        st.session_state[SESSION_KEYS["keep_home"]] = default_keep_home
+    
+    # Keep Home question with context-aware copy
     if spouse_or_partner_present:
+        # RULE 2: With partner, default Yes, partner-specific copy
+        st.markdown("#### A spouse or partner may remain at home. Include home expenses in the plan?")
         st.caption(
-            "💡 Because you live with a spouse or partner, we've defaulted this to **Yes**. "
-            "Only applied if someone continues living in the home."
+            "💡 When one person moves to a care facility but a spouse/partner stays home, "
+            "the household expenses continue. We've defaulted this to **Yes**."
         )
     else:
-        st.caption("💡 Only applied if someone (spouse/partner) continues living in the home.")
-    
-    # Default keep_home based on spouse flag
-    default_keep_home = spouse_or_partner_present
+        # RULE 3: No partner, default No, softer copy
+        st.markdown("#### Will the home continue to be maintained after the move?")
+        st.caption(
+            "💡 If the home will be sold or no longer maintained, select **No**. "
+            "Only include home expenses if someone continues living there."
+        )
     
     keep_home_options = ["No", "Yes"]
+    current_keep_home = st.session_state.get(SESSION_KEYS["keep_home"], spouse_or_partner_present)
     keep_home_choice = st.radio(
         "Keep Household",
         options=keep_home_options,
-        index=1 if st.session_state.get(SESSION_KEYS["keep_home"], default_keep_home) else 0,
+        index=1 if current_keep_home else 0,
         horizontal=True,
         key="prepare_qe_keep_home_radio",
         label_visibility="collapsed"
@@ -255,6 +287,16 @@ def _render_facility_questions():
     
     keep_home = (keep_home_choice == "Yes")
     st.session_state[SESSION_KEYS["keep_home"]] = keep_home
+    
+    # [CP_DEBUG] Log applied values
+    if st.session_state.get("debug_mode", False):
+        import sys
+        locked = False  # Facility questions are always editable
+        print(
+            f"[CP_DEBUG] CP Intro Applied: keep_home={keep_home}, "
+            f"locked={locked}, default_was={spouse_or_partner_present}",
+            file=sys.stderr
+        )
     
     st.markdown("")
     
