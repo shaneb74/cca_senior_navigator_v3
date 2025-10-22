@@ -108,6 +108,90 @@ def compute_recommendation_category(answers: dict[str, Any], persist_to_state: b
     return tier
 
 
+def _build_gcp_context(answers: dict[str, Any], context: dict[str, Any]) -> Any:
+    """Build GCPContext from GCP answers for LLM analysis.
+    
+    Extracts relevant fields from answers and constructs a GCPContext
+    object suitable for LLM-based care recommendation.
+    
+    Args:
+        answers: User responses from GCP module
+        context: Context dict from module engine
+    
+    Returns:
+        GCPContext instance
+    """
+    from ai.gcp_schemas import GCPContext
+    
+    # Extract age range from context or answers
+    age_range = context.get("age_range", "unknown")
+    if not age_range or age_range == "unknown":
+        # Try to derive from answers if present
+        age_range = answers.get("age_range", "75-84")  # Default to common range
+    
+    # Extract living situation
+    living_situation = answers.get("living_situation", "unknown")
+    
+    # Extract partner status
+    has_partner = answers.get("has_partner", False)
+    if isinstance(has_partner, str):
+        has_partner = has_partner.lower() in ("yes", "true", "1")
+    
+    # Extract medication complexity
+    meds_complexity = answers.get("meds_complexity", "simple")
+    
+    # Extract mobility
+    mobility = answers.get("mobility", "independent")
+    
+    # Extract falls
+    falls = answers.get("falls", "no_falls")
+    
+    # Extract BADLs (Basic ADLs)
+    badls = answers.get("badls", [])
+    if not isinstance(badls, list):
+        badls = []
+    
+    # Extract IADLs (Instrumental ADLs)
+    iadls = answers.get("iadls", [])
+    if not isinstance(iadls, list):
+        iadls = []
+    
+    # Extract memory changes
+    memory_changes = answers.get("memory_changes", "no_changes")
+    
+    # Extract behaviors
+    behaviors = answers.get("behaviors", [])
+    if not isinstance(behaviors, list):
+        behaviors = []
+    
+    # Extract isolation
+    isolation = answers.get("isolation", "minimal")
+    
+    # Extract move preference
+    move_preference = _derive_move_preference(answers)
+    
+    # Extract flags
+    flag_ids = _extract_flags_from_state(answers)
+    if not flag_ids:
+        flag_ids = _extract_flags_from_answers(answers, _load_module_json())
+    
+    return GCPContext(
+        age_range=age_range,
+        living_situation=living_situation,
+        has_partner=has_partner,
+        meds_complexity=meds_complexity,
+        mobility=mobility,
+        falls=falls,
+        badls=badls,
+        iadls=iadls,
+        memory_changes=memory_changes,
+        behaviors=behaviors,
+        isolation=isolation,
+        move_preference=move_preference,
+        flags=flag_ids,
+    )
+
+
 def derive_outcome(
     answers: dict[str, Any], context: dict[str, Any] = None, config: dict[str, Any] = None
 ) -> dict[str, Any]:
@@ -149,6 +233,49 @@ def derive_outcome(
     # This enables show_if conditions to access $state.recommendation.category
     _persist_recommendation_category(tier)
 
+    # ====================================================================
+    # LLM-ASSISTED GCP (GUARDED): Generate additive Navi advice
+    # ====================================================================
+    # Read FEATURE_LLM_GCP flag; if shadow/assist, call LLM for contextual advice
+    # Deterministic engine ALWAYS remains source of truth for final tier
+    llm_advice = None
+    try:
+        from ai.llm_client import get_feature_gcp_mode
+        llm_mode = get_feature_gcp_mode()
+        
+        if llm_mode in ("shadow", "assist"):
+            # Build GCP context from answers
+            from ai.gcp_navi_engine import generate_gcp_advice, reconcile_with_deterministic
+            from ai.gcp_schemas import GCPContext
+            
+            gcp_context = _build_gcp_context(answers, context or {})
+            
+            # Generate LLM advice (with guardrails)
+            ok, advice = generate_gcp_advice(gcp_context, mode=llm_mode)
+            
+            if ok and advice:
+                # Reconcile with deterministic (logs disagreements)
+                reconcile_with_deterministic(tier, advice, llm_mode)
+                
+                # Store advice for UI rendering (assist mode only)
+                llm_advice = advice
+                
+                # Dev logging
+                print(
+                    f"[GCP_LLM_{llm_mode.upper()}] ok={ok} tier_llm={advice.tier} "
+                    f"reasons={len(advice.reasons)} "
+                    f"msgs={len(advice.navi_messages)} "
+                    f"qnext={len(advice.questions_next)} "
+                    f"conf={advice.confidence:.2f}"
+                )
+            else:
+                print(f"[GCP_LLM_{llm_mode.upper()}] ok=False (generation failed)")
+                
+    except Exception as e:
+        # Silent failure - LLM must not affect deterministic flow
+        print(f"[GCP_LLM_ERROR] Exception (silent): {e}")
+    # ====================================================================
+
     # Build tier rankings (all tiers with calculated scores)
     tier_rankings = _build_tier_rankings(total_score, tier)
 
@@ -185,6 +312,21 @@ def derive_outcome(
     if move_preference_value is not None:
         derived["move_preference"] = move_preference_value
         derived["is_move_flexible"] = move_preference_value >= 3
+
+    # Store LLM advice in session state (for UI rendering in assist mode)
+    if llm_advice:
+        try:
+            import streamlit as st
+            st.session_state["_gcp_llm_advice"] = {
+                "tier": llm_advice.tier,
+                "reasons": llm_advice.reasons,
+                "risks": llm_advice.risks,
+                "navi_messages": llm_advice.navi_messages,
+                "questions_next": llm_advice.questions_next,
+                "confidence": llm_advice.confidence,
+            }
+        except Exception:
+            pass  # Silent failure if streamlit not available
 
     return {
         "tier": tier,
