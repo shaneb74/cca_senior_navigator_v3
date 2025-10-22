@@ -1,0 +1,3 @@
+# This directory stores disagreement cases for GCP training
+# Files: gcp_cases.jsonl, gcp_labels.jsonl
+# No PHI is stored - only tier recommendations, bands, flags

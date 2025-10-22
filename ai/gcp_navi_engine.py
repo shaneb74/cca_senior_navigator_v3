@@ -260,6 +260,46 @@ def reconcile_with_deterministic(
             f"[GCP_LLM_NOTE] mismatch: llm={llm_tier} vs det={det_normalized}; "
             f"detWins=True (conf={llm_advice.confidence:.2f})"
         )
+        
+        # Log disagreement for training (no PHI)
+        try:
+            from tools.log_disagreement import append_case
+            from products.gcp_v4.modules.care_recommendation.logic import (
+                cognitive_gate_behaviors_only,
+                cognition_band,
+                support_band
+            )
+            
+            # Extract context (gcp_context should be available from calling scope)
+            # If not available, we'll skip logging rather than fail
+            import streamlit as st
+            
+            # Get GCP context from session state (stored during generation)
+            gcp_ctx = st.session_state.get("_gcp_context_for_logging")
+            if gcp_ctx:
+                answers = gcp_ctx.get("answers", {})
+                flags = gcp_ctx.get("flags", [])
+                allowed = gcp_ctx.get("allowed_tiers", [])
+                
+                row = {
+                    "gcp_context": gcp_ctx,
+                    "allowed_tiers": sorted(list(allowed)) if allowed else [],
+                    "det_tier": det_normalized,
+                    "llm_tier": llm_tier,
+                    "llm_conf": llm_advice.confidence,
+                    "reasons": llm_advice.reasons[:6] if llm_advice.reasons else [],
+                    "bands": {
+                        "cog": cognition_band(answers, flags),
+                        "sup": support_band(answers, flags)
+                    },
+                    "has_risky_behaviors": cognitive_gate_behaviors_only(answers, flags)
+                }
+                
+                case_id = append_case(row)
+                print(f"[GCP_LOG] disagreement captured id={case_id}")
+        except Exception as e:
+            # Silent failure - logging must not disrupt operation
+            print(f"[GCP_LOG_WARN] Could not log disagreement: {e}")
     
     # Deterministic always wins
     return det_tier

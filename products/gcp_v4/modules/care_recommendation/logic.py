@@ -173,6 +173,28 @@ def support_band(answers: dict[str, Any], flags: list[str]) -> str:
     return "low"
 
 
+def cognitive_gate_behaviors_only(answers: dict[str, Any], flags: list[str]) -> bool:
+    """Check if risky behaviors are present (for disagreement logging).
+    
+    Used to identify cases where MC recommendation might be driven by
+    behaviors rather than pure cognition band.
+    
+    Args:
+        answers: User responses from GCP module
+        flags: Flags set by assessment
+    
+    Returns:
+        True if risky cognitive behaviors present
+    """
+    risky_flags = {"wandering", "elopement", "aggression", "severe_sundowning", 
+                   "severe_cognitive_risk", "memory_support"}
+    
+    behaviors = set((answers.get("behaviors") or []))
+    flags_set = set(flags or [])
+    
+    return bool(behaviors & risky_flags) or bool(flags_set & risky_flags)
+
+
 def _derive_move_preference(answers: dict[str, Any]) -> int | None:
     """Extract and derive move_preference value from answers.
     
@@ -554,6 +576,18 @@ def derive_outcome(
             from ai.gcp_schemas import GCPContext
             
             gcp_context = _build_gcp_context(answers, context or {})
+            
+            # Store context for disagreement logging (no PHI)
+            try:
+                import streamlit as st
+                st.session_state["_gcp_context_for_logging"] = {
+                    "answers": answers,
+                    "flags": list(flags or []),
+                    "allowed_tiers": sorted(list(allowed_tiers)),
+                    "context": context or {}
+                }
+            except Exception:
+                pass  # Silent failure if streamlit not available
             
             # Generate LLM advice (with guardrails) - pass allowed_tiers to scope LLM
             ok, advice = generate_gcp_advice(gcp_context, mode=llm_mode, allowed_tiers=sorted(list(allowed_tiers)))
