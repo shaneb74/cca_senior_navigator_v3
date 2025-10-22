@@ -746,6 +746,18 @@ def derive_outcome(
             
             gcp_context = _build_gcp_context(answers, context or {})
             
+            # JSON-safe helper for serializing context
+            def _jsonify_ctx(ctx):
+                import json
+                try:
+                    if hasattr(ctx, "model_dump"):
+                        return ctx.model_dump()
+                    return json.loads(json.dumps(ctx, default=str))
+                except Exception as e:
+                    return {"_note": "context_unserializable",
+                            "type": str(type(ctx)),
+                            "err": str(e)}
+            
             # Store context for disagreement logging (no PHI)
             try:
                 import streamlit as st
@@ -753,7 +765,7 @@ def derive_outcome(
                     "answers": answers,
                     "flags": list(flags or []),
                     "allowed_tiers": sorted(list(allowed_tiers)),
-                    "context": context or {}
+                    "context": _jsonify_ctx(context or {})
                 }
             except Exception:
                 pass  # Silent failure if streamlit not available
