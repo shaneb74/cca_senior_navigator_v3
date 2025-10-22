@@ -37,6 +37,59 @@ TIER_THRESHOLDS = {
 VALID_TIERS = set(TIER_THRESHOLDS.keys())
 
 
+def _persist_recommendation_category(tier: str) -> None:
+    """Persist recommendation category to session state for conditional rendering.
+    
+    Stores tier in both module state and top-level keys to enable show_if conditions
+    like: {"equals": ["$state.recommendation.category", "assisted_living"]}
+    
+    Args:
+        tier: Recommendation tier/category
+    """
+    try:
+        import streamlit as st
+        # Store in both module state and a dedicated recommendation key
+        state_key = "gcp_v4_state"
+        if state_key in st.session_state:
+            module_state = st.session_state[state_key]
+            if not isinstance(module_state, dict):
+                module_state = {}
+            # Store recommendation in nested structure for show_if access
+            if "recommendation" not in module_state:
+                module_state["recommendation"] = {}
+            module_state["recommendation"]["category"] = tier
+            st.session_state[state_key] = module_state
+        
+        # Also store in top-level for easier access
+        st.session_state["gcp_recommendation_category"] = tier
+    except Exception:
+        pass  # Don't fail if streamlit not available (e.g., in tests)
+
+
+def compute_recommendation_category(answers: dict[str, Any], persist_to_state: bool = True) -> str:
+    """Compute and return just the recommendation category (tier) from current answers.
+    
+    This is used for mid-flow computation (e.g., after Daily Living section completes)
+    to enable conditional rendering of subsequent sections based on recommendation.
+    
+    Args:
+        answers: Current user responses (may be partial)
+        persist_to_state: If True, stores recommendation in session state for conditional rendering
+        
+    Returns:
+        Tier string (no_care_needed | in_home | assisted_living | memory_care | memory_care_high_acuity)
+    """
+    module_data = _load_module_json()
+    total_score, _ = _calculate_score(answers, module_data)
+    tier = _determine_tier(total_score)
+    
+    # Persist to session state for conditional show_if logic
+    if persist_to_state:
+        _persist_recommendation_category(tier)
+    
+    return tier
+
+
 def derive_outcome(
     answers: dict[str, Any], context: dict[str, Any] = None, config: dict[str, Any] = None
 ) -> dict[str, Any]:
@@ -73,6 +126,10 @@ def derive_outcome(
 
     # Determine tier from score
     tier = _determine_tier(total_score)
+    
+    # Persist recommendation category to session state for conditional rendering
+    # This enables show_if conditions to access $state.recommendation.category
+    _persist_recommendation_category(tier)
 
     # Build tier rankings (all tiers with calculated scores)
     tier_rankings = _build_tier_rankings(total_score, tier)
