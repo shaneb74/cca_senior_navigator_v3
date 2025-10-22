@@ -465,6 +465,52 @@ def test_cognitive_gates():
     print("="*60)
 
 
+def test_tier_map_loads_and_returns_allowed_tier():
+    """Test that tier_map.json loads correctly and returns canonical tiers."""
+    
+    print("\n" + "="*60)
+    print("TIER MAP LOADER TEST")
+    print("="*60)
+    
+    # Import the loader
+    from products.gcp_v4.modules.care_recommendation.logic import _load_tier_map
+    from ai.gcp_schemas import CANONICAL_TIERS
+    
+    print("\nLoading tier_map.json...")
+    tier_map = _load_tier_map()
+    
+    # Verify structure
+    assert tier_map is not None, "Tier map should not be None"
+    assert "moderate" in tier_map, "Tier map should have 'moderate' cognition band"
+    assert "high" in tier_map["moderate"], "Moderate cognition should have 'high' support band"
+    
+    print(f"  ✅ Tier map loaded successfully")
+    print(f"  ✅ Structure validated (has moderate×high mapping)")
+    
+    # Check that returned tier is canonical
+    tier = tier_map["moderate"]["high"]
+    assert tier in CANONICAL_TIERS, f"Tier '{tier}' should be in CANONICAL_TIERS"
+    print(f"  ✅ Tier '{tier}' is canonical")
+    
+    # Test a few key mappings
+    test_cases = [
+        ("none", "low", "none"),
+        ("none", "high", "assisted_living"),
+        ("moderate", "high", "memory_care"),
+        ("high", "24h", "memory_care_high_acuity"),
+    ]
+    
+    print("\nTesting key mappings:")
+    for cog, sup, expected in test_cases:
+        result = tier_map.get(cog, {}).get(sup)
+        assert result == expected, f"Expected {cog}×{sup}={expected}, got {result}"
+        print(f"  ✅ {cog} × {sup} → {result}")
+    
+    print("\n" + "="*60)
+    print("TIER MAP LOADER TEST COMPLETE")
+    print("="*60)
+
+
 if __name__ == "__main__":
     # Run all guard tests
     test_gcp_canonical_tiers()
@@ -472,7 +518,8 @@ if __name__ == "__main__":
     test_forbidden_terms_filter()
     test_reconciliation()
     test_per_section_feedback()
-    test_cognitive_gates()  # NEW
+    test_cognitive_gates()
+    test_tier_map_loads_and_returns_allowed_tier()  # NEW
     
     print("\n" + "="*60)
     print("🎯 GCP LLM GUARD TESTS COMPLETE")
