@@ -17,6 +17,16 @@ from pydantic import BaseModel, Field, field_validator
 # Canonical tier values - ONLY these 5 are allowed
 CANONICAL_TIERS = {"none", "in_home", "assisted_living", "memory_care", "memory_care_high_acuity"}
 
+# Cognitive high-risk flags that gate memory care access
+COGNITIVE_HIGH_RISK = {
+    "wandering",
+    "elopement",
+    "aggression",
+    "severe_sundowning",
+    "severe_cognitive_risk",
+    "memory_support",
+}
+
 # Aliases for common tier name variations
 ALIASES = {
     "in_home_care": "in_home",

@@ -36,6 +36,142 @@ TIER_THRESHOLDS = {
 # Valid tier values - used for validation
 VALID_TIERS = set(TIER_THRESHOLDS.keys())
 
+# Cognitive high-risk flags/behaviors that gate memory care access
+COGNITIVE_HIGH_RISK = {
+    "wandering",
+    "elopement",
+    "aggression",
+    "severe_sundowning",
+    "severe_cognitive_risk",
+    "memory_support",
+}
+
+# Tier map cache (loaded from tier_map.json)
+_TIER_MAP_CACHE = None
+
+
+def _load_tier_map() -> dict:
+    """Load tier map from JSON file (cached).
+    
+    Returns:
+        Dict mapping (cognition_band, support_band) -> tier
+    """
+    global _TIER_MAP_CACHE
+    
+    if _TIER_MAP_CACHE is not None:
+        return _TIER_MAP_CACHE
+    
+    tier_map_path = Path(__file__).parent / "tier_map.json"
+    
+    try:
+        with open(tier_map_path, "r") as f:
+            _TIER_MAP_CACHE = json.load(f)
+        return _TIER_MAP_CACHE
+    except Exception as e:
+        print(f"[GCP_WARN] Could not load tier_map.json: {e}")
+        # Return empty dict as fallback
+        return {}
+
+
+def cognitive_gate(answers: dict[str, Any], flags: list[str]) -> bool:
+    """Determine if cognitive criteria are met for memory care access.
+    
+    Memory care requires moderate/severe memory changes OR risky behaviors.
+    This is a HARD gate - without it, MC/MC-HA are blocked.
+    
+    Args:
+        answers: User responses from GCP module
+        flags: Flags set by assessment
+    
+    Returns:
+        True if memory care access should be allowed
+    """
+    # Check memory_changes level
+    mem = (answers.get("memory_changes") or "").lower()
+    if mem in ("moderate", "severe"):
+        return True
+    
+    # Check for risky behaviors
+    behaviors = answers.get("behaviors") or []
+    risky_behav = set(b.lower() for b in behaviors)
+    if len(risky_behav & COGNITIVE_HIGH_RISK) > 0:
+        return True
+    
+    # Check for cognitive risk flags
+    flags_lower = set(f.lower() for f in (flags or []))
+    if len(flags_lower & COGNITIVE_HIGH_RISK) > 0:
+        return True
+    
+    return False
+
+
+def cognition_band(answers: dict[str, Any], flags: list[str]) -> str:
+    """Derive cognition band from memory changes and behaviors.
+    
+    Returns:
+        One of: "none", "mild", "moderate", "high"
+    """
+    mem = (answers.get("memory_changes") or "").lower()
+    behaviors = answers.get("behaviors") or []
+    risky_behav = set(b.lower() for b in behaviors)
+    
+    # Count risky behaviors
+    risky_count = len(risky_behav & COGNITIVE_HIGH_RISK)
+    
+    # High: severe memory OR multiple risky behaviors
+    if mem == "severe" or risky_count >= 2:
+        return "high"
+    
+    # Moderate: moderate memory OR single risky behavior
+    if mem == "moderate" or risky_count >= 1:
+        return "moderate"
+    
+    # Mild: mild memory changes
+    if mem == "mild":
+        return "mild"
+    
+    # None: no significant cognitive issues
+    return "none"
+
+
+def support_band(answers: dict[str, Any], flags: list[str]) -> str:
+    """Derive support band from ADLs, mobility, falls, meds.
+    
+    Returns:
+        One of: "low", "moderate", "high", "24h"
+    """
+    # Count BADL challenges
+    badls = answers.get("badls") or []
+    badl_count = len(badls) if isinstance(badls, list) else 0
+    
+    # Count IADL challenges
+    iadls = answers.get("iadls") or []
+    iadl_count = len(iadls) if isinstance(iadls, list) else 0
+    
+    # Check mobility
+    mobility = (answers.get("mobility") or "").lower()
+    
+    # Check falls
+    falls = (answers.get("falls") or "").lower()
+    
+    # Check meds complexity
+    meds = (answers.get("meds_complexity") or "").lower()
+    
+    # 24h: wheelchair/bedbound OR multiple BADLs + high falls
+    if mobility in ("wheelchair", "bedbound") or (badl_count >= 3 and falls == "multiple"):
+        return "24h"
+    
+    # High: multiple BADLs OR significant mobility + falls
+    if badl_count >= 2 or (mobility in ("walker", "cane") and falls in ("once", "multiple")):
+        return "high"
+    
+    # Moderate: some IADLs OR single BADL OR meds complexity
+    if iadl_count >= 2 or badl_count >= 1 or meds in ("moderate", "complex"):
+        return "moderate"
+    
+    # Low: minimal support needs
+    return "low"
+
 
 def _derive_move_preference(answers: dict[str, Any]) -> int | None:
     """Extract and derive move_preference value from answers.
@@ -343,9 +479,61 @@ def derive_outcome(
     # Calculate total score from answers
     total_score, scoring_details = _calculate_score(answers, module_data)
 
-    # Determine tier from score
-    tier = _determine_tier(total_score)
+    # Determine tier from score (traditional point-sum approach)
+    tier_from_score = _determine_tier(total_score)
 
+    # ====================================================================
+    # COGNITIVE GATES + 2-AXIS MAPPING
+    # ====================================================================
+    # Compute allowed tiers based on cognitive assessment
+    # Memory care requires moderate/severe memory changes OR risky behaviors
+    flags = _extract_flags_from_state(answers) or _extract_flags_from_answers(answers, module_data)
+    
+    # Determine if cognitive gate passes
+    passes_cognitive_gate = cognitive_gate(answers, flags)
+    
+    # Derive cognition and support bands
+    cog_band = cognition_band(answers, flags)
+    sup_band = support_band(answers, flags)
+    
+    # Load tier map and compute base recommendation
+    tier_map = _load_tier_map()
+    tier_from_mapping = None
+    
+    if tier_map and cog_band in tier_map and sup_band in tier_map.get(cog_band, {}):
+        tier_from_mapping = tier_map[cog_band][sup_band]
+    
+    # Build allowed tiers set
+    from ai.gcp_schemas import CANONICAL_TIERS
+    allowed_tiers = set(CANONICAL_TIERS)
+    
+    if not passes_cognitive_gate:
+        # Block memory care tiers
+        allowed_tiers -= {"memory_care", "memory_care_high_acuity"}
+        print(f"[GCP_GUARD] Cognitive gate FAILED (cog={cog_band} sup={sup_band}) - MC/MC-HA blocked")
+    else:
+        print(f"[GCP_GUARD] Cognitive gate PASSED (cog={cog_band} sup={sup_band}) - all tiers allowed")
+    
+    # Choose final deterministic tier
+    # Priority: mapping (if available and in allowed) > score-based (if in allowed) > downgrade to assisted_living
+    tier = None
+    
+    if tier_from_mapping and tier_from_mapping in allowed_tiers:
+        tier = tier_from_mapping
+        print(f"[GCP_GUARD] Using tier_map result: {tier} (mapping: {cog_band}×{sup_band})")
+    elif tier_from_score in allowed_tiers:
+        tier = tier_from_score
+        print(f"[GCP_GUARD] Using score-based tier: {tier} (score={total_score})")
+    else:
+        # Downgrade to highest allowed tier
+        if tier_from_score in {"memory_care", "memory_care_high_acuity"}:
+            tier = "assisted_living"
+            print(f"[GCP_GUARD] MC blocked by cognitive gate → downgraded {tier_from_score} → {tier}")
+        else:
+            # Fallback
+            tier = "assisted_living"
+            print(f"[GCP_GUARD] Fallback to assisted_living (original tier={tier_from_score} not in allowed)")
+    
     # Persist recommendation category to session state for conditional rendering
     # This enables show_if conditions to access $state.recommendation.category
     _persist_recommendation_category(tier)
@@ -367,8 +555,8 @@ def derive_outcome(
             
             gcp_context = _build_gcp_context(answers, context or {})
             
-            # Generate LLM advice (with guardrails)
-            ok, advice = generate_gcp_advice(gcp_context, mode=llm_mode)
+            # Generate LLM advice (with guardrails) - pass allowed_tiers to scope LLM
+            ok, advice = generate_gcp_advice(gcp_context, mode=llm_mode, allowed_tiers=sorted(list(allowed_tiers)))
             
             if ok and advice:
                 # Reconcile with deterministic (logs disagreements)

@@ -306,18 +306,34 @@ def _trigger_section_llm_feedback(config: ModuleConfig, module_state: dict, curr
         processed.add(section_key)
         
         # Build partial context
-        from products.gcp_v4.modules.care_recommendation.logic import build_partial_gcp_context
+        from products.gcp_v4.modules.care_recommendation.logic import (
+            build_partial_gcp_context,
+            cognitive_gate,
+        )
         from products.gcp_v4.modules.care_recommendation.flags import build_flags
+        from ai.gcp_schemas import CANONICAL_TIERS
         
         answers = module_state
         flags = build_flags(answers)
         
         partial_context = build_partial_gcp_context(section_id, answers, flags)
         
-        # Generate LLM advice
-        from ai.gcp_navi_engine import generate_gcp_advice
+        # Compute allowed tiers based on cognitive gate (even for partial context)
+        passes_gate = cognitive_gate(answers, flags)
+        allowed_tiers = set(CANONICAL_TIERS)
         
-        ok, advice = generate_gcp_advice(partial_context, mode=llm_mode)
+        if not passes_gate:
+            allowed_tiers -= {"memory_care", "memory_care_high_acuity"}
+        
+        # Generate LLM advice with allowed_tiers scoping
+        from ai.gcp_navi_engine import generate_section_advice
+        
+        ok, advice = generate_section_advice(
+            partial_context,
+            section=section_id,
+            mode=llm_mode,
+            allowed_tiers=sorted(list(allowed_tiers))
+        )
         
         # Log result
         if ok and advice:

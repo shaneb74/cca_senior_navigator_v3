@@ -120,12 +120,14 @@ Remember: Only use the 5 allowed tiers. Never mention skilled nursing or indepen
 def generate_gcp_advice(
     context: GCPContext,
     mode: Literal["off", "shadow", "assist"] = "off",
+    allowed_tiers: Optional[list[str]] = None,
 ) -> Tuple[bool, Optional[GCPAdvice]]:
     """Generate GCP advice from context with strict guardrails.
     
     Args:
         context: GCPContext with user's situation
         mode: Generation mode (off, shadow, or assist)
+        allowed_tiers: Optional list of allowed tier values (cognitive gate enforcement)
     
     Returns:
         Tuple of (success: bool, advice: Optional[GCPAdvice])
@@ -145,8 +147,15 @@ def generate_gcp_advice(
         return (False, None)
     
     try:
-        # Build prompts
+        # Build prompts (inject allowed_tiers if provided)
         system_prompt = GCP_NAVI_SYSTEM_PROMPT + "\n\n" + GCP_NAVI_DEVELOPER_PROMPT
+        
+        # Add allowed tiers constraint if provided
+        if allowed_tiers:
+            allowed_list = ", ".join(sorted(allowed_tiers))
+            tier_constraint = f"\n\nIMPORTANT: Due to cognitive assessment results, you must choose ONE tier from this restricted list ONLY: {allowed_list}"
+            system_prompt += tier_constraint
+        
         user_prompt = _build_gcp_prompt(context)
         
         # Generate JSON response (uses client's configured timeout, currently 10s)
@@ -173,6 +182,11 @@ def generate_gcp_advice(
             # Post-guard: Verify tier is canonical
             if advice.tier not in CANONICAL_TIERS:
                 print(f"[GCP_LLM_{mode.upper()}] Non-canonical tier '{advice.tier}' rejected")
+                return (False, None)
+            
+            # Post-guard: Verify tier is allowed (cognitive gate enforcement)
+            if allowed_tiers and advice.tier not in allowed_tiers:
+                print(f"[GCP_LLM_SKIP] tier '{advice.tier}' not in allowed_tiers {sorted(allowed_tiers)}")
                 return (False, None)
             
             # Post-guard: Double-check for forbidden terms in final output
@@ -255,6 +269,7 @@ def generate_section_advice(
     context: GCPContext,
     section: str,
     mode: Literal["off", "shadow", "assist"] = "off",
+    allowed_tiers: Optional[list[str]] = None,
 ) -> Tuple[bool, Optional[GCPAdvice]]:
     """Generate contextual Navi advice after a GCP section completes.
     
@@ -265,6 +280,7 @@ def generate_section_advice(
         context: GCPContext with answers completed so far (may be partial)
         section: Section name (about_you, health_safety, daily_living, etc.)
         mode: Generation mode (off, shadow, or assist)
+        allowed_tiers: Optional list of allowed tier values (cognitive gate enforcement)
     
     Returns:
         Tuple of (success: bool, advice: Optional[GCPAdvice])
@@ -284,8 +300,15 @@ def generate_section_advice(
         return (False, None)
     
     try:
-        # Build section-specific prompt
+        # Build section-specific prompt (inject allowed_tiers if provided)
         system_prompt = _build_section_system_prompt(section)
+        
+        # Add allowed tiers constraint if provided
+        if allowed_tiers:
+            allowed_list = ", ".join(sorted(allowed_tiers))
+            tier_constraint = f"\n\nIMPORTANT: Due to cognitive assessment results, you must choose ONE tier from this restricted list ONLY: {allowed_list}"
+            system_prompt += tier_constraint
+        
         user_prompt = _build_section_user_prompt(context, section)
         
         # Generate JSON response (uses client's configured timeout, currently 10s)
@@ -312,6 +335,11 @@ def generate_section_advice(
             # Post-guard: Verify tier is canonical
             if advice.tier not in CANONICAL_TIERS:
                 print(f"[GCP_LLM_SECTION] Non-canonical tier '{advice.tier}' rejected - section={section}")
+                return (False, None)
+            
+            # Post-guard: Verify tier is allowed (cognitive gate enforcement)
+            if allowed_tiers and advice.tier not in allowed_tiers:
+                print(f"[GCP_LLM_SKIP] section={section} tier '{advice.tier}' not in allowed_tiers {sorted(allowed_tiers)}")
                 return (False, None)
             
             # Post-guard: Filter forbidden terms

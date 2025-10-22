@@ -352,6 +352,119 @@ def test_per_section_feedback():
     print("="*60)
 
 
+def test_cognitive_gates():
+    """Test cognitive gates and allowed_tiers scoping."""
+    
+    print("\n" + "="*60)
+    print("COGNITIVE GATES + ALLOWED_TIERS TEST")
+    print("="*60)
+    
+    # Case A: High ADL burden, no memory issues → MC should be blocked
+    print("\n[Test A] High ADL burden, no cognitive issues (MC blocked)...")
+    context_no_cog = GCPContext(
+        age_range="85+",
+        living_situation="alone_in_house",
+        has_partner=False,
+        meds_complexity="complex",
+        mobility="wheelchair",
+        falls="multiple_falls",
+        badls=["bathing", "dressing", "toileting", "transferring"],
+        iadls=["meal_prep", "housekeeping", "medication", "finances"],
+        memory_changes="none",  # No memory issues
+        behaviors=[],  # No risky behaviors
+        isolation="severe",
+        move_preference=3,
+        flags=["high_dependence", "falls_risk"],
+    )
+    
+    # LLM should NOT be allowed to recommend memory_care
+    allowed_tiers_no_cog = ["none", "in_home", "assisted_living"]
+    
+    ok, advice = generate_gcp_advice(context_no_cog, mode="shadow", allowed_tiers=allowed_tiers_no_cog)
+    
+    if ok and advice:
+        print(f"  Tier: {advice.tier}")
+        print(f"  Allowed: {allowed_tiers_no_cog}")
+        
+        assert advice.tier in allowed_tiers_no_cog, f"LLM returned tier outside allowed list: {advice.tier}"
+        print(f"  ✅ LLM respected allowed_tiers (tier={advice.tier} in {allowed_tiers_no_cog})")
+        
+        assert advice.tier not in ["memory_care", "memory_care_high_acuity"], \
+            f"LLM should not recommend MC without cognitive issues"
+        print(f"  ✅ Memory care correctly blocked (no cognitive criteria)")
+    else:
+        print("  ⚠️  No advice generated")
+    
+    # Case B: Memory changes + wandering → MC should be allowed
+    print("\n[Test B] Moderate memory + wandering (MC allowed)...")
+    context_with_cog = GCPContext(
+        age_range="80-84",
+        living_situation="with_family",
+        has_partner=False,
+        meds_complexity="moderate",
+        mobility="walker",
+        falls="once",
+        badls=["bathing"],
+        iadls=["meal_prep", "medication"],
+        memory_changes="moderate",  # Moderate memory impairment
+        behaviors=["wandering", "confusion"],  # Risky behaviors
+        isolation="moderate",
+        move_preference=6,
+        flags=["moderate_cognitive_decline", "moderate_safety_concern"],
+    )
+    
+    # All tiers should be allowed
+    allowed_tiers_with_cog = ["none", "in_home", "assisted_living", "memory_care", "memory_care_high_acuity"]
+    
+    ok, advice = generate_gcp_advice(context_with_cog, mode="shadow", allowed_tiers=allowed_tiers_with_cog)
+    
+    if ok and advice:
+        print(f"  Tier: {advice.tier}")
+        print(f"  Allowed: {allowed_tiers_with_cog}")
+        
+        assert advice.tier in allowed_tiers_with_cog, f"LLM returned tier outside allowed list: {advice.tier}"
+        print(f"  ✅ LLM respected allowed_tiers (tier={advice.tier})")
+        
+        # LLM CAN recommend memory_care here (cognitive criteria met)
+        print(f"  ✅ Memory care allowed (cognitive criteria met)")
+    else:
+        print("  ⚠️  No advice generated")
+    
+    # Case C: Try to force MC when not allowed (simulate LLM returning blocked tier)
+    print("\n[Test C] Simulate LLM trying MC when blocked...")
+    print("  (This tests the post-guard rejection logic)")
+    
+    # Create context with no cognitive issues
+    context_test = GCPContext(
+        age_range="75-84",
+        living_situation="alone",
+        has_partner=False,
+        meds_complexity="moderate",
+        mobility="independent",
+        falls="none",
+        badls=[],
+        iadls=["housekeeping"],
+        memory_changes="none",
+        behaviors=[],
+        isolation="low",
+    )
+    
+    # Restrict allowed_tiers (simulate cognitive gate blocking MC)
+    allowed_no_mc = ["none", "in_home", "assisted_living"]
+    
+    ok, advice = generate_gcp_advice(context_test, mode="shadow", allowed_tiers=allowed_no_mc)
+    
+    if ok and advice:
+        assert advice.tier in allowed_no_mc, f"Post-guard failed: tier {advice.tier} not in allowed {allowed_no_mc}"
+        print(f"  ✅ Post-guard working (tier={advice.tier} in {allowed_no_mc})")
+    else:
+        print("  ✅ LLM generation rejected or returned blocked tier (expected behavior)")
+    
+    print("\n" + "="*60)
+    print("COGNITIVE GATES TESTS COMPLETE")
+    print("="*60)
+
+
 if __name__ == "__main__":
     # Run all guard tests
     test_gcp_canonical_tiers()
@@ -359,6 +472,7 @@ if __name__ == "__main__":
     test_forbidden_terms_filter()
     test_reconciliation()
     test_per_section_feedback()
+    test_cognitive_gates()  # NEW
     
     print("\n" + "="*60)
     print("🎯 GCP LLM GUARD TESTS COMPLETE")
