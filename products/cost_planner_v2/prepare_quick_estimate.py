@@ -428,8 +428,14 @@ def _get_default_home_carry(zip_code: str | None) -> float:
     lookup_result = lookup_zip(zip_code, kind="owner")
     if lookup_result:
         amount = lookup_result["amount"]
-        confidence_pct = int(lookup_result["confidence"] * 100)
-        print(f"[HOME_CARRY_DEFAULT] zip={zip_code} amount=${amount:,.0f} source={lookup_result['source']} conf={confidence_pct}%")
+        src = lookup_result["source"]
+        conf = int(lookup_result["confidence"] * 100)
+        
+        # Log once per session
+        if not st.session_state.get("_home_cost_logged"):
+            print(f"[HOME_CARRY_DEFAULT] zip={zip_code} amount=${amount:,.0f} source={src} conf={conf}%")
+            st.session_state["_home_cost_logged"] = True
+        
         return amount
 
     # Fallback to old regional scaling
