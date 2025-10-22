@@ -97,6 +97,7 @@
           "default": "alone",
           "options": [
             { "label": "Alone", "value": "alone" },
+            { "label": "With a spouse or partner", "value": "with_spouse_or_partner", "flags": ["has_partner"] },
             { "label": "With family", "value": "with_family" },
             { "label": "Assisted living", "value": "assisted_living" },
             { "label": "Other", "value": "other" }

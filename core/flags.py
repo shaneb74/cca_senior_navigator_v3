@@ -185,6 +185,11 @@ FLAG_REGISTRY: dict[str, dict[str, str]] = {
         "cost_multiplier": 1.10,
     },
     # SUPPORT SYSTEM FLAGS
+    "has_partner": {
+        "category": "caregiver",
+        "severity": "low",
+        "description": "Lives with spouse or partner (potential support system)",
+    },
     "no_support": {
         "category": "caregiver",
         "severity": "high",
