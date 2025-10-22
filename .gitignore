@@ -31,3 +31,11 @@ _archive_debug_docs/
 
 # Documentation - local only, not committed to origin
 Documentation/
+
+# Backup artifacts
+**/*.bak
+**/*.bak?
+**/*.bak??
+**/*_bak*
+**/*_backup*
+_archive_backups/
