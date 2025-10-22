@@ -263,12 +263,23 @@ def reconcile_with_deterministic(
         
         # Log disagreement for training (no PHI)
         try:
+            import json
+            import time
             from tools.log_disagreement import append_case
             from products.gcp_v4.modules.care_recommendation.logic import (
                 cognitive_gate_behaviors_only,
                 cognition_band,
                 support_band
             )
+            
+            # Hardened context serialization helper
+            def _jsonify_ctx(ctx):
+                try:
+                    if hasattr(ctx, "model_dump"):
+                        return ctx.model_dump()
+                    return json.loads(json.dumps(ctx, default=str))
+                except Exception as e:
+                    return {"_note": "context_unserializable", "type": str(type(ctx)), "err": str(e)}
             
             # Extract context (gcp_context should be available from calling scope)
             # If not available, we'll skip logging rather than fail
@@ -281,18 +292,21 @@ def reconcile_with_deterministic(
                 flags = gcp_ctx.get("flags", [])
                 allowed = gcp_ctx.get("allowed_tiers", [])
                 
+                # Compute bands for context
+                cog_band = cognition_band(answers, flags)
+                sup_band = support_band(answers, flags)
+                risky = cognitive_gate_behaviors_only(answers, flags)
+                
                 row = {
-                    "gcp_context": gcp_ctx,
+                    "gcp_context": _jsonify_ctx(gcp_ctx),
                     "allowed_tiers": sorted(list(allowed)) if allowed else [],
                     "det_tier": det_normalized,
-                    "llm_tier": llm_tier,
-                    "llm_conf": llm_advice.confidence,
-                    "reasons": llm_advice.reasons[:6] if llm_advice.reasons else [],
-                    "bands": {
-                        "cog": cognition_band(answers, flags),
-                        "sup": support_band(answers, flags)
-                    },
-                    "has_risky_behaviors": cognitive_gate_behaviors_only(answers, flags)
+                    "llm_tier": getattr(llm_advice, "narrowed_band", None) or getattr(llm_advice, "band", None) or getattr(llm_advice, "tier", None),
+                    "llm_conf": getattr(llm_advice, "confidence", None),
+                    "reasons": getattr(llm_advice, "reasons", []),
+                    "bands": {"cog": cog_band, "sup": sup_band},
+                    "has_risky_behaviors": risky,
+                    "ts": int(time.time())
                 }
                 
                 case_id = append_case(row)
