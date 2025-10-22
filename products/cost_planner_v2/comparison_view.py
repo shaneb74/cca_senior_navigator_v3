@@ -800,7 +800,11 @@ def _render_plan_selection_and_cta(recommended_tier: str, show_both: bool):
                 print(f"[FA_DEBUG] Monthly Total (including home): ${selected_breakdown.monthly_total:,.0f}")
                 print(f"[FA_DEBUG] Home Carry Cost: ${home_carry_monthly:,.0f}")
                 print(f"[FA_DEBUG] Care-Only Monthly (HANDOFF VALUE): ${care_only_monthly:,.0f}")
-                print(f"[FA_DEBUG] =====================================================\n")
+                print(f"[FA_DEBUG] ")
+                print(f"[FA_DEBUG] Breakdown lines:")
+                for line in selected_breakdown.lines:
+                    print(f"[FA_DEBUG]   - {line.label}: ${line.value:,.0f} (applied: {line.applied})")
+                print(f"[FA_DEBUG] =====================================================")
                 
                 # Store in expected format for expert_review.py
                 st.session_state.cost_v2_quick_estimate = {
