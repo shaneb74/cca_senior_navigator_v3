@@ -99,17 +99,17 @@ def render_comparison_view(zip_code: str):
     if "comparison_hours_per_day" not in st.session_state:
         st.session_state.comparison_hours_per_day = st.session_state.comparison_inhome_hours
     
-    # Log GCP hours initialization (dev-only)
-    gcp_data = st.session_state.get("gcp_care_recommendation", {})
-    gcp_hours_category = gcp_data.get("hours_per_day", "not_found")
-    st.write("### 🔍 GCP Hours Debug")
-    st.json({
-        "gcp_hours_category": gcp_hours_category,
-        "mapped_initial_hours": st.session_state.get("comparison_hours_gcp_source", "N/A"),
-        "slider_value_current": st.session_state.comparison_inhome_hours,
-        "is_24_hour": st.session_state.comparison_inhome_hours == 24.0
-    })
-    st.write("---")
+    # DEBUG: GCP hours initialization (commented out for production)
+    # gcp_data = st.session_state.get("gcp_care_recommendation", {})
+    # gcp_hours_category = gcp_data.get("hours_per_day", "not_found")
+    # st.write("### 🔍 GCP Hours Debug")
+    # st.json({
+    #     "gcp_hours_category": gcp_hours_category,
+    #     "mapped_initial_hours": st.session_state.get("comparison_hours_gcp_source", "N/A"),
+    #     "slider_value_current": st.session_state.comparison_inhome_hours,
+    #     "is_24_hour": st.session_state.comparison_inhome_hours == 24.0
+    # })
+    # st.write("---")
     
     # Get GCP recommendation
     gcp_rec = MCIP.get_care_recommendation()
@@ -124,13 +124,13 @@ def render_comparison_view(zip_code: str):
         if recommended_tier == "in_home":
             recommended_tier = "in_home_care"
     
-    # DEBUG: Show what recommendation we got
-    st.write("🔍 **GCP RECOMMENDATION DEBUG:**")
-    st.write(f"  - Raw tier value from GCP: `{gcp_rec.tier if gcp_rec else 'None'}`")
-    st.write(f"  - Normalized tier: `{recommended_tier}`")
-    st.write(f"  - Will use IN-HOME calc: {recommended_tier == 'in_home_care'}")
-    st.write(f"  - Will use FACILITY calc: {recommended_tier != 'in_home_care'}")
-    st.markdown("---")
+    # DEBUG: GCP recommendation (commented out for production)
+    # st.write("🔍 **GCP RECOMMENDATION DEBUG:**")
+    # st.write(f"  - Raw tier value from GCP: `{gcp_rec.tier if gcp_rec else 'None'}`")
+    # st.write(f"  - Normalized tier: `{recommended_tier}`")
+    # st.write(f"  - Will use IN-HOME calc: {recommended_tier == 'in_home_care'}")
+    # st.write(f"  - Will use FACILITY calc: {recommended_tier != 'in_home_care'}")
+    # st.markdown("---")
     
     # Check if user wants to see comparison (from prepare gate)
     # Default behavior: show both for facility, single for in-home
@@ -161,19 +161,19 @@ def render_comparison_view(zip_code: str):
     # Calculate and render scenarios based on recommendation
     if recommended_tier == "in_home_care":
         # In-home is recommended
-        st.markdown("### 🔍 Debug: Calculating In-Home Scenario (Recommended)")
-        inhome_breakdown = _calculate_inhome_scenario(zip_code, debug_label="LEFT_CARD (Recommended)")
+        # DEBUG: st.markdown("### 🔍 Debug: Calculating In-Home Scenario (Recommended)")
+        inhome_breakdown = _calculate_inhome_scenario(zip_code, debug_label="")  # Empty label = no UI debug
         st.session_state.comparison_inhome_breakdown = inhome_breakdown  # Store for handoff
         
         if show_both:
             # User wants to see AL comparison
-            st.markdown("### 🔍 Debug: Calculating AL Comparison")
-            al_breakdown = _calculate_facility_scenario("assisted_living", zip_code, debug_label="RIGHT_CARD (Comparison)")
+            # DEBUG: st.markdown("### 🔍 Debug: Calculating AL Comparison")
+            al_breakdown = _calculate_facility_scenario("assisted_living", zip_code, debug_label="")  # Empty label = no UI debug
             st.session_state.comparison_facility_breakdown = al_breakdown  # Store for handoff
             
-            # Development logging for consistency check
-            _log_calculation_inputs("LEFT (In-Home)", zip_code, inhome_breakdown)
-            _log_calculation_inputs("RIGHT (AL)", zip_code, al_breakdown)
+            # Development logging for consistency check (commented out for production)
+            # _log_calculation_inputs("LEFT (In-Home)", zip_code, inhome_breakdown)
+            # _log_calculation_inputs("RIGHT (AL)", zip_code, al_breakdown)
             
             _render_two_column_comparison_inhome_primary(
                 inhome_breakdown,
@@ -182,23 +182,23 @@ def render_comparison_view(zip_code: str):
             )
         else:
             # In-home only
-            _log_calculation_inputs("In-Home (Single)", zip_code, inhome_breakdown)
+            # _log_calculation_inputs("In-Home (Single)", zip_code, inhome_breakdown)
             _render_inhome_primary_view(inhome_breakdown)
     else:
         # Facility is recommended (AL, MC, MC-HA)
-        st.markdown("### 🔍 Debug: Calculating Facility Scenario (Recommended)")
-        facility_breakdown = _calculate_facility_scenario(recommended_tier, zip_code, debug_label="LEFT_CARD (Recommended)")
+        # DEBUG: st.markdown("### 🔍 Debug: Calculating Facility Scenario (Recommended)")
+        facility_breakdown = _calculate_facility_scenario(recommended_tier, zip_code, debug_label="")  # Empty label = no UI debug
         st.session_state.comparison_facility_breakdown = facility_breakdown  # Store for handoff
         
         if show_both:
             # Show facility + in-home comparison
-            st.markdown("### 🔍 Debug: Calculating In-Home Comparison")
-            inhome_breakdown = _calculate_inhome_scenario(zip_code, debug_label="RIGHT_CARD (Comparison)")
+            # DEBUG: st.markdown("### 🔍 Debug: Calculating In-Home Comparison")
+            inhome_breakdown = _calculate_inhome_scenario(zip_code, debug_label="")  # Empty label = no UI debug
             st.session_state.comparison_inhome_breakdown = inhome_breakdown  # Store for handoff
             
-            # Development logging for consistency check
-            _log_calculation_inputs("LEFT (Facility)", zip_code, facility_breakdown)
-            _log_calculation_inputs("RIGHT (In-Home)", zip_code, inhome_breakdown)
+            # Development logging for consistency check (commented out for production)
+            # _log_calculation_inputs("LEFT (Facility)", zip_code, facility_breakdown)
+            # _log_calculation_inputs("RIGHT (In-Home)", zip_code, inhome_breakdown)
             
             _render_two_column_comparison_facility_primary(
                 facility_breakdown,
@@ -207,7 +207,7 @@ def render_comparison_view(zip_code: str):
             )
         else:
             # Facility only
-            _log_calculation_inputs("Facility (Single)", zip_code, facility_breakdown)
+            # _log_calculation_inputs("Facility (Single)", zip_code, facility_breakdown)
             _render_facility_primary_view(facility_breakdown, recommended_tier)
     
     # Plan selection and CTA
