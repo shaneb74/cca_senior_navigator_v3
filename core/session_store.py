@@ -1,6 +1,12 @@
 """
 Session and User Data Persistence
 
+NOTE: Read-only by convention.
+Persistence contract for user/session data. Do NOT rename keys in USER_PERSIST_KEYS
+or change extraction/saving semantics without an explicit migration and review.
+If a change is required, include "BYPASS_SESSION_STORE_GUARD" in the commit message
+and update the guard test in tests/test_persistence_keys_guard.py.
+
 Provides atomic file operations with locking for session and user data.
 Prevents data corruption from concurrent writes or app crashes.
 

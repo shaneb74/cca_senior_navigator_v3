@@ -24,6 +24,11 @@
 - Use dev-only diagnostics with clear tags (e.g., `[GCP_WARN]`, `[LLM_SHADOW]`) and remove after verification.
 
 ## Things to Avoid
-- Don’t modify calculators or change costs unless told to.
-- Don’t introduce flags that aren’t in `core/flags.py`.
-- Don’t read or rely on archived/backup content, venvs, or large static blobs.
+- Don't modify calculators or change costs unless told to.
+- Don't introduce flags that aren't in `core/flags.py`.
+- Don't read or rely on archived/backup content, venvs, or large static blobs.
+
+## Read-only Modules
+- Treat `core/session_store.py` as read-only unless the task explicitly requests a persistence migration.
+- Never rename `USER_PERSIST_KEYS` entries or change save/extract semantics without a migration plan and test update.
+- If changes are required, include `BYPASS_SESSION_STORE_GUARD` in commit message and update `tests/test_persistence_keys_guard.py`.
