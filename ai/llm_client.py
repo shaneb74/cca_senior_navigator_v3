@@ -135,6 +135,32 @@ def get_openai_model() -> str:
     return os.getenv("OPENAI_MODEL", DEFAULT_MODEL)
 
 
+def get_feature_mode() -> str:
+    """Get LLM feature flag mode with priority order.
+    
+    Priority:
+    1. Streamlit secrets (st.secrets["FEATURE_LLM_NAVI"])
+    2. Environment variable (FEATURE_LLM_NAVI)
+    3. Default ("off")
+    
+    Returns:
+        Feature mode: "off" | "shadow" | "assist" | "adjust"
+    """
+    _load_env()
+    
+    # 1) Try Streamlit secrets
+    try:
+        import streamlit as st
+        mode = st.secrets.get("FEATURE_LLM_NAVI")
+        if mode:
+            return mode
+    except Exception:
+        pass
+    
+    # 2) Try environment variable or use default
+    return os.getenv("FEATURE_LLM_NAVI", "off")
+
+
 # ====================================================================
 # CLIENT CLASS
 # ====================================================================
