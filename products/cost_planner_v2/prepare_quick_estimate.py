@@ -396,14 +396,28 @@ def _resolve_region(zip_code: str):
 
 
 def _get_default_home_carry(zip_code: str | None) -> float:
-    """Get default home carry cost with regional scaling.
+    """Get default home carry cost with ZIP-based CSV lookup.
     
-    Uses dampened regional multiplier (50% deviation) same as comparison_calcs.
+    Priority:
+    1. ZIP-based CSV lookup (exact match or ZIP3 bucket)
+    2. Fallback to regional scaling if CSV lookup fails
+    3. National baseline if no ZIP provided
     """
+    from products.cost_planner_v2.utils.home_costs import lookup_zip
 
     if not zip_code:
         return comparison_calcs.HOME_CARRY_BASE
 
+    # Try CSV lookup first
+    lookup_result = lookup_zip(zip_code, kind="owner")
+    if lookup_result:
+        amount = lookup_result["amount"]
+        confidence_pct = int(lookup_result["confidence"] * 100)
+        print(f"[HOME_CARRY_DEFAULT] zip={zip_code} amount=${amount:,.0f} source={lookup_result['source']} conf={confidence_pct}%")
+        return amount
+
+    # Fallback to old regional scaling
+    print(f"[HOME_CARRY_DEFAULT] zip={zip_code} CSV lookup failed, using regional scaling fallback")
     return comparison_calcs.get_home_carry_effective(zip_code, user_override=None)
 
 

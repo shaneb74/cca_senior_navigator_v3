@@ -615,6 +615,7 @@ def _render_facility_controls(card_key: str):
     Args:
         card_key: Unique key for widgets
     """
+    from products.cost_planner_v2.utils.home_costs import lookup_zip
 
     st.markdown("**🏡 Home Costs**")
 
@@ -630,10 +631,24 @@ def _render_facility_controls(card_key: str):
         st.rerun()
 
     if keep_home:
+        # Try ZIP-based prefill if available and home carry cost not yet set
+        prefill_value = st.session_state.comparison_home_carry_cost
+        prefill_caption = None
+        
+        if prefill_value == 0.0:  # Only prefill if not already set
+            zip_code = st.session_state.get("cost_v2_zip")
+            if zip_code:
+                lookup_result = lookup_zip(zip_code, kind="owner")
+                if lookup_result:
+                    prefill_value = lookup_result["amount"]
+                    confidence_pct = int(lookup_result["confidence"] * 100)
+                    prefill_caption = f"💡 Prefilled from {lookup_result['source']} · {confidence_pct}% confidence"
+                    print(f"[HOME_COST_PREFILL] zip={zip_code} amount=${prefill_value:,.0f} conf={lookup_result['confidence']:.1%}")
+        
         home_carry = st.number_input(
             "Monthly home expense",
             min_value=0.0,
-            value=st.session_state.comparison_home_carry_cost,
+            value=prefill_value,
             step=100.0,
             help="Mortgage, rent, property tax, insurance, maintenance",
             key=f"{card_key}_home_carry"
@@ -643,6 +658,8 @@ def _render_facility_controls(card_key: str):
             st.session_state.comparison_home_carry_cost = home_carry
             st.rerun()
 
+        if prefill_caption:
+            st.caption(prefill_caption)
         st.caption(f"✓ Added to total (${home_carry:,.0f}/mo)")
     else:
         st.caption("Home expenses not included")
@@ -654,6 +671,7 @@ def _render_inhome_controls(card_key: str):
     Args:
         card_key: Unique key for widgets
     """
+    from products.cost_planner_v2.utils.home_costs import lookup_zip
 
     st.markdown("**⏰ Care Hours**")
 
@@ -685,10 +703,24 @@ def _render_inhome_controls(card_key: str):
 
     st.markdown("**🏡 Home Costs**")
 
+    # Try ZIP-based prefill if available and home carry cost not yet set
+    prefill_value = st.session_state.comparison_home_carry_cost
+    prefill_caption = None
+    
+    if prefill_value == 0.0:  # Only prefill if not already set
+        zip_code = st.session_state.get("cost_v2_zip")
+        if zip_code:
+            lookup_result = lookup_zip(zip_code, kind="owner")
+            if lookup_result:
+                prefill_value = lookup_result["amount"]
+                confidence_pct = int(lookup_result["confidence"] * 100)
+                prefill_caption = f"💡 Prefilled from {lookup_result['source']} · {confidence_pct}% confidence"
+                print(f"[HOME_COST_PREFILL] zip={zip_code} amount=${prefill_value:,.0f} conf={lookup_result['confidence']:.1%}")
+    
     home_carry = st.number_input(
         "Monthly home expense",
         min_value=0.0,
-        value=st.session_state.comparison_home_carry_cost,
+        value=prefill_value,
         step=100.0,
         help="Mortgage, rent, property tax, insurance, maintenance",
         key=f"{card_key}_home_carry"
@@ -698,6 +730,8 @@ def _render_inhome_controls(card_key: str):
         st.session_state.comparison_home_carry_cost = home_carry
         st.rerun()
 
+    if prefill_caption:
+        st.caption(prefill_caption)
     st.caption(f"✓ Always included (${home_carry:,.0f}/mo)")
 
 
