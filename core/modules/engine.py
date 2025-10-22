@@ -491,33 +491,36 @@ def _ensure_outcomes(config: ModuleConfig, answers: dict[str, Any]) -> None:
     outcome = OutcomeContract()
     if config.outcomes_compute:
         fn = _resolve_callable(config.outcomes_compute)
-        try:
-            result = fn(answers=answers, context=context)
-            if isinstance(result, OutcomeContract):
-                outcome = result
-            elif isinstance(result, dict):
-                # Don't wrap in OutcomeContract - store dict directly
-                # This allows product-specific schemas (e.g., GCP's tier/tier_score)
-                st.session_state[outcome_key] = result
+        
+        # Show spinner while computing recommendation (especially for LLM-assisted GCP)
+        with st.spinner("💬 Analyzing your assessment and preparing recommendations..."):
+            try:
+                result = fn(answers=answers, context=context)
+                if isinstance(result, OutcomeContract):
+                    outcome = result
+                elif isinstance(result, dict):
+                    # Don't wrap in OutcomeContract - store dict directly
+                    # This allows product-specific schemas (e.g., GCP's tier/tier_score)
+                    st.session_state[outcome_key] = result
 
-                # Still handle legacy handoff for backward compatibility
-                handoff = st.session_state.setdefault("handoff", {})
-                handoff[state_key] = result
+                    # Still handle legacy handoff for backward compatibility
+                    handoff = st.session_state.setdefault("handoff", {})
+                    handoff[state_key] = result
 
-                _emit(
-                    "module.outcomes.ready",
-                    {
-                        "state_key": state_key,
-                        "outcome": str(result.get("tier") or result.get("recommendation", "")),
-                    },
-                )
-                return  # Early return - we're done
-        except Exception as e:
-            import traceback
+                    _emit(
+                        "module.outcomes.ready",
+                        {
+                            "state_key": state_key,
+                            "outcome": str(result.get("tier") or result.get("recommendation", "")),
+                        },
+                    )
+                    return  # Early return - we're done
+            except Exception as e:
+                import traceback
 
-            st.error(f"❌ Error computing outcomes: {type(e).__name__}: {str(e)}")
-            st.text(traceback.format_exc())
-            outcome = OutcomeContract()
+                st.error(f"❌ Error computing outcomes: {type(e).__name__}: {str(e)}")
+                st.text(traceback.format_exc())
+                outcome = OutcomeContract()
 
     audit = dict(outcome.audit)
     audit.update(
