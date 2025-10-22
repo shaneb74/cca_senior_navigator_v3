@@ -398,18 +398,19 @@
       "questions": [
         {
           "id": "move_preference",
-          "type": "integer",
+          "type": "string",
           "select": "single",
-          "label": "How willing is this person to move to a care facility?",
+          "label": "How willing is this person to move?",
+          "help": "Understanding openness to relocating helps us provide realistic care planning guidance.",
           "required": true,
-          "default": 2,
+          "default": "2",
           "options": [
-            { "label": "1 – Strong preference to stay home", "value": 1, "score": 0 },
-            { "label": "2 – Uncertain or need more information", "value": 2, "score": 0 },
-            { "label": "3 – Open if it improves my care plan", "value": 3, "score": 0 },
-            { "label": "4 – Comfortable with the idea of moving", "value": 4, "score": 0 }
+            { "label": "1 – Strong preference to stay home", "value": "1", "score": 0 },
+            { "label": "2 – Uncertain or need more information", "value": "2", "score": 0 },
+            { "label": "3 – Open if it improves my care plan", "value": "3", "score": 0 },
+            { "label": "4 – Comfortable with the idea of moving", "value": "4", "score": 0 }
           ],
-          "ui": { "widget": "chip", "orientation": "vertical" }
+          "ui": { "widget": "chip", "orientation": "horizontal" }
         }
       ]
     },
