@@ -10,7 +10,7 @@ This module respects module.json as the authoritative source of truth:
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict, List, Optional, Tuple
 
 from .flags import build_flags
 
@@ -37,7 +37,7 @@ TIER_THRESHOLDS = {
 VALID_TIERS = set(TIER_THRESHOLDS.keys())
 
 
-def _derive_move_preference(answers: dict[str, Any]) -> int | None:
+def _derive_move_preference(answers: Dict[str, Any]) -> Optional[int]:
     """Extract and derive move_preference value from answers.
     
     Args:
@@ -84,7 +84,7 @@ def _persist_recommendation_category(tier: str) -> None:
         pass  # Don't fail if streamlit not available (e.g., in tests)
 
 
-def compute_recommendation_category(answers: dict[str, Any], persist_to_state: bool = True) -> str:
+def compute_recommendation_category(answers: Dict[str, Any], persist_to_state: bool = True) -> str:
     """Compute and return just the recommendation category (tier) from current answers.
     
     This is used for mid-flow computation (e.g., after Daily Living section completes)
@@ -109,8 +109,8 @@ def compute_recommendation_category(answers: dict[str, Any], persist_to_state: b
 
 
 def derive_outcome(
-    answers: dict[str, Any], context: dict[str, Any] = None, config: dict[str, Any] = None
-) -> dict[str, Any]:
+    answers: Dict[str, Any], context: Dict[str, Any] = None, config: Dict[str, Any] = None
+) -> Dict[str, Any]:
     """Compute care recommendation from answers and module.json scoring.
 
     This function:
@@ -198,7 +198,7 @@ def derive_outcome(
     }
 
 
-def _load_module_json() -> dict[str, Any]:
+def _load_module_json() -> Dict[str, Any]:
     """Load module.json from disk.
 
     Returns:
@@ -210,8 +210,8 @@ def _load_module_json() -> dict[str, Any]:
 
 
 def _calculate_score(
-    answers: dict[str, Any], module_data: dict[str, Any]
-) -> tuple[float, dict[str, Any]]:
+    answers: Dict[str, Any], module_data: Dict[str, Any]
+) -> Tuple[float, Dict[str, Any]]:
     """Calculate total score from user answers using module.json scoring.
 
     Args:
@@ -373,7 +373,7 @@ def _build_tier_rankings(total_score: float, winning_tier: str) -> list[tuple[st
 
 
 def _calculate_confidence(
-    answers: dict[str, Any], scoring_details: dict[str, Any], total_score: float
+    answers: Dict[str, Any], scoring_details: Dict[str, Any], total_score: float
 ) -> float:
     """Calculate confidence in the recommendation.
 
@@ -412,7 +412,7 @@ def _calculate_confidence(
     return max(0.5, confidence)  # Minimum 50% confidence
 
 
-def _build_rationale(scoring_details: dict[str, Any], tier: str, total_score: float) -> list[str]:
+def _build_rationale(scoring_details: Dict[str, Any], tier: str, total_score: float) -> List[str]:
     """Build human-readable rationale for the recommendation.
 
     Args:
@@ -464,7 +464,7 @@ def _build_rationale(scoring_details: dict[str, Any], tier: str, total_score: fl
     return rationale[:6]  # Keep top 6 items
 
 
-def _persist_flags_via_manager(flag_ids: list[str], answers: dict[str, Any]) -> None:
+def _persist_flags_via_manager(flag_ids: List[str], answers: Dict[str, Any]) -> None:
     """
     Persist flags using Flag Manager service (CHECKPOINT 2-5 integration).
 
@@ -506,9 +506,9 @@ def _persist_flags_via_manager(flag_ids: list[str], answers: dict[str, Any]) -> 
             print(f"⚠️  Warning: Could not activate flag '{flag_id}': {e}")
 
 
-def _extract_flags_from_state(answers: dict[str, Any]) -> list[str]:
+def _extract_flags_from_state(answers: Dict[str, Any]) -> List[str]:
     """Extract flag IDs from the module state flags dictionary."""
-    flag_ids: list[str] = []
+    flag_ids: List[str] = []
     flags_map = answers.get("flags")
     if isinstance(flags_map, dict):
         for flag_key, value in flags_map.items():
@@ -531,7 +531,7 @@ def _extract_flags_from_state(answers: dict[str, Any]) -> list[str]:
     return ordered_flags
 
 
-def _extract_flags_from_answers(answers: dict[str, Any], module_data: dict[str, Any]) -> list[str]:
+def _extract_flags_from_answers(answers: Dict[str, Any], module_data: Dict[str, Any]) -> List[str]:
     """Extract flag IDs from answers by matching against module.json options.
 
     Note: The module engine should have already set these flags, but this
