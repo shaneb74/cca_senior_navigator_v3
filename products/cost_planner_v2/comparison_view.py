@@ -831,8 +831,7 @@ def _render_plan_selection_and_cta(recommended_tier: str, show_both: bool):
                 
                 if llm_mode == "shadow":
                     try:
-                        from ai.navi_engine import generate_safe
-                        from ai.schemas import CPContext
+                        from ai.navi_engine import generate_safe_with_normalization
                         
                         # Build context from available data
                         gcp_rec = st.session_state.get("gcp_care_recommendation", {})
@@ -860,8 +859,9 @@ def _render_plan_selection_and_cta(recommended_tier: str, show_both: bool):
                         if isinstance(gcp_rec, dict) and "top_reasons" in gcp_rec:
                             top_reasons = gcp_rec.get("top_reasons", [])[:3]
                         
-                        # Create context
-                        context = CPContext(
+                        # Generate advice with normalization (shadow mode - no UI changes)
+                        # This handles tier aliases and skips if tier is invalid
+                        success, advice = generate_safe_with_normalization(
                             tier=tier,
                             has_partner=has_partner,
                             move_preference=move_pref,
@@ -870,10 +870,8 @@ def _render_plan_selection_and_cta(recommended_tier: str, show_both: bool):
                             region=region,
                             flags=flags,
                             top_reasons=top_reasons,
+                            mode="shadow",
                         )
-                        
-                        # Generate advice (shadow mode - no UI changes)
-                        success, advice = generate_safe(context, mode="shadow")
                         
                         # Log for dev diagnostics only
                         if success and advice:

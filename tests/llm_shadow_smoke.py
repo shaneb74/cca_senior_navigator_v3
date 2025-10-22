@@ -5,9 +5,10 @@ Validates that the LLM integration can:
 1. Build valid CPContext from typical Cost Planner data
 2. Generate advice without errors
 3. Validate response against CPAdvice schema
+4. Handle tier normalization and forbidden terms
 """
 
-from ai.navi_engine import generate_safe
+from ai.navi_engine import generate_safe, generate_safe_with_normalization, normalize_tier, FORBIDDEN_TERMS
 from ai.schemas import CPContext
 
 
@@ -84,9 +85,9 @@ def test_shadow_mode_edge_cases():
     # Test 1: Minimal context
     print("\n[Test 1] Minimal context (no flags, no reasons)...")
     context_minimal = CPContext(
-        tier="independent_living",
+        tier="none",
         has_partner=False,
-        monthly_adjusted=3000.0,
+        monthly_adjusted=0.0,
         region="midwest",
     )
     success, advice = generate_safe(context_minimal, mode="shadow")
@@ -106,9 +107,9 @@ def test_shadow_mode_edge_cases():
     print(f"  Result: {'✅ Success' if success else '⚠️  Failed'}")
     
     # Test 3: Home care preference
-    print("\n[Test 3] Home care with keep_home=True...")
+    print("\n[Test 3] In-home care with keep_home=True...")
     context_home = CPContext(
-        tier="home_care",
+        tier="in_home",
         has_partner=True,
         keep_home=True,
         monthly_adjusted=4500.0,
@@ -124,7 +125,91 @@ def test_shadow_mode_edge_cases():
     print("="*60)
 
 
+def test_tier_normalization():
+    """Test tier normalization and forbidden terms filtering."""
+    
+    print("\n" + "="*60)
+    print("TIER NORMALIZATION & GUARDRAIL TESTS")
+    print("="*60)
+    
+    # Test 1: Alias normalization
+    print("\n[Test 1] Tier alias normalization...")
+    test_cases = [
+        ("in_home_care", "in_home"),
+        ("home_care", "in_home"),
+        ("no_care", "none"),
+        ("assisted_living", "assisted_living"),  # Already canonical
+        ("memory_care", "memory_care"),  # Already canonical
+    ]
+    
+    for input_tier, expected in test_cases:
+        result = normalize_tier(input_tier)
+        status = "✅" if result == expected else "❌"
+        print(f"  {status} '{input_tier}' → '{result}' (expected: '{expected}')")
+    
+    # Test 2: Forbidden tiers rejected
+    print("\n[Test 2] Forbidden tiers rejected...")
+    forbidden_tiers = ["skilled_nursing", "independent_living", "nursing_home", "invalid_tier"]
+    
+    for tier in forbidden_tiers:
+        result = normalize_tier(tier)
+        status = "✅" if result is None else "❌"
+        print(f"  {status} '{tier}' → {result} (expected: None)")
+    
+    # Test 3: Integration test with generate_safe_with_normalization
+    print("\n[Test 3] Integration: Alias normalization in generate_safe_with_normalization...")
+    success, advice = generate_safe_with_normalization(
+        tier="in_home_care",  # Alias
+        has_partner=False,
+        move_preference=None,
+        keep_home=True,
+        monthly_adjusted=3000.0,
+        region="midwest",
+        flags=[],
+        top_reasons=[],
+        mode="shadow",
+    )
+    print(f"  Result: {'✅ Success (alias normalized to in_home)' if success else '⚠️  Failed'}")
+    
+    # Test 4: Integration test with forbidden tier
+    print("\n[Test 4] Integration: Forbidden tier skipped...")
+    success, advice = generate_safe_with_normalization(
+        tier="skilled_nursing",  # Forbidden
+        has_partner=False,
+        move_preference=None,
+        keep_home=False,
+        monthly_adjusted=8000.0,
+        region="south",
+        flags=[],
+        top_reasons=[],
+        mode="shadow",
+    )
+    expected_fail = not success
+    status = "✅" if expected_fail else "❌"
+    print(f"  {status} Forbidden tier rejected: {expected_fail} (expected: True)")
+    
+    # Test 5: Check forbidden terms don't appear in advice
+    print("\n[Test 5] Forbidden terms filter...")
+    if success and advice:
+        has_forbidden = False
+        all_text = " ".join(advice.messages + advice.insights + advice.questions_next).lower()
+        for term in FORBIDDEN_TERMS:
+            if term in all_text:
+                print(f"  ❌ Found forbidden term: '{term}'")
+                has_forbidden = True
+        
+        if not has_forbidden:
+            print(f"  ✅ No forbidden terms found in advice")
+    else:
+        print(f"  ✅ No advice generated (forbidden tier correctly skipped)")
+    
+    print("\n" + "="*60)
+    print("TIER NORMALIZATION & GUARDRAIL TESTS COMPLETE")
+    print("="*60)
+
+
 if __name__ == "__main__":
     # Run smoke tests
     test_shadow_mode_basic()
     test_shadow_mode_edge_cases()
+    test_tier_normalization()

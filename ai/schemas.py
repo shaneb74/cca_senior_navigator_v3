@@ -5,7 +5,7 @@ Defines strict data models for Cost Planner context and LLM advice responses.
 All models use strict validation to prevent injection or malformed data.
 """
 
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -17,7 +17,7 @@ class CPContext(BaseModel):
     generating contextual advice for the user's care planning journey.
     
     Attributes:
-        tier: Care tier (independent_living, assisted_living, memory_care, etc.)
+        tier: Care tier (none, in_home, assisted_living, memory_care, memory_care_high_acuity)
         has_partner: Whether user has a partner/spouse
         move_preference: User's move timeline preference
         keep_home: Whether user wants to keep their home
@@ -27,7 +27,10 @@ class CPContext(BaseModel):
         top_reasons: Top 3 reasons for seeking care (mobility, memory, etc.)
     """
     
-    tier: str = Field(..., description="Care tier recommendation")
+    tier: Literal["none", "in_home", "assisted_living", "memory_care", "memory_care_high_acuity"] = Field(
+        ..., 
+        description="Care tier recommendation (canonical values only)"
+    )
     has_partner: bool = Field(..., description="Has spouse/partner")
     move_preference: Optional[str] = Field(None, description="Move timeline preference")
     keep_home: bool = Field(default=False, description="Wants to keep home")
@@ -35,22 +38,6 @@ class CPContext(BaseModel):
     region: str = Field(..., description="Geographic region")
     flags: list[str] = Field(default_factory=list, description="User context flags")
     top_reasons: list[str] = Field(default_factory=list, description="Top care reasons")
-    
-    @field_validator("tier")
-    @classmethod
-    def validate_tier(cls, v: str) -> str:
-        """Ensure tier is a known care level."""
-        valid_tiers = {
-            "independent_living",
-            "assisted_living",
-            "memory_care",
-            "memory_care_high_acuity",
-            "skilled_nursing",
-            "home_care",
-        }
-        if v not in valid_tiers:
-            raise ValueError(f"Invalid tier: {v}. Must be one of {valid_tiers}")
-        return v
     
     @field_validator("monthly_adjusted")
     @classmethod
