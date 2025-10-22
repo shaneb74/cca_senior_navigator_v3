@@ -97,6 +97,15 @@ else:
     st.session_state["dev_mode"] = False
 
 # ====================================================================
+# FEATURE FLAGS
+# ====================================================================
+
+# LLM Navi feature flag: off|shadow|assist|adjust (default: off)
+# Shadow mode = read-only logging, no UI changes
+if "FEATURE_LLM_NAVI" not in st.session_state:
+    st.session_state["FEATURE_LLM_NAVI"] = "shadow"  # Enable shadow mode for testing
+
+# ====================================================================
 # SESSION PERSISTENCE - Load state from disk
 # ====================================================================
 
