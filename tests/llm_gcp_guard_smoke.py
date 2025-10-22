@@ -8,6 +8,11 @@ Validates that the guarded GCP integration:
 4. Reconciles with deterministic recommendations correctly
 5. Provides per-section feedback with running tier estimates
 """
+import sys
+from pathlib import Path
+
+# Add project root to path
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from ai.gcp_navi_engine import (
     generate_gcp_advice,

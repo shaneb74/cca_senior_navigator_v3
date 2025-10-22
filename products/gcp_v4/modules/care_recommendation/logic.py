@@ -645,14 +645,18 @@ def derive_outcome(
     else:
         print(f"[GCP_GUARD] Cognitive gate PASSED (cog={cog_band} sup={sup_band}) - all tiers allowed")
     
-    # Apply behavior gate for moderate×high cases (if enabled)
-    if mc_behavior_gate_enabled() and cog_band == "moderate" and sup_band == "high":
-        risky = cognitive_gate_behaviors_only(answers, flags)
-        if not risky:
-            # Remove MC tiers from allowed set
+    # --- Behavior gate for moderate × high without risky behaviors ---
+    gate_on = mc_behavior_gate_enabled()
+    risky = cognitive_gate_behaviors_only(answers, flags)  # True iff any of COGNITIVE_HIGH_RISK present
+    print(f"[GCP_FLAG] MC_BEHAVIOR_GATE={gate_on} cog={cog_band} sup={sup_band} risky={risky} allowed_pre={sorted(list(allowed_tiers))}")
+    
+    if gate_on and cog_band == "moderate" and sup_band == "high" and not risky:
+        # remove MC and MC-HA from allowed before selecting det tier
+        if "memory_care" in allowed_tiers or "memory_care_high_acuity" in allowed_tiers:
             allowed_tiers.discard("memory_care")
             allowed_tiers.discard("memory_care_high_acuity")
-            print(f"[GCP_GUARD] Behavior gate: moderate×high without risky behaviors - MC/MC-HA blocked")
+            print(f"[GCP_GUARD] moderate×high without risky behaviors → remove {{'memory_care','memory_care_high_acuity'}} from allowed: {sorted(list(allowed_tiers))}")
+    # --- end behavior gate ---
     
     # ====================================================================
     # HOURS/DAY SUGGESTION (GUARDED): Baseline + LLM refinement
@@ -695,24 +699,31 @@ def derive_outcome(
             print(f"[GCP_HOURS_WARN] Hours suggestion failed: {e}")
     
     # Choose final deterministic tier
-    # Priority: mapping (if available and in allowed) > score-based (if in allowed) > downgrade to assisted_living
-    tier = None
+    # Priority: mapping (if available and in allowed) > score-based (if in allowed) > fallback to best permitted
+    chosen = None
     
     if tier_from_mapping and tier_from_mapping in allowed_tiers:
-        tier = tier_from_mapping
-        print(f"[GCP_GUARD] Using tier_map result: {tier} (mapping: {cog_band}×{sup_band})")
-    elif tier_from_score in allowed_tiers:
-        tier = tier_from_score
-        print(f"[GCP_GUARD] Using score-based tier: {tier} (score={total_score})")
+        chosen = tier_from_mapping
+        print(f"[GCP_GUARD] Using tier_map result: {chosen} (mapping: {cog_band}×{sup_band})")
+    elif tier_from_score and tier_from_score in allowed_tiers:
+        chosen = tier_from_score
+        print(f"[GCP_GUARD] Using score-based tier: {chosen} (score={total_score})")
     else:
-        # Downgrade to highest allowed tier
-        if tier_from_score in {"memory_care", "memory_care_high_acuity"}:
-            tier = "assisted_living"
-            print(f"[GCP_GUARD] MC blocked by cognitive gate → downgraded {tier_from_score} → {tier}")
-        else:
-            # Fallback
-            tier = "assisted_living"
-            print(f"[GCP_GUARD] Fallback to assisted_living (original tier={tier_from_score} not in allowed)")
+        # Fallback to best permitted tier given the map order: prefer assisted_living, else in_home, else none
+        for cand in ("assisted_living", "in_home", "none", "memory_care", "memory_care_high_acuity"):
+            if cand in allowed_tiers:
+                chosen = cand
+                print(f"[GCP_GUARD] fallback chosen tier={cand} due to constraints; mapping={tier_from_mapping} score={tier_from_score} allowed={sorted(list(allowed_tiers))}")
+                break
+    
+    det_tier = chosen or (tier_from_mapping or tier_from_score or "none")
+    
+    # Ensure MC/MC-HA is downgraded if not allowed (safety check)
+    if det_tier in {"memory_care", "memory_care_high_acuity"} and "memory_care" not in allowed_tiers:
+        print("[GCP_GUARD] forced downgrade: MC/MC-HA not allowed → det=assisted_living")
+        det_tier = "assisted_living"
+    
+    tier = det_tier
     
     # Persist recommendation category to session state for conditional rendering
     # This enables show_if conditions to access $state.recommendation.category
@@ -748,6 +759,7 @@ def derive_outcome(
                 pass  # Silent failure if streamlit not available
             
             # Generate LLM advice (with guardrails) - pass allowed_tiers to scope LLM
+            print(f"[GCP_FLAG] allowed_tiers_sent={sorted(list(allowed_tiers))}")
             ok, advice = generate_gcp_advice(gcp_context, mode=llm_mode, allowed_tiers=sorted(list(allowed_tiers)))
             
             if ok and advice:
