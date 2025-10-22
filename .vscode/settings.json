@@ -5,7 +5,9 @@
     "**/__pycache__/**": true,
     "**/_archive*/**": true,
     "**/archive/**": true,
-    "**/static/images/**": true
+    "**/static/images/**": true,
+    "**/docs/legacy/**": true,
+    "**/.streamlit/cache/**": true
   },
   "search.exclude": {
     "**/venv/**": true,
@@ -13,6 +15,8 @@
     "**/__pycache__/**": true,
     "**/_archive*/**": true,
     "**/archive/**": true,
-    "**/static/images/**": true
+    "**/static/images/**": true,
+    "**/docs/legacy/**": true,
+    "**/.streamlit/cache/**": true
   }
 }

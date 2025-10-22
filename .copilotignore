@@ -10,7 +10,9 @@ archive/
 *.bak??
 *.pyc
 static/images/**
-data/**            # if large seed data; adjust if needed
+data/**              # large seeds; adjust if you need them indexed
+.streamlit/cache/**
+docs/legacy/**
 _restore_tmp/
 CHANGELOG_*.md
 VERIFICATION_REPORT.md
