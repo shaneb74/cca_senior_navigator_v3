@@ -822,6 +822,77 @@ def _render_plan_selection_and_cta(recommended_tier: str, show_both: bool):
                     }
                 }
 
+                # ============================================================
+                # LLM SHADOW MODE: Generate contextual Navi advice (read-only)
+                # ============================================================
+                from core.flags import get_flag_value
+                
+                llm_mode = get_flag_value("FEATURE_LLM_NAVI", default="off")
+                
+                if llm_mode == "shadow":
+                    try:
+                        from ai.navi_engine import generate_safe
+                        from ai.schemas import CPContext
+                        
+                        # Build context from available data
+                        gcp_rec = st.session_state.get("gcp_care_recommendation", {})
+                        qualifiers = st.session_state.get("cost_v2_qualifiers", {})
+                        triage = st.session_state.get("cost_v2_triage", {})
+                        
+                        # Extract context variables
+                        tier = selected_breakdown.care_type or "assisted_living"
+                        has_partner = qualifiers.get("has_partner", False)
+                        move_pref = triage.get("move_preference")
+                        keep_home = qualifiers.get("keep_home", False)
+                        region = "national"  # TODO: Extract from zip_code region mapping
+                        
+                        # Build flags list
+                        flags = []
+                        if qualifiers.get("is_veteran"):
+                            flags.append("veteran")
+                        if qualifiers.get("is_homeowner"):
+                            flags.append("homeowner")
+                        if qualifiers.get("medicaid_planning"):
+                            flags.append("medicaid_planning_needed")
+                        
+                        # Build top reasons from GCP if available
+                        top_reasons = []
+                        if isinstance(gcp_rec, dict) and "top_reasons" in gcp_rec:
+                            top_reasons = gcp_rec.get("top_reasons", [])[:3]
+                        
+                        # Create context
+                        context = CPContext(
+                            tier=tier,
+                            has_partner=has_partner,
+                            move_preference=move_pref,
+                            keep_home=keep_home,
+                            monthly_adjusted=float(care_cost_monthly),
+                            region=region,
+                            flags=flags,
+                            top_reasons=top_reasons,
+                        )
+                        
+                        # Generate advice (shadow mode - no UI changes)
+                        success, advice = generate_safe(context, mode="shadow")
+                        
+                        # Log for dev diagnostics only
+                        if success and advice:
+                            print(
+                                f"[LLM_SHADOW] advice_valid=True "
+                                f"messages={len(advice.messages)} "
+                                f"insights={len(advice.insights)} "
+                                f"questions={len(advice.questions_next)} "
+                                f"adjustments={len(advice.proposed_adjustments or {})} "
+                                f"confidence={advice.confidence:.2f}"
+                            )
+                        else:
+                            print("[LLM_SHADOW] advice_valid=False (generation failed or disabled)")
+                    
+                    except Exception as e:
+                        # Silent failure - shadow mode must not affect user flow
+                        print(f"[LLM_SHADOW] Exception (silent): {e}")
+                # ============================================================
+
                 # Navigate to financial assessment
                 if "step" in st.query_params:
                     del st.query_params["step"]
