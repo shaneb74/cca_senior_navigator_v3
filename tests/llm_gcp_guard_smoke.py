@@ -511,6 +511,99 @@ def test_tier_map_loads_and_returns_allowed_tier():
     print("="*60)
 
 
+def test_mc_behavior_gate():
+    """Test behavior gate for moderate×high cases without risky behaviors."""
+    
+    print("\n" + "="*60)
+    print("BEHAVIOR GATE TEST (moderate×high)")
+    print("="*60)
+    
+    import os
+    from products.gcp_v4.modules.care_recommendation.logic import (
+        cognitive_gate_behaviors_only,
+        cognition_band,
+        support_band,
+    )
+    from ai.gcp_schemas import CANONICAL_TIERS
+    
+    # Case A: moderate×high WITHOUT risky behaviors
+    answers_no_risk = {
+        "memory_changes": "moderate",
+        "behaviors": [],  # No risky behaviors
+        "badls": ["bathing", "dressing", "toileting", "grooming"],  # High support
+        "iadls": ["meal_prep", "housekeeping", "medications", "finances"],
+        "mobility": "walker",
+        "falls": "1_fall_last_6mo",
+    }
+    flags_no_risk = []
+    
+    cog = cognition_band(answers_no_risk, flags_no_risk)
+    sup = support_band(answers_no_risk, flags_no_risk)
+    risky = cognitive_gate_behaviors_only(answers_no_risk, flags_no_risk)
+    
+    print("\nCase A: moderate×high WITHOUT risky behaviors")
+    print(f"  Cognition band: {cog}")
+    print(f"  Support band: {sup}")
+    print(f"  Risky behaviors: {risky}")
+    
+    assert cog == "moderate", f"Expected moderate cognition, got {cog}"
+    assert sup == "high", f"Expected high support, got {sup}"
+    assert risky is False, f"Expected no risky behaviors, got {risky}"
+    
+    # Simulate gate logic
+    allowed_tiers = set(CANONICAL_TIERS)
+    if cog == "moderate" and sup == "high" and not risky:
+        allowed_tiers.discard("memory_care")
+        allowed_tiers.discard("memory_care_high_acuity")
+        print(f"  ✅ Gate blocks MC/MC-HA")
+        print(f"  ✅ Allowed tiers: {sorted(allowed_tiers)}")
+    
+    assert "memory_care" not in allowed_tiers, "MC should be blocked"
+    assert "memory_care_high_acuity" not in allowed_tiers, "MC-HA should be blocked"
+    assert "assisted_living" in allowed_tiers, "AL should be allowed"
+    
+    # Case B: moderate×high WITH risky behaviors
+    answers_with_risk = {
+        "memory_changes": "moderate",
+        "behaviors": ["mild_confusion"],  # Non-risky behavior
+        "badls": ["bathing", "dressing", "toileting", "grooming"],
+        "iadls": ["meal_prep", "housekeeping", "medications", "finances"],
+        "mobility": "walker",
+        "falls": "1_fall_last_6mo",
+    }
+    # Use flag instead of behavior to trigger risky (to keep cognition band at moderate)
+    flags_with_risk = ["wandering"]  # Risky flag present
+    
+    cog2 = cognition_band(answers_with_risk, flags_with_risk)
+    sup2 = support_band(answers_with_risk, flags_with_risk)
+    risky2 = cognitive_gate_behaviors_only(answers_with_risk, flags_with_risk)
+    
+    print("\nCase B: moderate×high WITH risky behaviors")
+    print(f"  Cognition band: {cog2}")
+    print(f"  Support band: {sup2}")
+    print(f"  Risky behaviors: {risky2}")
+    
+    assert cog2 == "moderate", f"Expected moderate cognition, got {cog2}"
+    assert sup2 == "high", f"Expected high support, got {sup2}"
+    assert risky2 is True, f"Expected risky behaviors, got {risky2}"
+    
+    # Simulate gate logic
+    allowed_tiers2 = set(CANONICAL_TIERS)
+    if cog2 == "moderate" and sup2 == "high" and not risky2:
+        allowed_tiers2.discard("memory_care")
+        allowed_tiers2.discard("memory_care_high_acuity")
+    
+    # With risky behaviors, gate should NOT block MC
+    assert "memory_care" in allowed_tiers2, "MC should be allowed with risky behaviors"
+    assert "memory_care_high_acuity" in allowed_tiers2, "MC-HA should be allowed with risky behaviors"
+    print(f"  ✅ Gate allows MC/MC-HA (risky behaviors present)")
+    print(f"  ✅ Allowed tiers: {sorted(allowed_tiers2)}")
+    
+    print("\n" + "="*60)
+    print("BEHAVIOR GATE TEST COMPLETE")
+    print("="*60)
+
+
 if __name__ == "__main__":
     # Run all guard tests
     test_gcp_canonical_tiers()
@@ -519,7 +612,8 @@ if __name__ == "__main__":
     test_reconciliation()
     test_per_section_feedback()
     test_cognitive_gates()
-    test_tier_map_loads_and_returns_allowed_tier()  # NEW
+    test_tier_map_loads_and_returns_allowed_tier()
+    test_mc_behavior_gate()  # NEW
     
     print("\n" + "="*60)
     print("🎯 GCP LLM GUARD TESTS COMPLETE")

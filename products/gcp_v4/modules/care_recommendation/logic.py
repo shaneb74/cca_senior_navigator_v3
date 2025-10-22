@@ -9,6 +9,7 @@ This module respects module.json as the authoritative source of truth:
 """
 
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -21,6 +22,28 @@ try:
     FLAG_MANAGER_AVAILABLE = True
 except ImportError:
     FLAG_MANAGER_AVAILABLE = False
+
+
+def mc_behavior_gate_enabled() -> bool:
+    """Check if moderate×high behavior gate is enabled.
+    
+    Behavior gate prevents MC/MC-HA recommendations for moderate cognition + high support
+    cases UNLESS risky cognitive behaviors are present.
+    
+    Priority: Streamlit Secrets → environment variable → default (off)
+    
+    Returns:
+        True if gate is enabled
+    """
+    try:
+        import streamlit as st
+        v = st.secrets.get("FEATURE_GCP_MC_BEHAVIOR_GATE")
+        if v is not None:
+            return str(v).lower() == "on"
+    except Exception:
+        pass
+    
+    return os.getenv("FEATURE_GCP_MC_BEHAVIOR_GATE", "off").lower() == "on"
 
 
 # Tier thresholds based on total score
@@ -535,6 +558,15 @@ def derive_outcome(
         print(f"[GCP_GUARD] Cognitive gate FAILED (cog={cog_band} sup={sup_band}) - MC/MC-HA blocked")
     else:
         print(f"[GCP_GUARD] Cognitive gate PASSED (cog={cog_band} sup={sup_band}) - all tiers allowed")
+    
+    # Apply behavior gate for moderate×high cases (if enabled)
+    if mc_behavior_gate_enabled() and cog_band == "moderate" and sup_band == "high":
+        risky = cognitive_gate_behaviors_only(answers, flags)
+        if not risky:
+            # Remove MC tiers from allowed set
+            allowed_tiers.discard("memory_care")
+            allowed_tiers.discard("memory_care_high_acuity")
+            print(f"[GCP_GUARD] Behavior gate: moderate×high without risky behaviors - MC/MC-HA blocked")
     
     # Choose final deterministic tier
     # Priority: mapping (if available and in allowed) > score-based (if in allowed) > downgrade to assisted_living
