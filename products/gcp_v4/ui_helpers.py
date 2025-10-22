@@ -67,3 +67,74 @@ def render_gcp_navi_card():
     
     st.markdown("</div>", unsafe_allow_html=True)
     st.markdown("")  # Spacing after card
+
+
+def render_hours_suggestion():
+    """Render hours/day suggestion if enabled in assist mode.
+    
+    Displays a brief suggestion line for hours per day based on:
+    - Transparent baseline rules (ADLs, falls, mobility, safety)
+    - Optional LLM refinement (when available)
+    
+    Only renders if:
+    - FEATURE_GCP_HOURS = "assist"
+    - Hours suggestion available in session state
+    - User hasn't answered hours_per_day yet (or is reviewing)
+    
+    The suggestion is NON-BINDING - user remains in full control.
+    """
+    # Check if feature is enabled
+    try:
+        from products.gcp_v4.modules.care_recommendation.logic import gcp_hours_mode
+        mode = gcp_hours_mode()
+    except Exception:
+        return  # Can't check mode, skip
+    
+    if mode != "assist":
+        return  # Only render in assist mode
+    
+    # Check if suggestion is available
+    suggestion = st.session_state.get("_hours_suggestion")
+    if not suggestion:
+        return  # No suggestion to display
+    
+    # Extract data
+    band = suggestion.get("band")
+    baseline = suggestion.get("base")
+    confidence = suggestion.get("conf")
+    reasons = suggestion.get("reasons", [])
+    
+    if not band:
+        return  # No band to suggest
+    
+    # Map band to friendly text
+    band_text = {
+        "<1h": "less than 1 hour",
+        "1-3h": "1–3 hours",
+        "4-8h": "4–8 hours",
+        "24h": "24-hour support",
+    }.get(band, band)
+    
+    # Render suggestion (compact, non-intrusive)
+    st.markdown(
+        f"<div style='background-color: #f9f9f9; padding: 0.75rem 1rem; border-radius: 0.5rem; "
+        f"border-left: 3px solid #6c757d; margin-bottom: 1rem;'>",
+        unsafe_allow_html=True,
+    )
+    
+    # Main suggestion line
+    st.markdown(f"💡 **Navi suggests {band_text}/day** based on your answers", unsafe_allow_html=True)
+    
+    # Show top reason if available
+    if reasons and len(reasons) > 0:
+        st.markdown(f"<small style='color: #6c757d;'>• {reasons[0]}</small>", unsafe_allow_html=True)
+    
+    # Show confidence if LLM refined (not baseline fallback)
+    if confidence is not None and confidence > 0:
+        conf_pct = int(confidence * 100)
+        st.markdown(
+            f"<small style='color: #6c757d;'>Confidence: {conf_pct}%</small>",
+            unsafe_allow_html=True,
+        )
+    
+    st.markdown("</div>", unsafe_allow_html=True)

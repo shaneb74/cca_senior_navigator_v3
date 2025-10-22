@@ -81,6 +81,10 @@ def render():
         # and outcomes in st.session_state[f"{config.state_key}._outcomes"]
         module_state = run_module(config)
 
+        # HOURS/DAY SUGGESTION: Render suggestion hint if on daily_living section in assist mode
+        # This must come AFTER run_module so the question is already rendered
+        _render_hours_suggestion_if_needed(config, current_step_index)
+
         # PER-SECTION LLM SHADOW FEEDBACK
         # Track section completion and trigger LLM feedback for each section
         current_step_index = module_state.get("_step", 0)
@@ -259,6 +263,48 @@ def _build_next_step_reason(outcome: dict) -> str:
         return f"Calculate financial impact of {tier} care"
     else:
         return "Complete your care assessment for a personalized recommendation"
+
+
+def _render_hours_suggestion_if_needed(config: ModuleConfig, current_step_index: int) -> None:
+    """Render hours/day suggestion if on daily_living section in assist mode.
+    
+    Displays a non-binding suggestion for hours per day based on user's answers.
+    Only renders if:
+    - FEATURE_GCP_HOURS = "assist"
+    - Currently on daily_living section
+    - Hours suggestion computed and stored in session state
+    
+    Args:
+        config: Module configuration
+        current_step_index: Current step index (0-based)
+    """
+    try:
+        # Check if we're on daily_living section
+        if current_step_index < 0 or current_step_index >= len(config.steps):
+            return
+        
+        current_step = config.steps[current_step_index]
+        if current_step.id != "daily_living":
+            return  # Only render on daily_living section
+        
+        # Check if hours suggestion feature is enabled
+        from products.gcp_v4.modules.care_recommendation.logic import gcp_hours_mode
+        mode = gcp_hours_mode()
+        
+        if mode != "assist":
+            return  # Only render in assist mode
+        
+        # Check if suggestion exists
+        if "_hours_suggestion" not in st.session_state:
+            return  # No suggestion computed yet
+        
+        # Render suggestion UI
+        from products.gcp_v4.ui_helpers import render_hours_suggestion
+        render_hours_suggestion()
+    
+    except Exception as e:
+        # Never fail the flow - just log
+        print(f"[GCP_HOURS_UI_ERROR] Failed to render hours suggestion: {e}")
 
 
 def _trigger_section_llm_feedback(config: ModuleConfig, module_state: dict, current_step_index: int) -> None:

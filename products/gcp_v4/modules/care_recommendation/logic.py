@@ -46,6 +46,33 @@ def mc_behavior_gate_enabled() -> bool:
     return os.getenv("FEATURE_GCP_MC_BEHAVIOR_GATE", "off").lower() == "on"
 
 
+def gcp_hours_mode() -> str:
+    """Check hours/day suggestion feature mode.
+    
+    Controls hours/day baseline + LLM refinement:
+    - "off": No suggestion (default)
+    - "shadow": Compute suggestion but don't show in UI (logging only)
+    - "assist": Show suggestion to user (non-binding)
+    
+    Priority: Streamlit Secrets → environment variable → default (off)
+    
+    Returns:
+        Mode string: "off" | "shadow" | "assist"
+    """
+    try:
+        import streamlit as st
+        v = st.secrets.get("FEATURE_GCP_HOURS")
+        if v is not None:
+            mode = str(v).lower()
+            if mode in {"off", "shadow", "assist"}:
+                return mode
+    except Exception:
+        pass
+    
+    mode = os.getenv("FEATURE_GCP_HOURS", "off").lower()
+    return mode if mode in {"off", "shadow", "assist"} else "off"
+
+
 # Tier thresholds based on total score
 # CRITICAL: These are the ONLY 5 allowed tier values
 TIER_THRESHOLDS = {
@@ -490,6 +517,65 @@ def _build_gcp_context(answers: dict[str, Any], context: dict[str, Any]) -> Any:
     )
 
 
+def _build_hours_context(answers: dict[str, Any], flags: list[str]) -> Any:
+    """Build HoursContext for hours/day suggestion.
+    
+    Extracts minimal signals from answers for baseline + LLM refinement.
+    
+    Args:
+        answers: User responses
+        flags: Flag IDs (e.g., ["wandering", "aggression"])
+    
+    Returns:
+        HoursContext instance (from ai.hours_schemas)
+    """
+    from ai.hours_schemas import HoursContext
+    
+    # Count BADLs
+    badls = answers.get("badls", [])
+    if not isinstance(badls, list):
+        badls = []
+    badls_count = len(badls)
+    
+    # Count IADLs
+    iadls = answers.get("iadls", [])
+    if not isinstance(iadls, list):
+        iadls = []
+    iadls_count = len(iadls)
+    
+    # Falls
+    falls = answers.get("falls", "none")
+    
+    # Mobility
+    mobility = answers.get("mobility", "independent")
+    
+    # Risky behaviors (check flags)
+    risky_behaviors = bool(set(flags) & COGNITIVE_HIGH_RISK)
+    
+    # Meds complexity
+    meds_complexity = answers.get("meds_complexity", "none")
+    
+    # Primary support
+    primary_support = answers.get("primary_support", "none")
+    
+    # Overnight needed (heuristic: help_overall == "full_support" or 24h current)
+    help_overall = answers.get("help_overall", "independent")
+    current_hours = answers.get("hours_per_day")
+    overnight_needed = (help_overall == "full_support" or current_hours == "24h")
+    
+    return HoursContext(
+        badls_count=badls_count,
+        iadls_count=iadls_count,
+        falls=falls,
+        mobility=mobility,
+        risky_behaviors=risky_behaviors,
+        meds_complexity=meds_complexity,
+        primary_support=primary_support,
+        overnight_needed=overnight_needed,
+        current_hours=current_hours,
+    )
+
+
 def derive_outcome(
     answers: dict[str, Any], context: dict[str, Any] = None, config: dict[str, Any] = None
 ) -> dict[str, Any]:
@@ -567,6 +653,46 @@ def derive_outcome(
             allowed_tiers.discard("memory_care")
             allowed_tiers.discard("memory_care_high_acuity")
             print(f"[GCP_GUARD] Behavior gate: moderate×high without risky behaviors - MC/MC-HA blocked")
+    
+    # ====================================================================
+    # HOURS/DAY SUGGESTION (GUARDED): Baseline + LLM refinement
+    # ====================================================================
+    # Compute hours/day suggestion if enabled (shadow/assist mode)
+    hours_mode = gcp_hours_mode()
+    if hours_mode in {"shadow", "assist"}:
+        try:
+            from ai.hours_engine import baseline_hours, generate_hours_advice
+            
+            # Build context
+            hours_ctx = _build_hours_context(answers, flags)
+            
+            # Get baseline
+            baseline = baseline_hours(hours_ctx)
+            
+            # Get LLM refinement
+            ok, advice = generate_hours_advice(hours_ctx, hours_mode)
+            
+            # Store suggestion in session state
+            try:
+                import streamlit as st
+                st.session_state["_hours_suggestion"] = {
+                    "band": advice.band if (ok and advice) else baseline,
+                    "base": baseline,
+                    "conf": advice.confidence if (ok and advice) else None,
+                    "reasons": advice.reasons if (ok and advice) else [],
+                    "mode": hours_mode,
+                }
+            except Exception:
+                pass
+            
+            # Log (dev-only)
+            if ok and advice:
+                print(f"[GCP_HOURS_{hours_mode.upper()}] base={baseline} llm={advice.band} conf={advice.confidence:.2f}")
+            else:
+                print(f"[GCP_HOURS_{hours_mode.upper()}] base={baseline} llm=None (fallback to baseline)")
+        
+        except Exception as e:
+            print(f"[GCP_HOURS_WARN] Hours suggestion failed: {e}")
     
     # Choose final deterministic tier
     # Priority: mapping (if available and in allowed) > score-based (if in allowed) > downgrade to assisted_living

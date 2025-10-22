@@ -256,6 +256,34 @@ else:
 - **Purpose:** AI-generated guidance messages
 - **Fallback:** Stock copy if disabled
 
+### **Hours/Day Suggestion** (Guarded Hybrid)
+- **Flag:** `FEATURE_GCP_HOURS` (`off` | `shadow` | `assist`)
+- **Modules:** `ai/hours_schemas.py`, `ai/hours_engine.py`
+- **Purpose:** Suggest hours/day of care support using baseline + LLM refinement
+- **Architecture:**
+  - **Baseline:** Transparent rule-based logic (ADLs, falls, mobility, safety)
+    - `<1h`: Minimal support (0-1 BADLs, independent)
+    - `1-3h`: Moderate support (2 BADLs or 3+ IADLs or mobility aid)
+    - `4-8h`: Substantial support (3+ BADLs or multiple falls or risky behaviors)
+    - `24h`: Round-the-clock care (only via LLM escalation from 4-8h floor)
+  - **LLM Refinement:** Schema-validated adjustment (max ±1 step from baseline)
+    - Pydantic v2 validation ensures only 4 allowed bands
+    - Off-menu outputs (e.g., "2-4h", "6h") rejected
+    - Provides 1-3 short reasons + confidence score
+  - **Modes:**
+    - `off`: No suggestion (default)
+    - `shadow`: Compute suggestion, log to console, no UI
+    - `assist`: Show suggestion to user (non-binding hint)
+- **Integration Points:**
+  - `logic.py`: Builds `HoursContext` from answers/flags, calls engine
+  - `product.py`: Renders suggestion UI on daily_living section (assist only)
+  - `ui_helpers.py`: Formats suggestion as compact hint above question
+- **Guardrails:**
+  - User always in control (suggestion is NON-BINDING)
+  - Baseline rules documented and tunable
+  - LLM cannot invent bands outside 4 allowed values
+  - Shadow mode enables safe A/B testing before assist rollout
+
 ---
 
 ## 🧪 Testing Strategy
