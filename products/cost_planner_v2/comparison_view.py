@@ -825,9 +825,9 @@ def _render_plan_selection_and_cta(recommended_tier: str, show_both: bool):
                 # ============================================================
                 # LLM SHADOW MODE: Generate contextual Navi advice (read-only)
                 # ============================================================
-                from core.flags import get_flag_value
-                
-                llm_mode = get_flag_value("FEATURE_LLM_NAVI", default="off")
+                # Read FEATURE_LLM_NAVI flag from session state
+                # Values: off|shadow|assist|adjust (default: off)
+                llm_mode = st.session_state.get("FEATURE_LLM_NAVI", "off")
                 
                 if llm_mode == "shadow":
                     try:
