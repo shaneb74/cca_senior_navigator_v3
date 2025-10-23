@@ -773,3 +773,10 @@ def render_navi_panel_v2(
     panel_html = f'<div class="navi-panel-v2 {variant_class}"><div class="navi-panel-v2__header"><div class="navi-panel-v2__eyebrow">✨ Navi</div>{progress_badge}</div>{alert_section}<div class="navi-panel-v2__title">{title}</div><div class="navi-panel-v2__reason">{reason}</div><div class="navi-panel-v2__encouragement navi-panel-v2__encouragement--{status}"><span style="font-size: 18px;">{encouragement.get("icon", "💪")}</span><span>{encouragement.get("text", "")}</span></div>{chips_html}{actions_html}</div>'
 
     st.markdown(panel_html, unsafe_allow_html=True)
+    
+    # HOURS/DAY NUDGE: Render inside top Navi header if in assist mode and user under-selected
+    try:
+        from products.gcp_v4.ui_helpers import render_navi_header_message
+        render_navi_header_message()
+    except Exception:
+        pass  # Gracefully skip if not available or error

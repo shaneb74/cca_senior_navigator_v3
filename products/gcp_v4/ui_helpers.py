@@ -215,3 +215,74 @@ def render_hours_nudge():
         f"based on {', '.join(sugg.get('reasons', [])[:2]) or 'your care needs'}. \n\n"
         f"{sugg['nudge_text']}"
     )
+
+
+def render_navi_header_message():
+    """Render hours/day nudge in TOP Navi header with optional chime.
+    
+    Displays a condensed nudge message inside the Navi header when:
+    - FEATURE_GCP_HOURS = "assist"
+    - User under-selected hours per day
+    - Nudge text has been generated
+    
+    Also plays a one-time chime when a new nudge appears (optional, graceful if audio missing).
+    """
+    import os
+    import streamlit as st
+    import base64
+    import pathlib
+    
+    # Check if assist mode is enabled
+    mode = None
+    try:
+        mode = st.secrets.get("FEATURE_GCP_HOURS")
+    except Exception:
+        pass
+    if not mode:
+        mode = os.getenv("FEATURE_GCP_HOURS", "off")
+    
+    if str(mode).lower() != "assist":
+        return
+    
+    sugg = st.session_state.get("_hours_suggestion")
+    if not sugg:
+        return
+    
+    nudge = (sugg.get("nudge_text") or "").strip()
+    if not nudge:
+        return
+    
+    # Compose the condensed header message (one short sentence)
+    band = sugg.get("band")
+    user = sugg.get("user") or "-"
+    header_line = f"**Navi** suggests **{band} hours/day** (you selected **{user}**). {nudge}"
+    
+    # Render inside the top Navi dialog
+    st.markdown(
+        f"<div id='navi-header-hours' style='margin-top:0.5rem; padding:12px 16px; "
+        f"background:#fff3cd; border:1px solid #ffc107; border-radius:8px; color:#856404; "
+        f"font-size:15px; line-height:1.5;'>"
+        f"{header_line}</div>",
+        unsafe_allow_html=True
+    )
+    
+    # Play chime once when a new nudge appears (optional)
+    if st.session_state.get("_hours_nudge_new"):
+        try:
+            p = pathlib.Path('assets/audio/chime.mp3')
+            if p.exists():
+                data = p.read_bytes()
+                b64 = base64.b64encode(data).decode()
+                # Autoplay audio via tiny HTML block; one-time per new nudge key
+                st.markdown(
+                    f"""
+                    <audio autoplay style="display:none">
+                      <source src="data:audio/mpeg;base64,{b64}" type="audio/mpeg">
+                    </audio>
+                    """,
+                    unsafe_allow_html=True
+                )
+        except Exception:
+            pass
+        # Immediately clear the new flag so it won't replay on minor reruns
+        st.session_state["_hours_nudge_new"] = False

@@ -340,7 +340,7 @@ def _recompute_hours_suggestion_if_needed(config: ModuleConfig, module_state: di
                     advice.severity = severity
         
         # Store suggestion in session state
-        st.session_state["_hours_suggestion"] = {
+        sugg = {
             "band": suggested,
             "base": baseline,
             "llm": advice.band if (ok and advice) else None,
@@ -351,6 +351,23 @@ def _recompute_hours_suggestion_if_needed(config: ModuleConfig, module_state: di
             "nudge_text": nudge_text,
             "severity": severity,
         }
+        
+        # Detect new nudge event for one-time notification
+        prev_key = st.session_state.get("_hours_nudge_key")
+        curr_key = None
+        if sugg.get("nudge_text"):
+            # Build a simple change key from (user, suggested)
+            user_selection = sugg.get("user") or "-"
+            suggested_band = sugg.get("band") or "-"
+            curr_key = f"{user_selection}->{suggested_band}"
+        
+        st.session_state["_hours_suggestion"] = sugg
+        
+        if curr_key and curr_key != prev_key:
+            st.session_state["_hours_nudge_key"] = curr_key
+            st.session_state["_hours_nudge_new"] = True
+        else:
+            st.session_state["_hours_nudge_new"] = False
         
         # Log (dev-only) - include user selection
         user_choice = user_band or "-"
