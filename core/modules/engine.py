@@ -1038,48 +1038,15 @@ def _render_results_view(mod: dict[str, Any], config: ModuleConfig) -> None:
         rec_text = "Your Guided Care Plan"
 
     # ========================================
-    # 1. NAVI ANNOUNCES THE RECOMMENDATION
+    # 1. CLEAN CONVERSATIONAL SUMMARY (LLM-powered)
     # ========================================
-    # Navi says: "Based on your answers, here's what I recommend:"
-    # Then shows the recommendation in her panel
-
-    from core.ui import render_navi_panel_v2
-
-    # Build Navi guidance with recommendation
-    navi_title = "Great job! Based on your answers, here's what I recommend:"
-    navi_reason = rec_text
-
-    # Calculate question completeness for contextual message
-    answered_count = 0
-    total_count = 0
-    for step in config.steps:
-        if not step.fields:
-            continue
-        for field in step.fields:
-            if field.required:
-                total_count += 1
-                value = mod.get(field.key)
-                if value is not None and value != "" and value != []:
-                    answered_count += 1
-
-    unanswered_count = total_count - answered_count
-
-    # Add contextual encouragement message
-    # If questions were skipped, let user know they can get a more reliable recommendation
-    # Otherwise, reassure them the plan can evolve
-    if unanswered_count > 0:
-        encouragement_text = f"You skipped {unanswered_count} question{'s' if unanswered_count > 1 else ''}. I can give a more reliable recommendation with more information—feel free to retake this assessment anytime."
-    else:
-        encouragement_text = "Your care plan can evolve as your needs change. You can retake this assessment anytime to get an updated recommendation."
-
-    render_navi_panel_v2(
-        title=navi_title,
-        reason=navi_reason,
-        encouragement={"icon": "💬", "text": encouragement_text, "status": "complete"},
-        context_chips=[],
-        primary_action={"label": "", "route": ""},
-        variant="module",
-    )
+    # Render single bordered Navi box with tier, quote, and guidance
+    # This replaces the old render_navi_panel_v2() call to avoid duplication
+    try:
+        from products.gcp_v4.ui_helpers import render_clean_summary
+        render_clean_summary()
+    except Exception:
+        pass  # Gracefully skip if not available
 
     st.markdown("<div style='margin: 32px 0;'></div>", unsafe_allow_html=True)
 
@@ -1113,19 +1080,7 @@ def _render_results_view(mod: dict[str, Any], config: ModuleConfig) -> None:
             clarity_message = "Near boundary — consider reviewing"
 
     # ========================================
-    # 2b. CLEAN CONVERSATIONAL SUMMARY (LLM-powered)
-    # ========================================
-    # Render clean Navi explanation with quote-style header
-    try:
-        from products.gcp_v4.ui_helpers import render_clean_summary
-        render_clean_summary()
-    except Exception:
-        pass  # Gracefully skip if not available
-
-    st.markdown("<div style='margin: 40px 0;'></div>", unsafe_allow_html=True)
-
-    # ========================================
-    # 3. NEXT ACTIONS - Three Simple Buttons
+    # 2. NEXT ACTIONS - Three Simple Buttons
     # ========================================
 
     col1, col2, col3 = st.columns([1, 1, 1])

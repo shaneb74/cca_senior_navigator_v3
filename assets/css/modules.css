@@ -1668,4 +1668,11 @@ div[data-testid="stVerticalBlock"]:has(.chip-wrap.is-active) .stButton > button{
   margin-bottom: .75rem;
 }
 
+/* Compact Navi header hours hint */
+#navi-compact {
+  margin-top: .25rem;
+  color: #0d1f4b;
+  font-size: .95rem;
+}
+
 
