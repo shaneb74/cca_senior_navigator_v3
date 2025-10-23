@@ -47,30 +47,16 @@ def mc_behavior_gate_enabled() -> bool:
 
 
 def gcp_hours_mode() -> str:
-    """Check hours/day suggestion feature mode.
-    
-    Controls hours/day baseline + LLM refinement:
-    - "off": No suggestion (default)
-    - "shadow": Compute suggestion but don't show in UI (logging only)
-    - "assist": Show suggestion to user (non-binding)
-    
-    Priority: Streamlit Secrets → environment variable → default (off)
-    
-    Returns:
-        Mode string: "off" | "shadow" | "assist"
-    """
+    """Resolve FEATURE_GCP_HOURS flag from secrets or environment."""
+    import streamlit as st, os
     try:
-        import streamlit as st
         v = st.secrets.get("FEATURE_GCP_HOURS")
-        if v is not None:
-            mode = str(v).lower()
-            if mode in {"off", "shadow", "assist"}:
-                return mode
+        if v:
+            return str(v).strip().strip('"').lower()
     except Exception:
         pass
-    
-    mode = os.getenv("FEATURE_GCP_HOURS", "off").lower()
-    return mode if mode in {"off", "shadow", "assist"} else "off"
+    v = os.getenv("FEATURE_GCP_HOURS")
+    return str(v).strip().strip('"').lower() if v else "off"
 
 
 # Tier thresholds based on total score
