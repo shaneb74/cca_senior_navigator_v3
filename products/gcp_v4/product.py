@@ -106,6 +106,7 @@ def render():
 
         # Force compute summary advice BEFORE any UI on RESULTS
         if is_on_results_step:
+            print("[GCP_RENDER] Entering RESULTS step, preparing summary advice")
             try:
                 state_pre = st.session_state.get(state_key, {})
                 from products.gcp_v4.modules.care_recommendation.flags import build_flags as _build_flags
@@ -118,12 +119,29 @@ def render():
                 
                 if tier_pre:
                     mode = get_feature_gcp_mode()
-                    # Show spinner only in assist mode (visible LLM work)
-                    if mode == "assist":
-                        with st.spinner("Summarizing your recommendation…"):
-                            ensure_summary_ready(state_pre, flags_pre, tier_pre)
-                    else:
+                    
+                    # Debounce duplicate LLM calls - check cache first
+                    if "gcp.llm_result" in st.session_state and st.session_state.get("summary_ready"):
+                        # Use cached result, no spinner needed
                         ensure_summary_ready(state_pre, flags_pre, tier_pre)
+                        print(f"[GCP_RENDER] RESULTS summary from cache for tier={tier_pre}")
+                    else:
+                        # Process summary (loading UI handled by module engine)
+                        ensure_summary_ready(state_pre, flags_pre, tier_pre)
+                        print(f"[GCP_RENDER] RESULTS summary processed for tier={tier_pre}")
+                
+                # PARTNER FLOW INTERSTITIAL
+                # After summary ready, check if we should show partner assessment option
+                try:
+                    from products.gcp_v4.partner_flow import should_show_partner_interstitial, render_partner_interstitial
+                    has_partner = st.session_state.get("has_partner", False) or ("has_partner" in (flags_pre or []))
+                    if should_show_partner_interstitial(has_partner):
+                        render_partner_interstitial()
+                        # If interstitial is showing, return early (user needs to make decision)
+                        return
+                except Exception:
+                    # Never block UI if partner flow fails
+                    pass
             except Exception:
                 # Never block UI if precompute fails
                 pass
@@ -201,6 +219,72 @@ def render():
                 gcp_outcome = derive_outcome(module_state)
                 _publish_to_mcip(gcp_outcome, module_state)
                 _mark_published()
+                
+                # HOUSEHOLD FLOW: Save CarePlan for current person
+                try:
+                    from products.gcp_v4.partner_flow import is_partner_mode
+                    from core.household import set_careplan_for, ensure_household_state, get_careplan_for
+                    from core.models import CarePlan
+                    
+                    # Determine current person
+                    in_partner_mode = is_partner_mode()
+                    if in_partner_mode:
+                        person_id = st.session_state.get("person.partner_id")
+                    else:
+                        person_id = st.session_state.get("person.primary_id")
+                    
+                    if not person_id:
+                        # First time through - create primary person
+                        from core.household import add_person
+                        hh = ensure_household_state(st)
+                        person = add_person(st, role="primary", zip=hh.zip)
+                        person_id = person.uid
+                    
+                    # Only save if we're on RESULTS and don't already have a CarePlan
+                    existing_cp = get_careplan_for(st, person_id) if person_id else None
+                    if person_id and is_on_results_step and not existing_cp:
+                        # Get adjudication decision for metadata
+                        adjudication = st.session_state.get("gcp.adjudication_decision", {})
+                        final_tier = st.session_state.get("gcp.final_tier")
+                        det_tier = gcp_outcome.get("tier")
+                        
+                        # Calculate alt_tier (the non-chosen tier)
+                        alt_tier = None
+                        if final_tier != det_tier:
+                            if adjudication.get("source") == "llm":
+                                alt_tier = det_tier  # LLM chosen, det was alternative
+                            else:
+                                alt_tier = adjudication.get("llm")  # Det chosen, LLM was alternative
+                        
+                        # Build CarePlan with adjudication metadata
+                        cp = CarePlan(
+                            person_id=person_id,
+                            det_tier=det_tier,
+                            llm_tier=adjudication.get("llm"),
+                            final_tier=final_tier,
+                            confidence=gcp_outcome.get("confidence", 0.0),
+                            allowed_tiers=list(gcp_outcome.get("allowed_tiers", [])) if "allowed_tiers" in gcp_outcome else [],
+                            bands={},  # TODO: Extract from outcome if needed
+                            risky_behaviors=gcp_outcome.get("risky_behaviors", False),
+                            hours_suggested=st.session_state.get("_hours_suggestion", {}).get("band"),
+                            hours_user=st.session_state.get("gcp_hours_user_choice"),
+                            # New adjudication metadata
+                            source=adjudication.get("source"),
+                            alt_tier=alt_tier,
+                            llm_confidence=adjudication.get("conf"),
+                            adjudication_reason=adjudication.get("adjudication_reason")
+                        )
+                        set_careplan_for(st, person_id, cp)
+                        role = "partner" if in_partner_mode else "primary"
+                        print(f"[HOUSEHOLD_FLOW] Saved {role} CarePlan: {cp.uid}")
+                        
+                        # If partner mode complete, clear partner mode flag
+                        if in_partner_mode:
+                            from products.gcp_v4.partner_flow import complete_partner_flow
+                            complete_partner_flow()
+                except Exception:
+                    pass  # Don't fail if household handling fails
+                
             except Exception as e:
                 st.error(f"❌ Error saving recommendation: {e}")
                 import traceback
@@ -275,17 +359,21 @@ def _publish_to_mcip(outcome, module_state: dict) -> None:
     final_tier = st.session_state.get("gcp.final_tier")
     if final_tier:
         outcome_data["tier"] = final_tier
+        print(f"[GCP_PUBLISH] Using adjudicated tier: {final_tier} (overriding deterministic: {outcome_data.get('tier')})")
+    else:
+        print(f"[GCP_PUBLISH] Using deterministic tier: {outcome_data.get('tier')} (no adjudication)")
 
-    # Validate required fields
-    if not outcome_data.get("tier"):
+    # Validate required fields - use the final adjudicated tier
+    chosen_tier = outcome_data.get("tier")
+    if not chosen_tier:
         st.error("❌ Unable to generate recommendation - missing tier")
         return
 
-    # Build CareRecommendation contract
+    # Build CareRecommendation contract with chosen (adjudicated) tier
     try:
         recommendation = CareRecommendation(
-            # Core recommendation
-            tier=outcome_data["tier"],
+            # Core recommendation - MUST use chosen tier (not deterministic)
+            tier=chosen_tier,
             tier_score=float(outcome_data.get("tier_score", 0.0)),
             tier_rankings=outcome_data.get("tier_rankings", []),
             confidence=float(outcome_data.get("confidence", 0.0)),
@@ -664,7 +752,15 @@ def _handle_restart_if_needed(config: ModuleConfig) -> None:
     if "gcp_v4_published" in st.session_state:
         del st.session_state["gcp_v4_published"]
 
-    # 5. Reset MCIP GCP completion (but preserve Cost Planner!)
+    # 5. Clear LLM cache to force fresh generation
+    if "gcp.llm_result_ready" in st.session_state:
+        del st.session_state["gcp.llm_result_ready"]
+    if "_summary_ready" in st.session_state:
+        del st.session_state["_summary_ready"]
+    if "_summary_advice" in st.session_state:
+        del st.session_state["_summary_advice"]
+
+    # 6. Reset MCIP GCP completion (but preserve Cost Planner!)
     try:
         from core.mcip import MCIP
 

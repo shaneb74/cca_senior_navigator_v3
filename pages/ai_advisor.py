@@ -517,8 +517,99 @@ def _get_navi_response(user_input: str) -> str:
 
 
 def _render_typing_indicator():
-    """Show Navi thinking animation for 600-900ms."""
-    with st.spinner("✨ Navi is thinking..."):
+    """Show Navi thinking animation for 600-900ms with enhanced visibility."""
+    # Create a prominent thinking indicator
+    thinking_container = st.container()
+    with thinking_container:
+        st.markdown("""
+        <div class="navi-thinking-indicator">
+            <div class="thinking-content">
+                <span class="thinking-icon">✨</span>
+                <span class="thinking-text">Navi is thinking...</span>
+                <div class="thinking-dots">
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                </div>
+            </div>
+        </div>
+        <style>
+        .navi-thinking-indicator {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px 16px;
+            margin: 16px 0;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(139, 92, 246, 0.05));
+            border: 2px solid rgba(59, 130, 246, 0.15);
+            border-radius: 16px;
+            box-shadow: 0 4px 16px rgba(59, 130, 246, 0.1);
+            animation: thinking-pulse 2s ease-in-out infinite;
+        }
+        
+        .thinking-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--brand-700);
+        }
+        
+        .thinking-icon {
+            font-size: 1.3rem;
+            animation: thinking-sparkle 1.5s ease-in-out infinite;
+        }
+        
+        .thinking-text {
+            font-weight: 700;
+        }
+        
+        .thinking-dots {
+            display: flex;
+            gap: 4px;
+        }
+        
+        .thinking-dots .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--brand-600);
+            animation: thinking-bounce 1.4s ease-in-out infinite;
+        }
+        
+        .thinking-dots .dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .thinking-dots .dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes thinking-pulse {
+            0%, 100% { 
+                border-color: rgba(59, 130, 246, 0.15);
+                box-shadow: 0 4px 16px rgba(59, 130, 246, 0.1);
+            }
+            50% { 
+                border-color: rgba(59, 130, 246, 0.25);
+                box-shadow: 0 6px 20px rgba(59, 130, 246, 0.15);
+            }
+        }
+        
+        @keyframes thinking-sparkle {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.1) rotate(180deg); }
+        }
+        
+        @keyframes thinking-bounce {
+            0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+            40% { transform: scale(1.2); opacity: 1; }
+        }
+        </style>
+        """, unsafe_allow_html=True)
+        
+        # Keep the original spinner timing
         time.sleep(random.uniform(0.6, 0.9))
 
 

@@ -60,16 +60,46 @@ def _get_gcp_hours_per_day() -> float:
 # MAIN ENTRY POINT
 # ==============================================================================
 
-def render_comparison_view(zip_code: str):
+def render_comparison_view(zip_code: str | None):
     """
     Render comparison view with side-by-side cost breakdowns.
     
     Shows facility (left) vs in-home (right) based on GCP recommendation.
     Includes interactive sliders for home carry cost and in-home hours.
     
+    ZIP gating: Layout always renders (controlled by view_mode).
+    If ZIP missing, show placeholder cards with warning banner.
+    
     Args:
-        zip_code: ZIP code for regional pricing
+        zip_code: ZIP code for regional pricing (None if not provided yet)
     """
+    
+    # Check if ZIP is present for compute gating
+    has_zip = bool(zip_code and len(str(zip_code)) == 5)
+    
+    # Render Navi header at top of comparison view
+    try:
+        from products.gcp_v4.ui_helpers import render_navi_header_message
+        # Set header title/subtitle for Cost Planner context
+        if "gcp_step_title" not in st.session_state:
+            st.session_state["gcp_step_title"] = "Your Cost Estimate"
+        if "gcp_step_subtitle" not in st.session_state:
+            compare_mode = st.session_state.get("cost.compare_inhome", False)
+            if compare_mode:
+                st.session_state["gcp_step_subtitle"] = "Compare your options side by side"
+            else:
+                st.session_state["gcp_step_subtitle"] = "Here's what your recommended plan will cost"
+        
+        render_navi_header_message()
+        
+        # Log header render
+        gcp_rec = MCIP.get_care_recommendation()
+        rec_tier = gcp_rec.tier if gcp_rec and gcp_rec.tier else "assisted_living"
+        compare_mode = st.session_state.get("cost.compare_inhome", False)
+        print(f"[NAVI_HEADER] rendered step=estimate compare={compare_mode} tier={rec_tier}")
+    except Exception as e:
+        print(f"[NAVI_HEADER] error rendering: {e}")
+        pass
 
     # Initialize session state for selected plan
     if "comparison_selected_plan" not in st.session_state:
@@ -130,48 +160,89 @@ def render_comparison_view(zip_code: str):
     # st.write(f"  - Will use FACILITY calc: {recommended_tier != 'in_home_care'}")
     # st.markdown("---")
 
-    # Check if user wants to see comparison (from prepare gate)
-    # Default behavior: show both for facility, single for in-home
-    user_wants_comparison = st.session_state.get("comparison_show_both")
+    # Check if user wants to see comparison (using cost.view_mode as single source of truth)
+    view_mode = st.session_state.get("cost.view_mode", "single")
+    single_path_tier = st.session_state.get("cost.single_path_tier")  # Explicit single-path tier
+    
+    # Mirror to compare_inhome for backward compatibility
+    compare_inhome = (view_mode == "compare")
+    st.session_state["cost.compare_inhome"] = compare_inhome
 
-    if user_wants_comparison is not None:
-        # User made an explicit choice in prepare gate
-        show_both = user_wants_comparison
+    # Determine show_both based on view_mode (single source of truth)
+    if view_mode == "compare":
+        # User explicitly chose compare mode
+        show_both = True
+        # Clear single-path tier if set
+        if single_path_tier:
+            st.session_state.pop("cost.single_path_tier", None)
+            single_path_tier = None
+    elif single_path_tier:
+        # Explicit single-path mode (from Continue CTA)
+        show_both = False
+        recommended_tier = single_path_tier  # Use explicitly set tier
     else:
-        # Fallback to default behavior
-        if recommended_tier == "in_home_care":
-            show_both = False  # In-home only by default
-        else:
-            show_both = True  # Show facility + in-home comparison
+        # Default behavior for single mode
+        show_both = False
+    
+    # Enhanced logging for view mode decision
+    if view_mode == "single":
+        print(f"[COST_VIEW] mode=single tier={recommended_tier} view_mode={view_mode} "
+              f"single_path_tier={single_path_tier or 'None'} show_both={show_both}")
+    else:
+        print(f"[COST_VIEW] mode=comparison tier={recommended_tier} view_mode={view_mode} "
+              f"single_path_tier={single_path_tier or 'None'} show_both={show_both}")
+    
+    # Detailed render state logging
+    print(f"[COST_RENDER] view_mode={view_mode} zip_present={has_zip} show_both={show_both} "
+          f"will_render={'two_cards' if show_both else 'single_card'}")
 
-    # Header
-    st.markdown("### Compare your recommended plan with staying at home")
-    st.markdown(
-        """<div style="color: var(--text-secondary); margin-bottom: 2rem; font-size: 0.95rem;">
-        <strong>💬 Navi says:</strong> These numbers can be eye-opening. 
-        Let's look at each option and figure out how to pay for it.
-        </div>""",
-        unsafe_allow_html=True
-    )
+    # Header (mode-aware)
+    if show_both:
+        st.markdown("### Compare your recommended plan with staying at home")
+        st.markdown(
+            """<div style="color: var(--text-secondary); margin-bottom: 2rem; font-size: 0.95rem;">
+            <strong>💬 Navi says:</strong> These numbers can be eye-opening. 
+            Let's look at each option and figure out how to pay for it.
+            </div>""",
+            unsafe_allow_html=True
+        )
+    else:
+        # Single-path view header
+        care_type_display_map = {
+            "assisted_living": "Assisted Living",
+            "memory_care": "Memory Care",
+            "memory_care_high_acuity": "Memory Care (High Acuity)",
+            "in_home_care": "In-Home Care",
+        }
+        tier_display = care_type_display_map.get(recommended_tier, recommended_tier.replace("_", " ").title())
+        st.markdown(f"### Your {tier_display} Cost Estimate")
+        st.markdown(
+            """<div style="color: var(--text-secondary); margin-bottom: 2rem; font-size: 0.95rem;">
+            <strong>💬 Navi says:</strong> Here's what your recommended plan will cost each month.
+            </div>""",
+            unsafe_allow_html=True
+        )
 
     st.markdown("---")
+    
+    # ZIP warning banner (shown at top if ZIP missing)
+    if not has_zip:
+        st.warning("⚠️ **ZIP code required:** Enter your ZIP code above to calculate accurate regional costs.")
+        st.markdown("")
 
     # Calculate and render scenarios based on recommendation
+    # Note: If ZIP missing, calculations use national baseline (no regional adjustment)
+    # Cards still render to show structure; user sees warning banner above
+    
     if recommended_tier == "in_home_care":
         # In-home is recommended
-        # DEBUG: st.markdown("### 🔍 Debug: Calculating In-Home Scenario (Recommended)")
-        inhome_breakdown = _calculate_inhome_scenario(zip_code, debug_label="")  # Empty label = no UI debug
+        inhome_breakdown = _calculate_inhome_scenario(zip_code or "00000", debug_label="")  # Use placeholder if ZIP missing
         st.session_state.comparison_inhome_breakdown = inhome_breakdown  # Store for handoff
 
         if show_both:
             # User wants to see AL comparison
-            # DEBUG: st.markdown("### 🔍 Debug: Calculating AL Comparison")
-            al_breakdown = _calculate_facility_scenario("assisted_living", zip_code, debug_label="")  # Empty label = no UI debug
+            al_breakdown = _calculate_facility_scenario("assisted_living", zip_code or "00000", debug_label="")
             st.session_state.comparison_facility_breakdown = al_breakdown  # Store for handoff
-
-            # Development logging for consistency check (commented out for production)
-            # _log_calculation_inputs("LEFT (In-Home)", zip_code, inhome_breakdown)
-            # _log_calculation_inputs("RIGHT (AL)", zip_code, al_breakdown)
 
             _render_two_column_comparison_inhome_primary(
                 inhome_breakdown,
@@ -180,23 +251,16 @@ def render_comparison_view(zip_code: str):
             )
         else:
             # In-home only
-            # _log_calculation_inputs("In-Home (Single)", zip_code, inhome_breakdown)
             _render_inhome_primary_view(inhome_breakdown)
     else:
         # Facility is recommended (AL, MC, MC-HA)
-        # DEBUG: st.markdown("### 🔍 Debug: Calculating Facility Scenario (Recommended)")
-        facility_breakdown = _calculate_facility_scenario(recommended_tier, zip_code, debug_label="")  # Empty label = no UI debug
+        facility_breakdown = _calculate_facility_scenario(recommended_tier, zip_code or "00000", debug_label="")
         st.session_state.comparison_facility_breakdown = facility_breakdown  # Store for handoff
 
         if show_both:
             # Show facility + in-home comparison
-            # DEBUG: st.markdown("### 🔍 Debug: Calculating In-Home Comparison")
-            inhome_breakdown = _calculate_inhome_scenario(zip_code, debug_label="")  # Empty label = no UI debug
+            inhome_breakdown = _calculate_inhome_scenario(zip_code or "00000", debug_label="")
             st.session_state.comparison_inhome_breakdown = inhome_breakdown  # Store for handoff
-
-            # Development logging for consistency check (commented out for production)
-            # _log_calculation_inputs("LEFT (Facility)", zip_code, facility_breakdown)
-            # _log_calculation_inputs("RIGHT (In-Home)", zip_code, inhome_breakdown)
 
             _render_two_column_comparison_facility_primary(
                 facility_breakdown,
@@ -210,6 +274,10 @@ def render_comparison_view(zip_code: str):
 
     # Plan selection and CTA
     st.markdown("---")
+    
+    # HOUSEHOLD DUAL COMPARISON (behind FEATURE_DUAL_COST_PLANNER flag)
+    _render_household_dual_comparison_if_applicable(zip_code)
+    
     _render_plan_selection_and_cta(recommended_tier, show_both)
 
 
@@ -486,9 +554,13 @@ def _render_facility_primary_view(
 
     st.markdown("---")
 
-    # Optional: Show in-home comparison button
-    if st.button("📊 Show In-Home Care Comparison", use_container_width=True):
-        st.session_state["comparison_show_both"] = True
+    # Show in-home comparison toggle button
+    if st.button("📊 Compare with In-Home Care", use_container_width=True, type="secondary"):
+        st.session_state["cost.view_mode"] = "compare"
+        # Clear single-path tier to enable comparison
+        if "cost.single_path_tier" in st.session_state:
+            del st.session_state["cost.single_path_tier"]
+        print(f"[COST_VIEW] toggle to comparison from single tier={recommended_tier}")
         st.rerun()
 
 
@@ -509,9 +581,13 @@ def _render_inhome_primary_view(inhome_breakdown: ScenarioBreakdown):
 
     st.markdown("---")
 
-    # Optional: Show facility comparison button
-    if st.button("📊 Show Assisted Living Comparison", use_container_width=True):
-        st.session_state["comparison_show_both"] = True
+    # Show facility comparison toggle button
+    if st.button("📊 Compare with Assisted Living", use_container_width=True, type="secondary"):
+        st.session_state["cost.view_mode"] = "compare"
+        # Clear single-path tier to enable comparison
+        if "cost.single_path_tier" in st.session_state:
+            del st.session_state["cost.single_path_tier"]
+        print(f"[COST_VIEW] toggle to comparison from single tier=in_home_care")
         st.rerun()
 
 
@@ -563,6 +639,11 @@ def _render_care_card(
         _render_cost_breakdown(breakdown)
 
     st.markdown("")
+
+    # Cost threshold advisory (for in-home scenarios only)
+    if not is_facility and breakdown.care_type == "in_home_care":
+        _render_cost_threshold_advisory(breakdown.monthly_total)
+        st.markdown("")
 
     # Interactive controls for home carry and hours
     if is_facility:
@@ -673,33 +754,60 @@ def _render_inhome_controls(card_key: str):
     """
     from products.cost_planner_v2.utils.home_costs import lookup_zip
 
-    st.markdown("**⏰ Care Hours**")
+    # Check if hours should be shown (only for in_home tier OR when compare_inhome is enabled)
+    gcp_rec = MCIP.get_care_recommendation()
+    rec_tier = gcp_rec.tier if gcp_rec and gcp_rec.tier else "assisted_living"
+    
+    # Normalize tier name
+    if rec_tier == "in_home":
+        rec_tier = "in_home_care"
+        
+    compare_inhome = st.session_state.get("cost.compare_inhome", False)
+    show_hours = (rec_tier == "in_home_care") or compare_inhome
+    
+    if show_hours:
+        st.markdown("**⏰ Care Hours**")
 
-    # Check if 24-hour care (lock slider)
-    is_24_hour = st.session_state.comparison_inhome_hours == 24.0
+        # Check if 24-hour care (lock slider)
+        is_24_hour = st.session_state.comparison_inhome_hours == 24.0
 
-    if is_24_hour:
-        # Show locked 24-hour display
-        st.info("🔒 **24-hour support** (as recommended in your care plan)")
-        st.caption("This setting cannot be adjusted - 24-hour care is required based on your assessment.")
+        if is_24_hour:
+            # Show locked 24-hour display
+            st.info("🔒 **24-hour support** (as recommended in your care plan)")
+            st.caption("This setting cannot be adjusted - 24-hour care is required based on your assessment.")
+        else:
+            # Editable slider
+            hours = st.slider(
+                "Hours per day",
+                min_value=1.0,
+                max_value=24.0,
+                value=st.session_state.comparison_inhome_hours,
+                step=1.0,
+                key=f"{card_key}_hours",
+                help="Adjust based on care needs (from your Guided Care Plan recommendation)"
+            )
+
+            if hours != st.session_state.comparison_inhome_hours:
+                st.session_state.comparison_inhome_hours = hours
+                st.session_state.comparison_hours_per_day = hours  # Keep synced
+                st.rerun()
+
+        st.markdown("")
+        
+        # Add 48-hour hint for higher support needs (only in in-home context)
+        _render_48_hour_hint_if_applicable()
+        
     else:
-        # Editable slider
-        hours = st.slider(
-            "Hours per day",
-            min_value=1.0,
-            max_value=24.0,
-            value=st.session_state.comparison_inhome_hours,
-            step=1.0,
-            key=f"{card_key}_hours",
-            help="Adjust based on care needs (from your Guided Care Plan recommendation)"
-        )
-
-        if hours != st.session_state.comparison_inhome_hours:
-            st.session_state.comparison_inhome_hours = hours
-            st.session_state.comparison_hours_per_day = hours  # Keep synced
-            st.rerun()
-
-    st.markdown("")
+        # Hours not shown - add CTA for facility tiers
+        if rec_tier in ["assisted_living", "memory_care", "memory_care_high_acuity"]:
+            st.markdown("**⏰ Care Hours**")
+            st.info("💡 Hours of care are included in your facility recommendation.")
+            st.caption("Assisted Living and Memory Care provide 24/7 staff availability as needed.")
+            
+            if st.button("Compare with staying home", key=f"{card_key}_compare_cta", use_container_width=True):
+                st.session_state["cost.compare_inhome"] = True
+                st.rerun()
+            st.markdown("")
 
     st.markdown("**🏡 Home Costs**")
 
@@ -735,6 +843,24 @@ def _render_inhome_controls(card_key: str):
     st.caption(f"✓ Always included (${home_carry:,.0f}/mo)")
 
 
+def _render_48_hour_hint_if_applicable():
+    """Render 48-hour hint when higher support flags are present."""
+    from core.flags import get_all_flags
+    
+    # Check for higher support flags
+    flags = get_all_flags()
+    higher_support_flags = [
+        "moderate_dependence", "high_dependence", "moderate_cognitive_decline", 
+        "severe_cognitive_risk", "falls_multiple", "medication_management",
+        "chronic_present", "behavioral_concerns"
+    ]
+    
+    has_higher_support = any(flags.get(flag, False) for flag in higher_support_flags)
+    
+    if has_higher_support:
+        st.caption("💡 Based on your answers, many families need close to 48 hours/week of paid help to stay safely at home. Actual needs vary—adjust hours to see the impact.")
+
+
 def _render_cost_breakdown(breakdown: ScenarioBreakdown):
     """Render detailed cost breakdown.
     
@@ -750,6 +876,155 @@ def _render_cost_breakdown(breakdown: ScenarioBreakdown):
 
     st.markdown("---")
     st.markdown(f"**Monthly Total:** ${breakdown.monthly_total:,.0f}")
+
+
+def _calculate_support_intensity() -> int:
+    """Calculate support intensity score from care flags.
+    
+    Returns:
+        Support intensity score (0-5)
+    """
+    from core.flags import get_all_flags
+    
+    flags = get_all_flags()
+    score = 0
+    
+    # Add +1 for each present, cap total at 5
+    intensity_flags = [
+        "moderate_dependence",
+        "mobility_limited", 
+        "moderate_cognitive_decline",
+        "chronic_present"
+    ]
+    
+    for flag in intensity_flags:
+        if flags.get(flag, False):
+            score += 1
+    
+    # Add +1 for falls_risk OR medication_management (max +1 for "extras")
+    if flags.get("falls_risk", False) or flags.get("medication_management", False):
+        score += 1
+    
+    return min(score, 5)
+
+
+def _get_cost_threshold(intensity_score: int) -> float:
+    """Map intensity score to cost threshold.
+    
+    Args:
+        intensity_score: Support intensity score (0-5)
+        
+    Returns:
+        Monthly cost threshold in dollars
+    """
+    if intensity_score <= 1:
+        return 7000.0
+    elif intensity_score <= 3:
+        return 7500.0
+    else:  # 4-5
+        return 8000.0
+
+
+def _render_cost_threshold_advisory(inhome_estimate: float, person_label: str = ""):
+    """Render cost threshold advisory message.
+    
+    Args:
+        inhome_estimate: Monthly in-home cost estimate
+        person_label: Label for person (e.g., "Primary", "Partner") for dual mode
+    """
+    intensity = _calculate_support_intensity()
+    threshold = _get_cost_threshold(intensity)
+    threshold_crossed = inhome_estimate >= threshold
+    
+    person_prefix = f"**{person_label}:** " if person_label else ""
+    
+    if threshold_crossed:
+        st.info(f"{person_prefix}In-home care is feasible, but based on the level of help you'll likely need, the monthly cost (~${inhome_estimate:,.0f}/mo) approaches or exceeds what families often pay for Assisted Living. Consider touring Assisted Living communities as a more predictable alternative.")
+    else:
+        st.success(f"{person_prefix}In-home care appears workable at ~${inhome_estimate:,.0f}/mo. Adjust weekly hours to see how costs change.")
+
+
+def _render_household_dual_comparison_if_applicable(zip_code: str):
+    """Render compact household dual comparison if both CarePlans exist.
+    
+    Gated by FEATURE_DUAL_COST_PLANNER flag (default: shadow).
+    Shows: Primary | Partner | Household Total | 50/50 Split
+    
+    Args:
+        zip_code: ZIP code for cost calculations
+    """
+    import os
+    
+    # Check feature flag
+    try:
+        flag_value = st.secrets.get("FEATURE_DUAL_COST_PLANNER", "shadow")
+    except Exception:
+        flag_value = os.getenv("FEATURE_DUAL_COST_PLANNER", "shadow")
+    
+    if str(flag_value).lower() not in {"on", "shadow"}:
+        return
+    
+    # Check if dual mode is enabled
+    dual_mode = st.session_state.get("cost.dual_mode", False)
+    if not dual_mode:
+        return
+    
+    # Get household data
+    try:
+        from products.cost_planner_v2.household import compute_household_total
+        result = compute_household_total(st)
+        
+        if not result.get("has_partner_plan"):
+            # Show inline note if partner is expected but missing
+            has_partner = st.session_state.get("has_partner", False)
+            if has_partner:
+                st.info("👥 **Add partner assessment** to see combined household costs.")
+            return
+        
+        # Render compact dual comparison
+        st.markdown("---")
+        st.markdown("### 👥 Household Cost Summary")
+        
+        # Display in compact columns
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            st.metric("Primary Monthly", f"${result['primary_total']:,.0f}")
+        
+        with col2:
+            st.metric("Partner Monthly", f"${result['partner_total']:,.0f}")
+        
+        with col3:
+            st.metric("Household Total", f"${result['household_total']:,.0f}")
+        
+        with col4:
+            st.metric("50/50 Split", f"${result['split']['primary']:,.0f} each")
+        
+        # Keep-home toggle affects home_carry
+        if result.get("home_carry", 0) > 0:
+            st.caption(f"💡 Includes ${result['home_carry']:,.0f}/mo home carry cost")
+        
+        # Per-person advisories (only for in-home scenarios)
+        primary_tier = result.get("primary_tier", "")
+        partner_tier = result.get("partner_tier", "")
+        
+        if primary_tier == "in_home_care" or partner_tier == "in_home_care":
+            st.markdown("**Cost Analysis:**")
+            
+            if primary_tier == "in_home_care":
+                _render_cost_threshold_advisory(result['primary_total'], "Primary")
+            
+            if partner_tier == "in_home_care":
+                _render_cost_threshold_advisory(result['partner_total'], "Partner")
+        
+        # Shadow mode logging
+        if str(flag_value).lower() == "shadow":
+            print(f"[DUAL_COST_SHADOW] household={result['household_total']:.0f} primary={result['primary_total']:.0f} partner={result['partner_total']:.0f}")
+    
+    except Exception as e:
+        # Never fail the UI
+        print(f"[DUAL_COST_ERROR] {e}")
+        pass
 
 
 def _render_plan_selection_and_cta(recommended_tier: str, show_both: bool):
@@ -889,6 +1164,29 @@ def _render_plan_selection_and_cta(recommended_tier: str, show_both: bool):
                         if qualifiers.get("medicaid_planning"):
                             flags.append("medicaid_planning_needed")
                         
+                        # Add in-home cost context for in_home_care tier
+                        inhome_context = ""
+                        if tier == "in_home_care":
+                            # Calculate intensity and threshold for context
+                            intensity_score = _calculate_support_intensity()
+                            threshold = _get_cost_threshold(intensity_score)
+                            threshold_crossed = care_cost_monthly >= threshold
+                            
+                            # Map intensity to label
+                            if intensity_score <= 1:
+                                intensity_label = "low"
+                            elif intensity_score <= 3:
+                                intensity_label = "medium"
+                            else:
+                                intensity_label = "high"
+                            
+                            inhome_context = f"""INHOME_ESTIMATE: ${care_cost_monthly:,.0f}
+CARE_INTENSITY: {intensity_label}
+THRESHOLD: ${threshold:,.0f}
+THRESHOLD_CROSSED: {str(threshold_crossed).lower()}
+
+"""
+                        
                         # Build top reasons from GCP if available
                         top_reasons = []
                         if isinstance(gcp_rec, dict) and "top_reasons" in gcp_rec:
@@ -896,6 +1194,14 @@ def _render_plan_selection_and_cta(recommended_tier: str, show_both: bool):
                         
                         # Generate advice with normalization (shadow mode - no UI changes)
                         # This handles tier aliases and skips if tier is invalid
+                        # Pass inhome_context as an additional parameter if needed
+                        
+                        # For now, store the context in session state so navi_engine can access it
+                        if inhome_context:
+                            st.session_state["_llm_inhome_context"] = inhome_context
+                        else:
+                            st.session_state.pop("_llm_inhome_context", None)
+                        
                         success, advice = generate_safe_with_normalization(
                             tier=tier,
                             has_partner=has_partner,
@@ -907,6 +1213,9 @@ def _render_plan_selection_and_cta(recommended_tier: str, show_both: bool):
                             top_reasons=top_reasons,
                             mode="shadow",
                         )
+                        
+                        # Clean up temporary session state
+                        st.session_state.pop("_llm_inhome_context", None)
                         
                         # Log for dev diagnostics only
                         if success and advice:

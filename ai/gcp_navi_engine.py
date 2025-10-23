@@ -256,9 +256,23 @@ def reconcile_with_deterministic(
     if det_normalized == llm_tier:
         print(f"[GCP_LLM_NOTE] alignment: llm={llm_tier} == det={det_normalized}")
     else:
+        # Check what the actual chosen tier was from adjudication
+        final_tier = None
+        adjudication = {}
+        try:
+            import streamlit as st
+            final_tier = st.session_state.get("gcp.final_tier")
+            adjudication = st.session_state.get("gcp.adjudication_decision", {})
+        except Exception:
+            # Streamlit not available or session state not accessible
+            pass
+        
+        source = adjudication.get("source", "unknown")
+        reason = adjudication.get("adjudication_reason", "unknown")
+        
         print(
             f"[GCP_LLM_NOTE] mismatch: llm={llm_tier} vs det={det_normalized}; "
-            f"detWins=True (conf={llm_advice.confidence:.2f})"
+            f"chosen={final_tier or det_normalized} source={source} reason={reason} (conf={llm_advice.confidence:.2f})"
         )
         
         # Log disagreement for training (no PHI)

@@ -120,25 +120,6 @@ def render_prepare_gate(recommendation_context: Any | None = None) -> bool:
         else:
             _render_facility_questions()
 
-    # CTA button
-    st.markdown("")
-    is_valid = _validate_inputs()
-
-    if st.button(
-        "🎯 See My Estimate",
-        type="primary",
-        use_container_width=True,
-        disabled=not is_valid,
-        key="prepare_qe_cta"
-    ):
-        st.session_state[SESSION_KEYS["is_complete"]] = True
-        # Sync to comparison_view session keys
-        _sync_to_comparison_view()
-        st.rerun()
-
-    # Return completion status
-    return st.session_state.get(SESSION_KEYS["is_complete"], False)
-
 
 # ==============================================================================
 # QUESTION RENDERERS
@@ -149,12 +130,19 @@ def _render_zip_question():
 
     st.markdown("#### Where will this care be provided?")
     st.caption("💡 Costs vary by region, so we use ZIP to localize rates.")
+    
+    # Initialize cost.inputs if missing
+    if "cost.inputs" not in st.session_state:
+        st.session_state["cost.inputs"] = {}
+    
+    # Get ZIP from cost.inputs (single source of truth)
+    current_zip = st.session_state["cost.inputs"].get("zip", "")
 
     zip_code = st.text_input(
         "ZIP Code",
         max_chars=5,
         placeholder="90210",
-        value=st.session_state.get(SESSION_KEYS["zip"], ""),
+        value=current_zip,
         key="prepare_qe_zip_input",
         label_visibility="collapsed"
     )
@@ -162,11 +150,16 @@ def _render_zip_question():
     # Update session state and resolve region
     if zip_code and len(zip_code) == 5:
         # Check if ZIP changed
-        previous_zip = st.session_state.get(SESSION_KEYS["zip"])
+        previous_zip = st.session_state["cost.inputs"].get("zip")
         zip_changed = (previous_zip != zip_code)
         
-        st.session_state[SESSION_KEYS["zip"]] = zip_code
+        # Atomic write to cost.inputs (single source of truth)
+        st.session_state["cost.inputs"]["zip"] = zip_code
+        st.session_state[SESSION_KEYS["zip"]] = zip_code  # Mirror to prepare gate key
         _resolve_region(zip_code)
+        
+        # Log ZIP persistence
+        print(f"[ZIP_STATE] set zip={zip_code} persisted=True")
 
         # If ZIP changed and user hasn't manually edited home carry, update it with new ZIP lookup
         if zip_changed:
@@ -185,6 +178,7 @@ def _render_zip_question():
         if region_label:
             st.success(f"📍 Region: **{region_label}**")
     elif zip_code:
+        st.session_state["cost.inputs"]["zip"] = None
         st.session_state[SESSION_KEYS["zip"]] = None
         st.warning("⚠️ Please enter a valid 5-digit ZIP code")
 
@@ -261,11 +255,12 @@ def _render_facility_questions():
     # Get context from GCP
     spouse_or_partner_present = st.session_state.get("spouse_or_partner_present", False)
     rec_tier = st.session_state.get(SESSION_KEYS["care_recommendation"], "assisted_living")
+    compare_inhome = st.session_state.get("cost.compare_inhome", False)
 
     # [CP_DEBUG] Log context on mount
     if st.session_state.get("debug_mode", False):
         import sys
-        print(f"[CP_DEBUG] CP Intro Mount: category={rec_tier}, has_partner={spouse_or_partner_present}", file=sys.stderr)
+        print(f"[CP_DEBUG] CP Intro Mount: category={rec_tier}, has_partner={spouse_or_partner_present}, compare_inhome={compare_inhome}", file=sys.stderr)
 
     # RULE 2 & 3: Default keep_home based on has_partner, but editable
     # Check if user has already set a value (don't override on revisit)
@@ -351,16 +346,79 @@ def _render_facility_questions():
         st.session_state[SESSION_KEYS["home_carry_base"]] = None
         st.session_state[SESSION_KEYS["home_carry_source"]] = None
 
-    # Show In-Home comparison
-    st.markdown("#### Would you like to see an In-Home Care comparison side-by-side?")
-    show_comparison = st.checkbox(
-        "Show In-Home Care comparison",
-        value=st.session_state.get(SESSION_KEYS["show_comparison"], True),
-        key="prepare_qe_show_inhome_comparison"
-    )
-    st.session_state[SESSION_KEYS["show_comparison"]] = show_comparison
-
+    # ====================================================================
+    # CONSOLIDATED CTAs (DYNAMIC LABELS)
+    # ====================================================================
     st.markdown("")
+    st.markdown("---")
+    
+    # Get tier display name
+    tier_display_map = {
+        "assisted_living": "Assisted Living",
+        "memory_care": "Memory Care",
+        "memory_care_high_acuity": "Memory Care",
+        "in_home": "In-Home Care",
+        "in_home_care": "In-Home Care",
+        "in_home_plus": "In-Home Care"
+    }
+    tier_display = tier_display_map.get(rec_tier, rec_tier.replace("_", " ").title())
+    
+    # Dynamic compare label based on tier
+    if rec_tier in ["assisted_living", "memory_care", "memory_care_high_acuity"]:
+        compare_label = f"⚖️ Compare {tier_display} vs In-Home Care"
+    else:
+        compare_label = "⚖️ Compare In-Home vs Community Options"
+    
+    continue_label = f"→ Continue with {tier_display}"
+    
+    # Get ZIP status for validation
+    zip_code = st.session_state.get("cost.inputs", {}).get("zip") or st.session_state.get(SESSION_KEYS["zip"])
+    has_zip = bool(zip_code and len(str(zip_code)) == 5)
+    
+    # Primary CTA: Compare (always enabled - doesn't need ZIP to toggle view)
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        if st.button(compare_label, key="compare_cta", use_container_width=True, type="primary"):
+            # Set view mode to compare (single source of truth)
+            st.session_state["cost.view_mode"] = "compare"
+            # Clear single-path tier to ensure comparison renders
+            if "cost.single_path_tier" in st.session_state:
+                del st.session_state["cost.single_path_tier"]
+            # Sync ZIP and other data (even if ZIP missing, sync what we have)
+            _sync_to_comparison_view()
+            # Log action
+            print(f"[COST_CTA] action=compare tier={rec_tier} zip_present={has_zip} view_mode=compare")
+            st.rerun()
+    
+    with col2:
+        # Secondary CTA: Continue with recommended tier (requires ZIP)
+        continue_disabled = not has_zip
+        if st.button(continue_label, key="continue_cta", use_container_width=True, disabled=continue_disabled):
+            if has_zip:
+                # Set view mode to single (single source of truth)
+                st.session_state["cost.view_mode"] = "single"
+                st.session_state[SESSION_KEYS["is_complete"]] = True
+                st.session_state["cost.single_path_tier"] = rec_tier  # Explicit tier for single view
+                _sync_to_comparison_view()
+                
+                # Enhanced logging with all flags being set
+                print(f"[COST_CTA] action=continue tier={rec_tier} zip_present=True "
+                      f"set_view_mode=single set_single_path_tier={rec_tier} "
+                      f"set_is_complete=True proceeded=True")
+                st.rerun()
+            else:
+                # Log blocked action
+                print(f"[COST_CTA] action=continue tier={rec_tier} zip_present=False proceeded=False")
+    
+    # Show ZIP warning if Continue button is disabled
+    if not has_zip:
+        st.caption("💡 ZIP code is required to show your estimate.")
+    
+    st.markdown("")
+    
+    # Return completion status
+    return st.session_state.get(SESSION_KEYS["is_complete"], False)
 
 
 # ==============================================================================
@@ -385,10 +443,11 @@ def _init_session_state(recommendation_context: Any | None):
     if SESSION_KEYS["is_complete"] not in st.session_state:
         st.session_state[SESSION_KEYS["is_complete"]] = False
 
+    # NOTE: show_comparison is deprecated in favor of cost.view_mode
+    # Keep for backward compatibility but don't reset if already set
     if SESSION_KEYS["show_comparison"] not in st.session_state:
-        # Default: False for in-home, True for facility
-        rec_tier = st.session_state.get(SESSION_KEYS["care_recommendation"])
-        st.session_state[SESSION_KEYS["show_comparison"]] = (rec_tier != "in_home_care")
+        # Default: False (single-path) - let user choose via CTAs
+        st.session_state[SESSION_KEYS["show_comparison"]] = False
 
     # LAYER 1: Session state - Store spouse/partner flag
     if "spouse_or_partner_present" not in st.session_state:
@@ -479,8 +538,10 @@ def _sync_to_comparison_view():
     This bridges the prepare gate to the comparison view component.
     """
 
-    # ZIP code (used by comparison_view)
-    st.session_state["cost_v2_quick_zip"] = st.session_state.get(SESSION_KEYS["zip"])
+    # ZIP code (use cost.inputs as source of truth, fallback to prepare gate key)
+    zip_code = st.session_state.get("cost.inputs", {}).get("zip") or st.session_state.get(SESSION_KEYS["zip"])
+    if zip_code:
+        st.session_state["cost_v2_quick_zip"] = zip_code
 
     # Home carry cost
     home_carry = st.session_state.get(SESSION_KEYS["home_carry_base"])

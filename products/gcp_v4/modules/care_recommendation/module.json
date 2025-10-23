@@ -390,7 +390,7 @@
         ]
       },
       "navi_guidance": {
-        "section_purpose": "Understand willingness to relocate for facility-based care",
+        "section_purpose": "Almost there — one more question before your personalized recommendation.",
         "why_this_matters": "Willingness to move affects care planning and family dynamics",
         "encouragement": "There's no right or wrong answer - just be honest about comfort level with change"
       },
@@ -439,7 +439,7 @@
         ]
       },
       "actions": [
-        { "label": "Continue to Cost Planner", "action": "route", "value": "cost_planner" },
+        { "label": "Next: Cost & Options", "action": "cost_planner_handoff", "value": "cost_planner" },
         { "label": "Return to Care Hub", "action": "route", "value": "care_hub" },
         { "label": "Talk to an Advisor", "action": "route", "value": "advisor" }
       ]
