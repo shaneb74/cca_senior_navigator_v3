@@ -137,33 +137,9 @@ def _render_navi_with_context(current_step: str):
 
     # Build context-aware message based on step
     if current_step == "intro":
-        if has_gcp:
-            recommended_care = tier_display_map.get(gcp_rec.tier, gcp_rec.tier)
-            title = "Let's look at costs"
-            reason = f"I've pre-selected **{recommended_care}** based on your Guided Care Plan. You can explore other scenarios too."
-            encouragement = {
-                "icon": "💡",
-                "status": "info",
-                "text": "Compare different care options to see what works for your budget.",
-            }
-        else:
-            title = "Let's get a quick estimate"
-            reason = "Enter your ZIP code and select a care type to see what it costs in your area."
-            encouragement = {
-                "icon": "📊",
-                "status": "info",
-                "text": "Complete the Guided Care Plan first for personalized recommendations.",
-            }
-
-        # Render Navi panel V2 with custom message (module variant = blue left border, no button)
-        render_navi_panel_v2(
-            title=title,
-            reason=reason,
-            encouragement=encouragement,
-            context_chips=[],
-            primary_action={"label": "Continue", "action": None},
-            variant="module",
-        )
+        # Intro page renders its own header inside products/cost_planner_v2/intro.py
+        # Skip here to avoid duplicate panel rendering
+        return
 
     elif current_step == "auth":
         # Authentication step - explain requirement and reassure about security

@@ -8,15 +8,33 @@ from .summary_schemas import SummaryAdvice
 
 SYSTEM_PROMPT = (
     "You are Navi, a calm, supportive care navigator. "
-    "Output STRICT JSON matching SummaryAdvice (headline, why[], what_it_means?, next_steps[], next_line, confidence). "
-    "Use plain, concise language. "
-    "No prices, no guarantees. Allowed tiers only: none, in_home, assisted_living, memory_care, memory_care_high_acuity. "
-    "For 'headline': 1 concise sentence about the recommendation. "
-    "For 'what_it_means': 1 short paragraph (1-2 sentences) explaining what this tier means for daily life. "
-    "For 'why': Expand 'When it's a good fit' into a short paragraph (2-4 concise sentences) drawing from ADLs, IADLs, mobility, falls, behaviors, isolation, and partner status. No costs. "
-    "For 'next_line': 1 short sentence that tees up the cost view. If tier≠in_home, invite comparing the recommended tier vs in-home. "
-    "If tier==in_home, invite exploring monthly cost with hours & supports. If tier==none, invite optional support cost overview."
+    "Output ONLY valid JSON matching this schema: "
+    '{"headline": "string (1 sentence)", "what_it_means": "string (1-2 sentences)", '
+    '"why": ["reason1", "reason2", ...], "next_line": "string (1 sentence)", "confidence": 0.8}. '
+    "Do NOT wrap in code fences. Return raw JSON only. "
+    "Use plain, concise language. No prices, no guarantees. "
+    "For 'headline': 1 concise sentence about the care tier recommendation. "
+    "For 'what_it_means': 1-2 sentences explaining what this tier means for daily life. "
+    "For 'why': Array of 2-4 brief reasons drawing from ADLs, IADLs, mobility, falls, behaviors, isolation, partner status. "
+    "For 'next_line': 1 sentence inviting cost exploration. "
+    "For 'confidence': 0.7 to 0.95 based on signal clarity."
 )
+
+
+def _get_flag(name: str, default: str = "off") -> str:
+    import os
+    try:
+        import streamlit as st
+        s = getattr(st, "secrets", None)
+        if s:
+            v = s.get(name)
+            if v is not None:
+                return str(v).strip().strip('"').lower()
+    except Exception:
+        pass
+    return str(os.getenv(name, default)).strip().strip('"').lower()
+
+DEBUG_LLM = (_get_flag("DEBUG_LLM", "off") == "on")
 
 
 def generate_summary(
@@ -47,6 +65,12 @@ def generate_summary(
     
     client = OpenAI(api_key=key)
     model = get_openai_model()
+
+    # Call instrumentation (always on for diagnostics)
+    try:
+        print(f"[GCP_SUMMARY_CALL] mode={mode} model={model} keys={list(context.keys())}")
+    except Exception:
+        pass
     
     # Build payload for LLM
     payload = {
@@ -78,17 +102,34 @@ def generate_summary(
         
         text = (resp.choices[0].message.content or "").strip()
         
+        # Always log raw response length
+        try:
+            print(f"[GCP_SUMMARY_RAW] len={len(text)}")
+        except Exception:
+            pass
+        
+        # Strip code fences if present
+        if text.startswith("```"):
+            text = text.strip().strip("`")
+            if text.lower().startswith("json"):
+                text = text[4:].lstrip()
+        
         # Try parsing as JSON
         try:
             adv = SummaryAdvice.model_validate_json(text)
             return True, adv
-        except Exception:
+        except Exception as e1:
             # Fallback: try parsing as dict
             try:
                 adv = SummaryAdvice(**json.loads(text))
                 return True, adv
-            except Exception:
+            except Exception as e2:
+                print(f"[GCP_SUMMARY_PARSE_ERROR] validate_json: {e1}")
+                print(f"[GCP_SUMMARY_PARSE_ERROR] json_loads: {e2}")
+                print(f"[GCP_SUMMARY_PARSE_ERROR] text_preview: {text[:200]}")
                 return False, None
     
-    except Exception:
+    except Exception as e:
+        # Propagate a concise failure log but do not raise
+        print(f"[GCP_SUMMARY_CALL_ERROR] {e}")
         return False, None

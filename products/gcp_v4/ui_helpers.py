@@ -172,6 +172,33 @@ def render_hours_suggestion():
         st.markdown("</div>", unsafe_allow_html=True)
 
 
+def _play_chime_once():
+    """Inject a tiny autoplay audio element to play the navi chime once.
+    Adds debug logs for reliability tracing.
+    """
+    import base64
+    import pathlib
+    import streamlit as st
+
+    p = pathlib.Path("assets/audio/chime.mp3")
+    if not p.exists():
+        print("[CHIME] skip: missing assets/audio/chime.mp3")
+        return
+    try:
+        b64 = base64.b64encode(p.read_bytes()).decode()
+        st.markdown(
+            f"""
+            <audio id="navi-chime" autoplay playsinline preload="auto" style="display:none">
+              <source src="data:audio/mpeg;base64,{b64}" type="audio/mpeg">
+            </audio>
+            """,
+            unsafe_allow_html=True,
+        )
+        print("[CHIME] injected")
+    except Exception as e:
+        print(f"[CHIME] error: {e}")
+
+
 def render_hours_nudge():
     """Render hours/day nudge card in assist mode when user under-selects.
     
@@ -223,20 +250,30 @@ def render_hours_nudge():
 
 
 def render_navi_header_message():
-    """Render hours/day nudge in TOP Navi header with CTA buttons.
-    
-    Displays a compact nudge message with Accept/Keep action buttons when:
-    - FEATURE_GCP_HOURS = "assist"
-    - User under-selected hours per day
-    - Nudge text has been generated
-    - User hasn't acknowledged yet
-    
-    Also plays a one-time chime when a new nudge appears (optional, graceful if audio missing).
+    """Render the single blue Navi header (module variant) with quote + hours hint.
+
+    Inside the blue header panel, show:
+    - Step title (or "Your Guided Care Plan") and optional subtitle
+    - One-line Navi quote (LLM headline) under title
+    - If FEATURE_GCP_HOURS=assist and user under-selected: a single subtle hours hint line
+
+    Below the header (still at top of page), render Accept/Keep hours CTAs ONLY on GCP route.
+    Play the chime once when a NEW nudge appears (only on GCP route) and then clear the flag.
     """
     import os
     import streamlit as st
     import base64
     import pathlib
+    
+    # Single-render guard to prevent recursion/duplication per page
+    # Scope by a simple per-page key so a stale flag from a previous page doesn't block first paint
+    pending_title = st.session_state.get("gcp_step_title") or ""
+    page_key = f"gcp_cp_header::{pending_title}"
+    prev_key = st.session_state.get("_gcp_cp_header_key")
+    if st.session_state.get("_gcp_cp_header_rendered", False) and prev_key == page_key:
+        return
+    st.session_state["_gcp_cp_header_rendered"] = True
+    st.session_state["_gcp_cp_header_key"] = page_key
     
     # Check if assist mode is enabled
     mode = None
@@ -247,77 +284,119 @@ def render_navi_header_message():
     if not mode:
         mode = os.getenv("FEATURE_GCP_HOURS", "off")
     
-    if str(mode).lower() != "assist":
+    # Resolve route and page scope
+    route = st.session_state.get("route") or st.query_params.get("page") or ""
+    is_gcp = (route == "gcp")
+    is_cp_intro = bool(st.session_state.get("cp_intro", False))
+
+    # Scope: Only render on GCP pages or CP intro
+    if not (is_gcp or is_cp_intro):
         return
-    
-    sugg = st.session_state.get("_hours_suggestion")
-    if not sugg:
-        return
-    
-    nudge = (sugg.get("nudge_text") or "").strip()
-    if not nudge:
-        return
-    
-    # Check if already acknowledged
-    if st.session_state.get("_hours_ack"):
-        return  # Don't show nudge if already acknowledged
-    
-    # Compose the compact header message (one short sentence)
+
+    # Build step title/subtitle from session (set by product before calling us)
+    step_title = st.session_state.get("gcp_step_title") or "Your Guided Care Plan"
+    step_subtitle = st.session_state.get("gcp_step_subtitle") or ""
+
+    # Gather summary advice for inline recommendation
+    step_id = str(st.session_state.get("gcp_current_step_id") or st.session_state.get("step_id") or st.session_state.get("current_step") or "")
+    is_results = (step_id == "results")
+    adv = st.session_state.get("_summary_advice") or {}
+    try:
+        print(f"[SUMMARY_ADVICE] present={bool(adv)} step={step_id}")
+    except Exception:
+        pass
+    tier_txt = (adv.get("tier") or "—").replace("_", " ").title()
+    headline = (adv.get("headline") or f"Based on your answers, I recommend {tier_txt}.").strip()
+
+    # Gather hours suggestion (assist mode only)
+    sugg = st.session_state.get("_hours_suggestion") or {}
     band = sugg.get("band")
     user = sugg.get("user") or "-"
-    header_line = f"**Navi** suggests **{band}** (you selected **{user}**). {nudge}"
+    under = bool(sugg.get("under_selected", False))
+    nudge_text = (sugg.get("nudge_text") or "").strip() if str(mode).lower() == "assist" else ""
+    # Only show hours hint inside header on RESULTS or CP intro
+    is_cp_intro = bool(st.session_state.get("cp_intro", False))
+    allow_hours_hint = is_results or is_cp_intro
+    show_hours_hint = bool(allow_hours_hint and under and nudge_text and not st.session_state.get("_hours_ack"))
+
+    # Compose reason HTML (inside the blue header panel) with Navi recommendation + optional nudge
+    navi_text = f"<strong>{headline}</strong>"
+    # If advice-level nudge exists, prefer it; else show hours hint when appropriate
+    adv_nudge = (adv.get("nudge") or adv.get("nudge_text") or "").strip()
+    if adv_nudge:
+        navi_text += f"<br>💡 {adv_nudge}"
+    elif show_hours_hint:
+        navi_text += f"<br>💡 Navi suggests {band} (you selected {user}). {nudge_text}"
+
+    # Add optional subtitle above text if present
+    parts: list[str] = []
+    if step_subtitle:
+        parts.append(step_subtitle)
+    parts.append(f"<div id='navi-header-text'>{navi_text}</div>")
+    reason_html = "<br/>".join(parts)
+
+    # Render the blue header panel (module variant)
+    try:
+        from core.ui import render_navi_panel_v2
+        render_navi_panel_v2(
+            title=step_title,
+            reason=reason_html,
+            encouragement={"icon": "✨", "text": "You can adjust details anytime.", "status": "in_progress"},
+            context_chips=[],
+            primary_action={"label": "", "route": ""},
+            variant="module",
+        )
+    except Exception:
+        # If blue header unavailable, skip silently (no alternative banners)
+        pass
     
-    # Render inside the top Navi dialog with compact styling
-    st.markdown(
-        f"<div id='navi-header-hours' style='margin-top:0.5rem; padding:12px 16px; "
-        f"background:#e3f2fd; border:1px solid #2196f3; border-radius:8px; color:#0d47a1; "
-        f"font-size:14px; line-height:1.5;'>"
-        f"{header_line}</div>",
-        unsafe_allow_html=True
-    )
+    # Render CTA buttons below header ONLY on RESULTS (assist + under-selected and not yet acknowledged)
+    if (
+        is_results
+        and str(mode).lower() == "assist"
+        and under
+        and not st.session_state.get("_hours_ack")
+    ):
+        col1, col2, col3 = st.columns([2, 2, 6])
+
+        with col1:
+            if st.button(f"✓ Accept {band}", key="hours_accept_btn", use_container_width=True):
+                # User accepts suggested hours
+                st.session_state["gcp_hours_user_choice"] = band
+                st.session_state["_hours_ack"] = True
+                st.session_state["_hours_ack_choice"] = "accepted"
+                st.session_state["_hours_nudge_new"] = False
+                st.session_state["_hours_nudge_key"] = f"{band}->{band}"
+                # Force summary to recompute with new hours
+                st.session_state.pop("_summary_ready", None)
+                print(f"[GCP_HOURS_ACK] action=accepted band={band}")
+                st.rerun()
+
+        with col2:
+            if st.button("Keep my current selection", key="hours_keep_btn", use_container_width=True):
+                # User keeps their selection
+                st.session_state["_hours_ack"] = True
+                st.session_state["_hours_ack_choice"] = "kept"
+                st.session_state["_hours_nudge_new"] = False
+                print(f"[GCP_HOURS_ACK] action=kept user={user} suggested={band}")
+                st.rerun()
     
-    # Render CTA buttons in a row
-    col1, col2, col3 = st.columns([2, 2, 6])
-    
-    with col1:
-        if st.button(f"✓ Accept {band}", key="hours_accept_btn", use_container_width=True):
-            # User accepts suggested hours
-            st.session_state["gcp_hours_user_choice"] = band
-            st.session_state["_hours_ack"] = True
-            st.session_state["_hours_ack_choice"] = "accepted"
-            st.session_state["_hours_nudge_new"] = False
-            print(f"[GCP_HOURS_ACK] action=accepted band={band}")
-            st.rerun()
-    
-    with col2:
-        if st.button("Keep my selection", key="hours_keep_btn", use_container_width=True):
-            # User keeps their selection
-            st.session_state["_hours_ack"] = True
-            st.session_state["_hours_ack_choice"] = "kept"
-            st.session_state["_hours_nudge_new"] = False
-            print(f"[GCP_HOURS_ACK] action=kept user={user} suggested={band}")
-            st.success("✓ We'll stick with your chosen hours.")
-            # Note: We don't rerun here, just show success message
-    
-    # Play chime once when a new nudge appears (optional) - only if not acknowledged
-    if st.session_state.get("_hours_nudge_new") and not st.session_state.get("_hours_ack"):
-        try:
-            p = pathlib.Path('assets/audio/chime.mp3')
-            if p.exists():
-                data = p.read_bytes()
-                b64 = base64.b64encode(data).decode()
-                # Autoplay audio via tiny HTML block; one-time per new nudge key
-                st.markdown(
-                    f"""
-                    <audio autoplay style="display:none">
-                      <source src="data:audio/mpeg;base64,{b64}" type="audio/mpeg">
-                    </audio>
-                    """,
-                    unsafe_allow_html=True
-                )
-        except Exception:
-            pass
-        # Immediately clear the new flag so it won't replay on minor reruns
+    # Play chime once strictly for under-selected hours (assist mode only) on header render
+    feat = str(mode).strip('"').lower() if mode else "off"
+    ack = bool(st.session_state.get("_hours_ack", False))
+    sugg = st.session_state.get("_hours_suggestion") or {}
+    under = bool(sugg.get("under_selected", False))
+    if (
+        feat == "assist" and               # feature enabled
+        (is_gcp or is_cp_intro) and        # only GCP/CP intro
+        under and                          # user < suggested
+        not ack and                        # not acknowledged yet
+        st.session_state.get("_hours_nudge_new")  # one-time per key
+    ):
+        print(
+            f"[CHIME] attempt: route={route} cp_intro={is_cp_intro} user={sugg.get('user')} -> sugg={sugg.get('band')}"
+        )
+        _play_chime_once()
         st.session_state["_hours_nudge_new"] = False
 
 
@@ -364,93 +443,26 @@ def render_navi_header_and_summary():
 
 
 def render_clean_summary():
-    """Render clean, conversational summary layout for GCP results page.
-    
-    Shows:
-    - Bordered Navi box with user name, tier, quote, and evolution note
-    - Two short paragraphs: "What this means for you" and "When it's a good fit"
-    - Clean section headers with horizontal rules
-    
-    Uses LLM-generated summary advice from session state.
+    """Render a single, clean paragraph under the Navi header with fallback.
+
+    Shows exactly one concise paragraph. If no LLM advice is available,
+    renders a deterministic fallback so the body never appears blank.
     """
     import streamlit as st
-    import os
-    
-    # Pull the LLM summary output
-    advice = st.session_state.get("_summary_advice")
-    tier = st.session_state.get("gcp.final_tier", "assisted_living").replace("_", " ").title()
-    navi_quote = advice.get("headline") if advice else None
-    what_it_means = advice.get("what_it_means") if advice else None
-    
-    # Build richer "When it's a good fit" from why array
-    when_best = None
-    if advice and advice.get("why"):
-        # Join 2-4 why items into one paragraph
-        why_items = advice.get("why", [])
-        when_best = " ".join(why_items[:4])
-    
-    # Get user name if available
-    user_name = st.session_state.get("senior_name") or st.session_state.get("user_name")
-    greeting = f"Great job{', ' + user_name if user_name else ''}."
-    
-    # Check for hours hint (if user under-selected)
-    hours_hint = None
-    try:
-        mode = None
-        try:
-            mode = st.secrets.get("FEATURE_GCP_HOURS")
-        except Exception:
-            pass
-        if not mode:
-            mode = os.getenv("FEATURE_GCP_HOURS", "off")
-        
-        if str(mode).lower() == "assist":
-            sugg = st.session_state.get("_hours_suggestion")
-            if sugg:
-                user_band = sugg.get("user")
-                suggested_band = sugg.get("band")
-                if user_band and suggested_band and user_band != suggested_band:
-                    hours_hint = f"💡 Navi suggests {suggested_band} hours/day based on care needs."
-    except Exception:
-        pass
-    
-    # Build quote block
-    quote_html = ""
-    if navi_quote:
-        quote_html = f'<p style="margin:1rem 0; padding-left:1rem; border-left:3px solid #3b82f6; font-style:italic; color:#4b5563;">💬 "{navi_quote}"</p>'
-    
-    # BORDERED NAVI BOX
-    navi_box_html = f"""
-    <div style="border:2px solid #cbd5e1; border-radius:8px; padding:1.5rem; margin-bottom:2rem; background:#ffffff;">
-        <div style="font-size:1.1rem; font-weight:600; margin-bottom:1rem; padding-bottom:.5rem; border-bottom:1px solid #e2e8f0;">
-            ✨ NAVI
-        </div>
-        <p style="margin-bottom:.75rem; color:#374151;">{greeting}</p>
-        <p style="margin-bottom:1rem; color:#374151;">Based on your answers, here's the plan that fits best right now:</p>
-        <p style="font-size:1.2rem; font-weight:600; margin:1rem 0; color:#0d1f4b;">🏡 {tier}</p>
-        {quote_html}
-        {f'<p style="margin:.75rem 0; color:#0369a1;">{hours_hint}</p>' if hours_hint else ''}
-        <p style="margin-top:1rem; color:#6b7280; font-size:.95rem;">▸ Your plan can evolve as your needs change—you can revisit it anytime.</p>
-    </div>
-    """
-    st.markdown(navi_box_html, unsafe_allow_html=True)
-    
-    # HORIZONTAL RULE
-    st.markdown("---")
-    
-    # WHAT IT MEANS
-    if what_it_means:
-        st.markdown("**What this means for you**")
-        st.markdown(what_it_means)
-        st.markdown("")
-    
-    # WHEN IT'S A GOOD FIT (richer paragraph)
-    if when_best:
-        st.markdown("**When it's a good fit**")
-        st.markdown(when_best)
-        st.markdown("")
-    
-    # HORIZONTAL RULE BEFORE BUTTONS
-    st.markdown("---")
-    st.markdown("🔘 **Choose what to do next:**")
-    st.markdown("")
+    adv = st.session_state.get("_summary_advice") or {}
+    tier_txt = (adv.get("tier") or "—").replace("_", " ").title()
+    body = (
+        (adv.get("what_it_means") or "").strip()
+        or " ".join((adv.get("why") or [])[:2]).strip()
+    )
+    if not body:
+        body = f"Based on your answers, {tier_txt} support can help keep things safe and manageable."
+
+    st.markdown("### What this means for you")
+    st.markdown(body)
+
+    if adv.get("next_line"):
+        st.markdown(
+            f"<div style='margin-top:.5rem;color:#0d1f4b'>{adv['next_line']}</div>",
+            unsafe_allow_html=True,
+        )

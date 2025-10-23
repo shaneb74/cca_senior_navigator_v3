@@ -33,15 +33,38 @@ def render():
     2. When complete, show comparison view (Quick Estimate)
     """
 
-    st.title("💰 Cost Planner")
+    # Mark CP intro scope for header helper
+    st.session_state["cp_intro"] = True
 
-    st.markdown("---")
+    # Open centered container for calm, consistent layout (desktop only)
+    st.markdown("<div class='sn-container'>", unsafe_allow_html=True)
 
     # Get GCP recommendation for context
     gcp_rec = MCIP.get_care_recommendation()
     rec_tier = None
     if gcp_rec and hasattr(gcp_rec, 'tier'):
         rec_tier = gcp_rec.tier
+
+    # Build Navi header content
+    header_title = "Let’s look at costs"
+    tier_display = None
+    if rec_tier:
+        tier_display = rec_tier.replace("_", " ").title()
+    header_reason = (
+        f"I’ve pre-selected {tier_display} from your Guided Care Plan. You can explore other scenarios too."
+        if tier_display
+        else "We’ll start with your Guided Care Plan. You can explore other scenarios too."
+    )
+
+    # Use the unified header helper (scoped to CP intro)
+    try:
+        from products.gcp_v4.ui_helpers import render_navi_header_message
+        # Feed title/subtitle through session to the helper
+        st.session_state["gcp_step_title"] = header_title
+        st.session_state["gcp_step_subtitle"] = header_reason
+        render_navi_header_message()
+    except Exception:
+        pass
 
     # Show prepare gate first
     is_ready = prepare_quick_estimate.render_prepare_gate(
@@ -57,6 +80,14 @@ def render():
             comparison_view.render_comparison_view(zip_code=zip_code)
         else:
             st.error("⚠️ ZIP code is required to show estimate.")
+
+    # Close container and reset single-render guard and CP intro flag at end of render
+    st.markdown("</div>", unsafe_allow_html=True)
+    if st.session_state.get("_gcp_cp_header_rendered"):
+        st.session_state["_gcp_cp_header_rendered"] = False
+    if st.session_state.get("_gcp_cp_header_key"):
+        del st.session_state["_gcp_cp_header_key"]
+    st.session_state["cp_intro"] = False
 
 
 def _render_auth_gate():

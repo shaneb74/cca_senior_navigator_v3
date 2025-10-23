@@ -59,6 +59,136 @@ def gcp_hours_mode() -> str:
     return str(v).strip().strip('"').lower() if v else "off"
 
 
+def ensure_summary_ready(answers: dict, flags: list[str], tier: str) -> None:
+    """
+    Computes summary context + LLM advice once, stores to session so UI
+    can render immediately (no widget interaction required).
+    Safe to call repeatedly (idempotent).
+    """
+    try:
+        import streamlit as st
+    except Exception:
+        return  # Only meaningful in Streamlit runtime
+
+    # Clear previous ready flag on RESULTS entry so we don't short-circuit
+    try:
+        st.session_state.pop("_summary_ready", None)
+    except Exception:
+        pass
+
+    # Enter marker for RESULT summary precompute
+    try:
+        print("[SUMMARY_ENTER] RESULTS")
+    except Exception:
+        pass
+
+    summary_ctx = {
+        "badls": answers.get("badls", []),
+        "iadls": answers.get("iadls", []),
+        "mobility": answers.get("mobility"),
+        "falls": answers.get("falls"),
+        "behaviors": answers.get("behaviors", []),
+        "meds_complexity": answers.get("meds_complexity"),
+        "isolation": answers.get("isolation"),
+        "has_partner": ("has_partner" in (flags or [])) or st.session_state.get("has_partner", False),
+    }
+
+    hours = st.session_state.get("_hours_suggestion", {}) or {}
+    user_hours = st.session_state.get("gcp_hours_user_choice")
+    suggested = hours.get("band")
+
+    try:
+        from ai.summary_engine import generate_summary
+        from ai.llm_client import get_feature_gcp_mode
+        mode = get_feature_gcp_mode()  # "shadow"|"assist"|others
+    except Exception:
+        # If imports fail, don't attempt LLM
+        mode = "off"
+        generate_summary = None
+
+    # Log effective mode on RESULTS
+    try:
+        print(f"[LLM_MODE] {mode}")
+    except Exception:
+        pass
+
+    ok = False
+    adv_obj = None
+    if generate_summary is not None:
+        try:
+            ok, adv_obj = generate_summary(summary_ctx, tier, suggested, user_hours, mode)
+        except Exception:
+            ok, adv_obj = False, None
+    else:
+        ok, adv_obj = False, None
+
+    # Log the call outcome with advice presence
+    try:
+        print(f"[LLM_CALL] ok={bool(ok)} advice={'yes' if adv_obj else 'no'}")
+    except Exception:
+        pass
+
+    if ok and adv_obj:
+        try:
+            d = adv_obj.model_dump() if hasattr(adv_obj, 'model_dump') else dict(getattr(adv_obj, '__dict__', {}))
+            d.setdefault("tier", tier)
+            st.session_state["_summary_advice"] = d
+            
+            # Concise LLM vs deterministic log + disagreement capture
+            try:
+                from core.logging import get_flag
+                TRAIN_LOG_ALL = (get_flag("FEATURE_TRAIN_LOG_ALL", "off") in {"on", "true", "1", "yes"})
+                
+                det = tier
+                # Prefer advice tier; else fall back to deterministic tier
+                llm_tier = d.get("tier") or d.get("recommended_tier") or tier
+                conf = float(d.get("confidence", 0.0) or 0.0)
+                aligned = (det == llm_tier)
+                
+                print(f"[GCP_LLM_SUMMARY] det={det} llm={llm_tier} aligned={aligned} conf={conf:.2f}")
+                
+                if llm_tier and not aligned:
+                    from tools.log_disagreement import append_case
+                    row = {
+                        "gcp_context": {"answers": answers, "flags": list(flags or [])},
+                        "det_tier": det,
+                        "llm_tier": llm_tier,
+                        "llm_conf": conf
+                    }
+                    append_case(row)
+                    print("[GCP_LOG] disagreement captured")
+                elif TRAIN_LOG_ALL:
+                    from tools.log_disagreement import append_case
+                    row = {
+                        "gcp_context": {"answers": answers, "flags": list(flags or [])},
+                        "det_tier": det,
+                        "llm_tier": llm_tier,
+                        "llm_conf": conf,
+                        "aligned": True
+                    }
+                    append_case(row)
+            except Exception:
+                pass  # Never fail on logging
+                
+        except Exception:
+            # If we cannot serialize, treat as failure
+            st.session_state.pop("_summary_advice", None)
+    else:
+        # Do NOT set fallback; leave unset for diagnostics
+        st.session_state.pop("_summary_advice", None)
+
+    st.session_state["_summary_ready"] = True
+
+    # Explicit readiness marker
+    try:
+        present = bool(st.session_state.get("_summary_advice"))
+        print(f"[SUMMARY_READY] present={present}")
+    except Exception:
+        pass
+    except Exception:
+        pass
+
+
 # Tier thresholds based on total score
 # CRITICAL: These are the ONLY 5 allowed tier values
 TIER_THRESHOLDS = {
@@ -703,23 +833,37 @@ def derive_outcome(
                     "nudge_text": nudge_text,
                     "severity": severity,
                 }
-                
-                # Detect new nudge event for one-time notification
-                prev_key = st.session_state.get("_hours_nudge_key")
-                curr_key = None
-                if sugg.get("nudge_text"):
-                    # Build a simple change key from (user, suggested)
-                    user_selection = sugg.get("user") or "-"
-                    suggested_band = sugg.get("band") or "-"
-                    curr_key = f"{user_selection}->{suggested_band}"
-                
+                # Compute under-selected and nudge key strictly by band order
+                ORDER = ["<1h", "1-3h", "4-8h", "24h"]
+                def _band_index(b):
+                    try:
+                        return ORDER.index(b)
+                    except Exception:
+                        return -1
+
+                user_band_cur = user_band
+                suggested_band_cur = suggested
+                under_selected_flag = (
+                    (user_band_cur in ORDER)
+                    and (suggested_band_cur in ORDER)
+                    and (_band_index(user_band_cur) < _band_index(suggested_band_cur))
+                )
+
+                # store on the suggestion dict too for UI use
+                sugg["user"] = user_band_cur
+                sugg["under_selected"] = bool(under_selected_flag)
+
+                # Persist suggestion first
                 st.session_state["_hours_suggestion"] = sugg
-                
-                if curr_key and curr_key != prev_key:
-                    st.session_state["_hours_nudge_key"] = curr_key
-                    st.session_state["_hours_nudge_new"] = True
-                else:
-                    st.session_state["_hours_nudge_new"] = False
+
+                # nudge-key changes only when the (user,suggested) pair changes
+                key = f"{user_band_cur or '-'}->{suggested_band_cur or '-'}"
+                prev = st.session_state.get("_hours_nudge_key")
+                st.session_state["_hours_nudge_new"] = bool(under_selected_flag and key != prev)
+                st.session_state["_hours_nudge_key"] = key
+                print(
+                    f"[HOURS_NUDGE] key={key} under={under_selected_flag} new={st.session_state['_hours_nudge_new']}"
+                )
             except Exception:
                 pass
             
@@ -900,51 +1044,7 @@ def derive_outcome(
             pass  # Silent failure if streamlit not available
 
     # ====================================================================
-    # LLM SUMMARY GENERATION (for conversational Navi explainer on summary page)
-    # ====================================================================
-    try:
-        import streamlit as st
-        from ai.summary_engine import generate_summary
-        
-        # Build summary context from answers
-        summary_ctx = {
-            "badls": answers.get("badls", []),
-            "iadls": answers.get("iadls", []),
-            "mobility": answers.get("mobility"),
-            "falls": answers.get("falls"),
-            "behaviors": answers.get("behaviors", []),
-            "meds_complexity": answers.get("meds_complexity"),
-            "isolation": answers.get("isolation"),
-            "has_partner": "has_partner" in [f["id"] for f in flags] or st.session_state.get("has_partner", False)
-        }
-        
-        # Get hours suggestion data
-        hours = st.session_state.get("_hours_suggestion", {})
-        user_hours = st.session_state.get("gcp_hours_user_choice")
-        hours_suggested = hours.get("band")
-        
-        # Generate summary (respects feature flag mode)
-        llm_mode = get_feature_gcp_mode()  # "shadow" or "assist"
-        ok, adv = generate_summary(summary_ctx, tier, hours_suggested, user_hours, llm_mode)
-        
-        if ok and adv:
-            st.session_state["_summary_advice"] = adv.model_dump()
-            print(
-                f"[GCP_SUMMARY_{llm_mode.upper()}] conf={adv.confidence:.2f} "
-                f"headline={adv.headline[:60]}..."
-            )
-        else:
-            st.session_state["_summary_advice"] = None
-            if llm_mode in ("shadow", "assist"):
-                print(f"[GCP_SUMMARY_{llm_mode.upper()}] ok=False (generation failed)")
-    
-    except Exception as e:
-        print(f"[GCP_SUMMARY_ERROR] Exception (silent): {e}")
-        try:
-            import streamlit as st
-            st.session_state["_summary_advice"] = None
-        except Exception:
-            pass
+    # LLM SUMMARY GENERATION (deprecated here): moved to ensure_summary_ready()
     # ====================================================================
 
     return {

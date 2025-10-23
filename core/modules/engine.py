@@ -1038,17 +1038,34 @@ def _render_results_view(mod: dict[str, Any], config: ModuleConfig) -> None:
         rec_text = "Your Guided Care Plan"
 
     # ========================================
-    # 1. CLEAN CONVERSATIONAL SUMMARY (LLM-powered)
+    # 1. BLUE NAVI HEADER (skip if product already rendered one)
     # ========================================
-    # Render single bordered Navi box with tier, quote, and guidance
-    # This replaces the old render_navi_panel_v2() call to avoid duplication
+    # Product pages (GCP) render the header at the top; avoid duplication here.
+    try:
+        if not st.session_state.get("_gcp_cp_header_rendered", False):
+            from core.ui import render_navi_panel_v2
+            header_title = "Your Guided Care Plan"
+            header_reason = f"Based on your answers, {rec_text} fits best right now."
+            render_navi_panel_v2(
+                title=header_title,
+                reason=header_reason,
+                encouragement={"icon": "💬", "text": "You can adjust details anytime and explore costs next.", "status": "in_progress"},
+                context_chips=[],
+                primary_action={"label": "", "route": ""},
+                variant="module",
+            )
+            # Mark as rendered to protect against downstream duplicate calls
+            st.session_state["_gcp_cp_header_rendered"] = True
+            st.session_state["_gcp_cp_header_key"] = "gcp_cp_header::results"
+    except Exception:
+        pass
+
+    # Clean paragraphs under header
     try:
         from products.gcp_v4.ui_helpers import render_clean_summary
         render_clean_summary()
     except Exception:
-        pass  # Gracefully skip if not available
-
-    st.markdown("<div style='margin: 32px 0;'></div>", unsafe_allow_html=True)
+        pass
 
     # ========================================
     # 2. RECOMMENDATION CLARITY - Collapsible Drawer (Developer Tool)

@@ -96,6 +96,7 @@ def get_api_key() -> Optional[str]:
         import streamlit as st
         key = st.secrets.get("OPENAI_API_KEY")
         if key:
+            _maybe_debug_masked_key(key)
             return key
     except Exception:
         pass  # Streamlit not available or secrets not configured
@@ -103,10 +104,14 @@ def get_api_key() -> Optional[str]:
     # 2) Try environment variables
     key = os.getenv("OPENAI_API_KEY")
     if key:
+        _maybe_debug_masked_key(key)
         return key
     
     # 3) Embedded fallback (prototype only)
-    return _embedded_key()
+    key = _embedded_key()
+    if key:
+        _maybe_debug_masked_key(key)
+    return key
 
 
 def get_openai_model() -> str:
@@ -127,12 +132,15 @@ def get_openai_model() -> str:
         import streamlit as st
         model = st.secrets.get("OPENAI_MODEL")
         if model:
+            _maybe_debug_model(str(model))
             return model
     except Exception:
         pass
     
     # 2) Try environment variable or use default
-    return os.getenv("OPENAI_MODEL", DEFAULT_MODEL)
+    model = os.getenv("OPENAI_MODEL", DEFAULT_MODEL)
+    _maybe_debug_model(str(model))
+    return model
 
 
 def get_feature_mode() -> str:
@@ -185,6 +193,44 @@ def get_feature_gcp_mode() -> str:
     
     # 2) Try environment variable or use default
     return os.getenv("FEATURE_LLM_GCP", "off")
+
+
+# ====================================================================
+# DEBUG HELPERS
+# ====================================================================
+
+def _flag_on(name: str) -> bool:
+    """Check feature/debug flag from secrets first then env."""
+    try:
+        import streamlit as st
+        v = getattr(st, "secrets", None)
+        if v is not None:
+            vv = v.get(name)
+            if vv is not None:
+                return str(vv).strip().strip('"').lower() == "on"
+    except Exception:
+        pass
+    return str(os.getenv(name, "off")).strip().strip('"').lower() == "on"
+
+
+def _maybe_debug_masked_key(key: Optional[str]) -> None:
+    """If DEBUG_LLM is on, print masked key tail for verification."""
+    if not key:
+        return
+    if not _flag_on("DEBUG_LLM"):
+        return
+    last4 = str(key)[-4:] if len(str(key)) >= 4 else str(key)
+    prefix = "sk-" if str(key).startswith("sk-") else "key-"
+    print(f"[LLM_CLIENT] key={prefix}***{last4}")
+
+
+def _maybe_debug_model(model: Optional[str]) -> None:
+    """If DEBUG_LLM is on, print selected model."""
+    if not model:
+        return
+    if not _flag_on("DEBUG_LLM"):
+        return
+    print(f"[LLM_CLIENT] model={model}")
 
 
 # ====================================================================

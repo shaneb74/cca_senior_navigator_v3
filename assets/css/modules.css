@@ -246,6 +246,10 @@ div.element-container:empty {
   margin: 0 !important;
 }
 
+/* === Navi header inline recommendation tweaks === */
+#navi-header-text { margin-top: .25rem; line-height: 1.4; font-size: .95rem; }
+.stButton button { padding: .4rem .9rem; border-radius: .5rem; font-size: .9rem; }
+
 /* Hide Streamlit's native widget labels (we use custom styled labels) */
 /* Hide widget labels ONLY within specific module field contexts to avoid breaking multiselect/other components */
 .sn-app .mod-field [data-testid="stWidgetLabel"],
@@ -1670,9 +1674,14 @@ div[data-testid="stVerticalBlock"]:has(.chip-wrap.is-active) .stButton > button{
 
 /* Compact Navi header hours hint */
 #navi-compact {
-  margin-top: .25rem;
+  margin-top: .35rem;
   color: #0d1f4b;
   font-size: .95rem;
 }
+
+/* Center main column on wide screens; keep narrow behavior intact */
+.sn-container { max-width: 980px; margin: 0 auto; padding: 0 24px; }
+.stMarkdown h3 { margin-top: 1.25rem; margin-bottom: .5rem; }
+.stMarkdown p  { margin-bottom: .75rem; }
 
 

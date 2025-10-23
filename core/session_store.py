@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 Session and User Data Persistence
 
@@ -35,17 +37,13 @@ import time
 import uuid
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional, Mapping
 
 try:
     import filelock
-
     HAS_FILELOCK = True
 except ImportError:
     HAS_FILELOCK = False
-    print(
-        "[WARN] filelock not installed - concurrent writes may conflict. Install: pip install filelock"
-    )
 
 
 # ====================================================================
@@ -178,7 +176,7 @@ def _atomic_write(path: Path, data: dict[str, Any], retries: int = MAX_RETRIES) 
     return False
 
 
-def _safe_read(path: Path) -> dict[str, Any] | None:
+def _safe_read(path: Path) -> Optional[Mapping[str, Any]]:
     """Read JSON file safely with error handling.
 
     If file is corrupted or doesn't exist, returns None.
