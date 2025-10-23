@@ -111,6 +111,31 @@ def _render_review_content(recommendation, assessment_data):
 
     st.markdown("---")
 
+    # Check if hours/day nudge needs acknowledgement before allowing progression
+    needs_ack = False
+    try:
+        from ai.hours_engine import under_selected
+        import os
+        
+        mode = None
+        try:
+            mode = st.secrets.get("FEATURE_GCP_HOURS")
+        except Exception:
+            pass
+        if not mode:
+            mode = os.getenv("FEATURE_GCP_HOURS", "off")
+        
+        if str(mode).lower() == "assist":
+            ack = st.session_state.get("_hours_ack")
+            sugg = st.session_state.get("_hours_suggestion")
+            if sugg and not ack:
+                user_band = sugg.get("user")
+                suggested_band = sugg.get("band")
+                if user_band and suggested_band and under_selected(user_band, suggested_band):
+                    needs_ack = True
+    except Exception:
+        pass  # Gracefully skip if hours engine not available
+    
     # Navigation buttons
     col1, col2, col3 = st.columns([1, 1, 1])
     with col1:
@@ -119,9 +144,12 @@ def _render_review_content(recommendation, assessment_data):
             st.rerun()
 
     with col2:
-        if st.button("💰 View Costs", type="primary", use_container_width=True):
+        if st.button("💰 View Costs", type="primary", use_container_width=True, disabled=needs_ack):
             st.query_params["page"] = "cost_v2"
             st.rerun()
+        
+        if needs_ack:
+            st.warning("⚠️ Please review Navi's hours recommendation above before continuing to costs.")
 
     with col3:
         if st.button("🔁 Retake Assessment", use_container_width=True):

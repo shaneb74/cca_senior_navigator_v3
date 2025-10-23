@@ -218,22 +218,24 @@ def generate_hours_nudge_text(
     try:
         client = OpenAI(api_key=api_key, timeout=10.0)
         
-        # Build minimal, guardrailed system prompt
+        # Build minimal, guardrailed system prompt (CONCISE VERSION)
         system_prompt = """You are 'Navi', a clinical care planning assistant. Your job is to suggest daily in-home care hours.
 
 Allowed bands ONLY: "<1h", "1-3h", "4-8h", "24h" (exactly 4 options).
 
-The user has selected a LOWER band than recommended. Provide a firm but supportive 1-2 sentence nudge that:
-- References the person's specific care needs (ADL/IADL counts, mobility aid, falls, risky behaviors like wandering/aggression, overnight needs, primary support, medication complexity)
-- Explains clearly that under-support increases safety risk and may make home care unsustainable or more costly overall
-- Ends with a clear recommendation to reconsider the specific suggested band (e.g., "We recommend 4-8 hours per day based on these needs.")
+The user has selected a LOWER band than recommended. Write ONE sentence (max ~24 words). No more than one clause. Zero numbers except the target band label. No lists. No second sentence.
+
+Reference ONE or TWO key care signals (e.g., "multiple falls", "walker", "3 ADLs") and state the recommended band.
+
+Example: "Given multiple falls and walker use, we recommend 4-8 hours per day for safety."
 
 RULES:
+- ONE sentence only
+- Max 24 words
 - No prices or financial calculations
 - No new band values (only use the 4 allowed bands)
 - No clinical guarantees or medical advice
-- Be firm but supportive and respectful
-- Keep it concise (1-2 sentences)"""
+- Be firm but supportive and respectful"""
         
         user_message = {
             "user_hours": user_band,
@@ -256,7 +258,7 @@ RULES:
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": f"Generate nudge for: {json.dumps(user_message)}"}
             ],
-            max_tokens=160,
+            max_tokens=80,  # Reduced from 160 for conciseness
             temperature=0.2,
         )
         
@@ -264,7 +266,17 @@ RULES:
         if not text:
             return None
         
-        return text
+        # Post-process: Keep first sentence only, trim to ≤ 160 chars
+        sentences = text.split('.')
+        first_sentence = sentences[0].strip()
+        if first_sentence and not first_sentence.endswith('.'):
+            first_sentence += '.'
+        
+        # Trim to max 160 characters
+        if len(first_sentence) > 160:
+            first_sentence = first_sentence[:157] + '...'
+        
+        return first_sentence
     
     except Exception as e:
         print(f"[GCP_HOURS_WARN] Nudge generation error: {e}")
