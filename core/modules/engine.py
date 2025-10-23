@@ -1140,13 +1140,21 @@ def _render_results_view(mod: dict[str, Any], config: ModuleConfig) -> None:
                     if k.startswith("gcp_") or k in ("_summary_advice", "_hours_suggestion", "_hours_ack", "_hours_nudge_key", "_hours_nudge_new", "_gcp_llm_advice"):
                         st.session_state.pop(k, None)
             
-            # Reset progress markers the engine uses
-            for k in ("gcp.step", "gcp_view", "persistence_loaded", "gcp_care_recommendation._step"):
+            # Reset to step 0 (first question - Age section)
+            st.session_state[f"{config.state_key}._step"] = 0
+            
+            # Update tile state to step 0
+            tiles = st.session_state.setdefault("tiles", {})
+            tile_state = tiles.setdefault(config.product, {})
+            tile_state["last_step"] = 0
+            
+            # Clear other progress markers
+            for k in ("gcp_view", "persistence_loaded"):
                 st.session_state.pop(k, None)
             
-            # Route to first GCP screen
-            from core.nav import route_to
-            route_to("gcp_v4")
+            # Rerun to show first question
+            from core.modules.engine import safe_rerun
+            safe_rerun()
 
     with col2:
         if st.button("💰 Explore Care Options & Costs", key="btn_costs", type="primary", use_container_width=True):
@@ -1157,6 +1165,9 @@ def _render_results_view(mod: dict[str, Any], config: ModuleConfig) -> None:
         if st.button("🏠 Return to Concierge Hub", key="btn_hub", use_container_width=True):
             from core.nav import route_to
             route_to("hub_concierge")
+    
+    # Bottom horizontal rule
+    st.markdown("---")
 
 
 def _render_results_summary(state: dict[str, Any], config: ModuleConfig) -> None:

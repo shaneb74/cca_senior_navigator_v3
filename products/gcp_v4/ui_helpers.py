@@ -367,11 +367,11 @@ def render_clean_summary():
     """Render clean, conversational summary layout for GCP results page.
     
     Shows:
-    - Navi header with tier + one-sentence quote + optional hours hint
+    - Bordered Navi box with user name, tier, quote, and evolution note
     - Two short paragraphs: "What this means for you" and "When it's a good fit"
+    - Clean section headers with horizontal rules
     
     Uses LLM-generated summary advice from session state.
-    No extra colors, bullets, or banners - just clean, readable text.
     """
     import streamlit as st
     import os
@@ -388,6 +388,10 @@ def render_clean_summary():
         # Join 2-4 why items into one paragraph
         why_items = advice.get("why", [])
         when_best = " ".join(why_items[:4])
+    
+    # Get user name if available
+    user_name = st.session_state.get("senior_name") or st.session_state.get("user_name")
+    greeting = f"Great job{', ' + user_name if user_name else ''}."
     
     # Check for hours hint (if user under-selected)
     hours_hint = None
@@ -410,27 +414,43 @@ def render_clean_summary():
     except Exception:
         pass
     
-    # SINGLE NAVI HEADER (no gray banner)
-    st.markdown(f"**✨ Navi**")
-    st.markdown("Great job, based on your answers, here's the plan that fits best right now:")
-    st.markdown(f"### 🏡 {tier}")
-    
+    # Build quote block
+    quote_html = ""
     if navi_quote:
-        st.markdown(f"*{navi_quote}*")
+        quote_html = f'<p style="margin:1rem 0; padding-left:1rem; border-left:3px solid #3b82f6; font-style:italic; color:#4b5563;">💬 "{navi_quote}"</p>'
     
-    if hours_hint:
-        st.markdown(hours_hint)
+    # BORDERED NAVI BOX
+    navi_box_html = f"""
+    <div style="border:2px solid #cbd5e1; border-radius:8px; padding:1.5rem; margin-bottom:2rem; background:#ffffff;">
+        <div style="font-size:1.1rem; font-weight:600; margin-bottom:1rem; padding-bottom:.5rem; border-bottom:1px solid #e2e8f0;">
+            ✨ NAVI
+        </div>
+        <p style="margin-bottom:.75rem; color:#374151;">{greeting}</p>
+        <p style="margin-bottom:1rem; color:#374151;">Based on your answers, here's the plan that fits best right now:</p>
+        <p style="font-size:1.2rem; font-weight:600; margin:1rem 0; color:#0d1f4b;">🏡 {tier}</p>
+        {quote_html}
+        {f'<p style="margin:.75rem 0; color:#0369a1;">{hours_hint}</p>' if hours_hint else ''}
+        <p style="margin-top:1rem; color:#6b7280; font-size:.95rem;">▸ Your plan can evolve as your needs change—you can revisit it anytime.</p>
+    </div>
+    """
+    st.markdown(navi_box_html, unsafe_allow_html=True)
     
-    st.markdown("▸ Your plan can evolve as your needs change — you can revisit it anytime.")
-    
-    st.markdown("<div style='margin-top:1.5rem;'></div>", unsafe_allow_html=True)
+    # HORIZONTAL RULE
+    st.markdown("---")
     
     # WHAT IT MEANS
     if what_it_means:
-        st.markdown("### What this means for you")
+        st.markdown("**What this means for you**")
         st.markdown(what_it_means)
+        st.markdown("")
     
     # WHEN IT'S A GOOD FIT (richer paragraph)
     if when_best:
-        st.markdown("### When it's a good fit")
+        st.markdown("**When it's a good fit**")
         st.markdown(when_best)
+        st.markdown("")
+    
+    # HORIZONTAL RULE BEFORE BUTTONS
+    st.markdown("---")
+    st.markdown("🔘 **Choose what to do next:**")
+    st.markdown("")
