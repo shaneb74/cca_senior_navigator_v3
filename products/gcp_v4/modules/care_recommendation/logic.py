@@ -84,15 +84,17 @@ def _choose_final_tier(
     bands: dict,
     risky: bool
 ) -> tuple[str, dict]:
-    """Return (final_tier, decision_info) using LLM-first policy.
+    """Return (final_tier, decision_info) using LLM-first policy with deterministic fallback.
     
     LLM-First Policy:
-    1) If LLM_TIER exists AND LLM_TIER ∈ ALLOWED_TIERS → CHOSEN = LLM_TIER.
-    2) Else if LLM_TIER missing/timeout/invalid OR not in ALLOWED_TIERS → CHOSEN = DET_TIER (fallback).
-    3) Confidence is NOT used to override; confidence is logged only.
+    1) If LLM_TIER exists AND LLM_TIER ∈ ALLOWED_TIERS → CHOSEN = LLM_TIER (source=llm).
+    2) Else if LLM_TIER missing/timeout/invalid OR not in ALLOWED_TIERS → CHOSEN = DET_TIER (source=fallback).
+    3) Confidence is NOT used to override; it is logged for analytics only.
+    
+    This function is PURE - no Streamlit state modifications.
     
     Args:
-        det_tier: Deterministic tier recommendation
+        det_tier: Deterministic tier recommendation (backup)
         allowed_tiers: Set of tiers allowed by cognitive/behavioral gates
         llm_tier: LLM-recommended tier (if available)
         llm_conf: LLM confidence score (if available)
@@ -100,7 +102,10 @@ def _choose_final_tier(
         risky: True if risky cognitive behaviors present
         
     Returns:
-        Tuple of (final_tier, decision_info_dict)
+        Tuple of (final_tier, decision_info_dict) where decision_info contains:
+        - source: "llm" or "fallback"
+        - reason: Why this tier was chosen
+        - adjudication_reason: Code for logging/analytics
     """
     info = {
         "det": det_tier,
@@ -122,26 +127,32 @@ def _choose_final_tier(
         info["source"] = "fallback"
         return default_tier, info
 
-    # Rule 1: LLM exists and is in allowed set → use LLM
+    # Rule 1: LLM exists and is in allowed set → use LLM (primary path)
     if llm_tier and llm_tier in allowed_tiers:
         info["reason"] = "llm_valid"
         info["source"] = "llm"
         info["adjudication_reason"] = "llm_valid"
         return llm_tier, info
     
-    # Rule 2: LLM invalid or missing → fallback to deterministic
+    # Rule 2: LLM invalid or missing → fallback to deterministic (backup path)
     if llm_tier is None:
-        info["reason"] = "llm_timeout"
+        info["reason"] = "llm_timeout_or_error"
         info["adjudication_reason"] = "llm_timeout"
     elif llm_tier not in allowed_tiers:
-        info["reason"] = "llm_invalid_guard"
-        info["adjudication_reason"] = "llm_invalid_guard"
+        info["reason"] = "llm_disallowed_by_guard"
+        info["adjudication_reason"] = "llm_guard_disallow"
     else:
         # This shouldn't happen, but handle edge case
         info["reason"] = "llm_invalid_unknown"
         info["adjudication_reason"] = "llm_invalid_unknown"
     
     info["source"] = "fallback"
+    
+    # Emit fallback warning for monitoring (< 2% expected)
+    import uuid
+    fallback_id = str(uuid.uuid4())[:12]
+    print(f"[LLM_FALLBACK] reason={info['adjudication_reason']} det={det_tier} llm={llm_tier or 'none'} id={fallback_id}")
+    
     return det_tier, info
 
 
@@ -323,10 +334,11 @@ def ensure_summary_ready(answers: dict, flags: list[str], tier: str) -> None:
         st.session_state["summary_ready"] = False
 
     # ====================================================================
-    # TIER DECISION POLICY (GUARDED LLM REPLACEMENT)
+    # TIER DECISION POLICY (LLM-FIRST WITH DETERMINISTIC FALLBACK)
     # ====================================================================
-    # Apply tier replacement policy if FEATURE_GCP_LLM_TIER="replace"
-    tier_mode = get_llm_tier_mode()  # "off"|"shadow"|"replace"
+    # ALWAYS use LLM-first logic regardless of mode.
+    # Mode only affects logging verbosity, not the decision path.
+    tier_mode = get_llm_tier_mode()  # "off"|"shadow"|"assist"|"adjust"
     
     # Get LLM tier and confidence from advice
     d = st.session_state.get("_summary_advice") or {}
@@ -365,75 +377,72 @@ def ensure_summary_ready(answers: dict, flags: list[str], tier: str) -> None:
         bands = {"cog": "unknown", "sup": "unknown"}
         risky = False
     
-    if tier_mode == "replace":
-        final_tier, decision = _choose_final_tier(
-            det_tier=tier,
-            allowed_tiers=allowed_tiers,
-            llm_tier=llm_tier,
-            llm_conf=llm_conf,
-            bands=bands,
-            risky=risky
-        )
+    # ALWAYS apply LLM-first decision logic (deterministic is fallback only)
+    final_tier, decision = _choose_final_tier(
+        det_tier=tier,
+        allowed_tiers=allowed_tiers,
+        llm_tier=llm_tier,
+        llm_conf=llm_conf,
+        bands=bands,
+        risky=risky
+    )
+    
+    # Publish chosen tier (single source of truth)
+    st.session_state["gcp.final_tier"] = final_tier
+    st.session_state["gcp.adjudication_decision"] = decision  # Store for CarePlan creation
+    
+    # Update advice object with final tier for UI consistency
+    if final_tier != tier and d:
+        d["tier"] = final_tier
+        st.session_state["_summary_advice"] = d
+    
+    # Generate correlation ID for tracing
+    import uuid
+    corr_id = str(uuid.uuid4())[:12]
+    
+    # Single-line adjudication log (ALWAYS emitted, shows source)
+    source = decision.get("source", "unknown")
+    reason = decision.get("adjudication_reason", "unknown")
+    print(f"[GCP_ADJ] chosen={final_tier} llm={llm_tier or 'none'} det={tier} source={source} allowed={decision['allowed']} conf={llm_conf or 0.0:.2f} reason={reason} id={corr_id}")
+    
+    # Legacy mode logging (for analytics/debugging only - does NOT affect publish)
+    if tier_mode in ("shadow", "off"):
+        mode_msg = "LLM disabled" if tier_mode == "off" else "diagnostic logging only"
+        print(f"[GCP_MODE] mode={tier_mode} ({mode_msg}) published={final_tier} source={source}")
+    
+    # NOW reconcile with deterministic for mismatch logging (after adjudication_decision is set)
+    try:
+        from ai.gcp_navi_engine import reconcile_with_deterministic
+        # Build advice-like object for reconcile
+        class AdjudicatedAdvice:
+            def __init__(self, tier, conf):
+                self.tier = tier
+                self.confidence = conf
         
-        st.session_state["gcp.final_tier"] = final_tier
-        st.session_state["gcp.adjudication_decision"] = decision  # Store for CarePlan creation
-        
-        # Update advice object with final tier for UI consistency
-        if final_tier != tier and d:
-            d["tier"] = final_tier
-            st.session_state["_summary_advice"] = d
-        
-        # Generate correlation ID for tracing
-        import uuid
-        corr_id = str(uuid.uuid4())[:12]
-        
-        # Single-line adjudication log
-        print(f"[GCP_ADJ] chosen={final_tier} llm={llm_tier or 'none'} det={tier} allowed={decision['allowed']} conf={llm_conf or 'none'} reason={decision['adjudication_reason']} id={corr_id}")
-        
-        # NOW reconcile with deterministic for mismatch logging (after adjudication_decision is set)
-        try:
-            from ai.gcp_navi_engine import reconcile_with_deterministic
-            # Build advice-like object for reconcile
-            class AdjudicatedAdvice:
-                def __init__(self, tier, conf):
-                    self.tier = tier
-                    self.confidence = conf
-            
-            if llm_tier:
-                advice_for_reconcile = AdjudicatedAdvice(llm_tier, llm_conf)
-                reconcile_with_deterministic(tier, advice_for_reconcile, tier_mode)
-        except Exception as e:
-            print(f"[GCP_RECONCILE_ERROR] {e}")
-        
-        # Training/audit row
-        try:
-            from tools.log_disagreement import append_case
-            row = {
-                "det_tier": tier,
-                "llm_tier": llm_tier,
-                "llm_conf": llm_conf,
-                "final_tier": final_tier,
-                "allowed_tiers": sorted(list(allowed_tiers)),
-                "bands": decision["bands"],
-                "risky": decision["risky"],
-                "reason": decision["reason"],
-                "answers": answers,
-                "flags": list(flags),
-            }
-            append_case(row)
-        except Exception:
-            pass  # Never fail on logging
-            
-    else:
-        # LEGACY MODE (off/shadow): Keep deterministic tier but DO NOT publish to UI/CarePlan
-        # In shadow mode, we log but do NOT write to gcp.final_tier (would overwrite LLM choice)
-        # Only set gcp.final_tier if tier_mode is completely off (no LLM at all)
-        if tier_mode == "off":
-            st.session_state["gcp.final_tier"] = tier
-            print(f"[GCP_TIER_DECISION] mode=off det={tier} (LLM disabled)")
-        else:
-            # Shadow mode: log only, do not publish deterministic tier
-            print(f"[GCP_TIER_DECISION] mode=shadow det={tier} llm={llm_tier or 'none'} conf={llm_conf or 0.0:.2f} (shadow only, not published)")
+        if llm_tier:
+            advice_for_reconcile = AdjudicatedAdvice(llm_tier, llm_conf)
+            reconcile_with_deterministic(tier, advice_for_reconcile, tier_mode)
+    except Exception as e:
+        print(f"[GCP_RECONCILE_ERROR] {e}")
+    
+    # Training/audit row
+    try:
+        from tools.log_disagreement import append_case
+        row = {
+            "det_tier": tier,
+            "llm_tier": llm_tier,
+            "llm_conf": llm_conf,
+            "final_tier": final_tier,
+            "allowed_tiers": sorted(list(allowed_tiers)),
+            "bands": decision["bands"],
+            "risky": decision["risky"],
+            "reason": decision["reason"],
+            "answers": answers,
+            "flags": list(flags),
+        }
+        append_case(row)
+    except Exception:
+        pass  # Never fail on logging
     
     # Clear hours suggestion for facility-based tiers when not comparing with in-home
     # Use published tier (gcp.final_tier) not deterministic tier
