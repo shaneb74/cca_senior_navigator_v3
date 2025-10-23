@@ -151,3 +151,121 @@ IMPORTANT: Output ONLY valid JSON. Do not invent band values outside the 4 allow
     except Exception as e:
         print(f"[GCP_HOURS_WARN] LLM refinement failed: {e}")
         return (False, None)
+
+
+# Band ordering for under-selection detection
+_BAND_ORDER = ["<1h", "1-3h", "4-8h", "24h"]
+
+
+def under_selected(user_band: Optional[HoursBand], suggested: HoursBand) -> bool:
+    """Check if user's selection is lower than the suggested band.
+    
+    Args:
+        user_band: User's current hours selection (or None)
+        suggested: Suggested band (baseline or LLM)
+    
+    Returns:
+        True if user_band is lower than suggested in the 4-band hierarchy
+    """
+    if not user_band:
+        return False
+    
+    try:
+        user_idx = _BAND_ORDER.index(user_band)
+        suggested_idx = _BAND_ORDER.index(suggested)
+        return user_idx < suggested_idx
+    except (ValueError, AttributeError):
+        return False
+
+
+def generate_hours_nudge_text(
+    context: HoursContext,
+    suggested: HoursBand,
+    user_band: Optional[HoursBand],
+    mode: str
+) -> Optional[str]:
+    """Generate firm but supportive nudge when user under-selects hours.
+    
+    Uses LLM to create personalized message referencing concrete care signals.
+    
+    Args:
+        context: HoursContext with all care signals
+        suggested: Suggested band (baseline or LLM)
+        user_band: User's current selection
+        mode: "off" | "shadow" | "assist"
+    
+    Returns:
+        Nudge text (1-2 sentences) or None if generation fails or mode is off
+    """
+    if mode == "off":
+        return None
+    
+    if OpenAI is None:
+        return None
+    
+    # Get API key
+    api_key = None
+    try:
+        api_key = st.secrets.get("OPENAI_API_KEY")
+    except Exception:
+        pass
+    if not api_key:
+        api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        print("[GCP_HOURS_WARN] No API key; skipping nudge")
+        return None
+    
+    try:
+        client = OpenAI(api_key=api_key, timeout=10.0)
+        
+        # Build minimal, guardrailed system prompt
+        system_prompt = """You are 'Navi', a clinical care planning assistant. Your job is to suggest daily in-home care hours.
+
+Allowed bands ONLY: "<1h", "1-3h", "4-8h", "24h" (exactly 4 options).
+
+The user has selected a LOWER band than recommended. Provide a firm but supportive 1-2 sentence nudge that:
+- References the person's specific care needs (ADL/IADL counts, mobility aid, falls, risky behaviors like wandering/aggression, overnight needs, primary support, medication complexity)
+- Explains clearly that under-support increases safety risk and may make home care unsustainable or more costly overall
+- Ends with a clear recommendation to reconsider the specific suggested band (e.g., "We recommend 4-8 hours per day based on these needs.")
+
+RULES:
+- No prices or financial calculations
+- No new band values (only use the 4 allowed bands)
+- No clinical guarantees or medical advice
+- Be firm but supportive and respectful
+- Keep it concise (1-2 sentences)"""
+        
+        user_message = {
+            "user_hours": user_band,
+            "suggested_hours": suggested,
+            "signals": {
+                "badls_count": context.badls_count,
+                "iadls_count": context.iadls_count,
+                "falls": context.falls,
+                "mobility": context.mobility,
+                "risky_behaviors": context.risky_behaviors,
+                "meds_complexity": context.meds_complexity,
+                "primary_support": context.primary_support,
+                "overnight_needed": context.overnight_needed
+            }
+        }
+        
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": f"Generate nudge for: {json.dumps(user_message)}"}
+            ],
+            max_tokens=160,
+            temperature=0.2,
+        )
+        
+        text = (response.choices[0].message.content or "").strip()
+        if not text:
+            return None
+        
+        return text
+    
+    except Exception as e:
+        print(f"[GCP_HOURS_WARN] Nudge generation error: {e}")
+        return None

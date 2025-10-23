@@ -665,13 +665,18 @@ def derive_outcome(
     # --- end behavior gate ---
     
     # ====================================================================
-    # HOURS/DAY SUGGESTION (GUARDED): Baseline + LLM refinement
+    # HOURS/DAY SUGGESTION (GUARDED): Baseline + LLM refinement + Nudge
     # ====================================================================
     # Compute hours/day suggestion if enabled (shadow/assist mode)
     hours_mode = gcp_hours_mode()
     if hours_mode in {"shadow", "assist"}:
         try:
-            from ai.hours_engine import baseline_hours, generate_hours_advice
+            from ai.hours_engine import (
+                baseline_hours,
+                generate_hours_advice,
+                under_selected,
+                generate_hours_nudge_text
+            )
             
             # Build context
             hours_ctx = _build_hours_context(answers, flags)
@@ -682,25 +687,49 @@ def derive_outcome(
             # Get LLM refinement
             ok, advice = generate_hours_advice(hours_ctx, hours_mode)
             
+            # Determine suggested band (prefer LLM if available, else baseline)
+            suggested = advice.band if (ok and advice) else baseline
+            user_band = hours_ctx.current_hours
+            
+            # Generate nudge if user under-selected
+            nudge_text = None
+            severity = None
+            if under_selected(user_band, suggested):
+                nudge_text = generate_hours_nudge_text(hours_ctx, suggested, user_band, hours_mode)
+                if nudge_text:
+                    severity = "strong"
+                    # Store nudge in advice object if available
+                    if ok and advice:
+                        advice.nudge_text = nudge_text
+                        advice.severity = severity
+            
             # Store suggestion in session state
             try:
                 import streamlit as st
                 st.session_state["_hours_suggestion"] = {
-                    "band": advice.band if (ok and advice) else baseline,
+                    "band": suggested,
                     "base": baseline,
+                    "llm": advice.band if (ok and advice) else None,
                     "conf": advice.confidence if (ok and advice) else None,
                     "reasons": advice.reasons if (ok and advice) else [],
                     "mode": hours_mode,
+                    "user": user_band,
+                    "nudge_text": nudge_text,
+                    "severity": severity,
                 }
             except Exception:
                 pass
             
             # Log (dev-only) - include user selection
-            user_choice = hours_ctx.current_hours or "-"
+            user_choice = user_band or "-"
             if ok and advice:
                 print(f"[GCP_HOURS_{hours_mode.upper()}] base={baseline} user={user_choice} llm={advice.band} conf={advice.confidence:.2f}")
             else:
                 print(f"[GCP_HOURS_{hours_mode.upper()}] base={baseline} user={user_choice} llm=None (fallback to baseline)")
+            
+            # Log nudge if generated (shadow mode visibility)
+            if nudge_text:
+                print(f"[GCP_HOURS_NUDGE_{hours_mode.upper()}] user={user_choice} → suggest={suggested} | {nudge_text}")
             
             # Log case for offline analysis (training data)
             try:

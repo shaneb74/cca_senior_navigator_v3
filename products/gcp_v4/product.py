@@ -298,9 +298,14 @@ def _recompute_hours_suggestion_if_needed(config: ModuleConfig, module_state: di
         st.session_state["_last_hours_selection"] = current_hours
         st.session_state["gcp_hours_user_choice"] = current_hours
         
-        # Recompute suggestion
+        # Recompute suggestion (with nudge support)
         from products.gcp_v4.modules.care_recommendation.logic import _build_hours_context
-        from ai.hours_engine import baseline_hours, generate_hours_advice
+        from ai.hours_engine import (
+            baseline_hours,
+            generate_hours_advice,
+            under_selected,
+            generate_hours_nudge_text
+        )
         
         answers = module_state
         flags = module_state.get("_flags", [])
@@ -314,21 +319,45 @@ def _recompute_hours_suggestion_if_needed(config: ModuleConfig, module_state: di
         # Get LLM refinement
         ok, advice = generate_hours_advice(hours_ctx, mode)
         
+        # Determine suggested band
+        suggested = advice.band if (ok and advice) else baseline
+        user_band = hours_ctx.current_hours
+        
+        # Generate nudge if user under-selected
+        nudge_text = None
+        severity = None
+        if under_selected(user_band, suggested):
+            nudge_text = generate_hours_nudge_text(hours_ctx, suggested, user_band, mode)
+            if nudge_text:
+                severity = "strong"
+                # Store nudge in advice object if available
+                if ok and advice:
+                    advice.nudge_text = nudge_text
+                    advice.severity = severity
+        
         # Store suggestion in session state
         st.session_state["_hours_suggestion"] = {
-            "band": advice.band if (ok and advice) else baseline,
+            "band": suggested,
             "base": baseline,
+            "llm": advice.band if (ok and advice) else None,
             "conf": advice.confidence if (ok and advice) else None,
             "reasons": advice.reasons if (ok and advice) else [],
             "mode": mode,
+            "user": user_band,
+            "nudge_text": nudge_text,
+            "severity": severity,
         }
         
         # Log (dev-only) - include user selection
-        user_choice = hours_ctx.current_hours or "-"
+        user_choice = user_band or "-"
         if ok and advice:
             print(f"[GCP_HOURS_{mode.upper()}_RECOMPUTE] base={baseline} user={user_choice} llm={advice.band} conf={advice.confidence:.2f}")
         else:
             print(f"[GCP_HOURS_{mode.upper()}_RECOMPUTE] base={baseline} user={user_choice} llm=None (fallback to baseline)")
+        
+        # Log nudge if generated (shadow mode visibility)
+        if nudge_text:
+            print(f"[GCP_HOURS_NUDGE_{mode.upper()}_RECOMPUTE] user={user_choice} → suggest={suggested} | {nudge_text}")
         
         # Log case for offline analysis (training data)
         try:

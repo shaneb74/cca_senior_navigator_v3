@@ -34,10 +34,16 @@ class HoursAdvice(BaseModel):
     """
     Validated LLM output for hours/day suggestion.
     Only valid if band is one of 4 allowed values.
+    
+    Optional nudge fields are set when user under-selects (picks lower band than suggested).
     """
     band: HoursBand
     reasons: List[str]  # Will be clipped to 3 by validator
     confidence: float = Field(ge=0.0, le=1.0)
+    
+    # Optional nudge payload (only set when user under-selects)
+    nudge_text: Optional[str] = None
+    severity: Optional[Literal["info", "strong"]] = None
 
     @field_validator("reasons")
     @classmethod

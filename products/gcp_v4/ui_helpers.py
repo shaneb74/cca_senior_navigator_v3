@@ -75,6 +75,7 @@ def render_hours_suggestion():
     Displays a brief suggestion line for hours per day based on:
     - Transparent baseline rules (ADLs, falls, mobility, safety)
     - Optional LLM refinement (when available)
+    - Nudge if user under-selected (picks lower than suggested)
     
     Only renders if:
     - FEATURE_GCP_HOURS = "assist"
@@ -103,6 +104,9 @@ def render_hours_suggestion():
     baseline = suggestion.get("base")
     confidence = suggestion.get("conf")
     reasons = suggestion.get("reasons", [])
+    user_band = suggestion.get("user")
+    nudge_text = suggestion.get("nudge_text")
+    severity = suggestion.get("severity")
     
     if not band:
         return  # No band to suggest
@@ -115,26 +119,54 @@ def render_hours_suggestion():
         "24h": "24-hour support",
     }.get(band, band)
     
-    # Render suggestion (compact, non-intrusive)
-    st.markdown(
-        f"<div style='background-color: #f9f9f9; padding: 0.75rem 1rem; border-radius: 0.5rem; "
-        f"border-left: 3px solid #6c757d; margin-bottom: 1rem;'>",
-        unsafe_allow_html=True,
-    )
-    
-    # Main suggestion line
-    st.markdown(f"💡 **Navi suggests {band_text}/day** based on your answers", unsafe_allow_html=True)
-    
-    # Show top reason if available
-    if reasons and len(reasons) > 0:
-        st.markdown(f"<small style='color: #6c757d;'>• {reasons[0]}</small>", unsafe_allow_html=True)
-    
-    # Show confidence if LLM refined (not baseline fallback)
-    if confidence is not None and confidence > 0:
-        conf_pct = int(confidence * 100)
+    # If there's a nudge (user under-selected), show warning-style card
+    if nudge_text and user_band:
         st.markdown(
-            f"<small style='color: #6c757d;'>Confidence: {conf_pct}%</small>",
+            f"<div style='background-color: #fff3cd; padding: 0.75rem 1rem; border-radius: 0.5rem; "
+            f"border-left: 4px solid #ffc107; margin-bottom: 1rem;'>",
             unsafe_allow_html=True,
         )
+        
+        st.markdown(f"⚠️ **Please reconsider your hours selection**", unsafe_allow_html=True)
+        st.markdown(f"<p style='margin-top: 0.5rem; margin-bottom: 0.5rem;'>{nudge_text}</p>", unsafe_allow_html=True)
+        
+        # Show what they selected vs. what's suggested
+        user_text = {
+            "<1h": "less than 1 hour",
+            "1-3h": "1–3 hours",
+            "4-8h": "4–8 hours",
+            "24h": "24-hour support",
+        }.get(user_band, user_band)
+        
+        st.markdown(
+            f"<small style='color: #856404;'>You selected: <strong>{user_text}/day</strong> | "
+            f"Navi recommends: <strong>{band_text}/day</strong></small>",
+            unsafe_allow_html=True,
+        )
+        
+        st.markdown("</div>", unsafe_allow_html=True)
     
-    st.markdown("</div>", unsafe_allow_html=True)
+    else:
+        # Normal suggestion (no nudge) - compact, non-intrusive
+        st.markdown(
+            f"<div style='background-color: #f9f9f9; padding: 0.75rem 1rem; border-radius: 0.5rem; "
+            f"border-left: 3px solid #6c757d; margin-bottom: 1rem;'>",
+            unsafe_allow_html=True,
+        )
+        
+        # Main suggestion line
+        st.markdown(f"💡 **Navi suggests {band_text}/day** based on your answers", unsafe_allow_html=True)
+        
+        # Show top reason if available
+        if reasons and len(reasons) > 0:
+            st.markdown(f"<small style='color: #6c757d;'>• {reasons[0]}</small>", unsafe_allow_html=True)
+        
+        # Show confidence if LLM refined (not baseline fallback)
+        if confidence is not None and confidence > 0:
+            conf_pct = int(confidence * 100)
+            st.markdown(
+                f"<small style='color: #6c757d;'>Confidence: {conf_pct}%</small>",
+                unsafe_allow_html=True,
+            )
+        
+        st.markdown("</div>", unsafe_allow_html=True)
