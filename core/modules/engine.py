@@ -1131,21 +1131,30 @@ def _render_results_view(mod: dict[str, Any], config: ModuleConfig) -> None:
     col1, col2, col3 = st.columns([1, 1, 1])
 
     with col1:
-        if st.button("🏁 Start Over – Answer Questions Again", use_container_width=True):
-            # Clear GCP state and restart
-            for key in list(st.session_state.keys()):
-                if key.startswith("gcp_") or key.startswith("_hours") or key in ("_summary_advice", "_gcp_llm_advice"):
-                    st.session_state.pop(key, None)
+        if st.button("🏁 Start Over – Answer Questions Again", key="btn_restart_gcp", use_container_width=True):
+            # Clear only GCP-related state to avoid LLM recompute on click
+            # Preserve auth, session_id, dev_mode
+            preserve = {"auth", "session_id", "dev_mode"}
+            for k in list(st.session_state.keys()):
+                if k not in preserve:
+                    if k.startswith("gcp_") or k in ("_summary_advice", "_hours_suggestion", "_hours_ack", "_hours_nudge_key", "_hours_nudge_new", "_gcp_llm_advice"):
+                        st.session_state.pop(k, None)
+            
+            # Reset progress markers the engine uses
+            for k in ("gcp.step", "gcp_view", "persistence_loaded", "gcp_care_recommendation._step"):
+                st.session_state.pop(k, None)
+            
+            # Route to first GCP screen
             from core.nav import route_to
             route_to("gcp_v4")
 
     with col2:
-        if st.button("💰 Explore Care Options & Costs", type="primary", use_container_width=True):
+        if st.button("💰 Explore Care Options & Costs", key="btn_costs", type="primary", use_container_width=True):
             from core.nav import route_to
             route_to("cost_v2")
 
     with col3:
-        if st.button("🏠 Return to Concierge Hub", use_container_width=True):
+        if st.button("🏠 Return to Concierge Hub", key="btn_hub", use_container_width=True):
             from core.nav import route_to
             route_to("hub_concierge")
 

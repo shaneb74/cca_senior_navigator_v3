@@ -1659,7 +1659,7 @@ div[data-testid="stVerticalBlock"]:has(.chip-wrap.is-active) .stButton > button{
 
 /* Clean typography for summary sections */
 .stMarkdown h3 {
-  margin-top: 1.5rem;
+  margin-top: 1.25rem;
   margin-bottom: .5rem;
   color: #0d1f4b;
 }
