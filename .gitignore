@@ -7,6 +7,10 @@ __pycache__/
 .DS_Store
 .streamlit/secrets.toml
 
+# Environment files with secrets
+.env
+.env.local
+
 # Session and user data (local persistence)
 .cache/
 data/users/
