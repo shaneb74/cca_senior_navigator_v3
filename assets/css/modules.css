@@ -1645,3 +1645,16 @@ div[data-testid="stVerticalBlock"]:has(.chip-wrap.is-active) .stButton > button{
   text-align: center !important;
 }
 
+/* ===================================================================
+   📝 NAVI SUMMARY - LIST SPACING
+   =================================================================== */
+/* Compact list spacing for Navi's next steps */
+.stMarkdown ul {
+  margin-top: .25rem;
+}
+
+.stMarkdown li {
+  margin-bottom: .25rem;
+}
+
+

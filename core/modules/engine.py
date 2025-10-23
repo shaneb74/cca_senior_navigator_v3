@@ -1112,48 +1112,15 @@ def _render_results_view(mod: dict[str, Any], config: ModuleConfig) -> None:
         else:
             clarity_message = "Near boundary — consider reviewing"
 
-    clarity_color = (
-        "#22c55e" if boundary_clarity >= 80 else "#f59e0b" if boundary_clarity >= 50 else "#ef4444"
-    )
-
-    with st.expander("🔧 Recommendation Clarity (For Fine-Tuning)", expanded=False):
-        st.markdown(
-            f"""
-        <div style="
-            background: white;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            padding: 20px;
-        ">
-            <div style="font-size: 24px; font-weight: 600; color: {clarity_color}; margin-bottom: 8px;">
-                {boundary_clarity}%
-            </div>
-            <div style="font-size: 14px; color: #64748b; margin-bottom: 12px;">
-                {clarity_message}
-            </div>
-            <div style="
-                background: #f1f5f9;
-                height: 8px;
-                border-radius: 4px;
-                overflow: hidden;
-                margin-bottom: 16px;
-            ">
-                <div style="
-                    background: {clarity_color};
-                    height: 100%;
-                    width: {boundary_clarity}%;
-                    transition: width 0.3s ease;
-                "></div>
-            </div>
-            <div style="font-size: 13px; color: #64748b;">
-                <strong>Score:</strong> {tier_score} points<br/>
-                <strong>Tier:</strong> {tier.replace("_", " ").title()}<br/>
-                <strong>Range:</strong> {tier_thresholds.get(tier, ("N/A", "N/A"))[0]}-{tier_thresholds.get(tier, ("N/A", "N/A"))[1]} points
-            </div>
-        </div>
-        """,
-            unsafe_allow_html=True,
-        )
+    # ========================================
+    # 2b. NAVI CONVERSATIONAL SUMMARY (LLM-powered)
+    # ========================================
+    # Render concise Navi explanation below the header
+    try:
+        from products.gcp_v4.ui_helpers import render_navi_header_and_summary
+        render_navi_header_and_summary()
+    except Exception:
+        pass  # Gracefully skip if not available
 
     st.markdown("<div style='margin: 24px 0;'></div>", unsafe_allow_html=True)
 
@@ -1395,16 +1362,33 @@ def _render_results_ctas_once(config: ModuleConfig) -> None:
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # Primary next step: Calculate Costs (only for GCP)
+    # Primary next step: Calculate Costs (only for GCP) - tier-aware CTA
     if config.product == "gcp_v4":
         st.markdown("---")
         st.markdown('<div class="sn-app mod-actions">', unsafe_allow_html=True)
+        
+        # Build tier-aware CTA label
+        outcome_key = f"{config.state_key}._outcomes"
+        outcomes_data = st.session_state.get(outcome_key, {})
+        tier = st.session_state.get("gcp.final_tier") or st.session_state.get("final_tier") or outcomes_data.get("tier") or "assisted_living"
+        
+        if tier in ("assisted_living", "memory_care", "memory_care_high_acuity"):
+            tier_display = tier.replace("_", " ").title()
+            cta_label = f"💰 Compare costs: {tier_display} vs In-Home"
+            cta_help = f"See how {tier_display} costs compare to In-Home care"
+        elif tier == "in_home" or tier == "in_home_care":
+            cta_label = "💰 See monthly costs for In-Home (adjust hours & supports)"
+            cta_help = "Explore In-Home care costs with customizable hours and support levels"
+        else:
+            cta_label = "💰 See optional support costs near you"
+            cta_help = "View optional support services and local resources"
+        
         if st.button(
-            "💰 Calculate Costs",
+            cta_label,
             key="_results_next_cost",
             type="primary",
             use_container_width=True,
-            help="See what your recommended care will cost",
+            help=cta_help,
         ):
             from core.nav import route_to
 

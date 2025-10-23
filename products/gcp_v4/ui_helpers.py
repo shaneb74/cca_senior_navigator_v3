@@ -319,3 +319,45 @@ def render_navi_header_message():
             pass
         # Immediately clear the new flag so it won't replay on minor reruns
         st.session_state["_hours_nudge_new"] = False
+
+
+def render_navi_header_and_summary():
+    """Render Navi's conversational explanation on GCP summary page.
+    
+    Shows LLM-generated summary advice below the top header:
+    - Headline (1 sentence)
+    - What it means (1-2 sentences)
+    - Next steps (1-3 bullets)
+    - Next line (transition to cost view)
+    
+    Only renders if _summary_advice is available in session state.
+    """
+    import streamlit as st
+    
+    adv = st.session_state.get("_summary_advice")
+    if not adv:
+        return
+    
+    # Add spacing
+    st.markdown("<div style='margin-top:.5rem'></div>", unsafe_allow_html=True)
+    
+    # Show headline
+    st.markdown(f"**{adv['headline']}**")
+    
+    # Show explanation (what_it_means or fallback to first 2 why items)
+    body = adv.get("what_it_means") or " ".join(adv.get("why", [])[:2])
+    if body:
+        st.markdown(body)
+    
+    # Show next steps if available
+    if adv.get("next_steps"):
+        st.markdown("**Next steps**")
+        for step in adv["next_steps"][:3]:
+            st.markdown(f"- {step}")
+    
+    # Show transition line if available
+    if adv.get("next_line"):
+        st.markdown(
+            f"<div style='margin-top:.5rem;color:#0d1f4b'>{adv['next_line']}</div>",
+            unsafe_allow_html=True
+        )

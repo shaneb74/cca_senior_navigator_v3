@@ -899,6 +899,54 @@ def derive_outcome(
         except Exception:
             pass  # Silent failure if streamlit not available
 
+    # ====================================================================
+    # LLM SUMMARY GENERATION (for conversational Navi explainer on summary page)
+    # ====================================================================
+    try:
+        import streamlit as st
+        from ai.summary_engine import generate_summary
+        
+        # Build summary context from answers
+        summary_ctx = {
+            "badls": answers.get("badls", []),
+            "iadls": answers.get("iadls", []),
+            "mobility": answers.get("mobility"),
+            "falls": answers.get("falls"),
+            "behaviors": answers.get("behaviors", []),
+            "meds_complexity": answers.get("meds_complexity"),
+            "isolation": answers.get("isolation"),
+            "has_partner": "has_partner" in [f["id"] for f in flags] or st.session_state.get("has_partner", False)
+        }
+        
+        # Get hours suggestion data
+        hours = st.session_state.get("_hours_suggestion", {})
+        user_hours = st.session_state.get("gcp_hours_user_choice")
+        hours_suggested = hours.get("band")
+        
+        # Generate summary (respects feature flag mode)
+        llm_mode = get_feature_gcp_mode()  # "shadow" or "assist"
+        ok, adv = generate_summary(summary_ctx, tier, hours_suggested, user_hours, llm_mode)
+        
+        if ok and adv:
+            st.session_state["_summary_advice"] = adv.model_dump()
+            print(
+                f"[GCP_SUMMARY_{llm_mode.upper()}] conf={adv.confidence:.2f} "
+                f"headline={adv.headline[:60]}..."
+            )
+        else:
+            st.session_state["_summary_advice"] = None
+            if llm_mode in ("shadow", "assist"):
+                print(f"[GCP_SUMMARY_{llm_mode.upper()}] ok=False (generation failed)")
+    
+    except Exception as e:
+        print(f"[GCP_SUMMARY_ERROR] Exception (silent): {e}")
+        try:
+            import streamlit as st
+            st.session_state["_summary_advice"] = None
+        except Exception:
+            pass
+    # ====================================================================
+
     return {
         "tier": tier,
         "tier_score": round(total_score, 1),
