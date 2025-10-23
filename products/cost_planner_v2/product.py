@@ -56,6 +56,24 @@ def render():
 
     product_shell_start()
 
+    # HOUSEHOLD FLOW: Detect dual-person mode for cost planning
+    try:
+        from core.household import get_careplan_for
+        primary_id = st.session_state.get("person.primary_id")
+        partner_id = st.session_state.get("person.partner_id")
+        
+        cp_primary = get_careplan_for(st, primary_id) if primary_id else None
+        cp_partner = get_careplan_for(st, partner_id) if partner_id else None
+        
+        # Set dual mode flag if both CarePlans exist
+        dual_mode = bool(cp_primary and cp_partner)
+        st.session_state["cost.dual_mode"] = dual_mode
+        
+        if dual_mode:
+            print(f"[COST_PLANNER] Dual mode enabled: primary={cp_primary.uid} partner={cp_partner.uid}")
+    except Exception:
+        st.session_state["cost.dual_mode"] = False
+
     # Initialize step state - check if user has progressed past intro
     if "cost_v2_step" not in st.session_state:
         # Check query params for explicit step override (from tile buttons)

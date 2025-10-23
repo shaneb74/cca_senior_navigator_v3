@@ -15,7 +15,7 @@ SYSTEM_PROMPT = (
     "Use plain, concise language. No prices, no guarantees. "
     "For 'headline': 1 concise sentence about the care tier recommendation. "
     "For 'what_it_means': 1-2 sentences explaining what this tier means for daily life. "
-    "For 'why': Array of 2-4 brief reasons drawing from ADLs, IADLs, mobility, falls, behaviors, isolation, partner status. "
+    "For 'why': Array of up to 4 brief reasons (do not exceed 4) drawing from ADLs, IADLs, mobility, falls, behaviors, isolation, partner status. "
     "For 'next_line': 1 sentence inviting cost exploration. "
     "For 'confidence': 0.7 to 0.95 based on signal clarity."
 )
@@ -42,7 +42,8 @@ def generate_summary(
     deterministic_tier: str,
     hours_suggested: str | None,
     user_hours: str | None,
-    mode: str
+    mode: str,
+    correlation_id: str | None = None
 ) -> tuple[bool, SummaryAdvice | None]:
     """Generate conversational summary advice for GCP recommendation.
     
@@ -52,10 +53,17 @@ def generate_summary(
         hours_suggested: Suggested hours/day band
         user_hours: User's selected hours/day band
         mode: Feature flag mode ("shadow" or "assist")
+        correlation_id: Optional trace ID for logging
     
     Returns:
         Tuple of (success: bool, advice: SummaryAdvice | None)
     """
+    import uuid
+    
+    # Generate correlation ID for tracing
+    if not correlation_id:
+        correlation_id = str(uuid.uuid4())[:12]
+    
     if mode not in ("shadow", "assist"):
         return False, None
     
@@ -116,20 +124,47 @@ def generate_summary(
         
         # Try parsing as JSON
         try:
-            adv = SummaryAdvice.model_validate_json(text)
-            return True, adv
-        except Exception as e1:
-            # Fallback: try parsing as dict
+            # First parse as dict to allow defensive trimming
+            data = json.loads(text)
+            
+            # Defensive trim: ensure 'why' array has max 4 items
+            if "why" in data and isinstance(data["why"], list) and len(data["why"]) > 4:
+                data["why"] = data["why"][:4]
+                try:
+                    print(f"[GCP_SUMMARY_TRIM] why field trimmed from {len(json.loads(text).get('why', []))} to 4 items")
+                except Exception:
+                    pass
+            
+            # Now validate with Pydantic
+            adv = SummaryAdvice(**data)
+            
+            # Log successful parse
             try:
-                adv = SummaryAdvice(**json.loads(text))
+                print(f"[LLM_RESULT] ok=True len={len(text)} schema_ok=True id={correlation_id}")
+            except Exception:
+                pass
+            
+            return True, adv
+            
+        except json.JSONDecodeError as e1:
+            # Try direct Pydantic validation as fallback
+            try:
+                adv = SummaryAdvice.model_validate_json(text)
                 return True, adv
             except Exception as e2:
-                print(f"[GCP_SUMMARY_PARSE_ERROR] validate_json: {e1}")
-                print(f"[GCP_SUMMARY_PARSE_ERROR] json_loads: {e2}")
+                print(f"[GCP_SUMMARY_PARSE_ERROR] json_loads: {e1}")
+                print(f"[GCP_SUMMARY_PARSE_ERROR] validate_json: {e2}")
                 print(f"[GCP_SUMMARY_PARSE_ERROR] text_preview: {text[:200]}")
+                print(f"[LLM_RESULT] ok=False len={len(text)} schema_ok=False id={correlation_id}")
                 return False, None
+        except Exception as e:
+            print(f"[GCP_SUMMARY_PARSE_ERROR] pydantic: {e}")
+            print(f"[GCP_SUMMARY_PARSE_ERROR] text_preview: {text[:200]}")
+            print(f"[LLM_RESULT] ok=False len={len(text)} schema_ok=False id={correlation_id}")
+            return False, None
     
     except Exception as e:
         # Propagate a concise failure log but do not raise
         print(f"[GCP_SUMMARY_CALL_ERROR] {e}")
+        print(f"[LLM_RESULT] ok=False len=0 schema_ok=False id={correlation_id}")
         return False, None

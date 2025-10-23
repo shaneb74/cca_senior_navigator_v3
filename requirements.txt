@@ -3,9 +3,10 @@ streamlit>=1.50
 openai>=1.0.0
 pydantic>=2.0
 filelock>=3.12
+PyYAML>=6.0
+pandas>=2.0.0
 
 # Optional but commonly needed by Streamlit components you already use
-pandas>=2.0
 pydeck>=0.9
 gitpython>=3.1
 

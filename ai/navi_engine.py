@@ -49,6 +49,190 @@ def normalize_tier(value: str) -> Optional[str]:
     v = value.strip().lower()
     v = ALIASES.get(v, v)
     
+    # Check against canonical tiers
+    if v in CANONICAL_TIERS:
+        return v
+    
+    # Check for forbidden terms
+    for forbidden in FORBIDDEN_TERMS:
+        if forbidden in v:
+            return None
+    
+    return None
+
+
+def detect_dual_mode_from_careplans(careplans: list) -> bool:
+    """Detect if dual mode is needed based on multiple care plans.
+    
+    Args:
+        careplans: List of care plan objects with tier fields
+        
+    Returns:
+        True if dual mode should be enabled (multiple different tiers)
+    """
+    if len(careplans) < 2:
+        return False
+    
+    # Extract tiers and normalize them
+    tiers = set()
+    for cp in careplans:
+        if hasattr(cp, 'tier') and cp.tier:
+            normalized = normalize_tier(cp.tier)
+            if normalized:
+                tiers.add(normalized)
+        elif hasattr(cp, 'final_tier') and cp.final_tier:
+            normalized = normalize_tier(cp.final_tier)
+            if normalized:
+                tiers.add(normalized)
+    
+    # Dual mode if we have multiple different tiers
+    return len(tiers) > 1
+
+
+def get_primary_tier_from_careplans(careplans: list) -> Optional[str]:
+    """Get the primary (most recent) care tier from care plans.
+    
+    Args:
+        careplans: List of care plan objects
+        
+    Returns:
+        Primary tier string (normalized) or None
+    """
+    if not careplans:
+        return None
+    
+    # Use the most recent care plan (assume they're ordered)
+    latest_cp = careplans[-1]
+    
+    # Try tier first, then final_tier
+    tier = getattr(latest_cp, 'tier', None) or getattr(latest_cp, 'final_tier', None)
+    if tier:
+        return normalize_tier(tier)
+    
+    return None
+
+
+def generate_handoff_blurb(
+    primary_tier: str, 
+    dual_mode: bool = False, 
+    flags: list = None,
+    partner_tier: str = None,
+    threshold_crossed: bool = False,
+    care_intensity: str = "medium",
+    compare_inhome_suggested: bool = False
+) -> str:
+    """Generate a 'what to expect' blurb for GCP→Cost Planner handoff using LLM templates.
+    
+    Args:
+        primary_tier: Primary care tier (assisted_living | memory_care | in_home | stay_home)
+        dual_mode: Whether dual mode comparison is available
+        flags: List of care flags for context
+        partner_tier: Optional partner's care tier
+        threshold_crossed: Whether cost threshold was crossed
+        care_intensity: Care intensity level (low|medium|high)
+        compare_inhome_suggested: Whether in-home comparison is suggested
+        
+    Returns:
+        Formatted blurb text for intro display using contextual templates
+    """
+    flags = flags or []
+    
+    # Template selection based on context
+    templates = _get_handoff_templates(
+        primary_tier=primary_tier,
+        partner_tier=partner_tier,
+        dual_mode=dual_mode,
+        threshold_crossed=threshold_crossed,
+        care_intensity=care_intensity,
+        compare_inhome_suggested=compare_inhome_suggested,
+        flags=flags
+    )
+    
+    # For now, select the first matching template
+    # In future, this could use LLM to choose the best template
+    return templates[0] if templates else _get_fallback_template(primary_tier, dual_mode)
+
+
+def _get_handoff_templates(
+    primary_tier: str,
+    partner_tier: str = None,
+    dual_mode: bool = False,
+    threshold_crossed: bool = False,
+    care_intensity: str = "medium",
+    compare_inhome_suggested: bool = False,
+    flags: list = None
+) -> list[str]:
+    """Get contextual handoff templates based on structured context.
+    
+    Returns list of applicable templates in priority order.
+    """
+    flags = flags or []
+    templates = []
+    
+    # 1. Assisted Living (or Memory Care) Templates
+    if primary_tier in ("assisted_living", "memory_care", "memory_care_high_acuity"):
+        tier_name = "Assisted Living" if primary_tier == "assisted_living" else "Memory Care"
+        
+        if dual_mode and partner_tier:
+            templates.append(f"We'll compare {tier_name} costs with your partner's care options to find what works best for both of you.")
+        elif compare_inhome_suggested or dual_mode:
+            templates.append(f"We'll show {tier_name} costs in your area and compare them with staying home with care.")
+        elif threshold_crossed:
+            templates.append(f"We'll explore {tier_name} options that fit your budget, including financial assistance programs.")
+        elif care_intensity == "high":
+            templates.append(f"We'll focus on {tier_name} communities with the specialized care level you need.")
+        else:
+            templates.append(f"We'll help you understand {tier_name} costs and what's included in monthly fees.")
+    
+    # 2. In-Home Care Templates  
+    elif primary_tier == "in_home":
+        if dual_mode and partner_tier in ("assisted_living", "memory_care"):
+            templates.append("We'll compare in-home care costs with facility options so you can see all your choices.")
+        elif care_intensity == "high":
+            templates.append("We'll calculate costs for the intensive in-home support you need, including overnight care.")
+        elif threshold_crossed:
+            templates.append("We'll find in-home care options that work within your budget, including veteran benefits and assistance programs.")
+        elif compare_inhome_suggested:
+            templates.append("We'll help you customize in-home care hours and services to match your specific needs and budget.")
+        else:
+            templates.append("We'll break down in-home care costs by hours and services so you can plan what works best.")
+    
+    # 3. Stay Home / Independent Templates
+    elif primary_tier in ("none", "stay_home", "independent"):
+        if dual_mode:
+            templates.append("We'll explore optional support services and compare costs if care needs change over time.")
+        elif threshold_crossed:
+            templates.append("We'll focus on affordable support services that help you stay independent longer.")
+        else:
+            templates.append("We'll look at optional support services and costs that might be helpful as a safety net.")
+    
+    # Add context-specific enhancements
+    context_additions = []
+    if "veteran_aanda_risk" in flags:
+        context_additions.append("We'll include veteran benefits that can help cover costs.")
+    if "limited_support" in flags or "no_support" in flags:
+        context_additions.append("We'll highlight options that provide family support and respite.")
+    if "fall_risk" in flags or "mobility_issues" in flags:
+        context_additions.append("We'll emphasize safety features and emergency response options.")
+    
+    # Combine templates with context additions
+    enhanced_templates = []
+    for template in templates:
+        if context_additions:
+            enhanced_template = f"{template} {context_additions[0]}"  # Add first relevant context
+            enhanced_templates.append(enhanced_template)
+        enhanced_templates.append(template)  # Also keep original
+    
+    return enhanced_templates if enhanced_templates else templates
+
+
+def _get_fallback_template(primary_tier: str, dual_mode: bool) -> str:
+    """Fallback template when no specific context matches."""
+    if dual_mode:
+        return "We'll compare different care options and costs so you can make the best choice for your situation."
+    else:
+        return "We'll break down the costs and help you understand what's included in your care options."
+    
     return v if v in CANONICAL_TIERS else None
 
 
@@ -105,14 +289,26 @@ def _build_context_prompt(context: CPContext) -> str:
     Returns:
         Formatted prompt string
     """
+    # Check for additional inhome context (for in_home tier cost analysis)
+    inhome_context = ""
+    try:
+        import streamlit as st
+        inhome_context = st.session_state.get("_llm_inhome_context", "")
+    except Exception:
+        # Handle case where streamlit is not available
+        pass
+    
     # Format flags as readable list
     flags_text = ", ".join(context.flags) if context.flags else "none"
     
     # Format reasons as readable list
     reasons_text = ", ".join(context.top_reasons) if context.top_reasons else "general care needs"
     
+    # Prepend inhome context if available
+    context_prefix = inhome_context if inhome_context else ""
+    
     # Build prompt
-    prompt = f"""USER CONTEXT:
+    prompt = f"""{context_prefix}USER CONTEXT:
 - Care Tier: {context.tier.replace('_', ' ').title()}
 - Has Partner: {'Yes' if context.has_partner else 'No'}
 - Monthly Cost: ${context.monthly_adjusted:,.2f}

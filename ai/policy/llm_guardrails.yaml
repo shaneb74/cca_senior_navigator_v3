@@ -1,0 +1,158 @@
+# LLM Guardrails Policy Configuration
+# Defines safety rules, escalation triggers, and validation thresholds for GCP LLM recommendations
+
+# Base configuration
+base:
+  source: deterministic_tier  # LLM refines from this starting point
+  description: "Deterministic engine provides baseline; LLM adds nuance within guardrails"
+
+# Hard safety gates - these MUST be satisfied for tier eligibility
+gates:
+  # Memory Care requires high cognitive/behavioral risk indicators
+  memory_care_requires_any:
+    - severe_cognitive_risk
+    - wandering  
+    - dangerous_behaviors
+    - moderate_cognitive_decline_with_behaviors
+  
+  memory_care_high_acuity_requires_any:
+    - severe_cognitive_risk
+    - wandering
+    - dangerous_behaviors
+    - elopement
+    - aggression
+    
+  # Block MC/MC-HA if cognitive indicators are absent
+  mc_block_if_absent: true
+  
+  # Additional safety requirements
+  assisted_living_min_age: 65  # Generally for seniors
+  in_home_safety_check: true   # Ensure home safety for aging in place
+
+# Escalation rules - when to bump up care level
+escalation:
+  # Bump to Assisted Living when compound needs + willingness to move
+  bump_to_assisted_living_when:
+    all_of:
+      - compound_needs: 3  # ADL/IADL support + mobility + safety concerns
+      - preference: [open_to_move, uncertain]
+      - age_factor: 75_plus  # Higher age increases facility appropriateness
+  
+  # Additional escalation triggers
+  isolation_escalation:
+    trigger: very_isolated
+    with_any: [mobility_drop, falls_multiple, no_support]
+    bump_to: assisted_living
+    
+  safety_escalation:
+    trigger: high_safety_concern
+    with_any: [limited_support, chronic_present]
+    bump_to: assisted_living
+
+# Clamps - hard limits based on preferences
+clamps:
+  # Strong preference to stay home limits tier
+  strong_stay_home_to: in_home_plus
+  strong_stay_home_key: preference_strong_stay_home
+  
+  # Enhanced in-home options to suggest
+  in_home_plus_notes:
+    - extra_aides_coverage
+    - safety_modifications_ramps
+    - medication_management_support
+    - emergency_response_system
+    - family_respite_services
+  
+  # Preference overrides (except for safety gates)
+  respect_preference_unless:
+    - safety_gates_triggered
+    - cognitive_gates_triggered
+
+# Self-undercount detection - when reported hours don't match needs
+self_undercount:
+  trigger_when:
+    adl_iadl_support: 4  # 4+ activities need help
+    and_hours_per_day: ["<1h", "1-3h"]  # But only getting 1-3 hours
+  
+  message: "You mentioned needing help with several daily activities but selected 1–3 hours of care. Many families in similar situations find 4–8 hours per day helps maintain safety and independence at home."
+  
+  alternative_message: "Based on your care needs, you might benefit from more support hours than currently selected. Consider discussing this with family or a care advisor."
+
+# Decision weights for LLM prompt construction
+weights:
+  safety: 0.40          # Primary concern - physical/cognitive safety
+  emotional_fit: 0.30   # Emotional comfort, familiarity, social connections  
+  cost: 0.20           # Financial sustainability and value
+  preference: 0.10     # User stated preference (lowest weight due to potential underestimation)
+
+# Confidence and quality thresholds
+confidence:
+  min_threshold: 0.80           # Below this, fallback to deterministic
+  fallback_to: deterministic    # Use BASE_TIER if confidence too low
+  high_confidence: 0.90         # Above this, flag as high-quality decision
+
+# Output quality validation
+output_contract:
+  required_fields: [tier, confidence, rationale, empathy_score]
+  
+  empathy_validation:
+    min_score: 8              # 1-10 scale, require warmth and reassurance
+    max_regen_attempts: 2     # Try to improve empathy up to 2 times
+    
+  rationale_validation:
+    min_length: 20            # Minimum characters for explanation
+    max_length: 200           # Keep concise but meaningful
+    required_elements:
+      - care_level_justification
+      - safety_consideration
+      - preference_acknowledgment
+
+# Compound needs calculation
+compound_needs:
+  factors:
+    adl_support: 1.0          # Each ADL needing help
+    iadl_support: 0.8         # Each IADL needing help  
+    mobility_issues: 1.5      # Mobility limitations
+    fall_risk: 1.2           # Fall history
+    medication_complexity: 1.0 # Medication management needs
+    isolation: 0.8           # Geographic/social isolation
+    cognitive_decline: 1.3    # Memory/thinking issues
+    chronic_conditions: 0.5   # Each chronic condition
+  
+  thresholds:
+    low: 2.0
+    moderate: 4.0
+    high: 6.0
+    very_high: 8.0
+
+# Allowed tier mappings based on flags
+tier_eligibility:
+  none:
+    max_compound_needs: 1.0
+    requires_independence: true
+    
+  in_home:
+    max_compound_needs: 6.0
+    requires_basic_safety: true
+    
+  in_home_plus:
+    max_compound_needs: 8.0
+    enhanced_support: true
+    
+  assisted_living:
+    min_compound_needs: 3.0
+    facility_appropriate: true
+    
+  memory_care:
+    requires_cognitive_gates: true
+    min_compound_needs: 4.0
+    
+  memory_care_high_acuity:
+    requires_severe_cognitive_gates: true
+    min_compound_needs: 6.0
+
+# Logging configuration
+logging:
+  format: "[GCP_POLICY] chosen={tier} base={base_tier} allowed={allowed_tiers} conf={confidence:.2f} empathy={empathy_score} clamp={clamp_applied} gates_mc={mc_gates_satisfied} notes={advisory_flags} id={correlation_id}"
+  include_rationale: false  # Keep logs concise
+  debug_mode: false        # Set true for detailed policy decision logging
