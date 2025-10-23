@@ -8,6 +8,7 @@ Uses care-type-specific modifiers and real calculations.
 import streamlit as st
 
 from core.mcip import MCIP
+from core.nav import route_to
 from products.cost_planner_v2 import comparison_calcs
 from products.cost_planner_v2.comparison_calcs import ScenarioBreakdown
 
@@ -1252,5 +1253,7 @@ THRESHOLD_CROSSED: {str(threshold_crossed).lower()}
     with col3:
         st.markdown('<div data-role="secondary">', unsafe_allow_html=True)
         if st.button("← Back to Hub", use_container_width=True, key="comparison_back"):
-            st.switch_page("pages/_stubs.py")
+            user_id = st.session_state.get("user_id", "unknown")
+            print(f"[CTA_NAV] action=back_to_hub dest=hub_concierge uid={user_id}")
+            route_to("hub_concierge")
         st.markdown("</div>", unsafe_allow_html=True)
