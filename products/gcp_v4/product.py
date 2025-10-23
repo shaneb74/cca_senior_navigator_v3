@@ -88,6 +88,10 @@ def render():
         # HOURS/DAY SUGGESTION: Render suggestion hint if on daily_living section in assist mode
         # This must come AFTER run_module so the question is already rendered
         _render_hours_suggestion_if_needed(config, current_step_index)
+        
+        # HOURS/DAY NUDGE: Render nudge card in assist mode if user under-selected
+        from products.gcp_v4.ui_helpers import render_hours_nudge
+        render_hours_nudge()
 
         # PER-SECTION LLM SHADOW FEEDBACK
         # Track section completion and trigger LLM feedback for each section
