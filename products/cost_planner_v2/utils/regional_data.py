@@ -12,7 +12,7 @@ Data sources:
 import json
 import os
 from dataclasses import dataclass
-from typing import Any, Optional, Dict
+from typing import Any
 
 
 @dataclass
@@ -27,7 +27,7 @@ class RegionalMultiplier:
 class RegionalDataProvider:
     """Provides regional cost multipliers with precedence system."""
 
-    _config: Optional[dict[str, Any]] = None
+    _config: dict[str, Any] | None = None
     _config_path = "config/regional_cost_config.json"
 
     @classmethod
@@ -115,7 +115,7 @@ class RegionalDataProvider:
 
     @classmethod
     def get_multiplier(
-        cls, zip_code: Optional[str] = None, state: Optional[str] = None
+        cls, zip_code: str | None = None, state: str | None = None
     ) -> RegionalMultiplier:
         """Get regional multiplier using precedence system.
 

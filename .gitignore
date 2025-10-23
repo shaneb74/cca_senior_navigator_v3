@@ -7,6 +7,10 @@ __pycache__/
 .DS_Store
 .streamlit/secrets.toml
 
+# Environment files with secrets
+.env
+.env.local
+
 # Session and user data (local persistence)
 .cache/
 data/users/
@@ -31,3 +35,11 @@ _archive_debug_docs/
 
 # Documentation - local only, not committed to origin
 Documentation/
+
+# Backup artifacts
+**/*.bak
+**/*.bak?
+**/*.bak??
+**/*_bak*
+**/*_backup*
+_archive_backups/

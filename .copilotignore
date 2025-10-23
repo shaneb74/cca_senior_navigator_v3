@@ -1,0 +1,18 @@
+# Keep Copilot's context clean
+venv/
+.venv/
+__pycache__/
+_archive*/
+archive/
+*_backup*/
+*.bak
+*.bak?
+*.bak??
+*.pyc
+static/images/**
+data/**              # large seeds; adjust if you need them indexed
+.streamlit/cache/**
+docs/legacy/**
+_restore_tmp/
+CHANGELOG_*.md
+VERIFICATION_REPORT.md

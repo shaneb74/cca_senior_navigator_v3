@@ -6,7 +6,7 @@ react to state changes without tight coupling.
 """
 
 from collections.abc import Callable
-from typing import Any, Optional
+from typing import Any
 
 
 class MCIPEventBus:
@@ -67,7 +67,7 @@ class MCIPEventBus:
                     print(f"[MCIPEventBus] Error in listener for {event_type}: {e}")
 
     @classmethod
-    def clear(cls, event_type: Optional[str] = None) -> None:
+    def clear(cls, event_type: str | None = None) -> None:
         """Clear event listeners.
 
         Args:

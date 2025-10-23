@@ -6,7 +6,7 @@ The Conductor: Orchestrates the user journey across all hubs, products, and modu
 
 from dataclasses import asdict, dataclass, fields
 from datetime import datetime
-from typing import Any, Optional, Dict
+from typing import Any
 
 import streamlit as st
 
@@ -180,7 +180,7 @@ class MCIP:
     # =========================================================================
 
     @classmethod
-    def get_care_recommendation(cls) -> Optional[CareRecommendation]:
+    def get_care_recommendation(cls) -> CareRecommendation | None:
         """Get the current care recommendation.
 
         Returns:
@@ -241,7 +241,7 @@ class MCIP:
     # =========================================================================
 
     @classmethod
-    def get_financial_profile(cls) -> Optional[FinancialProfile]:
+    def get_financial_profile(cls) -> FinancialProfile | None:
         """Get the current financial profile.
 
         Returns:
@@ -285,7 +285,7 @@ class MCIP:
     # =========================================================================
 
     @classmethod
-    def get_advisor_appointment(cls) -> Optional[AdvisorAppointment]:
+    def get_advisor_appointment(cls) -> AdvisorAppointment | None:
         """Get the current advisor appointment.
 
         Returns:
@@ -587,7 +587,7 @@ class MCIP:
         return product_key in journey["completed_products"]
 
     @classmethod
-    def get_recommended_next_product(cls) -> Optional[str]:
+    def get_recommended_next_product(cls) -> str | None:
         """Get MCIP's recommended next product.
 
         Returns:
@@ -733,7 +733,7 @@ class MCIP:
         }
 
     @classmethod
-    def get_product_summary(cls, product_key: str) -> Optional[dict[str, Any]]:
+    def get_product_summary(cls, product_key: str) -> dict[str, Any] | None:
         """Get summary info for a product tile.
 
         Pulls relevant data from MCIP contracts to show on product tiles.
@@ -968,7 +968,7 @@ class MCIP:
 # =============================================================================
 
 
-def get_care_tier_legacy_compatible() -> Optional[str]:
+def get_care_tier_legacy_compatible() -> str | None:
     """Get care tier from MCIP or legacy GCP state.
 
     Temporary helper during migration to support both patterns.

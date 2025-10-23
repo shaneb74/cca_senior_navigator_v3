@@ -31,7 +31,7 @@ def render():
     3. Plan Highlights Card (key metrics summary)
     4. What's Next Grid (3 actionable paths)
     """
-    
+
     # Clear restart flag so user can restart again after completing
     if "_cost_v2_restart_handled" in st.session_state:
         del st.session_state._cost_v2_restart_handled

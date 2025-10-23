@@ -7,7 +7,6 @@ Includes Navi at the top and the Additional Services section below.
 """
 
 import html
-from typing import Optional
 
 import streamlit as st
 
@@ -116,7 +115,7 @@ def render(ctx=None) -> None:
     render_footer_simple()
 
 
-def _build_saved_progress_alert(save_msg: Optional[dict]) -> str:
+def _build_saved_progress_alert(save_msg: dict | None) -> str:
     """Build progress alert banner."""
     if not save_msg:
         return ""

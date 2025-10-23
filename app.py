@@ -1,5 +1,10 @@
 import streamlit as st
 
+# Silence Streamlit file watcher spam
+import logging
+logging.getLogger("streamlit.watcher.local_sources_watcher").setLevel(logging.ERROR)
+logging.getLogger("streamlit.watcher").setLevel(logging.ERROR)
+
 from core.events import log_event
 from core.nav import current_route, load_nav
 
@@ -95,6 +100,27 @@ if "dev" in st.query_params and st.query_params["dev"].lower() in ("true", "1", 
         st.session_state["flag_validation_run"] = True
 else:
     st.session_state["dev_mode"] = False
+
+# ====================================================================
+# FEATURE FLAGS
+# ====================================================================
+
+# LLM Navi feature flag: off|shadow|assist|adjust (default: off)
+# Shadow mode = read-only logging, no UI changes
+if "FEATURE_LLM_NAVI" not in st.session_state:
+    import os
+    def _get_flag(name, default="off"):
+        try:
+            v = st.secrets.get(name)
+            if v:
+                return str(v).strip().strip('"').lower()
+        except Exception:
+            pass
+        v = os.getenv(name, default)
+        return str(v).strip().strip('"').lower()
+
+    # respect secrets.toml / env instead of hard-coding shadow
+    st.session_state["FEATURE_LLM_NAVI"] = _get_flag("FEATURE_LLM_GCP", "off")
 
 # ====================================================================
 # SESSION PERSISTENCE - Load state from disk

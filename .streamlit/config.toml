@@ -1,14 +1,20 @@
 [theme]
 base = "light"
-primaryColor = "#0D1F4B"            # navy for primary action buttons
+primaryColor = "#0D1F4B"
 backgroundColor = "#FFFFFF"
 secondaryBackgroundColor = "#FFFFFF"
 textColor = "#0d1f4b"
 font = "sans serif"
 
 [client]
-# Hide verbose error styling banners that can color widgets red:
 showErrorDetails = false
 
 [browser]
-gatherUsageStats = false 
+gatherUsageStats = false
+
+[logger]
+level = "error"
+messageFormat = "%(asctime)s %(message)s"
+
+[server]
+fileWatcherType = "poll"

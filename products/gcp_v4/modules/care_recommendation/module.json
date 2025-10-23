@@ -97,9 +97,9 @@
           "default": "alone",
           "options": [
             { "label": "Alone", "value": "alone" },
+            { "label": "With a spouse or partner", "value": "with_spouse_or_partner", "flags": ["has_partner"] },
             { "label": "With family", "value": "with_family" },
-            { "label": "Assisted living", "value": "assisted_living" },
-            { "label": "Other", "value": "other" }
+            { "label": "Assisted living", "value": "assisted_living" }
           ],
           "ui": { "widget": "chip", "orientation": "horizontal" }
         },
@@ -373,6 +373,41 @@
             { "label": "Paid caregiver", "value": "paid", "score": 2 },
             { "label": "Community or agency", "value": "community", "score": 2 },
             { "label": "No regular support", "value": "none", "score": 3, "flags": ["no_support"] }
+          ],
+          "ui": { "widget": "chip", "orientation": "horizontal" }
+        }
+      ]
+    },
+    {
+      "id": "move_preferences",
+      "title": "Move Preferences",
+      "description": "Help us understand this person's openness to moving to a care facility.",
+      "show_if": {
+        "any": [
+          { "key": "gcp_recommendation_category", "equals": "assisted_living" },
+          { "key": "gcp_recommendation_category", "equals": "memory_care" },
+          { "key": "gcp_recommendation_category", "equals": "memory_care_high_acuity" }
+        ]
+      },
+      "navi_guidance": {
+        "section_purpose": "Understand willingness to relocate for facility-based care",
+        "why_this_matters": "Willingness to move affects care planning and family dynamics",
+        "encouragement": "There's no right or wrong answer - just be honest about comfort level with change"
+      },
+      "questions": [
+        {
+          "id": "move_preference",
+          "type": "string",
+          "select": "single",
+          "label": "How willing is this person to move?",
+          "help": "Understanding openness to relocating helps us provide realistic care planning guidance.",
+          "required": true,
+          "default": "2",
+          "options": [
+            { "label": "1 – Strong preference to stay home", "value": "1", "score": 0 },
+            { "label": "2 – Uncertain or need more information", "value": "2", "score": 0 },
+            { "label": "3 – Open if it improves my care plan", "value": "3", "score": 0 },
+            { "label": "4 – Comfortable with the idea of moving", "value": "4", "score": 0 }
           ],
           "ui": { "widget": "chip", "orientation": "horizontal" }
         }

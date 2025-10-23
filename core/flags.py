@@ -14,7 +14,6 @@ IMPORTANT: All flags must be registered in FLAG_REGISTRY below.
 If a module tries to set an undefined flag, a validation warning will appear.
 """
 
-from typing import Optional, Dict, List, Any
 
 import streamlit as st
 
@@ -185,6 +184,11 @@ FLAG_REGISTRY: dict[str, dict[str, str]] = {
         "cost_multiplier": 1.10,
     },
     # SUPPORT SYSTEM FLAGS
+    "has_partner": {
+        "category": "caregiver",
+        "severity": "low",
+        "description": "Lives with spouse or partner (potential support system)",
+    },
     "no_support": {
         "category": "caregiver",
         "severity": "high",
@@ -194,6 +198,12 @@ FLAG_REGISTRY: dict[str, dict[str, str]] = {
         "category": "caregiver",
         "severity": "moderate",
         "description": "Limited caregiver support (1-3 hours/day)",
+    },
+    # MOVE PREFERENCE FLAGS
+    "is_move_flexible": {
+        "category": "preferences",
+        "severity": "low",
+        "description": "Willing to move to facility care (move_preference >= 3)",
     },
     # GEOGRAPHIC FLAGS
     "low_access": {
@@ -230,7 +240,7 @@ COST_MODEL_FLAGS: list[str] = [
 ]
 
 
-def get_flag_info(flag_id: str) -> Optional[dict[str, str]]:
+def get_flag_info(flag_id: str) -> dict[str, str] | None:
     """Get metadata for a specific flag.
 
     Args:

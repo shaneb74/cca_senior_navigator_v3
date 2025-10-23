@@ -13,7 +13,7 @@ ASSESSMENTS_DIR = PROJECT_ROOT / "products/cost_planner_v2/modules/assessments"
 
 def update_income_json():
     """Update Income assessment with level property and restructured sections."""
-    
+
     income_config = {
         "key": "income",
         "title": "Income Sources",
@@ -326,17 +326,17 @@ def update_income_json():
             "total_monthly_income": "calculated"
         }
     }
-    
+
     output_path = ASSESSMENTS_DIR / "income.json"
     with open(output_path, 'w') as f:
         json.dump(income_config, f, indent=2)
-    
+
     print(f"✅ Updated {output_path}")
 
 
 def update_assets_json():
     """Update Assets assessment with level property and restructured sections."""
-    
+
     assets_config = {
         "key": "assets",
         "title": "Assets & Resources",
@@ -649,7 +649,7 @@ def update_assets_json():
             "total_asset_value": "calculated"
         }
     }
-    
+
     output_path = ASSESSMENTS_DIR / "assets.json"
     # Backup first
     import shutil
@@ -657,10 +657,10 @@ def update_assets_json():
     if output_path.exists():
         shutil.copy(output_path, backup_path)
         print(f"📁 Backed up to {backup_path}")
-    
+
     with open(output_path, 'w') as f:
         json.dump(assets_config, f, indent=2)
-    
+
     print(f"✅ Updated {output_path}")
 
 

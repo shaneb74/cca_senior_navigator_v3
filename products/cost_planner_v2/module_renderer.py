@@ -8,7 +8,7 @@ Similar to GCP's data-driven approach but for financial forms.
 import json
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Optional, Dict
+from typing import Any
 
 import streamlit as st
 
@@ -25,7 +25,7 @@ def load_module_config() -> dict[str, Any]:
         return json.load(f)
 
 
-def get_module_definition(module_key: str) -> Optional[dict[str, Any]]:
+def get_module_definition(module_key: str) -> dict[str, Any] | None:
     """Get specific module definition by key.
 
     Args:
@@ -318,7 +318,7 @@ def _render_field(field: dict[str, Any], state_key: str) -> Any:
     return value
 
 
-def _evaluate_visible_if(visible_if: Optional[dict[str, Any]]) -> bool:
+def _evaluate_visible_if(visible_if: dict[str, Any] | None) -> bool:
     """Evaluate visibility condition.
 
     Args:

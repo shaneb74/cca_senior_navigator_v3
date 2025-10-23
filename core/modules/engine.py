@@ -491,33 +491,36 @@ def _ensure_outcomes(config: ModuleConfig, answers: dict[str, Any]) -> None:
     outcome = OutcomeContract()
     if config.outcomes_compute:
         fn = _resolve_callable(config.outcomes_compute)
-        try:
-            result = fn(answers=answers, context=context)
-            if isinstance(result, OutcomeContract):
-                outcome = result
-            elif isinstance(result, dict):
-                # Don't wrap in OutcomeContract - store dict directly
-                # This allows product-specific schemas (e.g., GCP's tier/tier_score)
-                st.session_state[outcome_key] = result
+        
+        # Show spinner while computing recommendation (especially for LLM-assisted GCP)
+        with st.spinner("💬 Analyzing your assessment and preparing recommendations..."):
+            try:
+                result = fn(answers=answers, context=context)
+                if isinstance(result, OutcomeContract):
+                    outcome = result
+                elif isinstance(result, dict):
+                    # Don't wrap in OutcomeContract - store dict directly
+                    # This allows product-specific schemas (e.g., GCP's tier/tier_score)
+                    st.session_state[outcome_key] = result
 
-                # Still handle legacy handoff for backward compatibility
-                handoff = st.session_state.setdefault("handoff", {})
-                handoff[state_key] = result
+                    # Still handle legacy handoff for backward compatibility
+                    handoff = st.session_state.setdefault("handoff", {})
+                    handoff[state_key] = result
 
-                _emit(
-                    "module.outcomes.ready",
-                    {
-                        "state_key": state_key,
-                        "outcome": str(result.get("tier") or result.get("recommendation", "")),
-                    },
-                )
-                return  # Early return - we're done
-        except Exception as e:
-            import traceback
+                    _emit(
+                        "module.outcomes.ready",
+                        {
+                            "state_key": state_key,
+                            "outcome": str(result.get("tier") or result.get("recommendation", "")),
+                        },
+                    )
+                    return  # Early return - we're done
+            except Exception as e:
+                import traceback
 
-            st.error(f"❌ Error computing outcomes: {type(e).__name__}: {str(e)}")
-            st.text(traceback.format_exc())
-            outcome = OutcomeContract()
+                st.error(f"❌ Error computing outcomes: {type(e).__name__}: {str(e)}")
+                st.text(traceback.format_exc())
+                outcome = OutcomeContract()
 
     audit = dict(outcome.audit)
     audit.update(
@@ -1035,50 +1038,34 @@ def _render_results_view(mod: dict[str, Any], config: ModuleConfig) -> None:
         rec_text = "Your Guided Care Plan"
 
     # ========================================
-    # 1. NAVI ANNOUNCES THE RECOMMENDATION
+    # 1. BLUE NAVI HEADER (skip if product already rendered one)
     # ========================================
-    # Navi says: "Based on your answers, here's what I recommend:"
-    # Then shows the recommendation in her panel
+    # Product pages (GCP) render the header at the top; avoid duplication here.
+    try:
+        if not st.session_state.get("_gcp_cp_header_rendered", False):
+            from core.ui import render_navi_panel_v2
+            header_title = "Your Guided Care Plan"
+            header_reason = f"Based on your answers, {rec_text} fits best right now."
+            render_navi_panel_v2(
+                title=header_title,
+                reason=header_reason,
+                encouragement={"icon": "💬", "text": "You can adjust details anytime and explore costs next.", "status": "in_progress"},
+                context_chips=[],
+                primary_action={"label": "", "route": ""},
+                variant="module",
+            )
+            # Mark as rendered to protect against downstream duplicate calls
+            st.session_state["_gcp_cp_header_rendered"] = True
+            st.session_state["_gcp_cp_header_key"] = "gcp_cp_header::results"
+    except Exception:
+        pass
 
-    from core.ui import render_navi_panel_v2
-
-    # Build Navi guidance with recommendation
-    navi_title = "Great job! Based on your answers, here's what I recommend:"
-    navi_reason = rec_text
-
-    # Calculate question completeness for contextual message
-    answered_count = 0
-    total_count = 0
-    for step in config.steps:
-        if not step.fields:
-            continue
-        for field in step.fields:
-            if field.required:
-                total_count += 1
-                value = mod.get(field.key)
-                if value is not None and value != "" and value != []:
-                    answered_count += 1
-
-    unanswered_count = total_count - answered_count
-
-    # Add contextual encouragement message
-    # If questions were skipped, let user know they can get a more reliable recommendation
-    # Otherwise, reassure them the plan can evolve
-    if unanswered_count > 0:
-        encouragement_text = f"You skipped {unanswered_count} question{'s' if unanswered_count > 1 else ''}. I can give a more reliable recommendation with more information—feel free to retake this assessment anytime."
-    else:
-        encouragement_text = "Your care plan can evolve as your needs change. You can retake this assessment anytime to get an updated recommendation."
-
-    render_navi_panel_v2(
-        title=navi_title,
-        reason=navi_reason,
-        encouragement={"icon": "💬", "text": encouragement_text, "status": "complete"},
-        context_chips=[],
-        primary_action={"label": "", "route": ""},
-        variant="module",
-    )
-
-    st.markdown("<div style='margin: 32px 0;'></div>", unsafe_allow_html=True)
+    # Clean paragraphs under header
+    try:
+        from products.gcp_v4.ui_helpers import render_clean_summary
+        render_clean_summary()
+    except Exception:
+        pass
 
     # ========================================
     # 2. RECOMMENDATION CLARITY - Collapsible Drawer (Developer Tool)
@@ -1109,75 +1096,50 @@ def _render_results_view(mod: dict[str, Any], config: ModuleConfig) -> None:
         else:
             clarity_message = "Near boundary — consider reviewing"
 
-    clarity_color = (
-        "#22c55e" if boundary_clarity >= 80 else "#f59e0b" if boundary_clarity >= 50 else "#ef4444"
-    )
-
-    with st.expander("🔧 Recommendation Clarity (For Fine-Tuning)", expanded=False):
-        st.markdown(
-            f"""
-        <div style="
-            background: white;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            padding: 20px;
-        ">
-            <div style="font-size: 24px; font-weight: 600; color: {clarity_color}; margin-bottom: 8px;">
-                {boundary_clarity}%
-            </div>
-            <div style="font-size: 14px; color: #64748b; margin-bottom: 12px;">
-                {clarity_message}
-            </div>
-            <div style="
-                background: #f1f5f9;
-                height: 8px;
-                border-radius: 4px;
-                overflow: hidden;
-                margin-bottom: 16px;
-            ">
-                <div style="
-                    background: {clarity_color};
-                    height: 100%;
-                    width: {boundary_clarity}%;
-                    transition: width 0.3s ease;
-                "></div>
-            </div>
-            <div style="font-size: 13px; color: #64748b;">
-                <strong>Score:</strong> {tier_score} points<br/>
-                <strong>Tier:</strong> {tier.replace("_", " ").title()}<br/>
-                <strong>Range:</strong> {tier_thresholds.get(tier, ("N/A", "N/A"))[0]}-{tier_thresholds.get(tier, ("N/A", "N/A"))[1]} points
-            </div>
-        </div>
-        """,
-            unsafe_allow_html=True,
-        )
-
-    st.markdown("<div style='margin: 24px 0;'></div>", unsafe_allow_html=True)
-
     # ========================================
-    # 3. WHY YOU GOT THIS RECOMMENDATION
+    # 2. NEXT ACTIONS - Three Simple Buttons
     # ========================================
 
-    st.markdown("### 🔍 Why You Got This Recommendation")
+    col1, col2, col3 = st.columns([1, 1, 1])
 
-    summary_data = outcomes.get("summary", {})
-    points = summary_data.get("points", [])
+    with col1:
+        if st.button("🏁 Start Over – Answer Questions Again", key="btn_restart_gcp", use_container_width=True):
+            # Clear only GCP-related state to avoid LLM recompute on click
+            # Preserve auth, session_id, dev_mode
+            preserve = {"auth", "session_id", "dev_mode"}
+            for k in list(st.session_state.keys()):
+                if k not in preserve:
+                    if k.startswith("gcp_") or k in ("_summary_advice", "_hours_suggestion", "_hours_ack", "_hours_nudge_key", "_hours_nudge_new", "_gcp_llm_advice"):
+                        st.session_state.pop(k, None)
+            
+            # Reset to step 0 (first question - Age section)
+            st.session_state[f"{config.state_key}._step"] = 0
+            
+            # Update tile state to step 0
+            tiles = st.session_state.setdefault("tiles", {})
+            tile_state = tiles.setdefault(config.product, {})
+            tile_state["last_step"] = 0
+            
+            # Clear other progress markers
+            for k in ("gcp_view", "persistence_loaded"):
+                st.session_state.pop(k, None)
+            
+            # Rerun to show first question
+            from core.modules.engine import safe_rerun
+            safe_rerun()
 
-    if points:
-        # Use detailed summary points from derive() function
-        # Group them visually with icons
-        _render_recommendation_details(points)
-    else:
-        # Fallback to basic summary
-        _render_results_summary(mod, config)
+    with col2:
+        if st.button("💰 Explore Care Options & Costs", key="btn_costs", type="primary", use_container_width=True):
+            from core.nav import route_to
+            route_to("cost_v2")
 
-    st.markdown("<div style='margin: 40px 0;'></div>", unsafe_allow_html=True)
-
-    # ========================================
-    # 4. NEXT ACTIONS - Simplified CTAs
-    # ========================================
-
-    _render_results_ctas_once(config)
+    with col3:
+        if st.button("🏠 Return to Concierge Hub", key="btn_hub", use_container_width=True):
+            from core.nav import route_to
+            route_to("hub_concierge")
+    
+    # Bottom horizontal rule
+    st.markdown("---")
 
 
 def _render_results_summary(state: dict[str, Any], config: ModuleConfig) -> None:
@@ -1392,16 +1354,33 @@ def _render_results_ctas_once(config: ModuleConfig) -> None:
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # Primary next step: Calculate Costs (only for GCP)
+    # Primary next step: Calculate Costs (only for GCP) - tier-aware CTA
     if config.product == "gcp_v4":
         st.markdown("---")
         st.markdown('<div class="sn-app mod-actions">', unsafe_allow_html=True)
+        
+        # Build tier-aware CTA label
+        outcome_key = f"{config.state_key}._outcomes"
+        outcomes_data = st.session_state.get(outcome_key, {})
+        tier = st.session_state.get("gcp.final_tier") or st.session_state.get("final_tier") or outcomes_data.get("tier") or "assisted_living"
+        
+        if tier in ("assisted_living", "memory_care", "memory_care_high_acuity"):
+            tier_display = tier.replace("_", " ").title()
+            cta_label = f"💰 Compare costs: {tier_display} vs In-Home"
+            cta_help = f"See how {tier_display} costs compare to In-Home care"
+        elif tier == "in_home" or tier == "in_home_care":
+            cta_label = "💰 See monthly costs for In-Home (adjust hours & supports)"
+            cta_help = "Explore In-Home care costs with customizable hours and support levels"
+        else:
+            cta_label = "💰 See optional support costs near you"
+            cta_help = "View optional support services and local resources"
+        
         if st.button(
-            "💰 Calculate Costs",
+            cta_label,
             key="_results_next_cost",
             type="primary",
             use_container_width=True,
-            help="See what your recommended care will cost",
+            help=cta_help,
         ):
             from core.nav import route_to
 

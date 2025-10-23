@@ -11,7 +11,7 @@ Regional multipliers from RegionalDataProvider
 import json
 import os
 from dataclasses import dataclass
-from typing import Any, Optional, Dict, List
+from typing import Any
 
 from .regional_data import RegionalDataProvider
 
@@ -163,7 +163,7 @@ class CostEstimate:
 class CostCalculator:
     """Cost calculation engine."""
 
-    _base_costs: Optional[dict[str, Any]] = None
+    _base_costs: dict[str, Any] | None = None
     _config_path = "config/cost_config.v3.json"
 
     @classmethod
@@ -247,7 +247,7 @@ class CostCalculator:
 
     @classmethod
     def calculate_quick_estimate_with_breakdown(
-        cls, care_tier: str, zip_code: Optional[str] = None
+        cls, care_tier: str, zip_code: str | None = None
     ) -> CostEstimate:
         """Calculate quick estimate with line-item breakdown for intro page.
 
@@ -399,7 +399,7 @@ class CostCalculator:
 
     @classmethod
     def calculate_quick_estimate(
-        cls, care_tier: str, zip_code: Optional[str] = None, state: Optional[str] = None
+        cls, care_tier: str, zip_code: str | None = None, state: str | None = None
     ) -> CostEstimate:
         """Calculate quick estimate for intro page (LEGACY - use calculate_quick_estimate_with_breakdown).
 
@@ -445,12 +445,12 @@ class CostCalculator:
     def calculate_detailed_estimate(
         cls,
         care_tier: str,
-        care_hours: Optional[int] = None,
-        additional_services: Optional[dict[str, bool]] = None,
-        veteran_benefit: Optional[float] = None,
-        insurance_coverage: Optional[float] = None,
-        zip_code: Optional[str] = None,
-        state: Optional[str] = None,
+        care_hours: int | None = None,
+        additional_services: dict[str, bool] | None = None,
+        veteran_benefit: float | None = None,
+        insurance_coverage: float | None = None,
+        zip_code: str | None = None,
+        state: str | None = None,
     ) -> CostEstimate:
         """Calculate detailed estimate with all modules.
 

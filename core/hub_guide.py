@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from html import escape as html_escape
-from typing import Optional,  Any
+from typing import Any
 
 import streamlit as st
 
@@ -46,7 +46,7 @@ def compute_hub_guide(
     hub_order: dict[str, Any] | None = None,
     *,
     mode: str = "auto",
-    extra_panel: Optional[str] = None,
+    extra_panel: str | None = None,
 ) -> str:
     required_products = list(hub_order.get("ordered_products") or []) if hub_order else []
     if mode == "full":

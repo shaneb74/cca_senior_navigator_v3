@@ -1,11 +1,10 @@
 # hubs/waiting_room.py
 
-from typing import Optional
+
 import streamlit as st
 
 from core.additional_services import get_additional_services
 from core.base_hub import render_dashboard_body
-from core.hub_guide import compute_hub_guide
 from core.mcip import MCIP
 from core.navi import render_navi_panel
 from core.product_tile import ProductTileHub
@@ -70,7 +69,7 @@ def _get_trivia_progress():
     return int((completed_count / total_quizzes) * 100)
 
 
-def _build_advisor_prep_tile(is_next_recommended: bool) -> Optional[ProductTileHub]:
+def _build_advisor_prep_tile(is_next_recommended: bool) -> ProductTileHub | None:
     """Build Advisor Prep tile if PFMA booking exists.
     
     Args:
@@ -147,7 +146,7 @@ def _build_trivia_tile(is_next_recommended: bool) -> ProductTileHub:
     """
     trivia_badges = _get_trivia_badges()
     trivia_progress = _get_trivia_progress()
-    
+
     # Variant: gradient brand if recommended, teal otherwise
     variant = "brand" if is_next_recommended else "teal"
 
@@ -215,34 +214,34 @@ def _determine_next_recommendation() -> str:
     # Check waiting room state from MCIP
     waiting_room_state = MCIP.get_waiting_room_state()
     current_focus = waiting_room_state.get("current_focus", "advisor_prep")
-    
+
     # Get advisor prep summary
     prep_summary = MCIP.get_advisor_prep_summary()
     advisor_prep_available = prep_summary.get("available", False)
     advisor_prep_progress = prep_summary.get("progress", 0)
-    
+
     # Priority 1: Advisor Prep if available and not complete
     if advisor_prep_available and advisor_prep_progress < 100:
         return "advisor_prep"
-    
+
     # Priority 2: Senior Trivia if no progress
     trivia_progress = _get_trivia_progress()
     if trivia_progress == 0:
         return "senior_trivia"
-    
+
     # Priority 3: Featured Partners (default)
     return "partners_spotlight"
 
 
 def render(ctx=None) -> None:
     """Render Waiting Room Hub with MCIP-driven tile ordering and styling."""
-    
+
     # Initialize MCIP
     MCIP.initialize()
-    
+
     # Determine next recommended activity
     next_recommendation = _determine_next_recommendation()
-    
+
     # Pull state safely with fallbacks for remaining tiles
     appt = st.session_state.get("appointment", {}) or {}
     appointment_summary = appt.get("summary", "No appointment scheduled")
@@ -251,7 +250,7 @@ def render(ctx=None) -> None:
     gamification_progress = float(
         (st.session_state.get("gamification", {}) or {}).get("progress", 0)
     )
-    
+
     # Build MCIP-driven tiles (orders 1-3)
     advisor_prep_tile = _build_advisor_prep_tile(
         is_next_recommended=(next_recommendation == "advisor_prep")
@@ -262,7 +261,7 @@ def render(ctx=None) -> None:
     partners_tile = _build_featured_partners_tile(
         is_next_recommended=(next_recommendation == "partners_spotlight")
     )
-    
+
     # Assemble tiles in MCIP-driven order
     cards = [
         advisor_prep_tile,  # Order 1 (if available)
@@ -314,7 +313,7 @@ def render(ctx=None) -> None:
 
     # Filter out None tiles (Advisor Prep may be None if appointment not booked)
     cards = [c for c in cards if c is not None]
-    
+
     # Sort by order (MCIP-driven)
     cards.sort(key=lambda c: c.order)
 

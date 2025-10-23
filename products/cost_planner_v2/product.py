@@ -81,7 +81,7 @@ def render():
                 st.session_state.cost_v2_step = step_from_query
 
     current_step = st.session_state.cost_v2_step
-    
+
 
     # Render Navi panel with dynamic guidance based on step
     # Skip for module_active, expert_review, exit, and when inside an assessment
@@ -137,33 +137,9 @@ def _render_navi_with_context(current_step: str):
 
     # Build context-aware message based on step
     if current_step == "intro":
-        if has_gcp:
-            recommended_care = tier_display_map.get(gcp_rec.tier, gcp_rec.tier)
-            title = "Let's look at costs"
-            reason = f"I've pre-selected **{recommended_care}** based on your Guided Care Plan. You can explore other scenarios too."
-            encouragement = {
-                "icon": "💡",
-                "status": "info",
-                "text": "Compare different care options to see what works for your budget.",
-            }
-        else:
-            title = "Let's get a quick estimate"
-            reason = "Enter your ZIP code and select a care type to see what it costs in your area."
-            encouragement = {
-                "icon": "📊",
-                "status": "info",
-                "text": "Complete the Guided Care Plan first for personalized recommendations.",
-            }
-
-        # Render Navi panel V2 with custom message (module variant = blue left border, no button)
-        render_navi_panel_v2(
-            title=title,
-            reason=reason,
-            encouragement=encouragement,
-            context_chips=[],
-            primary_action={"label": "Continue", "action": None},
-            variant="module",
-        )
+        # Intro page renders its own header inside products/cost_planner_v2/intro.py
+        # Skip here to avoid duplicate panel rendering
+        return
 
     elif current_step == "auth":
         # Authentication step - explain requirement and reassure about security
@@ -367,7 +343,7 @@ def _handle_restart_if_needed() -> None:
     # Check if we've already handled restart in this session
     if st.session_state.get("_cost_v2_restart_handled", False):
         return  # Already restarted, don't clear state again
-    
+
     # Check if Cost Planner is complete
     try:
         from core.mcip import MCIP
@@ -383,10 +359,10 @@ def _handle_restart_if_needed() -> None:
         return  # Not at intro, don't auto-restart
 
     # RESTART: Clear Cost Planner state but preserve GCP
-    
+
     # Set flag FIRST to prevent re-clearing on next render
     st.session_state._cost_v2_restart_handled = True
-    
+
     # 1. Clear cost planner step state
     if "cost_v2_step" in st.session_state:
         st.session_state.cost_v2_step = "intro"
@@ -457,12 +433,12 @@ def _handle_restart_if_needed() -> None:
     # This ensures the cleared keys are saved to the user file
     # so they don't get reloaded on next page navigation
     try:
-        from core.session_store import save_user, extract_user_state, get_or_create_user_id
-        
+        from core.session_store import extract_user_state, get_or_create_user_id, save_user
+
         uid = get_or_create_user_id(st.session_state)
         user_data = extract_user_state(st.session_state)
         save_user(uid, user_data)
-    except Exception as e:
+    except Exception:
         pass  # Silently handle persistence errors
 
     # Note: GCP state and recommendation preserved automatically
