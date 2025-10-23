@@ -271,6 +271,11 @@ def _publish_to_mcip(outcome, module_state: dict) -> None:
         st.error("❌ Unable to generate recommendation - invalid outcome format")
         return
 
+    # Apply final tier from LLM policy if available (overrides deterministic tier)
+    final_tier = st.session_state.get("gcp.final_tier")
+    if final_tier:
+        outcome_data["tier"] = final_tier
+
     # Validate required fields
     if not outcome_data.get("tier"):
         st.error("❌ Unable to generate recommendation - missing tier")

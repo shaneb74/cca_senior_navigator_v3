@@ -59,10 +59,91 @@ def gcp_hours_mode() -> str:
     return str(v).strip().strip('"').lower() if v else "off"
 
 
+def get_llm_tier_mode() -> str:
+    """Resolve FEATURE_GCP_LLM_TIER flag from secrets or environment.
+    
+    Returns:
+        "off" | "shadow" | "replace" (default: "shadow")
+    """
+    try:
+        import streamlit as st, os
+        v = st.secrets.get("FEATURE_GCP_LLM_TIER", None)
+        if v is None:
+            v = os.getenv("FEATURE_GCP_LLM_TIER", "shadow")
+        return str(v).strip().strip('"').lower()
+    except Exception:
+        import os
+        return str(os.getenv("FEATURE_GCP_LLM_TIER", "shadow")).strip().strip('"').lower()
+
+
+def _choose_final_tier(
+    det_tier: str,
+    allowed_tiers: set[str],
+    llm_tier: str | None,
+    llm_conf: float | None,
+    bands: dict,
+    risky: bool
+) -> tuple[str, dict]:
+    """Return (final_tier, decision_info) using guarded replacement policy.
+    
+    Args:
+        det_tier: Deterministic tier recommendation
+        allowed_tiers: Set of tiers allowed by cognitive/behavioral gates
+        llm_tier: LLM-recommended tier (if available)
+        llm_conf: LLM confidence score (if available)
+        bands: Dict with cognitive and support bands {"cog": str, "sup": str}
+        risky: True if risky cognitive behaviors present
+        
+    Returns:
+        Tuple of (final_tier, decision_info_dict)
+    """
+    info = {
+        "det": det_tier,
+        "llm": llm_tier,
+        "conf": llm_conf,
+        "allowed": sorted(list(allowed_tiers)),
+        "bands": bands,
+        "risky": risky,
+        "reason": "deterministic"
+    }
+
+    # Must have LLM tier and it must be in allowed set
+    if not llm_tier or llm_tier not in allowed_tiers:
+        if llm_tier and llm_tier not in allowed_tiers:
+            info["reason"] = "llm_tier_not_allowed"
+        return det_tier, info
+
+    conf = float(llm_conf or 0.0)
+    
+    # Block downgrades when risky behaviors require MC/MC-HA
+    if risky and det_tier in {"memory_care", "memory_care_high_acuity"} \
+       and llm_tier not in {"memory_care", "memory_care_high_acuity"}:
+        info["reason"] = "risky_behaviors_keep_det"
+        return det_tier, info
+
+    # Special de-overscore: moderate×high no risky → gates removed MC, accept AL if confident
+    if det_tier in {"memory_care", "memory_care_high_acuity"} \
+       and llm_tier == "assisted_living" \
+       and conf >= 0.80 \
+       and bands.get("cog") == "moderate" \
+       and bands.get("sup") == "high" \
+       and not risky:
+        info["reason"] = "de_overscore_accept_al"
+        return llm_tier, info
+
+    # General acceptance when confident
+    if conf >= 0.80:
+        info["reason"] = "confident_llm_accept"
+        return llm_tier, info
+
+    return det_tier, info
+
+
 def ensure_summary_ready(answers: dict, flags: list[str], tier: str) -> None:
     """
     Computes summary context + LLM advice once, stores to session so UI
     can render immediately (no widget interaction required).
+    Also applies tier decision policy if FEATURE_GCP_LLM_TIER="replace".
     Safe to call repeatedly (idempotent).
     """
     try:
@@ -176,6 +257,91 @@ def ensure_summary_ready(answers: dict, flags: list[str], tier: str) -> None:
     else:
         # Do NOT set fallback; leave unset for diagnostics
         st.session_state.pop("_summary_advice", None)
+
+    # ====================================================================
+    # TIER DECISION POLICY (GUARDED LLM REPLACEMENT)
+    # ====================================================================
+    # Apply tier replacement policy if FEATURE_GCP_LLM_TIER="replace"
+    tier_mode = get_llm_tier_mode()  # "off"|"shadow"|"replace"
+    
+    # Get LLM tier and confidence from advice
+    d = st.session_state.get("_summary_advice") or {}
+    llm_tier = d.get("tier") or d.get("recommended_tier")
+    llm_conf = float(d.get("confidence", 0.0) or 0.0)
+    
+    # Compute allowed tiers (same logic as in derive_outcome)
+    try:
+        from ai.gcp_schemas import CANONICAL_TIERS
+        allowed_tiers = set(CANONICAL_TIERS)
+        
+        # Apply cognitive gate
+        passes_cognitive = cognitive_gate(answers, flags)
+        if not passes_cognitive:
+            allowed_tiers -= {"memory_care", "memory_care_high_acuity"}
+        
+        # Apply behavior gate if enabled
+        gate_on = mc_behavior_gate_enabled()
+        cog_band = cognition_band(answers, flags)
+        sup_band = support_band(answers, flags)
+        risky = cognitive_gate_behaviors_only(answers, flags)
+        
+        if gate_on and cog_band == "moderate" and sup_band == "high" and not risky:
+            allowed_tiers.discard("memory_care")
+            allowed_tiers.discard("memory_care_high_acuity")
+        
+        bands = {"cog": cog_band, "sup": sup_band}
+        
+    except Exception:
+        # Fallback: all tiers allowed, no bands
+        from ai.gcp_schemas import CANONICAL_TIERS
+        allowed_tiers = set(CANONICAL_TIERS)
+        bands = {"cog": "unknown", "sup": "unknown"}
+        risky = False
+    
+    if tier_mode == "replace":
+        final_tier, decision = _choose_final_tier(
+            det_tier=tier,
+            allowed_tiers=allowed_tiers,
+            llm_tier=llm_tier,
+            llm_conf=llm_conf,
+            bands=bands,
+            risky=risky
+        )
+        
+        st.session_state["gcp.final_tier"] = final_tier
+        
+        # Update advice object with final tier for UI consistency
+        if final_tier != tier and d:
+            d["tier"] = final_tier
+            st.session_state["_summary_advice"] = d
+        
+        print(f"[GCP_TIER_DECISION] mode=replace det={tier} llm={llm_tier} conf={llm_conf:.2f} -> final={final_tier} reason={decision['reason']}")
+        
+        # Training/audit row
+        try:
+            from tools.log_disagreement import append_case
+            row = {
+                "det_tier": tier,
+                "llm_tier": llm_tier,
+                "llm_conf": llm_conf,
+                "final_tier": final_tier,
+                "allowed_tiers": sorted(list(allowed_tiers)),
+                "bands": decision["bands"],
+                "risky": decision["risky"],
+                "reason": decision["reason"],
+                "answers": answers,
+                "flags": list(flags),
+            }
+            append_case(row)
+        except Exception:
+            pass  # Never fail on logging
+            
+    else:
+        # Keep deterministic tier (off or shadow mode)
+        st.session_state["gcp.final_tier"] = tier
+        if tier_mode == "shadow":
+            print(f"[GCP_TIER_DECISION] mode=shadow det={tier} llm={llm_tier} conf={llm_conf:.2f} -> final={tier}")
+    # ====================================================================
 
     st.session_state["_summary_ready"] = True
 
