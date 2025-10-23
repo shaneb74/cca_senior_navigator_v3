@@ -1113,41 +1113,41 @@ def _render_results_view(mod: dict[str, Any], config: ModuleConfig) -> None:
             clarity_message = "Near boundary — consider reviewing"
 
     # ========================================
-    # 2b. NAVI CONVERSATIONAL SUMMARY (LLM-powered)
+    # 2b. CLEAN CONVERSATIONAL SUMMARY (LLM-powered)
     # ========================================
-    # Render concise Navi explanation below the header
+    # Render clean Navi explanation with quote-style header
     try:
-        from products.gcp_v4.ui_helpers import render_navi_header_and_summary
-        render_navi_header_and_summary()
+        from products.gcp_v4.ui_helpers import render_clean_summary
+        render_clean_summary()
     except Exception:
         pass  # Gracefully skip if not available
-
-    st.markdown("<div style='margin: 24px 0;'></div>", unsafe_allow_html=True)
-
-    # ========================================
-    # 3. WHY YOU GOT THIS RECOMMENDATION
-    # ========================================
-
-    st.markdown("### 🔍 Why You Got This Recommendation")
-
-    summary_data = outcomes.get("summary", {})
-    points = summary_data.get("points", [])
-
-    if points:
-        # Use detailed summary points from derive() function
-        # Group them visually with icons
-        _render_recommendation_details(points)
-    else:
-        # Fallback to basic summary
-        _render_results_summary(mod, config)
 
     st.markdown("<div style='margin: 40px 0;'></div>", unsafe_allow_html=True)
 
     # ========================================
-    # 4. NEXT ACTIONS - Simplified CTAs
+    # 3. NEXT ACTIONS - Three Simple Buttons
     # ========================================
 
-    _render_results_ctas_once(config)
+    col1, col2, col3 = st.columns([1, 1, 1])
+
+    with col1:
+        if st.button("🏁 Start Over – Answer Questions Again", use_container_width=True):
+            # Clear GCP state and restart
+            for key in list(st.session_state.keys()):
+                if key.startswith("gcp_") or key.startswith("_hours") or key in ("_summary_advice", "_gcp_llm_advice"):
+                    st.session_state.pop(key, None)
+            from core.nav import route_to
+            route_to("gcp_v4")
+
+    with col2:
+        if st.button("💰 Explore Care Options & Costs", type="primary", use_container_width=True):
+            from core.nav import route_to
+            route_to("cost_v2")
+
+    with col3:
+        if st.button("🏠 Return to Concierge Hub", use_container_width=True):
+            from core.nav import route_to
+            route_to("hub_concierge")
 
 
 def _render_results_summary(state: dict[str, Any], config: ModuleConfig) -> None:

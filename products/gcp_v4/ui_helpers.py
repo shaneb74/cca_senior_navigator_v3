@@ -361,3 +361,54 @@ def render_navi_header_and_summary():
             f"<div style='margin-top:.5rem;color:#0d1f4b'>{adv['next_line']}</div>",
             unsafe_allow_html=True
         )
+
+
+def render_clean_summary():
+    """Render clean, conversational summary layout for GCP results page.
+    
+    Shows:
+    - Navi header block (quote-style)
+    - Two short paragraphs: "What this means for you" and "When it's a good fit"
+    
+    Uses LLM-generated summary advice from session state.
+    No extra colors, bullets, or banners - just clean, readable text.
+    """
+    import streamlit as st
+    
+    # Pull the LLM summary output
+    advice = st.session_state.get("_summary_advice")
+    tier = st.session_state.get("gcp.final_tier", "assisted_living").replace("_", " ").title()
+    navi_quote = advice.get("headline") if advice else None
+    what_it_means = advice.get("what_it_means") if advice else None
+    when_best = " ".join(advice.get("why", [])[:2]) if advice and advice.get("why") else None
+    
+    # Build quote block if we have a headline
+    quote_block = ""
+    if navi_quote:
+        quote_block = f"<blockquote style='font-style:italic; color:#0d1f4b; margin:0;'>{navi_quote}</blockquote>"
+    
+    # NAVI HEADER
+    st.markdown(f"""
+    <div style='border:1px solid #e0e4e9; border-radius:12px; padding:1.5rem; background:#f9fafc;'>
+      <p style='font-size:1.1rem; margin-bottom:.5rem;'><strong>✨ Navi</strong></p>
+      <p style='font-size:1rem; color:#0d1f4b; margin-bottom:.75rem;'>
+        Great job, based on your answers, here's the plan that fits best right now:
+      </p>
+      <p style='font-size:1.1rem; font-weight:600; color:#0d1f4b;'>🏡 {tier}</p>
+      {quote_block}
+      <p style='font-size:.9rem; color:#3a3a3a; margin-top:1rem;'>
+        ▸ Your plan can evolve as your needs change — you can revisit it anytime.
+      </p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown("<div style='margin-top:1.5rem;'></div>", unsafe_allow_html=True)
+    
+    # WHAT IT MEANS + WHEN IT'S BEST
+    if what_it_means:
+        st.markdown("### What this means for you")
+        st.markdown(what_it_means)
+    
+    if when_best:
+        st.markdown("### When it's a good fit")
+        st.markdown(when_best)
