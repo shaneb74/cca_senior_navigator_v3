@@ -346,14 +346,17 @@ def ensure_summary_ready(answers: dict, flags: list[str], tier: str) -> None:
         # Apply behavior gate if enabled
         gate_on = mc_behavior_gate_enabled()
         cog_band = cognition_band(answers, flags)
-        sup_band = support_band(answers, flags)
+        supervision_bucket_legacy = support_band(answers, flags)  # Diagnostic only
+        
+        # For routing/gates, map 24h → high
+        sup_band_for_routing = "high" if supervision_bucket_legacy == "24h" else supervision_bucket_legacy
         risky = cognitive_gate_behaviors_only(answers, flags)
         
-        if gate_on and cog_band == "moderate" and sup_band == "high" and not risky:
+        if gate_on and cog_band == "moderate" and sup_band_for_routing == "high" and not risky:
             allowed_tiers.discard("memory_care")
             allowed_tiers.discard("memory_care_high_acuity")
         
-        bands = {"cog": cog_band, "sup": sup_band}
+        bands = {"cog": cog_band, "sup": sup_band_for_routing}
         
     except Exception:
         # Fallback: all tiers allowed, no bands
@@ -422,10 +425,15 @@ def ensure_summary_ready(answers: dict, flags: list[str], tier: str) -> None:
             pass  # Never fail on logging
             
     else:
-        # Keep deterministic tier (off or shadow mode)
-        st.session_state["gcp.final_tier"] = tier
-        if tier_mode == "shadow":
-            print(f"[GCP_TIER_DECISION] mode=shadow det={tier} llm={llm_tier} conf={llm_conf:.2f} -> final={tier}")
+        # LEGACY MODE (off/shadow): Keep deterministic tier but DO NOT publish to UI/CarePlan
+        # In shadow mode, we log but do NOT write to gcp.final_tier (would overwrite LLM choice)
+        # Only set gcp.final_tier if tier_mode is completely off (no LLM at all)
+        if tier_mode == "off":
+            st.session_state["gcp.final_tier"] = tier
+            print(f"[GCP_TIER_DECISION] mode=off det={tier} (LLM disabled)")
+        else:
+            # Shadow mode: log only, do not publish deterministic tier
+            print(f"[GCP_TIER_DECISION] mode=shadow det={tier} llm={llm_tier or 'none'} conf={llm_conf or 0.0:.2f} (shadow only, not published)")
     
     # Clear hours suggestion for facility-based tiers when not comparing with in-home
     # Use published tier (gcp.final_tier) not deterministic tier
@@ -999,6 +1007,12 @@ def derive_outcome(
         - rationale: List[str]
         - suggested_next_product: str
     """
+    
+    # Clear legacy support keys to prevent stale values from previous runs
+    import streamlit as st
+    legacy_keys = ["support", "support_bucket", "supervision_bucket"]
+    for key in legacy_keys:
+        st.session_state.pop(key, None)
 
     # Load module.json to get scoring rules
     module_data = _load_module_json()
@@ -1019,16 +1033,24 @@ def derive_outcome(
     # Determine if cognitive gate passes
     passes_cognitive_gate = cognitive_gate(answers, flags)
     
-    # Derive cognition and support bands
+    # Derive cognition band for tier mapping
     cog_band = cognition_band(answers, flags)
-    sup_band = support_band(answers, flags)
     
-    # Load tier map and compute base recommendation
+    # Derive supervision bucket (LEGACY DIAGNOSTIC - not used for routing)
+    # This 24h bucket is diagnostic only and should NOT influence tier selection
+    supervision_bucket_legacy = support_band(answers, flags)
+    print(f"[LEGACY_SUP] bucket={supervision_bucket_legacy} cog={cog_band} (diagnostic only, not used for routing)")
+    
+    # For tier_map lookup, we use a routing-safe support band (without 24h)
+    # Map 24h → high for routing purposes only
+    sup_band_for_routing = "high" if supervision_bucket_legacy == "24h" else supervision_bucket_legacy
+    
+    # Load tier map and compute base recommendation using routing-safe band
     tier_map = _load_tier_map()
     tier_from_mapping = None
     
-    if tier_map and cog_band in tier_map and sup_band in tier_map.get(cog_band, {}):
-        tier_from_mapping = tier_map[cog_band][sup_band]
+    if tier_map and cog_band in tier_map and sup_band_for_routing in tier_map.get(cog_band, {}):
+        tier_from_mapping = tier_map[cog_band][sup_band_for_routing]
     
     # Build allowed tiers set
     from ai.gcp_schemas import CANONICAL_TIERS
@@ -1037,16 +1059,16 @@ def derive_outcome(
     if not passes_cognitive_gate:
         # Block memory care tiers
         allowed_tiers -= {"memory_care", "memory_care_high_acuity"}
-        print(f"[GCP_GUARD] Cognitive gate FAILED (cog={cog_band} sup={sup_band}) - MC/MC-HA blocked")
+        print(f"[GCP_GUARD] Cognitive gate FAILED (cog={cog_band} sup={sup_band_for_routing}) - MC/MC-HA blocked")
     else:
-        print(f"[GCP_GUARD] Cognitive gate PASSED (cog={cog_band} sup={sup_band}) - all tiers allowed")
+        print(f"[GCP_GUARD] Cognitive gate PASSED (cog={cog_band} sup={sup_band_for_routing}) - all tiers allowed")
     
     # --- Behavior gate for moderate × high without risky behaviors ---
     gate_on = mc_behavior_gate_enabled()
     risky = cognitive_gate_behaviors_only(answers, flags)  # True iff any of COGNITIVE_HIGH_RISK present
-    print(f"[GCP_FLAG] MC_BEHAVIOR_GATE={gate_on} cog={cog_band} sup={sup_band} risky={risky} allowed_pre={sorted(list(allowed_tiers))}")
+    print(f"[GCP_FLAG] MC_BEHAVIOR_GATE={gate_on} cog={cog_band} sup={sup_band_for_routing} risky={risky} allowed_pre={sorted(list(allowed_tiers))}")
     
-    if gate_on and cog_band == "moderate" and sup_band == "high" and not risky:
+    if gate_on and cog_band == "moderate" and sup_band_for_routing == "high" and not risky:
         # remove MC and MC-HA from allowed before selecting det tier
         if "memory_care" in allowed_tiers or "memory_care_high_acuity" in allowed_tiers:
             allowed_tiers.discard("memory_care")
@@ -1174,7 +1196,7 @@ def derive_outcome(
     
     if tier_from_mapping and tier_from_mapping in allowed_tiers:
         chosen = tier_from_mapping
-        print(f"[GCP_GUARD] Using tier_map result: {chosen} (mapping: {cog_band}×{sup_band})")
+        print(f"[GCP_GUARD] Using tier_map result: {chosen} (mapping: {cog_band}×{sup_band_for_routing})")
     elif tier_from_score and tier_from_score in allowed_tiers:
         chosen = tier_from_score
         print(f"[GCP_GUARD] Using score-based tier: {chosen} (score={total_score})")
