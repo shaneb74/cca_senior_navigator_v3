@@ -24,14 +24,29 @@ except ImportError:
 def render():
     """Render Medical & Care Needs prep section with LLM-generated comprehensive assessment."""
 
-    # Get feature flag
-    feature_flag = get_flag_value("FEATURE_ADVISOR_SUMMARY_LLM", "off")
-    
-    # Check if LLM enhancement is active and available
-    if feature_flag in ["adjust"] and LLM_SUMMARY_AVAILABLE:
-        _render_llm_assessment()
+    # Load config for metadata
+    config = _load_config()
+
+    # Render Navi panel for contextual guidance
+    render_navi_panel(location="product", product_key="advisor_prep", module_config=config)
+
+    # Personalized section header
+    st.markdown(f"## {config['icon']} {section_header(config['title'])}")
+    st.markdown(f"*{personalize(config['description'])}*")
+
+    # Check if LLM enhancement is enabled
+    llm_mode = get_flag_value("FEATURE_ADVISOR_SUMMARY_LLM", "off") if LLM_SUMMARY_AVAILABLE else "off"
+
+    if llm_mode in ["adjust"] and LLM_SUMMARY_AVAILABLE:
+        # Render LLM-powered comprehensive medical assessment
+        _render_llm_medical_assessment()
     else:
-        _render_legacy_form()
+        # Fallback to original form-based approach
+        _render_legacy_medical_form()
+
+    # Navigation footer
+    st.markdown("---")
+    _render_navigation()
 
 
 def _render_llm_assessment():
