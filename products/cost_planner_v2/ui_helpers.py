@@ -122,18 +122,49 @@ def ensure_home_hours_scalar() -> float | None:
 
 
 def get_care_context_for_llm() -> dict:
-    """Extract stable, non-PII signals from GCP state for LLM context."""
+    """Extract care context from GCP session state for LLM personalization.
+    
+    Reads directly from st.session_state["gcp"] which contains the full module state.
+    Falls back to empty/zero values if GCP hasn't run yet.
+    """
     g = st.session_state.get("gcp", {})
-    return {
-        "cognition_level": g.get("cognition_level"),
-        "behaviors": g.get("behaviors", []),
-        "adl_count": g.get("adl_count"),
-        "iadl_count": g.get("iadl_count"),
-        "falls_risk": g.get("falls_risk"),
-        "mobility_level": g.get("mobility_level"),
-        "meds_complexity": g.get("meds_complexity"),
-        "isolation": g.get("isolation"),
+    
+    # Count ADLs and IADLs from arrays
+    badls = g.get("badls", [])
+    iadls = g.get("iadls", [])
+    adl_count = len(badls) if isinstance(badls, list) else 0
+    iadl_count = len(iadls) if isinstance(iadls, list) else 0
+    
+    # Get cognition level (0=none, 1=mild, 2=moderate, 3=severe)
+    cognition_level = g.get("cognition_level")
+    
+    # Get behaviors list
+    behaviors = g.get("behaviors", [])
+    
+    # Get falls risk from pills
+    falls_pill = g.get("falls_pill")  # none | recent | multiple
+    
+    # Get mobility level from pills
+    mobility_pill = g.get("mobility_pill")  # independent | cane | walker | wheelchair | bedbound
+    
+    # Get meds complexity
+    meds_pill = g.get("meds_complexity_pill")  # simple | moderate | complex
+    
+    ctx = {
+        "cognition_level": cognition_level,
+        "behaviors": behaviors,
+        "adl_count": adl_count,
+        "iadl_count": iadl_count,
+        "badls": badls,  # Include actual selections for more specific messaging
+        "iadls": iadls,
+        "falls_risk": falls_pill,
+        "mobility_level": mobility_pill,
+        "meds_complexity": meds_pill,
+        "isolation": None,  # Not tracked yet
     }
+    
+    print(f"[CARE_CONTEXT] Extracted from GCP: adl={adl_count} iadl={iadl_count} cognition={cognition_level} behaviors={len(behaviors)} falls={falls_pill}")
+    return ctx
 
 
 def _hours_advice_cache():
@@ -184,30 +215,37 @@ def request_llm_hours_advice(ctx: dict, user_hours: float, llm_high: float) -> s
         
         print(f"[HOURS_ADVISORY_LLM] Client acquired, building prompt with context: {ctx}")
         
-        # Build specific care details from context
+        # Build specific care details from context (None-safe comparisons)
         care_details = []
         
-        if ctx.get("adl_count", 0) >= 3:
-            care_details.append(f"assistance with {ctx.get('adl_count')} daily activities")
-        elif ctx.get("adl_count", 0) > 0:
-            care_details.append(f"help with {ctx.get('adl_count')} daily activities")
+        adl_count = ctx.get("adl_count") or 0
+        iadl_count = ctx.get("iadl_count") or 0
+        cognition_level = ctx.get("cognition_level")
+        behaviors = ctx.get("behaviors") or []
+        falls_risk = ctx.get("falls_risk")
+        mobility_level = ctx.get("mobility_level")
         
-        if ctx.get("iadl_count", 0) >= 3:
-            care_details.append(f"{ctx.get('iadl_count')} instrumental activities")
+        if adl_count >= 3:
+            care_details.append(f"assistance with {adl_count} daily activities")
+        elif adl_count > 0:
+            care_details.append(f"help with {adl_count} daily activities")
         
-        if ctx.get("falls_risk") == "multiple":
+        if iadl_count >= 3:
+            care_details.append(f"{iadl_count} instrumental activities")
+        
+        if falls_risk == "multiple":
             care_details.append("multiple falls")
-        elif ctx.get("falls_risk") == "recent":
+        elif falls_risk == "recent":
             care_details.append("recent fall history")
         
-        if ctx.get("cognition_level") in [2, 3]:  # moderate/high
+        if cognition_level in [2, 3]:  # moderate/high
             care_details.append("memory challenges")
         
-        if ctx.get("behaviors") and len(ctx.get("behaviors", [])) > 0:
+        if behaviors and len(behaviors) > 0:
             care_details.append("behavioral support needs")
         
-        if ctx.get("mobility_level") in ["walker", "wheelchair"]:
-            care_details.append(f"mobility support ({ctx.get('mobility_level')})")
+        if mobility_level in ["walker", "wheelchair"]:
+            care_details.append(f"mobility support ({mobility_level})")
         
         # Build prompt
         care_context = ", ".join(care_details) if care_details else "multiple care needs"
@@ -319,16 +357,16 @@ def render_confirm_hours_if_needed(current_hours_key: str = "qe_home_hours"):
         g = st.session_state.get("gcp", {})
         needs_list = []
         
-        # Extract specific care needs from GCP state
-        adl_needs = g.get("adl_needs", [])
-        iadl_needs = g.get("iadl_needs", [])
+        # Extract specific care needs from GCP state (use badls/iadls arrays)
+        badls = g.get("badls", [])
+        iadls = g.get("iadls", [])
         behaviors = g.get("behaviors", [])
         
         # Build natural needs phrase from actual selections
-        if adl_needs:
-            needs_list.extend([n.replace("_", " ") for n in adl_needs[:3]])
-        if iadl_needs:
-            needs_list.extend([n.replace("_", " ") for n in iadl_needs[:2]])
+        if badls:
+            needs_list.extend([n.replace("_", " ") for n in badls[:3]])
+        if iadls:
+            needs_list.extend([n.replace("_", " ") for n in iadls[:2]])
         
         # Build natural language list
         if needs_list:
@@ -356,7 +394,7 @@ def render_confirm_hours_if_needed(current_hours_key: str = "qe_home_hours"):
         
         # Construct the empathetic paragraph
         advice = f"""You mentioned needing help with {needs_phrase}{context_phrase}. That level of daily support often means several hours of hands-on care each day. <strong>In-home care can be one of the most significant expenses for families</strong>, and if those hours aren't planned for, the costs can rise quickly. Many families in similar situations find that planning for around {fmt_hours(llm_high)} of support a day gives a more realistic picture of what safe, consistent care at home will cost."""
-        print(f"[HOURS_ADVISORY] FALLBACK text built: {advice[:80]}...")
+        print(f"[HOURS_ADVISORY] FALLBACK text built with needs={needs_phrase[:40]}...")
     else:
         print(f"[HOURS_ADVISORY] ✅ Using LLM-generated advice: {advice[:80]}...")
     
