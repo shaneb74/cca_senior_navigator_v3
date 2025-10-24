@@ -1,46 +1,24 @@
 """
 Advisor Prep - Personal Information Section
 
-LLM-powered comprehensive personal assessment for advisor review.
-Replaces form-based approach with detailed narrative analysis.
+Data inventory view showing captured personal information for advisor review.
 """
 
 import streamlit as st
 
 from core.events import log_event
-from core.flags import get_flag_value
 from core.mcip import MCIP
 from core.name_utils import section_header, personalize
 from core.navi import render_navi_panel
 
-# Try to import the new LLM advisor summary system
-try:
-    from ai.advisor_summary_engine import AdvisorSummaryEngine
-    LLM_SUMMARY_AVAILABLE = True
-except ImportError:
-    LLM_SUMMARY_AVAILABLE = False
-
 
 def render():
-    """Render Personal Information prep section with LLM-generated comprehensive assessment."""
-
-    # Get feature flag
-    feature_flag = get_flag_value("FEATURE_ADVISOR_SUMMARY_LLM", "off")
-    
-    # Check if LLM enhancement is active and available
-    if feature_flag in ["adjust"] and LLM_SUMMARY_AVAILABLE:
-        _render_llm_assessment()
-    else:
-        _render_legacy_form()
+    """Render Personal Information data inventory for advisor review."""
+    _render_data_inventory()
 
 
-def _render_llm_assessment():
-    """Render LLM-generated comprehensive personal assessment."""
-    
-    # Progress tracking
-    container = st.container()
-    with container:
-        st.success("✓ About Person section complete - comprehensive assessment available for advisor review")
+def _render_data_inventory():
+    """Display captured personal information in inventory format."""
     
     # Navigation buttons at top
     col1, col2, col3 = st.columns([1, 1, 1])
@@ -57,35 +35,103 @@ def _render_llm_assessment():
             st.session_state["advisor_prep_current_section"] = "housing"
             st.rerun()
 
-    # Personalized section header
-    st.markdown(f"### {section_header('Personal Information Assessment')}")
-    st.markdown(personalize("*This assessment shows what we know about {NAME_POS} personal demographics, social support, and decision-making context.*"))
+    # Section header
+    st.markdown(f"### {section_header('Personal Information Data Inventory')}")
+    st.markdown(personalize("*Review what we know about {NAME_POS} personal background and support network.*"))
 
-    try:
-        if LLM_SUMMARY_AVAILABLE:
-            engine = AdvisorSummaryEngine()
-            context = engine.build_advisor_context_from_session()
-            assessment = engine.generate_drawer_narrative("about_person", context)
-            
-            if assessment and assessment.strip():
-                st.markdown(f"#### {section_header('Personal Information Summary')}")
-                st.markdown(assessment)
-            else:
-                st.warning("Assessment generation temporarily unavailable. Please check back in a moment.")
-                _render_legacy_form()
-        else:
-            st.warning("LLM assessment system not available. Showing basic form.")
-            _render_legacy_form()
-            
-    except Exception as e:
-        st.error(f"Error generating assessment: {str(e)}")
-        _render_legacy_form()
+    # Get personal data from session
+    personal_data = st.session_state.get("personal_assessment", {})
+    advisor_prep_data = st.session_state.get("advisor_prep", {}).get("data", {}).get("personal", {})
+    
+    # Combine data sources
+    all_personal_data = {**personal_data, **advisor_prep_data}
+    
+    # Core personal information
+    _display_data_section("👤 Basic Demographics", [
+        ("Person Name", st.session_state.get("person_name", "Not captured")),
+        ("Planning For", st.session_state.get("planning_for_name", "Not captured")),
+        ("Age Range", all_personal_data.get("age_range", "Not captured")),
+    ])
+    
+    # Living situation
+    _display_data_section("🏠 Living Situation", [
+        ("Current Housing", all_personal_data.get("living_situation", "Not captured")),
+        ("Primary Caregiver", all_personal_data.get("primary_caregiver", "Not captured")),
+    ])
+    
+    # Support network
+    support_network = all_personal_data.get("support_network", [])
+    if support_network:
+        support_display = ", ".join(support_network)
+    else:
+        support_display = "Not captured"
+    
+    _display_data_section("👥 Support Network", [
+        ("Support Types", support_display),
+        ("Emergency Contact", all_personal_data.get("emergency_contact", "Not captured")),
+    ])
+    
+    # Show completion status
+    if all_personal_data:
+        st.success("✓ Personal information captured")
+        _mark_section_complete()
+    else:
+        st.info("No personal data captured yet.")
 
     # Render Navi panel for contextual guidance
     render_navi_panel()
 
-    # Log completion
-    log_event("advisor_prep", "personal_section_complete", {"method": "llm_assessment"})
+
+def _display_data_section(title: str, data_items: list):
+    """Display a section of data inventory.
+    
+    Args:
+        title: Section title
+        data_items: List of (field_name, value) tuples
+    """
+    st.markdown(f"#### {title}")
+    
+    for field_name, value in data_items:
+        if value and value != "Not captured":
+            status = "✅ Captured"
+            value_display = f"**{value}**"
+        else:
+            status = "❌ Not Captured"
+            value_display = "*No data*"
+        
+        col1, col2, col3 = st.columns([2, 1, 2])
+        with col1:
+            st.write(field_name)
+        with col2:
+            st.write(status)
+        with col3:
+            st.write(value_display)
+    
+    st.markdown("---")
+
+
+def _mark_section_complete():
+    """Mark personal section as complete."""
+    # Initialize advisor_prep structure if needed
+    if "advisor_prep" not in st.session_state:
+        st.session_state["advisor_prep"] = {
+            "sections_complete": [],
+            "data": {"personal": {}, "financial": {}, "housing": {}, "medical": {}},
+        }
+    
+    sections_complete = st.session_state["advisor_prep"]["sections_complete"]
+    if "personal" not in sections_complete:
+        sections_complete.append("personal")
+        
+        # Update MCIP contract with prep progress
+        appt = MCIP.get_advisor_appointment()
+        if appt:
+            appt.prep_sections_complete = sections_complete
+            appt.prep_progress = len(sections_complete) * 25
+            MCIP.set_advisor_appointment(appt)
+
+        # Log completion
+        log_event("advisor_prep", "personal_section_complete", {"method": "data_inventory"})
 
 
 def _render_legacy_form():
