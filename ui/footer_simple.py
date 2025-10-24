@@ -74,7 +74,7 @@ def render_footer_simple(version: str = "3.2.1") -> None:
         <footer class="sn-footer">
           <div class="sn-footer__inner">
             <p class="sn-footer__text">
-              © 2025 Community Care Advisors  •  v{version}
+              © 2025 Concierge Care Advisors, Inc. | Senior Navigator™ | Patent Pending  •  v{version}
             </p>
           </div>
         </footer>
