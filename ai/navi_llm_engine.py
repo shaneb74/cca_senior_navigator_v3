@@ -102,26 +102,20 @@ class NaviLLMEngine:
             if not client:
                 return None
                 
-            prompt = NaviLLMEngine._build_advice_prompt(context)
+            system_prompt = NaviLLMEngine._get_system_prompt()
+            user_prompt = NaviLLMEngine._build_advice_prompt(context)
             
-            response = client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": NaviLLMEngine._get_system_prompt()
-                    },
-                    {
-                        "role": "user", 
-                        "content": prompt
-                    }
-                ],
-                response_format={"type": "json_object"},
-                temperature=0.3,
-                timeout=8
+            # Generate completion using the LLMClient interface
+            response_text = client.generate_completion(
+                system_prompt=system_prompt,
+                user_prompt=user_prompt,
+                response_format={"type": "json_object"}
             )
             
-            advice_data = json.loads(response.choices[0].message.content)
+            if not response_text:
+                return None
+                
+            advice_data = json.loads(response_text)
             return NaviAdvice(**advice_data)
             
         except Exception as e:
@@ -148,26 +142,20 @@ class NaviLLMEngine:
             if not client:
                 return None
                 
-            prompt = NaviLLMEngine._build_tips_prompt(context)
+            system_prompt = NaviLLMEngine._get_tips_system_prompt()
+            user_prompt = NaviLLMEngine._build_tips_prompt(context)
             
-            response = client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": NaviLLMEngine._get_tips_system_prompt()
-                    },
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
-                ],
-                response_format={"type": "json_object"},
-                temperature=0.4,
-                timeout=10
+            # Generate completion using the LLMClient interface
+            response_text = client.generate_completion(
+                system_prompt=system_prompt,
+                user_prompt=user_prompt,
+                response_format={"type": "json_object"}
             )
             
-            tips_data = json.loads(response.choices[0].message.content)
+            if not response_text:
+                return None
+                
+            tips_data = json.loads(response_text)
             return NaviContextualTips(**tips_data)
             
         except Exception as e:
