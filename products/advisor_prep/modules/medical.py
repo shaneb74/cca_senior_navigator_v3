@@ -354,25 +354,14 @@ def _render_legacy_medical_form():
         help="Optional: Share any additional medical context",
     )
 
-    # Save button
+    # Save button for legacy form
     st.markdown("---")
-
-    col_save1, col_save2, col_save3 = st.columns([1, 2, 1])
-
-    with col_save1:
-        if st.button("← Back to Menu", type="secondary", use_container_width=True):
-            st.session_state.pop("advisor_prep_current_section", None)
-            st.rerun()
-
-    with col_save2:
-        if st.button("💾 Save Medical Information", type="primary", use_container_width=True):
+    
+    col_save = st.columns([1, 2, 1])[1]  # Center column
+    with col_save:
+        if st.button("💾 Save Medical Information", type="primary", use_container_width=True, key="save_medical_legacy"):
             _save_medical_section(selected_conditions, selected_flags, medical_notes)
-
-    with col_save3:
-        # Show completion status
-        sections_complete = st.session_state["advisor_prep"]["sections_complete"]
-        if "medical" in sections_complete:
-            st.success("✓ Saved")
+            st.success("✓ Medical information saved!")
 
 
 def _render_navigation():
@@ -381,7 +370,7 @@ def _render_navigation():
     col_save1, col_save2, col_save3 = st.columns([1, 2, 1])
 
     with col_save1:
-        if st.button("← Back to Menu", type="secondary", use_container_width=True):
+        if st.button("← Back to Menu", type="secondary", use_container_width=True, key="medical_back_to_menu"):
             st.session_state.pop("advisor_prep_current_section", None)
             st.rerun()
 

@@ -229,7 +229,7 @@ def _render_navigation():
     col_nav1, col_nav2 = st.columns(2)
 
     with col_nav1:
-        if st.button("← Back to Menu", type="secondary", use_container_width=True):
+        if st.button("← Back to Menu", type="secondary", use_container_width=True, key="financial_back_to_menu"):
             st.session_state.pop("advisor_prep_current_section", None)
             st.rerun()
 
