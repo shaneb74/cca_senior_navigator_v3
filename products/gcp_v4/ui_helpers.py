@@ -437,13 +437,56 @@ def render_navi_header_message():
     except Exception:
         pass
 
-    # Render the blue header panel (module variant)
+    # Render the blue header panel (module variant) with LLM enhancement
     try:
         from core.ui import render_navi_panel_v2
+        from core.flags import get_flag_value
+        
+        # Check if LLM enhancement is enabled
+        llm_mode = get_flag_value("FEATURE_LLM_NAVI", "off")
+        
+        # Default encouragement
+        encouragement = {"icon": "✨", "text": "You can adjust details anytime.", "status": "in_progress"}
+        enhanced_reason = reason_html
+        
+        # Try LLM enhancement if enabled
+        if llm_mode in ["assist", "adjust"]:
+            try:
+                from ai.navi_llm_engine import NaviLLMEngine, build_navi_context_from_session
+                
+                # Build context for LLM
+                navi_context = build_navi_context_from_session()
+                navi_context.current_location = "gcp_v4"
+                navi_context.product_context = {
+                    "product": "gcp_v4",
+                    "module": "care_recommendation",
+                    "step_title": step_title,
+                    "step_type": "module_assessment"
+                }
+                
+                # Generate contextual advice
+                advice = NaviLLMEngine.generate_advice(navi_context)
+                if advice:
+                    # Enhance encouragement with LLM content
+                    encouragement = {
+                        "icon": "🌟", 
+                        "text": advice.message or "You can adjust details anytime.",
+                        "status": "in_progress"
+                    }
+                    
+                    # Enhance reason with guidance if available
+                    if advice.guidance and advice.guidance.strip():
+                        enhanced_reason = f"{reason_html}<br><em>{advice.guidance}</em>"
+                        
+            except Exception as e:
+                print(f"[GCP_LLM] Enhancement failed, using static content: {e}")
+                # Fall back to static content
+                pass
+        
         render_navi_panel_v2(
             title=step_title,
-            reason=reason_html,
-            encouragement={"icon": "✨", "text": "You can adjust details anytime.", "status": "in_progress"},
+            reason=enhanced_reason,
+            encouragement=encouragement,
             context_chips=[],
             primary_action={"label": "", "route": ""},
             variant="module",
