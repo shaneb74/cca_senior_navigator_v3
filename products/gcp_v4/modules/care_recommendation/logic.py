@@ -403,6 +403,15 @@ def ensure_summary_ready(answers: dict, flags: list[str], tier: str) -> None:
     # Single-line adjudication log (ALWAYS emitted, shows source)
     source = decision.get("source", "unknown")
     reason = decision.get("adjudication_reason", "unknown")
+    
+    # Fire emoji if LLM disagreed with deterministic AND was used
+    if final_tier != tier and source == "llm":
+        print(f"\n{'🔥'*40}")
+        print(f"[DISAGREEMENT] LLM overrode deterministic engine!")
+        print(f"[DISAGREEMENT] Deterministic: {tier} → LLM: {final_tier}")
+        print(f"[DISAGREEMENT] Reason: {reason}")
+        print(f"{'🔥'*40}\n")
+    
     print(f"[GCP_ADJ] chosen={final_tier} llm={llm_tier or 'none'} det={tier} source={source} allowed={decision['allowed']} conf={llm_conf or 0.0:.2f} reason={reason} id={corr_id}")
     
     # Legacy mode logging (for analytics/debugging only - does NOT affect publish)

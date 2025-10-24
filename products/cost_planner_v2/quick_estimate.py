@@ -137,7 +137,8 @@ def _validate_qe_ready(cost: dict) -> tuple[bool, str | None]:
         (is_valid, error_message) tuple
     """
     # Require a chosen path and ZIP at minimum
-    path = cost.get("path_choice")
+    # Check both path_choice (old) and selected_assessment (new)
+    path = cost.get("path_choice") or cost.get("selected_assessment")
     zip_code = cost.get("inputs", {}).get("zip")
     
     if not path:
@@ -309,11 +310,6 @@ def render():
     
     # Render Navi panel (always at top)
     render_navi_panel(location="product", product_key="cost_planner")
-    
-    # B) Back to Intro
-    if st.button("← Back", key="cp_back", help="Return to options"):
-        print(f"[QUICK_ESTIMATE] Navigate back to intro")
-        go_to_intro()
     
     st.markdown("")
     
@@ -651,11 +647,24 @@ def _render_facility_card(tier: str, zip_code: str, show_keep_home: bool = False
 # ==============================================================================
 
 def _render_path_selection():
-    """Render Choose Your Path Forward radios."""
+    """Render Choose Your Path Forward as clickable buttons."""
     st.markdown("### Choose Your Path Forward")
     
     available = st.session_state.get("cost.assessments_available", {"home": True, "al": True, "mc": False})
     sel = st.session_state.get("cost.selected_assessment", "home")
+    
+    # Get GCP recommendation to highlight recommended path
+    gcp = st.session_state.get("gcp", {})
+    recommended_tier = gcp.get("published_tier") or gcp.get("recommended_tier")
+    
+    # Map tier to assessment key
+    tier_to_assessment = {
+        "in_home_care": "home",
+        "assisted_living": "al",
+        "memory_care": "mc",
+        "memory_care_high_acuity": "mc"
+    }
+    recommended_assessment = tier_to_assessment.get(recommended_tier)
     
     labels = {"home": "In-Home Care", "al": "Assisted Living", "mc": "Memory Care"}
     choices = [k for k, v in available.items() if v]
@@ -663,30 +672,40 @@ def _render_path_selection():
     if not choices:
         return
     
-    current_index = choices.index(sel) if sel in choices else 0
+    # Render as button group
+    cols = st.columns(len(choices))
     
-    new_sel = st.radio(
-        "Which scenario would you like to explore in detail?",
-        options=choices,
-        format_func=lambda k: labels.get(k, k),
-        index=current_index,
-        key="qe_path_choice",
-        horizontal=True,
-        label_visibility="collapsed"
-    )
-    
-    if new_sel != sel:
-        st.session_state["cost.selected_assessment"] = new_sel
-        _snapshot_costplan("path_change")
-        st.rerun()
-    
-    # Update selected plan for handoff to FA
-    plan_key_map = {
-        "home": "inhome_in_home_care",
-        "al": "facility_assisted_living",
-        "mc": "facility_memory_care"
-    }
-    st.session_state.comparison_selected_plan = plan_key_map.get(new_sel, "inhome_in_home_care")
+    for idx, choice in enumerate(choices):
+        with cols[idx]:
+            is_selected = (choice == sel)
+            is_recommended = (choice == recommended_assessment)
+            
+            # Button label with optional badge
+            label = labels[choice]
+            if is_recommended:
+                label = f"⭐ {label}"
+            
+            # Use primary type for selected, secondary for others
+            btn_type = "primary" if is_selected else "secondary"
+            
+            if st.button(
+                label,
+                key=f"path_btn_{choice}",
+                type=btn_type,
+                use_container_width=True,
+                help=f"Explore {labels[choice]} costs" + (" (Recommended for you)" if is_recommended else "")
+            ):
+                if choice != sel:
+                    st.session_state["cost.selected_assessment"] = choice
+                    _snapshot_costplan("path_change")
+                    # Update selected plan for handoff to FA
+                    plan_key_map = {
+                        "home": "inhome_in_home_care",
+                        "al": "facility_assisted_living",
+                        "mc": "facility_memory_care"
+                    }
+                    st.session_state.comparison_selected_plan = plan_key_map.get(choice, "inhome_in_home_care")
+                    st.rerun()
 
 
 # ==============================================================================
@@ -694,16 +713,10 @@ def _render_path_selection():
 # ==============================================================================
 
 def _render_bottom_ctas():
-    """Render bottom CTA row with optional back link."""
+    """Render bottom CTA row."""
     st.markdown("")
     
-    # Optional: Duplicate back link above CTAs for convenience
-    if st.button("← Back to Options", key="cp_back_bottom", help="Return to intro page"):
-        go_to_intro()
-    
-    st.markdown("")
-    
-    col1, col2, col3 = st.columns([2, 1, 1])
+    col1, col2 = st.columns([3, 1])
     
     with col1:
         if st.button(
@@ -712,8 +725,15 @@ def _render_bottom_ctas():
             use_container_width=True,
             key="qe_continue"
         ):
+            # Ensure path_choice is set from selected_assessment
+            cost = st.session_state.setdefault("cost", {})
+            selected = cost.get("selected_assessment")
+            if selected:
+                # Map assessment to path_choice for PFMA compatibility
+                path_map = {"home": "in_home_care", "al": "assisted_living", "mc": "memory_care"}
+                cost["path_choice"] = path_map.get(selected, selected)
+            
             # Validate QE is ready for PFMA handoff
-            cost = st.session_state.get("cost", {})
             ok, err = _validate_qe_ready(cost)
             
             if not ok:
@@ -730,23 +750,17 @@ def _render_bottom_ctas():
                 
                 if authed:
                     # Authenticated: go directly to PFMA (financial assessment)
-                    print("[CTA_PAY] authed -> fa_intro")
+                    print(f"[CTA_PAY] authed -> fa_intro (path={cost['path_choice']})")
                     st.query_params["page"] = "fa_intro"
                 else:
                     # Not authenticated: go to auth with return parameter
-                    print("[CTA_PAY] not authed -> auth_start (return=fa_intro)")
+                    print(f"[CTA_PAY] not authed -> auth_start (return=fa_intro, path={cost['path_choice']})")
                     st.query_params["page"] = "auth_start"
                     st.query_params["return"] = "fa_intro"
                 
                 st.rerun()
     
     with col2:
-        if st.button("💾 Save Both", use_container_width=True, key="qe_save_both"):
-            _snapshot_for_pfma(event="qe_save_both")
-            print("[CTA_SAVE] saved snapshot")
-            st.success("💾 Scenarios saved!")
-    
-    with col3:
         if st.button("← Back to Hub", use_container_width=True, key="qe_back_hub"):
             route_to("hub_concierge")
     

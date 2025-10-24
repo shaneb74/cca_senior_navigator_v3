@@ -371,7 +371,12 @@ def _publish_to_mcip(outcome, module_state: dict) -> None:
     
     if final_tier:
         outcome_data["tier"] = final_tier
-        print(f"[GCP_PUBLISH] Using adjudicated tier: {final_tier} (overriding deterministic: {deterministic_tier})")
+        if final_tier != deterministic_tier:
+            print(f"\n{'🔥'*40}")
+            print(f"[LLM_OVERRIDE] Deterministic={deterministic_tier} → LLM Adjudicated={final_tier}")
+            print(f"{'🔥'*40}\n")
+        else:
+            print(f"[GCP_PUBLISH] Using adjudicated tier: {final_tier} (agrees with deterministic)")
     else:
         print(f"[GCP_PUBLISH] Using deterministic tier: {deterministic_tier} (no adjudication)")
 
@@ -564,6 +569,10 @@ def _recompute_hours_suggestion_if_needed(config: ModuleConfig, module_state: di
         nudge_text = None
         severity = None
         if under_selected(user_band, suggested):
+            print(f"\n{'🔥'*40}")
+            print(f"[HOURS_DISAGREEMENT] User selected LOWER than suggested!")
+            print(f"[HOURS_DISAGREEMENT] User: {user_band} → Suggested: {suggested}")
+            print(f"{'🔥'*40}\n")
             nudge_text = generate_hours_nudge_text(hours_ctx, suggested, user_band, mode)
             if nudge_text:
                 severity = "strong"
