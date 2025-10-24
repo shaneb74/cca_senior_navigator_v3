@@ -1887,6 +1887,85 @@ div[data-testid="stVerticalBlock"]:has(.chip-wrap.is-active) .stButton > button{
   white-space: nowrap;
 }
 
+/* Hours Confirmation Advisory - Navi Style */
+.hours-advisory {
+  border: 1px solid var(--gray-200, #e5e7eb);
+  background: var(--surface, #fff);
+  border-radius: 10px;
+  padding: 16px 18px;
+  margin: 12px 0 16px;
+}
+
+.hours-advisory__navi-title {
+  font-weight: 700;
+  color: var(--brand-800, #1e40af);
+  margin-bottom: 6px;
+  font-size: 0.95rem;
+}
+
+.hours-advisory__text {
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--text-800, #1f2937);
+  margin: 0;
+}
+
+.hours-advisory__text strong {
+  font-weight: 600;
+  color: var(--text-800, #1f2937);
+}
+
+.hours-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.hours-actions .stButton > button {
+  padding: 8px 16px !important;
+  border-radius: 8px !important;
+  font-size: 0.95rem !important;
+  transition: all 0.2s ease !important;
+}
+
+/* Primary button - navy background */
+.hours-actions .stButton:first-child > button {
+  background-color: #0f2a5f !important;
+  color: white !important;
+  border: none !important;
+}
+
+.hours-actions .stButton:first-child > button:hover {
+  background-color: #1a3a6f !important;
+  box-shadow: 0 2px 4px rgba(15, 42, 95, 0.2) !important;
+}
+
+/* Secondary button - navy outline */
+.hours-actions .stButton:last-child > button {
+  background-color: white !important;
+  color: #0f2a5f !important;
+  border: 1px solid #0f2a5f !important;
+}
+
+.hours-actions .stButton:last-child > button:hover {
+  background-color: rgba(15, 42, 95, 0.05) !important;
+  border-color: #1a3a6f !important;
+}
+
+/* Responsive mobile stacking */
+@media (max-width: 640px) {
+  .hours-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .hours-actions .stButton > button {
+    width: 100%;
+  }
+}
+
 /* Panels */
 .cp-panels {
   margin-top: 10px;

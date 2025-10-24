@@ -1,4 +1,5 @@
 import streamlit as st
+import re
 
 
 # ==============================================================================
@@ -53,6 +54,353 @@ def money(v: float | None) -> str:
     return "—" if v is None else f"${v:,.0f}"
 
 
+def parse_hours_band_to_high_end(band: str | None) -> float | None:
+    """
+    Parse bands like '1-3h', '4-8h', '8-12h' to float high end.
+    Returns None if unknown.
+    """
+    if not band:
+        return None
+    m = re.match(r"(\d+)\s*-\s*(\d+)\s*h", band)
+    if m:
+        return float(m.group(2))
+    # tolerate single value like '8h'
+    m2 = re.match(r"(\d+)\s*h", band)
+    if m2:
+        return float(m2.group(1))
+    return None
+
+
+def get_llm_hours_high_end_from_gcp() -> float | None:
+    """
+    Expected GCP state based on logs:
+      st.session_state['gcp']['hours_llm']    -> '4-8h'
+      or st.session_state['gcp']['hours_band'] -> '4-8h'
+    """
+    gcp = st.session_state.get("gcp", {})
+    band = gcp.get("hours_llm") or gcp.get("hours_band") or gcp.get("hours_assist_band")
+    result = parse_hours_band_to_high_end(band)
+    print(f"[HOURS_PARSE] gcp_keys={list(gcp.keys())} band={band} result={result}")
+    return result
+
+
+def fmt_hours(h: float | None) -> str:
+    """Format hours for display."""
+    return f"{h:.1f} h/day" if isinstance(h, (int, float)) else "—"
+
+
+# ==============================================================================
+# HOURS ADVISORY HELPERS (LLM-backed confirmation)
+# ==============================================================================
+
+def ensure_home_hours_scalar() -> float | None:
+    """
+    Ensure cost['home_hours_scalar'] is set from slider or user band.
+    Returns the current hours value or None.
+    """
+    cost = st.session_state.setdefault("cost", {})
+    
+    # Mirror from slider if set
+    v = st.session_state.get("qe_home_hours")
+    if isinstance(v, list):
+        v = v[0] if v else None
+    if isinstance(v, (int, float)):
+        cost["home_hours_scalar"] = float(v)
+        return float(v)
+    
+    # Fall back to existing scalar if present
+    if "home_hours_scalar" in cost and isinstance(cost["home_hours_scalar"], (int, float)):
+        return cost["home_hours_scalar"]
+    
+    # Fall back to comparison_inhome_hours if present
+    v2 = st.session_state.get("comparison_inhome_hours")
+    if isinstance(v2, (int, float)):
+        cost["home_hours_scalar"] = float(v2)
+        return float(v2)
+    
+    return None
+
+
+def get_care_context_for_llm() -> dict:
+    """Extract stable, non-PII signals from GCP state for LLM context."""
+    g = st.session_state.get("gcp", {})
+    return {
+        "cognition_level": g.get("cognition_level"),
+        "behaviors": g.get("behaviors", []),
+        "adl_count": g.get("adl_count"),
+        "iadl_count": g.get("iadl_count"),
+        "falls_risk": g.get("falls_risk"),
+        "mobility_level": g.get("mobility_level"),
+        "meds_complexity": g.get("meds_complexity"),
+        "isolation": g.get("isolation"),
+    }
+
+
+def _hours_advice_cache():
+    """Get or create the hours advice cache dict."""
+    meta = st.session_state.setdefault("cost", {}).setdefault("meta", {})
+    return meta.setdefault("hours_advice_cache", {})
+
+
+def get_cached_hours_advice(key: str) -> str | None:
+    """Retrieve cached LLM-generated hours advice."""
+    return _hours_advice_cache().get(key)
+
+
+def cache_hours_advice(key: str, text: str):
+    """Store LLM-generated hours advice in session cache."""
+    _hours_advice_cache()[key] = text
+
+
+def request_llm_hours_advice(ctx: dict, user_hours: float, llm_high: float) -> str | None:
+    """
+    Generate empathetic Cost Planner hours advisory using LLM.
+    Returns 2-3 sentence explanation of why higher hours are recommended.
+    Non-blocking, returns None on error/timeout.
+    
+    Args:
+        ctx: Care context dict with cognition_level, behaviors, adl_count, etc.
+        user_hours: User's currently selected hours
+        llm_high: LLM-suggested hours (high end of band)
+    
+    Returns:
+        HTML-formatted paragraph or None if LLM unavailable
+    """
+    try:
+        from ai.llm_client import get_client
+        
+        # Get LLM client
+        client = get_client(timeout=5)
+        if not client:
+            print("[HOURS_ADVISORY_LLM] No LLM client available")
+            return None
+        
+        # Build specific care details from context
+        care_details = []
+        
+        if ctx.get("adl_count", 0) >= 3:
+            care_details.append(f"assistance with {ctx.get('adl_count')} daily activities")
+        elif ctx.get("adl_count", 0) > 0:
+            care_details.append(f"help with {ctx.get('adl_count')} daily activities")
+        
+        if ctx.get("iadl_count", 0) >= 3:
+            care_details.append(f"{ctx.get('iadl_count')} instrumental activities")
+        
+        if ctx.get("falls_risk") == "multiple":
+            care_details.append("multiple falls")
+        elif ctx.get("falls_risk") == "recent":
+            care_details.append("recent fall history")
+        
+        if ctx.get("cognition_level") in [2, 3]:  # moderate/high
+            care_details.append("memory challenges")
+        
+        if ctx.get("behaviors") and len(ctx.get("behaviors", [])) > 0:
+            care_details.append("behavioral support needs")
+        
+        if ctx.get("mobility_level") in ["walker", "wheelchair"]:
+            care_details.append(f"mobility support ({ctx.get('mobility_level')})")
+        
+        # Build prompt
+        care_context = ", ".join(care_details) if care_details else "multiple care needs"
+        
+        system_prompt = """You are a compassionate care planning advisor helping families understand realistic care hour requirements for in-home care."""
+        
+        user_prompt = f"""The user selected {user_hours:.1f} hours/day of in-home care, but based on their care needs ({care_context}), we recommend {llm_high:.1f} hours/day.
+
+Write a warm, empathetic 2-3 sentence explanation that:
+1. Acknowledges the specific care needs they mentioned
+2. Explains that in-home care can be a significant expense and adequate planning prevents cost surprises
+3. Mentions that families in similar situations often need around {llm_high:.1f} hours for safe, consistent care
+
+IMPORTANT FORMATTING:
+- Use <strong></strong> tags around the phrase "In-home care can be one of the most significant expenses for families"
+- Keep it to 2-3 sentences maximum
+- Tone: supportive, practical, cost-aware (not scary)
+- Return ONLY the paragraph text with HTML tags (no JSON, no preamble)"""
+        
+        # Call LLM
+        text = client.generate_completion(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt
+        )
+        
+        if text:
+            # Clean up any markdown or extra formatting
+            text = text.strip()
+            if text.startswith("```"):
+                # Remove markdown code blocks
+                parts = text.split("```")
+                if len(parts) >= 3:
+                    text = parts[1].strip()
+                    if text.startswith("html"):
+                        text = text[4:].strip()
+            print(f"[HOURS_ADVISORY_LLM] Generated {len(text)} chars")
+            return text
+        else:
+            print("[HOURS_ADVISORY_LLM] No response from LLM")
+            return None
+            
+    except Exception as e:
+        print(f"[HOURS_ADVISORY_LLM_ERR] {e}")
+        return None
+
+
+def render_confirm_hours_if_needed(current_hours_key: str = "qe_home_hours"):
+    """Render Navi-style hours confirmation advisory when LLM suggestion differs from current hours."""
+    cost = st.session_state.setdefault("cost", {})
+    meta = cost.setdefault("meta", {})
+    sel = cost.get("selected_assessment", "home")
+    
+    print(f"[HOURS_CHECK] sel={sel}")
+    if sel != "home":
+        return  # only in the In-Home assessment
+
+    # 1) LLM suggested hours (high end of band)
+    llm_high = get_llm_hours_high_end_from_gcp()
+    print(f"[HOURS_CHECK] llm_high={llm_high}")
+    if llm_high is None:
+        return
+
+    # 2) Current hours value (use new helper)
+    current = ensure_home_hours_scalar()
+    print(f"[HOURS_CHECK] current={current} key={current_hours_key}")
+
+    # 3) Don't show if close enough or already accepted/dismissed
+    if current is None or not isinstance(current, (int, float)):
+        print(f"[HOURS_CHECK] current not a number, returning")
+        return
+    if abs(current - llm_high) < 0.5:
+        print(f"[HOURS_CHECK] current close to llm_high (diff={abs(current - llm_high)}), returning")
+        return
+
+    # Show only if the user hasn't decided for this llm_high yet
+    decision_key = f"home_hours_decided_{llm_high}"
+    if meta.get(decision_key):
+        print(f"[HOURS_CHECK] already decided {decision_key}, returning")
+        return
+    
+    print(f"[HOURS_ADVISORY] show user={current} suggested={llm_high}")
+
+    # 4) Get or generate LLM advice (empathetic, personalized)
+    advice_key = f"home_hours_{llm_high}"
+    advice = get_cached_hours_advice(advice_key)
+    
+    if not advice:
+        # Build context for LLM
+        ctx = get_care_context_for_llm()
+        
+        # Request LLM-generated advice
+        advice = request_llm_hours_advice(ctx, user_hours=current, llm_high=llm_high)
+        
+        if advice:
+            cache_hours_advice(advice_key, advice)
+            print(f"[HOURS_ADVISORY] LLM advice generated and cached")
+        else:
+            print(f"[HOURS_ADVISORY] LLM unavailable, building fallback")
+    
+    # 5) Use LLM advice or fallback
+    if not advice:
+        # Fallback: Build from actual GCP data
+        g = st.session_state.get("gcp", {})
+        needs_list = []
+        
+        # Extract specific care needs from GCP state
+        adl_needs = g.get("adl_needs", [])
+        iadl_needs = g.get("iadl_needs", [])
+        behaviors = g.get("behaviors", [])
+        
+        # Build natural needs phrase from actual selections
+        if adl_needs:
+            needs_list.extend([n.replace("_", " ") for n in adl_needs[:3]])
+        if iadl_needs:
+            needs_list.extend([n.replace("_", " ") for n in iadl_needs[:2]])
+        
+        # Build natural language list
+        if needs_list:
+            if len(needs_list) == 1:
+                needs_phrase = needs_list[0]
+            elif len(needs_list) == 2:
+                needs_phrase = f"{needs_list[0]} and {needs_list[1]}"
+            else:
+                needs_phrase = ", ".join(needs_list[:-1]) + f", and {needs_list[-1]}"
+        else:
+            needs_phrase = "bathing, dressing, meals, medication, and mobility"
+        
+        # Add memory/behavior context if applicable
+        context_phrase = ""
+        cognition_level = g.get("cognition_level")
+        has_memory = cognition_level in [2, 3] if cognition_level else False
+        has_behaviors = len(behaviors) > 0
+        
+        if has_memory and has_behaviors:
+            context_phrase = ", along with some memory and decision-making challenges"
+        elif has_memory:
+            context_phrase = ", along with some memory challenges"
+        elif has_behaviors:
+            context_phrase = ", along with some behavioral support needs"
+        
+        # Construct the empathetic paragraph
+        advice = f"""You mentioned needing help with {needs_phrase}{context_phrase}. That level of daily support often means several hours of hands-on care each day. <strong>In-home care can be one of the most significant expenses for families</strong>, and if those hours aren't planned for, the costs can rise quickly. Many families in similar situations find that planning for around {fmt_hours(llm_high)} of support a day gives a more realistic picture of what safe, consistent care at home will cost."""
+    
+    print(f"[HOURS_ADVISORY] rendered=True user={current} suggested={llm_high} llm_advice={bool(advice)}")
+
+    # 6) Render Navi-style advisory UI
+    st.markdown(
+        f"""
+        <div class="hours-advisory">
+          <div class="hours-advisory__navi-title">✨ Navi says</div>
+          <p class="hours-advisory__text">{advice}</p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    
+    # 7) Two elegant buttons (primary = accept; secondary = keep)
+    st.markdown('<div class="hours-actions">', unsafe_allow_html=True)
+    col1, col2 = st.columns([1, 1], gap="small")
+    with col1:
+        if st.button(f"Update Hours to {fmt_hours(llm_high)}", key=f"btn_accept_{llm_high}", use_container_width=True):
+            # Update the comparison values (not the widget key directly)
+            st.session_state["comparison_inhome_hours"] = float(llm_high)
+            st.session_state["comparison_hours_per_day"] = float(llm_high)
+            cost["home_hours_scalar"] = float(llm_high)
+            meta[decision_key] = "accepted"
+            print(f"[HOURS_CONFIRM] accept={llm_high}")
+            
+            # Persist hours decision
+            try:
+                from core.user_persist import persist_costplan, get_current_user_id
+                persist_costplan(get_current_user_id(), {
+                    "event": "hours_confirm_accept",
+                    "corr_id": st.session_state.get("corr_id", "unknown"),
+                    "home_hours": float(llm_high),
+                    "previous_hours": float(current),
+                })
+            except Exception as e:
+                print(f"[USER_PERSIST_ERR] hours_confirm_accept failed: {e}")
+            
+            st.rerun()
+    with col2:
+        if st.button(f"Keep {fmt_hours(current)}", key=f"btn_keep_{llm_high}", use_container_width=True):
+            meta[decision_key] = "kept"
+            print(f"[HOURS_CONFIRM] keep={current} (llm={llm_high})")
+            
+            # Persist hours decision
+            try:
+                from core.user_persist import persist_costplan, get_current_user_id
+                persist_costplan(get_current_user_id(), {
+                    "event": "hours_confirm_keep",
+                    "corr_id": st.session_state.get("corr_id", "unknown"),
+                    "home_hours": float(current),
+                    "suggested_hours": float(llm_high),
+                })
+            except Exception as e:
+                print(f"[USER_PERSIST_ERR] hours_confirm_keep failed: {e}")
+            
+            st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)  # Close hours-actions div
+
+
 def donut_cost_chart(segments: dict[str, float], total_label: str, emphasize: str = "Care Services"):
     """
     Render a compact donut showing monthly composition.
@@ -62,8 +410,17 @@ def donut_cost_chart(segments: dict[str, float], total_label: str, emphasize: st
         total_label: "$6,750/mo" (displayed in center)
         emphasize: label to visually emphasize (default: "Care Services")
     """
-    import plotly.express as px
-    
+    try:
+        import plotly.express as px
+    except Exception as e:
+        # graceful fallback: just show the pills/labels
+        st.caption("Monthly total composition")
+        for lbl, val in (segments or {}).items():
+            st.markdown(f"- **{lbl}** {money(val)}")
+        print(f"[DONUT_FALLBACK] plotly import failed: {e}")
+        return
+
+    # rest of your existing plotly chart code follows here ↓
     segs = {k: float(v) for k, v in segments.items() if v and float(v) > 0}
     if not segs:
         return
