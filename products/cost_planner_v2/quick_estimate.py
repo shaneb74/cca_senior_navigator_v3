@@ -223,7 +223,10 @@ def _render_panel(assessment: str, render_card_fn):
 def _render_home_card(zip_code: str):
     """Render In-Home Care card (hours + home expense, no Keep Home toggle)."""
     from products.cost_planner_v2.comparison_calcs import calculate_inhome_scenario
-    from products.cost_planner_v2.ui_helpers import totals_set, segcache_set, segcache_get, render_cost_composition_bar
+    from products.cost_planner_v2.ui_helpers import (
+        totals_set, segcache_set, segcache_get, donut_cost_chart, 
+        money, render_care_chunk_compare_blurb
+    )
     
     # Calculate scenario
     breakdown = calculate_inhome_scenario(
@@ -233,7 +236,7 @@ def _render_home_card(zip_code: str):
     )
     st.session_state.comparison_inhome_breakdown = breakdown
     
-    # Extract segments from breakdown
+    # Extract segments from breakdown (no recompute, reuse existing values)
     care_amt = 0.0
     home_carry_amt = 0.0
     for line in breakdown.lines:
@@ -249,12 +252,11 @@ def _render_home_card(zip_code: str):
     monthly_total = breakdown.monthly_total
     totals_set("home", monthly_total)
     
-    segments = {}
-    if care_amt > 0:
-        segments["Care Services"] = care_amt
-    if home_carry_amt > 0:
-        segments["Home Carry"] = home_carry_amt
-    segcache_set("home", segments)
+    segments = {
+        "Care Services": float(care_amt or 0),
+        "Home Carry": float(home_carry_amt or 0),
+    }
+    segcache_set("home", {k: v for k, v in segments.items() if v > 0})
     
     print(f"[CARD] rendered home monthly={monthly_total:,.0f}")
     print(f"[COMPOSE] home segs={segcache_get('home')} total={monthly_total:,.0f}")
@@ -266,12 +268,13 @@ def _render_home_card(zip_code: str):
     st.markdown('<div class="cost-card__title">In-Home Care</div>', unsafe_allow_html=True)
     st.markdown('<div class="cost-card__caption">Estimated monthly total</div>', unsafe_allow_html=True)
     
-    # Totals
-    st.markdown(f'<div class="cost-total">${breakdown.monthly_total:,.0f}</div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="cost-annual">${breakdown.annual_total:,.0f} / yr</div>', unsafe_allow_html=True)
+    # Totals display removed - now shown in donut center
     
-    # Composition bar (right after totals)
-    render_cost_composition_bar("home")
+    # Donut chart (replaces bar + shows total in center)
+    donut_cost_chart(segments, total_label=money(monthly_total), emphasize="Care Services")
+    
+    # Care chunk comparison (when both cached)
+    render_care_chunk_compare_blurb("home")
     
     # Controls: Hours slider
     st.markdown('<div class="cost-section__label">Daily Support Hours</div>', unsafe_allow_html=True)
@@ -324,7 +327,10 @@ def _render_home_card(zip_code: str):
 def _render_facility_card(tier: str, zip_code: str, show_keep_home: bool = False):
     """Render facility card (AL or MC) with optional Keep Home toggle."""
     from products.cost_planner_v2.comparison_calcs import calculate_facility_scenario
-    from products.cost_planner_v2.ui_helpers import totals_set, segcache_set, segcache_get, render_cost_composition_bar
+    from products.cost_planner_v2.ui_helpers import (
+        totals_set, segcache_set, segcache_get, donut_cost_chart,
+        money, render_care_chunk_compare_blurb
+    )
     
     # Calculate scenario
     breakdown = calculate_facility_scenario(
@@ -335,7 +341,7 @@ def _render_facility_card(tier: str, zip_code: str, show_keep_home: bool = False
     )
     st.session_state.comparison_facility_breakdown = breakdown
     
-    # Extract segments from breakdown
+    # Extract segments from breakdown (no recompute, reuse existing values)
     housing_amt = 0.0
     care_amt = 0.0
     home_carry_amt = 0.0
@@ -360,14 +366,14 @@ def _render_facility_card(tier: str, zip_code: str, show_keep_home: bool = False
     monthly_total = breakdown.monthly_total
     totals_set(assessment_key, monthly_total)
     
-    segments = {}
-    if housing_amt > 0:
-        segments["Housing/Room"] = housing_amt
-    if care_amt > 0:
-        segments["Care Services"] = care_amt
-    if home_carry_amt > 0:
-        segments["Home Carry"] = home_carry_amt
-    segcache_set(assessment_key, segments)
+    segments = {
+        "Housing/Room": float(housing_amt or 0),
+        "Care Services": float(care_amt or 0),
+    }
+    if show_keep_home and st.session_state.get("comparison_keep_home", False):
+        segments["Home Carry"] = float(home_carry_amt or 0)
+    
+    segcache_set(assessment_key, {k: v for k, v in segments.items() if v > 0})
     
     print(f"[CARD] rendered {assessment_key} monthly={monthly_total:,.0f}")
     print(f"[COMPOSE] {assessment_key} segs={segcache_get(assessment_key)} total={monthly_total:,.0f}")
@@ -380,12 +386,13 @@ def _render_facility_card(tier: str, zip_code: str, show_keep_home: bool = False
     st.markdown(f'<div class="cost-card__title">{display_name}</div>', unsafe_allow_html=True)
     st.markdown('<div class="cost-card__caption">Estimated monthly total</div>', unsafe_allow_html=True)
     
-    # Totals
-    st.markdown(f'<div class="cost-total">${breakdown.monthly_total:,.0f}</div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="cost-annual">${breakdown.annual_total:,.0f} / yr</div>', unsafe_allow_html=True)
+    # Totals display removed - now shown in donut center
     
-    # Composition bar (right after totals)
-    render_cost_composition_bar(assessment_key)
+    # Donut chart (replaces bar + shows total in center)
+    donut_cost_chart(segments, total_label=money(monthly_total), emphasize="Care Services")
+    
+    # Care chunk comparison (when both cached)
+    render_care_chunk_compare_blurb(assessment_key)
     
     # Keep Home toggle (only if show_keep_home=True)
     if show_keep_home:

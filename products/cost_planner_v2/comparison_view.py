@@ -523,7 +523,10 @@ def _render_care_card(
         card_key: Unique key for widgets
         is_recommended: Whether this is the recommended plan (adds visual accent)
     """
-    from products.cost_planner_v2.ui_helpers import segcache_set, segcache_get, totals_set, render_cost_composition_bar
+    from products.cost_planner_v2.ui_helpers import (
+        segcache_set, segcache_get, totals_set, 
+        donut_cost_chart, money, render_care_chunk_compare_blurb
+    )
     
     # Extract segments from breakdown for visualization (no new math)
     segments = _extract_segments_from_breakdown(breakdown, is_facility)
@@ -549,12 +552,13 @@ def _render_care_card(
     st.markdown(f"<div class='cost-card__title'>{care_type_display}</div>", unsafe_allow_html=True)
     st.markdown("<div class='cost-card__caption'>Estimated monthly total</div>", unsafe_allow_html=True)
 
-    # Primary Cost
-    st.markdown(f"<div class='cost-total'>${breakdown.monthly_total:,.0f}</div>", unsafe_allow_html=True)
-    st.markdown(f"<div class='cost-annual'>${breakdown.annual_total:,.0f} / yr</div>", unsafe_allow_html=True)
+    # Totals display removed - now shown in donut center
     
-    # Composition bar (under total, before controls)
-    render_cost_composition_bar(assessment_key)
+    # Donut chart (replaces bar + shows total in center)
+    donut_cost_chart(segments, total_label=money(monthly_total), emphasize="Care Services")
+    
+    # Care chunk comparison (when both cached)
+    render_care_chunk_compare_blurb(assessment_key)
 
     # Controls
     if is_facility:

@@ -48,6 +48,75 @@ def total_to_str(v) -> str:
     return "—" if v is None or v == 0 else f"${v:,.0f}"
 
 
+def money(v: float | None) -> str:
+    """Format currency value for display."""
+    return "—" if v is None else f"${v:,.0f}"
+
+
+def donut_cost_chart(segments: dict[str, float], total_label: str, emphasize: str = "Care Services"):
+    """
+    Render a compact donut showing monthly composition.
+    
+    Args:
+        segments: {"Housing/Room": x, "Care Services": y, "Home Carry": z}
+        total_label: "$6,750/mo" (displayed in center)
+        emphasize: label to visually emphasize (default: "Care Services")
+    """
+    import plotly.express as px
+    
+    segs = {k: float(v) for k, v in segments.items() if v and float(v) > 0}
+    if not segs:
+        return
+
+    labels = list(segs.keys())
+    values = list(segs.values())
+
+    # Emphasize care wedge with saturated brand palette
+    base_colors = {
+        "Housing/Room": "#CBD5E1",  # slate-300
+        "Care Services": "#0f2a5f", # brand navy (emphasize)
+        "Home Carry": "#7aa2ff"    # light brand blue
+    }
+    colors = [base_colors.get(l, "#A3BFFA") for l in labels]
+
+    # Ensure emphasized label gets the darkest color
+    for i, l in enumerate(labels):
+        if l.lower() == emphasize.lower():
+            colors[i] = "#0f2a5f"  # darkest
+        elif l == "Housing/Room":
+            colors[i] = "#CBD5E1"
+        elif l == "Home Carry":
+            colors[i] = "#7aa2ff"
+
+    fig = px.pie(values=values, names=labels, hole=0.72, color=labels, color_discrete_sequence=colors)
+    fig.update_traces(
+        textinfo="none",
+        hovertemplate="%{label}<br>$%{value:,.0f}/mo<extra></extra>",
+        sort=False
+    )
+    fig.update_layout(
+        showlegend=False,
+        margin=dict(l=0, r=0, t=0, b=0),
+        height=220,
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        annotations=[dict(text=total_label, showarrow=False, font=dict(size=20, color="#0f2a5f"))]
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+
+def render_care_chunk_compare_blurb(active: str):
+    """Render care chunk comparison when both home and AL segments are cached."""
+    home = segcache_get("home") or {}
+    al = segcache_get("al") or {}
+    home_care = float(home.get("Care Services", 0))
+    al_care = float(al.get("Care Services", 0))
+    
+    if home_care > 0 and al_care > 0:
+        ratio = home_care / al_care
+        st.caption(f"💡 Care at home (~{money(home_care)}/mo) is **{ratio:,.1f}×** the care portion in Assisted Living (~{money(al_care)}/mo).")
+
+
 # ==============================================================================
 # NAVI RENDERING HELPERS
 # ==============================================================================
