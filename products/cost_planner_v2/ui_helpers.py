@@ -153,10 +153,7 @@ def cache_hours_advice(key: str, text: str):
 
 
 def request_llm_hours_advice(ctx: dict, user_hours: float, llm_high: float) -> str | None:
-    """
-    Generate empathetic Cost Planner hours advisory using LLM.
-    Returns 2-3 sentence explanation of why higher hours are recommended.
-    Non-blocking, returns None on error/timeout.
+    """Request LLM-generated hours advisory text.
     
     Args:
         ctx: Care context dict with cognition_level, behaviors, adl_count, etc.
@@ -166,14 +163,26 @@ def request_llm_hours_advice(ctx: dict, user_hours: float, llm_high: float) -> s
     Returns:
         HTML-formatted paragraph or None if LLM unavailable
     """
+    print(f"[HOURS_ADVISORY_LLM] Attempting to generate advice: user={user_hours} suggested={llm_high}")
+    
     try:
-        from ai.llm_client import get_client
+        from ai.llm_client import get_client, get_feature_mode
+        
+        # Check if LLM is enabled
+        mode = get_feature_mode()
+        print(f"[HOURS_ADVISORY_LLM] FEATURE_LLM_NAVI={mode}")
+        
+        if mode == "off":
+            print("[HOURS_ADVISORY_LLM] LLM disabled (mode=off), using fallback")
+            return None
         
         # Get LLM client
         client = get_client(timeout=5)
         if not client:
-            print("[HOURS_ADVISORY_LLM] No LLM client available")
+            print("[HOURS_ADVISORY_LLM] No LLM client available (get_client returned None)")
             return None
+        
+        print(f"[HOURS_ADVISORY_LLM] Client acquired, building prompt with context: {ctx}")
         
         # Build specific care details from context
         care_details = []
@@ -219,6 +228,7 @@ IMPORTANT FORMATTING:
 - Return ONLY the paragraph text with HTML tags (no JSON, no preamble)"""
         
         # Call LLM
+        print(f"[HOURS_ADVISORY_LLM] Calling LLM with prompt (care_context={care_context})")
         text = client.generate_completion(
             system_prompt=system_prompt,
             user_prompt=user_prompt
@@ -234,10 +244,10 @@ IMPORTANT FORMATTING:
                     text = parts[1].strip()
                     if text.startswith("html"):
                         text = text[4:].strip()
-            print(f"[HOURS_ADVISORY_LLM] Generated {len(text)} chars")
+            print(f"[HOURS_ADVISORY_LLM] ✅ SUCCESS - Generated {len(text)} chars: {text[:100]}...")
             return text
         else:
-            print("[HOURS_ADVISORY_LLM] No response from LLM")
+            print("[HOURS_ADVISORY_LLM] ❌ FAILED - No response from LLM")
             return None
             
     except Exception as e:
@@ -285,7 +295,11 @@ def render_confirm_hours_if_needed(current_hours_key: str = "qe_home_hours"):
     advice_key = f"home_hours_{llm_high}"
     advice = get_cached_hours_advice(advice_key)
     
+    if advice:
+        print(f"[HOURS_ADVISORY] Using CACHED advice for key={advice_key}")
+    
     if not advice:
+        print(f"[HOURS_ADVISORY] No cached advice, requesting LLM generation...")
         # Build context for LLM
         ctx = get_care_context_for_llm()
         
@@ -300,6 +314,7 @@ def render_confirm_hours_if_needed(current_hours_key: str = "qe_home_hours"):
     
     # 5) Use LLM advice or fallback
     if not advice:
+        print(f"[HOURS_ADVISORY] ⚠️  Using FALLBACK (static text builder) - LLM did not generate advice")
         # Fallback: Build from actual GCP data
         g = st.session_state.get("gcp", {})
         needs_list = []
@@ -341,6 +356,9 @@ def render_confirm_hours_if_needed(current_hours_key: str = "qe_home_hours"):
         
         # Construct the empathetic paragraph
         advice = f"""You mentioned needing help with {needs_phrase}{context_phrase}. That level of daily support often means several hours of hands-on care each day. <strong>In-home care can be one of the most significant expenses for families</strong>, and if those hours aren't planned for, the costs can rise quickly. Many families in similar situations find that planning for around {fmt_hours(llm_high)} of support a day gives a more realistic picture of what safe, consistent care at home will cost."""
+        print(f"[HOURS_ADVISORY] FALLBACK text built: {advice[:80]}...")
+    else:
+        print(f"[HOURS_ADVISORY] ✅ Using LLM-generated advice: {advice[:80]}...")
     
     print(f"[HOURS_ADVISORY] rendered=True user={current} suggested={llm_high} llm_advice={bool(advice)}")
 
