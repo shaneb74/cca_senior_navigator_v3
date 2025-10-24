@@ -34,7 +34,25 @@ def render():
     Note: GCP gate removed from workflow. GCP is recommended
     but accessed separately via navigation, not forced in flow.
     """
-
+    
+    # DEBUG: Log GCP state on Cost Planner mount
+    print(f"\n{'='*80}")
+    print(f"[CP_MOUNT] Cost Planner v2 Loading")
+    print(f"{'='*80}")
+    gcp_state = st.session_state.get("gcp", {})
+    print(f"[CP_DEBUG] GCP state exists: {bool(gcp_state)}")
+    print(f"[CP_DEBUG] GCP keys: {list(gcp_state.keys())}")
+    print(f"[CP_DEBUG] gcp.published_tier={gcp_state.get('published_tier')}")
+    print(f"[CP_DEBUG] gcp.recommended_tier={gcp_state.get('recommended_tier')}")
+    print(f"[CP_DEBUG] gcp.allowed_tiers={gcp_state.get('allowed_tiers')}")
+    
+    # Check MCIP contract
+    from core.mcip import MCIP
+    mcip_rec = MCIP.get_care_recommendation()
+    print(f"[CP_DEBUG] MCIP has recommendation: {mcip_rec is not None}")
+    if mcip_rec:
+        print(f"[CP_DEBUG] MCIP tier={mcip_rec.tier} allowed={getattr(mcip_rec, 'allowed_tiers', None)}")
+    print(f"{'='*80}\n")
 
     # Check for restart intent (when complete and re-entering at intro)
     _handle_restart_if_needed()

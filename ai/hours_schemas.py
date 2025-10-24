@@ -19,8 +19,8 @@ class HoursContext(BaseModel):
     Minimal context for hours/day suggestion.
     Built from GCP answers/flags after Daily Living section.
     """
-    badls_count: int = Field(ge=0, le=6)  # Basic ADLs (bathing, dressing, etc.)
-    iadls_count: int = Field(ge=0, le=8)  # Instrumental ADLs (meds, meals, etc.)
+    badls_count: int = Field(ge=0, le=12)  # Basic ADLs (relaxed from 6 to 12)
+    iadls_count: int = Field(ge=0, le=20)  # Instrumental ADLs (relaxed from 8 to 20)
     falls: Optional[str] = None  # "none", "once", "multiple"
     mobility: Optional[str] = None  # "independent", "cane", "walker", "wheelchair"
     risky_behaviors: bool = False  # wandering, elopement, aggression, etc.

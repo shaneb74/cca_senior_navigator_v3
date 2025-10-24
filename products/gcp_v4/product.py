@@ -344,6 +344,10 @@ def _publish_to_mcip(outcome, module_state: dict) -> None:
         outcome: OutcomeContract or dict from logic.py
         module_state: Module state with answers
     """
+    
+    print(f"\n{'🔥'*40}")
+    print(f"[_PUBLISH_TO_MCIP] FUNCTION CALLED - WRITING TO st.session_state['gcp']")
+    print(f"{'🔥'*40}\n")
 
     # Extract outcome data (handle both OutcomeContract and dict)
     if hasattr(outcome, "__dict__"):
@@ -392,9 +396,12 @@ def _publish_to_mcip(outcome, module_state: dict) -> None:
     hours_user_band = g.get("hours_user_band")
     hours_llm_band = g.get("hours_llm") or g.get("hours_band")
     
+    print(f"\n{'✅'*40}")
     print(f"[GCP_PERSIST_TIER] published={chosen_tier} recommended={chosen_tier} allowed={allowed_tiers}")
     print(f"[GCP_HOURS_PERSIST] user={hours_user_band} llm={hours_llm_band}")
-    print(f"[GCP_DEBUG] Session state after persist: gcp.published_tier={g.get('published_tier')} gcp.allowed_tiers={g.get('allowed_tiers')} type={type(g.get('allowed_tiers'))}")
+    print(f"[GCP_STATE_WRITTEN] st.session_state['gcp'] = {dict(g)}")
+    print(f"[GCP_STATE_VERIFY] published_tier={g.get('published_tier')} allowed_tiers={g.get('allowed_tiers')}")
+    print(f"{'✅'*40}\n")
 
     # Build CareRecommendation contract with chosen (adjudicated) tier
     try:
