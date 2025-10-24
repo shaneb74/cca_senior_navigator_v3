@@ -14,6 +14,8 @@ Navi replaces and deprecates:
 - Module progress bars (Navi IS the progress indicator)
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import Any
 

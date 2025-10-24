@@ -14,6 +14,7 @@ import time
 import streamlit as st
 
 from core.navi import render_navi_panel
+from core.name_utils import personalize
 from products.cost_planner_v2.ui_helpers import go_to_quick_estimate
 from products.cost_planner_v2.utils.home_costs import lookup_zip
 from products.cost_planner_v2.utils.regional_data import RegionalDataProvider
@@ -80,11 +81,11 @@ def render():
     render_navi_panel(location="product", product_key="cost_planner")
 
     # Render mini-form
-    st.markdown("### Let's personalize your estimate")
+    st.markdown(personalize("### Let's personalize {NAME_POS} estimate"))
     st.markdown(
-        """<div style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.95rem;">
-        Answer two quick questions so we can show you the most relevant costs.
-        </div>""",
+        personalize("""<div style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.95rem;">
+        Answer two quick questions so we can show you the most relevant costs for {NAME}.
+        </div>"""),
         unsafe_allow_html=True
     )
 
@@ -146,19 +147,19 @@ def render():
     move_pref = gcp_data.get("move_preference")
     if move_pref == "stay_home":
         st.markdown(
-            '<div class="cp-hint">We\'ll include your monthly home costs since you plan to stay home.</div>',
+            personalize('<div class="cp-hint">We\'ll include {NAME_POS} monthly home costs since {NAME} plans to stay home.</div>'),
             unsafe_allow_html=True
         )
     elif move_pref in ("open", "uncertain"):
         st.markdown(
-            '<div class="cp-hint">You can compare staying home or moving; ZIP will localize costs.</div>',
+            personalize('<div class="cp-hint">You can compare {NAME} staying home or moving; ZIP will localize costs.</div>'),
             unsafe_allow_html=True
         )
 
     st.markdown("")
 
     # Question 2: Monthly Home Carry
-    st.markdown("#### What are your monthly household costs?")
+    st.markdown(personalize("#### What are {NAME_POS} monthly household costs?"))
     st.caption(
         "💡 Typical monthly cost to keep the household running "
         "(mortgage/rent, utilities, insurance, groceries)."
@@ -211,7 +212,7 @@ def render():
     # CTA: Compare My Cost Options (full width)
     has_zip = bool(inputs.get("zip") and len(str(inputs.get("zip"))) == 5)
 
-    if st.button("Compare My Cost Options", key="intro_compare_cta", use_container_width=True, type="primary"):
+    if st.button(personalize("Compare {NAME_POS} Cost Options"), key="intro_compare_cta", use_container_width=True, type="primary"):
         if has_zip:
             print(f"[INTRO] Navigate to quick_estimate: zip={inputs.get('zip')}")
             go_to_quick_estimate()

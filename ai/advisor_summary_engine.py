@@ -47,10 +47,37 @@ from ai.advisor_summary_templates import (
     FINANCIAL_OVERVIEW_TEMPLATE,
     AdvisorSummaryContext
 )
+from core.name_utils import first_name, possessive
 
 
 class AdvisorSummaryEngine:
     """LLM engine for generating advisor summary narratives."""
+    
+    @staticmethod
+    def _personalize_template(template: str, person_name: str) -> str:
+        """
+        Process personalization tokens in LLM templates.
+        
+        Args:
+            template: Template string with personalization tokens
+            person_name: Full name of the care recipient
+            
+        Returns:
+            Template with personalization tokens replaced
+        """
+        if not person_name or person_name == "the care recipient":
+            # Fallback to generic language when no name available
+            person_first_name = "the care recipient"
+            person_possessive = "their"
+        else:
+            person_first_name = first_name(person_name)
+            person_possessive = possessive(person_first_name)
+        
+        # Replace personalization tokens in template
+        personalized_template = template.replace("{person_first_name}", person_first_name)
+        personalized_template = personalized_template.replace("{person_possessive}", person_possessive)
+        
+        return personalized_template
     
     @staticmethod
     def build_advisor_context_from_session() -> Optional[AdvisorSummaryContext]:
@@ -112,13 +139,62 @@ class AdvisorSummaryEngine:
                 if st.session_state.get(flag, False) and flag not in care_flags:
                     care_flags.append(flag)
             
-            # Cost Planner data
+            # Cost Planner data with detailed breakdown
             financial_data = st.session_state.get("financial_assessment_complete", {})
             cost_data = financial_data.get("cost_summary", {})
             
+            # Extract detailed income breakdown
+            income_breakdown = financial_data.get("income_breakdown", {})
+            social_security = income_breakdown.get("social_security", 0.0)
+            pension = income_breakdown.get("pension", 0.0)
+            retirement_401k = income_breakdown.get("401k_withdrawals", 0.0)
+            roth_ira = income_breakdown.get("roth_distributions", 0.0)
+            traditional_ira = income_breakdown.get("traditional_ira", 0.0)
+            employment = income_breakdown.get("employment", 0.0)
+            rental_income = income_breakdown.get("rental", 0.0)
+            investment_income = income_breakdown.get("investment", 0.0)
+            family_support = income_breakdown.get("family_support", 0.0)
+            other_income = income_breakdown.get("other", 0.0)
+            
             monthly_cost = cost_data.get("monthly_total", 0.0)
             household_income = financial_data.get("household_income", 0.0)
+            
+            # Extract detailed asset breakdown
+            asset_breakdown = financial_data.get("asset_breakdown", {})
+            checking_accounts = asset_breakdown.get("checking", 0.0)
+            savings_accounts = asset_breakdown.get("savings", 0.0)
+            money_market = asset_breakdown.get("money_market", 0.0)
+            cds = asset_breakdown.get("certificates_deposit", 0.0)
+            retirement_401k_balance = asset_breakdown.get("401k_balance", 0.0)
+            traditional_ira_balance = asset_breakdown.get("traditional_ira_balance", 0.0)
+            roth_ira_balance = asset_breakdown.get("roth_ira_balance", 0.0)
+            brokerage = asset_breakdown.get("brokerage", 0.0)
+            home_value = asset_breakdown.get("primary_residence", 0.0)
+            investment_real_estate = asset_breakdown.get("investment_property", 0.0)
+            life_insurance_cash = asset_breakdown.get("life_insurance_cash", 0.0)
+            personal_property = asset_breakdown.get("personal_property", 0.0)
+            
             total_assets = financial_data.get("total_assets", 0.0)
+            
+            # Extract debt breakdown
+            debt_breakdown = financial_data.get("debt_breakdown", {})
+            mortgage_balance = debt_breakdown.get("mortgage", 0.0)
+            heloc_balance = debt_breakdown.get("heloc", 0.0)
+            credit_card_debt = debt_breakdown.get("credit_cards", 0.0)
+            auto_loans = debt_breakdown.get("auto_loans", 0.0)
+            personal_loans = debt_breakdown.get("personal_loans", 0.0)
+            medical_debt = debt_breakdown.get("medical_debt", 0.0)
+            other_debt = debt_breakdown.get("other_debt", 0.0)
+            
+            # Extract insurance coverage
+            insurance_data = financial_data.get("insurance_coverage", {})
+            medicare_a = insurance_data.get("medicare_part_a", False)
+            medicare_b = insurance_data.get("medicare_part_b", False)
+            medicare_supplement = insurance_data.get("medicare_supplement", False)
+            medicare_advantage = insurance_data.get("medicare_advantage", False)
+            ltc_insurance = insurance_data.get("long_term_care", False)
+            life_insurance = insurance_data.get("life_insurance_amount", 0.0)
+            disability_insurance = insurance_data.get("disability", False)
             
             # Calculate years funded
             years_funded = 0.0
@@ -153,7 +229,7 @@ class AdvisorSummaryEngine:
                 room_type=room_type,
                 care_flags=care_flags,
                 
-                # Cost Planner
+                # Cost Planner Basic
                 monthly_cost=monthly_cost,
                 household_income=household_income,
                 total_assets=total_assets,
@@ -165,7 +241,51 @@ class AdvisorSummaryEngine:
                 rx_costs_high=rx_costs_high,
                 transportation_needed=transportation_needed,
                 auto_present=auto_present,
-                family_travel_needed=family_travel_needed
+                family_travel_needed=family_travel_needed,
+                
+                # Detailed Income Breakdown
+                social_security=social_security,
+                pension=pension,
+                retirement_401k=retirement_401k,
+                roth_ira=roth_ira,
+                traditional_ira=traditional_ira,
+                employment=employment,
+                rental_income=rental_income,
+                investment_income=investment_income,
+                family_support=family_support,
+                other_income=other_income,
+                
+                # Detailed Asset Breakdown
+                checking_accounts=checking_accounts,
+                savings_accounts=savings_accounts,
+                money_market=money_market,
+                cds=cds,
+                retirement_401k_balance=retirement_401k_balance,
+                traditional_ira_balance=traditional_ira_balance,
+                roth_ira_balance=roth_ira_balance,
+                brokerage=brokerage,
+                home_value=home_value,
+                investment_real_estate=investment_real_estate,
+                life_insurance_cash=life_insurance_cash,
+                personal_property=personal_property,
+                
+                # Detailed Debt Breakdown
+                mortgage_balance=mortgage_balance,
+                heloc_balance=heloc_balance,
+                credit_card_debt=credit_card_debt,
+                auto_loans=auto_loans,
+                personal_loans=personal_loans,
+                medical_debt=medical_debt,
+                other_debt=other_debt,
+                
+                # Insurance Coverage
+                medicare_a=medicare_a,
+                medicare_b=medicare_b,
+                medicare_supplement=medicare_supplement,
+                medicare_advantage=medicare_advantage,
+                ltc_insurance=ltc_insurance,
+                life_insurance=life_insurance,
+                disability_insurance=disability_insurance
             )
             
         except Exception as e:
@@ -202,6 +322,11 @@ class AdvisorSummaryEngine:
                 print(f"[ADVISOR_SUMMARY] Unknown drawer type: {drawer_type}")
                 return None
             
+            # Personalize the template with name context
+            personalized_template = AdvisorSummaryEngine._personalize_template(
+                template, context.person_a_name
+            )
+            
             # Build context variables for template substitution
             context_vars = asdict(context)
             
@@ -217,25 +342,32 @@ class AdvisorSummaryEngine:
             context_vars["total_assets"] = f"{context_vars['total_assets']:,.0f}"
             context_vars["years_funded"] = f"{context_vars['years_funded']:.1f}"
             
-            # Create the full prompt with context injection
-            prompt = f"""
-{template}
+            # Create system and user prompts for LLM API
+            system_prompt = f"""You are an expert geriatric care advisor generating comprehensive assessment reports for professional review. 
+Generate natural-language paragraphs following template guidelines with warm, empathetic, factual tone suitable for internal advisor reports. 
+Focus on specific captured data rather than generic descriptions. Return only the paragraph text, no additional formatting or explanation.
+
+PERSONALIZATION STYLE RULES:
+- Always refer to the care recipient by their first name: {first_name(context.person_a_name) if context.person_a_name != "the care recipient" else "the care recipient"}
+- Use possessive form when appropriate: {possessive(first_name(context.person_a_name)) if context.person_a_name != "the care recipient" else "their"}
+- Avoid generic "the client" or "this person" language
+- Example: "{first_name(context.person_a_name) if context.person_a_name != "the care recipient" else "The care recipient"} has Medicare coverage..." not "The client has Medicare coverage..."
+"""
+            
+            user_prompt = f"""
+{personalized_template}
 
 Context Data:
 {chr(10).join(f'- {key}: {value}' for key, value in context_vars.items())}
 
-Generate a natural-language paragraph following the template guidelines above.
-Use warm, empathetic, factual tone suitable for internal advisor reports.
-Length: 80-120 words.
-Return only the paragraph text, no additional formatting or explanation.
+Generate a comprehensive assessment paragraph following the template guidelines above using the specific context data provided.
 """
             
             # Generate using LLM
             client = LLMClient()
             response = client.generate_completion(
-                prompt=prompt,
-                max_tokens=800,  # Increased for comprehensive reports
-                temperature=0.7
+                system_prompt=system_prompt,
+                user_prompt=user_prompt
             )
             
             if response and response.strip():

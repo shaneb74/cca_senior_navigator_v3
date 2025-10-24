@@ -396,19 +396,23 @@ def render_welcome_card(
 
         # Handle form submission - allow navigation with or without a name
         if submitted:
-            # Store relationship context
+            # Store relationship context using standard relationship_type
             if safe_active == "someone":
+                st.session_state["relationship_type"] = "Parent"  # Default for planning for someone else
                 st.session_state["planning_for_relationship"] = "someone_else"
             elif safe_active == "self":
+                st.session_state["relationship_type"] = "Myself"
                 st.session_state["planning_for_relationship"] = "self"
 
-            # Store name if provided (not empty or whitespace)
+            # Store person's name for personalization throughout the app
             if name_value and name_value.strip():
+                st.session_state["person_a_name"] = name_value.strip()
+                # Keep legacy keys for backward compatibility
                 st.session_state["planning_for_name"] = name_value.strip()
-                # Keep legacy person_name for backward compatibility
                 st.session_state["person_name"] = name_value.strip()
             else:
                 # Clear names if exists, allowing generic terms to be used
+                st.session_state.pop("person_a_name", None)
                 st.session_state.pop("planning_for_name", None)
                 st.session_state.pop("person_name", None)
 

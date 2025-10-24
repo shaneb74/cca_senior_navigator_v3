@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from core.modules.schema import FieldDef, ModuleConfig, StepDef
+from core.name_utils import personalize
 
 
 def get_config() -> ModuleConfig:
@@ -60,6 +61,10 @@ def _convert_section_to_step(section: dict[str, Any]) -> StepDef:
     section_id = section["id"]
     title = section.get("title", "")
     description = section.get("description", "")
+    
+    # Apply personalization to title and description
+    title = personalize(title)
+    description = personalize(description)
     navi_guidance = section.get("navi_guidance")  # Extract Navi guidance
 
     # Handle info sections (intro pages)
@@ -133,12 +138,16 @@ def _convert_question_to_field(question: dict[str, Any]) -> FieldDef:
 
     # Handle visible_if condition
     visible_if = question.get("visible_if")
+    
+    # Apply personalization to label and help text
+    label = personalize(question.get("label", ""))
+    help_text = personalize(question.get("help", "")) if question.get("help") else None
 
     return FieldDef(
         key=question_id,
-        label=question.get("label", ""),
+        label=label,
         type=_convert_type(question_type, select_type, ui_config),
-        help=question.get("help"),
+        help=help_text,
         required=question.get("required", False),
         options=question.get("options", []),
         min=question.get("min"),

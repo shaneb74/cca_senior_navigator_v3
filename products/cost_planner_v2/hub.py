@@ -15,6 +15,7 @@ import os
 import streamlit as st
 
 from core.mcip import MCIP, CareRecommendation
+from core.name_utils import section_header, personalize, pname
 from products.cost_planner_v2.utils.financial_helpers import (
     asset_breakdown,
     calculate_total_monthly_income,
@@ -120,7 +121,7 @@ def render():
     _, col_center, _ = st.columns([1, 6, 1])
 
     with col_center:
-        st.title("💰 Financial Assessment")
+        st.title(section_header("Financial Assessment"))
 
         st.markdown("---")
 
@@ -194,7 +195,7 @@ def render():
         st.markdown("---")
 
         # Module tiles
-        st.markdown("### 💼 Financial Assessment Modules")
+        st.markdown(personalize("### 💼 {NAME_POS} Financial Assessment Modules"))
 
         # Render modules dynamically in 2-column layout
         for i in range(0, len(visible_modules), 2):
@@ -278,7 +279,7 @@ def render():
                 f"### ✅ Required Modules Complete ({required_completed}/{len(required_modules)})"
             )
             st.markdown(
-                f"💡 You can complete {total_modules - completed} more optional module(s) for a comprehensive assessment, or proceed with current data."
+                personalize(f"💡 You can complete {total_modules - completed} more optional module(s) for a comprehensive assessment of {{NAME_POS}} finances, or proceed with current data.")
             )
 
             # Show summary
