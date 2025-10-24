@@ -18,7 +18,7 @@ def render():
 
 
 def _render_data_inventory():
-    """Display captured personal information in inventory format."""
+    """Display all capturable personal information fields."""
     
     # Navigation buttons at top
     col1, col2, col3 = st.columns([1, 1, 1])
@@ -36,44 +36,41 @@ def _render_data_inventory():
             st.rerun()
 
     # Section header
-    st.markdown(f"### {section_header('Personal Information Data Inventory')}")
-    st.markdown(personalize("*Review what we know about {NAME_POS} personal background and support network.*"))
+    st.markdown(f"### {section_header('Personal Information - Capturable Fields')}")
+    st.markdown(personalize("*These are all the personal fields the app can capture for {NAME}.*"))
 
-    # Get personal data from session
+    # Get personal data from session to show current values
     personal_data = st.session_state.get("personal_assessment", {})
     advisor_prep_data = st.session_state.get("advisor_prep", {}).get("data", {}).get("personal", {})
-    
-    # Combine data sources
     all_personal_data = {**personal_data, **advisor_prep_data}
     
-    # Core personal information
+    # Core personal information fields (from legacy form)
     _display_data_section("👤 Basic Demographics", [
         ("Person Name", st.session_state.get("person_name", "Not captured")),
         ("Planning For", st.session_state.get("planning_for_name", "Not captured")),
-        ("Age Range", all_personal_data.get("age_range", "Not captured")),
+        ("Age Range", all_personal_data.get("age_range", "Not captured"), ["Under 65", "65-74", "75-84", "85-94", "95+"]),
     ])
     
-    # Living situation
+    # Living situation fields
     _display_data_section("🏠 Living Situation", [
-        ("Current Housing", all_personal_data.get("living_situation", "Not captured")),
-        ("Primary Caregiver", all_personal_data.get("primary_caregiver", "Not captured")),
+        ("Current Living Situation", all_personal_data.get("living_situation", "Not captured"), 
+         ["Lives alone", "Lives with spouse/partner", "Lives with family", "Lives with caregiver", "Other"]),
+        ("Primary Caregiver", all_personal_data.get("primary_caregiver", "Not captured"),
+         ["Self-sufficient", "Spouse/Partner", "Adult child", "Other family member", "Professional caregiver", "Multiple caregivers"]),
     ])
     
-    # Support network
+    # Support network fields
     support_network = all_personal_data.get("support_network", [])
-    if support_network:
-        support_display = ", ".join(support_network)
-    else:
-        support_display = "Not captured"
+    support_display = ", ".join(support_network) if support_network else "Not captured"
     
     _display_data_section("👥 Support Network", [
-        ("Support Types", support_display),
-        ("Emergency Contact", all_personal_data.get("emergency_contact", "Not captured")),
+        ("Support Types", support_display, ["Family nearby", "Friends in area", "Religious community", "Neighbors", "Professional services", "Limited support"]),
+        ("Emergency Contact", all_personal_data.get("emergency_contact", "Not captured"), ["Free text field"]),
     ])
     
     # Show completion status
     if all_personal_data:
-        st.success("✓ Personal information captured")
+        st.success("✓ Some personal information captured")
         _mark_section_complete()
     else:
         st.info("No personal data captured yet.")
@@ -83,29 +80,42 @@ def _render_data_inventory():
 
 
 def _display_data_section(title: str, data_items: list):
-    """Display a section of data inventory.
+    """Display a section of capturable fields.
     
     Args:
         title: Section title
-        data_items: List of (field_name, value) tuples
+        data_items: List of (field_name, current_value, options) tuples
     """
     st.markdown(f"#### {title}")
     
-    for field_name, value in data_items:
+    for item in data_items:
+        if len(item) == 3:
+            field_name, value, options = item
+            if isinstance(options, list) and len(options) > 1:
+                options_display = f"Options: {', '.join(options)}"
+            else:
+                options_display = "Type: " + str(options[0]) if options else "Free text"
+        else:
+            field_name, value = item
+            options_display = "Available"
+        
         if value and value != "Not captured":
             status = "✅ Captured"
             value_display = f"**{value}**"
         else:
             status = "❌ Not Captured"
-            value_display = "*No data*"
+            value_display = "*Available for capture*"
         
-        col1, col2, col3 = st.columns([2, 1, 2])
+        col1, col2, col3 = st.columns([2, 1, 3])
         with col1:
-            st.write(field_name)
+            st.write(f"**{field_name}**")
         with col2:
             st.write(status)
         with col3:
-            st.write(value_display)
+            if value and value != "Not captured":
+                st.write(value_display)
+            else:
+                st.caption(options_display)
     
     st.markdown("---")
 
@@ -131,7 +141,7 @@ def _mark_section_complete():
             MCIP.set_advisor_appointment(appt)
 
         # Log completion
-        log_event("advisor_prep", "personal_section_complete", {"method": "data_inventory"})
+        log_event("advisor_prep.personal_section_complete", {"method": "data_inventory"})
 
 
 def _render_legacy_form():

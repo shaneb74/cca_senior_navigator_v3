@@ -67,8 +67,11 @@ def run_module(config: ModuleConfig) -> dict[str, Any]:
 
     step = config.steps[step_index]
 
-    # Substitute {{name}} template in title
+    # Substitute {{name}} template in title and apply content contract interpolation
     title = _substitute_title(step.title, state)
+    
+    # Also apply content contract interpolation to subtitle
+    subtitle = _substitute_title(step.subtitle or "", state) if step.subtitle else None
 
     # Calculate progress BEFORE rendering header
     progress = _update_progress(config, state, step, step_index)
@@ -99,7 +102,7 @@ def run_module(config: ModuleConfig) -> dict[str, Any]:
         step_index,
         total_steps,
         title,
-        step.subtitle,
+        subtitle,
         progress,
         progress_total,
         show_step_dots,
@@ -242,23 +245,41 @@ def _render_header(
 
 
 def _substitute_title(title: str, state: Mapping[str, Any]) -> str:
-    """Replace {{name}} with person's name from state or session."""
-    if "{{name}}" not in title:
-        return title
+    """Apply content contract interpolation to title and subtitle text."""
+    # Import here to avoid circular dependencies
+    from core.content_contract import build_token_context, interpolate
+    
+    # DEBUG: Log what's happening
+    print(f"[SUBSTITUTE_TITLE_DEBUG] Input title: '{title}'")
+    print(f"[SUBSTITUTE_TITLE_DEBUG] Session keys: {list(st.session_state.keys())}")
+    
+    # Build token context from current session state
+    try:
+        context = build_token_context(st.session_state)
+        print(f"[SUBSTITUTE_TITLE_DEBUG] Context NAME: '{context.name}', NAME_POS: '{context.name_possessive}'")
+        # Apply content contract interpolation
+        interpolated = interpolate(title, context)
+        print(f"[SUBSTITUTE_TITLE_DEBUG] Interpolated result: '{interpolated}'")
+        return interpolated
+    except Exception as e:
+        print(f"[SUBSTITUTE_TITLE_DEBUG] Exception: {e}")
+        # Fallback: try old {{name}} substitution for backward compatibility
+        if "{{name}}" not in title:
+            return title
 
-    # Try to get name from module state first
-    name = state.get("recipient_name") or state.get("person_name")
+        # Try to get name from module state first
+        name = state.get("recipient_name") or state.get("person_name")
 
-    # Fall back to session state
-    if not name:
-        profile = st.session_state.get("profile", {})
-        name = profile.get("recipient_name") or profile.get("person_name")
+        # Fall back to session state
+        if not name:
+            profile = st.session_state.get("profile", {})
+            name = profile.get("recipient_name") or profile.get("person_name")
 
-    # Default to generic text
-    if not name:
-        name = "This Person"
+        # Default to generic text
+        if not name:
+            name = "This Person"
 
-    return title.replace("{{name}}", name)
+        return title.replace("{{name}}", name)
 
 
 def _render_content(content: list[str]) -> None:

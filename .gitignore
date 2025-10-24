@@ -73,3 +73,7 @@ Documentation/
 **/*_bak*
 **/*_backup*
 _archive_backups/
+
+# Content overrides (local editor testing)
+**/module.overrides.json
+**/*.overrides.json

@@ -22,7 +22,7 @@ def render():
 
 
 def _render_data_inventory():
-    """Display captured financial information in inventory format."""
+    """Display all capturable financial information fields."""
     
     # Navigation buttons at top
     col1, col2, col3 = st.columns([1, 1, 1])
@@ -40,8 +40,8 @@ def _render_data_inventory():
             st.rerun()
 
     # Section header
-    st.markdown(f"### {section_header('Financial Data Inventory')}")
-    st.markdown(personalize("*Review what we know about {NAME_POS} financial situation and care funding.*"))
+    st.markdown(f"### {section_header('Financial Information - Capturable Fields')}")
+    st.markdown(personalize("*These are all the financial fields the app can capture for {NAME}.*"))
 
     # Get financial data from various sources
     financial_session_data = st.session_state.get("financial_assessment", {})
@@ -54,7 +54,7 @@ def _render_data_inventory():
     # Combine data sources
     all_financial_data = {**financial_session_data, **advisor_prep_data}
     
-    # Income and assets
+    # Income and assets fields (from financial.json config)
     monthly_income = (
         all_financial_data.get("monthly_income") or 
         prefill_data.get("monthly_income") or
@@ -68,15 +68,23 @@ def _render_data_inventory():
     )
     
     _display_data_section("💰 Income & Assets", [
-        ("Monthly Income", f"${monthly_income:,.0f}" if monthly_income else "Not captured"),
-        ("Total Assets", f"${total_assets:,.0f}" if total_assets else "Not captured"),
+        ("Monthly Income", f"${monthly_income:,.0f}" if monthly_income else "Not captured", 
+         ["Number field: Total from all sources (SS, pensions, employment, investments, family)"]),
+        ("Total Assets", f"${total_assets:,.0f}" if total_assets else "Not captured",
+         ["Number field: Liquid assets, investments, retirement accounts, real estate equity, life insurance"]),
     ])
     
-    # Insurance coverage
+    # Insurance coverage fields (from financial.json config)
     insurance_coverage = (
         all_financial_data.get("insurance_coverage") or 
         prefill_data.get("insurance_coverage", [])
     )
+    
+    insurance_options = [
+        "Medicare Part A (Hospital)", "Medicare Part B (Medical)", "Medicare Part D (Prescription)",
+        "Medigap/Supplement", "Medicaid", "VA Benefits", "Long-term Care Insurance", 
+        "Private Health Insurance", "None"
+    ]
     
     if insurance_coverage:
         insurance_display = ", ".join(insurance_coverage)
@@ -84,40 +92,50 @@ def _render_data_inventory():
         insurance_display = "Not captured"
     
     _display_data_section("🛡️ Insurance Coverage", [
-        ("Insurance Types", insurance_display),
-        ("Coverage Count", f"{len(insurance_coverage)} types" if insurance_coverage else "No coverage data"),
+        ("Insurance Types", insurance_display, insurance_options),
+        ("Coverage Count", f"{len(insurance_coverage)} types" if insurance_coverage else "0 types", 
+         ["Multi-select: Up to 9 insurance types"]),
     ])
     
-    # Primary financial concerns
+    # Primary financial concerns field (from financial.json config)
     primary_concern = (
         all_financial_data.get("primary_concern") or 
         prefill_data.get("primary_concern")
     )
     
+    concern_options = ["Affordability", "Limited runway", "Benefits navigation", "None identified"]
+    
     _display_data_section("⚠️ Financial Concerns", [
-        ("Primary Concern", primary_concern if primary_concern else "Not captured"),
+        ("Primary Concern", primary_concern if primary_concern else "Not captured", concern_options),
     ])
     
-    # Cost Planner results (if available)
+    # Cost Planner integration fields (computed)
     if cost_planner_data:
         total_monthly_cost = cost_planner_data.get("total_monthly_cost")
         affordability_status = cost_planner_data.get("affordability_status")
         
         _display_data_section("📊 Cost Planning Results", [
-            ("Estimated Monthly Cost", f"${total_monthly_cost:,.0f}" if total_monthly_cost else "Not calculated"),
-            ("Affordability Status", affordability_status if affordability_status else "Not assessed"),
+            ("Estimated Monthly Cost", f"${total_monthly_cost:,.0f}" if total_monthly_cost else "Not calculated",
+             ["Computed by Cost Planner v2"]),
+            ("Affordability Status", affordability_status if affordability_status else "Not assessed",
+             ["Computed: Affordable/Stretched/Unaffordable"]),
+        ])
+    else:
+        _display_data_section("📊 Cost Planning Results", [
+            ("Estimated Monthly Cost", "Not calculated", ["Computed by Cost Planner v2"]),
+            ("Affordability Status", "Not assessed", ["Computed: Affordable/Stretched/Unaffordable"]),
         ])
     
     # Show completion status
     if any([monthly_income, total_assets, insurance_coverage, primary_concern, cost_planner_data]):
-        st.success("✓ Financial information captured")
+        st.success("✓ Some financial information captured")
         _mark_section_complete()
     else:
         st.info("No financial data captured yet.")
 
-    # Show data sources info
+    # Show data sources and capacity info
     st.markdown("---")
-    st.markdown("#### 📋 Data Sources")
+    st.markdown("#### 📋 Financial Data Capacity")
     
     sources = []
     if prefill_data.get("monthly_income") or prefill_data.get("total_assets"):
@@ -127,39 +145,66 @@ def _render_data_inventory():
     if all_financial_data:
         sources.append("Direct advisor prep input")
     
-    if sources:
-        st.info(f"Data gathered from: {', '.join(sources)}")
-    else:
-        st.info("No financial data sources identified yet")
+    source_info = f"Data sources: {', '.join(sources)}" if sources else "No financial data sources active"
+    
+    st.info(f"""
+    **Available for capture:**
+    - **Income/Assets:** Numeric fields with prefill from Cost Planner
+    - **Insurance:** 9 insurance types (multi-select)
+    - **Concerns:** 4 predefined financial concern categories
+    - **Cost Planning:** Auto-computed from Cost Planner integration
+    
+    {source_info}
+    """)
 
     # Render Navi panel for contextual guidance
     render_navi_panel()
 
 
 def _display_data_section(title: str, data_items: list):
-    """Display a section of data inventory.
+    """Display a section of capturable fields.
     
     Args:
         title: Section title
-        data_items: List of (field_name, value) tuples
+        data_items: List of (field_name, current_value, options) tuples
     """
     st.markdown(f"#### {title}")
     
-    for field_name, value in data_items:
-        if value and value != "Not captured" and value != [] and value != "No coverage data" and value != "No financial data sources identified yet":
+    for item in data_items:
+        if len(item) == 3:
+            field_name, value, options = item
+            if isinstance(options, list) and len(options) > 1:
+                if len(options) > 5:
+                    options_display = f"{len(options)} options available"
+                else:
+                    options_display = f"Options: {', '.join(options)}"
+            else:
+                options_display = "Type: " + str(options[0]) if options else "Free text"
+        else:
+            field_name, value = item
+            options_display = "Available"
+        
+        if (value and value != "Not captured" and value != [] and value != "No coverage data" 
+            and "0 types" not in str(value) and "Not calculated" not in str(value) 
+            and "Not assessed" not in str(value)):
             status = "✅ Captured"
             value_display = f"**{value}**"
         else:
             status = "❌ Not Captured"
-            value_display = "*No data*"
+            value_display = "*Available for capture*"
         
-        col1, col2, col3 = st.columns([2, 1, 2])
+        col1, col2, col3 = st.columns([2, 1, 3])
         with col1:
-            st.write(field_name)
+            st.write(f"**{field_name}**")
         with col2:
             st.write(status)
         with col3:
-            st.write(value_display)
+            if (value and value != "Not captured" and value != [] and value != "No coverage data" 
+                and "0 types" not in str(value) and "Not calculated" not in str(value) 
+                and "Not assessed" not in str(value)):
+                st.write(value_display)
+            else:
+                st.caption(options_display)
     
     st.markdown("---")
 
@@ -185,4 +230,4 @@ def _mark_section_complete():
             MCIP.set_advisor_appointment(appt)
 
         # Log completion
-        log_event("advisor_prep", "financial_section_complete", {"method": "data_inventory"})
+        log_event("advisor_prep.financial_section_complete", {"method": "data_inventory"})
