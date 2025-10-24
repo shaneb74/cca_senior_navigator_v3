@@ -20,6 +20,109 @@ from products.cost_planner_v2.ui_helpers import go_to_intro
 
 
 # ==============================================================================
+# HELPER: User Persistence
+# ==============================================================================
+
+def _snapshot_costplan(event: str):
+    """Persist CostPlan snapshot to disk (non-blocking).
+    
+    Args:
+        event: Event name (qe_mount, tab_change, path_change, etc.)
+    """
+    try:
+        from core.user_persist import persist_costplan, get_current_user_id
+        
+        cost = st.session_state.get("cost", {})
+        g = st.session_state.get("gcp", {})
+        
+        snap = {
+            "event": event,
+            "corr_id": st.session_state.get("corr_id", "unknown"),
+            "zip": cost.get("inputs", {}).get("zip"),
+            "region": cost.get("region_label"),
+            "selected_assessment": cost.get("selected_assessment"),
+            "chosen_path": cost.get("path_choice"),
+            "home_hours": cost.get("home_hours_scalar"),
+            "home_carry": cost.get("inputs", {}).get("home_carry"),
+            "keep_home": cost.get("keep_home"),
+            "totals_cache": cost.get("totals_cache"),
+            "gcp_summary": {
+                "published_tier": g.get("published_tier"),
+                "allowed_tiers": g.get("allowed_tiers"),
+                "hours_user_band": g.get("hours_user_band"),
+                "hours_llm_band": g.get("hours_llm"),
+            },
+        }
+        
+        persist_costplan(get_current_user_id(), snap)
+        
+    except Exception as e:
+        print(f"[USER_PERSIST_ERR] _snapshot_costplan({event}) failed: {e}")
+
+
+# ==============================================================================
+# HELPER: Get GCP Hours
+# ==============================================================================
+
+def _get_gcp_hours_per_day() -> float:
+    """Get hours per day from GCP recommendation, with categorical mapping.
+    
+    GCP provides categorical answers which map to numeric hours:
+    - "Less than 1 hour" → 1.0
+    - "1–3 hours" → 2.0
+    - "4–8 hours" → 8.0 (or 6.0 if user explicitly chose mid-range)
+    - "24-hour support" → 24.0
+    
+    Returns:
+        Float hours per day (default: 2.0 if not found - safer than 1.0)
+    """
+    # First try new GCP state structure (preferred)
+    gcp = st.session_state.get("gcp", {})
+    user_band = gcp.get("hours_user_band")
+    
+    if user_band:
+        # Map band to numeric value (use mid-range for ranges)
+        band_map = {
+            "<1h": 1.0,
+            "1-3h": 2.0,
+            "4-8h": 6.0,  # mid-range unless user explicitly chose 8
+            "24h": 24.0,
+        }
+        mapped = band_map.get(user_band)
+        if mapped:
+            print(f"[QE_INIT] Using hours from gcp.hours_user_band: {user_band} → {mapped}")
+            return mapped
+    
+    # Fall back to legacy gcp_care_recommendation structure
+    gcp_data = st.session_state.get("gcp_care_recommendation", {})
+    hours_category = gcp_data.get("hours_per_day", "")
+
+    # Mapping dictionary (handles various formats)
+    hours_map = {
+        # Standard formats
+        "less than 1 hour": 1.0,
+        "<1h": 1.0,
+        "1-3h": 2.0,
+        "1–3 hours": 2.0,
+        "4-8h": 6.0,  # use mid-range
+        "4–8 hours": 6.0,
+        "24h": 24.0,
+        "24-hour support": 24.0,
+        # Additional variations
+        "less_than_1": 1.0,
+        "1_to_3": 2.0,
+        "4_to_8": 6.0,
+        "24_hour": 24.0,
+    }
+
+    # Normalize and lookup
+    hours_normalized = str(hours_category).lower().strip()
+    mapped_hours = hours_map.get(hours_normalized, 2.0)  # default to 2.0, not 1.0 or 8.0
+
+    return mapped_hours
+
+
+# ==============================================================================
 # NAVI BLURBS (Tab-Specific)
 # ==============================================================================
 
@@ -43,35 +146,55 @@ def render():
     zip_code = st.session_state.get("cost.inputs", {}).get("zip") or st.session_state.get("cost_v2_quick_zip")
     has_zip = bool(zip_code and len(str(zip_code)) == 5)
     
+    # ---- READ FINALS FROM SESSION OR MCIP ----
     # Single source of truth for active tab
     cost = st.session_state.setdefault("cost", {})
     
-    # Get GCP recommendation from existing state
-    recommended = st.session_state.get("gcp", {}).get("recommended_tier")  # 'home'|'assisted_living'|'memory_care'
-    allowed = st.session_state.get("gcp", {}).get("allowed_tiers", [])  # list of strings
+    # Get GCP recommendation from session state (persisted by GCP Results)
+    g = st.session_state.get("gcp", {})
+    rec = g.get("published_tier") or g.get("recommended_tier")
+    alwd = g.get("allowed_tiers")
     
-    # If not in gcp dict, fall back to MCIP for compatibility
-    if not recommended:
-        gcp_rec = MCIP.get_care_recommendation()
-        if gcp_rec and gcp_rec.tier:
-            recommended = gcp_rec.tier
-            if recommended == "in_home":
-                recommended = "in_home_care"
+    # Fallback to MCIP persisted contract if session is empty/missing
+    if not rec or not alwd:
+        mc_rec = MCIP.get_care_recommendation()
+        if mc_rec:
+            if not rec:
+                rec = mc_rec.tier
+                # Normalize tier name for consistency
+                if rec == "in_home":
+                    rec = "in_home_care"
+            if not alwd:
+                # Read allowed_tiers from MCIP contract (v2 schema)
+                alwd = getattr(mc_rec, "allowed_tiers", None) or []
     
-    # Compute availability (once per render)
+    # Ensure alwd is a list (default empty if still None)
+    alwd = alwd or []
+    
+    # Debug: Log full state before computing availability
+    print(f"[QE_DEBUG] GCP session state: gcp.published_tier={g.get('published_tier')} gcp.recommended_tier={g.get('recommended_tier')} gcp.allowed_tiers={g.get('allowed_tiers')}")
+    
+    # Compute availability: MC shows if in allowed OR if recommended
+    mc_in_allowed = "memory_care" in alwd or "memory_care_high_acuity" in alwd
+    mc_is_recommended = rec in ("memory_care", "memory_care_high_acuity")
+    
     avail = {
         "home": True,
         "al": True,
-        "mc": bool(recommended == "memory_care" or "memory_care" in allowed)
+        "mc": mc_in_allowed or mc_is_recommended
     }
     cost["assessments_available"] = avail
     
-    # Default selected tab
+    # Enhanced debug output
+    print(f"[QE_DEBUG] MC Tab Logic: mc_in_allowed={mc_in_allowed} (allowed={alwd}), mc_is_recommended={mc_is_recommended} (recommended={rec}), FINAL mc={avail['mc']}")
+    
+    # Default selected tab (prefer recommended, fallback gracefully)
     sel = cost.get("selected_assessment")
     if sel not in ("home", "al", "mc"):
-        if avail["mc"] and recommended == "memory_care":
+        # No valid selection yet - choose based on recommendation
+        if avail["mc"] and rec in ("memory_care", "memory_care_high_acuity"):
             cost["selected_assessment"] = "mc"
-        elif recommended in ("assisted_living", "al"):
+        elif rec == "assisted_living":
             cost["selected_assessment"] = "al"
         else:
             cost["selected_assessment"] = "home"
@@ -80,9 +203,12 @@ def render():
         if not avail.get(sel, False):
             cost["selected_assessment"] = "al" if avail["al"] else "home"
     
-    # Log availability once
-    print(f"[QE_AVAIL] recommended={recommended} allowed={allowed} avail={avail} sel={cost['selected_assessment']}")
+    # Log availability with full context
+    print(f"[QE_AVAIL] recommended={rec} allowed={alwd} avail={avail} sel={cost['selected_assessment']}")
     print(f"[QE] selected_assessment={cost['selected_assessment']}")
+    
+    # Persist initial state snapshot (after availability/selection computed)
+    _snapshot_costplan("qe_mount")
     
     # Initialize session state for calculations
     if "comparison_selected_plan" not in st.session_state:
@@ -95,10 +221,26 @@ def render():
         st.session_state.comparison_home_carry_cost = 0.0
     if "comparison_keep_home" not in st.session_state:
         st.session_state.comparison_keep_home = False
+    
+    # Initialize hours from GCP (only on first load)
     if "comparison_inhome_hours" not in st.session_state:
-        st.session_state.comparison_inhome_hours = 8.0
+        gcp_hours = _get_gcp_hours_per_day()
+        st.session_state.comparison_inhome_hours = gcp_hours
+        st.session_state.comparison_hours_gcp_source = gcp_hours  # Track original GCP value
+        
+        # Log initialization with user band and LLM band
+        gcp = st.session_state.get("gcp", {})
+        user_band = gcp.get("hours_user_band", "unknown")
+        llm_band = gcp.get("hours_llm", "unknown")
+        print(f"[QE_INIT] home_hours={gcp_hours} user_band={user_band}")
+        
+        # Log LLM band parsing
+        from products.cost_planner_v2.ui_helpers import parse_hours_band_to_high_end
+        if llm_band != "unknown":
+            llm_high = parse_hours_band_to_high_end(llm_band)
+            print(f"[QE_LLM] band={llm_band} → high={llm_high}")
     if "comparison_hours_per_day" not in st.session_state:
-        st.session_state.comparison_hours_per_day = 8.0
+        st.session_state.comparison_hours_per_day = st.session_state.comparison_inhome_hours
     
     # Open centered container
     st.markdown("<div class='sn-container'>", unsafe_allow_html=True)
@@ -195,6 +337,7 @@ def _render_compact_cost_tabs():
                 if not is_active:
                     st.session_state["cost"]["selected_assessment"] = assessment
                     print(f"[COMPACT_TABS] Switched to {assessment}")
+                    _snapshot_costplan("tab_change")
                     st.rerun()
     
     st.markdown('</div>', unsafe_allow_html=True)
@@ -225,7 +368,7 @@ def _render_home_card(zip_code: str):
     from products.cost_planner_v2.comparison_calcs import calculate_inhome_scenario
     from products.cost_planner_v2.ui_helpers import (
         totals_set, segcache_set, segcache_get, donut_cost_chart, 
-        money, render_care_chunk_compare_blurb
+        money, render_care_chunk_compare_blurb, render_confirm_hours_if_needed
     )
     
     # Calculate scenario
@@ -276,6 +419,9 @@ def _render_home_card(zip_code: str):
     # Care chunk comparison (when both cached)
     render_care_chunk_compare_blurb("home")
     
+    # Hours confirmation advisory (shows if LLM hours != current)
+    render_confirm_hours_if_needed(current_hours_key="qe_home_hours")
+    
     # Controls: Hours slider
     st.markdown('<div class="cost-section__label">Daily Support Hours</div>', unsafe_allow_html=True)
     current_hours = st.session_state.comparison_inhome_hours
@@ -289,6 +435,9 @@ def _render_home_card(zip_code: str):
         help="Adjust based on care needs",
         label_visibility="collapsed"
     )
+    
+    # Mirror slider value to cost state for confirmation logic
+    st.session_state.setdefault("cost", {})["home_hours_scalar"] = float(hours)
     st.markdown(f'<div class="cp-hint">{hours:.1f} h/day</div>', unsafe_allow_html=True)
     
     if hours != st.session_state.comparison_inhome_hours:
@@ -466,6 +615,7 @@ def _render_path_selection():
     
     if new_sel != sel:
         st.session_state["cost.selected_assessment"] = new_sel
+        _snapshot_costplan("path_change")
         st.rerun()
     
     # Update selected plan for handoff to FA

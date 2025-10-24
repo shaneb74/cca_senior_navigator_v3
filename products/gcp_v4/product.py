@@ -206,12 +206,18 @@ def render():
         # Check if outcome exists for publishing
         outcome_key = f"{state_key}._outcomes"
         outcome = st.session_state.get(outcome_key)
+        
+        # DEBUG: Log publish state
+        already_pub = _already_published()
+        print(f"[GCP_PUBLISH_CHECK] outcome_exists={bool(outcome)} already_published={already_pub} is_results={is_on_results_step}")
+        print(f"[GCP_OUTCOME_KEY] key='{outcome_key}' outcome_type={type(outcome)} outcome={outcome}")
 
         # If outcome exists and we haven't published yet, publish to MCIP
         # NOTE: The outcome may be wrapped in OutcomeContract format, but our
         # derive_outcome() returns GCP-specific fields (tier, tier_score, etc)
         # We need to call derive_outcome directly to get the proper format
-        if outcome and not _already_published():
+        print(f"[GCP_PUBLISH_GATE] outcome_truthy={bool(outcome)} not_already_pub={not already_pub} WILL_PUBLISH={bool(outcome and not already_pub)}")
+        if outcome and not already_pub:
             # Re-compute outcome directly to get proper GCP format
             try:
                 from products.gcp_v4.modules.care_recommendation.logic import derive_outcome
@@ -321,7 +327,9 @@ def _already_published() -> bool:
     Returns:
         True if already published
     """
-    return st.session_state.get("gcp_v4_published", False)
+    published = st.session_state.get("gcp_v4_published", False)
+    print(f"[GCP_ALREADY_PUB] {published}")
+    return published
 
 
 def _mark_published() -> None:
@@ -357,17 +365,36 @@ def _publish_to_mcip(outcome, module_state: dict) -> None:
 
     # Apply final tier from LLM policy if available (overrides deterministic tier)
     final_tier = st.session_state.get("gcp.final_tier")
+    deterministic_tier = outcome_data.get("tier")
+    
     if final_tier:
         outcome_data["tier"] = final_tier
-        print(f"[GCP_PUBLISH] Using adjudicated tier: {final_tier} (overriding deterministic: {outcome_data.get('tier')})")
+        print(f"[GCP_PUBLISH] Using adjudicated tier: {final_tier} (overriding deterministic: {deterministic_tier})")
     else:
-        print(f"[GCP_PUBLISH] Using deterministic tier: {outcome_data.get('tier')} (no adjudication)")
+        print(f"[GCP_PUBLISH] Using deterministic tier: {deterministic_tier} (no adjudication)")
 
     # Validate required fields - use the final adjudicated tier
     chosen_tier = outcome_data.get("tier")
     if not chosen_tier:
         st.error("❌ Unable to generate recommendation - missing tier")
         return
+    
+    # Persist tier state for Cost Planner (before building CareRecommendation)
+    allowed_tiers = outcome_data.get("allowed_tiers", [])
+    g = st.session_state.setdefault("gcp", {})
+    g["published_tier"] = chosen_tier
+    g["recommended_tier"] = chosen_tier  # after adjudication, these are the same
+    g["allowed_tiers"] = allowed_tiers
+    g["deterministic_tier"] = deterministic_tier  # for diagnostics
+    
+    # Persist hours bands (already set by logic.py, just ensure they're there)
+    # These are used by Cost Planner to show hours advisory
+    hours_user_band = g.get("hours_user_band")
+    hours_llm_band = g.get("hours_llm") or g.get("hours_band")
+    
+    print(f"[GCP_PERSIST_TIER] published={chosen_tier} recommended={chosen_tier} allowed={allowed_tiers}")
+    print(f"[GCP_HOURS_PERSIST] user={hours_user_band} llm={hours_llm_band}")
+    print(f"[GCP_DEBUG] Session state after persist: gcp.published_tier={g.get('published_tier')} gcp.allowed_tiers={g.get('allowed_tiers')} type={type(g.get('allowed_tiers'))}")
 
     # Build CareRecommendation contract with chosen (adjudicated) tier
     try:
@@ -379,6 +406,7 @@ def _publish_to_mcip(outcome, module_state: dict) -> None:
             confidence=float(outcome_data.get("confidence", 0.0)),
             flags=outcome_data.get("flags", []),
             rationale=outcome_data.get("rationale", []),
+            allowed_tiers=allowed_tiers,  # Enable Cost Planner to show appropriate tabs
             # Provenance
             generated_at=datetime.utcnow().isoformat() + "Z",
             version="4.0.0",
@@ -387,7 +415,7 @@ def _publish_to_mcip(outcome, module_state: dict) -> None:
             # Next step
             next_step={
                 "product": outcome_data.get("suggested_next_product", "cost_planner"),
-                "route": "cost_v2"
+                "route": "cost_intro"
                 if outcome_data.get("suggested_next_product") == "cost_planner"
                 else "gcp_v4",
                 "label": "Calculate Costs"
@@ -403,6 +431,39 @@ def _publish_to_mcip(outcome, module_state: dict) -> None:
 
         # Publish to MCIP (single source of truth)
         MCIP.publish_care_recommendation(recommendation)
+        print(f"[MCIP_PUBLISH] tier={recommendation.tier} allowed={recommendation.allowed_tiers}")
+
+        # Persist CarePlan snapshot to disk for training/debugging
+        try:
+            from core.user_persist import persist_careplan, get_current_user_id
+            
+            user_id = get_current_user_id()
+            corr_id = st.session_state.get("corr_id", "unknown")
+            
+            careplan_snapshot = {
+                "corr_id": corr_id,
+                "published_tier": chosen_tier,
+                "deterministic_tier": deterministic_tier,
+                "allowed_tiers": allowed_tiers,
+                "confidence": float(outcome_data.get("confidence", 0.0)),
+                "tier_score": float(outcome_data.get("tier_score", 0.0)),
+                "hours_user_band": g.get("hours_user_band"),
+                "hours_llm_band": g.get("hours_llm"),
+                "flags": {
+                    "cognition_level": module_state.get("cognition_level"),
+                    "support_level": module_state.get("support_level"),
+                    "behaviors": module_state.get("behaviors", []),
+                    "badls": module_state.get("badls", []),
+                    "iadls": module_state.get("iadls", []),
+                    "falls_risk": module_state.get("falls_pill"),
+                    "mobility": module_state.get("mobility_pill"),
+                    "meds_complexity": module_state.get("meds_complexity_pill"),
+                    "isolation": module_state.get("isolation_pill"),
+                }
+            }
+            persist_careplan(user_id, careplan_snapshot)
+        except Exception as e:
+            print(f"[USER_PERSIST_ERR] CarePlan snapshot failed: {e}")
 
         # Mark GCP as complete in journey
         MCIP.mark_product_complete("gcp")
