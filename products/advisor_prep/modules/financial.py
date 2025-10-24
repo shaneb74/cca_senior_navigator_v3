@@ -1,8 +1,8 @@
 """
 Advisor Prep - Financial Section
 
-JSON-driven generic form renderer for financial information.
-Includes prefill logic from Cost Planner and Financial Profile.
+LLM-powered comprehensive financial assessment for advisor review.
+Replaces form-based approach with detailed narrative analysis.
 """
 
 import json
@@ -11,25 +11,119 @@ from pathlib import Path
 import streamlit as st
 
 from core.events import log_event
+from core.flags import get_flag_value
 from core.mcip import MCIP
 from core.navi import render_navi_panel
 from products.advisor_prep.prefill import get_financial_prefill
 
+# Try to import the new LLM advisor summary system
+try:
+    from ai.advisor_summary_engine import AdvisorSummaryEngine
+    LLM_SUMMARY_AVAILABLE = True
+except ImportError:
+    LLM_SUMMARY_AVAILABLE = False
+
 
 def render():
-    """Render Financial prep section."""
+    """Render Financial prep section with LLM-generated comprehensive assessment."""
 
-    # Load config
+    # Load config for metadata
     config = _load_config()
 
-    # Get prefill data from Cost Planner / Financial Profile
-    prefill_data = get_financial_prefill()
-
-    # Render Navi (pass None for module_config since this isn't a stepped module)
+    # Render Navi
     render_navi_panel(location="product", product_key="advisor_prep", module_config=None)
 
     st.markdown(f"## {config['icon']} {config['title']}")
     st.markdown(f"*{config['description']}*")
+
+    # Check if LLM enhancement is enabled
+    llm_mode = get_flag_value("FEATURE_ADVISOR_SUMMARY_LLM", "off") if LLM_SUMMARY_AVAILABLE else "off"
+
+    if llm_mode in ["assist", "adjust"] and LLM_SUMMARY_AVAILABLE:
+        # Render LLM-powered comprehensive financial assessment
+        _render_llm_financial_assessment()
+    else:
+        # Fallback to original form-based approach
+        _render_legacy_financial_form()
+
+    # Navigation footer
+    st.markdown("---")
+    _render_navigation()
+
+
+def _render_llm_financial_assessment():
+    """Render comprehensive LLM-generated financial assessment for advisors."""
+    
+    st.info(
+        "📋 **Comprehensive Financial Assessment Report**\n\n"
+        "This detailed analysis helps advisors understand your complete financial picture "
+        "and identify areas requiring additional consultation."
+    )
+
+    try:
+        # Generate comprehensive financial assessment
+        engine = AdvisorSummaryEngine()
+        drawers = engine.generate_all_drawers()
+        
+        financial_assessment = drawers.get('financial_overview')
+        
+        if financial_assessment:
+            st.markdown("### 💰 Complete Financial Analysis")
+            
+            # Display the comprehensive financial assessment
+            with st.container():
+                st.markdown(
+                    """
+                    <div style="background-color: #f8f9fa; padding: 20px; border-radius: 10px; border-left: 4px solid #007acc;">
+                    """ + financial_assessment.replace('\n', '<br>') + """
+                    </div>
+                    """, 
+                    unsafe_allow_html=True
+                )
+            
+            # Mark section as complete with LLM assessment
+            _mark_section_complete_with_llm()
+            
+            st.success("✅ **Comprehensive financial assessment generated for advisor review**")
+            
+            # Show additional context available
+            st.markdown("### 📊 Assessment Coverage")
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.markdown("""
+                **✅ Information Captured:**
+                - Income sources and stability
+                - Asset portfolio analysis  
+                - Care funding projections
+                - Benefits optimization opportunities
+                """)
+            
+            with col2:
+                st.markdown("""
+                **📋 For Advisor Follow-up:**
+                - Estate planning updates
+                - Investment allocation review
+                - Tax planning strategies
+                - Medicaid planning considerations
+                """)
+                
+        else:
+            st.warning("Unable to generate financial assessment. Using standard form.")
+            _render_legacy_financial_form()
+            
+    except Exception as e:
+        st.error(f"LLM assessment generation failed: {e}")
+        st.info("Falling back to standard financial form.")
+        _render_legacy_financial_form()
+
+
+def _render_legacy_financial_form():
+    """Render original form-based financial section as fallback."""
+    
+    # Get prefill data from Cost Planner / Financial Profile
+    prefill_data = get_financial_prefill()
 
     # Show prefill context if we have prefilled data
     if any(
@@ -48,6 +142,7 @@ def render():
 
     # Get current data
     current_data = st.session_state["advisor_prep"]["data"]["financial"]
+    config = _load_config()
 
     # Render fields from JSON config
     form_data = {}
@@ -115,15 +210,8 @@ def render():
 
         form_data[field_key] = value
 
-    # Save button
-    st.markdown("---")
-
+    # Save button for legacy form
     col_save1, col_save2, col_save3 = st.columns([1, 2, 1])
-
-    with col_save1:
-        if st.button("← Back to Menu", type="secondary", use_container_width=True):
-            st.session_state.pop("advisor_prep_current_section", None)
-            st.rerun()
 
     with col_save2:
         if st.button("💾 Save Financial Information", type="primary", use_container_width=True):
@@ -134,6 +222,75 @@ def render():
         sections_complete = st.session_state["advisor_prep"]["sections_complete"]
         if "financial" in sections_complete:
             st.success("✓ Saved")
+
+
+def _render_navigation():
+    """Render navigation controls."""
+    col_nav1, col_nav2 = st.columns(2)
+
+    with col_nav1:
+        if st.button("← Back to Menu", type="secondary", use_container_width=True):
+            st.session_state.pop("advisor_prep_current_section", None)
+            st.rerun()
+
+    with col_nav2:
+        # Show completion status
+        sections_complete = st.session_state["advisor_prep"]["sections_complete"]
+        if "financial" in sections_complete:
+            st.success("✓ Assessment Complete")
+
+
+def _mark_section_complete_with_llm():
+    """Mark financial section as complete with LLM assessment."""
+    # Mark section complete
+    sections_complete = st.session_state["advisor_prep"]["sections_complete"]
+    if "financial" not in sections_complete:
+        sections_complete.append("financial")
+
+    # Save LLM-generated status
+    if "advisor_prep" not in st.session_state:
+        st.session_state["advisor_prep"] = {
+            "sections_complete": [],
+            "data": {"personal": {}, "financial": {}, "housing": {}, "medical": {}},
+        }
+    
+    st.session_state["advisor_prep"]["data"]["financial"] = {
+        "assessment_type": "llm_generated",
+        "generated_at": str(st.session_state.get("current_time", "unknown")),
+        "comprehensive_report": True
+    }
+
+    # Award duck badge (local import to avoid circular dependency)
+    try:
+        from products.advisor_prep.utils import award_duck_badge
+        award_duck_badge("financial")
+    except ImportError:
+        pass  # Duck badges not available
+
+    # Update MCIP contract with prep progress
+    appt = MCIP.get_advisor_appointment()
+    if appt:
+        appt.prep_sections_complete = sections_complete
+        appt.prep_progress = len(sections_complete) * 25
+        MCIP.set_advisor_appointment(appt)
+
+    # Update MCIP Waiting Room status based on progress
+    if len(sections_complete) == 0:
+        MCIP.update_advisor_prep_status("not_started")
+    elif len(sections_complete) < 4:
+        MCIP.update_advisor_prep_status("in_progress")
+    else:
+        MCIP.update_advisor_prep_status("complete")
+
+    # Log event
+    log_event(
+        "advisor_prep.section.completed",
+        {
+            "section": "financial",
+            "assessment_type": "llm_comprehensive",
+            "has_llm_report": True,
+        },
+    )
 
 
 def _load_config() -> dict:

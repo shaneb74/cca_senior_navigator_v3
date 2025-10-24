@@ -32,6 +32,17 @@ FEATURE_FLAGS = {
             "assist": "LLM provides additional context tips alongside static messages", 
             "adjust": "LLM fully replaces static messages with dynamic contextual advice"
         }
+    },
+    "FEATURE_ADVISOR_SUMMARY_LLM": {
+        "default": "off",
+        "values": ["off", "shadow", "assist", "adjust"],
+        "description": "Controls LLM-powered advisor summary generation",
+        "details": {
+            "off": "Use legacy form-based advisor prep modules",
+            "shadow": "Generate LLM summaries but show legacy forms",
+            "assist": "Show both LLM summaries and legacy forms",
+            "adjust": "Full LLM-generated comprehensive advisor assessment reports"
+        }
     }
 }
 
