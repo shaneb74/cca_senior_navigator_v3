@@ -46,15 +46,15 @@ def _render_llm_assessment():
     col1, col2, col3 = st.columns([1, 1, 1])
     with col1:
         if st.button("← About Person", use_container_width=True):
-            MCIP.update({"advisor_prep_section": "personal"})
+            st.session_state["advisor_prep_current_section"] = "personal"
             st.rerun()
     with col2:
         if st.button("Housing Preferences →", use_container_width=True):
-            MCIP.update({"advisor_prep_section": "housing"})
+            st.session_state["advisor_prep_current_section"] = "housing"
             st.rerun()
     with col3:
         if st.button("Financial Overview →", use_container_width=True):
-            MCIP.update({"advisor_prep_section": "financial"})
+            st.session_state["advisor_prep_current_section"] = "financial"
             st.rerun()
 
     # Personalized section header
@@ -147,11 +147,11 @@ def _render_legacy_form():
     col1, col2 = st.columns(2)
     with col1:
         if st.button("← About Person", use_container_width=True):
-            MCIP.update({"advisor_prep_section": "personal"})
+            st.session_state["advisor_prep_current_section"] = "personal"
             st.rerun()
     with col2:
         if st.button("Housing Preferences →", use_container_width=True):
-            MCIP.update({"advisor_prep_section": "housing"})
+            st.session_state["advisor_prep_current_section"] = "housing"
             st.rerun()
 
 import json
