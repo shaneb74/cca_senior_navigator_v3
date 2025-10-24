@@ -45,43 +45,44 @@ def render():
     
     # Single source of truth for active tab
     cost = st.session_state.setdefault("cost", {})
-    sel = cost.setdefault("selected_assessment", "home")
-    print(f"[QE] selected_assessment={sel}")
     
-    # Get GCP recommendation
-    gcp_rec = MCIP.get_care_recommendation()
-    recommended_tier = "assisted_living"  # Default fallback
-    if gcp_rec and gcp_rec.tier:
-        recommended_tier = gcp_rec.tier
-        if recommended_tier == "in_home":
-            recommended_tier = "in_home_care"
+    # Get GCP recommendation from existing state
+    recommended = st.session_state.get("gcp", {}).get("recommended_tier")  # 'home'|'assisted_living'|'memory_care'
+    allowed = st.session_state.get("gcp", {}).get("allowed_tiers", [])  # list of strings
     
-    # Initialize assessment availability
-    mc_allowed = recommended_tier in ("memory_care", "memory_care_high_acuity")
-    available = {
+    # If not in gcp dict, fall back to MCIP for compatibility
+    if not recommended:
+        gcp_rec = MCIP.get_care_recommendation()
+        if gcp_rec and gcp_rec.tier:
+            recommended = gcp_rec.tier
+            if recommended == "in_home":
+                recommended = "in_home_care"
+    
+    # Compute availability (once per render)
+    avail = {
         "home": True,
         "al": True,
-        "mc": mc_allowed
+        "mc": bool(recommended == "memory_care" or "memory_care" in allowed)
     }
-    st.session_state.setdefault("cost.assessments_available", available)
+    cost["assessments_available"] = avail
     
-    # Default selected assessment based on recommendation
-    if recommended_tier == "in_home_care":
-        default_sel = "home"
-    elif recommended_tier in ("memory_care", "memory_care_high_acuity") and mc_allowed:
-        default_sel = "mc"
-    elif recommended_tier in ("assisted_living", "al"):
-        default_sel = "al"
+    # Default selected tab
+    sel = cost.get("selected_assessment")
+    if sel not in ("home", "al", "mc"):
+        if avail["mc"] and recommended == "memory_care":
+            cost["selected_assessment"] = "mc"
+        elif recommended in ("assisted_living", "al"):
+            cost["selected_assessment"] = "al"
+        else:
+            cost["selected_assessment"] = "home"
     else:
-        default_sel = "home"
+        # if current selection is not available, fall back
+        if not avail.get(sel, False):
+            cost["selected_assessment"] = "al" if avail["al"] else "home"
     
-    st.session_state.setdefault("cost.selected_assessment", default_sel)
-    
-    # Ensure selected points to a visible tab
-    sel = st.session_state["cost.selected_assessment"]
-    if not available.get(sel, False):
-        st.session_state["cost.selected_assessment"] = "al" if available["al"] else "home"
-        sel = st.session_state["cost.selected_assessment"]
+    # Log availability once
+    print(f"[QE_AVAIL] recommended={recommended} allowed={allowed} avail={avail} sel={cost['selected_assessment']}")
+    print(f"[QE] selected_assessment={cost['selected_assessment']}")
     
     # Initialize session state for calculations
     if "comparison_selected_plan" not in st.session_state:
@@ -123,13 +124,13 @@ def render():
     # D) Panels - exactly one card per panel
     st.markdown("<div class='cp-panels'>", unsafe_allow_html=True)
     
-    if available.get("home"):
+    if avail.get("home"):
         _render_panel("home", lambda: _render_home_card(zip_code or "00000"))
     
-    if available.get("al"):
+    if avail.get("al"):
         _render_panel("al", lambda: _render_facility_card("assisted_living", zip_code or "00000", show_keep_home=True))
     
-    if available.get("mc"):
+    if avail.get("mc"):
         _render_panel("mc", lambda: _render_facility_card("memory_care", zip_code or "00000", show_keep_home=True))
     
     st.markdown("</div>", unsafe_allow_html=True)

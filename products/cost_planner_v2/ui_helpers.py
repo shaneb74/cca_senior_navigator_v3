@@ -240,8 +240,8 @@ def render_cost_composition_bar(assessment: str):
     df = pd.DataFrame({"label": list(segs.keys()), "value": list(segs.values())})
     df["bar"] = "total"  # ← Force single row
     
-    # Create compact stacked bar chart
-    bar = alt.Chart(df).mark_bar().encode(
+    # Create compact stacked bar chart (thicker and rounded for visibility)
+    bar = alt.Chart(df).mark_bar(cornerRadius=4).encode(
         x=alt.X("value:Q", stack="zero", axis=None),
         y=alt.Y("bar:N", axis=None),  # Single row using constant "bar" field
         color=alt.Color(
@@ -253,7 +253,7 @@ def render_cost_composition_bar(assessment: str):
             alt.Tooltip("label:N", title="Component"),
             alt.Tooltip("value:Q", format=",.0f", title="Amount")
         ]
-    ).properties(height=22)
+    ).properties(height=28)  # Increased from 22 to 28 for better visibility
     
     # Render chart with clean styling
     chart = bar.configure_view(stroke=None)
@@ -263,7 +263,7 @@ def render_cost_composition_bar(assessment: str):
     st.markdown('<div class="cp-seg-pills">', unsafe_allow_html=True)
     for lbl, val in segs.items():
         st.markdown(
-            f'<span class="cp-pill">{lbl} {total_to_str(val)}</span>',
+            f'<span class="cp-pill">{lbl} ${val:,.0f}</span>',
             unsafe_allow_html=True
         )
     st.markdown('</div>', unsafe_allow_html=True)
