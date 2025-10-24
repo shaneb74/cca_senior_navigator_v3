@@ -56,12 +56,7 @@ class NaviDialogue:
         Returns:
             Dict with text, subtext, cta, icon
         """
-        # Try LLM-powered dynamic generation first
-        llm_message = cls._try_llm_journey_message(phase, is_authenticated, context)
-        if llm_message:
-            return llm_message
-            
-        # Fall back to static dialogue
+        # Get base static dialogue first
         dialogue = cls.load_dialogue()
         phase_data = dialogue["journey_phases"].get(phase, {})
         messages = phase_data.get("messages", {})
@@ -72,7 +67,7 @@ class NaviDialogue:
             # Try authenticated variants
             for key in [
                 "main_authenticated",
-                "greeting_authenticated",
+                "greeting_authenticated", 
                 "celebration_authenticated",
             ]:
                 if key in messages:
@@ -94,6 +89,14 @@ class NaviDialogue:
         if context:
             message = cls._format_message(message, context)
 
+        # Try LLM enhancement only if enabled and only to add subtle improvements
+        llm_message = cls._try_llm_journey_message(phase, is_authenticated, context)
+        if llm_message and message:
+            # Only enhance if we don't already have rich content
+            # Add LLM encouragement as subtle enhancement
+            if llm_message.get("encouragement") and not message.get("encouragement"):
+                message["encouragement"] = llm_message.get("encouragement")
+
         return message
     
     @classmethod
@@ -109,6 +112,12 @@ class NaviDialogue:
             return None
             
         try:
+            # Only run in "adjust" mode to be conservative
+            from core.flags import get_flag_value
+            llm_mode = get_flag_value("FEATURE_LLM_NAVI", "off")
+            if llm_mode != "adjust":
+                return None
+                
             # Build context for LLM
             navi_context = build_navi_context_from_session()
             
@@ -168,18 +177,20 @@ class NaviDialogue:
         Returns:
             List of context-specific messages
         """
-        # Try LLM-powered contextual tips first
-        llm_tips = cls._try_llm_contextual_tips(phase, context)
-        if llm_tips:
-            return llm_tips
-            
-        # Fall back to static boost messages
+        # Get static boost messages first
         dialogue = cls.load_dialogue()
         phase_data = dialogue["journey_phases"].get(phase, {})
         boost = phase_data.get("messages", {}).get("context_boost", [])
 
         if context:
             boost = [cls._format_string(msg, context) for msg in boost]
+
+        # Only try LLM enhancement if we don't already have rich static content
+        if not boost:
+            llm_tips = cls._try_llm_contextual_tips(phase, context)
+            if llm_tips:
+                # Use LLM tips only when no static content exists
+                boost = llm_tips
 
         return boost
     
@@ -322,12 +333,7 @@ class NaviDialogue:
         Returns:
             Dict with text, subtext, icon
         """
-        # Try LLM-powered module guidance first
-        llm_message = cls._try_llm_module_guidance(product_key, module_key, context)
-        if llm_message:
-            return llm_message
-            
-        # Fall back to static module guidance
+        # Get static module guidance first
         dialogue = cls.load_dialogue()
         module_guidance = dialogue.get("module_guidance", {})
         product_modules = module_guidance.get(product_key, {})
@@ -335,6 +341,13 @@ class NaviDialogue:
 
         if context:
             message = cls._format_message(message, context)
+
+        # Try LLM-powered module guidance to enhance static content
+        llm_message = cls._try_llm_module_guidance(product_key, module_key, context)
+        if llm_message and message:
+            # Enhance existing message with LLM content
+            if not message.get("subtext") and llm_message.get("subtext"):
+                message["subtext"] = llm_message.get("subtext")
 
         return message
     

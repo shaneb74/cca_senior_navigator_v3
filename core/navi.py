@@ -443,15 +443,8 @@ def render_navi_panel(
     # Get complete context
     ctx = NaviOrchestrator.get_context(location, hub_key, product_key, module_config)
 
-    # Check if LLM enhancement is enabled
-    llm_mode = get_flag_value("FEATURE_LLM_NAVI", "off")
-    use_llm_enhancement = llm_mode in ["assist", "adjust"]
-    
-    # Try LLM-enhanced rendering first if enabled
-    if use_llm_enhancement and _try_llm_enhanced_panel(ctx, location, hub_key, product_key):
-        return ctx
-
-    # Fall back to existing static rendering logic
+    # LLM enhancement will integrate with existing UI, not replace it
+    # We'll enhance the content that gets passed to the existing beautiful UI functions
     # Get guidance text based on location
     if location == "hub":
         # ============================================================
@@ -1011,8 +1004,9 @@ def _try_llm_enhanced_panel(
         True if LLM panel was rendered, False to fall back to static
     """
     try:
+        import streamlit as st
         from ai.navi_llm_engine import NaviLLMEngine, build_navi_context_from_session
-        from core.navi_dialogue import render_navi_enhanced_panel
+        from core.navi_dialogue import render_navi_message
         from core.flags import get_flag_value
         
         # Build LLM context from current session
@@ -1049,32 +1043,43 @@ def _try_llm_enhanced_panel(
         tips = NaviLLMEngine.generate_contextual_tips(navi_context)
         
         if advice or tips:
-            # Determine panel title based on location
-            if location == "hub":
-                if hub_key == "concierge":
-                    title = "Your Care Journey"
-                elif hub_key == "professional":
-                    title = "Professional Dashboard" 
-                elif hub_key == "waiting_room":
-                    title = "Your Waiting Room"
-                else:
-                    title = "Navi Guidance"
-            else:
-                title = f"Guidance for {product_key or 'Current Step'}"
+            # Convert advice to message format that existing UI expects
+            if advice:
+                # Get appropriate icon for advice tone
+                tone_icons = {
+                    "supportive": "🤗",
+                    "encouraging": "💪", 
+                    "celebratory": "🎉",
+                    "urgent": "⚡",
+                }
+                icon = tone_icons.get(advice.tone, "🤖")
                 
-            # Check flag mode for display indicators
-            llm_mode = get_flag_value("FEATURE_LLM_NAVI", "off")
-            show_indicator = llm_mode in ["shadow", "assist"]
+                advice_message = {
+                    "text": advice.title,
+                    "subtext": advice.message,
+                    "cta": advice.guidance,
+                    "icon": icon,
+                    "encouragement": advice.encouragement,
+                    "priority": advice.priority
+                }
+                
+                # Use existing render_navi_message function
+                render_navi_message(advice_message, show_cta=False)
             
-            # Render enhanced panel
-            render_navi_enhanced_panel(
-                title=title,
-                advice=advice.__dict__ if advice else None,
-                tips=tips.tips if tips else None,
-                show_llm_indicator=show_indicator
-            )
+            # Render contextual tips if available
+            if tips and tips.tips:
+                with st.expander("💡 Contextual Tips", expanded=True):
+                    for tip in tips.tips:
+                        st.markdown(f"• {tip}")
+                    
+                    if tips.why_this_matters:
+                        st.markdown(f"\n**💡 Why this matters:** {tips.why_this_matters}")
+                        
+                    if tips.time_estimate:
+                        st.markdown(f"**⏱️ Time needed:** {tips.time_estimate}")
             
             # Log for shadow mode
+            llm_mode = get_flag_value("FEATURE_LLM_NAVI", "off")
             if llm_mode == "shadow":
                 print(f"[NAVI_LLM_SHADOW] Generated advice: {advice}")
                 print(f"[NAVI_LLM_SHADOW] Generated tips: {tips}")
