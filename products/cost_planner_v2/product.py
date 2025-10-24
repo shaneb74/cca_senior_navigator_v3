@@ -36,23 +36,18 @@ def render():
     """
     
     # DEBUG: Log GCP state on Cost Planner mount
-    print(f"\n{'='*80}")
     print(f"[CP_MOUNT] Cost Planner v2 Loading")
-    print(f"{'='*80}")
     gcp_state = st.session_state.get("gcp", {})
-    print(f"[CP_DEBUG] GCP state exists: {bool(gcp_state)}")
-    print(f"[CP_DEBUG] GCP keys: {list(gcp_state.keys())}")
-    print(f"[CP_DEBUG] gcp.published_tier={gcp_state.get('published_tier')}")
-    print(f"[CP_DEBUG] gcp.recommended_tier={gcp_state.get('recommended_tier')}")
-    print(f"[CP_DEBUG] gcp.allowed_tiers={gcp_state.get('allowed_tiers')}")
+    if gcp_state:
+        print(f"[CP_GCP_STATE] published_tier={gcp_state.get('published_tier')} allowed_tiers={gcp_state.get('allowed_tiers')}")
+    else:
+        print(f"[CP_GCP_STATE] No GCP state found - user may not have completed GCP yet")
     
-    # Check MCIP contract
+    # Check MCIP contract as fallback
     from core.mcip import MCIP
     mcip_rec = MCIP.get_care_recommendation()
-    print(f"[CP_DEBUG] MCIP has recommendation: {mcip_rec is not None}")
     if mcip_rec:
-        print(f"[CP_DEBUG] MCIP tier={mcip_rec.tier} allowed={getattr(mcip_rec, 'allowed_tiers', None)}")
-    print(f"{'='*80}\n")
+        print(f"[CP_MCIP] tier={mcip_rec.tier} allowed={getattr(mcip_rec, 'allowed_tiers', None)}")
 
     # Check for restart intent (when complete and re-entering at intro)
     _handle_restart_if_needed()
