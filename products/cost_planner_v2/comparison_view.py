@@ -97,6 +97,11 @@ def render_comparison_view(zip_code: str | None):
     
     # Check if ZIP is present for compute gating
     has_zip = bool(zip_code and len(str(zip_code)) == 5)
+    
+    # Single source of truth for active tab
+    cost = st.session_state.setdefault("cost", {})
+    sel = cost.get("selected_assessment", "home")
+    print(f"[COMPARISON_VIEW] selected_assessment={sel}")
 
     # Get GCP recommendation to determine Memory Care availability
     gcp_rec = MCIP.get_care_recommendation()
@@ -518,7 +523,7 @@ def _render_care_card(
         card_key: Unique key for widgets
         is_recommended: Whether this is the recommended plan (adds visual accent)
     """
-    from products.cost_planner_v2.ui_helpers import segcache_set, render_cost_composition_bar
+    from products.cost_planner_v2.ui_helpers import segcache_set, segcache_get, totals_set, render_cost_composition_bar
     
     # Extract segments from breakdown for visualization (no new math)
     segments = _extract_segments_from_breakdown(breakdown, is_facility)
@@ -526,9 +531,12 @@ def _render_care_card(
     # Determine assessment key for caching
     assessment_key = _get_assessment_key_from_breakdown(breakdown, is_facility)
     
-    # Cache segments and total
+    # Cache segments and total using helpers
     segcache_set(assessment_key, segments)
-    st.session_state.setdefault("cost", {}).setdefault("totals_cache", {})[assessment_key] = breakdown.monthly_total
+    monthly_total = breakdown.monthly_total
+    totals_set(assessment_key, monthly_total)
+    print(f"[CARD] rendered {assessment_key} monthly={monthly_total:,.0f}")
+    print(f"[COMPOSE] {assessment_key} segs={segcache_get(assessment_key)} total={monthly_total:,.0f}")
 
     # Minimal card structure (clean base design)
     card_classes = "cost-card"

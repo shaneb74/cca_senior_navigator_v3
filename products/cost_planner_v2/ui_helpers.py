@@ -35,6 +35,14 @@ def segcache_set(assessment: str, segments: dict[str, float]) -> None:
     segs[assessment] = segments
 
 
+def totals_set(assessment: str, value: float) -> None:
+    """Cache monthly total for assessment; called by card after compute."""
+    cost = st.session_state.setdefault("cost", {})
+    totals = cost.setdefault("totals_cache", {})
+    totals[assessment] = float(value)
+    print(f"[CACHE] totals[{assessment}]={value:,.0f}")
+
+
 def total_to_str(v) -> str:
     """Format total value for display in pills."""
     return "—" if v is None or v == 0 else f"${v:,.0f}"
@@ -196,7 +204,8 @@ def render_cp_panel(assessment: str, render_card_fn):
     """
     import streamlit as st
     
-    sel = st.session_state.get("cost.selected_assessment", "home")
+    # Single source of truth: cost["selected_assessment"]
+    sel = st.session_state.get("cost", {}).get("selected_assessment", "home")
     is_active = (sel == assessment)
     panel_class = "cp-panel is-active" if is_active else "cp-panel"
     
@@ -220,21 +229,21 @@ def render_cost_composition_bar(assessment: str):
     import pandas as pd
     
     segs = segcache_get(assessment) or {}
+    # Filter to only non-zero segments
+    segs = {k: float(v or 0) for k, v in segs.items() if v and float(v) > 0}
+    
     if not segs:
         # Graceful fallback: nothing to show yet
         return
     
-    # Build dataframe with segments in fixed order
+    # Build dataframe with segments
     df = pd.DataFrame({"label": list(segs.keys()), "value": list(segs.values())})
-    df = df[df["value"] > 0]
-    
-    if df.empty:
-        return
+    df["bar"] = "total"  # ← Force single row
     
     # Create compact stacked bar chart
     bar = alt.Chart(df).mark_bar().encode(
         x=alt.X("value:Q", stack="zero", axis=None),
-        y=alt.Y("label:N", axis=None),  # single-row layered
+        y=alt.Y("bar:N", axis=None),  # Single row using constant "bar" field
         color=alt.Color(
             "label:N",
             scale=alt.Scale(range=["#0f2a5f", "#3b6ae0", "#7aa2ff"]),
@@ -258,3 +267,5 @@ def render_cost_composition_bar(assessment: str):
             unsafe_allow_html=True
         )
     st.markdown('</div>', unsafe_allow_html=True)
+    
+    print(f"[BAR_RENDER] {assessment} labels={list(segs.keys())} values={list(segs.values())}")
