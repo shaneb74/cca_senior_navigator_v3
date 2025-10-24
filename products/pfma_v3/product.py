@@ -29,6 +29,20 @@ from core.navi import render_navi_panel
 def render():
     """Main entry point for PFMA v3."""
 
+    # Log mount with Cost Planner state
+    cost = st.session_state.get("cost", {})
+    g = st.session_state.get("gcp", {})
+    
+    chosen_path = cost.get("path_choice")
+    zip_code = cost.get("inputs", {}).get("zip")
+    home_hours = cost.get("home_hours_scalar")
+    published_tier = g.get("published_tier")
+    
+    print(
+        f"[FA_MOUNT] chosen_path={chosen_path} zip={zip_code} "
+        f"hours={home_hours} tier={published_tier}"
+    )
+
     # Step 1: Check prerequisites via MCIP
     if not _check_prerequisites():
         # Render Navi for gate screen
@@ -103,7 +117,10 @@ def _render_gate():
         route_to("hub_concierge")
 
     if st.button("Go to Cost Planner →", type="primary"):
-        route_to("cost_planner_v2")
+        # Navigate to Cost Planner v2 auth step (will show fake auth page)
+        st.session_state.cost_v2_step = "auth"
+        st.query_params["page"] = "cost_v2"
+        st.rerun()
 
 
 # =============================================================================

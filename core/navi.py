@@ -932,19 +932,47 @@ def render_navi_panel(
                         variant="module",
                     )
         else:
-            # No module config or step info - show simple guidance
-            render_navi_panel_v2(
-                title="I'm here to help",
-                reason="Let's work through this together.",
-                encouragement={
-                    "icon": "💪",
-                    "text": "Take your time—we'll get through this.",
-                    "status": "in_progress",
-                },
-                context_chips=[],
-                primary_action={"label": "", "route": ""},
-                variant="module",
-            )
+            # No module config - check for product-specific guidance
+            if product_key in ("cost_planner", "cost_v2"):
+                # Cost Planner guidance
+                gcp_rec = ctx.care_recommendation
+                tier_display = None
+                if gcp_rec and hasattr(gcp_rec, 'tier'):
+                    tier_display = _get_tier_display_name(gcp_rec.tier)
+                
+                if tier_display:
+                    title = "Let's look at costs"
+                    reason = f"I've pre-selected {tier_display} from your Guided Care Plan. You can explore other scenarios too."
+                else:
+                    title = "Let's look at costs"
+                    reason = "We'll help you explore different care options and their costs."
+                
+                render_navi_panel_v2(
+                    title=title,
+                    reason=reason,
+                    encouragement={
+                        "icon": "✨",
+                        "text": "You can adjust details anytime to see how costs change.",
+                        "status": "in_progress",
+                    },
+                    context_chips=[],
+                    primary_action={"label": "", "route": ""},
+                    variant="module",
+                )
+            else:
+                # Generic fallback for other products
+                render_navi_panel_v2(
+                    title="I'm here to help",
+                    reason="Let's work through this together.",
+                    encouragement={
+                        "icon": "💪",
+                        "text": "Take your time—we'll get through this.",
+                        "status": "in_progress",
+                    },
+                    context_chips=[],
+                    primary_action={"label": "", "route": ""},
+                    variant="module",
+                )
 
     return ctx
 

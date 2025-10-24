@@ -591,8 +591,13 @@ USER_PERSIST_KEYS = {
     "cost_planner_v2_health_insurance",  # Health insurance assessment state
     "cost_planner_v2_life_insurance",  # Life insurance assessment state
     "cost_planner_v2_medicaid_navigation",  # Medicaid navigation assessment state
+    # Cost Planner v2 additional state keys
+    "cost.inputs",  # ZIP, hours, keep_home, owner_tenant
+    "cost.compare_inhome",  # Toggle for in-home comparison (AL/MC tiers)
+    "cost.dual_mode",  # Dual-person cost planning mode
     # GCP v4 answer data
-    "gcp_care_recommendation",  # All GCP assessment answers
+    "gcp",  # GCP v4 module state (published_tier, allowed_tiers, hours, badls, iadls, etc.)
+    "gcp_care_recommendation",  # All GCP assessment answers (legacy)
     "gcp_v4_published",
     "gcp_v4_complete",
 }

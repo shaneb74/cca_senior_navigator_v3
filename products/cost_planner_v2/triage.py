@@ -9,6 +9,8 @@ Three simple questions to personalize which financial modules are shown:
 
 import streamlit as st
 
+from core.nav import route_to
+
 
 def render():
     """Render quick qualifier questions to personalize modules."""
@@ -121,5 +123,7 @@ def render():
     with col3:
         st.markdown('<div data-role="secondary">', unsafe_allow_html=True)
         if st.button("← Back to Hub", key="qualifier_back_hub", use_container_width=True):
-            st.switch_page("pages/_stubs.py")
+            user_id = st.session_state.get("user_id", "unknown")
+            print(f"[CTA_NAV] action=back_to_hub dest=hub_concierge uid={user_id}")
+            route_to("hub_concierge")
         st.markdown("</div>", unsafe_allow_html=True)

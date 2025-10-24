@@ -84,10 +84,17 @@ def _choose_final_tier(
     bands: dict,
     risky: bool
 ) -> tuple[str, dict]:
-    """Return (final_tier, decision_info) using guarded replacement policy.
+    """Return (final_tier, decision_info) using LLM-first policy with deterministic fallback.
+    
+    LLM-First Policy:
+    1) If LLM_TIER exists AND LLM_TIER ∈ ALLOWED_TIERS → CHOSEN = LLM_TIER (source=llm).
+    2) Else if LLM_TIER missing/timeout/invalid OR not in ALLOWED_TIERS → CHOSEN = DET_TIER (source=fallback).
+    3) Confidence is NOT used to override; it is logged for analytics only.
+    
+    This function is PURE - no Streamlit state modifications.
     
     Args:
-        det_tier: Deterministic tier recommendation
+        det_tier: Deterministic tier recommendation (backup)
         allowed_tiers: Set of tiers allowed by cognitive/behavioral gates
         llm_tier: LLM-recommended tier (if available)
         llm_conf: LLM confidence score (if available)
@@ -95,7 +102,10 @@ def _choose_final_tier(
         risky: True if risky cognitive behaviors present
         
     Returns:
-        Tuple of (final_tier, decision_info_dict)
+        Tuple of (final_tier, decision_info_dict) where decision_info contains:
+        - source: "llm" or "fallback"
+        - reason: Why this tier was chosen
+        - adjudication_reason: Code for logging/analytics
     """
     info = {
         "det": det_tier,
@@ -104,38 +114,45 @@ def _choose_final_tier(
         "allowed": sorted(list(allowed_tiers)),
         "bands": bands,
         "risky": risky,
-        "reason": "deterministic"
+        "reason": "deterministic",
+        "source": "fallback",
+        "adjudication_reason": "unknown"
     }
 
-    # Must have LLM tier and it must be in allowed set
-    if not llm_tier or llm_tier not in allowed_tiers:
-        if llm_tier and llm_tier not in allowed_tiers:
-            info["reason"] = "llm_tier_not_allowed"
-        return det_tier, info
+    # Edge case: both tiers missing (shouldn't happen)
+    if not det_tier and not llm_tier:
+        default_tier = "assisted_living"  # Safe default
+        info["reason"] = "double_missing_default"
+        info["adjudication_reason"] = "double_missing_default"
+        info["source"] = "fallback"
+        return default_tier, info
 
-    conf = float(llm_conf or 0.0)
+    # Rule 1: LLM exists and is in allowed set → use LLM (primary path)
+    if llm_tier and llm_tier in allowed_tiers:
+        info["reason"] = "llm_valid"
+        info["source"] = "llm"
+        info["adjudication_reason"] = "llm_valid"
+        return llm_tier, info
     
-    # Block downgrades when risky behaviors require MC/MC-HA
-    if risky and det_tier in {"memory_care", "memory_care_high_acuity"} \
-       and llm_tier not in {"memory_care", "memory_care_high_acuity"}:
-        info["reason"] = "risky_behaviors_keep_det"
-        return det_tier, info
-
-    # Special de-overscore: moderate×high no risky → gates removed MC, accept AL if confident
-    if det_tier in {"memory_care", "memory_care_high_acuity"} \
-       and llm_tier == "assisted_living" \
-       and conf >= 0.80 \
-       and bands.get("cog") == "moderate" \
-       and bands.get("sup") == "high" \
-       and not risky:
-        info["reason"] = "de_overscore_accept_al"
-        return llm_tier, info
-
-    # General acceptance when confident
-    if conf >= 0.80:
-        info["reason"] = "confident_llm_accept"
-        return llm_tier, info
-
+    # Rule 2: LLM invalid or missing → fallback to deterministic (backup path)
+    if llm_tier is None:
+        info["reason"] = "llm_timeout_or_error"
+        info["adjudication_reason"] = "llm_timeout"
+    elif llm_tier not in allowed_tiers:
+        info["reason"] = "llm_disallowed_by_guard"
+        info["adjudication_reason"] = "llm_guard_disallow"
+    else:
+        # This shouldn't happen, but handle edge case
+        info["reason"] = "llm_invalid_unknown"
+        info["adjudication_reason"] = "llm_invalid_unknown"
+    
+    info["source"] = "fallback"
+    
+    # Emit fallback warning for monitoring (< 2% expected)
+    import uuid
+    fallback_id = str(uuid.uuid4())[:12]
+    print(f"[LLM_FALLBACK] reason={info['adjudication_reason']} det={det_tier} llm={llm_tier or 'none'} id={fallback_id}")
+    
     return det_tier, info
 
 
@@ -151,17 +168,31 @@ def ensure_summary_ready(answers: dict, flags: list[str], tier: str) -> None:
     except Exception:
         return  # Only meaningful in Streamlit runtime
 
-    # Clear previous ready flag on RESULTS entry so we don't short-circuit
-    try:
-        st.session_state.pop("_summary_ready", None)
-    except Exception:
-        pass
+    # Check if summary is already ready using session state flags
+    if st.session_state.get("summary_ready", False):
+        # Summary already computed and ready
+        print("[GCP_RENDER] Using cached summary result")
+        return
 
-    # Enter marker for RESULT summary precompute
-    try:
-        print("[SUMMARY_ENTER] RESULTS")
-    except Exception:
-        pass
+    # Check if LLM result is already cached for this session (legacy check)
+    llm_result_ready = st.session_state.get("gcp.llm_result_ready", False)
+    if llm_result_ready:
+        # Use cached result, skip LLM call
+        import uuid
+        cache_id = str(uuid.uuid4())[:12]
+        try:
+            has_advice = bool(st.session_state.get("_summary_advice"))
+            keys = "summary_ready,llm_result_ready,_summary_advice" if has_advice else "summary_ready,llm_result_ready"
+            print(f"[LLM_CACHE] ready=True keys={keys} id={cache_id}")
+        except Exception:
+            pass
+        print("[GCP_RENDER] Using cached LLM result")
+        st.session_state["summary_ready"] = True
+        return
+
+    # Set loading state at start of summary computation
+    st.session_state["llm_loading"] = True
+    st.session_state["summary_ready"] = False
 
     summary_ctx = {
         "badls": answers.get("badls", []),
@@ -193,11 +224,15 @@ def ensure_summary_ready(answers: dict, flags: list[str], tier: str) -> None:
     except Exception:
         pass
 
+    # Generate correlation ID for tracing
+    import uuid
+    correlation_id = str(uuid.uuid4())[:12]
+    
     ok = False
     adv_obj = None
     if generate_summary is not None:
         try:
-            ok, adv_obj = generate_summary(summary_ctx, tier, suggested, user_hours, mode)
+            ok, adv_obj = generate_summary(summary_ctx, tier, suggested, user_hours, mode, correlation_id)
         except Exception:
             ok, adv_obj = False, None
     else:
@@ -214,6 +249,10 @@ def ensure_summary_ready(answers: dict, flags: list[str], tier: str) -> None:
             d = adv_obj.model_dump() if hasattr(adv_obj, 'model_dump') else dict(getattr(adv_obj, '__dict__', {}))
             d.setdefault("tier", tier)
             st.session_state["_summary_advice"] = d
+            
+            # Mark summary as ready and clear loading state
+            st.session_state["summary_ready"] = True
+            st.session_state["llm_loading"] = False
             
             # Concise LLM vs deterministic log + disagreement capture
             try:
@@ -254,15 +293,52 @@ def ensure_summary_ready(answers: dict, flags: list[str], tier: str) -> None:
         except Exception:
             # If we cannot serialize, treat as failure
             st.session_state.pop("_summary_advice", None)
+            # Clear loading state even on failure
+            st.session_state["llm_loading"] = False
+            st.session_state["summary_ready"] = False
     else:
-        # Do NOT set fallback; leave unset for diagnostics
-        st.session_state.pop("_summary_advice", None)
+        # Create graceful fallback text based on tier instead of leaving blank
+        try:
+            print(f"[LLM_FALLBACK] reason=parse_error tier={tier} id={correlation_id}")
+        except Exception:
+            pass
+        
+        # Generate safe fallback headline based on tier
+        tier_display_map = {
+            "assisted_living": "Assisted Living",
+            "memory_care": "Memory Care", 
+            "memory_care_high_acuity": "Memory Care",
+            "in_home": "In-Home Care",
+            "in_home_care": "In-Home Care"
+        }
+        tier_display = tier_display_map.get(tier, tier.replace("_", " ").title())
+        
+        fallback_headline = f"We've matched {tier_display} based on your answers."
+        if tier in ["in_home", "in_home_care"]:
+            fallback_headline += " You can adjust hours anytime."
+        else:
+            fallback_headline += " You can adjust details anytime."
+        
+        fallback_advice = {
+            "tier": tier,
+            "headline": fallback_headline,
+            "what_it_means": f"{tier_display} provides the level of support that matches your current needs.",
+            "why": ["Based on your assessment responses"],
+            "next_line": "Let's explore the costs and see how to make it work for you.",
+            "confidence": 0.8
+        }
+        
+        st.session_state["_summary_advice"] = fallback_advice
+        # Clear loading state when using fallback
+        st.session_state["llm_loading"] = False
+        st.session_state["summary_ready"] = False
 
     # ====================================================================
-    # TIER DECISION POLICY (GUARDED LLM REPLACEMENT)
+    # TIER DECISION POLICY (LLM-FIRST WITH DETERMINISTIC FALLBACK)
     # ====================================================================
-    # Apply tier replacement policy if FEATURE_GCP_LLM_TIER="replace"
-    tier_mode = get_llm_tier_mode()  # "off"|"shadow"|"replace"
+    # ALWAYS use LLM-first logic regardless of mode.
+    # Mode only affects logging verbosity, not the decision path.
+    tier_mode = get_llm_tier_mode()  # "off"|"shadow"|"assist"|"adjust"
     
     # Get LLM tier and confidence from advice
     d = st.session_state.get("_summary_advice") or {}
@@ -282,14 +358,17 @@ def ensure_summary_ready(answers: dict, flags: list[str], tier: str) -> None:
         # Apply behavior gate if enabled
         gate_on = mc_behavior_gate_enabled()
         cog_band = cognition_band(answers, flags)
-        sup_band = support_band(answers, flags)
+        supervision_bucket_legacy = support_band(answers, flags)  # Diagnostic only
+        
+        # For routing/gates, map 24h → high
+        sup_band_for_routing = "high" if supervision_bucket_legacy == "24h" else supervision_bucket_legacy
         risky = cognitive_gate_behaviors_only(answers, flags)
         
-        if gate_on and cog_band == "moderate" and sup_band == "high" and not risky:
+        if gate_on and cog_band == "moderate" and sup_band_for_routing == "high" and not risky:
             allowed_tiers.discard("memory_care")
             allowed_tiers.discard("memory_care_high_acuity")
         
-        bands = {"cog": cog_band, "sup": sup_band}
+        bands = {"cog": cog_band, "sup": sup_band_for_routing}
         
     except Exception:
         # Fallback: all tiers allowed, no bands
@@ -298,59 +377,114 @@ def ensure_summary_ready(answers: dict, flags: list[str], tier: str) -> None:
         bands = {"cog": "unknown", "sup": "unknown"}
         risky = False
     
-    if tier_mode == "replace":
-        final_tier, decision = _choose_final_tier(
-            det_tier=tier,
-            allowed_tiers=allowed_tiers,
-            llm_tier=llm_tier,
-            llm_conf=llm_conf,
-            bands=bands,
-            risky=risky
-        )
+    # ALWAYS apply LLM-first decision logic (deterministic is fallback only)
+    final_tier, decision = _choose_final_tier(
+        det_tier=tier,
+        allowed_tiers=allowed_tiers,
+        llm_tier=llm_tier,
+        llm_conf=llm_conf,
+        bands=bands,
+        risky=risky
+    )
+    
+    # Publish chosen tier (single source of truth)
+    st.session_state["gcp.final_tier"] = final_tier
+    st.session_state["gcp.adjudication_decision"] = decision  # Store for CarePlan creation
+    
+    # Update advice object with final tier for UI consistency
+    if final_tier != tier and d:
+        d["tier"] = final_tier
+        st.session_state["_summary_advice"] = d
+    
+    # Generate correlation ID for tracing
+    import uuid
+    corr_id = str(uuid.uuid4())[:12]
+    
+    # Single-line adjudication log (ALWAYS emitted, shows source)
+    source = decision.get("source", "unknown")
+    reason = decision.get("adjudication_reason", "unknown")
+    
+    # Fire emoji if LLM disagreed with deterministic AND was used
+    if final_tier != tier and source == "llm":
+        print(f"\n{'🔥'*40}")
+        print(f"[DISAGREEMENT] LLM overrode deterministic engine!")
+        print(f"[DISAGREEMENT] Deterministic: {tier} → LLM: {final_tier}")
+        print(f"[DISAGREEMENT] Reason: {reason}")
+        print(f"{'🔥'*40}\n")
+    
+    print(f"[GCP_ADJ] chosen={final_tier} llm={llm_tier or 'none'} det={tier} source={source} allowed={decision['allowed']} conf={llm_conf or 0.0:.2f} reason={reason} id={corr_id}")
+    
+    # Legacy mode logging (for analytics/debugging only - does NOT affect publish)
+    if tier_mode in ("shadow", "off"):
+        mode_msg = "LLM disabled" if tier_mode == "off" else "diagnostic logging only"
+        print(f"[GCP_MODE] mode={tier_mode} ({mode_msg}) published={final_tier} source={source}")
+    
+    # NOW reconcile with deterministic for mismatch logging (after adjudication_decision is set)
+    try:
+        from ai.gcp_navi_engine import reconcile_with_deterministic
+        # Build advice-like object for reconcile
+        class AdjudicatedAdvice:
+            def __init__(self, tier, conf):
+                self.tier = tier
+                self.confidence = conf
         
-        st.session_state["gcp.final_tier"] = final_tier
+        if llm_tier:
+            advice_for_reconcile = AdjudicatedAdvice(llm_tier, llm_conf)
+            reconcile_with_deterministic(tier, advice_for_reconcile, tier_mode)
+    except Exception as e:
+        print(f"[GCP_RECONCILE_ERROR] {e}")
+    
+    # Training/audit row
+    try:
+        from tools.log_disagreement import append_case
+        row = {
+            "det_tier": tier,
+            "llm_tier": llm_tier,
+            "llm_conf": llm_conf,
+            "final_tier": final_tier,
+            "allowed_tiers": sorted(list(allowed_tiers)),
+            "bands": decision["bands"],
+            "risky": decision["risky"],
+            "reason": decision["reason"],
+            "answers": answers,
+            "flags": list(flags),
+        }
+        append_case(row)
+    except Exception:
+        pass  # Never fail on logging
+    
+    # Clear hours suggestion for facility-based tiers when not comparing with in-home
+    # Use published tier (gcp.final_tier) not deterministic tier
+    # Hours only apply to in-home scenarios OR when comparing facility with in-home
+    published_tier = st.session_state.get("gcp.final_tier", tier)
+    facility_tiers = ["assisted_living", "memory_care", "memory_care_high_acuity"]
+    compare_inhome = st.session_state.get("cost.compare_inhome", False)
+    
+    if published_tier in facility_tiers and not compare_inhome:
+        # Get person_id for person-scoped clearing (dual flow support)
+        person_id = st.session_state.get("person_id", "self")
+        hours_key = f"_hours_suggestion_{person_id}"
         
-        # Update advice object with final tier for UI consistency
-        if final_tier != tier and d:
-            d["tier"] = final_tier
-            st.session_state["_summary_advice"] = d
+        # Clear person-scoped hours suggestion
+        if hours_key in st.session_state:
+            st.session_state.pop(hours_key, None)
+            print(f"[HOURS_CLEAR] Cleared {hours_key} for facility tier={published_tier} (not comparing)")
         
-        print(f"[GCP_TIER_DECISION] mode=replace det={tier} llm={llm_tier} conf={llm_conf:.2f} -> final={final_tier} reason={decision['reason']}")
-        
-        # Training/audit row
-        try:
-            from tools.log_disagreement import append_case
-            row = {
-                "det_tier": tier,
-                "llm_tier": llm_tier,
-                "llm_conf": llm_conf,
-                "final_tier": final_tier,
-                "allowed_tiers": sorted(list(allowed_tiers)),
-                "bands": decision["bands"],
-                "risky": decision["risky"],
-                "reason": decision["reason"],
-                "answers": answers,
-                "flags": list(flags),
-            }
-            append_case(row)
-        except Exception:
-            pass  # Never fail on logging
-            
-    else:
-        # Keep deterministic tier (off or shadow mode)
-        st.session_state["gcp.final_tier"] = tier
-        if tier_mode == "shadow":
-            print(f"[GCP_TIER_DECISION] mode=shadow det={tier} llm={llm_tier} conf={llm_conf:.2f} -> final={tier}")
+        # Also clear legacy global key for backward compatibility
+        if "_hours_suggestion" in st.session_state:
+            st.session_state.pop("_hours_suggestion", None)
+            print(f"[HOURS_CLEAR] Cleared legacy _hours_suggestion for facility tier={published_tier}")
+    
     # ====================================================================
 
     st.session_state["_summary_ready"] = True
+    # Set cache flag to prevent duplicate LLM calls on subsequent renders
+    st.session_state["gcp.llm_result_ready"] = True
 
     # Explicit readiness marker
     try:
         present = bool(st.session_state.get("_summary_advice"))
-        print(f"[SUMMARY_READY] present={present}")
-    except Exception:
-        pass
+        print(f"[SUMMARY_READY] present={present} cached=True")
     except Exception:
         pass
 
@@ -813,17 +947,39 @@ def _build_hours_context(answers: dict[str, Any], flags: list[str]) -> Any:
     """
     from ai.hours_schemas import HoursContext
     
-    # Count BADLs
+    # Canonical BADL mapping to deduplicate UI variations
+    CANON_BADLS = {
+        "Bathing/Showering": "bathing",
+        "Bathing": "bathing",
+        "Showering": "bathing",
+        "Dressing": "dressing",
+        "Toileting": "toileting",
+        "Transferring": "transferring",
+        "Eating": "feeding",
+        "Feeding": "feeding",
+        "Mobility": "mobility",
+        "Personal Hygiene": "hygiene",
+        "Hygiene": "hygiene",
+    }
+    
+    # Count BADLs (deduplicated)
     badls = answers.get("badls", [])
     if not isinstance(badls, list):
         badls = []
-    badls_count = len(badls)
+    
+    # Deduplicate using canonical mapping
+    badls_unique = {CANON_BADLS.get(x, x.lower()) for x in badls}
+    badls_count = len(badls_unique)
+    
+    print(f"[GUARD_INPUT] badls_raw={badls} badls_unique={badls_unique} badls_count={badls_count}")
     
     # Count IADLs
     iadls = answers.get("iadls", [])
     if not isinstance(iadls, list):
         iadls = []
     iadls_count = len(iadls)
+    
+    print(f"[GUARD_INPUT] iadls_count={iadls_count}")
     
     # Falls
     falls = answers.get("falls", "none")
@@ -891,6 +1047,12 @@ def derive_outcome(
         - rationale: List[str]
         - suggested_next_product: str
     """
+    
+    # Clear legacy support keys to prevent stale values from previous runs
+    import streamlit as st
+    legacy_keys = ["support", "support_bucket", "supervision_bucket"]
+    for key in legacy_keys:
+        st.session_state.pop(key, None)
 
     # Load module.json to get scoring rules
     module_data = _load_module_json()
@@ -911,16 +1073,24 @@ def derive_outcome(
     # Determine if cognitive gate passes
     passes_cognitive_gate = cognitive_gate(answers, flags)
     
-    # Derive cognition and support bands
+    # Derive cognition band for tier mapping
     cog_band = cognition_band(answers, flags)
-    sup_band = support_band(answers, flags)
     
-    # Load tier map and compute base recommendation
+    # Derive supervision bucket (LEGACY DIAGNOSTIC - not used for routing)
+    # This 24h bucket is diagnostic only and should NOT influence tier selection
+    supervision_bucket_legacy = support_band(answers, flags)
+    print(f"[LEGACY_SUP] bucket={supervision_bucket_legacy} cog={cog_band} (diagnostic only, not used for routing)")
+    
+    # For tier_map lookup, we use a routing-safe support band (without 24h)
+    # Map 24h → high for routing purposes only
+    sup_band_for_routing = "high" if supervision_bucket_legacy == "24h" else supervision_bucket_legacy
+    
+    # Load tier map and compute base recommendation using routing-safe band
     tier_map = _load_tier_map()
     tier_from_mapping = None
     
-    if tier_map and cog_band in tier_map and sup_band in tier_map.get(cog_band, {}):
-        tier_from_mapping = tier_map[cog_band][sup_band]
+    if tier_map and cog_band in tier_map and sup_band_for_routing in tier_map.get(cog_band, {}):
+        tier_from_mapping = tier_map[cog_band][sup_band_for_routing]
     
     # Build allowed tiers set
     from ai.gcp_schemas import CANONICAL_TIERS
@@ -929,16 +1099,16 @@ def derive_outcome(
     if not passes_cognitive_gate:
         # Block memory care tiers
         allowed_tiers -= {"memory_care", "memory_care_high_acuity"}
-        print(f"[GCP_GUARD] Cognitive gate FAILED (cog={cog_band} sup={sup_band}) - MC/MC-HA blocked")
+        print(f"[GCP_GUARD] Cognitive gate FAILED (cog={cog_band} sup={sup_band_for_routing}) - MC/MC-HA blocked")
     else:
-        print(f"[GCP_GUARD] Cognitive gate PASSED (cog={cog_band} sup={sup_band}) - all tiers allowed")
+        print(f"[GCP_GUARD] Cognitive gate PASSED (cog={cog_band} sup={sup_band_for_routing}) - all tiers allowed")
     
     # --- Behavior gate for moderate × high without risky behaviors ---
     gate_on = mc_behavior_gate_enabled()
     risky = cognitive_gate_behaviors_only(answers, flags)  # True iff any of COGNITIVE_HIGH_RISK present
-    print(f"[GCP_FLAG] MC_BEHAVIOR_GATE={gate_on} cog={cog_band} sup={sup_band} risky={risky} allowed_pre={sorted(list(allowed_tiers))}")
+    print(f"[GCP_FLAG] MC_BEHAVIOR_GATE={gate_on} cog={cog_band} sup={sup_band_for_routing} risky={risky} allowed_pre={sorted(list(allowed_tiers))}")
     
-    if gate_on and cog_band == "moderate" and sup_band == "high" and not risky:
+    if gate_on and cog_band == "moderate" and sup_band_for_routing == "high" and not risky:
         # remove MC and MC-HA from allowed before selecting det tier
         if "memory_care" in allowed_tiers or "memory_care_high_acuity" in allowed_tiers:
             allowed_tiers.discard("memory_care")
@@ -984,6 +1154,17 @@ def derive_outcome(
                     if ok and advice:
                         advice.nudge_text = nudge_text
                         advice.severity = severity
+            
+            # Persist hours bands to GCP state for Cost Planner
+            try:
+                import streamlit as st
+                gcp_state = st.session_state.setdefault("gcp", {})
+                gcp_state["hours_user_band"] = user_band or "1-3h"
+                gcp_state["hours_llm"] = suggested or baseline
+                gcp_state["hours_band"] = suggested or baseline  # legacy key
+                print(f"[GCP_HOURS_PERSIST] user={gcp_state['hours_user_band']} llm={gcp_state['hours_llm']}")
+            except Exception as persist_err:
+                print(f"[GCP_HOURS_PERSIST_ERROR] {persist_err}")
             
             # Store suggestion in session state
             try:
@@ -1058,7 +1239,38 @@ def derive_outcome(
                 print(f"[HOURS_LOG_ERROR] Failed to log case: {log_err}")
         
         except Exception as e:
-            print(f"[GCP_HOURS_WARN] Hours suggestion failed: {e}")
+            print(f"[GCP_HOURS_FALLBACK] {e}")
+            # Graceful degradation: persist user band and provide safe default
+            try:
+                import streamlit as st
+                
+                # Try to get user's current selection
+                raw_hours = answers.get("hours_per_day")
+                valid_bands = {"<1h", "1-3h", "4-8h", "24h"}
+                user_band = raw_hours if raw_hours in valid_bands else "1-3h"
+                
+                # Determine if high cognition + high support (conservative default)
+                cog_level = answers.get("cognition", {}).get("level", "none")
+                is_high_cog = cog_level in {"moderate", "advanced"}
+                
+                badls_raw = answers.get("badls", [])
+                iadls_raw = answers.get("iadls", [])
+                is_high_support = len(badls_raw) >= 3 or len(iadls_raw) >= 4
+                
+                # Provide conservative LLM band when in doubt
+                if is_high_cog and is_high_support:
+                    llm_band = "4-8h"
+                else:
+                    llm_band = user_band  # match user if unsure
+                
+                gcp_state = st.session_state.setdefault("gcp", {})
+                gcp_state["hours_user_band"] = user_band
+                gcp_state["hours_llm"] = llm_band
+                gcp_state["hours_band"] = llm_band  # legacy key
+                
+                print(f"[GCP_HOURS_PERSIST] user={user_band} llm={llm_band} (fallback)")
+            except Exception as fallback_err:
+                print(f"[GCP_HOURS_PERSIST_ERROR] fallback failed: {fallback_err}")
     
     # Choose final deterministic tier
     # Priority: mapping (if available and in allowed) > score-based (if in allowed) > fallback to best permitted
@@ -1066,7 +1278,7 @@ def derive_outcome(
     
     if tier_from_mapping and tier_from_mapping in allowed_tiers:
         chosen = tier_from_mapping
-        print(f"[GCP_GUARD] Using tier_map result: {chosen} (mapping: {cog_band}×{sup_band})")
+        print(f"[GCP_GUARD] Using tier_map result: {chosen} (mapping: {cog_band}×{sup_band_for_routing})")
     elif tier_from_score and tier_from_score in allowed_tiers:
         chosen = tier_from_score
         print(f"[GCP_GUARD] Using score-based tier: {chosen} (score={total_score})")
@@ -1087,6 +1299,9 @@ def derive_outcome(
     
     tier = det_tier
     
+    # NOTE: Hours clearing moved to ensure_summary_ready AFTER adjudication
+    # This ensures we use the published tier (not deterministic) and check compare mode
+    
     # Persist recommendation category to session state for conditional rendering
     # This enables show_if conditions to access $state.recommendation.category
     _persist_recommendation_category(tier)
@@ -1102,13 +1317,28 @@ def derive_outcome(
         llm_mode = get_feature_gcp_mode()
         
         if llm_mode in ("shadow", "assist"):
-            # Build GCP context from answers
-            from ai.gcp_navi_engine import generate_gcp_advice, reconcile_with_deterministic
-            from ai.gcp_schemas import GCPContext
+            # POLICY-MEDIATED LLM RECOMMENDATION
+            # Replace raw LLM call with policy-aware mediator that applies guardrails
+            from ai.llm_mediator import get_mediated_recommendation
+            from ai.gcp_navi_engine import reconcile_with_deterministic
+            import uuid
             
-            gcp_context = _build_gcp_context(answers, context or {})
+            # Generate correlation ID for tracing policy decisions
+            correlation_id = str(uuid.uuid4())[:12]
             
-            # JSON-safe helper for serializing context
+            # Convert flags list to dict format for mediator
+            flags_dict = {}
+            flag_list = flags or []
+            for flag in flag_list:
+                flags_dict[flag] = True
+            
+            # Add derived flags from answers for mediator context
+            if answers.get("age_range"):
+                flags_dict["age_range"] = answers["age_range"]
+            if answers.get("preference"):
+                flags_dict["preference"] = answers["preference"]
+            
+            # JSON-safe helper for serializing context (preserved for logging)
             def _jsonify_ctx(ctx):
                 import json
                 try:
@@ -1132,29 +1362,56 @@ def derive_outcome(
             except Exception:
                 pass  # Silent failure if streamlit not available
             
-            # Generate LLM advice (with guardrails) - pass allowed_tiers to scope LLM
-            print(f"[GCP_FLAG] allowed_tiers_sent={sorted(list(allowed_tiers))}")
-            ok, advice = generate_gcp_advice(gcp_context, mode=llm_mode, allowed_tiers=sorted(list(allowed_tiers)))
-            
-            if ok and advice:
-                # Reconcile with deterministic (logs disagreements)
-                reconcile_with_deterministic(tier, advice, llm_mode)
-                
-                # Store advice for UI rendering (assist mode only)
-                llm_advice = advice
-                
-                # Final recommendation logging (det vs llm)
-                print(
-                    f"[GCP_LLM_FINAL] det={tier} llm={advice.tier} "
-                    f"conf={advice.confidence:.2f} "
-                    f"msgs={len(advice.navi_messages)} reasons={len(advice.reasons)}"
+            # Get policy-mediated recommendation
+            print(f"[GCP_MEDIATOR] Calling policy-aware LLM mediator for tier={tier}")
+            try:
+                policy_decision = get_mediated_recommendation(
+                    base_tier=tier,
+                    flags=flags_dict,
+                    answers=answers,
+                    correlation_id=correlation_id
                 )
-            else:
-                print(f"[GCP_LLM_{llm_mode.upper()}] ok=False (generation failed)")
+                
+                # Convert PolicyDecision to advice-like object for existing UI compatibility
+                if policy_decision:
+                    # Create advice object that matches existing interface
+                    class PolicyAdvice:
+                        def __init__(self, decision):
+                            self.tier = decision.chosen_tier
+                            self.confidence = decision.confidence
+                            self.empathy_score = decision.empathy_score
+                            self.navi_messages = [decision.rationale] if decision.rationale else []
+                            self.reasons = decision.advisory_notes or []
+                    
+                    advice = PolicyAdvice(policy_decision)
+                    ok = True
+                    
+                    # NOTE: reconcile_with_deterministic moved to ensure_summary_ready AFTER adjudication
+                    # This ensures adjudication_decision is set before logging reads it
+                    
+                    # Store advice for UI rendering (assist mode only)
+                    llm_advice = advice
+                    
+                    # Enhanced logging with policy context
+                    print(
+                        f"[GCP_POLICY_FINAL] det={tier} policy={advice.tier} "
+                        f"conf={advice.confidence:.2f} empathy={policy_decision.empathy_score} "
+                        f"source={policy_decision.source} clamp={policy_decision.clamp_applied} "
+                        f"allowed={','.join(policy_decision.allowed_tiers)} id={correlation_id}"
+                    )
+                else:
+                    print(f"[GCP_POLICY_{llm_mode.upper()}] ok=False (policy decision failed)")
+                    ok = False
+                    
+            except Exception as e:
+                print(f"[GCP_POLICY_ERROR] type={e.__class__.__name__} msg={str(e)}")
+                ok = False
+                llm_advice = None  # Clear advice on error to ensure clean fallback
                 
     except Exception as e:
         # Silent failure - LLM must not affect deterministic flow
-        print(f"[GCP_LLM_ERROR] Exception (silent): {e}")
+        print(f"[GCP_LLM_ERROR] type={e.__class__.__name__} msg={str(e)}")
+        llm_advice = None  # Ensure llm_advice is None on outer exception
     # ====================================================================
 
     # Build tier rankings (all tiers with calculated scores)
@@ -1213,7 +1470,7 @@ def derive_outcome(
     # LLM SUMMARY GENERATION (deprecated here): moved to ensure_summary_ready()
     # ====================================================================
 
-    return {
+    outcome = {
         "tier": tier,
         "tier_score": round(total_score, 1),
         "tier_rankings": tier_rankings,
@@ -1222,7 +1479,12 @@ def derive_outcome(
         "rationale": rationale,
         "suggested_next_product": suggested_next,
         "derived": derived,
+        "allowed_tiers": sorted(list(allowed_tiers)),  # Persist for Cost Planner
     }
+    
+    print(f"[DERIVE_OUTCOME] tier={tier} allowed={sorted(list(allowed_tiers))} confidence={round(confidence, 2)}")
+    
+    return outcome
 
 
 def _load_module_json() -> dict[str, Any]:

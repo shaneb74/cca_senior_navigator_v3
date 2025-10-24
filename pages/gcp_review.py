@@ -145,7 +145,8 @@ def _render_review_content(recommendation, assessment_data):
 
     with col2:
         if st.button("💰 View Costs", type="primary", use_container_width=True, disabled=needs_ack):
-            st.query_params["page"] = "cost_v2"
+            print(f"[GCP_REVIEW] Navigate to cost_intro")
+            st.query_params["page"] = "cost_intro"
             st.rerun()
         
         if needs_ack:

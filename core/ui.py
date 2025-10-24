@@ -3,6 +3,7 @@ import functools
 import mimetypes
 import pathlib
 import sys
+from typing import Optional
 
 import streamlit as st
 
@@ -76,7 +77,7 @@ def page_container_close():
     st.markdown("</main>", unsafe_allow_html=True)
 
 
-def hub_section(title: str, right_meta: str | None = None):
+def hub_section(title: str, right_meta: Optional[str] = None):
     right = f'<div class="tile-meta"><span>{right_meta}</span></div>' if right_meta else ""
     st.markdown(
         f"""<section class="container section">
@@ -493,11 +494,11 @@ def _render_celebration_effect() -> None:
 
 def render_navi_guide_bar(
     text: str,
-    subtext: str | None = None,
+    subtext: Optional[str] = None,
     icon: str = "🤖",
     show_progress: bool = False,
-    current_step: int | None = None,
-    total_steps: int | None = None,
+    current_step: Optional[int] = None,
+    total_steps: Optional[int] = None,
     color: str = "#8b5cf6",
 ) -> None:
     """Render persistent Navi guide bar at top of page.
@@ -560,9 +561,9 @@ def render_navi_panel_v2(
     encouragement: dict,
     context_chips: list[dict],
     primary_action: dict,
-    secondary_action: dict | None = None,
-    progress: dict | None = None,
-    alert_html: str | None = None,
+    secondary_action: Optional[dict] = None,
+    progress: Optional[dict] = None,
+    alert_html: Optional[str] = None,
     variant: str = "hub",
 ) -> None:
     """Render refined Navi panel with structured layout using Streamlit native components.

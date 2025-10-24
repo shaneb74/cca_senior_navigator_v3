@@ -532,3 +532,95 @@ div[data-role="secondary"] .stButton > button[kind="secondary"][data-testid="stB
   color: #0f172a;
   font-size: 1.05rem;
 }
+
+/* ===== Enhanced Spinner Visibility ===== */
+/* Make Streamlit's spinner more prominent and visible */
+.stSpinner {
+  position: relative !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  padding: 24px 16px !important;
+  margin: 16px 0 !important;
+  background: rgba(59, 130, 246, 0.03) !important;
+  border: 2px solid rgba(59, 130, 246, 0.12) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.08) !important;
+  backdrop-filter: blur(2px) !important;
+}
+
+/* Spinner text styling */
+.stSpinner > div {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  font-size: 1.1rem !important;
+  font-weight: 600 !important;
+  color: var(--brand-700) !important;
+  text-align: center !important;
+}
+
+/* Enhanced spinner animation */
+.stSpinner::before {
+  content: '' !important;
+  position: absolute !important;
+  top: -2px !important;
+  left: -2px !important;
+  right: -2px !important;
+  bottom: -2px !important;
+  border-radius: 16px !important;
+  background: linear-gradient(45deg, transparent, rgba(59, 130, 246, 0.2), transparent) !important;
+  animation: spinner-border-pulse 2s ease-in-out infinite !important;
+  z-index: -1 !important;
+}
+
+@keyframes spinner-border-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.8; }
+}
+
+/* Center the spinner in its container */
+.stSpinner {
+  min-height: 80px !important;
+  width: 100% !important;
+  max-width: 600px !important;
+  margin: 20px auto !important;
+}
+
+/* Pulsing background animation */
+.stSpinner {
+  animation: spinner-bg-pulse 3s ease-in-out infinite !important;
+}
+
+@keyframes spinner-bg-pulse {
+  0%, 100% { 
+    background: rgba(59, 130, 246, 0.03) !important;
+    border-color: rgba(59, 130, 246, 0.12) !important;
+  }
+  50% { 
+    background: rgba(59, 130, 246, 0.06) !important;
+    border-color: rgba(59, 130, 246, 0.18) !important;
+  }
+}
+
+/* Special styling for Navi thinking spinner */
+.stSpinner > div:has-text("Navi is thinking"),
+.stSpinner > div:has-text("✨ Navi is thinking") {
+  color: var(--brand-600) !important;
+  font-weight: 700 !important;
+  font-size: 1.15rem !important;
+}
+
+/* Special styling for GCP analysis spinner */
+.stSpinner > div:has-text("Analyzing your assessment"),
+.stSpinner > div:has-text("💬 Analyzing your assessment") {
+  color: var(--brand-700) !important;
+  font-weight: 600 !important;
+}
+
+/* Special styling for summarizing spinner */
+.stSpinner > div:has-text("Summarizing your recommendation"),
+.stSpinner > div:has-text("Summarizing your recommendation…") {
+  color: var(--brand-600) !important;
+  font-weight: 600 !important;
+}

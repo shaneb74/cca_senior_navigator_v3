@@ -17,18 +17,11 @@ def render():
     Users must sign in to continue - no guest access.
 
     Workflow:
-    1. Auto-skip if already authenticated (seamless experience)
+    1. Show fake auth page with pre-filled demo data
     2. Sign in required to proceed to Financial Assessment
 
     Future: Replace with real OAuth/email authentication.
     """
-
-    # AUTO-ADVANCE: If already authenticated, skip this step
-    if is_authenticated():
-        # User is logged in - go directly to next step
-        st.session_state.cost_v2_step = "triage"
-        st.rerun()
-        return
 
     # Not authenticated - show sign-in only (no guest mode in MVP)
     st.title("🔐 Sign In to Continue")

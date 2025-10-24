@@ -492,35 +492,150 @@ def _ensure_outcomes(config: ModuleConfig, answers: dict[str, Any]) -> None:
     if config.outcomes_compute:
         fn = _resolve_callable(config.outcomes_compute)
         
-        # Show spinner while computing recommendation (especially for LLM-assisted GCP)
-        with st.spinner("💬 Analyzing your assessment and preparing recommendations..."):
-            try:
-                result = fn(answers=answers, context=context)
-                if isinstance(result, OutcomeContract):
-                    outcome = result
-                elif isinstance(result, dict):
-                    # Don't wrap in OutcomeContract - store dict directly
-                    # This allows product-specific schemas (e.g., GCP's tier/tier_score)
-                    st.session_state[outcome_key] = result
+        # Single analysis spinner with controlled mounting/unmounting
+        analysis_placeholder = st.empty()
+        
+        # Set loading flags for deterministic state management
+        st.session_state["llm_loading"] = True
+        st.session_state["summary_ready"] = False
+        
+        # Show analysis spinner
+        with analysis_placeholder.container():
+            st.markdown("""
+            <div class="assessment-analysis-spinner">
+                <div class="analysis-content">
+                    <span class="analysis-icon">💬</span>
+                    <span class="analysis-text">Analyzing your assessment and preparing recommendations...</span>
+                    <div class="analysis-progress">
+                        <div class="progress-bar"></div>
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # Inject CSS once (outside conditional to avoid flicker)
+        st.markdown("""
+        <style>
+        .assessment-analysis-spinner {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 28px 24px;
+            margin: 24px 0;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.05), rgba(59, 130, 246, 0.05));
+            border: 2px solid rgba(139, 92, 246, 0.18);
+            border-radius: 18px;
+            box-shadow: 0 8px 24px rgba(139, 92, 246, 0.12);
+            animation: analysis-pulse 2.5s ease-in-out infinite;
+            max-width: 650px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .analysis-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            text-align: center;
+        }
+        
+        .analysis-content > div:first-child {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .analysis-icon {
+            font-size: 1.5rem;
+            animation: analysis-float 2s ease-in-out infinite;
+        }
+        
+        .analysis-text {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--brand-700);
+            line-height: 1.4;
+        }
+        
+        .analysis-progress {
+            width: 200px;
+            height: 4px;
+            background: rgba(139, 92, 246, 0.2);
+            border-radius: 2px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #8b5cf6, #3b82f6);
+            border-radius: 2px;
+            animation: analysis-progress 2s ease-in-out infinite;
+        }
+        
+        @keyframes analysis-pulse {
+            0%, 100% { 
+                border-color: rgba(139, 92, 246, 0.18);
+                box-shadow: 0 8px 24px rgba(139, 92, 246, 0.12);
+            }
+            50% { 
+                border-color: rgba(139, 92, 246, 0.28);
+                box-shadow: 0 12px 32px rgba(139, 92, 246, 0.18);
+            }
+        }
+        
+        @keyframes analysis-float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-4px); }
+        }
+        
+        @keyframes analysis-progress {
+            0% { width: 0%; transform: translateX(-100%); }
+            50% { width: 100%; transform: translateX(0%); }
+            100% { width: 100%; transform: translateX(100%); }
+        }
+        </style>
+        """, unsafe_allow_html=True)
+        
+        try:
+            result = fn(answers=answers, context=context)
+            if isinstance(result, OutcomeContract):
+                outcome = result
+            elif isinstance(result, dict):
+                # Don't wrap in OutcomeContract - store dict directly
+                # This allows product-specific schemas (e.g., GCP's tier/tier_score)
+                st.session_state[outcome_key] = result
 
-                    # Still handle legacy handoff for backward compatibility
-                    handoff = st.session_state.setdefault("handoff", {})
-                    handoff[state_key] = result
+                # Still handle legacy handoff for backward compatibility
+                handoff = st.session_state.setdefault("handoff", {})
+                handoff[state_key] = result
 
-                    _emit(
-                        "module.outcomes.ready",
-                        {
-                            "state_key": state_key,
-                            "outcome": str(result.get("tier") or result.get("recommendation", "")),
-                        },
-                    )
-                    return  # Early return - we're done
-            except Exception as e:
-                import traceback
+                _emit(
+                    "module.outcomes.ready",
+                    {
+                        "state_key": state_key,
+                        "outcome": str(result.get("tier") or result.get("recommendation", "")),
+                    },
+                )
+                
+                # Clear loading state and spinner after successful computation
+                st.session_state["llm_loading"] = False
+                st.session_state["summary_ready"] = True
+                analysis_placeholder.empty()
+                
+                return  # Early return - we're done
+        except Exception as e:
+            import traceback
 
-                st.error(f"❌ Error computing outcomes: {type(e).__name__}: {str(e)}")
-                st.text(traceback.format_exc())
-                outcome = OutcomeContract()
+            st.error(f"❌ Error computing outcomes: {type(e).__name__}: {str(e)}")
+            st.text(traceback.format_exc())
+            outcome = OutcomeContract()
+            
+            # Clear loading state even on error
+            st.session_state["llm_loading"] = False
+            st.session_state["summary_ready"] = False
+            analysis_placeholder.empty()
 
     audit = dict(outcome.audit)
     audit.update(
@@ -1017,6 +1132,45 @@ def _render_confidence_improvement(
 def _render_results_view(mod: dict[str, Any], config: ModuleConfig) -> None:
     """Render results with Navi announcing recommendation + clean detail cards."""
 
+    # ========================================
+    # NAVIGATION GATE: Handle proceed request at top (before rendering UI)
+    # ========================================
+    # Check if user clicked Continue button (debounce mechanism)
+    proceed_requested = st.session_state.get("gcp.proceed_requested", False)
+    summary_ready = st.session_state.get("summary_ready", False) or st.session_state.get("gcp.llm_result_ready", False)
+    
+    if proceed_requested:
+        if summary_ready:
+            # Clear the flag and navigate
+            st.session_state["gcp.proceed_requested"] = False
+            print(f"[GCP_NAV] to=cost_v2 proceed=True ready=True")
+            
+            from core.nav import route_to
+            from core.flags import get_flag
+            
+            # Set handoff flag
+            st.session_state["flow.from_gcp"] = True
+            
+            # Check for partner interstitial requirement
+            partner_flow_enabled = get_flag("FEATURE_HOUSEHOLD_PARTNER_FLOW")
+            if partner_flow_enabled:
+                # TODO: Add partner interstitial logic here
+                # For now, proceed directly to cost planner
+                pass
+            
+            print(f"[GCP_NAV] Navigate to cost_intro")
+            route_to("cost_intro")
+            return  # Exit early after navigation
+        else:
+            # Summary not ready yet - show loading state and block
+            print(f"[GCP_NAV] waiting proceed=True ready=False")
+            st.info("⏳ Preparing your summary...")
+            st.stop()  # Stop rendering and wait for next rerun
+    
+    # ========================================
+    # NORMAL RESULTS RENDERING
+    # ========================================
+
     # Get data
     outcome_key = f"{config.state_key}._outcomes"
     outcomes = st.session_state.get(outcome_key, {})
@@ -1131,7 +1285,8 @@ def _render_results_view(mod: dict[str, Any], config: ModuleConfig) -> None:
     with col2:
         if st.button("💰 Explore Care Options & Costs", key="btn_costs", type="primary", use_container_width=True):
             from core.nav import route_to
-            route_to("cost_v2")
+            print(f"[GCP_RESULTS] Navigate to cost_intro")
+            route_to("cost_intro")
 
     with col3:
         if st.button("🏠 Return to Concierge Hub", key="btn_hub", use_container_width=True):
@@ -1359,21 +1514,12 @@ def _render_results_ctas_once(config: ModuleConfig) -> None:
         st.markdown("---")
         st.markdown('<div class="sn-app mod-actions">', unsafe_allow_html=True)
         
-        # Build tier-aware CTA label
-        outcome_key = f"{config.state_key}._outcomes"
-        outcomes_data = st.session_state.get(outcome_key, {})
-        tier = st.session_state.get("gcp.final_tier") or st.session_state.get("final_tier") or outcomes_data.get("tier") or "assisted_living"
+        # Build streamlined CTA for Cost Planner handoff
+        cta_label = "Next: Cost & Options →"
+        cta_help = "Get personalized cost estimates and explore your care options"
         
-        if tier in ("assisted_living", "memory_care", "memory_care_high_acuity"):
-            tier_display = tier.replace("_", " ").title()
-            cta_label = f"💰 Compare costs: {tier_display} vs In-Home"
-            cta_help = f"See how {tier_display} costs compare to In-Home care"
-        elif tier == "in_home" or tier == "in_home_care":
-            cta_label = "💰 See monthly costs for In-Home (adjust hours & supports)"
-            cta_help = "Explore In-Home care costs with customizable hours and support levels"
-        else:
-            cta_label = "💰 See optional support costs near you"
-            cta_help = "View optional support services and local resources"
+        # Disable button if summary not ready (extra safety)
+        summary_ready = st.session_state.get("summary_ready", False) or st.session_state.get("gcp.llm_result_ready", False)
         
         if st.button(
             cta_label,
@@ -1381,10 +1527,12 @@ def _render_results_ctas_once(config: ModuleConfig) -> None:
             type="primary",
             use_container_width=True,
             help=cta_help,
+            disabled=not summary_ready,
         ):
-            from core.nav import route_to
-
-            route_to("cost_v2")
+            # Set proceed flag and rerun - navigation happens at top of _render_results_view
+            print(f"[GCP_CTA] results_continue clicked ready={summary_ready}")
+            st.session_state["gcp.proceed_requested"] = True
+            st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
 
 
