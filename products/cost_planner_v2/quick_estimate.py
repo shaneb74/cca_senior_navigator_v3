@@ -650,8 +650,9 @@ def _render_path_selection():
     """Render Choose Your Path Forward as clickable buttons."""
     st.markdown("### Choose Your Path Forward")
     
-    available = st.session_state.get("cost.assessments_available", {"home": True, "al": True, "mc": False})
-    sel = st.session_state.get("cost.selected_assessment", "home")
+    cost = st.session_state.get("cost", {})
+    available = cost.get("assessments_available", {"home": True, "al": True, "mc": False})
+    sel = cost.get("selected_assessment", "home")
     
     # Get GCP recommendation to highlight recommended path
     gcp = st.session_state.get("gcp", {})
