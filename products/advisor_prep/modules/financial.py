@@ -48,47 +48,6 @@ def render():
         # Fallback to original form-based approach
         _render_legacy_financial_form(config)
 
-import json
-from pathlib import Path
-
-import streamlit as st
-
-from core.events import log_event
-from core.flags import get_flag_value
-from core.mcip import MCIP
-from core.navi import render_navi_panel
-from products.advisor_prep.prefill import get_financial_prefill
-
-# Try to import the new LLM advisor summary system
-try:
-    from ai.advisor_summary_engine import AdvisorSummaryEngine
-    LLM_SUMMARY_AVAILABLE = True
-except ImportError:
-    LLM_SUMMARY_AVAILABLE = False
-
-
-def render():
-    """Render Financial prep section with LLM-generated comprehensive assessment."""
-
-    # Load config for metadata
-    config = _load_config()
-
-    # Render Navi
-    render_navi_panel(location="product", product_key="advisor_prep", module_config=None)
-
-    st.markdown(f"## {config['icon']} {config['title']}")
-    st.markdown(f"*{config['description']}*")
-
-    # Check if LLM enhancement is enabled
-    llm_mode = get_flag_value("FEATURE_ADVISOR_SUMMARY_LLM", "off") if LLM_SUMMARY_AVAILABLE else "off"
-
-    if llm_mode in ["assist", "adjust"] and LLM_SUMMARY_AVAILABLE:
-        # Render LLM-powered comprehensive financial assessment
-        _render_llm_financial_assessment()
-    else:
-        # Fallback to original form-based approach
-        _render_legacy_financial_form()
-
     # Navigation footer
     st.markdown("---")
     _render_navigation()
