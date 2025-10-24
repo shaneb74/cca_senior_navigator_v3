@@ -51,34 +51,76 @@ class AdvisorSummaryContext:
 
 # Template 1: About the Person
 ABOUT_PERSON_TEMPLATE = """
-Write a short paragraph that introduces [person_a_name], who is in their [person_a_age_range] and currently lives in the [geo_zip] area. 
+Write a comprehensive demographic and social profile for [person_a_name] that gives advisors a complete picture of their current situation and what additional context may be needed.
 
-Consider their living situation:
-- If [dual_household] is true, mention they live with family or a partner
-- If [dual_household] is false, mention they live independently or alone
-- If [support_network_low] is true, note limited family support nearby
-- If [low_access] is true, mention challenges accessing services or support
+Include a detailed assessment of:
 
-Include information about who is helping with planning based on [relationship_type] (spouse, adult child, etc.).
+DEMOGRAPHIC PROFILE:
+- Full name, age range, and current living arrangement
+- Geographic location and community context
+- Household composition and family dynamics
+- Primary decision-maker and relationship to care recipient
 
-Style: Warm introduction that establishes the person's current situation and support context. Use their first name throughout.
-Length: 80-120 words.
+SOCIAL SUPPORT ASSESSMENT:
+- Family support network strength and proximity
+- Available informal caregivers and their capacity
+- Community connections and social isolation factors
+- Transportation access and mobility independence
+- Emergency contact availability and response capability
+
+CURRENT LIVING SITUATION:
+- Housing type, ownership status, and suitability for aging in place
+- Home safety assessment needs and accessibility modifications required
+- Neighborhood resources and service availability
+- Financial obligations related to current housing
+
+GAPS REQUIRING ADVISOR FOLLOW-UP:
+- Missing demographic information that impacts care planning
+- Unassessed family dynamics or caregiver stress factors
+- Unknown community resources or support systems
+- Unclear decision-making authority or legal considerations
+
+This should be a thorough profile that helps advisors understand the complete social and environmental context, not a brief introduction. Include specific details about what we know versus what still needs to be explored in advisor conversations.
 """
 
 # Template 2: Housing Preferences  
 HOUSING_PREFERENCES_TEMPLATE = """
-Summarize [person_a_name]'s preferred living arrangement based on their [recommended_tier] recommendation and planning preferences.
+Write a comprehensive housing and care setting assessment for [person_a_name] that provides advisors with detailed information about housing preferences, readiness for transition, and what additional housing-related context is needed.
 
-Include details about:
-- Housing type preference based on [recommended_tier] (Independent Living, Assisted Living, Memory Care, etc.)
-- Room preference from [room_type] (studio, one-bedroom, two-bedroom)
-- Move timeline from [move_timeline] (immediate, 3-6 months, flexible, etc.)
-- Home plans: if [home_carry] is true, mention keeping their current home; if false, mention selling
+Include a thorough analysis of:
 
-Focus on their expressed preferences and desired setting rather than just the recommendation.
+CARE SETTING PREFERENCES:
+- Detailed exploration of preferred care environments and settings
+- Specific amenities, services, and community features desired
+- Cultural, religious, or lifestyle preferences affecting housing choice
+- Pet ownership, hobbies, or special accommodation needs
 
-Style: Factual summary of housing goals and timeline preferences.
-Length: 80-120 words.
+TRANSITION READINESS AND TIMELINE:
+- Current readiness to consider care options and move from current home
+- Emotional attachment to current home and community
+- Family agreement or disagreement about care transitions
+- Preferred timeline for exploring options versus actual move timing
+- Seasonal or family event considerations affecting timing
+
+FINANCIAL CONSIDERATIONS FOR HOUSING:
+- Current housing costs and ongoing obligations
+- Proceeds expected from home sale and timeline for sale
+- Rental income potential if keeping current property
+- Moving costs, deposits, and transition expenses anticipated
+
+LOCATION AND COMMUNITY PREFERENCES:
+- Desired proximity to family members, friends, or healthcare providers
+- Transportation needs and access to community resources
+- Climate or geographic preferences if considering relocation
+- Specific community features important to quality of life
+
+GAPS REQUIRING ADVISOR EXPLORATION:
+- Unresolved housing decisions or family disagreements
+- Financial implications not yet calculated or understood
+- Care needs that may affect housing suitability over time
+- Legal or estate planning considerations related to housing decisions
+
+This should provide advisors with a complete housing and transition assessment, highlighting both confirmed preferences and areas needing further exploration during advisor consultations.
 """
 
 # Template 3: Medical & Care Information
@@ -103,20 +145,51 @@ Length: 80-120 words.
 
 # Template 4: Financial Overview
 FINANCIAL_OVERVIEW_TEMPLATE = """
-Create a financial summary for [person_a_name] based on their cost planning data.
+Write a comprehensive financial assessment for [person_a_name] that provides advisors with detailed information about their complete financial picture and identifies areas requiring additional financial planning consultation.
 
-Include information about:
-- Projected monthly care budget: approximately $[monthly_cost]
-- Funding timeline: estimated [years_funded] years of coverage
-- Asset situation: if [assets_low] mention limited assets, if [assets_high] mention substantial assets
-- Income sources: reference [household_income] and any relevant details
-- Benefits: if [va_benefits_eligible] mention potential VA benefits, if [benefits_present] mention existing benefits
-- Special considerations: if [rx_costs_high] mention medication costs, if [transportation_needed] or [family_travel_needed] mention transportation factors
+Include a thorough analysis of:
 
-Focus on affordability range and funding timeline rather than giving financial advice.
+INCOME ASSESSMENT:
+- Complete breakdown of all monthly income sources (Social Security, pensions, retirement accounts, employment, rental income, family support)
+- Stability and predictability of each income stream
+- Potential changes to income over time (retirement timing, pension adjustments, Social Security optimization)
+- Tax implications and net versus gross income considerations
 
-Style: Neutral financial overview suitable for advisor planning.
-Length: 80-120 words.
+ASSET EVALUATION:
+- Detailed inventory of liquid assets (savings, checking, CDs, money market accounts)
+- Investment portfolio composition and risk tolerance
+- Real estate holdings including primary residence and investment properties
+- Personal property of significant value and collectibles
+- Retirement accounts (401k, IRA, Roth IRA) and withdrawal strategies
+
+LIABILITIES AND ONGOING OBLIGATIONS:
+- Current debt obligations (mortgage, credit cards, loans, lines of credit)
+- Monthly fixed expenses and discretionary spending patterns
+- Insurance premiums and coverage gaps
+- Tax liabilities and estate planning considerations
+
+CARE FUNDING ANALYSIS:
+- Projected monthly care costs for different levels of care
+- Funding timeline calculations under various scenarios
+- Long-term care insurance coverage and benefit details
+- Veterans benefits eligibility and application status
+- Medicaid planning considerations and asset protection strategies
+
+BENEFITS AND ENTITLEMENTS:
+- Current benefits received and optimization opportunities
+- Potential benefits not yet claimed or applied for
+- Insurance coverage for healthcare, long-term care, and life insurance
+- Family financial support capacity and willingness
+
+GAPS REQUIRING ADVISOR CONSULTATION:
+- Incomplete financial information or documentation needed
+- Estate planning updates or legal document reviews required
+- Tax planning opportunities or concerns
+- Insurance coverage adequacy assessment
+- Long-term financial sustainability questions
+- Family financial planning coordination needs
+
+This should provide advisors with a complete financial picture and clear understanding of what additional financial planning work is needed during their consultation.
 """
 
 
@@ -173,7 +246,13 @@ EXAMPLE_CONTEXT = AdvisorSummaryContext(
 # Example outputs (what the LLM should generate)
 EXAMPLE_OUTPUTS = {
     "about_person": """
-This plan is for Margaret, who is in her late seventies and currently lives alone in the Baton Rouge area (70808). She has limited access to nearby family and occasionally relies on neighbors for support. Her daughter is assisting with planning and exploring options that would keep Margaret close to familiar surroundings while ensuring she receives appropriate care and oversight.
+# Example outputs (comprehensive advisor reports)
+EXAMPLE_OUTPUTS = {
+    "about_person": "Comprehensive demographic and social profile covering living situation, family dynamics, support network, and gaps requiring advisor follow-up.",
+    "housing_preferences": "Detailed housing assessment covering care setting preferences, transition readiness, financial considerations, and areas needing advisor exploration.", 
+    "medical_care": "Margaret experiences moderate memory changes and mild mobility challenges. Care flags: moderate_cognitive_decline, mobility_limited, medication_management, chronic_conditions.",
+    "financial_overview": "Comprehensive financial assessment covering income sources, asset evaluation, liabilities, care funding analysis, benefits assessment, and gaps requiring advisor consultation."
+}
 """.strip(),
 
     "housing_preferences": """

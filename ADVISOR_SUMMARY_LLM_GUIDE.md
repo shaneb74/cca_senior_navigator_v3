@@ -15,14 +15,59 @@ Each drawer presents a short, warm paragraph describing what the system knows ab
 
 ## Four Drawer Types
 
-### 1. About the Person
-**Purpose**: Introduce the care recipient and their current situation
-**Content**: Name, age, living situation, geographic area, support network, family involvement
-**Length**: 80-120 words
-**Tone**: Warm introduction establishing context
+## Four Drawer Types
 
-**Example**:
-> "This plan is for Margaret, who is in her late seventies and currently lives alone in the Baton Rouge area (70808). She has limited access to nearby family and occasionally relies on neighbors for support. Her daughter is assisting with planning and exploring options that would keep Margaret close to familiar surroundings while ensuring she receives appropriate care and oversight."
+### 1. About the Person
+**Purpose**: Comprehensive demographic and social profile for advisor review
+**Content**: Complete living situation, family dynamics, support network assessment, decision-making authority, gaps requiring follow-up
+**Focus**: What we know vs. what's missing for complete advisor understanding
+**Length**: Comprehensive (no word limit - detail is the goal)
+**Tone**: Thorough professional assessment
+
+**Key Areas Covered**:
+- Full demographic profile and current living arrangement
+- Social support assessment and family capacity evaluation
+- Current living situation and safety considerations
+- Gaps requiring advisor follow-up and exploration
+
+### 2. Housing Preferences
+**Purpose**: Complete housing and care setting assessment for advisor planning
+**Content**: Detailed preferences, transition readiness, financial housing considerations, family dynamics around moving decisions
+**Focus**: Comprehensive housing assessment highlighting confirmed preferences and unresolved decisions
+**Length**: Comprehensive (no word limit - detail is the goal)
+**Tone**: Thorough assessment of housing planning needs
+
+**Key Areas Covered**:
+- Care setting preferences and specific requirements
+- Transition readiness and timeline considerations
+- Financial implications of housing decisions
+- Gaps requiring advisor exploration and family facilitation
+
+### 3. Medical & Care Information
+**Purpose**: Complete medical and care needs assessment with care flag details
+**Content**: Cognitive state, ADLs, BADLs, care flags with human-friendly explanations, coordination requirements
+**Focus**: Full medical picture with specific care flags maintained for context
+**Length**: Comprehensive (no word limit - detail is the goal)
+**Tone**: Professional medical assessment, respectful and person-centered
+
+**Key Areas Covered**:
+- Complete cognitive assessment and functional status
+- All care flags with detailed explanations
+- ADL and BADL support requirements
+- Care coordination and supervision needs
+
+### 4. Financial Overview
+**Purpose**: Complete financial assessment and planning analysis
+**Content**: Detailed income/asset evaluation, care funding analysis, benefit opportunities, gaps requiring financial planning
+**Focus**: Comprehensive financial picture highlighting planning opportunities and gaps
+**Length**: Comprehensive (no word limit - detail is the goal)
+**Tone**: Thorough financial assessment for advisor planning
+
+**Key Areas Covered**:
+- Complete income and asset assessment
+- Care funding analysis and timeline projections
+- Benefits optimization opportunities
+- Financial planning gaps requiring advisor consultation
 
 ### 2. Housing Preferences  
 **Purpose**: Summarize preferred living arrangements and timeline
@@ -146,24 +191,27 @@ narrative = AdvisorSummaryEngine.generate_drawer_narrative(
 
 ## Style Guidelines
 
+### Style Guidelines
+
 ### Tone Parameters
-- **Clear, empathetic, factual** - suitable for internal reports
+- **Comprehensive and detailed** - thoroughness is the goal, not brevity
+- **Professional assessment tone** suitable for advisor review
 - **Present tense** throughout
-- **No marketing language** or promotional content
-- **Assume internal audience** - no customer-facing explanations
+- **Factual and analytical** - focus on what we know vs. what's missing
+- **Assume internal advisor audience** - technical detail is appropriate
 
-### Language Guidelines
-- Use person's **first name** throughout
-- **No pronouns** like "we" or "our system"
-- Speak about the person **directly**
-- Emphasize **care coordination needs** rather than deficits
-- Use **respectful, person-centered language**
+### Content Guidelines
+- **Full reports** covering cognitive state, ADLs, BADLs, financial snapshot
+- **Human-friendly explanations** of all care flags and technical terms
+- **Gap analysis** highlighting what additional context advisors need to gather
+- **No length restrictions** - comprehensive detail is preferred over brevity
+- **Maintain care flags** in medical drawer for context on specialized needs
 
-### Technical Requirements
-- **80-120 words** per drawer
-- **Placeholder variables** in brackets for programmatic binding
-- **Complete prose** format, not bullet points
-- **Neutral tone** for financial information (not advisory)
+### Purpose Guidelines
+- **Advisor review and feedback** - help advisors understand data completeness
+- **Identify missing information** that impacts care planning
+- **Show system capabilities** so advisors know what we can vs. cannot capture
+- **Internal use only** - not for end user consumption
 
 ## Production Readiness
 

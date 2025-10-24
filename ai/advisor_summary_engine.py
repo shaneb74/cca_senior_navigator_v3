@@ -234,7 +234,7 @@ Return only the paragraph text, no additional formatting or explanation.
             client = LLMClient()
             response = client.generate_completion(
                 prompt=prompt,
-                max_tokens=200,
+                max_tokens=800,  # Increased for comprehensive reports
                 temperature=0.7
             )
             
