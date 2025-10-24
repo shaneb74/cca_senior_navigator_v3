@@ -623,14 +623,14 @@ def _render_navigation():
 
     with col2:
         if st.button("📊 View Expert Review", key="review_expert", use_container_width=True, type="primary"):
-            # Navigate to expert review step
-            st.session_state.cost_v2_step = "expert_review"
-            st.query_params["page"] = "cost_v2"
+            # Navigate to expert review step (quick_estimate for now)
+            print(f"[COST_REVIEW] Navigate to cost_quick_estimate")
+            st.query_params["page"] = "cost_quick_estimate"
             st.rerun()
 
     with col3:
         if st.button("↻ Retake Assessment", key="review_restart", use_container_width=True):
-            # Clear Cost Planner state for restart
-            st.session_state.cost_v2_step = "intro"
-            st.query_params["page"] = "cost_v2"
+            # Navigate to intro for restart
+            print(f"[COST_REVIEW] Restart -> cost_intro")
+            st.query_params["page"] = "cost_intro"
             st.rerun()

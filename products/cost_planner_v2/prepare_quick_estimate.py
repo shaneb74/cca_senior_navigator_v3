@@ -363,55 +363,28 @@ def _render_facility_questions():
     }
     tier_display = tier_display_map.get(rec_tier, rec_tier.replace("_", " ").title())
     
-    # Dynamic compare label based on tier
-    if rec_tier in ["assisted_living", "memory_care", "memory_care_high_acuity"]:
-        compare_label = f"⚖️ Compare {tier_display} vs In-Home Care"
-    else:
-        compare_label = "⚖️ Compare In-Home vs Community Options"
-    
-    continue_label = f"→ Continue with {tier_display}"
-    
     # Get ZIP status for validation
     zip_code = st.session_state.get("cost.inputs", {}).get("zip") or st.session_state.get(SESSION_KEYS["zip"])
     has_zip = bool(zip_code and len(str(zip_code)) == 5)
     
-    # Primary CTA: Compare (always enabled - doesn't need ZIP to toggle view)
-    col1, col2 = st.columns(2)
+    # // reason: Single full-width CTA (wired) - renamed to "Compare My Cost Options"
+    if st.button("Compare My Cost Options", key="compare_cta", use_container_width=True, type="primary"):
+        # Set two-stage reveal flags
+        st.session_state["cost.tabs_revealed"] = True
+        st.session_state["cost.compare_breadcrumb"] = True
+        
+        # Set view mode to compare (single source of truth)
+        st.session_state["cost.view_mode"] = "compare"
+        # Clear single-path tier to ensure comparison renders
+        if "cost.single_path_tier" in st.session_state:
+            del st.session_state["cost.single_path_tier"]
+        # Sync ZIP and other data (even if ZIP missing, sync what we have)
+        _sync_to_comparison_view()
+        # Log action
+        print(f"[COST_CTA] action=compare tier={rec_tier} zip_present={has_zip} view_mode=compare tabs_revealed=True")
+        st.rerun()
     
-    with col1:
-        if st.button(compare_label, key="compare_cta", use_container_width=True, type="primary"):
-            # Set view mode to compare (single source of truth)
-            st.session_state["cost.view_mode"] = "compare"
-            # Clear single-path tier to ensure comparison renders
-            if "cost.single_path_tier" in st.session_state:
-                del st.session_state["cost.single_path_tier"]
-            # Sync ZIP and other data (even if ZIP missing, sync what we have)
-            _sync_to_comparison_view()
-            # Log action
-            print(f"[COST_CTA] action=compare tier={rec_tier} zip_present={has_zip} view_mode=compare")
-            st.rerun()
-    
-    with col2:
-        # Secondary CTA: Continue with recommended tier (requires ZIP)
-        continue_disabled = not has_zip
-        if st.button(continue_label, key="continue_cta", use_container_width=True, disabled=continue_disabled):
-            if has_zip:
-                # Set view mode to single (single source of truth)
-                st.session_state["cost.view_mode"] = "single"
-                st.session_state[SESSION_KEYS["is_complete"]] = True
-                st.session_state["cost.single_path_tier"] = rec_tier  # Explicit tier for single view
-                _sync_to_comparison_view()
-                
-                # Enhanced logging with all flags being set
-                print(f"[COST_CTA] action=continue tier={rec_tier} zip_present=True "
-                      f"set_view_mode=single set_single_path_tier={rec_tier} "
-                      f"set_is_complete=True proceeded=True")
-                st.rerun()
-            else:
-                # Log blocked action
-                print(f"[COST_CTA] action=continue tier={rec_tier} zip_present=False proceeded=False")
-    
-    # Show ZIP warning if Continue button is disabled
+    # Show ZIP warning if missing
     if not has_zip:
         st.caption("💡 ZIP code is required to show your estimate.")
     

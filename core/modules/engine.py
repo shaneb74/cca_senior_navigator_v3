@@ -1158,7 +1158,8 @@ def _render_results_view(mod: dict[str, Any], config: ModuleConfig) -> None:
                 # For now, proceed directly to cost planner
                 pass
             
-            route_to("cost_v2")
+            print(f"[GCP_NAV] Navigate to cost_intro")
+            route_to("cost_intro")
             return  # Exit early after navigation
         else:
             # Summary not ready yet - show loading state and block
@@ -1284,7 +1285,8 @@ def _render_results_view(mod: dict[str, Any], config: ModuleConfig) -> None:
     with col2:
         if st.button("💰 Explore Care Options & Costs", key="btn_costs", type="primary", use_container_width=True):
             from core.nav import route_to
-            route_to("cost_v2")
+            print(f"[GCP_RESULTS] Navigate to cost_intro")
+            route_to("cost_intro")
 
     with col3:
         if st.button("🏠 Return to Concierge Hub", key="btn_hub", use_container_width=True):

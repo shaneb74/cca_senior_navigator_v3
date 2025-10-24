@@ -403,6 +403,15 @@ def ensure_summary_ready(answers: dict, flags: list[str], tier: str) -> None:
     # Single-line adjudication log (ALWAYS emitted, shows source)
     source = decision.get("source", "unknown")
     reason = decision.get("adjudication_reason", "unknown")
+    
+    # Fire emoji if LLM disagreed with deterministic AND was used
+    if final_tier != tier and source == "llm":
+        print(f"\n{'🔥'*40}")
+        print(f"[DISAGREEMENT] LLM overrode deterministic engine!")
+        print(f"[DISAGREEMENT] Deterministic: {tier} → LLM: {final_tier}")
+        print(f"[DISAGREEMENT] Reason: {reason}")
+        print(f"{'🔥'*40}\n")
+    
     print(f"[GCP_ADJ] chosen={final_tier} llm={llm_tier or 'none'} det={tier} source={source} allowed={decision['allowed']} conf={llm_conf or 0.0:.2f} reason={reason} id={corr_id}")
     
     # Legacy mode logging (for analytics/debugging only - does NOT affect publish)
@@ -938,17 +947,39 @@ def _build_hours_context(answers: dict[str, Any], flags: list[str]) -> Any:
     """
     from ai.hours_schemas import HoursContext
     
-    # Count BADLs
+    # Canonical BADL mapping to deduplicate UI variations
+    CANON_BADLS = {
+        "Bathing/Showering": "bathing",
+        "Bathing": "bathing",
+        "Showering": "bathing",
+        "Dressing": "dressing",
+        "Toileting": "toileting",
+        "Transferring": "transferring",
+        "Eating": "feeding",
+        "Feeding": "feeding",
+        "Mobility": "mobility",
+        "Personal Hygiene": "hygiene",
+        "Hygiene": "hygiene",
+    }
+    
+    # Count BADLs (deduplicated)
     badls = answers.get("badls", [])
     if not isinstance(badls, list):
         badls = []
-    badls_count = len(badls)
+    
+    # Deduplicate using canonical mapping
+    badls_unique = {CANON_BADLS.get(x, x.lower()) for x in badls}
+    badls_count = len(badls_unique)
+    
+    print(f"[GUARD_INPUT] badls_raw={badls} badls_unique={badls_unique} badls_count={badls_count}")
     
     # Count IADLs
     iadls = answers.get("iadls", [])
     if not isinstance(iadls, list):
         iadls = []
     iadls_count = len(iadls)
+    
+    print(f"[GUARD_INPUT] iadls_count={iadls_count}")
     
     # Falls
     falls = answers.get("falls", "none")
@@ -1124,6 +1155,17 @@ def derive_outcome(
                         advice.nudge_text = nudge_text
                         advice.severity = severity
             
+            # Persist hours bands to GCP state for Cost Planner
+            try:
+                import streamlit as st
+                gcp_state = st.session_state.setdefault("gcp", {})
+                gcp_state["hours_user_band"] = user_band or "1-3h"
+                gcp_state["hours_llm"] = suggested or baseline
+                gcp_state["hours_band"] = suggested or baseline  # legacy key
+                print(f"[GCP_HOURS_PERSIST] user={gcp_state['hours_user_band']} llm={gcp_state['hours_llm']}")
+            except Exception as persist_err:
+                print(f"[GCP_HOURS_PERSIST_ERROR] {persist_err}")
+            
             # Store suggestion in session state
             try:
                 import streamlit as st
@@ -1197,7 +1239,38 @@ def derive_outcome(
                 print(f"[HOURS_LOG_ERROR] Failed to log case: {log_err}")
         
         except Exception as e:
-            print(f"[GCP_HOURS_WARN] Hours suggestion failed: {e}")
+            print(f"[GCP_HOURS_FALLBACK] {e}")
+            # Graceful degradation: persist user band and provide safe default
+            try:
+                import streamlit as st
+                
+                # Try to get user's current selection
+                raw_hours = answers.get("hours_per_day")
+                valid_bands = {"<1h", "1-3h", "4-8h", "24h"}
+                user_band = raw_hours if raw_hours in valid_bands else "1-3h"
+                
+                # Determine if high cognition + high support (conservative default)
+                cog_level = answers.get("cognition", {}).get("level", "none")
+                is_high_cog = cog_level in {"moderate", "advanced"}
+                
+                badls_raw = answers.get("badls", [])
+                iadls_raw = answers.get("iadls", [])
+                is_high_support = len(badls_raw) >= 3 or len(iadls_raw) >= 4
+                
+                # Provide conservative LLM band when in doubt
+                if is_high_cog and is_high_support:
+                    llm_band = "4-8h"
+                else:
+                    llm_band = user_band  # match user if unsure
+                
+                gcp_state = st.session_state.setdefault("gcp", {})
+                gcp_state["hours_user_band"] = user_band
+                gcp_state["hours_llm"] = llm_band
+                gcp_state["hours_band"] = llm_band  # legacy key
+                
+                print(f"[GCP_HOURS_PERSIST] user={user_band} llm={llm_band} (fallback)")
+            except Exception as fallback_err:
+                print(f"[GCP_HOURS_PERSIST_ERROR] fallback failed: {fallback_err}")
     
     # Choose final deterministic tier
     # Priority: mapping (if available and in allowed) > score-based (if in allowed) > fallback to best permitted
@@ -1397,7 +1470,7 @@ def derive_outcome(
     # LLM SUMMARY GENERATION (deprecated here): moved to ensure_summary_ready()
     # ====================================================================
 
-    return {
+    outcome = {
         "tier": tier,
         "tier_score": round(total_score, 1),
         "tier_rankings": tier_rankings,
@@ -1406,7 +1479,12 @@ def derive_outcome(
         "rationale": rationale,
         "suggested_next_product": suggested_next,
         "derived": derived,
+        "allowed_tiers": sorted(list(allowed_tiers)),  # Persist for Cost Planner
     }
+    
+    print(f"[DERIVE_OUTCOME] tier={tier} allowed={sorted(list(allowed_tiers))} confidence={round(confidence, 2)}")
+    
+    return outcome
 
 
 def _load_module_json() -> dict[str, Any]:

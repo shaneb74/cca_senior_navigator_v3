@@ -181,7 +181,7 @@ class TestNaviNextBestAction:
                         )
                     )
 
-                    assert next_action["route"] == "cost_v2"
+                    assert next_action["route"] == "cost_intro"
                     assert (
                         "cost" in next_action["label"].lower()
                         or "financial" in next_action["label"].lower()
@@ -331,7 +331,7 @@ class TestNaviNavigation:
         """Navi CTAs use canonical route IDs, not hard-coded URLs."""
         from core.navi import NaviOrchestrator
 
-        # Next actions should return route keys like "gcp_v4", "cost_v2", "pfma_v2"
+        # Next actions should return route keys like "gcp_v4", "cost_intro", "pfma_v2"
         # Not URLs like "?page=gcp_v4"
         next_action = NaviOrchestrator.get_next_action(
             Mock(

@@ -1,47 +1,48 @@
 """
-Cost Planner v2 - Intro Page (Quick Estimate)
+Cost Planner v2 - Intro Page (Mini-Form)
 
-Unauthenticated quick estimate calculator.
-Allows anonymous users to get a ballpark cost estimate before creating an account.
+Clean entry point with minimal form:
+- ZIP code input (automatic update with debounce)
+- Monthly home carry input
+- One CTA to Quick Estimate
 
-Spec:
-- ZIP only (no State field)
-- 5 care types only: No Care Recommended, In-Home Care, Assisted Living, Memory Care, Memory Care (High Acuity)
-- Seed with GCP recommendation when available
-- Line-item breakdown: base cost, regional %, condition add-ons, total
-- Reassurance copy + CTA to Full Assessment
-
-Workflow:
-1. Welcome message
-2. Quick estimate form (care type + ZIP)
-3. Show line-item breakdown
-4. Reassurance copy
-5. CTA → Full Assessment (authentication)
+No tabs, no cards, no maintain-home question here.
 """
 
 import streamlit as st
+import time
 
 from core.mcip import MCIP
-from products.cost_planner_v2 import comparison_view, prepare_quick_estimate
+from core.navi import render_navi_panel
+from products.cost_planner_v2.ui_helpers import go_to_quick_estimate
+from products.cost_planner_v2.utils.regional_data import RegionalDataProvider
+from products.cost_planner_v2.utils.home_costs import lookup_zip
 
 
 def render():
-    """Render intro page with prepare gate, then comparison view.
+    """Render intro page with clean mini-form."""
     
-    Flow:
-    1. Show prepare gate (personalization questions)
-    2. When complete, show comparison view (Quick Estimate)
-    """
+    print("[PAGE_MOUNT] cost_intro")
 
     # Mark CP intro scope for header helper
     st.session_state["cp_intro"] = True
+
+    # Initialize cost namespace FIRST (before any rendering)
+    cost = st.session_state.setdefault("cost", {})
+    inputs = cost.setdefault("inputs", {})
+    meta = cost.setdefault("meta", {})  # Container for submission guards and flags
+    
+    # Legacy safety: prevent downstream key errors
+    inputs.setdefault("maintain_home", True)  # UI toggle lives in facility cards later
+    
+    print(f"[INTRO] Render start: zip={inputs.get('zip')} home_carry={inputs.get('home_carry')}")
 
     # HOUSEHOLD FLOW: Load household and CarePlans (single-writer pattern)
     try:
         from core.household import ensure_household_state, get_careplan_for
         
         # Only prefill if cost.inputs not already initialized
-        if "cost.inputs" not in st.session_state:
+        if not inputs:  # Check if inputs dict is empty
             hh = ensure_household_state(st)
             
             # Get person IDs
@@ -53,210 +54,176 @@ def render():
             cp_partner = get_careplan_for(st, partner_id) if partner_id else None
             
             # Prefill cost inputs from household data (single write on first entry)
-            inputs = {
-                "zip": hh.zip,
-                "keep_home": hh.keep_home_default if hh.keep_home_default is not None else False,
-                "owner_tenant": hh.home_owner_type or "unknown",
-            }
+            inputs["zip"] = hh.zip
+            inputs["keep_home"] = hh.keep_home_default if hh.keep_home_default is not None else False
+            inputs["owner_tenant"] = hh.home_owner_type or "unknown"
             
             # Use hours from primary CarePlan if available
             if cp_primary:
                 inputs["hours"] = cp_primary.hours_user or cp_primary.hours_suggested
             
-            st.session_state["cost.inputs"] = inputs
             print(f"[COST_PLANNER] Prefilled: zip={hh.zip} has_partner={hh.has_partner}")
         
         # Log ZIP state on load
-        current_zip = st.session_state.get("cost.inputs", {}).get("zip")
+        current_zip = inputs.get("zip")
         if current_zip:
             print(f"[ZIP_STATE] loaded zip={current_zip} from cost.inputs")
             
-        # Initialize cost.view_mode ONCE (never reset during reruns)
-        # Single source of truth: "compare" or "single"
-        if "cost.view_mode" not in st.session_state:
-            # Default to single-path view on first load
-            st.session_state["cost.view_mode"] = "single"
-            print(f"[VIEW_MODE] initialized to single")
-            
-        # Mirror to cost.compare_inhome for backward compatibility
-        st.session_state["cost.compare_inhome"] = (st.session_state["cost.view_mode"] == "compare")
-            
-    except Exception:
-        # Fallback to non-household flow
-        # Initialize cost.inputs if missing
-        if "cost.inputs" not in st.session_state:
-            st.session_state["cost.inputs"] = {}
-        # Initialize cost.view_mode ONCE (never reset during reruns)
-        if "cost.view_mode" not in st.session_state:
-            st.session_state["cost.view_mode"] = "single"
-            print(f"[VIEW_MODE] initialized to single (fallback)")
-        # Mirror to cost.compare_inhome for backward compatibility
-        st.session_state["cost.compare_inhome"] = (st.session_state["cost.view_mode"] == "compare")
+    except Exception as e:
+        print(f"[COST_PLANNER] Household load error: {e}")
+        # Fallback already handled by setdefault above
 
-    # Open centered container for calm, consistent layout (desktop only)
+    # Open centered container
     st.markdown("<div class='sn-container'>", unsafe_allow_html=True)
 
-    # Check for GCP handoff
-    from_gcp = st.session_state.get("flow.from_gcp", False)
-    handoff_blurb = None
-    
-    # Get GCP recommendation for context
-    gcp_rec = MCIP.get_care_recommendation()
-    rec_tier = None
-    if gcp_rec and hasattr(gcp_rec, 'tier'):
-        rec_tier = gcp_rec.tier
+    # Render Navi (pinned, unconditional - always at top)
+    render_navi_panel(location="product", product_key="cost_planner")
 
-    # GCP HANDOFF LOGIC: Generate contextual blurb and set dual_mode
-    if from_gcp:
-        try:
-            from core.household import ensure_household_state, get_careplan_for
-            from ai.navi_engine import (
-                detect_dual_mode_from_careplans,
-                get_primary_tier_from_careplans,
-                generate_handoff_blurb
-            )
-            
-            # Collect available care plans
-            careplans = []
-            hh = ensure_household_state(st)
-            
-            # Get person IDs
-            primary_id = st.session_state.get("person.primary_id")
-            partner_id = st.session_state.get("person.partner_id")
-            
-            # Load CarePlans
-            if primary_id:
-                cp_primary = get_careplan_for(st, primary_id)
-                if cp_primary:
-                    careplans.append(cp_primary)
-                    
-            if partner_id:
-                cp_partner = get_careplan_for(st, partner_id)
-                if cp_partner:
-                    careplans.append(cp_partner)
-            
-            # Set dual_mode based on multiple care plans
-            dual_mode = detect_dual_mode_from_careplans(careplans)
-            if dual_mode and "cost.dual_mode" not in st.session_state:
-                st.session_state["cost.dual_mode"] = True
-                print(f"[GCP_HANDOFF] Enabled dual_mode: {len(careplans)} care plans detected")
-            
-            # Get primary and partner tiers for context
-            primary_tier = get_primary_tier_from_careplans(careplans) or rec_tier
-            partner_tier = None
-            if len(careplans) >= 2:
-                # Get partner tier from the other care plan
-                for cp in careplans:
-                    cp_tier = getattr(cp, 'final_tier', None) or getattr(cp, 'tier', None)
-                    if cp_tier and cp_tier != primary_tier:
-                        from ai.navi_engine import normalize_tier
-                        partner_tier = normalize_tier(cp_tier)
-                        break
-            
-            # Get flags for context
-            flags = []
-            if gcp_rec and hasattr(gcp_rec, 'flags'):
-                flags = gcp_rec.flags
-            
-            # Calculate care intensity from GCP data
-            care_intensity = "medium"  # default
-            if gcp_rec and hasattr(gcp_rec, 'tier_score'):
-                if gcp_rec.tier_score >= 0.8:
-                    care_intensity = "high"
-                elif gcp_rec.tier_score <= 0.4:
-                    care_intensity = "low"
-            
-            # Determine if in-home comparison is suggested
-            compare_inhome_suggested = (
-                primary_tier in ("assisted_living", "memory_care", "memory_care_high_acuity") or
-                dual_mode or 
-                st.session_state.get("cost.compare_inhome", False)
-            )
-            
-            # Threshold detection (placeholder - would come from cost analysis)
-            threshold_crossed = False  # TODO: Implement based on regional cost data
-            
-            # Generate enhanced handoff blurb with full context
-            if primary_tier:
-                handoff_blurb = generate_handoff_blurb(
-                    primary_tier=primary_tier,
-                    dual_mode=dual_mode,
-                    flags=flags,
-                    partner_tier=partner_tier,
-                    threshold_crossed=threshold_crossed,
-                    care_intensity=care_intensity,
-                    compare_inhome_suggested=compare_inhome_suggested
-                )
-                print(f"[GCP_HANDOFF] Generated enhanced blurb: tier={primary_tier}, dual_mode={dual_mode}, partner_tier={partner_tier}, intensity={care_intensity}")
-        except Exception as e:
-            print(f"[GCP_HANDOFF] Error generating context: {e}")
-            # Fallback to standard flow
-            pass
-
-    # Build Navi header content
-    header_title = "Let's look at costs"
-    tier_display = None
-    if rec_tier:
-        tier_display = rec_tier.replace("_", " ").title()
-    
-    # Use handoff blurb if available, otherwise use standard messaging
-    if handoff_blurb:
-        header_reason = handoff_blurb
-    else:
-        header_reason = (
-            f"I've pre-selected {tier_display} from your Guided Care Plan. You can explore other scenarios too."
-            if tier_display
-            else "We'll start with your Guided Care Plan. You can explore other scenarios too."
-        )
-
-    # Use the unified header helper (scoped to CP intro)
-    try:
-        from products.gcp_v4.ui_helpers import render_navi_header_message
-        # Feed title/subtitle through session to the helper
-        st.session_state["gcp_step_title"] = header_title
-        st.session_state["gcp_step_subtitle"] = header_reason
-        render_navi_header_message()
-    except Exception:
-        pass
-
-    # Show prepare gate first
-    is_ready = prepare_quick_estimate.render_prepare_gate(
-        recommendation_context=rec_tier
+    # Render mini-form
+    st.markdown("### Let's personalize your estimate")
+    st.markdown(
+        """<div style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.95rem;">
+        Answer two quick questions so we can show you the most relevant costs.
+        </div>""",
+        unsafe_allow_html=True
     )
 
-    # Show comparison view when gate is complete OR user has toggled to compare mode OR single mode is set
-    view_mode = st.session_state.get("cost.view_mode", "single")
-    single_path_tier = st.session_state.get("cost.single_path_tier")
+    # Question 1: ZIP code (automatic update with debounce)
+    st.markdown("#### Where will this care be provided?")
+    st.caption("💡 Costs vary by region, so we use ZIP to localize rates.")
     
-    # Log intro state
-    zip_from_inputs = st.session_state.get("cost.inputs", {}).get("zip")
-    zip_from_v2 = st.session_state.get("cost_v2_quick_zip")
-    print(f"[CP_INTRO] is_ready={is_ready} view_mode={view_mode} single_path_tier={single_path_tier} zip_inputs={zip_from_inputs} zip_v2={zip_from_v2}")
+    # Direct ZIP input (no form)
+    zip_value = st.text_input(
+        "ZIP Code",
+        value=inputs.get("zip", "") or "",
+        placeholder="Enter ZIP",
+        max_chars=5,
+        key="intro_zip_input",
+        label_visibility="collapsed"
+    )
     
-    # Show estimate view when:
-    # 1. Gate is complete (is_ready=True), OR
-    # 2. User explicitly chose compare mode, OR
-    # 3. User explicitly chose single mode via Continue CTA (single_path_tier is set)
-    show_estimate_view = is_ready or view_mode == "compare" or single_path_tier is not None
+    # Debounce: update only if value changed & enough time passed
+    typed_zip = (zip_value or "").strip()
+    now = time.time()
+    last_update = meta.get("zip_last_update", 0)
     
-    if show_estimate_view:
-        st.markdown("---")
-        # Use cost.inputs as source of truth, fallback to cost_v2_quick_zip
-        zip_code = zip_from_inputs or zip_from_v2
+    if typed_zip and len(typed_zip) == 5 and typed_zip != inputs.get("zip") and (now - last_update) > 1.0:
+        inputs["zip"] = typed_zip
+        st.session_state["cost_v2_quick_zip"] = typed_zip
+        meta["zip_last_update"] = now
         
-        # Log render decision
-        print(f"[COST_RENDER] view_mode={view_mode} zip_present={bool(zip_code)} show_estimate={show_estimate_view}")
+        # Only estimate home carry if user hasn't manually set it
+        if not inputs.get("home_carry_user_set", False):
+            est = lookup_zip(typed_zip, kind="owner")
+            if est and est.get("amount") is not None:
+                inputs["home_carry"] = float(est["amount"])
         
-        # Always render comparison view - ZIP gating happens inside for compute only
-        # Layout is controlled by view_mode, not ZIP presence
-        comparison_view.render_comparison_view(zip_code=zip_code)
+        print(f"[INTRO_ZIP] auto-update zip={typed_zip} home_carry={inputs.get('home_carry')}")
+        
+        # Blur focus so it doesn't trap
+        st.markdown(
+            "<script>window.parent.document.activeElement?.blur();</script>",
+            unsafe_allow_html=True
+        )
+        st.rerun()
+    
+    # Display current ZIP and region (if valid)
+    if inputs.get("zip") and len(str(inputs.get("zip"))) == 5:
+        # Resolve region
+        regional = RegionalDataProvider.get_multiplier(zip_code=inputs.get("zip"))
+        region_label = regional.region_name
+        
+        # Show inline region (no green banner)
+        st.markdown(
+            f'📍 <span class="region-label"><b>Region:</b> {region_label}</span>',
+            unsafe_allow_html=True
+        )
+        
+        print(f"[ZIP_STATE] displaying zip={inputs.get('zip')} region={region_label}")
 
-    # Close container and reset single-render guard and CP intro flag at end of render
+    # Preference-aware hint (small polish)
+    gcp_data = st.session_state.get("gcp", {})
+    move_pref = gcp_data.get("move_preference")
+    if move_pref == "stay_home":
+        st.markdown(
+            '<div class="cp-hint">We\'ll include your monthly home costs since you plan to stay home.</div>',
+            unsafe_allow_html=True
+        )
+    elif move_pref in ("open", "uncertain"):
+        st.markdown(
+            '<div class="cp-hint">You can compare staying home or moving; ZIP will localize costs.</div>',
+            unsafe_allow_html=True
+        )
+
+    st.markdown("")
+
+    # Question 2: Monthly Home Carry
+    st.markdown("#### What are your monthly household costs?")
+    st.caption(
+        "💡 Typical monthly cost to keep the household running "
+        "(mortgage/rent, utilities, insurance, groceries)."
+    )
+
+    # Read-before-write: Only initialize if missing, never overwrite on rerun
+    if inputs.get("home_carry") is None:
+        stored_zip = inputs.get("zip")
+        if stored_zip and len(str(stored_zip)) == 5:
+            est = lookup_zip(stored_zip, kind="owner")
+            if est and est.get("amount") is not None:
+                inputs["home_carry"] = float(est["amount"])
+                print(f"[INTRO_HOME_CARRY] Initialized from ZIP: {inputs['home_carry']}")
+            else:
+                inputs["home_carry"] = 0.0
+        else:
+            inputs["home_carry"] = 0.0
+    
+    # Get current value from session state
+    home_carry_value = float(inputs.get("home_carry") or 0.0)
+    
+    # Salt widget key with ZIP so it mounts fresh when ZIP changes
+    # This prevents client-side stale value from overwriting server value
+    carry_key = f"intro_home_carry__{inputs.get('zip', '')}"
+    
+    # Render number input using session value (no magic defaults)
+    new_home_carry = st.number_input(
+        "Monthly Home Carry Cost",
+        value=home_carry_value,
+        min_value=0.0,
+        max_value=50000.0,
+        step=50.0,
+        format="%.0f",
+        key=carry_key,
+        label_visibility="collapsed"
+    )
+    
+    # Track user changes
+    if new_home_carry != home_carry_value:
+        inputs["home_carry_user_set"] = True
+        inputs["home_carry"] = float(new_home_carry)
+        st.session_state.comparison_home_carry_cost = float(new_home_carry)
+        print(f"[INTRO_HOME_CARRY] user_set={inputs['home_carry']}")
+    else:
+        # Sync to legacy key
+        st.session_state.comparison_home_carry_cost = home_carry_value
+
+    st.markdown("")
+
+    # CTA: Compare My Cost Options (full width)
+    has_zip = bool(inputs.get("zip") and len(str(inputs.get("zip"))) == 5)
+    
+    if st.button("Compare My Cost Options", key="intro_compare_cta", use_container_width=True, type="primary"):
+        if has_zip:
+            print(f"[INTRO] Navigate to quick_estimate: zip={inputs.get('zip')}")
+            go_to_quick_estimate()
+        else:
+            st.error("⚠️ Please enter a valid ZIP code first")
+    
+    # Show ZIP warning if missing
+    if not has_zip:
+        st.caption("💡 ZIP code is required to show your estimate.")
+
+    # Close container and reset CP intro flag
     st.markdown("</div>", unsafe_allow_html=True)
-    if st.session_state.get("_gcp_cp_header_rendered"):
-        st.session_state["_gcp_cp_header_rendered"] = False
-    if st.session_state.get("_gcp_cp_header_key"):
-        del st.session_state["_gcp_cp_header_key"]
     st.session_state["cp_intro"] = False
 
 

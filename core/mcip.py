@@ -4,9 +4,9 @@ MCIP v2 - Master Care Intelligence Panel
 The Conductor: Orchestrates the user journey across all hubs, products, and modules.
 """
 
-from dataclasses import asdict, dataclass, fields
+from dataclasses import asdict, dataclass, field, fields
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional
 
 import streamlit as st
 
@@ -29,6 +29,8 @@ class CareRecommendation:
     status: str  # new | in_progress | complete | needs_update
     last_updated: str  # ISO timestamp
     needs_refresh: bool  # True if inputs changed significantly
+    allowed_tiers: Optional[list[str]] = field(default=None)  # Tiers allowed after gates
+    schema_version: int = 2  # Contract version for backward compatibility
 
 
 @dataclass
@@ -705,13 +707,13 @@ class MCIP:
                 return {
                     "action": "💰 Resume Your Cost Planner",
                     "reason": "Continue estimating monthly costs with your saved answers.",
-                    "route": "cost_v2",
+                    "route": "cost_intro",
                     "status": "in_progress",
                 }
             return {
                 "action": "💰 Calculate Your Care Costs",
                 "reason": "Understand the financial side of your care plan.",
-                "route": "cost_v2",
+                "route": "cost_intro",
                 "status": "in_progress",
             }
 
@@ -792,7 +794,7 @@ class MCIP:
                         "status": "complete",
                         "summary_line": f"✅ {summary_message}",
                         "icon": "💰",
-                        "route": "cost_v2",
+                        "route": "cost_intro",
                     }
                 else:
                     # Fallback to old format
@@ -808,7 +810,7 @@ class MCIP:
                         "status": "complete",
                         "summary_line": f"✅ {cost_str} ({runway_str})",
                         "icon": "💰",
-                        "route": "cost_v2",
+                        "route": "cost_intro",
                     }
             else:
                 # Check if product is unlocked (either via GCP completion OR via direct access)
@@ -823,7 +825,7 @@ class MCIP:
                         "status": "unlocked",
                         "summary_line": "Calculate your care costs",
                         "icon": "💰",
-                        "route": "cost_v2",
+                        "route": "cost_intro",
                     }
                 else:
                     return {

@@ -596,7 +596,8 @@ USER_PERSIST_KEYS = {
     "cost.compare_inhome",  # Toggle for in-home comparison (AL/MC tiers)
     "cost.dual_mode",  # Dual-person cost planning mode
     # GCP v4 answer data
-    "gcp_care_recommendation",  # All GCP assessment answers
+    "gcp",  # GCP v4 module state (published_tier, allowed_tiers, hours, badls, iadls, etc.)
+    "gcp_care_recommendation",  # All GCP assessment answers (legacy)
     "gcp_v4_published",
     "gcp_v4_complete",
 }
