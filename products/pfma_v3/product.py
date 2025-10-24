@@ -117,7 +117,10 @@ def _render_gate():
         route_to("hub_concierge")
 
     if st.button("Go to Cost Planner →", type="primary"):
-        route_to("cost_planner_v2")
+        # Navigate to Cost Planner v2 auth step (will show fake auth page)
+        st.session_state.cost_v2_step = "auth"
+        st.query_params["page"] = "cost_v2"
+        st.rerun()
 
 
 # =============================================================================

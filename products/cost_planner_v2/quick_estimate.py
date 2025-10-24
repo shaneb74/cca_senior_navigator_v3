@@ -746,19 +746,10 @@ def _render_bottom_ctas():
                 # Persist CostPlan snapshot for PFMA
                 _snapshot_for_pfma()
                 
-                # Check authentication status
-                authed = st.session_state.get("auth", {}).get("is_authenticated", False)
-                
-                if authed:
-                    # Authenticated: go directly to PFMA (financial assessment)
-                    print(f"[CTA_PAY] authed -> fa_intro (path={cost['path_choice']})")
-                    st.query_params["page"] = "fa_intro"
-                else:
-                    # Not authenticated: go to auth with return parameter
-                    print(f"[CTA_PAY] not authed -> auth_start (return=fa_intro, path={cost['path_choice']})")
-                    st.query_params["page"] = "auth_start"
-                    st.query_params["return"] = "fa_intro"
-                
+                # Navigate to Cost Planner v2 triage step
+                print(f"[CTA_PAY] → cost_v2 triage (path={cost['path_choice']})")
+                st.session_state.cost_v2_step = "triage"
+                st.query_params["page"] = "cost_v2"
                 st.rerun()
     
     with col2:

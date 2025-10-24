@@ -205,11 +205,8 @@ PAGES = load_nav(ctx)
 route = current_route("welcome", PAGES)
 _sanitize_query_params_for_welcome(route)
 
-# Cost Planner v2 redirect: force cost_v2 to new intro page
-if route == "cost_v2":
-    print(f"[ROUTER_WARN] page={route} not allowed → redirect cost_intro")
-    st.query_params["page"] = "cost_intro"
-    st.rerun()
+# Cost Planner v2: Allow direct access to cost_v2 product router
+# (removed redirect that was forcing to cost_intro)
 
 LAYOUT_CHROME_ROUTES = {
     "welcome",
