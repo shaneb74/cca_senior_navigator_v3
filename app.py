@@ -205,6 +205,12 @@ PAGES = load_nav(ctx)
 route = current_route("welcome", PAGES)
 _sanitize_query_params_for_welcome(route)
 
+# Cost Planner v2 redirect: force cost_v2 to new intro page
+if route == "cost_v2":
+    print(f"[ROUTER_WARN] page={route} not allowed → redirect cost_intro")
+    st.query_params["page"] = "cost_intro"
+    st.rerun()
+
 LAYOUT_CHROME_ROUTES = {
     "welcome",
     "self",
@@ -225,6 +231,12 @@ if not uses_layout_frame:
     page_container_open()
 
 log_event("nav.page_change", {"to": route})
+
+# Log route resolution for key flows
+log_routes = ("cost_intro", "cost_quick_estimate", "auth_start", "login", "fa_intro", "pfma_v3")
+if route in log_routes:
+    module_path = PAGES[route]["render"].__module__ + ":" + PAGES[route]["render"].__name__
+    print(f"[ROUTER] page={route} -> {module_path}")
 
 PAGES[route]["render"]()
 

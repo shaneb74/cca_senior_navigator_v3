@@ -46,6 +46,12 @@
           "hidden": true
         },
         {
+          "key": "auth_start",
+          "label": "Authentication",
+          "module": "pages.login:render",
+          "hidden": true
+        },
+        {
           "key": "signup",
           "label": "Sign up",
           "module": "pages.signup:render",
@@ -130,6 +136,18 @@
           "hidden": true
         },
         {
+          "key": "cost_intro",
+          "label": "Cost Planner Intro",
+          "module": "products.cost_planner_v2.intro:render",
+          "hidden": true
+        },
+        {
+          "key": "cost_quick_estimate",
+          "label": "Quick Estimate",
+          "module": "products.cost_planner_v2.quick_estimate:render",
+          "hidden": true
+        },
+        {
           "key": "cost_review",
           "label": "Cost Planner Review",
           "module": "pages.cost_review:render",
@@ -138,6 +156,12 @@
         {
           "key": "pfma_v3",
           "label": "Plan with My Advisor",
+          "module": "products.pfma_v3.product:render",
+          "hidden": true
+        },
+        {
+          "key": "fa_intro",
+          "label": "Financial Assessment",
           "module": "products.pfma_v3.product:render",
           "hidden": true
         },

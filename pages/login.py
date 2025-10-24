@@ -6,6 +6,19 @@ from core.nav import route_to
 from core.state import authenticate_user
 from core.ui import img_src
 
+
+def _go_next_after_auth():
+    """Navigate to next page after successful authentication.
+    
+    Reads 'return' query param to determine destination.
+    Defaults to hub_concierge if no return param.
+    """
+    return_page = st.query_params.get("return", "hub_concierge")
+    print(f"[AUTH] success -> {return_page}")
+    st.query_params.clear()
+    route_to(return_page)
+
+
 # Demo/test user profiles with fixed UIDs for consistent testing
 DEMO_USERS = {
     "demo_sarah": {
@@ -56,11 +69,10 @@ def render():
         authenticate_user(name=demo["name"], email=demo["email"])
 
         # Update URL to include demo UID
-        st.query_params.clear()
         st.query_params["uid"] = demo["uid"]
 
-        # Redirect to hub
-        route_to("hub_concierge")
+        # Navigate to next page (respects return param)
+        _go_next_after_auth()
         st.rerun()
 
     # Check if form was submitted
@@ -72,9 +84,8 @@ def render():
         # Toggle auth on
         authenticate_user(name=name, email=email)
 
-        # Clear query params and redirect to hub
-        st.query_params.clear()
-        route_to("hub_concierge")
+        # Navigate to next page (respects return param)
+        _go_next_after_auth()
         st.rerun()
 
     # Show form UI
@@ -177,8 +188,8 @@ def render():
             # Get values from form (use defaults)
             authenticate_user(name="Sarah", email="sarah@example.com")
             st.success("✅ Logged in as Sarah!")
-            st.info("Redirecting to Concierge Hub...")
-            route_to("hub_concierge")
+            st.info("Redirecting...")
+            _go_next_after_auth()
             st.rerun()
 
     with col2:

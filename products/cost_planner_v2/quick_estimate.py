@@ -15,6 +15,7 @@ import streamlit as st
 from core.mcip import MCIP
 from core.nav import route_to
 from core.navi import render_navi_panel
+from core.user_persist import persist_costplan, get_current_user_id
 from products.cost_planner_v2 import comparison_calcs
 from products.cost_planner_v2.ui_helpers import go_to_intro
 
@@ -120,6 +121,67 @@ def _get_gcp_hours_per_day() -> float:
     mapped_hours = hours_map.get(hours_normalized, 2.0)  # default to 2.0, not 1.0 or 8.0
 
     return mapped_hours
+
+
+# ==============================================================================
+# CTA VALIDATION & SNAPSHOT
+# ==============================================================================
+
+def _validate_qe_ready(cost: dict) -> tuple[bool, str | None]:
+    """Validate if QE has minimum required inputs for PFMA handoff.
+    
+    Args:
+        cost: Cost session state dict
+        
+    Returns:
+        (is_valid, error_message) tuple
+    """
+    # Require a chosen path and ZIP at minimum
+    path = cost.get("path_choice")
+    zip_code = cost.get("inputs", {}).get("zip")
+    
+    if not path:
+        return False, "Choose a care path above to continue."
+    if not zip_code:
+        return False, "Enter your ZIP code to localize costs."
+    
+    return True, None
+
+
+def _snapshot_for_pfma(event: str = "qe_pay_cta"):
+    """Persist comprehensive CostPlan snapshot for PFMA handoff.
+    
+    Args:
+        event: Event name for logging
+    """
+    cost = st.session_state.get("cost", {})
+    g = st.session_state.get("gcp", {})
+    
+    snap = {
+        "event": event,
+        "corr_id": st.session_state.get("corr_id"),
+        "zip": cost.get("inputs", {}).get("zip"),
+        "region": cost.get("region_label"),
+        "selected_assessment": cost.get("selected_assessment"),
+        "chosen_path": cost.get("path_choice"),
+        "home_hours": cost.get("home_hours_scalar"),
+        "home_carry": cost.get("inputs", {}).get("home_carry"),
+        "keep_home": cost.get("keep_home"),
+        "totals_cache": cost.get("totals_cache"),
+        "segments_cache": cost.get("segments_cache"),
+        "gcp": {
+            "published_tier": g.get("published_tier"),
+            "allowed_tiers": g.get("allowed_tiers"),
+            "hours_user_band": g.get("hours_user_band"),
+            "hours_llm_band": g.get("hours_llm"),
+        },
+    }
+    
+    try:
+        persist_costplan(get_current_user_id(), snap)
+        print(f"[CTA_PAY] persisted costplan snapshot event={event}")
+    except Exception as e:
+        print(f"[CTA_PAY] persist failed: {e}")
 
 
 # ==============================================================================
@@ -650,45 +712,45 @@ def _render_bottom_ctas():
             use_container_width=True,
             key="qe_continue"
         ):
-            # Store selected breakdown for FA handoff
-            selected_plan_key = st.session_state.comparison_selected_plan
+            # Validate QE is ready for PFMA handoff
+            cost = st.session_state.get("cost", {})
+            ok, err = _validate_qe_ready(cost)
             
-            if selected_plan_key.startswith("facility_"):
-                selected_breakdown = st.session_state.comparison_facility_breakdown
-                is_facility = True
+            if not ok:
+                # Store error in cost state to display inline
+                st.session_state["cost"]["cta_error"] = err
+                print(f"[CTA_PAY] blocked: {err}")
+                st.rerun()
             else:
-                selected_breakdown = st.session_state.comparison_inhome_breakdown
-                is_facility = False
-            
-            care_cost_monthly = selected_breakdown.monthly_total
-            home_carry_monthly = 0.0
-            
-            if is_facility:
-                # Subtract home carry for facility care
-                for line in selected_breakdown.lines:
-                    if line.label == "Home Carry Cost" and line.applied:
-                        home_carry_monthly = line.value
-                        care_cost_monthly -= line.value
-                        break
-            
-            # Store for expert_review.py
-            st.session_state.cost_v2_quick_estimate = {
-                "estimate": {
-                    "monthly_adjusted": care_cost_monthly,
-                    "monthly_total": selected_breakdown.monthly_total,
-                    "care_type": selected_breakdown.care_type,
-                    "selected_plan": selected_plan_key,
-                }
-            }
-            
-            # Navigate to financial assessment
-            st.session_state.cost_v2_step = "auth"
-            st.rerun()
+                # Persist CostPlan snapshot for PFMA
+                _snapshot_for_pfma()
+                
+                # Check authentication status
+                authed = st.session_state.get("auth", {}).get("is_authenticated", False)
+                
+                if authed:
+                    # Authenticated: go directly to PFMA (financial assessment)
+                    print("[CTA_PAY] authed -> fa_intro")
+                    st.query_params["page"] = "fa_intro"
+                else:
+                    # Not authenticated: go to auth with return parameter
+                    print("[CTA_PAY] not authed -> auth_start (return=fa_intro)")
+                    st.query_params["page"] = "auth_start"
+                    st.query_params["return"] = "fa_intro"
+                
+                st.rerun()
     
     with col2:
         if st.button("💾 Save Both", use_container_width=True, key="qe_save_both"):
-            st.info("💡 Sign in to save scenarios")
+            _snapshot_for_pfma(event="qe_save_both")
+            print("[CTA_SAVE] saved snapshot")
+            st.success("💾 Scenarios saved!")
     
     with col3:
         if st.button("← Back to Hub", use_container_width=True, key="qe_back_hub"):
             route_to("hub_concierge")
+    
+    # Display inline error if CTA validation failed
+    err = st.session_state.get("cost", {}).pop("cta_error", None)
+    if err:
+        st.caption(f"⚠️ {err}")
