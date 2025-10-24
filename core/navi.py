@@ -424,6 +424,8 @@ def render_navi_panel(
     - Hub Guide (orchestration)
     - MCIP journey status (consolidated here)
     - Module progress bars (Navi IS the progress)
+    
+    Enhanced with LLM-powered contextual advice generation.
 
     Args:
         location: "hub" or "product"
@@ -434,12 +436,22 @@ def render_navi_panel(
     Returns:
         NaviContext for downstream use
     """
-    from core.navi_dialogue import NaviDialogue
+    from core.navi_dialogue import NaviDialogue, render_navi_enhanced_panel
     from core.ui import render_navi_panel_v2
+    from core.flags import get_flag_value
 
     # Get complete context
     ctx = NaviOrchestrator.get_context(location, hub_key, product_key, module_config)
 
+    # Check if LLM enhancement is enabled
+    llm_mode = get_flag_value("FEATURE_LLM_NAVI", "off")
+    use_llm_enhancement = llm_mode in ["assist", "adjust"]
+    
+    # Try LLM-enhanced rendering first if enabled
+    if use_llm_enhancement and _try_llm_enhanced_panel(ctx, location, hub_key, product_key):
+        return ctx
+
+    # Fall back to existing static rendering logic
     # Get guidance text based on location
     if location == "hub":
         # ============================================================
@@ -975,6 +987,105 @@ def render_navi_panel(
                 )
 
     return ctx
+
+
+# ============================================================================
+# LLM ENHANCEMENT FUNCTIONS
+# ============================================================================
+
+def _try_llm_enhanced_panel(
+    ctx: NaviContext, 
+    location: str, 
+    hub_key: str | None = None, 
+    product_key: str | None = None
+) -> bool:
+    """Try to render LLM-enhanced Navi panel.
+    
+    Args:
+        ctx: Navi context with journey state
+        location: "hub" or "product" 
+        hub_key: Hub identifier
+        product_key: Product identifier
+        
+    Returns:
+        True if LLM panel was rendered, False to fall back to static
+    """
+    try:
+        from ai.navi_llm_engine import NaviLLMEngine, build_navi_context_from_session
+        from core.navi_dialogue import render_navi_enhanced_panel
+        from core.flags import get_flag_value
+        
+        # Build LLM context from current session
+        navi_context = build_navi_context_from_session()
+        
+        # Override with specific context
+        navi_context.current_location = location
+        if product_key:
+            navi_context.current_location = product_key
+            
+        # Add context from NaviOrchestrator
+        if ctx.care_recommendation:
+            navi_context.care_tier = ctx.care_recommendation.tier
+            navi_context.care_confidence = getattr(ctx.care_recommendation, 'confidence', None)
+            
+        if ctx.financial_profile:
+            navi_context.estimated_cost = getattr(ctx.financial_profile, 'monthly_cost', None)
+            navi_context.has_financial_profile = True
+            
+        navi_context.user_name = ctx.user_name
+        navi_context.is_authenticated = ctx.is_authenticated
+        
+        # Add product-specific context
+        navi_context.product_context = {
+            "location": location,
+            "hub_key": hub_key,
+            "product_key": product_key,
+            "progress": ctx.progress,
+            "next_action": ctx.next_action
+        }
+        
+        # Generate LLM-powered advice
+        advice = NaviLLMEngine.generate_advice(navi_context)
+        tips = NaviLLMEngine.generate_contextual_tips(navi_context)
+        
+        if advice or tips:
+            # Determine panel title based on location
+            if location == "hub":
+                if hub_key == "concierge":
+                    title = "Your Care Journey"
+                elif hub_key == "professional":
+                    title = "Professional Dashboard" 
+                elif hub_key == "waiting_room":
+                    title = "Your Waiting Room"
+                else:
+                    title = "Navi Guidance"
+            else:
+                title = f"Guidance for {product_key or 'Current Step'}"
+                
+            # Check flag mode for display indicators
+            llm_mode = get_flag_value("FEATURE_LLM_NAVI", "off")
+            show_indicator = llm_mode in ["shadow", "assist"]
+            
+            # Render enhanced panel
+            render_navi_enhanced_panel(
+                title=title,
+                advice=advice.__dict__ if advice else None,
+                tips=tips.tips if tips else None,
+                show_llm_indicator=show_indicator
+            )
+            
+            # Log for shadow mode
+            if llm_mode == "shadow":
+                print(f"[NAVI_LLM_SHADOW] Generated advice: {advice}")
+                print(f"[NAVI_LLM_SHADOW] Generated tips: {tips}")
+            
+            return True
+            
+    except Exception as e:
+        print(f"[NAVI_LLM] Enhancement failed, falling back to static: {e}")
+        return False
+        
+    return False
 
 
 __all__ = ["NaviContext", "NaviOrchestrator", "render_navi_panel"]

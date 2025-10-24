@@ -18,6 +18,51 @@ If a module tries to set an undefined flag, a validation warning will appear.
 import streamlit as st
 
 # ==============================================================================
+# FEATURE FLAGS (System-wide capabilities)
+# ==============================================================================
+
+FEATURE_FLAGS = {
+    "FEATURE_LLM_NAVI": {
+        "default": "off",
+        "values": ["off", "shadow", "assist", "adjust"],
+        "description": "Controls LLM-powered Navi dialogue generation",
+        "details": {
+            "off": "Static dialogue only (JSON-based messages)",
+            "shadow": "LLM runs in background, logs results, shows static messages",
+            "assist": "LLM provides additional context tips alongside static messages", 
+            "adjust": "LLM fully replaces static messages with dynamic contextual advice"
+        }
+    }
+}
+
+def get_flag_value(flag_name: str, default: str = None) -> str:
+    """Get the value of a feature flag.
+    
+    Args:
+        flag_name: Name of the feature flag
+        default: Default value if not set
+        
+    Returns:
+        Current flag value
+    """
+    if flag_name in FEATURE_FLAGS:
+        default = default or FEATURE_FLAGS[flag_name]["default"]
+        
+    # Check environment variables first
+    import os
+    env_value = os.getenv(flag_name)
+    if env_value:
+        return env_value
+        
+    # Check session state
+    if hasattr(st, 'session_state'):
+        session_value = st.session_state.get(f"flag_{flag_name}")
+        if session_value:
+            return session_value
+            
+    return default or "off"
+
+# ==============================================================================
 # CENTRAL FLAG REGISTRY
 # ==============================================================================
 # This is the authoritative list of ALL valid flags in the system.
@@ -409,8 +454,10 @@ def has_all_flags(flag_names: list) -> bool:
 
 __all__ = [
     "FLAG_REGISTRY",
-    "VALID_FLAGS",
+    "VALID_FLAGS", 
     "COST_MODEL_FLAGS",
+    "FEATURE_FLAGS",
+    "get_flag_value",
     "get_flag_info",
     "validate_flags",
     "get_flags_by_category",
