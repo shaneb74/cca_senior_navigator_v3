@@ -7,14 +7,14 @@ Captures user selection vs baseline vs LLM suggestion for training data.
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 
 def log_hours_case(
     context: Any,
     base_band: str,
-    llm_band: Optional[str],
-    llm_conf: Optional[float],
+    llm_band: str | None,
+    llm_conf: float | None,
     mode: str
 ) -> None:
     """Log a hours suggestion case for offline analysis.
@@ -38,9 +38,9 @@ def log_hours_case(
         # Ensure data/training directory exists
         log_dir = Path(__file__).parent.parent / "data" / "training"
         log_dir.mkdir(parents=True, exist_ok=True)
-        
+
         log_file = log_dir / "hours_cases.jsonl"
-        
+
         # Build row dict (extract fields from HoursContext)
         row = {
             "ts": datetime.utcnow().isoformat(),
@@ -58,11 +58,11 @@ def log_hours_case(
             "llm_band": llm_band,
             "llm_conf": llm_conf,
         }
-        
+
         # Append to JSONL
         with open(log_file, "a", encoding="utf-8") as f:
             f.write(json.dumps(row) + "\n")
-    
+
     except Exception as e:
         # Never fail the main flow - just log error
         print(f"[HOURS_LOG_ERROR] Failed to log hours case: {e}")

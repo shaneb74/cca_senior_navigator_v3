@@ -10,18 +10,19 @@ Tests the new LLM-first adjudication policy where:
 Run: python test_gcp_adjudication.py
 """
 
-import unittest
-from unittest.mock import Mock, patch, MagicMock
 import sys
+import unittest
+from unittest.mock import patch
+
 sys.path.append('.')
 
-from products.gcp_v4.modules.care_recommendation.logic import _choose_final_tier
 from core.models import CarePlan
+from products.gcp_v4.modules.care_recommendation.logic import _choose_final_tier
 
 
 class TestGCPAdjudication(unittest.TestCase):
     """Test suite for LLM-first GCP adjudication."""
-    
+
     def setUp(self):
         """Set up test fixtures."""
         self.bands = {"cog": "moderate", "sup": "high"}
@@ -37,7 +38,7 @@ class TestGCPAdjudication(unittest.TestCase):
             bands=self.bands,
             risky=False
         )
-        
+
         self.assertEqual(final_tier, "memory_care", "LLM tier should win when valid")
         self.assertEqual(decision["source"], "llm")
         self.assertEqual(decision["adjudication_reason"], "llm_valid")
@@ -48,7 +49,7 @@ class TestGCPAdjudication(unittest.TestCase):
         """Test fallback to deterministic when LLM tier not in allowed set."""
         # LLM suggests memory_care but it's not in allowed set
         allowed_no_mc = {"assisted_living", "in_home"}
-        
+
         final_tier, decision = _choose_final_tier(
             det_tier="assisted_living",
             allowed_tiers=allowed_no_mc,
@@ -57,7 +58,7 @@ class TestGCPAdjudication(unittest.TestCase):
             bands=self.bands,
             risky=False
         )
-        
+
         self.assertEqual(final_tier, "assisted_living", "Should fallback to deterministic")
         self.assertEqual(decision["source"], "fallback")
         self.assertEqual(decision["adjudication_reason"], "llm_invalid_guard")
@@ -74,9 +75,9 @@ class TestGCPAdjudication(unittest.TestCase):
             bands=self.bands,
             risky=False
         )
-        
+
         self.assertEqual(final_tier, "in_home", "Should fallback to deterministic")
-        self.assertEqual(decision["source"], "fallback") 
+        self.assertEqual(decision["source"], "fallback")
         self.assertEqual(decision["adjudication_reason"], "llm_timeout")
         self.assertIsNone(decision["llm"])
         self.assertEqual(decision["det"], "in_home")
@@ -91,7 +92,7 @@ class TestGCPAdjudication(unittest.TestCase):
             bands=self.bands,
             risky=False
         )
-        
+
         self.assertEqual(final_tier, "assisted_living", "Should use LLM tier even when same")
         self.assertEqual(decision["source"], "llm", "Source should be LLM when LLM is valid")
         self.assertEqual(decision["adjudication_reason"], "llm_valid")
@@ -102,14 +103,14 @@ class TestGCPAdjudication(unittest.TestCase):
         """Test that confidence does not affect decision - only validity."""
         # Low confidence but valid LLM tier should still win
         final_tier, decision = _choose_final_tier(
-            det_tier="assisted_living", 
+            det_tier="assisted_living",
             allowed_tiers=self.allowed_tiers,
             llm_tier="in_home",
             llm_conf=0.20,  # Very low confidence
             bands=self.bands,
             risky=False
         )
-        
+
         self.assertEqual(final_tier, "in_home", "LLM should win regardless of low confidence")
         self.assertEqual(decision["source"], "llm")
         self.assertEqual(decision["adjudication_reason"], "llm_valid")
@@ -124,7 +125,7 @@ class TestGCPAdjudication(unittest.TestCase):
             bands=self.bands,
             risky=False
         )
-        
+
         self.assertEqual(final_tier, "assisted_living", "Should default to safe fallback")
         self.assertEqual(decision["source"], "fallback")
         self.assertEqual(decision["adjudication_reason"], "double_missing_default")
@@ -139,7 +140,7 @@ class TestGCPAdjudication(unittest.TestCase):
             bands=self.bands,
             risky=False
         )
-        
+
         self.assertEqual(final_tier, "assisted_living", "Should fallback when LLM tier unrecognized")
         self.assertEqual(decision["source"], "fallback")
         self.assertEqual(decision["adjudication_reason"], "llm_invalid_guard")
@@ -147,7 +148,7 @@ class TestGCPAdjudication(unittest.TestCase):
     @patch('streamlit.session_state', {})
     def test_partner_independent_llm_first(self):
         """Test partner adjudication is independent and follows LLM-first."""
-        
+
         # Test primary person - LLM valid
         primary_tier, primary_decision = _choose_final_tier(
             det_tier="assisted_living",
@@ -157,7 +158,7 @@ class TestGCPAdjudication(unittest.TestCase):
             bands=self.bands,
             risky=False
         )
-        
+
         # Test partner - LLM invalid (not in allowed)
         partner_tier, partner_decision = _choose_final_tier(
             det_tier="in_home",
@@ -167,12 +168,12 @@ class TestGCPAdjudication(unittest.TestCase):
             bands=self.bands,
             risky=False
         )
-        
+
         # Verify primary uses LLM
         self.assertEqual(primary_tier, "memory_care")
         self.assertEqual(primary_decision["source"], "llm")
-        
-        # Verify partner falls back to deterministic  
+
+        # Verify partner falls back to deterministic
         self.assertEqual(partner_tier, "in_home")
         self.assertEqual(partner_decision["source"], "fallback")
         self.assertEqual(partner_decision["adjudication_reason"], "llm_invalid_guard")
@@ -189,7 +190,7 @@ class TestGCPAdjudication(unittest.TestCase):
             llm_confidence=0.85,
             adjudication_reason="llm_valid"
         )
-        
+
         # Verify all fields are set correctly
         self.assertEqual(cp.source, "llm")
         self.assertEqual(cp.alt_tier, "assisted_living")
@@ -207,10 +208,10 @@ class TestGCPAdjudication(unittest.TestCase):
             det_tier="assisted_living",
             final_tier="assisted_living"
         )
-        
+
         # New fields should be None by default
         self.assertIsNone(cp.source)
-        self.assertIsNone(cp.alt_tier) 
+        self.assertIsNone(cp.alt_tier)
         self.assertIsNone(cp.llm_confidence)
         self.assertIsNone(cp.adjudication_reason)
 
@@ -224,14 +225,14 @@ class TestGCPAdjudication(unittest.TestCase):
             bands=self.bands,
             risky=True
         )
-        
+
         # Verify all required fields are present
-        required_fields = ["det", "llm", "conf", "allowed", "bands", "risky", 
+        required_fields = ["det", "llm", "conf", "allowed", "bands", "risky",
                           "reason", "source", "adjudication_reason"]
-        
+
         for field in required_fields:
             self.assertIn(field, decision, f"Decision missing required field: {field}")
-        
+
         # Verify field types and values
         self.assertIsInstance(decision["allowed"], list)
         self.assertIsInstance(decision["bands"], dict)
@@ -242,6 +243,6 @@ class TestGCPAdjudication(unittest.TestCase):
 if __name__ == "__main__":
     print("🧪 Testing GCP Adjudication Simplification — LLM-First, Deterministic Fallback")
     print("=" * 80)
-    
+
     # Run the tests
     unittest.main(verbosity=2)

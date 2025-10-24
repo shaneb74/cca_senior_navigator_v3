@@ -29,20 +29,20 @@ def render_gcp_navi_card():
     llm_mode = get_feature_gcp_mode()
     if llm_mode != "assist":
         return  # Don't render in off/shadow modes
-    
+
     # Check if LLM advice is available
     llm_advice = st.session_state.get("_gcp_llm_advice")
     if not llm_advice:
         return  # No advice to display
-    
+
     # Extract data
     navi_messages = llm_advice.get("navi_messages", [])
     reasons = llm_advice.get("reasons", [])
-    
+
     # Only render if we have content
     if not navi_messages and not reasons:
         return
-    
+
     # Render Navi card (additive, non-intrusive)
     st.markdown("---")
     st.markdown("### 💡 Navi thinks...")
@@ -51,20 +51,20 @@ def render_gcp_navi_card():
         "border-left: 4px solid #4a90e2;'>",
         unsafe_allow_html=True,
     )
-    
+
     # Show up to 2 Navi messages
     if navi_messages:
         for i, msg in enumerate(navi_messages[:2], 1):
             st.markdown(f"**Message {i}:** {msg}")
             if i < min(2, len(navi_messages)):
                 st.markdown("")  # Spacing
-    
+
     # Show up to 2 reasons
     if reasons:
         st.markdown("**Key factors considered:**")
         for reason in reasons[:2]:
             st.markdown(f"- {reason}")
-    
+
     st.markdown("</div>", unsafe_allow_html=True)
     st.markdown("")  # Spacing after card
 
@@ -91,32 +91,32 @@ def render_hours_suggestion():
         mode = gcp_hours_mode()
     except Exception:
         return  # Can't check mode, skip
-    
+
     if mode != "assist":
         return  # Only render in assist mode
-    
+
     # Check the care tier - only show hours for in-home recommendations
     summary_advice = st.session_state.get("_summary_advice", {})
     care_tier = summary_advice.get("tier", "")
-    
+
     # Show hours for in-home tiers OR when comparing with staying home
     facility_tiers = ["assisted_living", "memory_care", "memory_care_high_acuity"]
     compare_inhome = st.session_state.get("cost.compare_inhome", False)
-    
+
     # Diagnostic log
     try:
         print(f"[HOURS_SUGGEST_CHECK] tier={care_tier} is_facility={care_tier in facility_tiers} compare={compare_inhome}")
     except Exception:
         pass
-    
+
     if care_tier in facility_tiers and not compare_inhome:
         return  # Don't show hours for facility-based care unless comparing with home
-    
+
     # Check if suggestion is available
     suggestion = st.session_state.get("_hours_suggestion")
     if not suggestion:
         return  # No suggestion to display
-    
+
     # Extract data
     band = suggestion.get("band")
     baseline = suggestion.get("base")
@@ -125,10 +125,10 @@ def render_hours_suggestion():
     user_band = suggestion.get("user")
     nudge_text = suggestion.get("nudge_text")
     severity = suggestion.get("severity")
-    
+
     if not band:
         return  # No band to suggest
-    
+
     # Map band to friendly text
     band_text = {
         "<1h": "less than 1 hour",
@@ -136,18 +136,18 @@ def render_hours_suggestion():
         "4-8h": "4–8 hours",
         "24h": "24-hour support",
     }.get(band, band)
-    
+
     # If there's a nudge (user under-selected), show warning-style card
     if nudge_text and user_band:
         st.markdown(
-            f"<div style='background-color: #fff3cd; padding: 0.75rem 1rem; border-radius: 0.5rem; "
-            f"border-left: 4px solid #ffc107; margin-bottom: 1rem;'>",
+            "<div style='background-color: #fff3cd; padding: 0.75rem 1rem; border-radius: 0.5rem; "
+            "border-left: 4px solid #ffc107; margin-bottom: 1rem;'>",
             unsafe_allow_html=True,
         )
-        
-        st.markdown(f"⚠️ **Please reconsider your hours selection**", unsafe_allow_html=True)
+
+        st.markdown("⚠️ **Please reconsider your hours selection**", unsafe_allow_html=True)
         st.markdown(f"<p style='margin-top: 0.5rem; margin-bottom: 0.5rem;'>{nudge_text}</p>", unsafe_allow_html=True)
-        
+
         # Show what they selected vs. what's suggested
         user_text = {
             "<1h": "less than 1 hour",
@@ -155,30 +155,30 @@ def render_hours_suggestion():
             "4-8h": "4–8 hours",
             "24h": "24-hour support",
         }.get(user_band, user_band)
-        
+
         st.markdown(
             f"<small style='color: #856404;'>You selected: <strong>{user_text}/day</strong> | "
             f"Navi recommends: <strong>{band_text}/day</strong></small>",
             unsafe_allow_html=True,
         )
-        
+
         st.markdown("</div>", unsafe_allow_html=True)
-    
+
     else:
         # Normal suggestion (no nudge) - compact, non-intrusive
         st.markdown(
-            f"<div style='background-color: #f9f9f9; padding: 0.75rem 1rem; border-radius: 0.5rem; "
-            f"border-left: 3px solid #6c757d; margin-bottom: 1rem;'>",
+            "<div style='background-color: #f9f9f9; padding: 0.75rem 1rem; border-radius: 0.5rem; "
+            "border-left: 3px solid #6c757d; margin-bottom: 1rem;'>",
             unsafe_allow_html=True,
         )
-        
+
         # Main suggestion line
         st.markdown(f"💡 **Navi suggests {band_text}/day** based on your answers", unsafe_allow_html=True)
-        
+
         # Show top reason if available
         if reasons and len(reasons) > 0:
             st.markdown(f"<small style='color: #6c757d;'>• {reasons[0]}</small>", unsafe_allow_html=True)
-        
+
         # Show confidence if LLM refined (not baseline fallback)
         if confidence is not None and confidence > 0:
             conf_pct = int(confidence * 100)
@@ -186,7 +186,7 @@ def render_hours_suggestion():
             f"<small style='color: #6c757d;'>Confidence: {conf_pct}%</small>",
             unsafe_allow_html=True,
         )
-        
+
         st.markdown("</div>", unsafe_allow_html=True)
 
 
@@ -196,6 +196,7 @@ def _play_chime_once():
     """
     import base64
     import pathlib
+
     import streamlit as st
 
     p = pathlib.Path("assets/audio/chime.mp3")
@@ -230,13 +231,14 @@ def render_hours_nudge():
     
     The nudge is advisory only - does not change user's selection.
     """
-    import streamlit as st
     import os
-    
+
+    import streamlit as st
+
     sugg = st.session_state.get("_hours_suggestion")
     if not sugg:
         return
-    
+
     # Check if assist mode is enabled
     mode = None
     try:
@@ -245,38 +247,38 @@ def render_hours_nudge():
         pass
     if not mode:
         mode = os.getenv("FEATURE_GCP_HOURS", "off")
-    
+
     if str(mode).lower() != "assist":
         return
-    
+
     # Check the care tier - only show hours for in-home recommendations
     summary_advice = st.session_state.get("_summary_advice", {})
     care_tier = summary_advice.get("tier", "")
-    
+
     # Show hours for in-home tiers OR when comparing with staying home
     facility_tiers = ["assisted_living", "memory_care", "memory_care_high_acuity"]
     compare_inhome = st.session_state.get("cost.compare_inhome", False)
-    
+
     # Diagnostic log
     try:
         print(f"[HOURS_WARNING_CHECK] tier={care_tier} is_facility={care_tier in facility_tiers} compare={compare_inhome}")
     except Exception:
         pass
-    
+
     if care_tier in facility_tiers and not compare_inhome:
         return  # Don't show hours for facility-based care unless comparing with home
-    
+
     # Suppress if already acknowledged (to avoid duplication with top header)
     if st.session_state.get("_hours_ack"):
         return
-    
+
     # Get user selection
     user = st.session_state.get("gcp_hours_user_choice") or "-"
-    
+
     # Check if nudge exists and user has made a selection
     if not sugg.get("nudge_text") or user == "-":
         return
-    
+
     # Render warning card with nudge (bottom card - optional, kept for context)
     st.warning(
         f"💡 Navi suggests **{sugg['band']} hours per day** instead of **{user}**, "
@@ -297,10 +299,9 @@ def render_navi_header_message():
     Play the chime once when a NEW nudge appears (only on GCP route) and then clear the flag.
     """
     import os
+
     import streamlit as st
-    import base64
-    import pathlib
-    
+
     # Single-render guard to prevent recursion/duplication per page
     # Scope by a simple per-page key so a stale flag from a previous page doesn't block first paint
     pending_title = st.session_state.get("gcp_step_title") or ""
@@ -310,7 +311,7 @@ def render_navi_header_message():
         return
     st.session_state["_gcp_cp_header_rendered"] = True
     st.session_state["_gcp_cp_header_key"] = page_key
-    
+
     # Check if assist mode is enabled
     mode = None
     try:
@@ -319,7 +320,7 @@ def render_navi_header_message():
         pass
     if not mode:
         mode = os.getenv("FEATURE_GCP_HOURS", "off")
-    
+
     # Resolve route and page scope
     route = st.session_state.get("route") or st.query_params.get("page") or ""
     is_gcp = (route == "gcp")
@@ -337,7 +338,7 @@ def render_navi_header_message():
     step_id = str(st.session_state.get("gcp_current_step_id") or st.session_state.get("step_id") or st.session_state.get("current_step") or "")
     is_results = (step_id == "results")
     adv = st.session_state.get("_summary_advice") or {}
-    
+
     # Guard against tier=None: Use published tier as fallback to prevent flicker
     tier_from_advice = adv.get("tier")
     if not tier_from_advice:
@@ -345,7 +346,6 @@ def render_navi_header_message():
         tier_from_advice = st.session_state.get("gcp.final_tier")
         if not tier_from_advice:
             try:
-                from core.mcip import MCIP
                 from core.household import get_careplan_for
                 person_id = st.session_state.get("person_id", "self")
                 careplan = get_careplan_for(person_id)
@@ -353,31 +353,31 @@ def render_navi_header_message():
                     tier_from_advice = careplan.tier
             except Exception:
                 pass
-    
+
     tier_txt = (tier_from_advice or "—").replace("_", " ").title()
-    
+
     # Log tier resolution for debugging first-click flicker
     try:
         print(f"[SUMMARY_ADVICE] present={bool(adv)} step={step_id} tier={tier_from_advice or 'None'}")
     except Exception:
         pass
-    
+
     # Stable header strategy: Always show something to prevent first-click flicker
     # Track if user has provided ANY answers yet to determine readiness
     module_state = st.session_state.get("gcp_v4_care_recommendation_module", {})
     has_answers = bool(module_state and len([k for k in module_state.keys() if not k.startswith("_")]) > 0)
-    
+
     # Only show recommendations on RESULTS step or when summary is ready
     summary_ready = st.session_state.get("summary_ready", False)
     can_recommend = is_results or summary_ready
-    
+
     # Log readiness for first-click flicker debugging
     if step_id in ("about_you", "daily_living"):
         is_first_answer = has_answers and not st.session_state.get(f"_navi_step_{step_id}_logged", False)
         if is_first_answer:
             print(f"[NAVI_STEP] step={step_id} ready={has_answers} event=first_click")
             st.session_state[f"_navi_step_{step_id}_logged"] = True
-    
+
     if can_recommend:
         headline = (adv.get("headline") or f"Based on your answers, I recommend {tier_txt}.").strip()
     else:
@@ -394,21 +394,21 @@ def render_navi_header_message():
     # Only show hours hint inside header on RESULTS or CP intro
     is_cp_intro = bool(st.session_state.get("cp_intro", False))
     allow_hours_hint = is_results or is_cp_intro
-    
+
     # Check care tier - show hours for in-home OR when comparing with staying home
     # Use tier_from_advice (already guarded against None above) instead of reading from adv again
     care_tier = tier_from_advice or ""
     facility_tiers = ["assisted_living", "memory_care", "memory_care_high_acuity"]
     compare_inhome = st.session_state.get("cost.compare_inhome", False)
     hours_for_facility = care_tier in facility_tiers and not compare_inhome
-    
+
     # Diagnostic log with guarded tier
     try:
         print(f"[HOURS_HEADER_CHECK] tier={care_tier or 'None'} is_facility={care_tier in facility_tiers} "
               f"compare={compare_inhome} hide_hours={hours_for_facility}")
     except Exception:
         pass
-    
+
     show_hours_hint = bool(allow_hours_hint and under and nudge_text and not st.session_state.get("_hours_ack") and not hours_for_facility)
 
     # Compose reason HTML (inside the blue header panel) with Navi recommendation + optional nudge
@@ -451,7 +451,7 @@ def render_navi_header_message():
     except Exception:
         # If blue header unavailable, skip silently (no alternative banners)
         pass
-    
+
     # Render CTA buttons below header ONLY on RESULTS (assist + under-selected and not yet acknowledged + not facility-based)
     if (
         is_results
@@ -483,7 +483,7 @@ def render_navi_header_message():
                 st.session_state["_hours_nudge_new"] = False
                 print(f"[GCP_HOURS_ACK] action=kept user={user} suggested={band}")
                 st.rerun()
-    
+
     # Play chime once strictly for under-selected hours (assist mode only) on header render
     feat = str(mode).strip('"').lower() if mode else "off"
     ack = bool(st.session_state.get("_hours_ack", False))
@@ -516,28 +516,28 @@ def render_navi_header_and_summary():
     Only renders if _summary_advice is available in session state.
     """
     import streamlit as st
-    
+
     adv = st.session_state.get("_summary_advice")
     if not adv:
         return
-    
+
     # Add spacing
     st.markdown("<div style='margin-top:.5rem'></div>", unsafe_allow_html=True)
-    
+
     # Show headline
     st.markdown(f"**{adv['headline']}**")
-    
+
     # Show explanation (what_it_means or fallback to first 2 why items)
     body = adv.get("what_it_means") or " ".join(adv.get("why", [])[:2])
     if body:
         st.markdown(body)
-    
+
     # Show next steps if available
     if adv.get("next_steps"):
         st.markdown("**Next steps**")
         for step in adv["next_steps"][:3]:
             st.markdown(f"- {step}")
-    
+
     # Show transition line if available
     if adv.get("next_line"):
         st.markdown(

@@ -35,9 +35,10 @@ import json
 import os
 import time
 import uuid
+from collections.abc import Mapping
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Optional, Mapping
+from typing import Any
 
 try:
     import filelock
@@ -176,7 +177,7 @@ def _atomic_write(path: Path, data: dict[str, Any], retries: int = MAX_RETRIES) 
     return False
 
 
-def _safe_read(path: Path) -> Optional[Mapping[str, Any]]:
+def _safe_read(path: Path) -> Mapping[str, Any] | None:
     """Read JSON file safely with error handling.
 
     If file is corrupted or doesn't exist, returns None.

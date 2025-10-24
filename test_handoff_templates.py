@@ -9,16 +9,17 @@ Tests the new contextual template system with all context variables:
 Run: python test_handoff_templates.py
 """
 
-import unittest
 import sys
+import unittest
+
 sys.path.append('.')
 
-from ai.navi_engine import generate_handoff_blurb, _get_handoff_templates
+from ai.navi_engine import _get_handoff_templates, generate_handoff_blurb
 
 
 class TestHandoffTemplates(unittest.TestCase):
     """Test enhanced handoff blurb templates."""
-    
+
     def test_assisted_living_basic(self):
         """Test basic assisted living template."""
         blurb = generate_handoff_blurb(
@@ -26,7 +27,7 @@ class TestHandoffTemplates(unittest.TestCase):
             dual_mode=False,
             care_intensity="medium"
         )
-        
+
         self.assertIn("Assisted Living", blurb)
         self.assertIn("costs", blurb)
         self.assertIn("monthly fees", blurb)
@@ -39,7 +40,7 @@ class TestHandoffTemplates(unittest.TestCase):
             dual_mode=True,
             care_intensity="medium"
         )
-        
+
         self.assertIn("Assisted Living", blurb)
         self.assertIn("partner's care options", blurb)
         self.assertIn("both of you", blurb)
@@ -51,7 +52,7 @@ class TestHandoffTemplates(unittest.TestCase):
             compare_inhome_suggested=True,
             care_intensity="medium"
         )
-        
+
         self.assertIn("Assisted Living", blurb)
         self.assertIn("compare them with staying home", blurb)
 
@@ -62,7 +63,7 @@ class TestHandoffTemplates(unittest.TestCase):
             threshold_crossed=True,
             care_intensity="medium"
         )
-        
+
         self.assertIn("Assisted Living", blurb)
         self.assertIn("fit your budget", blurb)
         self.assertIn("financial assistance", blurb)
@@ -73,7 +74,7 @@ class TestHandoffTemplates(unittest.TestCase):
             primary_tier="assisted_living",
             care_intensity="high"
         )
-        
+
         self.assertIn("Assisted Living", blurb)
         self.assertIn("specialized care level", blurb)
 
@@ -84,7 +85,7 @@ class TestHandoffTemplates(unittest.TestCase):
             dual_mode=False,
             care_intensity="medium"
         )
-        
+
         self.assertIn("Memory Care", blurb)
         self.assertIn("costs", blurb)
 
@@ -95,7 +96,7 @@ class TestHandoffTemplates(unittest.TestCase):
             dual_mode=False,
             care_intensity="medium"
         )
-        
+
         self.assertIn("in-home care", blurb)
         self.assertIn("hours and services", blurb)
 
@@ -107,7 +108,7 @@ class TestHandoffTemplates(unittest.TestCase):
             dual_mode=True,
             care_intensity="medium"
         )
-        
+
         self.assertIn("in-home care", blurb)
         self.assertIn("facility options", blurb)
         self.assertIn("all your choices", blurb)
@@ -118,7 +119,7 @@ class TestHandoffTemplates(unittest.TestCase):
             primary_tier="in_home",
             care_intensity="high"
         )
-        
+
         self.assertIn("intensive in-home support", blurb)
         self.assertIn("overnight care", blurb)
 
@@ -128,7 +129,7 @@ class TestHandoffTemplates(unittest.TestCase):
             primary_tier="in_home",
             threshold_crossed=True
         )
-        
+
         self.assertIn("in-home care", blurb)
         self.assertIn("within your budget", blurb)
         self.assertIn("veteran benefits", blurb)
@@ -139,7 +140,7 @@ class TestHandoffTemplates(unittest.TestCase):
             primary_tier="in_home",
             compare_inhome_suggested=True
         )
-        
+
         self.assertIn("customize in-home care", blurb)
         self.assertIn("specific needs", blurb)
 
@@ -149,7 +150,7 @@ class TestHandoffTemplates(unittest.TestCase):
             primary_tier="none",
             dual_mode=False
         )
-        
+
         self.assertIn("optional support services", blurb)
         self.assertIn("safety net", blurb)
 
@@ -159,7 +160,7 @@ class TestHandoffTemplates(unittest.TestCase):
             primary_tier="none",
             dual_mode=True
         )
-        
+
         self.assertIn("optional support services", blurb)
         self.assertIn("care needs change", blurb)
 
@@ -169,7 +170,7 @@ class TestHandoffTemplates(unittest.TestCase):
             primary_tier="none",
             threshold_crossed=True
         )
-        
+
         self.assertIn("affordable support services", blurb)
         self.assertIn("stay independent", blurb)
 
@@ -179,7 +180,7 @@ class TestHandoffTemplates(unittest.TestCase):
             primary_tier="assisted_living",
             flags=["veteran_aanda_risk"]
         )
-        
+
         self.assertIn("veteran benefits", blurb)
 
     def test_support_flag_context(self):
@@ -188,7 +189,7 @@ class TestHandoffTemplates(unittest.TestCase):
             primary_tier="in_home",
             flags=["limited_support"]
         )
-        
+
         self.assertIn("family support", blurb)
         self.assertIn("respite", blurb)
 
@@ -198,7 +199,7 @@ class TestHandoffTemplates(unittest.TestCase):
             primary_tier="assisted_living",
             flags=["fall_risk"]
         )
-        
+
         self.assertIn("safety features", blurb)
         self.assertIn("emergency response", blurb)
 
@@ -210,7 +211,7 @@ class TestHandoffTemplates(unittest.TestCase):
             dual_mode=True,
             flags=["veteran_aanda_risk"]
         )
-        
+
         self.assertTrue(len(templates) > 0)
         # First template should be the most specific (partner context)
         self.assertIn("partner's care options", templates[0])
@@ -221,7 +222,7 @@ class TestHandoffTemplates(unittest.TestCase):
             primary_tier="unknown_tier",  # This should trigger fallback
             dual_mode=False
         )
-        
+
         # Should get a fallback template
         self.assertIn("costs", blurb)
         self.assertIn("care options", blurb)
@@ -230,14 +231,14 @@ class TestHandoffTemplates(unittest.TestCase):
         """Test template with all context variables set."""
         blurb = generate_handoff_blurb(
             primary_tier="memory_care",
-            partner_tier="assisted_living", 
+            partner_tier="assisted_living",
             dual_mode=True,
             threshold_crossed=True,
             care_intensity="high",
             compare_inhome_suggested=True,
             flags=["veteran_aanda_risk", "fall_risk"]
         )
-        
+
         self.assertIn("Memory Care", blurb)
         # Should pick the most relevant template based on context priority
         self.assertTrue(len(blurb) > 10)  # Should generate meaningful content
@@ -246,6 +247,6 @@ class TestHandoffTemplates(unittest.TestCase):
 if __name__ == "__main__":
     print("🧪 Testing Enhanced LLM Blurb Templates")
     print("=" * 50)
-    
+
     # Run the tests
     unittest.main(verbosity=2)

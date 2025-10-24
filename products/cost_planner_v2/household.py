@@ -11,12 +11,10 @@ Future enhancements:
 - Income-based split calculations
 """
 
-import streamlit as st
-from typing import Dict, Optional
-from core.household import get_careplan_for, ensure_household_state
+from core.household import ensure_household_state, get_careplan_for
 
 
-def compute_household_total(st) -> Dict:
+def compute_household_total(st) -> dict:
     """Compute household total cost and split for dual care plans.
     
     Reads:
@@ -37,34 +35,34 @@ def compute_household_total(st) -> Dict:
         hh = ensure_household_state(st)
     except Exception:
         hh = None
-    
+
     primary_id = st.session_state.get("person.primary_id")
     partner_id = st.session_state.get("person.partner_id")
-    
+
     # Get CarePlans
     cp_primary = get_careplan_for(st, primary_id) if primary_id else None
     cp_partner = get_careplan_for(st, partner_id) if partner_id else None
-    
+
     # Get cost inputs
     inputs = st.session_state.get("cost.inputs", {})
     zip_code = inputs.get("zip") or (hh.zip if hh else None)
     keep_home = inputs.get("keep_home", False)
     owner_tenant = inputs.get("owner_tenant", "unknown")
     hours_band = inputs.get("hours")
-    
+
     # Compute primary cost
     primary_total = 0.0
     if cp_primary:
         # Use existing cost calculation (placeholder for now)
         # In real implementation, call products/cost_planner_v2/utils/cost_calculator.py
         primary_total = _estimate_person_cost(cp_primary, zip_code, hours_band)
-    
+
     # Compute partner cost
     partner_total = 0.0
     if cp_partner:
         partner_hours = cp_partner.hours_user or cp_partner.hours_suggested
         partner_total = _estimate_person_cost(cp_partner, zip_code, partner_hours)
-    
+
     # Compute home carry cost (shared if keeping home)
     home_carry = 0.0
     if keep_home:
@@ -74,13 +72,13 @@ def compute_household_total(st) -> Dict:
             home_carry = 2000.0
         elif owner_tenant == "tenant":
             home_carry = 1500.0
-    
+
     # Household total
     household_total = primary_total + partner_total + home_carry
-    
+
     # 50/50 split
     split_amount = household_total / 2.0
-    
+
     return {
         "primary_total": primary_total,
         "partner_total": partner_total,
@@ -94,7 +92,7 @@ def compute_household_total(st) -> Dict:
     }
 
 
-def _estimate_person_cost(cp, zip_code: Optional[str], hours: Optional[str]) -> float:
+def _estimate_person_cost(cp, zip_code: str | None, hours: str | None) -> float:
     """Estimate monthly cost for a person's care plan.
     
     Placeholder implementation - in production, would call
@@ -109,7 +107,7 @@ def _estimate_person_cost(cp, zip_code: Optional[str], hours: Optional[str]) -> 
         Estimated monthly cost
     """
     tier = cp.final_tier or cp.det_tier
-    
+
     # Placeholder facility costs by tier
     facility_costs = {
         "no_care_needed": 0.0,
@@ -118,7 +116,7 @@ def _estimate_person_cost(cp, zip_code: Optional[str], hours: Optional[str]) -> 
         "memory_care": 6500.0,
         "memory_care_high_acuity": 8500.0
     }
-    
+
     # Placeholder in-home costs by hours
     hourly_costs = {
         "<1h": 500.0,
@@ -126,14 +124,14 @@ def _estimate_person_cost(cp, zip_code: Optional[str], hours: Optional[str]) -> 
         "4-8h": 3500.0,
         "24h": 8000.0
     }
-    
+
     if tier in facility_costs and tier not in {"no_care_needed", "in_home"}:
         return facility_costs.get(tier, 0.0)
-    
+
     # In-home or hours-based
     if hours:
         return hourly_costs.get(hours, 0.0)
-    
+
     # Default to hours from CarePlan
     hours_band = cp.hours_user or cp.hours_suggested
     return hourly_costs.get(hours_band, 0.0)

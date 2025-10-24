@@ -608,7 +608,7 @@ def _render_typing_indicator():
         }
         </style>
         """, unsafe_allow_html=True)
-        
+
         # Keep the original spinner timing
         time.sleep(random.uniform(0.6, 0.9))
 

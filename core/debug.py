@@ -11,10 +11,9 @@ Toggles:
 from __future__ import annotations
 
 import os
-from typing import Optional
 
 
-def _get_secret(name: str) -> Optional[str]:
+def _get_secret(name: str) -> str | None:
     """Best-effort read from Streamlit secrets without import-time failure."""
     try:
         import streamlit as st
@@ -26,7 +25,7 @@ def _get_secret(name: str) -> Optional[str]:
         return None
 
 
-def _on(val: Optional[str]) -> bool:
+def _on(val: str | None) -> bool:
     if val is None:
         return False
     return str(val).strip().strip('"').lower() in {"on", "true", "1", "yes"}

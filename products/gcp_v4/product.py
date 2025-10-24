@@ -14,7 +14,6 @@ import streamlit as st
 from core.mcip import MCIP, CareRecommendation
 from core.modules.engine import run_module
 from core.modules.schema import ModuleConfig
-from core.navi import render_navi_panel
 from ui.product_shell import product_shell_end, product_shell_start
 
 
@@ -109,17 +108,22 @@ def render():
             print("[GCP_RENDER] Entering RESULTS step, preparing summary advice")
             try:
                 state_pre = st.session_state.get(state_key, {})
-                from products.gcp_v4.modules.care_recommendation.flags import build_flags as _build_flags
+                from products.gcp_v4.modules.care_recommendation.flags import (
+                    build_flags as _build_flags,
+                )
                 flags_pre = _build_flags(state_pre)
-                from products.gcp_v4.modules.care_recommendation.logic import derive_outcome, ensure_summary_ready
                 from ai.llm_client import get_feature_gcp_mode
-                
+                from products.gcp_v4.modules.care_recommendation.logic import (
+                    derive_outcome,
+                    ensure_summary_ready,
+                )
+
                 outcome_pre = derive_outcome(state_pre)
                 tier_pre = outcome_pre.get("tier") if isinstance(outcome_pre, dict) else getattr(outcome_pre, "tier", None)
-                
+
                 if tier_pre:
                     mode = get_feature_gcp_mode()
-                    
+
                     # Debounce duplicate LLM calls - check cache first
                     if "gcp.llm_result" in st.session_state and st.session_state.get("summary_ready"):
                         # Use cached result, no spinner needed
@@ -129,11 +133,14 @@ def render():
                         # Process summary (loading UI handled by module engine)
                         ensure_summary_ready(state_pre, flags_pre, tier_pre)
                         print(f"[GCP_RENDER] RESULTS summary processed for tier={tier_pre}")
-                
+
                 # PARTNER FLOW INTERSTITIAL
                 # After summary ready, check if we should show partner assessment option
                 try:
-                    from products.gcp_v4.partner_flow import should_show_partner_interstitial, render_partner_interstitial
+                    from products.gcp_v4.partner_flow import (
+                        render_partner_interstitial,
+                        should_show_partner_interstitial,
+                    )
                     has_partner = st.session_state.get("has_partner", False) or ("has_partner" in (flags_pre or []))
                     if should_show_partner_interstitial(has_partner):
                         render_partner_interstitial()
@@ -206,7 +213,7 @@ def render():
         # Check if outcome exists for publishing
         outcome_key = f"{state_key}._outcomes"
         outcome = st.session_state.get(outcome_key)
-        
+
         # DEBUG: Log publish state
         already_pub = _already_published()
         print(f"[GCP_PUBLISH_CHECK] outcome_exists={bool(outcome)} already_published={already_pub} is_results={is_on_results_step}")
@@ -225,27 +232,31 @@ def render():
                 gcp_outcome = derive_outcome(module_state)
                 _publish_to_mcip(gcp_outcome, module_state)
                 _mark_published()
-                
+
                 # HOUSEHOLD FLOW: Save CarePlan for current person
                 try:
-                    from products.gcp_v4.partner_flow import is_partner_mode
-                    from core.household import set_careplan_for, ensure_household_state, get_careplan_for
+                    from core.household import (
+                        ensure_household_state,
+                        get_careplan_for,
+                        set_careplan_for,
+                    )
                     from core.models import CarePlan
-                    
+                    from products.gcp_v4.partner_flow import is_partner_mode
+
                     # Determine current person
                     in_partner_mode = is_partner_mode()
                     if in_partner_mode:
                         person_id = st.session_state.get("person.partner_id")
                     else:
                         person_id = st.session_state.get("person.primary_id")
-                    
+
                     if not person_id:
                         # First time through - create primary person
                         from core.household import add_person
                         hh = ensure_household_state(st)
                         person = add_person(st, role="primary", zip=hh.zip)
                         person_id = person.uid
-                    
+
                     # Only save if we're on RESULTS and don't already have a CarePlan
                     existing_cp = get_careplan_for(st, person_id) if person_id else None
                     if person_id and is_on_results_step and not existing_cp:
@@ -253,7 +264,7 @@ def render():
                         adjudication = st.session_state.get("gcp.adjudication_decision", {})
                         final_tier = st.session_state.get("gcp.final_tier")
                         det_tier = gcp_outcome.get("tier")
-                        
+
                         # Calculate alt_tier (the non-chosen tier)
                         alt_tier = None
                         if final_tier != det_tier:
@@ -261,7 +272,7 @@ def render():
                                 alt_tier = det_tier  # LLM chosen, det was alternative
                             else:
                                 alt_tier = adjudication.get("llm")  # Det chosen, LLM was alternative
-                        
+
                         # Build CarePlan with adjudication metadata
                         cp = CarePlan(
                             person_id=person_id,
@@ -283,14 +294,14 @@ def render():
                         set_careplan_for(st, person_id, cp)
                         role = "partner" if in_partner_mode else "primary"
                         print(f"[HOUSEHOLD_FLOW] Saved {role} CarePlan: {cp.uid}")
-                        
+
                         # If partner mode complete, clear partner mode flag
                         if in_partner_mode:
                             from products.gcp_v4.partner_flow import complete_partner_flow
                             complete_partner_flow()
                 except Exception:
                     pass  # Don't fail if household handling fails
-                
+
             except Exception as e:
                 st.error(f"❌ Error saving recommendation: {e}")
                 import traceback
@@ -344,8 +355,8 @@ def _publish_to_mcip(outcome, module_state: dict) -> None:
         outcome: OutcomeContract or dict from logic.py
         module_state: Module state with answers
     """
-    
-    print(f"[_PUBLISH_TO_MCIP] Publishing recommendation to MCIP and session state")
+
+    print("[_PUBLISH_TO_MCIP] Publishing recommendation to MCIP and session state")
 
     # Extract outcome data (handle both OutcomeContract and dict)
     if hasattr(outcome, "__dict__"):
@@ -368,7 +379,7 @@ def _publish_to_mcip(outcome, module_state: dict) -> None:
     # Apply final tier from LLM policy if available (overrides deterministic tier)
     final_tier = st.session_state.get("gcp.final_tier")
     deterministic_tier = outcome_data.get("tier")
-    
+
     if final_tier:
         outcome_data["tier"] = final_tier
         if final_tier != deterministic_tier:
@@ -385,7 +396,7 @@ def _publish_to_mcip(outcome, module_state: dict) -> None:
     if not chosen_tier:
         st.error("❌ Unable to generate recommendation - missing tier")
         return
-    
+
     # Persist tier state for Cost Planner (before building CareRecommendation)
     allowed_tiers = outcome_data.get("allowed_tiers", [])
     g = st.session_state.setdefault("gcp", {})
@@ -393,12 +404,12 @@ def _publish_to_mcip(outcome, module_state: dict) -> None:
     g["recommended_tier"] = chosen_tier  # after adjudication, these are the same
     g["allowed_tiers"] = allowed_tiers
     g["deterministic_tier"] = deterministic_tier  # for diagnostics
-    
+
     # Persist hours bands (already set by logic.py, just ensure they're there)
     # These are used by Cost Planner to show hours advisory
     hours_user_band = g.get("hours_user_band")
     hours_llm_band = g.get("hours_llm") or g.get("hours_band")
-    
+
     print(f"[GCP_PERSIST_TIER] published={chosen_tier} recommended={chosen_tier} allowed={allowed_tiers}")
     print(f"[GCP_HOURS_PERSIST] user={hours_user_band} llm={hours_llm_band}")
     print(f"[GCP_STATE_WRITTEN] st.session_state['gcp'] keys: {list(g.keys())}")
@@ -442,11 +453,11 @@ def _publish_to_mcip(outcome, module_state: dict) -> None:
 
         # Persist CarePlan snapshot to disk for training/debugging
         try:
-            from core.user_persist import persist_careplan, get_current_user_id
-            
+            from core.user_persist import get_current_user_id, persist_careplan
+
             user_id = get_current_user_id()
             corr_id = st.session_state.get("corr_id", "unknown")
-            
+
             careplan_snapshot = {
                 "corr_id": corr_id,
                 "published_tier": chosen_tier,
@@ -523,54 +534,54 @@ def _recompute_hours_suggestion_if_needed(config: ModuleConfig, module_state: di
     """
     try:
         from products.gcp_v4.modules.care_recommendation.logic import gcp_hours_mode
-        
+
         mode = gcp_hours_mode()
         if mode not in {"shadow", "assist"}:
             return  # Feature disabled
-        
+
         # Get current user selection
         current_hours = module_state.get("hours_per_day")
-        
+
         # Check if selection changed
         last_hours = st.session_state.get("_last_hours_selection")
         if current_hours == last_hours and "_hours_suggestion" in st.session_state:
             return  # No change, skip recompute
-        
+
         # Store current selection for next comparison
         st.session_state["_last_hours_selection"] = current_hours
         st.session_state["gcp_hours_user_choice"] = current_hours
-        
+
         # Recompute suggestion (with nudge support)
-        from products.gcp_v4.modules.care_recommendation.logic import _build_hours_context
         from ai.hours_engine import (
             baseline_hours,
             generate_hours_advice,
+            generate_hours_nudge_text,
             under_selected,
-            generate_hours_nudge_text
         )
-        
+        from products.gcp_v4.modules.care_recommendation.logic import _build_hours_context
+
         answers = module_state
         flags = module_state.get("_flags", [])
-        
+
         # Build context
         hours_ctx = _build_hours_context(answers, flags)
-        
+
         # Get baseline
         baseline = baseline_hours(hours_ctx)
-        
+
         # Get LLM refinement
         ok, advice = generate_hours_advice(hours_ctx, mode)
-        
+
         # Determine suggested band
         suggested = advice.band if (ok and advice) else baseline
         user_band = hours_ctx.current_hours
-        
+
         # Generate nudge if user under-selected
         nudge_text = None
         severity = None
         if under_selected(user_band, suggested):
             print(f"\n{'🔥'*40}")
-            print(f"[HOURS_DISAGREEMENT] User selected LOWER than suggested!")
+            print("[HOURS_DISAGREEMENT] User selected LOWER than suggested!")
             print(f"[HOURS_DISAGREEMENT] User: {user_band} → Suggested: {suggested}")
             print(f"{'🔥'*40}\n")
             nudge_text = generate_hours_nudge_text(hours_ctx, suggested, user_band, mode)
@@ -580,7 +591,7 @@ def _recompute_hours_suggestion_if_needed(config: ModuleConfig, module_state: di
                 if ok and advice:
                     advice.nudge_text = nudge_text
                     advice.severity = severity
-        
+
         # Store suggestion in session state
         sugg = {
             "band": suggested,
@@ -593,7 +604,7 @@ def _recompute_hours_suggestion_if_needed(config: ModuleConfig, module_state: di
             "nudge_text": nudge_text,
             "severity": severity,
         }
-        
+
         # Detect new nudge event for one-time notification
         prev_key = st.session_state.get("_hours_nudge_key")
         curr_key = None
@@ -602,26 +613,26 @@ def _recompute_hours_suggestion_if_needed(config: ModuleConfig, module_state: di
             user_selection = sugg.get("user") or "-"
             suggested_band = sugg.get("band") or "-"
             curr_key = f"{user_selection}->{suggested_band}"
-        
+
         st.session_state["_hours_suggestion"] = sugg
-        
+
         if curr_key and curr_key != prev_key:
             st.session_state["_hours_nudge_key"] = curr_key
             st.session_state["_hours_nudge_new"] = True
         else:
             st.session_state["_hours_nudge_new"] = False
-        
+
         # Log (dev-only) - include user selection
         user_choice = user_band or "-"
         if ok and advice:
             print(f"[GCP_HOURS_{mode.upper()}_RECOMPUTE] base={baseline} user={user_choice} llm={advice.band} conf={advice.confidence:.2f}")
         else:
             print(f"[GCP_HOURS_{mode.upper()}_RECOMPUTE] base={baseline} user={user_choice} llm=None (fallback to baseline)")
-        
+
         # Log nudge if generated (shadow mode visibility)
         if nudge_text:
             print(f"[GCP_HOURS_NUDGE_{mode.upper()}_RECOMPUTE] user={user_choice} → suggest={suggested} | {nudge_text}")
-        
+
         # Log case for offline analysis (training data)
         try:
             from tools.log_hours import log_hours_case
@@ -634,7 +645,7 @@ def _recompute_hours_suggestion_if_needed(config: ModuleConfig, module_state: di
             )
         except Exception as log_err:
             print(f"[HOURS_LOG_ERROR] Failed to log case during recompute: {log_err}")
-    
+
     except Exception as e:
         print(f"[GCP_HOURS_RECOMPUTE_ERROR] Failed to recompute hours suggestion: {e}")
 
@@ -656,26 +667,26 @@ def _render_hours_suggestion_if_needed(config: ModuleConfig, current_step_index:
         # Check if we're on daily_living section
         if current_step_index < 0 or current_step_index >= len(config.steps):
             return
-        
+
         current_step = config.steps[current_step_index]
         if current_step.id != "daily_living":
             return  # Only render on daily_living section
-        
+
         # Check if hours suggestion feature is enabled
         from products.gcp_v4.modules.care_recommendation.logic import gcp_hours_mode
         mode = gcp_hours_mode()
-        
+
         if mode != "assist":
             return  # Only render in assist mode
-        
+
         # Check if suggestion exists
         if "_hours_suggestion" not in st.session_state:
             return  # No suggestion computed yet
-        
+
         # Render suggestion UI
         from products.gcp_v4.ui_helpers import render_hours_suggestion
         render_hours_suggestion()
-    
+
     except Exception as e:
         # Never fail the flow - just log
         print(f"[GCP_HOURS_UI_ERROR] Failed to render hours suggestion: {e}")
@@ -696,65 +707,65 @@ def _trigger_section_llm_feedback(config: ModuleConfig, module_state: dict, curr
         # Get LLM mode
         from ai.llm_client import get_feature_gcp_mode
         llm_mode = get_feature_gcp_mode()
-        
+
         # Only run in shadow or assist mode
         if llm_mode not in ("shadow", "assist"):
             return
-        
+
         # Get current section ID
         if current_step_index < 0 or current_step_index >= len(config.steps):
             return
-        
+
         current_step = config.steps[current_step_index]
         section_id = current_step.id
-        
+
         # Skip intro and results
         if section_id in ("intro", "results"):
             return
-        
+
         # Track which sections we've already processed (avoid re-running on re-render)
-        processed_key = f"_gcp_llm_sections_processed"
+        processed_key = "_gcp_llm_sections_processed"
         processed = st.session_state.setdefault(processed_key, set())
-        
+
         # Build a unique key for this section at this step
         section_key = f"{section_id}_{current_step_index}"
-        
+
         if section_key in processed:
             return  # Already processed this section
-        
+
         # Mark as processed
         processed.add(section_key)
-        
+
         # Build partial context
+        from ai.gcp_schemas import CANONICAL_TIERS
+        from products.gcp_v4.modules.care_recommendation.flags import build_flags
         from products.gcp_v4.modules.care_recommendation.logic import (
             build_partial_gcp_context,
             cognitive_gate,
         )
-        from products.gcp_v4.modules.care_recommendation.flags import build_flags
-        from ai.gcp_schemas import CANONICAL_TIERS
-        
+
         answers = module_state
         flags = build_flags(answers)
-        
+
         partial_context = build_partial_gcp_context(section_id, answers, flags)
-        
+
         # Compute allowed tiers based on cognitive gate (even for partial context)
         passes_gate = cognitive_gate(answers, flags)
         allowed_tiers = set(CANONICAL_TIERS)
-        
+
         if not passes_gate:
             allowed_tiers -= {"memory_care", "memory_care_high_acuity"}
-        
+
         # Generate LLM advice with allowed_tiers scoping
         from ai.gcp_navi_engine import generate_section_advice
-        
+
         ok, advice = generate_section_advice(
             partial_context,
             section=section_id,
             mode=llm_mode,
             allowed_tiers=sorted(list(allowed_tiers))
         )
-        
+
         # Log result
         if ok and advice:
             print(
@@ -763,7 +774,7 @@ def _trigger_section_llm_feedback(config: ModuleConfig, module_state: dict, curr
             )
         else:
             print(f"[GCP_LLM_SECTION] section={section_id} ok={ok} tier_llm=None msgs=0 reasons=0 conf=0.00")
-    
+
     except Exception as e:
         # Never fail the flow - just log
         print(f"[GCP_LLM_SECTION_ERROR] section={current_step_index}: {e}")

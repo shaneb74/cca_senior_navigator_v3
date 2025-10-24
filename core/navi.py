@@ -939,14 +939,14 @@ def render_navi_panel(
                 tier_display = None
                 if gcp_rec and hasattr(gcp_rec, 'tier'):
                     tier_display = _get_tier_display_name(gcp_rec.tier)
-                
+
                 if tier_display:
                     title = "Let's look at costs"
                     reason = f"I've pre-selected {tier_display} from your Guided Care Plan. You can explore other scenarios too."
                 else:
                     title = "Let's look at costs"
                     reason = "We'll help you explore different care options and their costs."
-                
+
                 render_navi_panel_v2(
                     title=title,
                     reason=reason,

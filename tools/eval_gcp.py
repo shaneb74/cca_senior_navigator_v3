@@ -13,7 +13,7 @@ Usage:
 
 import json
 import pathlib
-import collections
+
 import pandas as pd
 
 CASES = pathlib.Path("data/training/gcp_cases.jsonl")
@@ -29,10 +29,10 @@ def load_jsonl(p: pathlib.Path) -> list[dict]:
 
 def main():
     """Run evaluation on disagreement cases."""
-    
+
     cases = load_jsonl(CASES)
     labels = {r["id"]: r for r in load_jsonl(LABELS)}
-    
+
     # Build dataframe
     rows = []
     for c in cases:
@@ -47,50 +47,50 @@ def main():
             "sup": c["bands"]["sup"],
             "risky": c.get("has_risky_behaviors", False)
         })
-    
+
     df = pd.DataFrame(rows)
-    
+
     print("=" * 70)
     print("GCP DISAGREEMENT EVALUATION")
     print("=" * 70)
     print(f"\nTotal cases: {len(df)}")
     print(f"Labeled:     {df['gold'].notna().sum()}")
     print(f"Unlabeled:   {df['gold'].isna().sum()}")
-    
+
     if df["gold"].notna().sum() == 0:
         print("\n⚠️  No labels yet. Run the reviewer to tag gold_tier.")
         print("   Command: streamlit run products/admin/disagreements.py")
         return
-    
+
     # Filter to labeled cases
     lab = df[df["gold"].notna()].copy()
-    
+
     # Accuracy
     def acc(pred):
         return (lab[pred] == lab["gold"]).mean()
-    
+
     print("\n" + "=" * 70)
     print("ACCURACY")
     print("=" * 70)
     print(f"Deterministic vs Gold: {acc('det'):.3f}")
     print(f"LLM vs Gold:           {acc('llm'):.3f}")
-    
+
     # Confusion matrices
     print("\n" + "=" * 70)
     print("CONFUSION MATRIX: Deterministic vs Gold")
     print("=" * 70)
     print("(rows=gold, cols=predicted, values=rate)")
     print(pd.crosstab(lab["gold"], lab["det"], normalize="index").round(2))
-    
+
     print("\n" + "=" * 70)
     print("CONFUSION MATRIX: LLM vs Gold")
     print("=" * 70)
     print("(rows=gold, cols=predicted, values=rate)")
     print(pd.crosstab(lab["gold"], lab["llm"], normalize="index").round(2))
-    
+
     # Key slice: moderate × high without risky behaviors
     sl = lab[(lab["cog"] == "moderate") & (lab["sup"] == "high") & (~lab["risky"])]
-    
+
     if len(sl):
         print("\n" + "=" * 70)
         print(f"KEY SLICE: Moderate×High, No Risky Behaviors (n={len(sl)})")
@@ -99,7 +99,7 @@ def main():
         print(f"LLM → MC rate:           {(sl['llm']=='memory_care').mean():.3f}")
         print(f"Gold = AL rate:          {(sl['gold']=='assisted_living').mean():.3f}")
         print(f"Gold = MC rate:          {(sl['gold']=='memory_care').mean():.3f}")
-    
+
     # Band distribution
     print("\n" + "=" * 70)
     print("BAND DISTRIBUTION (labeled cases)")
@@ -110,7 +110,7 @@ def main():
     print(lab["sup"].value_counts().sort_index())
     print("\nRisky behaviors:")
     print(lab["risky"].value_counts())
-    
+
     print("\n" + "=" * 70)
     print("✓ Evaluation complete")
     print("=" * 70)

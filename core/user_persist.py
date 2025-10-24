@@ -8,10 +8,10 @@ Writes CarePlan and CostPlan snapshots to data/users/{user_id}/ for:
 All writes are best-effort and non-blocking (never crash the app).
 """
 
-import os
-import json
 import datetime as dt
-from typing import Any, Optional
+import json
+import os
+from typing import Any
 
 try:
     import streamlit as st
@@ -34,16 +34,16 @@ def get_current_user_id() -> str:
     """
     if not (HAS_STREAMLIT and hasattr(st, "session_state")):
         return "anon_default"
-    
+
     # Check for authenticated user
     auth = st.session_state.get("auth", {})
     if auth.get("is_authenticated") and auth.get("user_id"):
         return auth["user_id"]
-    
+
     # Check for anonymous user ID
     if "anonymous_uid" in st.session_state:
         return st.session_state["anonymous_uid"]
-    
+
     return "anon_default"
 
 
@@ -61,7 +61,7 @@ def _user_dir(user_id: str) -> str:
     return base
 
 
-def _write_json(user_id: str, subdir: str, payload: dict[str, Any]) -> Optional[str]:
+def _write_json(user_id: str, subdir: str, payload: dict[str, Any]) -> str | None:
     """Write JSON payload to timestamped file.
     
     Args:
@@ -76,16 +76,16 @@ def _write_json(user_id: str, subdir: str, payload: dict[str, Any]) -> Optional[
         base = _user_dir(user_id)
         folder = os.path.join(base, subdir)
         os.makedirs(folder, exist_ok=True)
-        
+
         ts = dt.datetime.utcnow().strftime("%Y-%m-%dT%H-%M-%SZ")
         path = os.path.join(folder, f"{ts}_{subdir}.json")
-        
+
         with open(path, "w", encoding="utf-8") as f:
             json.dump(payload, f, ensure_ascii=False, indent=2)
-        
+
         print(f"[USER_PERSIST] wrote {path}")
         return path
-        
+
     except Exception as e:
         print(f"[USER_PERSIST_ERR] Failed to write {subdir}: {e}")
         return None
@@ -103,7 +103,7 @@ def persist_careplan(user_id: str, payload: dict[str, Any]) -> None:
     if not user_id:
         print("[USER_PERSIST_ERR] No user_id provided for careplan")
         return
-        
+
     try:
         payload.setdefault("schema_version", 2)
         payload.setdefault("timestamp", dt.datetime.utcnow().isoformat() + "Z")
@@ -124,7 +124,7 @@ def persist_costplan(user_id: str, payload: dict[str, Any]) -> None:
     if not user_id:
         print("[USER_PERSIST_ERR] No user_id provided for costplan")
         return
-        
+
     try:
         payload.setdefault("schema_version", 2)
         payload.setdefault("timestamp", dt.datetime.utcnow().isoformat() + "Z")

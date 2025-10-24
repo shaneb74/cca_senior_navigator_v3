@@ -13,28 +13,29 @@ Validates:
 Run: python test_gcp_handoff_integration.py
 """
 
-import unittest
-from unittest.mock import Mock, patch, MagicMock
 import sys
+import unittest
+from unittest.mock import MagicMock, Mock, patch
+
 sys.path.append('.')
 
-from core.models import CarePlan, Person
 from ai.navi_engine import (
     detect_dual_mode_from_careplans,
-    get_primary_tier_from_careplans, 
     generate_handoff_blurb,
-    normalize_tier
+    get_primary_tier_from_careplans,
+    normalize_tier,
 )
+from core.models import CarePlan
 
 
 class TestGCPHandoffIntegration(unittest.TestCase):
     """Test suite for GCP → Cost Planner handoff functionality."""
-    
+
     def setUp(self):
         """Set up test fixtures."""
         self.mock_st = MagicMock()
         self.mock_st.session_state = {}
-        
+
         # Sample CarePlan objects
         self.cp_primary_inhome = CarePlan(
             person_id="person_1",
@@ -42,14 +43,14 @@ class TestGCPHandoffIntegration(unittest.TestCase):
             hours_suggested="8",
             hours_user=None
         )
-        
+
         self.cp_partner_al = CarePlan(
-            person_id="person_2", 
+            person_id="person_2",
             final_tier="assisted_living",
             hours_suggested=None,
             hours_user=None
         )
-        
+
         self.cp_single_mc = CarePlan(
             person_id="person_1",
             final_tier="memory_care",
@@ -60,7 +61,7 @@ class TestGCPHandoffIntegration(unittest.TestCase):
     def test_dual_mode_detection_multiple_tiers(self):
         """Test dual mode is enabled when multiple different tiers exist."""
         careplans = [self.cp_primary_inhome, self.cp_partner_al]
-        
+
         result = detect_dual_mode_from_careplans(careplans)
         self.assertTrue(result, "Should detect dual mode with different tiers")
 
@@ -73,28 +74,28 @@ class TestGCPHandoffIntegration(unittest.TestCase):
             hours_user=None
         )
         careplans = [self.cp_primary_inhome, cp_another_inhome]
-        
+
         result = detect_dual_mode_from_careplans(careplans)
         self.assertFalse(result, "Should not detect dual mode with same tiers")
 
     def test_dual_mode_detection_single_careplan(self):
         """Test dual mode is not enabled with single care plan."""
         careplans = [self.cp_primary_inhome]
-        
+
         result = detect_dual_mode_from_careplans(careplans)
         self.assertFalse(result, "Should not detect dual mode with single care plan")
 
     def test_dual_mode_detection_empty_list(self):
         """Test dual mode handles empty care plan list."""
         careplans = []
-        
+
         result = detect_dual_mode_from_careplans(careplans)
         self.assertFalse(result, "Should not detect dual mode with no care plans")
 
     def test_primary_tier_extraction(self):
         """Test primary tier extraction from care plans."""
         careplans = [self.cp_primary_inhome, self.cp_partner_al]
-        
+
         # Should return the last (most recent) care plan's tier
         result = get_primary_tier_from_careplans(careplans)
         self.assertEqual(result, "assisted_living", "Should return last care plan's tier")
@@ -102,14 +103,14 @@ class TestGCPHandoffIntegration(unittest.TestCase):
     def test_primary_tier_extraction_empty(self):
         """Test primary tier extraction with empty list."""
         careplans = []
-        
+
         result = get_primary_tier_from_careplans(careplans)
         self.assertIsNone(result, "Should return None for empty list")
 
     def test_handoff_blurb_generation_inhome(self):
         """Test handoff blurb generation for in-home care."""
         result = generate_handoff_blurb("in_home", dual_mode=False)
-        
+
         self.assertIn("in-home care", result)
         self.assertIn("hours", result)
         self.assertNotIn("compare", result, "Should not mention comparison without dual mode")
@@ -117,15 +118,15 @@ class TestGCPHandoffIntegration(unittest.TestCase):
     def test_handoff_blurb_generation_inhome_dual_mode(self):
         """Test handoff blurb generation for in-home care with dual mode."""
         result = generate_handoff_blurb("in_home", dual_mode=True)
-        
+
         self.assertIn("in-home care", result)
-        self.assertIn("hours", result) 
+        self.assertIn("hours", result)
         # Note: Basic dual_mode without partner_tier may not always mention comparison
 
     def test_handoff_blurb_generation_assisted_living(self):
         """Test handoff blurb generation for assisted living."""
         result = generate_handoff_blurb("assisted_living", dual_mode=False)
-        
+
         self.assertIn("Assisted Living", result)
         self.assertIn("costs", result)
 
@@ -133,7 +134,7 @@ class TestGCPHandoffIntegration(unittest.TestCase):
         """Test handoff blurb generation includes flag-specific context."""
         flags = ["veteran_aanda_risk", "fall_risk"]
         result = generate_handoff_blurb("in_home", dual_mode=False, flags=flags)
-        
+
         self.assertIn("in-home care", result)
         self.assertIn("veteran benefits", result)  # Updated to match new template text
 
@@ -141,14 +142,14 @@ class TestGCPHandoffIntegration(unittest.TestCase):
         """Test tier normalization handles aliases correctly."""
         test_cases = [
             ("in_home_care", "in_home"),
-            ("home_care", "in_home"), 
+            ("home_care", "in_home"),
             ("no_care", "none"),
             ("no_care_needed", "none"),
             ("assisted_living", "assisted_living"),  # Should remain unchanged
             ("", None),  # Empty string
             (None, None)  # None input
         ]
-        
+
         for input_tier, expected in test_cases:
             with self.subTest(input_tier=input_tier):
                 result = normalize_tier(input_tier) if input_tier is not None else normalize_tier("")
@@ -165,30 +166,30 @@ class TestGCPHandoffIntegration(unittest.TestCase):
         mock_hh.home_owner_type = "owner"
         mock_hh.has_partner = True
         mock_ensure_hh.return_value = mock_hh
-        
+
         # Mock care plans (primary and partner with different tiers)
         mock_get_careplan.side_effect = [self.cp_primary_inhome, self.cp_partner_al]
-        
+
         # Setup session state for handoff
         self.mock_st.session_state.update({
             "flow.from_gcp": True,
             "person.primary_id": "person_1",
             "person.partner_id": "person_2"
         })
-        
+
         # Mock GCP recommendation
         mock_gcp_rec = Mock()
         mock_gcp_rec.tier = "in_home"
         mock_gcp_rec.flags = ["veteran_aanda_risk"]
-        
+
         with patch('products.cost_planner_v2.intro.MCIP.get_care_recommendation', return_value=mock_gcp_rec):
             # Import after patching to ensure mocks are applied
             from ai.navi_engine import (
                 detect_dual_mode_from_careplans,
+                generate_handoff_blurb,
                 get_primary_tier_from_careplans,
-                generate_handoff_blurb
             )
-            
+
             # Simulate the handoff logic from intro.py
             careplans = [self.cp_primary_inhome, self.cp_partner_al]
             dual_mode = detect_dual_mode_from_careplans(careplans)
@@ -196,7 +197,7 @@ class TestGCPHandoffIntegration(unittest.TestCase):
             # Generate handoff blurb (with enhanced parameters)
             handoff_blurb = generate_handoff_blurb(
                 primary_tier=primary_tier,
-                dual_mode=dual_mode, 
+                dual_mode=dual_mode,
                 flags=mock_gcp_rec.flags,
                 partner_tier="in_home",  # Partner has in_home tier
                 care_intensity="medium"
@@ -204,42 +205,42 @@ class TestGCPHandoffIntegration(unittest.TestCase):
             self.assertTrue(dual_mode, "Should enable dual mode with different care plans")
             self.assertEqual(primary_tier, "assisted_living", "Should get primary tier from latest care plan")
             self.assertIn("Assisted Living costs", handoff_blurb)
-            self.assertIn("veteran benefits", handoff_blurb)  # Updated to match new template 
+            self.assertIn("veteran benefits", handoff_blurb)  # Updated to match new template
             self.assertIn("compare", handoff_blurb)
 
     def test_hours_gating_compatibility(self):
         """Test that handoff logic is compatible with existing hours gating."""
         # This test verifies the logic doesn't interfere with existing functionality
         # The hours gating logic in comparison_view.py should still work
-        
+
         # Simulate AL tier (should gate hours input unless compare_inhome=True)
         primary_tier = "assisted_living"
         dual_mode = False
-        
-        # Generate blurb 
+
+        # Generate blurb
         blurb = generate_handoff_blurb(primary_tier, dual_mode)
-        
+
         # Verify blurb mentions costs (basic validation)
         self.assertIn("costs", blurb)
-        
+
         # The actual hours gating logic is tested in tools/smoke_household.py
         # This test just ensures our handoff doesn't break that pattern
 
     def test_error_handling_missing_tier(self):
-        """Test error handling when care plans have no tier information.""" 
+        """Test error handling when care plans have no tier information."""
         cp_no_tier = CarePlan(
             person_id="person_1",
             final_tier=None,
             hours_suggested=None,
             hours_user=None
         )
-        
+
         careplans = [cp_no_tier]
-        
+
         # Should handle gracefully
         dual_mode = detect_dual_mode_from_careplans(careplans)
         primary_tier = get_primary_tier_from_careplans(careplans)
-        
+
         self.assertFalse(dual_mode, "Should not detect dual mode with no valid tiers")
         self.assertIsNone(primary_tier, "Should return None for missing tier")
 
@@ -249,14 +250,14 @@ class TestGCPHandoffIntegration(unittest.TestCase):
         malformed_cp = Mock()
         malformed_cp.tier = "invalid_tier_value"  # Invalid tier value
         malformed_cp.final_tier = None  # Missing final_tier
-        
+
         careplans = [malformed_cp]
-        
+
         # Should handle gracefully without raising exceptions
         try:
-            dual_mode = detect_dual_mode_from_careplans(careplans) 
+            dual_mode = detect_dual_mode_from_careplans(careplans)
             primary_tier = get_primary_tier_from_careplans(careplans)
-            
+
             self.assertFalse(dual_mode)
             self.assertIsNone(primary_tier)  # Should return None for invalid tier
         except Exception as e:
@@ -266,6 +267,6 @@ class TestGCPHandoffIntegration(unittest.TestCase):
 if __name__ == "__main__":
     print("🧪 Testing GCP → Cost Planner Handoff Integration")
     print("=" * 60)
-    
+
     # Run the tests
     unittest.main(verbosity=2)

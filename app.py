@@ -1,7 +1,8 @@
-import streamlit as st
-
 # Silence Streamlit file watcher spam
 import logging
+
+import streamlit as st
+
 logging.getLogger("streamlit.watcher.local_sources_watcher").setLevel(logging.ERROR)
 logging.getLogger("streamlit.watcher").setLevel(logging.ERROR)
 

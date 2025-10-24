@@ -45,8 +45,8 @@ def test_cost_planner_imports():
 def test_other_product_imports():
     """Test other product imports."""
     from products import advisor_prep, pfma_v3
-    from products.senior_trivia import product as senior_trivia_product
     from products.resources_common import coming_soon
+    from products.senior_trivia import product as senior_trivia_product
 
     assert hasattr(advisor_prep.product, 'render')
     assert hasattr(pfma_v3.product, 'render')
