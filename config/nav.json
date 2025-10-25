@@ -180,43 +180,43 @@
         {
           "key": "fall_risk",
           "label": "Fall Risk",
-          "module": "products.resources.fall_risk:render",
+          "module": "products.resources.fall_risk.product:render",
           "hidden": true
         },
         {
           "key": "disease_mgmt",
           "label": "Disease Management",
-          "module": "products.resources.disease_mgmt:render",
+          "module": "products.resources.disease_mgmt.product:render",
           "hidden": true
         },
         {
           "key": "home_safety",
           "label": "Home Safety Check",
-          "module": "products.waiting_room.home_safety:render",
+          "module": "products.waiting_room.home_safety.product:render",
           "hidden": true
         },
         {
           "key": "home_health",
           "label": "Find Home Health",
-          "module": "products.resources.home_health:render",
+          "module": "products.resources.home_health.product:render",
           "hidden": true
         },
         {
           "key": "dme",
           "label": "Find DME",
-          "module": "products.resources.dme:render",
+          "module": "products.resources.dme.product:render",
           "hidden": true
         },
         {
           "key": "med_manage",
-          "label": "Medication Management",
-          "module": "products.resources.med_manage:render",
+          "label": "Med Manager",
+          "module": "products.resources.med_manage.product:render",
           "hidden": true
         },
         {
           "key": "predictive_health",
-          "label": "Predictive Health Analytics",
-          "module": "products.waiting_room.predictive_health:render",
+          "label": "Predictive Health",
+          "module": "products.waiting_room.predictive_health.product:render",
           "hidden": true
         },
         {
