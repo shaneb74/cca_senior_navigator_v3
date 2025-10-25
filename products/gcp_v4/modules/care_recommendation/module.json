@@ -32,7 +32,7 @@
   "sections": [
     {
       "id": "intro",
-      "title": "Welcome to the Guided Care Plan",
+      "title": "",
       "type": "info",
       "content": [
         "This quick check helps match {NAME} with the right level of support. We'll ask about safety, day-to-day help, health, and who's involved in care. It takes about two minutes, saves automatically, and you can pause anytime.",

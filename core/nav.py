@@ -99,6 +99,27 @@ def current_route(default: str, pages: dict[str, dict]) -> str:
     Returns:
         Current page key or default
     """
-    # Use query params for navigation (works with href links from tiles)
-    r = st.query_params.get("page", default)
-    return r if r in pages else default
+    # Normalize query params for navigation (works with href links from tiles)
+    aliases = {
+        "faqs": "faq",
+        "faq": "faq",
+        "faqs_and_answers": "faq",
+        "ai_advisor": "faq",
+        "advisor": "faq",
+    }
+
+    raw_page = st.query_params.get("page")
+    candidate = raw_page or default
+
+    if isinstance(candidate, str):
+        normalized = candidate.lower().strip()
+    else:
+        normalized = default
+
+    page = aliases.get(normalized, normalized)
+
+    if page not in pages:
+        page = default
+
+    st.session_state["current_route"] = page
+    return page

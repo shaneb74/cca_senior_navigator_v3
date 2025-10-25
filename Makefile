@@ -21,7 +21,7 @@ smoke:  ## Run smoke import tests
 	@echo "=== Running Smoke Tests ==="
 	@python tests/smoke_imports.py || (echo "❌ Smoke tests failed" && exit 1)
 
-check: lint type smoke  ## Run all checks (lint + type + smoke)
+check: lint type smoke validate-faq-recs  ## Run all checks (lint + type + smoke + faq validation)
 	@echo ""
 	@echo "✅ All checks passed!"
 
@@ -65,3 +65,7 @@ sync-site:  ## Crawl CCA website and update corp knowledge base
 	@echo "=== Syncing Corporate Knowledge Base ==="
 	@python tools/sync_site.py || (echo "❌ Site sync failed" && exit 1)
 	@echo "✓ Knowledge base updated"
+
+validate-faq-recs:  ## Validate recommended FAQ chips have valid answers
+	@echo "=== Validating FAQ Recommended Questions ==="
+	@python tools/validate_faq_recs.py || (echo "❌ FAQ validation failed" && exit 1)

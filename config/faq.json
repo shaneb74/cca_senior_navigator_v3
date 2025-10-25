@@ -229,5 +229,42 @@
     "priority": 3,
     "category": "planning",
     "ctas": [{"label": "Start Guided Care Plan", "route": "gcp_v4"}, {"label": "Get Cost Estimates", "route": "cost_planner_v2"}]
+  },
+  {
+    "id": "faq_gcp_duration",
+    "question": "How long does the Guided Care Plan take?",
+    "answer": "The **Guided Care Plan** takes **10–15 minutes** to complete. It's a comprehensive assessment that evaluates:\n- Current health and mobility\n- Safety concerns (falls, medications, wandering)\n- Daily living needs (bathing, dressing, meals)\n- Cognitive function\n- Social and emotional well-being\n\n**What you get:**\n- Personalized care recommendation (home care, assisted living, memory care, etc.)\n- Safety priorities and next steps\n- Cost estimates for recommended care level\n- Referrals to appropriate resources\n\nYou can save your progress and return anytime. The assessment is designed to be thorough yet efficient — giving you actionable insights quickly.",
+    "tags": ["gcp", "guided-care-plan", "planning"],
+    "triggers": ["how long", "gcp", "guided care plan", "assessment time", "how long does"],
+    "flags": [],
+    "priority": 3,
+    "category": "planning",
+    "ctas": [{"label": "Start Guided Care Plan", "route": "gcp_v4"}]
+  },
+  {
+    "id": "faq_cp_overview",
+    "question": "What does the Cost Planner do?",
+    "answer": "The **Cost Planner** helps you understand and plan for care costs. It provides:\n\n**Cost estimates for:**\n- Home care (hourly or live-in)\n- Assisted living\n- Memory care\n- Nursing homes\n- Adult day care\n- Home modifications\n\n**Funding analysis:**\n- Medicare coverage (limited)\n- Medicaid eligibility and planning\n- VA benefits for veterans\n- Long-term care insurance\n- Life insurance conversion options\n- Reverse mortgages\n- Personal savings strategies\n\n**Regional accuracy:**\n- State-specific Medicaid rules\n- Local market pricing\n- County-level cost data\n\n**What you get:**\n- Monthly cost breakdown\n- Funding gap analysis\n- Personalized recommendations\n- Timeline for decision-making\n\nThe Cost Planner integrates with your Guided Care Plan results to show costs for your specific situation.",
+    "tags": ["cost-planner", "costs", "planning"],
+    "triggers": ["cost planner", "what does cost planner", "costs", "pricing", "how much"],
+    "flags": [],
+    "priority": 3,
+    "category": "cost",
+    "ctas": [{"label": "Open Cost Planner", "route": "cost_planner_v2"}]
+  },
+  {
+    "id": "faq_memory_care_eligibility",
+    "question": "Do I need a diagnosis for Memory Care?",
+    "answer": "Many memory care communities ask for documentation of a dementia diagnosis before move-in. Requirements vary by state and by provider. If you don't yet have a formal diagnosis, Assisted Living may still support day-to-day needs while you speak with a physician. An Advisor can review local policies and help you confirm what's required.",
+    "tags": ["care-levels", "memory-care", "eligibility"],
+    "triggers": ["memory care diagnosis", "need diagnosis", "dementia diagnosis", "memory care eligibility"],
+    "flags": [],
+    "priority": 3,
+    "category": "care",
+    "ctas": [
+      {"label": "Open Guided Care Plan", "route": "gcp_intro"},
+      {"label": "Talk to an Advisor", "route": "advisor_contact"}
+    ]
   }
 ]
+

@@ -1,9 +1,15 @@
 {
   "copy": {
-    "page_title": "Welcome to the Guided Care Plan",
-    "lead": "This quick check matches {NAME} with the right level of support. It takes about two minutes, and you can pause at any time.",
-    "helper": "Answer for {NAME} — the person you’re helping — and we’ll guide the next steps.",
-    "navi_title": "I’m here to guide you through each question.",
-    "navi_line": "You’ll answer a few short questions about safety, daily help, and health — and you’ll get a personalized recommendation for the best senior care option."
+    "page_title": "Let's get {NAME} the right support",
+    "lead": "We'll take you through a focused check on daily life, safety, and health so Navi can recommend the right level of care. It takes about two minutes and saves automatically, so you can pause anytime.",
+    "helper_self": "Answer from your own perspective and we'll tailor the plan to what you share.",
+    "helper_supporter": "Answer on behalf of {NAME} and we'll turn your answers into the clearest next steps for both of you.",
+    "points": [
+      "Know what to expect at each step in plain language",
+      "See the care level Navi recommends for {RELATION}",
+      "Leave with guidance you can act on right away"
+    ],
+    "navi_title": "I'm here to guide you through each question.",
+    "navi_line": "You'll answer a few short questions about safety, daily help, and health - and you'll get a personalized recommendation for the best senior care option."
   }
 }

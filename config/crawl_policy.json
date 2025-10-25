@@ -2,9 +2,8 @@
   "root": "https://www.conciergecareadvisors.com/",
   "use_sitemap": true,
   "allow": [
-    "^https://www\\.conciergecareadvisors\\.com/$",
-    "^https://www\\.conciergecareadvisors\\.com/(about|our-story|leadership|team|careers|contact)/?$",
-    "^https://www\\.conciergecareadvisors\\.com/(services|senior|resources)/.*$"
+    "^https://(www\\.)?conciergecareadvisors\\.com/?$",
+    "^https://(www\\.)?conciergecareadvisors\\.com/.+$"
   ],
   "exclude": [
     "\\?.+$",
@@ -13,10 +12,10 @@
     "/feed/",
     "\\.(pdf|zip|mp4|jpg|png)$"
   ],
-  "max_pages": 200,
+  "max_pages": 400,
   "max_depth": 3,
   "rate_limit_per_sec": 2,
   "max_bytes_per_page": 300000,
-  "min_text_chars": 400,
+  "min_text_chars": 200,
   "respect_robots": true
 }

@@ -254,8 +254,12 @@ def render_hub_tile(
                         route_to("cost_planner")
                     elif "Plan with My Advisor" in title:
                         route_to("pfma")
-                    elif "FAQs & Answers" in title or "FAQ Center" in title:
-                        route_to("faqs")
+                    elif (
+                        "AI Advisor" in title
+                        or "FAQs & Answers" in title
+                        or "FAQ Center" in title
+                    ):
+                        route_to("faq")
 
         with col2:
             if st.button(secondary_label, key=secondary_key, use_container_width=True):
@@ -280,8 +284,12 @@ def render_hub_tile(
                     route_to("cost_planner")
                 elif "Plan with My Advisor" in title:
                     route_to("pfma")
-                elif "FAQs & Answers" in title or "FAQ Center" in title:
-                    route_to("faqs")
+                elif (
+                    "AI Advisor" in title
+                    or "FAQs & Answers" in title
+                    or "FAQ Center" in title
+                ):
+                    route_to("faq")
 
     # Close the card-actions div and tile
     st.markdown("</div></article>", unsafe_allow_html=True)

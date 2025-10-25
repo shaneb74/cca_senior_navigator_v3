@@ -1,14 +1,16 @@
 """
-GCP v4 Intro Page - Custom centered layout with compact Navi and hero
+GCP v4 Intro Page - Custom centered layout with refreshed copy
 
-Visual/design goals:
-- Centered container with two-column responsive grid
-- Compact Navi (no banners) with title + single line
-- Hero image with subtle tilt and frame
-- Copy via overrides with token interpolation
+Goals:
+- Keep Navi header from product shell untouched
+- Introduce warmer, context-aware lead copy with bullet reminders
+- Maintain hero image on the right with subtle tilt
 """
 
 import json
+from html import escape as html_escape
+from typing import Any
+
 import streamlit as st
 
 from core.content_contract import build_token_context, resolve_content
@@ -23,11 +25,8 @@ def _load_planning_bytes() -> bytes | None:
         return None
 
 
-def load_intro_overrides() -> dict:
-    """Load intro copy overrides from config.
-
-    Prefers config/gcp_intro.overrides.json; falls back to legacy underscore name.
-    """
+def load_intro_overrides() -> dict[str, Any]:
+    """Load intro copy overrides from config, supporting legacy filename."""
     paths = [
         "config/gcp_intro.overrides.json",
         "config/gcp_intro_overrides.json",
@@ -42,90 +41,106 @@ def load_intro_overrides() -> dict:
 
 
 def render_intro_step() -> None:
-    """Render custom intro step with two-column layout and hero image.
-
-    Header title may be shown by the engine; this view focuses on Navi + body + hero.
-    """
-    # Resolve content (overrides + tokens)
+    """Render the custom intro step with responsive layout and tailored copy."""
+    # Resolve content (overrides + tokens) using current session context
     ctx = build_token_context(st.session_state, snapshot=None)
     overrides = load_intro_overrides()
     resolved = resolve_content({"copy": overrides.get("copy", {})}, context=ctx)
-    C = resolved.get("copy", {})
+    copy = resolved.get("copy", {})
 
-    # Inject page-scoped CSS (wrapper, grid, hero, and compact Navi reset)
+    # Determine helper copy based on who the plan is for
+    relationship = st.session_state.get("planning_for_relationship", "")
+    relationship_type = st.session_state.get("relationship_type", "")
+    is_self = relationship == "self" or relationship_type == "Myself"
+
+    helper_text = copy.get("helper_self") if is_self else copy.get("helper_supporter")
+    if not helper_text:
+        helper_text = copy.get("helper")
+    if helper_text:
+        helper_text = html_escape(helper_text)
+
+    title_text = html_escape(copy.get("page_title", ""))
+    lead_text = html_escape(copy.get("lead", ""))
+
+    points = [point for point in copy.get("points", []) if point]
+    points_html = ""
+    if points:
+        items = "".join(
+            f"<li><span class='dot'></span><span>{html_escape(point)}</span></li>" for point in points
+        )
+        points_html = f"<ul class='intro-points'>{items}</ul>"
+
+    # Prepare hero image markup (single source, placed differently per breakpoint)
+    hero_bytes = _load_planning_bytes()
+    if hero_bytes:
+        import base64
+
+        encoded = base64.b64encode(hero_bytes).decode("utf-8")
+        hero_block = (
+            "<div class='gcp-hero-card'>"
+            f"<img class='gcp-hero-img' src='data:image/png;base64,{encoded}' alt='Planning together at a table' />"
+            "</div>"
+        )
+    else:
+        hero_block = (
+            "<div class='gcp-hero-card placeholder'>"
+            "<div class='placeholder-text'>We'll add a guiding image here soon.</div>"
+            "</div>"
+        )
+
+    hero_desktop = f"<div class='intro-media intro-media--desktop'>{hero_block}</div>"
+    hero_mobile = f"<div class='intro-media intro-media--mobile'>{hero_block}</div>"
+
+    # Inject scoped CSS for layout and typography (ASCII only)
     st.markdown(
         """
         <style>
-          /* Centered wrapper */
-          #gcp-intro.intro-wrap { max-width: 1100px; margin: 0 auto; padding: 8px 24px 24px; }
-          #gcp-intro h3 { margin: 10px 0 8px; }
-          #gcp-intro .lead { margin-top: 8px; font-size: 1.05rem; color: #0d1f4b; line-height: 1.5; }
-          #gcp-intro .helper { color: #6b7280; font-size: 0.9rem; margin-top: 4px; }
-          #gcp-intro .intro-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 28px; align-items: center; }
-
-          /* Tilted hero card */
-          .gcp-hero-card { border-radius: 12px; box-shadow: 0 12px 28px rgba(16,24,40,.18); overflow: hidden; background: #fff; border: 10px solid #fff; width: clamp(240px, 32vw, 440px); transform: rotate(18deg); transform-origin: center; }
-          .gcp-hero-img { width: 100%; height: auto; border-radius: 8px; display: block; }
-
+          #gcp-intro.intro-wrap { max-width: 1100px; margin: -8px auto 0; padding: 0 24px 20px; }
+          #gcp-intro .intro-grid { display: grid; grid-template-columns: minmax(0,1.05fr) minmax(0,0.95fr); gap: 32px; align-items: center; }
+          #gcp-intro .intro-copy { display: flex; flex-direction: column; gap: 14px; }
+          #gcp-intro .intro-heading { font-size: 1.9rem; font-weight: 700; color: #0d1f4b; margin: 0; line-height: 1.2; }
+          #gcp-intro .lead { font-size: 1.08rem; color: #1f2a44; line-height: 1.6; margin: 0; max-width: 60ch; }
+          #gcp-intro .helper { color: #1f3c88; font-size: 1rem; font-weight: 600; margin: 4px 0 0; }
+          #gcp-intro .intro-points { margin: 12px 0 0; padding: 0; list-style: none; }
+          #gcp-intro .intro-points li { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 10px; color: #1f2937; font-size: 0.98rem; line-height: 1.5; }
+          #gcp-intro .intro-points li .dot { width: 12px; height: 12px; border-radius: 50%; background: #1f3c88; margin-top: 6px; flex-shrink: 0; }
+          #gcp-intro .intro-media { display: flex; justify-content: flex-end; }
+          #gcp-intro .intro-media--mobile { display: none !important; justify-content: center; margin: 4px 0 0; }
+          .gcp-hero-card { border-radius: 16px; box-shadow: 0 18px 32px rgba(16,24,40,.18); overflow: hidden; background: #fff; border: 12px solid #fff; width: clamp(260px, 34vw, 440px); transform: rotate(5deg); transform-origin: center; }
+          .gcp-hero-card.placeholder { display: flex; align-items: center; justify-content: center; padding: 24px; }
+          .gcp-hero-card .placeholder-text { color: #475569; font-weight: 500; text-align: center; }
+          .gcp-hero-img { width: 100%; height: auto; border-radius: 12px; display: block; }
           @media (max-width: 900px) {
-            #gcp-intro .intro-grid { grid-template-columns: 1fr; gap: 18px; }
-            .gcp-hero-card { width: clamp(220px, 70vw, 360px); }
+            #gcp-intro .intro-grid { grid-template-columns: 1fr; gap: 20px; }
+            #gcp-intro .intro-copy { gap: 12px; }
+            #gcp-intro .intro-media--desktop { display: none !important; }
+            #gcp-intro .intro-media--mobile { display: flex !important; order: 1; }
+            #gcp-intro .intro-copy > .lead { order: 2; }
+            #gcp-intro .intro-copy > .helper { order: 3; }
+            #gcp-intro .intro-copy > .intro-points { order: 4; }
+            .gcp-hero-card { width: clamp(220px, 78vw, 360px); transform: rotate(3deg); }
           }
         </style>
         """,
         unsafe_allow_html=True,
     )
 
-    # Wrapper start
-    st.markdown('<div id="gcp-intro" class="intro-wrap">', unsafe_allow_html=True)
-
-    # Compact Navi (title + one line only)
-    try:
-        from core.ui import render_navi_panel_v2
-        render_navi_panel_v2(
-            title=C.get("navi_title"),
-            reason=C.get("navi_line", ""),
-            encouragement={"icon": "", "text": "", "status": "in_progress"},
-            context_chips=[],
-            primary_action={"label": "", "route": ""},
-            variant="compact",
-        )
-    except Exception:
-        pass
-
-    # Two-column layout: text left, image right
-    st.markdown('<div class="intro-grid">', unsafe_allow_html=True)
-    st.markdown(
-        f"""
-        <div>
-          <h3>{C.get('page_title','')}</h3>
-          <p class="lead">{C.get('lead','')}</p>
-          <p class="helper">{C.get('helper','')}</p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    # Hero column
-    hero = _load_planning_bytes()
-    if hero:
-        import base64
-        b64 = base64.b64encode(hero).decode("utf-8")
-        st.markdown(
-            f"""
-            <div class="hero">
-              <div class="gcp-hero-card">
-                <img class="gcp-hero-img" src="data:image/png;base64,{b64}" alt="Planning together at a table" />
-              </div>
+    layout_html = f"""
+        <div id=\"gcp-intro\" class=\"intro-wrap\">
+          <div class=\"intro-grid\">
+            <div class=\"intro-copy\">
+              <div class=\"intro-heading\">{title_text}</div>
+              {hero_mobile}
+              <p class=\"lead\">{lead_text}</p>
+              {f"<p class='helper'>{helper_text}</p>" if helper_text else ""}
+              {points_html}
             </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    else:
-        st.info("📋 Planning your care journey...")
+            {hero_desktop}
+          </div>
+        </div>
+    """
 
-    st.markdown('</div>', unsafe_allow_html=True)  # end grid
-    st.markdown('</div>', unsafe_allow_html=True)  # end wrapper
+    st.markdown(layout_html, unsafe_allow_html=True)
 
 
 def should_use_custom_intro() -> bool:

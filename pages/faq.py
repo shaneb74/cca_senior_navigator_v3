@@ -18,6 +18,7 @@ LLM-POWERED FAQ (Stage 3):
 
 from typing import Any
 import json
+import re
 
 import streamlit as st
 import numpy as np
@@ -71,6 +72,127 @@ def load_faq_policy() -> dict[str, Any]:
         return json.load(f)
 
 
+@st.cache_data
+def load_faq_recommended() -> list[dict[str, Any]]:
+    """Load canonical recommended FAQ questions from config/faq_recommended.json.
+    
+    These are the top 3 chips shown at the top of the page. They bypass retrieval
+    and always return a deterministic answer from the FAQ database.
+    
+    Returns:
+        List of recommended FAQ dicts with schema:
+        {
+            "id": str,        # FAQ ID from faq.json
+            "label": str      # Display text for chip (from FAQ question)
+        }
+    """
+    with open("config/faq_recommended.json", "r", encoding="utf-8") as f:
+        data = json.load(f)
+    
+    faqs = {f["id"]: f for f in load_faq_items()}
+    recs = []
+    
+    for r in data.get("items", []):
+        item = faqs.get(r["id"])
+        if not item or not item.get("answer"):
+            # Skip missing or empty FAQs (should be caught by CI validation)
+            continue
+        recs.append({
+            "id": item["id"],
+            "label": item["question"]  # Chip text comes from canonical question
+        })
+    
+    return recs
+
+
+@st.cache_data
+def load_easter_eggs() -> list[dict[str, Any]]:
+    """Load easter egg patterns from config/easter_eggs.json.
+    
+    Returns:
+        List of easter egg dicts with schema:
+        {
+            "id": str,
+            "match": str,      # Regex pattern
+            "reply": str,      # Response text
+            "cta": dict | None,
+            "env": list[str]   # ["dev", "staging", "prod"]
+        }
+    """
+    try:
+        with open("config/easter_eggs.json", "r", encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return []
+
+
+def try_easter_egg(query: str) -> dict[str, Any] | None:
+    """Check if query matches an easter egg pattern.
+    
+    Args:
+        query: User's question text
+        
+    Returns:
+        Easter egg dict if matched, None otherwise
+    """
+    import os
+    
+    # Check environment (default to dev for local)
+    env = os.getenv("STREAMLIT_ENV", "dev")
+    
+    eggs = load_easter_eggs()
+    for egg in eggs:
+        # Check if egg is enabled for this environment
+        if env not in egg.get("env", ["dev"]):
+            continue
+        
+        # Check if query matches pattern
+        pattern = egg.get("match", "")
+        if pattern and re.search(pattern, query):
+            return egg
+    
+    return None
+
+
+def ask_direct_faq(faq_id: str, name: str | None) -> dict[str, Any]:
+    """Answer a FAQ question directly without retrieval (deterministic).
+    
+    Used for recommended chips to ensure they always work regardless of
+    TF-IDF performance or website crawl status.
+    
+    Args:
+        faq_id: FAQ ID from faq.json
+        name: User's name for personalization (optional)
+        
+    Returns:
+        Answer dict with schema:
+        {
+            "answer": str,
+            "sources": list[dict],  # [{"title": str, "url": str}]
+            "cta": dict | None
+        }
+    """
+    faqs = load_faq_items()
+    faq = next((f for f in faqs if f["id"] == faq_id), None)
+    policy = load_faq_policy()
+    
+    if not faq:
+        # Fallback if FAQ ID missing (shouldn't happen with CI validation)
+        return {
+            "answer": "We don't have that in our FAQ yet. You can start the Guided Care Plan to get a tailored next step.",
+            "sources": [],
+            "cta": policy.get("default_cta")
+        }
+    
+    # Return stored answer verbatim (deterministic, fast)
+    return {
+        "answer": faq["answer"],
+        "sources": [{"title": f"From CCA FAQ: {faq.get('question', 'Untitled')}", "url": ""}],
+        "cta": (faq.get("ctas") or [None])[0]
+    }
+
+
+
 # ==============================================================================
 # RETRIEVAL LAYER (TF-IDF)
 # ==============================================================================
@@ -110,9 +232,25 @@ def retrieve_faq(query: str, faqs: list[dict], k: int = 3) -> list[dict]:
 # ==============================================================================
 # CORPORATE KNOWLEDGE LOADER + RETRIEVER (Stage 3.5)
 # ==============================================================================
-@st.cache_data
-def load_corp_chunks() -> list[dict[str, Any]]:
+@st.cache_data(ttl=None, show_spinner=False)
+def _get_corp_chunks_mtime() -> float:
+    """Get modification time of corp_knowledge.jsonl for cache invalidation."""
+    import os
+    chunks_path = "config/corp_knowledge.jsonl"
+    try:
+        return os.path.getmtime(chunks_path)
+    except OSError:
+        return 0.0
+
+
+@st.cache_data(show_spinner=False)
+def load_corp_chunks(_mtime: float | None = None) -> list[dict[str, Any]]:
     """Load corporate knowledge chunks from config/corp_knowledge.jsonl.
+    
+    Cache automatically refreshes when file is updated (via _mtime parameter).
+    
+    Args:
+        _mtime: File modification time (for cache invalidation, passed by caller)
     
     Returns:
         List of chunk dicts with schema:
@@ -123,7 +261,8 @@ def load_corp_chunks() -> list[dict[str, Any]]:
             "heading": str,
             "text": str,
             "last_fetched": str,
-            "tags": list[str]
+            "tags": list[str],
+            "type": str  # about, leadership, services, blog (Stage 3.6)
         }
     """
     try:
@@ -147,8 +286,63 @@ def load_corp_chunks() -> list[dict[str, Any]]:
 
 
 @st.cache_data
+def load_corp_mini_faq() -> list[dict[str, Any]]:
+    """Load curated mini-FAQ for identity questions (Stage 3.6).
+    
+    Returns:
+        List of mini-FAQ dicts with schema:
+        {
+            "id": str,
+            "q": str,
+            "a": str,
+            "ctas": list[dict]  # [{"label": str, "route": str}]
+        }
+    """
+    import os
+    p = "config/corp_mini_faq.json"
+    try:
+        if os.path.exists(p):
+            with open(p, "r", encoding="utf-8") as f:
+                return json.load(f)
+    except Exception as e:
+        print(f"[MINI_FAQ_LOAD_ERROR] {e}")
+    return []
+
+
+@st.cache_resource
+def build_corp_index(chunks: tuple) -> tuple:
+    """Build and cache TF-IDF index for corp knowledge chunks (Stage 3.6).
+    
+    Args:
+        chunks: Tuple of chunk dicts (tuple for hashability)
+        
+    Returns:
+        Tuple of (vectorizer, matrix, chunk_list) for reuse
+    """
+    try:
+        from sklearn.feature_extraction.text import TfidfVectorizer
+        
+        if not chunks:
+            return None, None, []
+        
+        chunk_list = list(chunks)
+        texts = [f"{c.get('heading', '')} {c.get('text', '')}" for c in chunk_list]
+        
+        vectorizer = TfidfVectorizer(stop_words="english", max_features=500)
+        X = vectorizer.fit_transform(texts)
+        
+        return vectorizer, X, chunk_list
+    except Exception as e:
+        print(f"[CORP_INDEX_BUILD_ERROR] {e}")
+        return None, None, []
+
+
+@st.cache_data
 def retrieve_corp(query: str, chunks: list[dict], k: int = 5) -> list[dict]:
-    """Retrieve top-k most relevant corp knowledge chunks using TF-IDF.
+    """Retrieve top-k most relevant corp knowledge chunks using weighted TF-IDF.
+    
+    Applies priors to prioritize authoritative content (about/leadership/services)
+    and boost fresh content (<90 days old). Uses cached index for faster retrieval.
     
     Args:
         query: User's natural language question
@@ -159,27 +353,108 @@ def retrieve_corp(query: str, chunks: list[dict], k: int = 5) -> list[dict]:
         List of top-k chunk dicts with similarity > 0, sorted by relevance
     """
     try:
-        from sklearn.feature_extraction.text import TfidfVectorizer
         from sklearn.metrics.pairwise import cosine_similarity
+        from datetime import datetime
         
         if not chunks:
             return []
         
-        # Combine heading + text for richer matching
-        texts = [f"{c['heading']} {c['text']}" for c in chunks]
+        # Build/get cached index
+        chunks_tuple = tuple(json.dumps(c, sort_keys=True) for c in chunks)
+        vectorizer, X, chunk_list = build_corp_index(chunks_tuple)
         
-        vectorizer = TfidfVectorizer(stop_words="english", max_features=500)
-        X = vectorizer.fit_transform(texts)
+        if vectorizer is None or X is None:
+            return []
+        
+        # Transform query
         q_vec = vectorizer.transform([query])
-        
         sims = cosine_similarity(q_vec, X).flatten()
-        top_idx = np.argsort(sims)[::-1][:k]
         
-        # Only return results with positive similarity
-        return [chunks[i] for i in top_idx if sims[i] > 0]
+        # Apply weighted priors (Stage 3.6)
+        def prior(ctype: str) -> float:
+            """Authoritative content gets boost."""
+            if ctype in ("about", "leadership"):
+                return 0.25
+            if ctype == "services":
+                return 0.10
+            return 0.0
+        
+        def freshness_bonus(chunk: dict) -> float:
+            """Fresh content (<90 days) gets small boost."""
+            try:
+                last_fetched = chunk.get("last_fetched", "")
+                if not last_fetched:
+                    return 0.0
+                dt = datetime.fromisoformat(last_fetched.replace("Z", ""))
+                age_days = (datetime.utcnow() - dt).days
+                return 0.05 if age_days < 90 else 0.0
+            except Exception:
+                return 0.0
+        
+        # Add priors to similarity scores
+        priors = np.array([prior(c.get("type", "blog")) for c in chunk_list])
+        freshness = np.array([freshness_bonus(c) for c in chunk_list])
+        scores = sims + priors + freshness
+        
+        top_idx = np.argsort(scores)[::-1][:k]
+        
+        # Only return results with positive score
+        return [chunk_list[i] for i in top_idx if scores[i] > 0]
     except Exception as e:
         print(f"[CORP_RETRIEVAL_ERROR] {e}")
         return []
+
+
+# ==============================================================================
+# MINI-FAQ ROUTING (Stage 3.6)
+# ==============================================================================
+IDENTITY_RE = re.compile(
+    r"(?:^|\b)(?:who\s+(?:is|are)\s+(?:cca|concierge\s+care\s+advisors)|"
+    r"about\s+(?:cca|concierge\s+care\s+advisors)|"
+    r"(?:leadership|leadership\s+team|executives)|"
+    r"(?:founded|how\s+long\s+in\s+business|been\s+around))",
+    re.IGNORECASE
+)
+
+
+def try_mini_faq(user_q: str) -> dict[str, Any] | None:
+    """Try to match identity question to curated mini-FAQ.
+    
+    Args:
+        user_q: User's question text
+        
+    Returns:
+        Mini-FAQ dict if pattern matches, else None
+    """
+    mini = load_corp_mini_faq()
+    
+    if not mini:
+        return None
+    
+    if not IDENTITY_RE.search(user_q or ""):
+        return None
+    
+    # Simple keyword matching to pick best entry
+    q_lower = (user_q or "").lower()
+    
+    # Check for specific keywords
+    if any(k in q_lower for k in ["who is cca", "who are", "about cca", "about concierge"]):
+        for item in mini:
+            if item["id"] == "corp_who_is_cca":
+                return item
+    
+    if any(k in q_lower for k in ["leadership", "team", "executives", "who runs"]):
+        for item in mini:
+            if item["id"] == "corp_leadership":
+                return item
+    
+    if any(k in q_lower for k in ["founded", "how long", "been around", "been in business"]):
+        for item in mini:
+            if item["id"] == "corp_founded":
+                return item
+    
+    # Fallback to first match if pattern matched but no specific keyword
+    return mini[0] if mini else None
 
 
 # Load question database from JSON
@@ -647,6 +922,23 @@ def _get_legacy_response(question: str) -> str:
 # ==============================================================================
 # UX ENHANCEMENT HELPERS
 # ==============================================================================
+def fmt_date(iso: str) -> str | None:
+    """Format ISO date string to 'MMM YYYY' for display.
+    
+    Args:
+        iso: ISO 8601 date string (e.g., "2024-10-25T12:00:00Z")
+        
+    Returns:
+        Formatted date string (e.g., "Oct 2024") or None if parsing fails
+    """
+    from datetime import datetime
+    try:
+        dt = datetime.fromisoformat(iso.replace("Z", ""))
+        return dt.strftime("%b %Y")
+    except Exception:
+        return None
+
+
 def _copy_button(text: str, key: str) -> None:
     """Render a copy-to-clipboard button with JS."""
     import html
@@ -770,26 +1062,45 @@ def render():
         unsafe_allow_html=True
     )
     
-    # ─── Recommended Questions (3 chips) ───
+    # ─── Recommended Questions (3 canonical chips) ───
     st.markdown("**Recommended questions:**")
     
-    # Curated high-value questions
-    recommendations = [
-        "How long does the Guided Care Plan take?",
-        "What does the Cost Planner do?",
-        "Do I need a diagnosis for Memory Care?"
-    ]
+    # Load canonical recommendations (bypasses retrieval, always works)
+    recommendations = load_faq_recommended()
     
-    cols = st.columns(3)
-    for i, rec_q in enumerate(recommendations):
+    cols = st.columns(len(recommendations))
+    for i, rec in enumerate(recommendations):
         if cols[i].button(
-            rec_q,
-            key=f"rec_chip_{i}",
+            rec["label"],
+            key=f"rec_chip_{rec['id']}",
             use_container_width=True,
-            help="Click to ask"
+            help="Canonical answer from CCA FAQ"
         ):
-            st.session_state["faq_composer"] = rec_q
-            st.session_state["faq_send_now"] = True
+            # Direct FAQ answer (deterministic, no retrieval needed)
+            chat = list(st.session_state.get("faq_chat", []))
+            chat.append({"role": "user", "text": str(rec["label"])})
+            st.session_state["faq_chat"] = chat
+            
+            # Get direct answer from FAQ database
+            name = st.session_state.get("ctx", {}).get("auth", {}).get("name")
+            ans = ask_direct_faq(rec["id"], name)
+            
+            # Format sources
+            source_titles = [s["title"] for s in ans.get("sources", [])]
+            
+            # Add response
+            msg = {
+                "role": "assistant",
+                "text": str(ans["answer"]),
+                "sources": source_titles,
+                "source_ids": [],
+                "cta": ans.get("cta") if isinstance(ans.get("cta"), dict) else None,
+                "user_query": str(rec["label"]),
+                "seed_tags": [],
+                "is_canonical": True  # Flag for badge
+            }
+            chat.append(msg)
+            st.session_state["faq_chat"] = chat
             st.rerun()
     
     st.markdown("---")
@@ -798,6 +1109,7 @@ def render():
     chat = st.session_state["faq_chat"]
     
     if not chat:
+        # Simple empty state - recommended questions already shown above (#5)
         st.info("💡 Click a recommended question above or type your own to start chatting.")
     else:
         st.markdown('<div class="chat">', unsafe_allow_html=True)
@@ -811,23 +1123,71 @@ def render():
                     f'<div class="msg-wrapper user"><div class="msg user">{text}</div></div>',
                     unsafe_allow_html=True
                 )
+            elif role == "typing":
+                # Typing indicator (#4)
+                st.markdown(
+                    '<div class="msg-wrapper assistant"><div class="msg assistant"><em>Navi is typing...</em></div></div>',
+                    unsafe_allow_html=True
+                )
             else:  # assistant
                 st.markdown(
                     f'<div class="msg-wrapper assistant"><div class="msg assistant">{text}</div></div>',
                     unsafe_allow_html=True
                 )
                 
-                # Sources (if FAQ)
-                sources = msg.get("sources", [])
-                if sources:
-                    pills_html = " ".join([
-                        f'<span class="source-pill">{src}</span>'
-                        for src in sources[:3]  # Max 3 visible
-                    ])
+                # Mini-FAQ badge (#6), Canonical badge, or Easter Egg badge
+                if msg.get("is_easter_egg"):
                     st.markdown(
-                        f'<div class="sources">📚 Sources: {pills_html}</div>',
+                        '<div class="sources">🥚 <strong>Easter Egg found!</strong> (Dev mode only)</div>',
                         unsafe_allow_html=True
                     )
+                elif msg.get("is_mini_faq"):
+                    st.markdown(
+                        '<div class="sources">🚀 <strong>Instant answer</strong> from curated CCA content</div>',
+                        unsafe_allow_html=True
+                    )
+                elif msg.get("is_canonical"):
+                    st.markdown(
+                        '<div class="sources">✅ <strong>Canonical answer</strong> from CCA FAQ</div>',
+                        unsafe_allow_html=True
+                    )
+                else:
+                    # Sources (if FAQ or corp with metadata)
+                    sources = msg.get("sources", [])
+                    source_metas = msg.get("source_metas", [])
+                    
+                    if source_metas:
+                        # Corp knowledge with freshness and clickable links (Stage 3.6, #7)
+                        pills_html = []
+                        for meta in source_metas[:3]:
+                            title = meta.get("title", "Untitled")
+                            url = meta.get("url", "")
+                            freshness = fmt_date(meta.get("last_fetched", ""))
+                            if freshness:
+                                pill_text = f"{title} (Updated {freshness})"
+                            else:
+                                pill_text = title
+                            
+                            # Make clickable if URL exists (#7)
+                            if url:
+                                pills_html.append(f'<a href="{url}" target="_blank" style="text-decoration: none;"><span class="source-pill">{pill_text}</span></a>')
+                            else:
+                                pills_html.append(f'<span class="source-pill">{pill_text}</span>')
+                        
+                        st.markdown(
+                            f'<div class="sources">📚 Sources: {" ".join(pills_html)}</div>',
+                            unsafe_allow_html=True
+                        )
+                    elif sources:
+                        # Legacy format or FAQ sources
+                        pills_html = " ".join([
+                            f'<span class="source-pill">{src}</span>'
+                            for src in sources[:3]  # Max 3 visible
+                        ])
+                        st.markdown(
+                            f'<div class="sources">📚 Sources: {pills_html}</div>',
+                            unsafe_allow_html=True
+                        )
                 
                 # ─── Copy & Share Actions ───
                 action_col1, action_col2 = st.columns([1, 1])
@@ -914,9 +1274,29 @@ def render():
                 if idx < len(chat) - 1:
                     st.markdown('<div class="msg-divider"></div>', unsafe_allow_html=True)
         
-        st.markdown('</div>', unsafe_allow_html=True)
+        # Auto-scroll anchor (#2)
+        st.markdown('<div id="chat-bottom"></div>', unsafe_allow_html=True)
+        st.markdown("""
+        <script>
+            // Scroll to bottom of chat
+            const chatBottom = document.getElementById('chat-bottom');
+            if (chatBottom) {
+                chatBottom.scrollIntoView({ behavior: 'smooth', block: 'end' });
+            }
+        </script>
+        """, unsafe_allow_html=True)
+        
+        st.markdown('</div>', unsafe_allow_html=True)  # Close chat div
     
     st.markdown("---")
+    
+    # Check if currently processing (#3)
+    is_processing = st.session_state.get("faq_processing", False)
+    
+    # Clear input after processing (#1) - must happen before widget is rendered
+    if not is_processing and st.session_state.get("faq_last_question"):
+        st.session_state["faq_composer_input"] = ""
+        st.session_state.pop("faq_last_question", None)
     
     # ─── Composer ───
     col1, col2 = st.columns([5, 1])
@@ -926,15 +1306,25 @@ def render():
             "Ask about planning, costs, eligibility, or our company…",
             key="faq_composer_input",
             placeholder="e.g., What is assisted living? Who is CCA?",
-            label_visibility="collapsed"
+            label_visibility="collapsed",
+            on_change=lambda: st.session_state.update({"faq_enter_pressed": True}),
+            disabled=is_processing  # Disable during processing
         )
     
     with col2:
-        send_clicked = st.button("Send", type="primary", key="faq_send_btn")
+        send_clicked = st.button(
+            "Send", 
+            type="primary", 
+            key="faq_send_btn",
+            disabled=is_processing  # Disable during processing
+        )
+    
+    # Detect Enter key press (text_input triggers rerun on Enter)
+    enter_pressed = st.session_state.pop("faq_enter_pressed", False)
     
     # Also trigger on chip click
     send_now = st.session_state.pop("faq_send_now", False)
-    should_send = send_clicked or send_now
+    should_send = send_clicked or send_now or (enter_pressed and user_q and user_q.strip())
     
     # If chip was clicked, use the stored composer value
     if send_now and st.session_state.get("faq_composer"):
@@ -945,12 +1335,81 @@ def render():
     if should_send and user_q and user_q.strip():
         q = user_q.strip()
         
-        # Add user message
-        st.session_state["faq_chat"].append({"role": "user", "text": q})
+        # Set processing flag (#3)
+        st.session_state["faq_processing"] = True
+        
+        # Add user message and typing indicator (safe pattern)
+        chat = list(st.session_state.get("faq_chat", []))
+        chat.append({"role": "user", "text": str(q)})
+        chat.append({"role": "typing", "text": "..."})
+        st.session_state["faq_chat"] = chat
+        
+        # Store the question so we can clear input on rerun
+        st.session_state["faq_last_question"] = q
         
         with st.spinner("🤔 Thinking..."):
             # Load policy
             policy = load_faq_policy()
+            
+            # ─── EASTER EGG PATH ───
+            # Check for easter eggs first (dev/staging only)
+            egg = try_easter_egg(q)
+            if egg:
+                msg = {
+                    "role": "assistant",
+                    "text": str(egg.get("reply", "")),
+                    "sources": ["🥚 Easter Egg"],
+                    "source_ids": [],
+                    "cta": egg.get("cta"),
+                    "user_query": str(q),
+                    "seed_tags": ["easter-egg"],
+                    "is_easter_egg": True  # Flag for special badge
+                }
+                
+                # Remove typing indicator and add response (safe pattern)
+                chat = list(st.session_state.get("faq_chat", []))
+                if chat and chat[-1].get("role") == "typing":
+                    chat.pop()
+                chat.append(msg)
+                st.session_state["faq_chat"] = chat
+                st.session_state["faq_processing"] = False
+                st.rerun()
+            
+            # ─── MINI-FAQ PATH (Stage 3.6) ───
+            # Try curated identity answers first for instant response
+            hit = try_mini_faq(q)
+            if hit:
+                # Direct (fast) path: no LLM needed (safe pattern)
+                cta = (hit.get("ctas") or [None])[0]
+                cta = cta if isinstance(cta, dict) else {}  # Ensure it's a dict
+                
+                msg = {
+                    "role": "assistant",
+                    "text": str(hit.get("a", "")),
+                    "sources": ["CCA Identity (curated)"],
+                    "source_ids": [],
+                    "cta": cta,
+                    "user_query": str(q),
+                    "seed_tags": ["identity", "about"],
+                    "is_mini_faq": True  # Flag for badge display (#6)
+                }
+                
+                # Log mini-FAQ hit
+                from core.events import log_event
+                log_event("faq_mini", {
+                    "query": q,
+                    "mini_id": hit["id"],
+                    "cta_route": cta.get("route") if cta else None
+                })
+                
+                # Remove typing indicator and add response (safe pattern)
+                chat = list(st.session_state.get("faq_chat", []))
+                if chat and chat[-1].get("role") == "typing":
+                    chat.pop()
+                chat.append(msg)
+                st.session_state["faq_chat"] = chat
+                st.session_state["faq_processing"] = False  # Clear processing flag
+                st.rerun()
             
             # ─── ROUTING: Corp Knowledge vs FAQ ───
             corp_keywords = [
@@ -961,19 +1420,63 @@ def render():
             is_corp_query = any(kw in q.lower() for kw in corp_keywords)
             
             if is_corp_query:
-                # Try corporate knowledge first
-                corp_chunks = load_corp_chunks()
+                # Try corporate knowledge first (auto-refreshes when corpus updates)
+                corp_chunks = load_corp_chunks(_get_corp_chunks_mtime())
                 corp_hits = retrieve_corp(q, corp_chunks, k=5)
                 
                 if corp_hits:
-                    from core.state import get_current_name
                     from ai.llm_mediator import answer_corp
                     
-                    name = get_current_name() or policy.get("fallback_name", "the person you're helping")
-                    result = answer_corp(q, name, corp_hits, policy)
+                    name = st.session_state.get("ctx", {}).get("auth", {}).get("name") or policy.get("fallback_name", "the person you're helping")
                     
-                    # Format sources for display
-                    source_titles = [f"{s['title']}" for s in result.get("sources", [])[:3]]
+                    try:
+                        result = answer_corp(q, name, corp_hits, policy)
+                    except Exception as e:
+                        # Error handling with retry (#8)
+                        from core.events import log_event
+                        log_event("faq_error", {
+                            "query": q,
+                            "error_type": type(e).__name__,
+                            "error_msg": str(e),
+                            "path": "corp"
+                        })
+                        
+                        # Remove typing indicator and show error (safe pattern)
+                        chat = list(st.session_state.get("faq_chat", []))
+                        if chat and chat[-1].get("role") == "typing":
+                            chat.pop()
+                        
+                        # Show error message with retry option
+                        msg = {
+                            "role": "assistant",
+                            "text": "I'm sorry, I encountered an error while processing your question. Please try asking again or rephrase your question.",
+                            "sources": [],
+                            "source_ids": [],
+                            "cta": None,
+                            "user_query": str(q),
+                            "seed_tags": [],
+                            "is_error": True
+                        }
+                        chat.append(msg)
+                        st.session_state["faq_chat"] = chat
+                        st.session_state["faq_processing"] = False
+                        st.rerun()
+                    
+                    # Format sources with freshness (Stage 3.6)
+                    # Dedupe by URL first
+                    used_sources = result.get("sources", [])[:5]
+                    seen_urls = set()
+                    source_metas = []
+                    
+                    for s in used_sources:
+                        url = s.get("url", "")
+                        if url and url not in seen_urls:
+                            seen_urls.add(url)
+                            source_metas.append({
+                                "title": s.get("title", "Untitled"),
+                                "url": url,
+                                "last_fetched": s.get("last_fetched", "")
+                            })
                     
                     # Collect tags for smart CTA chaining (from corp chunks)
                     seed_tags = []
@@ -983,11 +1486,12 @@ def render():
                     
                     msg = {
                         "role": "assistant",
-                        "text": result["answer"],
-                        "sources": source_titles,
+                        "text": str(result.get("answer", "")),
+                        "sources": [],  # Will be rendered with metadata
+                        "source_metas": source_metas,  # Metadata for rendering with freshness
                         "source_ids": [],  # Corp doesn't use FAQ IDs
                         "cta": None,  # Corp answers don't have CTAs
-                        "user_query": q,
+                        "user_query": str(q),
                         "seed_tags": seed_tags
                     }
                     
@@ -1000,7 +1504,13 @@ def render():
                         "name_present": bool(st.session_state.get("person_a_name")),
                     })
                     
-                    st.session_state["faq_chat"].append(msg)
+                    # Remove typing indicator and add response (safe pattern)
+                    chat = list(st.session_state.get("faq_chat", []))
+                    if chat and chat[-1].get("role") == "typing":
+                        chat.pop()
+                    chat.append(msg)
+                    st.session_state["faq_chat"] = chat
+                    st.session_state["faq_processing"] = False  # Clear processing flag
                     st.rerun()
             
             # ─── FAQ Path ───
@@ -1009,11 +1519,42 @@ def render():
                 retrieved = retrieve_faq(q, faqs, k=3)
                 
                 if retrieved:
-                    from core.state import get_current_name
                     from ai.llm_mediator import answer_faq
                     
-                    name = get_current_name() or policy.get("fallback_name", "the person you're helping")
-                    result = answer_faq(q, name, retrieved, policy)
+                    name = st.session_state.get("ctx", {}).get("auth", {}).get("name") or policy.get("fallback_name", "the person you're helping")
+                    
+                    try:
+                        result = answer_faq(q, name, retrieved, policy)
+                    except Exception as e:
+                        # Error handling with retry (#8)
+                        from core.events import log_event
+                        log_event("faq_error", {
+                            "query": q,
+                            "error_type": type(e).__name__,
+                            "error_msg": str(e),
+                            "path": "faq"
+                        })
+                        
+                        # Remove typing indicator and show error (safe pattern)
+                        chat = list(st.session_state.get("faq_chat", []))
+                        if chat and chat[-1].get("role") == "typing":
+                            chat.pop()
+                        
+                        # Show error message with retry option
+                        msg = {
+                            "role": "assistant",
+                            "text": "I'm sorry, I encountered an error while processing your question. Please try asking again or rephrase your question.",
+                            "sources": [],
+                            "source_ids": [],
+                            "cta": None,
+                            "user_query": str(q),
+                            "seed_tags": [],
+                            "is_error": True
+                        }
+                        chat.append(msg)
+                        st.session_state["faq_chat"] = chat
+                        st.session_state["faq_processing"] = False
+                        st.rerun()
                     
                     # Map source IDs to FAQ questions for display
                     used_ids = set(result.get("sources", []))
@@ -1031,11 +1572,11 @@ def render():
                     
                     msg = {
                         "role": "assistant",
-                        "text": result["answer"],
+                        "text": str(result.get("answer", "")),
                         "sources": source_titles,
                         "source_ids": list(used_ids),  # For follow-up chips
-                        "cta": result.get("cta"),
-                        "user_query": q,
+                        "cta": result.get("cta") if isinstance(result.get("cta"), dict) else None,
+                        "user_query": str(q),
                         "seed_tags": seed_tags
                     }
                     
@@ -1048,6 +1589,13 @@ def render():
                         "cta_route": (result.get("cta") or {}).get("route"),
                         "name_present": bool(st.session_state.get("person_a_name")),
                     })
+                    
+                    # Remove typing indicator and add response (safe pattern)
+                    chat = list(st.session_state.get("faq_chat", []))
+                    if chat and chat[-1].get("role") == "typing":
+                        chat.pop()
+                    chat.append(msg)
+                    st.session_state["faq_chat"] = chat
                 else:
                     # No results fallback
                     msg = {
@@ -1056,7 +1604,7 @@ def render():
                         "sources": [],
                         "source_ids": [],
                         "cta": {"label": "Open Guided Care Plan", "route": "gcp_intro"},
-                        "user_query": q,
+                        "user_query": str(q),
                         "seed_tags": []
                     }
                     
@@ -1069,8 +1617,15 @@ def render():
                         "cta_route": "gcp_intro",
                         "name_present": bool(st.session_state.get("person_a_name")),
                     })
-                
-                st.session_state["faq_chat"].append(msg)
+                    
+                    # Remove typing indicator and add response (safe pattern)
+                    chat = list(st.session_state.get("faq_chat", []))
+                    if chat and chat[-1].get("role") == "typing":
+                        chat.pop()
+                    chat.append(msg)
+                    st.session_state["faq_chat"] = chat
+                    
+                st.session_state["faq_processing"] = False  # Clear processing flag
                 st.rerun()
     
     # ─── Controls ───

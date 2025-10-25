@@ -487,7 +487,7 @@ def _build_navi_guide_block(ctx) -> str:
 
     actions_html = (
         f'<a class="btn btn--primary" href="{action_route}" target="_self">{html.escape(action_label)}</a>'
-        '<a class="btn btn--secondary" href="?page=faqs" target="_self">Ask Navi →</a>'
+        '<a class="btn btn--secondary" href="?page=faq" target="_self">Ask Navi →</a>'
     )
 
     reason_html = html.escape(reason) if reason else ""
@@ -614,8 +614,8 @@ def _build_pfma_tile(hub_order: dict, ordered_index: dict, next_action: dict) ->
 def _build_faq_tile() -> ProductTileHub:
     """Build FAQ tile (always available, never locked)."""
     return ProductTileHub(
-        key="faqs",
-        title="FAQs & Answers",
+        key="faq",
+        title="AI Advisor",
         desc="Answers in plain language, available whenever you are.",
         blurb=(
             "Search our advisor-reviewed knowledge base or ask Senior Navigator AI for tailored guidance, "
@@ -628,7 +628,7 @@ def _build_faq_tile() -> ProductTileHub:
             "Available 24/7",
         ],
         primary_label="Open",
-        primary_route="?page=faqs",
+        primary_route="?page=faq",
         progress=0,
         variant="teal",
         order=40,

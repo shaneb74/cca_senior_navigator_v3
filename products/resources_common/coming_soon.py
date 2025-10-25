@@ -84,7 +84,7 @@ def render_coming_soon(product_key: str, product_title: str, product_desc: str):
         if st.button("❓ FAQs & Support", use_container_width=True):
             from core.nav import route_to
 
-            route_to("faqs")
+            route_to("faq")
 
     # Feedback section
     st.markdown("---")

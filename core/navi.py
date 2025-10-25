@@ -804,7 +804,7 @@ def render_navi_panel(
         if num_suggested > 0:
             secondary_action = {
                 "label": "Ask Navi →",
-                "route": "faqs",  # Fixed: correct page key
+                "route": "faq",  # Points to AI Advisor chat
             }
 
         # Render V2 panel

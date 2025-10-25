@@ -1,20 +1,44 @@
 {
-  "allowed_products": ["Guided Care Plan", "Cost Planner", "Advisor Prep"],
-  "allowed_terms": [
-    "safety",
-    "daily help",
-    "health",
-    "assisted living",
-    "memory care",
-    "in-home care",
-    "costs",
-    "benefits",
-    "eligibility"
-  ],
-  "banned_phrases": ["loved one"],
-  "fallback_name": "the person you're helping",
-  "default_cta": {
-    "label": "Open Guided Care Plan",
-    "route": "gcp_intro"
+  "version": "2025-10-25",
+
+  "products": {
+    "allowed": ["Guided Care Plan", "Cost Planner", "Advisor Prep"],
+    "default_cta": { "label": "Open Guided Care Plan", "route": "gcp_intro" }
+  },
+
+  "answer": {
+    "max_words": 120,
+    "fallback_name": "the person you’re helping",
+    "tone": "plain",
+    "bullets": false,
+    "banned_phrases": ["loved one", "guaranteed", "always", "free forever"]
+  },
+
+  "sources": {
+    "required": true,
+    "max": 2,
+    "dedupe": true,
+    "show_updated": true,
+    "allowed_domains": ["conciergecareadvisors.com"],
+    "banned_domains": ["aarp.org", "medicare.gov"],
+    "external_sources_allowed": false,
+    "freshness_days_max": 365
+  },
+
+  "retrieval": {
+    "min_similarity": 0.08,
+    "prefer_types": { "about": 0.25, "leadership": 0.25, "services": 0.10, "blog": 0.0 }
+  },
+
+  "routing": {
+    "mini_faq_first": true,
+    "identity_patterns": [
+      "(?i)(?:^|\\b)(?:who\\s+(?:is|are)\\s+(?:cca|concierge\\s+care\\s+advisors)|about\\s+(?:cca|concierge\\s+care\\s+advisors)|leadership|executives|founded|how\\s+long\\s+in\\s+business)"
+    ]
+  },
+
+  "safety": {
+    "disallow_medical_advice": true,
+    "disallow_pricing_promises": true
   }
 }
