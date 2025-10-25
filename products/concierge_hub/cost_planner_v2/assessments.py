@@ -30,7 +30,7 @@ from products.concierge_hub.cost_planner_v2.utils.financial_helpers import (
     normalize_asset_data,
     normalize_income_data,
 )
-from products.concierge_hub.cost_planner_v2.va_rates import get_monthly_va_disability
+from products.concierge_hub.cost_planner_v2.utils.va_rates import get_monthly_va_disability
 
 _SINGLE_PAGE_ASSESSMENTS: dict[str, dict[str, Any]] = {
     "income": {
