@@ -1,8 +1,6 @@
-"""
-GCP v4 - Guided Care Plan with MCIP Integration
+# DEPRECATED: use products.concierge_hub.gcp_v4
+# This shim maintains backward compatibility for existing imports
+from products.concierge_hub.gcp_v4.product import render as render
 
-This version maintains the JSON-driven module architecture while adding
-clean integration with MCIP v2 for recommendation publishing.
-"""
-
-__version__ = "4.0.0"
+def describe():
+    return {"name": "GCP v4", "hub": "concierge"}

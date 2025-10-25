@@ -295,7 +295,7 @@ def render():
         print(f"[QE_INIT] home_hours={gcp_hours} user_band={user_band}")
 
         # Log LLM band parsing
-        from products.cost_planner_v2.ui_helpers import parse_hours_band_to_high_end
+        from products.concierge_hub.cost_planner_v2.ui_helpers import parse_hours_band_to_high_end
         if llm_band != "unknown":
             llm_high = parse_hours_band_to_high_end(llm_band)
             print(f"[QE_LLM] band={llm_band} → high={llm_high}")
@@ -349,7 +349,7 @@ def render():
 
 def _render_compact_cost_tabs():
     """Render compact horizontal cost tabs with costs under labels."""
-    from products.cost_planner_v2.ui_helpers import format_currency, get_cached_monthly_total
+    from products.concierge_hub.cost_planner_v2.ui_helpers import format_currency, get_cached_monthly_total
 
     cost = st.session_state.get("cost", {})
     available = cost.get("assessments_available", {"home": True, "al": True, "mc": False})
@@ -420,8 +420,8 @@ def _render_panel(assessment: str, render_card_fn):
 
 def _render_home_card(zip_code: str):
     """Render In-Home Care card (hours + home expense, no Keep Home toggle)."""
-    from products.cost_planner_v2.comparison_calcs import calculate_inhome_scenario
-    from products.cost_planner_v2.ui_helpers import (
+    from products.concierge_hub.cost_planner_v2.comparison_calcs import calculate_inhome_scenario
+    from products.concierge_hub.cost_planner_v2.ui_helpers import (
         donut_cost_chart,
         money,
         render_care_chunk_compare_blurb,
@@ -535,8 +535,8 @@ def _render_home_card(zip_code: str):
 
 def _render_facility_card(tier: str, zip_code: str, show_keep_home: bool = False):
     """Render facility card (AL or MC) with optional Keep Home toggle."""
-    from products.cost_planner_v2.comparison_calcs import calculate_facility_scenario
-    from products.cost_planner_v2.ui_helpers import (
+    from products.concierge_hub.cost_planner_v2.comparison_calcs import calculate_facility_scenario
+    from products.concierge_hub.cost_planner_v2.ui_helpers import (
         donut_cost_chart,
         money,
         render_care_chunk_compare_blurb,

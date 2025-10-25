@@ -16,7 +16,7 @@ import streamlit as st
 
 from core.mcip import MCIP, CareRecommendation
 from core.name_utils import section_header, personalize, pname
-from products.cost_planner_v2.utils.financial_helpers import (
+from products.concierge_hub.cost_planner_v2.utils.financial_helpers import (
     asset_breakdown,
     calculate_total_monthly_income,
     income_breakdown,
@@ -1156,7 +1156,7 @@ def _publish_to_mcip():
     from datetime import datetime
 
     from core.mcip import MCIP, FinancialProfile
-    from products.cost_planner_v2.utils.cost_calculator import CostCalculator
+    from products.concierge_hub.cost_planner_v2.utils.cost_calculator import CostCalculator
 
     modules_state = st.session_state.cost_v2_modules
 

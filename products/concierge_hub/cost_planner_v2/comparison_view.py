@@ -9,8 +9,8 @@ import streamlit as st
 
 from core.mcip import MCIP
 from core.nav import route_to
-from products.cost_planner_v2 import comparison_calcs
-from products.cost_planner_v2.comparison_calcs import ScenarioBreakdown
+from products.concierge_hub.cost_planner_v2 import comparison_calcs
+from products.concierge_hub.cost_planner_v2.comparison_calcs import ScenarioBreakdown
 
 # ==============================================================================
 # GCP HOURS MAPPING
@@ -194,7 +194,7 @@ def render_comparison_view(zip_code: str | None):
         st.markdown("")
 
     # // reason: Render interactive tabbed comparison section
-    from products.cost_planner_v2.ui_helpers import render_cp_panel, render_cp_tabs
+    from products.concierge_hub.cost_planner_v2.ui_helpers import render_cp_panel, render_cp_tabs
 
     render_cp_tabs()
 
@@ -259,7 +259,7 @@ def _log_calculation_inputs(label: str, zip_code: str, breakdown: ScenarioBreakd
         zip_code: ZIP code used
         breakdown: The calculated scenario breakdown
     """
-    from products.cost_planner_v2.utils.regional_data import RegionalDataProvider
+    from products.concierge_hub.cost_planner_v2.utils.regional_data import RegionalDataProvider
 
     regional = RegionalDataProvider.get_multiplier(zip_code=zip_code)
 
@@ -297,7 +297,7 @@ def _calculate_facility_scenario(care_type, zip_code, debug_label=""):
 
     if debug_label:
         st.write("**Step 2: Base Facility Rate Lookup**")
-        from products.cost_planner_v2.comparison_calcs import FACILITY_BASE_RATES
+        from products.concierge_hub.cost_planner_v2.comparison_calcs import FACILITY_BASE_RATES
         base_rate = FACILITY_BASE_RATES.get(care_type, 4500)
         st.write(f"  - FACILITY_BASE_RATES lookup for `{care_type}`: **${base_rate:,.0f}**/month")
         if care_type not in FACILITY_BASE_RATES:
@@ -305,7 +305,7 @@ def _calculate_facility_scenario(care_type, zip_code, debug_label=""):
         st.write("")
 
         st.write("**Step 3: Regional Adjustment**")
-        from products.cost_planner_v2.utils.regional_data import RegionalDataProvider
+        from products.concierge_hub.cost_planner_v2.utils.regional_data import RegionalDataProvider
         regional = RegionalDataProvider.get_multiplier(zip_code=zip_code)
         multiplier = regional.multiplier
         region_label = regional.region_name
@@ -365,8 +365,8 @@ def _calculate_inhome_scenario(zip_code, debug_label=""):
 
     if debug_label:
         st.write("**Step 2: Base Hourly Rate Calculation**")
-        from products.cost_planner_v2.comparison_calcs import INHOME_HOURLY_BASE
-        from products.cost_planner_v2.utils.regional_data import RegionalDataProvider
+        from products.concierge_hub.cost_planner_v2.comparison_calcs import INHOME_HOURLY_BASE
+        from products.concierge_hub.cost_planner_v2.utils.regional_data import RegionalDataProvider
         regional = RegionalDataProvider.get_multiplier(zip_code=zip_code)
         multiplier = regional.multiplier
         region_label = regional.region_name
@@ -523,7 +523,7 @@ def _render_care_card(
         card_key: Unique key for widgets
         is_recommended: Whether this is the recommended plan (adds visual accent)
     """
-    from products.cost_planner_v2.ui_helpers import (
+    from products.concierge_hub.cost_planner_v2.ui_helpers import (
         donut_cost_chart,
         money,
         render_care_chunk_compare_blurb,
@@ -582,7 +582,7 @@ def _render_facility_controls(card_key: str):
         card_key: Unique key for widgets
     """
     # Minimal "Keep Home" section (presentation only)
-    from products.cost_planner_v2.ui_helpers import render_cp_hint
+    from products.concierge_hub.cost_planner_v2.ui_helpers import render_cp_hint
     st.markdown("<div class='cost-section__label'>� Keep Home?</div>", unsafe_allow_html=True)
 
     keep_home = st.checkbox(
@@ -631,7 +631,7 @@ def _render_inhome_controls(card_key: str):
     Args:
         card_key: Unique key for widgets
     """
-    from products.cost_planner_v2.ui_helpers import render_cp_hint
+    from products.concierge_hub.cost_planner_v2.ui_helpers import render_cp_hint
 
     # Care Hours (minimal)
     current_hours = st.session_state.comparison_inhome_hours
@@ -695,7 +695,7 @@ def _render_48_hour_hint_if_applicable():
     has_higher_support = any(flags.get(flag, False) for flag in higher_support_flags)
 
     if has_higher_support:
-        from products.cost_planner_v2.ui_helpers import render_cp_hint
+        from products.concierge_hub.cost_planner_v2.ui_helpers import render_cp_hint
         render_cp_hint("💡 Based on your answers, many families need close to 48 hours/week of paid help to stay safely at home. Actual needs vary—adjust hours to see the impact.")
 
 
@@ -779,7 +779,7 @@ def _render_cost_threshold_advisory(inhome_estimate: float, person_label: str = 
 
     person_prefix = f"**{person_label}:** " if person_label else ""
 
-    from products.cost_planner_v2.ui_helpers import render_cp_hint
+    from products.concierge_hub.cost_planner_v2.ui_helpers import render_cp_hint
     if threshold_crossed:
         render_cp_hint(f"{person_prefix}In-home care is feasible, but based on the level of help you'll likely need, the monthly cost (~${inhome_estimate:,.0f}/mo) approaches or exceeds what families often pay for Assisted Living. Consider touring Assisted Living communities as a more predictable alternative.")
     else:
@@ -813,7 +813,7 @@ def _render_household_dual_comparison_if_applicable(zip_code: str):
 
     # Get household data
     try:
-        from products.cost_planner_v2.household import compute_household_total
+        from products.concierge_hub.cost_planner_v2.household import compute_household_total
         result = compute_household_total(st)
 
         if not result.get("has_partner_plan"):

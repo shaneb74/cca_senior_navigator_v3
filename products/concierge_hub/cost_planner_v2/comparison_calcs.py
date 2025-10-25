@@ -20,7 +20,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from core.mcip import MCIP
-from products.cost_planner_v2.utils.regional_data import RegionalDataProvider
+from products.concierge_hub.cost_planner_v2.utils.regional_data import RegionalDataProvider
 
 # ==============================================================================
 # BASE RATES

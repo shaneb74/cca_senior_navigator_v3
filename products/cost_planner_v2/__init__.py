@@ -1,13 +1,8 @@
-"""
-Cost Planner v2 - MCIP-driven financial planning
+# DEPRECATED: use products.concierge_hub.cost_planner_v2
+# This shim maintains backward compatibility for existing imports
+from products.concierge_hub.cost_planner_v2.product import render as render
+from products.concierge_hub.cost_planner_v2.intro import render as intro_render
+from products.concierge_hub.cost_planner_v2.quick_estimate import render as quick_estimate_render
 
-This version demonstrates the universal product interface:
-1. Check prerequisites via MCIP
-2. Run product logic (module hub)
-3. Publish output to MCIP
-4. Show completion screen
-
-Extensible, polymorphic, and completely decoupled from other products.
-"""
-
-__version__ = "2.0.0"
+def describe():
+    return {"name": "Cost Planner v2", "hub": "concierge"}

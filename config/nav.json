@@ -114,13 +114,13 @@
         {
           "key": "gcp",
           "label": "Guided Care Plan (legacy)",
-          "module": "products.gcp_v4.product:render",
+          "module": "products.concierge_hub.gcp_v4.product:render",
           "hidden": true
         },
         {
           "key": "gcp_v4",
           "label": "Guided Care Plan",
-          "module": "products.gcp_v4.product:render",
+          "module": "products.concierge_hub.gcp_v4.product:render",
           "hidden": true
         },
         {
@@ -132,19 +132,19 @@
         {
           "key": "cost_v2",
           "label": "Cost Planner v2",
-          "module": "products.cost_planner_v2.product:render",
+          "module": "products.concierge_hub.cost_planner_v2.product:render",
           "hidden": true
         },
         {
           "key": "cost_intro",
           "label": "Cost Planner Intro",
-          "module": "products.cost_planner_v2.intro:render",
+          "module": "products.concierge_hub.cost_planner_v2.intro:render",
           "hidden": true
         },
         {
           "key": "cost_quick_estimate",
           "label": "Quick Estimate",
-          "module": "products.cost_planner_v2.quick_estimate:render",
+          "module": "products.concierge_hub.cost_planner_v2.quick_estimate:render",
           "hidden": true
         },
         {
@@ -156,19 +156,19 @@
         {
           "key": "pfma_v3",
           "label": "Plan with My Advisor",
-          "module": "products.pfma_v3.product:render",
+          "module": "products.concierge_hub.pfma_v3.product:render",
           "hidden": true
         },
         {
           "key": "fa_intro",
           "label": "Financial Assessment",
-          "module": "products.pfma_v3.product:render",
+          "module": "products.concierge_hub.pfma_v3.product:render",
           "hidden": true
         },
         {
           "key": "advisor_prep",
           "label": "Advisor Prep",
-          "module": "products.advisor_prep.product:render",
+          "module": "products.waiting_room.advisor_prep.product:render",
           "hidden": true
         },
         {

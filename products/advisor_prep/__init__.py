@@ -1,5 +1,6 @@
-"""Advisor Prep - Optional preparation for advisor consultations"""
+# DEPRECATED: use products.waiting_room.advisor_prep
+# This shim maintains backward compatibility for existing imports
+from products.waiting_room.advisor_prep.product import render as render
 
-from .product import render
-
-__all__ = ["render"]
+def describe():
+    return {"name": "Advisor Prep", "hub": "waiting_room"}

@@ -16,8 +16,8 @@ from typing import Any
 import streamlit as st
 
 from core.mcip import MCIP
-from products.cost_planner_v2 import comparison_calcs
-from products.cost_planner_v2.utils.regional_data import RegionalDataProvider
+from products.concierge_hub.cost_planner_v2 import comparison_calcs
+from products.concierge_hub.cost_planner_v2.utils.regional_data import RegionalDataProvider
 
 # ==============================================================================
 # SESSION STATE KEYS
@@ -451,7 +451,7 @@ def _get_default_home_carry(zip_code: str | None) -> float:
     2. Fallback to regional scaling if CSV lookup fails
     3. National baseline if no ZIP provided
     """
-    from products.cost_planner_v2.utils.home_costs import lookup_zip
+    from products.concierge_hub.cost_planner_v2.utils.home_costs import lookup_zip
 
     if not zip_code:
         return comparison_calcs.HOME_CARRY_BASE

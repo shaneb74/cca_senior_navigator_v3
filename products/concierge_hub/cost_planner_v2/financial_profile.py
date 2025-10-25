@@ -14,7 +14,7 @@ from typing import Any
 
 import streamlit as st
 
-from products.cost_planner_v2.utils.financial_helpers import (
+from products.concierge_hub.cost_planner_v2.utils.financial_helpers import (
     asset_breakdown,
     income_breakdown,
     normalize_asset_data,

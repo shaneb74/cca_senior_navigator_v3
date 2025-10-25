@@ -9,8 +9,8 @@ import streamlit as st
 
 from core.mcip import MCIP
 from core.ui import render_navi_panel_v2
-from products.cost_planner_v2.expert_formulas import calculate_expert_review
-from products.cost_planner_v2.financial_profile import get_financial_profile, publish_to_mcip
+from products.concierge_hub.cost_planner_v2.expert_formulas import calculate_expert_review
+from products.concierge_hub.cost_planner_v2.financial_profile import get_financial_profile, publish_to_mcip
 
 
 def render():
@@ -181,7 +181,7 @@ def _render_navi_guidance(analysis, profile):
     - Coverage adequacy tiers
     """
 
-    from products.cost_planner_v2.expert_formulas import calculate_extended_runway
+    from products.concierge_hub.cost_planner_v2.expert_formulas import calculate_extended_runway
 
     # Get current selections
     selected_assets = st.session_state.get("expert_review_selected_assets", {})
@@ -318,7 +318,7 @@ def _calculate_timeline_segments(analysis, selected_assets):
     - total_years: Total coverage years
     - timeline_max: Fixed horizon (30 years)
     """
-    from products.cost_planner_v2.expert_formulas import calculate_extended_runway
+    from products.concierge_hub.cost_planner_v2.expert_formulas import calculate_extended_runway
 
     timeline_max = 30  # Fixed 30-year horizon
 
@@ -378,7 +378,7 @@ def _render_financial_summary_banner(analysis, profile):
     - Years of Coverage Timeline (Genworth-style visualization)
     """
 
-    from products.cost_planner_v2.expert_formulas import calculate_extended_runway
+    from products.concierge_hub.cost_planner_v2.expert_formulas import calculate_extended_runway
 
     # Calculate coverage duration (with selected assets if any)
     selected_assets = st.session_state.get("expert_review_selected_assets", {})
@@ -969,7 +969,7 @@ def _render_coverage_impact_visualization(analysis, profile):
     - Visual timeline representation
     """
 
-    from products.cost_planner_v2.expert_formulas import calculate_extended_runway
+    from products.concierge_hub.cost_planner_v2.expert_formulas import calculate_extended_runway
 
     st.markdown("### 📊 Coverage Analysis (Dynamic)")
 

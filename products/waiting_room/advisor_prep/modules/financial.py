@@ -13,7 +13,7 @@ from core.events import log_event
 from core.mcip import MCIP
 from core.name_utils import section_header, personalize
 from core.navi import render_navi_panel
-from products.advisor_prep.prefill import get_financial_prefill
+from products.waiting_room.advisor_prep.prefill import get_financial_prefill
 
 
 def render():

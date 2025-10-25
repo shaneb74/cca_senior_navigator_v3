@@ -23,14 +23,14 @@ from core.mode_engine import (
 )
 from core.session_store import safe_rerun
 from core.ui import render_navi_panel_v2
-from products.cost_planner_v2.utils.financial_helpers import (
+from products.concierge_hub.cost_planner_v2.utils.financial_helpers import (
     calculate_total_asset_debt,
     calculate_total_asset_value,
     calculate_total_monthly_income,
     normalize_asset_data,
     normalize_income_data,
 )
-from products.cost_planner_v2.va_rates import get_monthly_va_disability
+from products.concierge_hub.cost_planner_v2.va_rates import get_monthly_va_disability
 
 _SINGLE_PAGE_ASSESSMENTS: dict[str, dict[str, Any]] = {
     "income": {
@@ -885,7 +885,7 @@ def _calculate_summary_total(summary_config: dict[str, Any], state: dict[str, An
             # For assets: use calculate_total_asset_value and subtract debts
             if "cash_liquid_total" in state or "checking_balance" in state:
                 # This is the assets assessment
-                from products.cost_planner_v2.utils.financial_helpers import (
+                from products.concierge_hub.cost_planner_v2.utils.financial_helpers import (
                     calculate_total_asset_debt,
                     calculate_total_asset_value,
                 )

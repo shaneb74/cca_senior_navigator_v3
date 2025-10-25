@@ -1,5 +1,6 @@
-"""PFMA v3 - Plan with My Advisor (Booking-First Model)"""
+# DEPRECATED: use products.concierge_hub.pfma_v3
+# This shim maintains backward compatibility for existing imports
+from products.concierge_hub.pfma_v3.product import render as render
 
-from .product import render
-
-__all__ = ["render"]
+def describe():
+    return {"name": "PFMA v3", "hub": "concierge"}

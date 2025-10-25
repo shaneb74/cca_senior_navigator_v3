@@ -241,56 +241,56 @@ def _render_navi_with_context(current_step: str):
 
 def _render_intro_step():
     """Step 1: Intro with quick estimate (unauthenticated)."""
-    from products.cost_planner_v2 import intro
+    from products.concierge_hub.cost_planner_v2 import intro
 
     intro.render()
 
 
 def _render_auth_step():
     """Step 2: Authentication gate."""
-    from products.cost_planner_v2 import auth
+    from products.concierge_hub.cost_planner_v2 import auth
 
     auth.render()
 
 
 def _render_triage_step():
     """Step 3: Quick qualifier questions (Veteran, Homeowner, Medicaid)."""
-    from products.cost_planner_v2 import triage
+    from products.concierge_hub.cost_planner_v2 import triage
 
     triage.render()
 
 
 def _render_assessments_step():
     """Step 4: Financial Assessment hub (now using JSON-driven assessments)."""
-    from products.cost_planner_v2.assessments import render_assessment_hub
+    from products.concierge_hub.cost_planner_v2.assessments import render_assessment_hub
 
     render_assessment_hub(product_key="cost_planner_v2")
 
 
 def _render_assessment_page_step(assessment_key: str):
     """Render a single assessment page (Phase 5: page-based flow)."""
-    from products.cost_planner_v2.assessments import render_assessment_page
+    from products.concierge_hub.cost_planner_v2.assessments import render_assessment_page
 
     render_assessment_page(assessment_key=assessment_key, product_key="cost_planner_v2")
 
 
 def _render_expert_review_step():
     """Step 5: Expert Advisor Review."""
-    from products.cost_planner_v2 import expert_review
+    from products.concierge_hub.cost_planner_v2 import expert_review
 
     expert_review.render()
 
 
 def _render_exit_step():
     """Step 6: Exit with summary and next actions."""
-    from products.cost_planner_v2 import exit
+    from products.concierge_hub.cost_planner_v2 import exit
 
     exit.render()
 
 
 def _render_exit_step():
     """Step 7: Exit with summary and next actions."""
-    from products.cost_planner_v2 import exit
+    from products.concierge_hub.cost_planner_v2 import exit
 
     exit.render()
 
