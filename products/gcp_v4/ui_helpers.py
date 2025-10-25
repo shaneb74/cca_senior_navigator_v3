@@ -333,6 +333,11 @@ def render_navi_header_message():
     # Build step title/subtitle from session (set by product before calling us)
     step_title = st.session_state.get("gcp_step_title") or "Your Guided Care Plan"
     step_subtitle = st.session_state.get("gcp_step_subtitle") or ""
+    
+    # IMPORTANT: Don't duplicate page title in Navi on intro step
+    step_id = str(st.session_state.get("gcp_current_step_id") or "")
+    if step_id == "intro":
+        step_title = None  # Let module header handle the single page title
 
     # Gather summary advice for inline recommendation
     step_id = str(st.session_state.get("gcp_current_step_id") or st.session_state.get("step_id") or st.session_state.get("current_step") or "")
@@ -378,7 +383,21 @@ def render_navi_header_message():
             print(f"[NAVI_STEP] step={step_id} ready={has_answers} event=first_click")
             st.session_state[f"_navi_step_{step_id}_logged"] = True
 
-    if can_recommend:
+    # Use personalized intro copy for intro step
+    if step_id == "intro":
+        try:
+            from products.gcp_v4.modules.care_recommendation.intro import load_intro_overrides
+            from core.text import personalize_text
+            overrides = load_intro_overrides()
+            copy = overrides.get("copy", {})
+            headline = personalize_text(copy.get("navi_subtitle", "I'm here to guide you through each question."))
+            navi_body = personalize_text(copy.get("navi_body", ""))
+            navi_info = personalize_text(copy.get("navi_info", ""))
+        except Exception:
+            headline = "I'm here to guide you through each question."
+            navi_body = ""
+            navi_info = ""
+    elif can_recommend:
         headline = (adv.get("headline") or f"Based on your answers, I recommend {tier_txt}.").strip()
     else:
         # Use neutral anticipatory copy for early steps - ALWAYS show this until results ready
@@ -412,20 +431,30 @@ def render_navi_header_message():
     show_hours_hint = bool(allow_hours_hint and under and nudge_text and not st.session_state.get("_hours_ack") and not hours_for_facility)
 
     # Compose reason HTML (inside the blue header panel) with Navi recommendation + optional nudge
-    navi_text = f"<strong>{headline}</strong>"
-    # If advice-level nudge exists, prefer it; else show hours hint when appropriate
-    adv_nudge = (adv.get("nudge") or adv.get("nudge_text") or "").strip()
-    if adv_nudge:
-        navi_text += f"<br>💡 {adv_nudge}"
-    elif show_hours_hint:
-        navi_text += f"<br>💡 Navi suggests {band} (you selected {user}). {nudge_text}"
+    if step_id == "intro":
+        # For intro, render subtitle/body/info from overrides (no title)
+        parts: list[str] = []
+        parts.append(f"<div id='navi-header-text'><strong>{headline}</strong></div>")
+        if navi_body:
+            parts.append(f"<div>{navi_body}</div>")
+        if navi_info:
+            parts.append(f"<div><small>{navi_info}</small></div>")
+        reason_html = "<br/>".join(parts)
+    else:
+        navi_text = f"<strong>{headline}</strong>"
+        # If advice-level nudge exists, prefer it; else show hours hint when appropriate
+        adv_nudge = (adv.get("nudge") or adv.get("nudge_text") or "").strip()
+        if adv_nudge:
+            navi_text += f"<br>💡 {adv_nudge}"
+        elif show_hours_hint:
+            navi_text += f"<br>💡 Navi suggests {band} (you selected {user}). {nudge_text}"
 
-    # Add optional subtitle above text if present
-    parts: list[str] = []
-    if step_subtitle:
-        parts.append(step_subtitle)
-    parts.append(f"<div id='navi-header-text'>{navi_text}</div>")
-    reason_html = "<br/>".join(parts)
+        # Add optional subtitle above text if present
+        parts: list[str] = []
+        if step_subtitle:
+            parts.append(step_subtitle)
+        parts.append(f"<div id='navi-header-text'>{navi_text}</div>")
+        reason_html = "<br/>".join(parts)
 
     # Log navigation render state
     try:

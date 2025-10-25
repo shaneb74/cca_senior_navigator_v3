@@ -20,6 +20,7 @@ def img_src(rel_path: str) -> str:
     """
     Return a base64 data URI for an image at repo-relative rel_path.
     Example: img_src("static/images/hero.png")
+    WARNING: Returns empty string for missing files. Use safe_img_src() for None returns.
     """
     safe_rel = rel_path.lstrip("/").replace("\\", "/")
     p = (_REPO_ROOT / safe_rel).resolve()
@@ -36,10 +37,20 @@ def img_src(rel_path: str) -> str:
     return f"data:{mime or 'image/png'};base64,{b64}"
 
 
-def safe_img_src(filename: str) -> str:
+def safe_img_src(rel_path: str) -> str | None:
+    """
+    Safe image source that returns None for empty/invalid paths instead of empty string.
+    Use this for conditional rendering to prevent empty <img> tags.
+    """
+    uri = img_src(rel_path)
+    return uri if uri else None
+
+
+def legacy_safe_img_src(filename: str) -> str:
     """
     Resolve a static image by delegating to layout.static_url while avoiding circular imports.
     Accepts bare filenames or repo-relative static paths.
+    NOTE: This is the legacy function - use safe_img_src() for new code.
     """
     try:
         from layout import static_url  # type: ignore
@@ -555,7 +566,7 @@ def render_navi_guide_bar(
 
 
 def render_navi_panel_v2(
-    title: str,
+    title: str | None,
     reason: str,
     encouragement: dict,
     context_chips: list[dict],
@@ -571,6 +582,38 @@ def render_navi_panel_v2(
         variant: "hub" (default) or "module" - controls styling and layout
     """
     from core.url_helpers import add_uid_to_href
+    from core.text import personalize_text
+
+    # Personalize all text content before rendering
+    # Personalize title only if provided
+    if title is not None and title != "":
+        title = personalize_text(title)
+    reason = personalize_text(reason)
+    if encouragement and encouragement.get("text"):
+        encouragement = encouragement.copy()  # Don't mutate original
+        encouragement["text"] = personalize_text(encouragement["text"])
+    
+    # Personalize action labels
+    if primary_action and primary_action.get("label"):
+        primary_action = primary_action.copy()
+        primary_action["label"] = personalize_text(primary_action["label"])
+    if secondary_action and secondary_action.get("label"):
+        secondary_action = secondary_action.copy()
+        secondary_action["label"] = personalize_text(secondary_action["label"])
+    
+    # Personalize chip labels and values
+    if context_chips:
+        personalized_chips = []
+        for chip in context_chips:
+            chip_copy = chip.copy()
+            if chip_copy.get("label"):
+                chip_copy["label"] = personalize_text(chip_copy["label"])
+            if chip_copy.get("value"):
+                chip_copy["value"] = personalize_text(chip_copy["value"])
+            if chip_copy.get("sublabel"):
+                chip_copy["sublabel"] = personalize_text(chip_copy["sublabel"])
+            personalized_chips.append(chip_copy)
+        context_chips = personalized_chips
 
     # Inject CSS for Navi panel V2 (matches product tile styling)
     navi_css = """
@@ -770,6 +813,8 @@ def render_navi_panel_v2(
         chips_html = ""
         actions_html = ""
 
-    panel_html = f'<div class="navi-panel-v2 {variant_class}"><div class="navi-panel-v2__header"><div class="navi-panel-v2__eyebrow">✨ Navi</div>{progress_badge}</div>{alert_section}<div class="navi-panel-v2__title">{title}</div><div class="navi-panel-v2__reason">{reason}</div><div class="navi-panel-v2__encouragement navi-panel-v2__encouragement--{status}"><span style="font-size: 18px;">{encouragement.get("icon", "💪")}</span><span>{encouragement.get("text", "")}</span></div>{chips_html}{actions_html}</div>'
+    # Title block is optional; omit entirely if no title provided
+    title_block = f'<div class="navi-panel-v2__title">{title}</div>' if (title is not None and str(title).strip() != "") else ""
+    panel_html = f'<div class="navi-panel-v2 {variant_class}"><div class="navi-panel-v2__header"><div class="navi-panel-v2__eyebrow">✨ Navi</div>{progress_badge}</div>{alert_section}{title_block}<div class="navi-panel-v2__reason">{reason}</div><div class="navi-panel-v2__encouragement navi-panel-v2__encouragement--{status}"><span style="font-size: 18px;">{encouragement.get("icon", "💪")}</span><span>{encouragement.get("text", "")}</span></div>{chips_html}{actions_html}</div>'
 
     st.markdown(panel_html, unsafe_allow_html=True)

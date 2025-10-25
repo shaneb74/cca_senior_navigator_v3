@@ -111,7 +111,18 @@ def run_module(config: ModuleConfig) -> dict[str, Any]:
     )
 
     # Render content array (for info-type pages)
-    if step.content:
+    # Check for custom intro rendering first (GCP v4 special case)
+    custom_rendered = False
+    if step.content and config.product == "gcp_v4" and step.id == "intro":
+        try:
+            from products.gcp_v4.modules.care_recommendation.intro import render_custom_intro_if_needed
+            custom_rendered = render_custom_intro_if_needed()
+        except Exception:
+            # Fall back to default rendering if custom intro fails
+            custom_rendered = False
+    
+    # Use default content rendering if no custom renderer or it failed
+    if step.content and not custom_rendered:
         _render_content(step.content)
 
     new_values = _render_fields(step, state)
@@ -289,10 +300,20 @@ def _render_content(content: list[str]) -> None:
         content: List of content lines with markdown support.
                  Empty strings create spacing.
     """
+    from core.text import personalize_text
+    import re
+    import json
+    
     for line in content:
         if line.strip():
-            # Render non-empty lines with markdown
-            st.markdown(line)
+            # Apply personalization to non-empty lines before rendering
+            personalized_line = personalize_text(line)
+            
+            # Safety: assert no unresolved tokens remain
+            if re.search(r"\{NAME(_POS)?\}", personalized_line):
+                raise AssertionError(f"Unresolved name token found in content: '{personalized_line}'")
+            
+            st.markdown(personalized_line)
         else:
             # Empty lines add spacing
             st.markdown("<br/>", unsafe_allow_html=True)

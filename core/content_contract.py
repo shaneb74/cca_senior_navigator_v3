@@ -107,13 +107,32 @@ def build_token_context(session_state: Dict[str, Any], snapshot: Dict[str, Any] 
     Returns:
         TokenContext with all available token values
     """
-    # Extract person name
-    person_name = (
-        session_state.get("person_a_name") or 
-        session_state.get("planning_for_name") or
-        session_state.get("person_name") or
-        ""
-    )
+    # Extract person name from provided session_state, not global st.session_state
+    # Check direct keys first
+    person_name = ""
+    name_keys = ["person_a_name", "person_name", "planning_for_name"]
+    for key in name_keys:
+        name = session_state.get(key)
+        if name and str(name).strip():
+            person_name = str(name).strip()
+            break
+    
+    # If no direct key found, check nested structures
+    if not person_name:
+        # Check profile.person_name
+        profile = session_state.get("profile", {})
+        if isinstance(profile, dict):
+            profile_name = profile.get("person_name")
+            if profile_name and str(profile_name).strip():
+                person_name = str(profile_name).strip()
+    
+    if not person_name:
+        # Check gcp.person_a_name  
+        gcp_data = session_state.get("gcp", {})
+        if isinstance(gcp_data, dict):
+            gcp_name = gcp_data.get("person_a_name")
+            if gcp_name and str(gcp_name).strip():
+                person_name = str(gcp_name).strip()
     
     # Determine relationship context
     relationship_type = session_state.get("relationship_type", "")

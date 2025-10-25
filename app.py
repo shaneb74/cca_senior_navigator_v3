@@ -181,6 +181,10 @@ if needs_reload:
     # Load user data (persistent, cross-device)
     user_data = load_user(uid)
     merge_into_state(st.session_state, user_data)
+    
+    # Rehydrate name from loaded user data
+    from core.state_bootstrap import rehydrate_name_from_snapshot
+    rehydrate_name_from_snapshot(user_data)
 
     st.session_state["persistence_loaded"] = True
     st.session_state["_last_loaded_uid"] = uid

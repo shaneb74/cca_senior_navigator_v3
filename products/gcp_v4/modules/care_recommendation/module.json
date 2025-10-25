@@ -35,17 +35,9 @@
       "title": "Welcome to the Guided Care Plan",
       "type": "info",
       "content": [
-        "Quick two-minute check to match {NAME} with the right care setting.",
-        "Answer for {NAME} - the person who needs help—pause anytime and we'll save your place.",
+        "This quick check helps match {NAME} with the right level of support. We'll ask about safety, day-to-day help, health, and who's involved in care. It takes about two minutes, saves automatically, and you can pause anytime.",
         "",
-        "**What you'll cover:**",
-        "• Daily support and safety",
-        "• Health, medications, and falls",
-        "• Memory or behavior changes",
-        "• Who helps today",
-        "",
-        "**What you'll get:**",
-        "• A care match such as No Care Needed, In-Home Care, Assisted Living, Memory Care, or Memory Care (High Acuity) for {NAME}"
+        "Answer for {NAME} — the person who needs help — and we'll guide your next steps."
       ],
       "actions": [
         { "label": "Get Started", "action": "next" },

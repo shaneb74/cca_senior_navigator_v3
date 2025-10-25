@@ -336,13 +336,8 @@ def render_welcome_card(
     for key in pill_keys:
         cfg = _PILLS[key]
         route = _PILL_ROUTES.get(key) or cfg.get("fallback") or "welcome"
-        icon = ""
-        if key == "someone":
-            icon = "<svg viewBox='0 0 24 24'><path d='M8 11a3 3 0 1 0-3-3 3 3 0 0 0 3 3zm8-2a2.5 2.5 0 1 0-2.5-2.5A2.5 2.5 0 0 0 16 9zM4 18.5C4 15.46 6.63 14 10 14s6 1.46 6 4.5V20H4zM17 14c-1.08 0-2.05.19-2.91.52A4.3 4.3 0 0 1 16.5 17v.5H20V17c0-2-1.55-3-3-3z'/></svg>"
-        elif key == "self":
-            icon = "<svg viewBox='0 0 24 24'><path d='M12 12a3.5 3.5 0 1 0-3.5-3.5A3.5 3.5 0 0 0 12 12zm0 2c-3.31 0-7 1.64-7 4.5V20h14v-1.5C19 15.64 15.31 14 12 14z'/></svg>"
-        else:
-            icon = "<svg viewBox='0 0 24 24'><path d='M9 6.5A2.5 2.5 0 0 1 11.5 4h1A2.5 2.5 0 0 1 15 6.5V7h2.5A2.5 2.5 0 0 1 20 9.5V17a2 2 0 0 1-2 2h-3v-2h3V9.5a.5.5 0 0 0-.5-.5H15v1a1 1 0 0 1-2 0v-1h-2v1a1 1 0 0 1-2 0v-1H6.5a.5.5 0 0 0-.5.5V17h3v2H6a2 2 0 0 1-2-2V9.5A2.5 2.5 0 0 1 6.5 7H9z'/></svg>"
+        # REMOVED: SVG icons that were causing black blob flash during transitions
+        icon = ""  # No icons - they were causing the flash
         classes = "context-pill-link"
         if key == safe_active:
             classes += " is-active"
@@ -405,16 +400,12 @@ def render_welcome_card(
                 st.session_state["planning_for_relationship"] = "self"
 
             # Store person's name for personalization throughout the app
+            from core.state_name import set_person_name
             if name_value and name_value.strip():
-                st.session_state["person_a_name"] = name_value.strip()
-                # Keep legacy keys for backward compatibility
-                st.session_state["planning_for_name"] = name_value.strip()
-                st.session_state["person_name"] = name_value.strip()
+                set_person_name(name_value.strip())
             else:
                 # Clear names if exists, allowing generic terms to be used
-                st.session_state.pop("person_a_name", None)
-                st.session_state.pop("planning_for_name", None)
-                st.session_state.pop("person_name", None)
+                set_person_name("")
 
             # Navigate regardless of whether name was provided
             if submit_route:
@@ -466,6 +457,11 @@ def _welcome_body(
     hero_url = static_url("hero.png")
     family_main = static_url("welcome_someone_else.png")
     self_main = static_url("welcome_self.png")
+    
+    # Guard against empty image sources during transitions
+    if not (hero_url and family_main and self_main):
+        st.markdown("Loading welcome page...", unsafe_allow_html=True)
+        return
 
     # Build CTA buttons with UID preservation
     primary_href = add_uid_to_href(f"?page={primary_route}")
@@ -497,7 +493,7 @@ def _welcome_body(
                   <div class="welcome-hero-media">
                     <div class="welcome-hero-frame">
                       <div class="welcome-hero-photo">
-                        <img src="{hero_url}" alt="Care professional supporting senior" />
+                        {f'<img src="{hero_url}" alt="Care professional supporting senior" />' if hero_url else ''}
                       </div>
                     </div>
                   </div>
@@ -512,7 +508,7 @@ def _welcome_body(
                 <div class="cards-2">
                   <article class="card welcome-card">
                     <div class="welcome-card-media">
-                      <img src="{family_main}" alt="Family gathering outdoors" />
+                      {f'<img src="{family_main}" alt="Family gathering outdoors" />' if family_main else ''}
                     </div>
                     <p class="card-head">I would like to <strong>support my loved ones</strong></p>
                     <p class="card-meta">For a loved one</p>
@@ -526,7 +522,7 @@ def _welcome_body(
 
                   <article class="card welcome-card">
                     <div class="welcome-card-media">
-                      <img src="{self_main}" alt="Senior lifestyle" />
+                      {f'<img src="{self_main}" alt="Senior lifestyle" />' if self_main else ''}
                     </div>
                     <p class="card-head">I'm looking for <strong>support just for myself</strong></p>
                     <p class="card-meta">For myself</p>
