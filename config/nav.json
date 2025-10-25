@@ -180,13 +180,13 @@
         {
           "key": "fall_risk",
           "label": "Fall Risk",
-          "module": "products.fall_risk:render",
+          "module": "products.resources.fall_risk:render",
           "hidden": true
         },
         {
           "key": "disease_mgmt",
-          "label": "Disease Management Program",
-          "module": "products.disease_mgmt:render",
+          "label": "Disease Management",
+          "module": "products.resources.disease_mgmt:render",
           "hidden": true
         },
         {
@@ -198,19 +198,19 @@
         {
           "key": "home_health",
           "label": "Find Home Health",
-          "module": "products.home_health:render",
+          "module": "products.resources.home_health:render",
           "hidden": true
         },
         {
           "key": "dme",
           "label": "Find DME",
-          "module": "products.dme:render",
+          "module": "products.resources.dme:render",
           "hidden": true
         },
         {
           "key": "med_manage",
           "label": "Medication Management",
-          "module": "products.med_manage:render",
+          "module": "products.resources.med_manage:render",
           "hidden": true
         },
         {

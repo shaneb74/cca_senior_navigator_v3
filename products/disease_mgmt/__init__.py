@@ -1,6 +1,6 @@
-# products/disease_mgmt/__init__.py
-"""Disease Management Program Module."""
+# DEPRECATED: use products.resources.disease_mgmt
+# This shim maintains backward compatibility for existing imports
+from products.resources.disease_mgmt.product import render as render
 
-__all__ = ["render"]
-
-from .product import render
+def describe():
+    return {"name": "Disease Management Program", "hub": "resources", "status": "placeholder"}

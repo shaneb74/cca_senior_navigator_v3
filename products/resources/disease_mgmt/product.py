@@ -1,7 +1,7 @@
 # products/disease_mgmt/product.py
 """Disease Management Program - Coming Soon"""
 
-from products.resources_common.coming_soon import render_coming_soon
+from products.resources.resources_common.coming_soon import render_coming_soon
 
 
 def render():

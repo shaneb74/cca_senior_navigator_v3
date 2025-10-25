@@ -1,7 +1,7 @@
 # products/home_health/product.py
 """Find Home Health - Coming Soon"""
 
-from products.resources_common.coming_soon import render_coming_soon
+from products.resources.resources_common.coming_soon import render_coming_soon
 
 
 def render():

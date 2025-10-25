@@ -1,7 +1,7 @@
 # products/dme/product.py
 """Find DME (Durable Medical Equipment) - Coming Soon"""
 
-from products.resources_common.coming_soon import render_coming_soon
+from products.resources.resources_common.coming_soon import render_coming_soon
 
 
 def render():

@@ -1,9 +1,6 @@
-# products/med_manage/__init__.py
-"""
-Medication Management Product Module
-Connected support for safe and reliable medication routines.
-"""
+# DEPRECATED: use products.resources.med_manage
+# This shim maintains backward compatibility for existing imports
+from products.resources.med_manage.product import render as render
 
-from products.med_manage.product import render
-
-__all__ = ["render"]
+def describe():
+    return {"name": "Medication Management", "hub": "resources", "status": "placeholder"}

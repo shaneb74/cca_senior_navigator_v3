@@ -1,6 +1,6 @@
-# products/dme/__init__.py
-"""Find DME (Durable Medical Equipment) Module."""
+# DEPRECATED: use products.resources.dme
+# This shim maintains backward compatibility for existing imports
+from products.resources.dme.product import render as render
 
-__all__ = ["render"]
-
-from .product import render
+def describe():
+    return {"name": "Find DME (Durable Medical Equipment)", "hub": "resources", "status": "placeholder"}
