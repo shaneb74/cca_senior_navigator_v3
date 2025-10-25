@@ -9,6 +9,19 @@ from pathlib import Path
 
 import pandas as pd
 
+
+def _project_root(start: Path) -> Path:
+    """
+    Walk up from `start` until we find a marker of the repo root.
+    Falls back to 4 parents up (matches current layout).
+    """
+    cur = start.resolve()
+    for _ in range(8):
+        if (cur / "config" / "nav.json").exists() or (cur / "app.py").exists():
+            return cur
+        cur = cur.parent
+    return start.resolve().parents[4]  # fallback for safety
+
 try:
     import streamlit as st
     HAS_STREAMLIT = True
@@ -52,16 +65,23 @@ def _load_csv() -> pd.DataFrame:
     Returns:
         DataFrame with normalized columns
     """
-    # Find CSV path
-    csv_path = Path(__file__).resolve().parents[3] / "data" / "app_data" / "monthly_median_cost.csv"
+    # Find CSV path using robust root resolver
+    csv_path = _project_root(Path(__file__)) / "data" / "app_data" / "monthly_median_cost.csv"
 
+    # --- health log: existence ---
     if not csv_path.exists():
-        print(f"[HOME_COST_WARN] CSV not found at {csv_path}")
+        print(f"[HOME_COST_WARN] CSV not found at: {csv_path}")
         return pd.DataFrame(columns=["zip", "amount", "kind"])
 
     # Load CSV
-    df = pd.read_csv(csv_path)
+    try:
+        df = pd.read_csv(csv_path)
+        print(f"[HOME_COST_OK] Loaded CSV: {csv_path} rows={len(df)} cols={list(df.columns)}")
+    except Exception as e:
+        print(f"[HOME_COST_ERR] Failed to read CSV at {csv_path}: {e}")
+        return pd.DataFrame(columns=["zip", "amount", "kind"])
 
+    # --- health log: columns present? ---
     # Detect ZIP column (case-insensitive, with variants)
     zip_col = None
     zip_variants = ["zipcode", "zip", "postal", "zip_code", "postalcode"]
@@ -72,7 +92,7 @@ def _load_csv() -> pd.DataFrame:
             break
 
     if zip_col is None:
-        print(f"[HOME_COST_WARN] No ZIP column found in CSV. Columns: {list(df.columns)}")
+        print(f"[HOME_COST_WARN] No ZIP column detected; columns={list(df.columns)}")
         return pd.DataFrame(columns=["zip", "amount", "kind"])
 
     # Detect value column (owner/renter variants)
@@ -134,10 +154,14 @@ def _load_csv() -> pd.DataFrame:
                 "kind": "renter",
             })
 
+    if not rows:
+        print(f"[HOME_COST_WARN] No owner/renter columns; columns={list(df.columns)}")
+        return pd.DataFrame(columns=["zip", "amount", "kind"])
+
     result_df = pd.DataFrame(rows)
 
-    print(f"[HOME_COST] Loaded {len(result_df)} records from {csv_path.name}")
-    print(f"[HOME_COST] Columns detected: ZIP={zip_col}, OWNER={owner_col}, RENTER={renter_col}")
+    print(f"[HOME_COST_OK] Normalized rows={len(result_df)} (zip/amount/kind)")
+    print(f"[HOME_COST_OK] Columns detected: ZIP={zip_col}, OWNER={owner_col}, RENTER={renter_col}")
 
     return result_df
 
