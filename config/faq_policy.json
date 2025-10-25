@@ -1,0 +1,20 @@
+{
+  "allowed_products": ["Guided Care Plan", "Cost Planner", "Advisor Prep"],
+  "allowed_terms": [
+    "safety",
+    "daily help",
+    "health",
+    "assisted living",
+    "memory care",
+    "in-home care",
+    "costs",
+    "benefits",
+    "eligibility"
+  ],
+  "banned_phrases": ["loved one"],
+  "fallback_name": "the person you're helping",
+  "default_cta": {
+    "label": "Open Guided Care Plan",
+    "route": "gcp_intro"
+  }
+}

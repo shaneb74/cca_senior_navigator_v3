@@ -47,6 +47,24 @@ def load_faq_items() -> list[dict[str, Any]]:
         return json.load(f)
 
 
+@st.cache_data
+def load_faq_policy() -> dict[str, Any]:
+    """Load FAQ policy guardrails from config/faq_policy.json.
+    
+    Returns:
+        Policy dict with schema:
+        {
+            "allowed_products": list[str],
+            "allowed_terms": list[str],
+            "banned_phrases": list[str],
+            "fallback_name": str,
+            "default_cta": dict
+        }
+    """
+    with open("config/faq_policy.json", "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
 # Load question database from JSON
 QUESTION_DATABASE = load_faq_items()
 
