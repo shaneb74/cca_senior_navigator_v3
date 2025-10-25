@@ -82,3 +82,9 @@ _archive_backups/
 # Content overrides (local editor testing)
 **/module.overrides.json
 **/*.overrides.json
+
+# One-off tools / diffs
+senior_navigator_golden_manifest.json
+repo_diff_*.csv
+repo_diff_summary.md
+check_repo_diff.py

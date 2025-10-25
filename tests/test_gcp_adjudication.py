@@ -17,7 +17,7 @@ from unittest.mock import patch
 sys.path.append('.')
 
 from core.models import CarePlan
-from products.gcp_v4.modules.care_recommendation.logic import _choose_final_tier
+from products.concierge_hub.gcp_v4.modules.care_recommendation.logic import _choose_final_tier
 
 
 class TestGCPAdjudication(unittest.TestCase):

@@ -25,7 +25,7 @@ from unittest.mock import patch
 
 from core.models import CarePlan, CostPlan, Household, Person
 from products.cost_planner_v2 import comparison_calcs
-from products.cost_planner_v2.household import compute_household_total
+from products.concierge_hub.cost_planner_v2.household import compute_household_total
 
 
 class MockSessionState:
@@ -493,7 +493,7 @@ def test_threshold_low_intensity_below():
         return {}  # No flags = low intensity = threshold $7,000
 
     with patch('core.flags.get_all_flags', mock_get_all_flags):
-        from products.cost_planner_v2.comparison_view import (
+        from products.concierge_hub.cost_planner_v2.comparison_view import (
             _calculate_support_intensity,
             _get_cost_threshold,
         )
@@ -538,7 +538,7 @@ def test_threshold_high_intensity_crossed():
         }
 
     with patch('core.flags.get_all_flags', mock_get_all_flags):
-        from products.cost_planner_v2.comparison_view import (
+        from products.concierge_hub.cost_planner_v2.comparison_view import (
             _calculate_support_intensity,
             _get_cost_threshold,
         )
@@ -657,7 +657,7 @@ def test_compare_toggle_roundtrip():
 
 def test_llm_valid_wins():
     """Test adjudication: LLM wins when valid and in allowed set."""
-    from products.gcp_v4.modules.care_recommendation.logic import _choose_final_tier
+    from products.concierge_hub.gcp_v4.modules.care_recommendation.logic import _choose_final_tier
 
     final_tier, decision = _choose_final_tier(
         det_tier="assisted_living",
@@ -677,7 +677,7 @@ def test_llm_valid_wins():
 
 def test_llm_invalid_guard_fallback():
     """Test adjudication: deterministic fallback when LLM not in allowed set."""
-    from products.gcp_v4.modules.care_recommendation.logic import _choose_final_tier
+    from products.concierge_hub.gcp_v4.modules.care_recommendation.logic import _choose_final_tier
 
     final_tier, decision = _choose_final_tier(
         det_tier="assisted_living",
@@ -697,7 +697,7 @@ def test_llm_invalid_guard_fallback():
 
 def test_llm_timeout_fallback():
     """Test adjudication: deterministic fallback when LLM missing/timeout."""
-    from products.gcp_v4.modules.care_recommendation.logic import _choose_final_tier
+    from products.concierge_hub.gcp_v4.modules.care_recommendation.logic import _choose_final_tier
 
     final_tier, decision = _choose_final_tier(
         det_tier="in_home",
@@ -717,7 +717,7 @@ def test_llm_timeout_fallback():
 
 def test_llm_and_det_same():
     """Test adjudication: LLM source when LLM and deterministic agree."""
-    from products.gcp_v4.modules.care_recommendation.logic import _choose_final_tier
+    from products.concierge_hub.gcp_v4.modules.care_recommendation.logic import _choose_final_tier
 
     final_tier, decision = _choose_final_tier(
         det_tier="assisted_living",
@@ -737,7 +737,7 @@ def test_llm_and_det_same():
 
 def test_partner_independent_llm_first():
     """Test adjudication: partner adjudication is independent."""
-    from products.gcp_v4.modules.care_recommendation.logic import _choose_final_tier
+    from products.concierge_hub.gcp_v4.modules.care_recommendation.logic import _choose_final_tier
 
     # Primary: LLM valid
     primary_tier, primary_decision = _choose_final_tier(
@@ -774,7 +774,7 @@ def test_logging_once():
     # Mock session state and capture print output
     import io
 
-    from products.gcp_v4.modules.care_recommendation.logic import _choose_final_tier
+    from products.concierge_hub.gcp_v4.modules.care_recommendation.logic import _choose_final_tier
 
     f = io.StringIO()
     with contextlib.redirect_stdout(f):
@@ -798,7 +798,7 @@ def test_logging_once():
 def test_llm_valid_wins_ui_and_persist():
     """Test LLM-first: when LLM tier is valid and allowed, it wins and is saved to CarePlan."""
     from core.models import CarePlan
-    from products.gcp_v4.modules.care_recommendation.logic import _choose_final_tier
+    from products.concierge_hub.gcp_v4.modules.care_recommendation.logic import _choose_final_tier
 
     # Mock a valid LLM choice that differs from deterministic
     final_tier, decision = _choose_final_tier(
@@ -842,7 +842,7 @@ def test_llm_valid_wins_ui_and_persist():
 def test_llm_invalid_guard_fallback_ui():
     """Test LLM-first: when LLM tier is not in allowed set, fallback to deterministic."""
     from core.models import CarePlan
-    from products.gcp_v4.modules.care_recommendation.logic import _choose_final_tier
+    from products.concierge_hub.gcp_v4.modules.care_recommendation.logic import _choose_final_tier
 
     # LLM returns tier not in allowed set
     final_tier, decision = _choose_final_tier(
@@ -943,7 +943,7 @@ def test_gcp_adjudication_logging_once():
     import contextlib
     import io
 
-    from products.gcp_v4.modules.care_recommendation.logic import _choose_final_tier
+    from products.concierge_hub.gcp_v4.modules.care_recommendation.logic import _choose_final_tier
 
     # Capture log output
     f = io.StringIO()
@@ -975,7 +975,7 @@ def test_gcp_adjudication_logging_once():
     import contextlib
     import io
 
-    from products.gcp_v4.modules.care_recommendation.logic import _choose_final_tier
+    from products.concierge_hub.gcp_v4.modules.care_recommendation.logic import _choose_final_tier
 
     # Capture log output
     f = io.StringIO()
