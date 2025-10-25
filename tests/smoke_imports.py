@@ -44,14 +44,15 @@ def test_cost_planner_imports():
 
 def test_other_product_imports():
     """Test other product imports."""
-    from products import advisor_prep, pfma_v3
-    from products.resources_common import coming_soon
-    from products.senior_trivia import product as senior_trivia_product
+    from products.waiting_room import advisor_prep
+    from products.concierge_hub import pfma_v3
+    from products.resources.resources_common.coming_soon import render_coming_soon
+    from products.waiting_room.senior_trivia import product as senior_trivia_product
 
     assert hasattr(advisor_prep.product, 'render')
     assert hasattr(pfma_v3.product, 'render')
     assert hasattr(senior_trivia_product, 'render')  # Fixed: Import product directly
-    assert hasattr(coming_soon, 'render_coming_soon')  # Fixed: render → render_coming_soon
+    assert callable(render_coming_soon)  # Fixed: Direct import
     print("✓ Other product imports successful")
 
 

@@ -538,7 +538,7 @@ def _load_module_config(module_key: str) -> ModuleConfig:
         version=module_meta.get("version", "v2025.10"),
         steps=steps,
         state_key=f"trivia_{module_meta.get('id', module_key)}",
-        outcomes_compute="products.senior_trivia.scoring:compute_trivia_outcome",
+        outcomes_compute="products.waiting_room.senior_trivia.scoring:compute_trivia_outcome",
         results_step_id=module_meta.get("results_step_id", "results"),
         skip_default_results=True,  # Use custom trivia results renderer
     )
