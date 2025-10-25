@@ -108,12 +108,12 @@ def render():
             print("[GCP_RENDER] Entering RESULTS step, preparing summary advice")
             try:
                 state_pre = st.session_state.get(state_key, {})
-                from products.gcp_v4.modules.care_recommendation.flags import (
+                from products.concierge_hub.gcp_v4.modules.care_recommendation.flags import (
                     build_flags as _build_flags,
                 )
                 flags_pre = _build_flags(state_pre)
                 from ai.llm_client import get_feature_gcp_mode
-                from products.gcp_v4.modules.care_recommendation.logic import (
+                from products.concierge_hub.gcp_v4.modules.care_recommendation.logic import (
                     derive_outcome,
                     ensure_summary_ready,
                 )
@@ -137,7 +137,7 @@ def render():
                 # PARTNER FLOW INTERSTITIAL
                 # After summary ready, check if we should show partner assessment option
                 try:
-                    from products.gcp_v4.partner_flow import (
+                    from products.concierge_hub.gcp_v4.partner_flow import (
                         render_partner_interstitial,
                         should_show_partner_interstitial,
                     )
@@ -164,7 +164,7 @@ def render():
 
         # Single Navi header at the top of all GCP pages (including results)
         try:
-            from products.gcp_v4.ui_helpers import render_navi_header_message
+            from products.concierge_hub.gcp_v4.ui_helpers import render_navi_header_message
             # Render header only when on GCP route (prevent leaks)
             route = st.session_state.get("route") or st.query_params.get("page") or ""
             if route == "gcp":
@@ -203,7 +203,7 @@ def render():
             if current_step_index >= 4 and not st.session_state.get("gcp_recommendation_category"):
                 # Daily Living complete, compute recommendation for conditional gating
                 try:
-                    from products.gcp_v4.modules.care_recommendation.logic import (
+                    from products.concierge_hub.gcp_v4.modules.care_recommendation.logic import (
                         compute_recommendation_category,
                     )
                     compute_recommendation_category(module_state, persist_to_state=True)
@@ -227,7 +227,7 @@ def render():
         if outcome and not already_pub:
             # Re-compute outcome directly to get proper GCP format
             try:
-                from products.gcp_v4.modules.care_recommendation.logic import derive_outcome
+                from products.concierge_hub.gcp_v4.modules.care_recommendation.logic import derive_outcome
 
                 gcp_outcome = derive_outcome(module_state)
                 _publish_to_mcip(gcp_outcome, module_state)
@@ -241,7 +241,7 @@ def render():
                         set_careplan_for,
                     )
                     from core.models import CarePlan
-                    from products.gcp_v4.partner_flow import is_partner_mode
+                    from products.concierge_hub.gcp_v4.partner_flow import is_partner_mode
 
                     # Determine current person
                     in_partner_mode = is_partner_mode()
@@ -297,7 +297,7 @@ def render():
 
                         # If partner mode complete, clear partner mode flag
                         if in_partner_mode:
-                            from products.gcp_v4.partner_flow import complete_partner_flow
+                            from products.concierge_hub.gcp_v4.partner_flow import complete_partner_flow
                             complete_partner_flow()
                 except Exception:
                     pass  # Don't fail if household handling fails
@@ -327,7 +327,7 @@ def _load_module_config() -> ModuleConfig:
     Returns:
         ModuleConfig for care_recommendation module
     """
-    from products.gcp_v4.modules.care_recommendation import config
+    from products.concierge_hub.gcp_v4.modules.care_recommendation import config
 
     return config.get_config()
 
@@ -533,7 +533,7 @@ def _recompute_hours_suggestion_if_needed(config: ModuleConfig, module_state: di
         module_state: Current module state with answers
     """
     try:
-        from products.gcp_v4.modules.care_recommendation.logic import gcp_hours_mode
+        from products.concierge_hub.gcp_v4.modules.care_recommendation.logic import gcp_hours_mode
 
         mode = gcp_hours_mode()
         if mode not in {"shadow", "assist"}:
@@ -558,7 +558,7 @@ def _recompute_hours_suggestion_if_needed(config: ModuleConfig, module_state: di
             generate_hours_nudge_text,
             under_selected,
         )
-        from products.gcp_v4.modules.care_recommendation.logic import _build_hours_context
+        from products.concierge_hub.gcp_v4.modules.care_recommendation.logic import _build_hours_context
 
         answers = module_state
         flags = module_state.get("_flags", [])
@@ -673,7 +673,7 @@ def _render_hours_suggestion_if_needed(config: ModuleConfig, current_step_index:
             return  # Only render on daily_living section
 
         # Check if hours suggestion feature is enabled
-        from products.gcp_v4.modules.care_recommendation.logic import gcp_hours_mode
+        from products.concierge_hub.gcp_v4.modules.care_recommendation.logic import gcp_hours_mode
         mode = gcp_hours_mode()
 
         if mode != "assist":
@@ -684,7 +684,7 @@ def _render_hours_suggestion_if_needed(config: ModuleConfig, current_step_index:
             return  # No suggestion computed yet
 
         # Render suggestion UI
-        from products.gcp_v4.ui_helpers import render_hours_suggestion
+        from products.concierge_hub.gcp_v4.ui_helpers import render_hours_suggestion
         render_hours_suggestion()
 
     except Exception as e:
@@ -738,8 +738,8 @@ def _trigger_section_llm_feedback(config: ModuleConfig, module_state: dict, curr
 
         # Build partial context
         from ai.gcp_schemas import CANONICAL_TIERS
-        from products.gcp_v4.modules.care_recommendation.flags import build_flags
-        from products.gcp_v4.modules.care_recommendation.logic import (
+        from products.concierge_hub.gcp_v4.modules.care_recommendation.flags import build_flags
+        from products.concierge_hub.gcp_v4.modules.care_recommendation.logic import (
             build_partial_gcp_context,
             cognitive_gate,
         )

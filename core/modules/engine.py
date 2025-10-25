@@ -115,7 +115,7 @@ def run_module(config: ModuleConfig) -> dict[str, Any]:
     custom_rendered = False
     if step.content and config.product == "gcp_v4" and step.id == "intro":
         try:
-            from products.gcp_v4.modules.care_recommendation.intro import render_custom_intro_if_needed
+            from products.concierge_hub.gcp_v4.modules.care_recommendation.intro import render_custom_intro_if_needed
             custom_rendered = render_custom_intro_if_needed()
         except Exception:
             # Fall back to default rendering if custom intro fails
@@ -1258,7 +1258,7 @@ def _render_results_view(mod: dict[str, Any], config: ModuleConfig) -> None:
 
     # Clean paragraphs under header
     try:
-        from products.gcp_v4.ui_helpers import render_clean_summary
+        from products.concierge_hub.gcp_v4.ui_helpers import render_clean_summary
         render_clean_summary()
     except Exception:
         pass

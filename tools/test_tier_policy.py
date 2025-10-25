@@ -8,7 +8,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from products.gcp_v4.modules.care_recommendation.logic import _choose_final_tier
+from products.concierge_hub.gcp_v4.modules.care_recommendation.logic import _choose_final_tier
 
 
 def test_tier_policy():
