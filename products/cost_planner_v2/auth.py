@@ -7,7 +7,7 @@ Sign-in is required to access Financial Assessment (no guest mode in MVP).
 
 import streamlit as st
 
-from core.state import authenticate_user, is_authenticated
+from core.state import authenticate_user
 
 
 def render():

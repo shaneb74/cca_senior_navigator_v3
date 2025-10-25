@@ -130,11 +130,11 @@ def _render_zip_question():
 
     st.markdown("#### Where will this care be provided?")
     st.caption("💡 Costs vary by region, so we use ZIP to localize rates.")
-    
+
     # Initialize cost.inputs if missing
     if "cost.inputs" not in st.session_state:
         st.session_state["cost.inputs"] = {}
-    
+
     # Get ZIP from cost.inputs (single source of truth)
     current_zip = st.session_state["cost.inputs"].get("zip", "")
 
@@ -152,12 +152,12 @@ def _render_zip_question():
         # Check if ZIP changed
         previous_zip = st.session_state["cost.inputs"].get("zip")
         zip_changed = (previous_zip != zip_code)
-        
+
         # Atomic write to cost.inputs (single source of truth)
         st.session_state["cost.inputs"]["zip"] = zip_code
         st.session_state[SESSION_KEYS["zip"]] = zip_code  # Mirror to prepare gate key
         _resolve_region(zip_code)
-        
+
         # Log ZIP persistence
         print(f"[ZIP_STATE] set zip={zip_code} persisted=True")
 
@@ -351,7 +351,7 @@ def _render_facility_questions():
     # ====================================================================
     st.markdown("")
     st.markdown("---")
-    
+
     # Get tier display name
     tier_display_map = {
         "assisted_living": "Assisted Living",
@@ -362,17 +362,17 @@ def _render_facility_questions():
         "in_home_plus": "In-Home Care"
     }
     tier_display = tier_display_map.get(rec_tier, rec_tier.replace("_", " ").title())
-    
+
     # Get ZIP status for validation
     zip_code = st.session_state.get("cost.inputs", {}).get("zip") or st.session_state.get(SESSION_KEYS["zip"])
     has_zip = bool(zip_code and len(str(zip_code)) == 5)
-    
+
     # // reason: Single full-width CTA (wired) - renamed to "Compare My Cost Options"
     if st.button("Compare My Cost Options", key="compare_cta", use_container_width=True, type="primary"):
         # Set two-stage reveal flags
         st.session_state["cost.tabs_revealed"] = True
         st.session_state["cost.compare_breadcrumb"] = True
-        
+
         # Set view mode to compare (single source of truth)
         st.session_state["cost.view_mode"] = "compare"
         # Clear single-path tier to ensure comparison renders
@@ -383,13 +383,13 @@ def _render_facility_questions():
         # Log action
         print(f"[COST_CTA] action=compare tier={rec_tier} zip_present={has_zip} view_mode=compare tabs_revealed=True")
         st.rerun()
-    
+
     # Show ZIP warning if missing
     if not has_zip:
         st.caption("💡 ZIP code is required to show your estimate.")
-    
+
     st.markdown("")
-    
+
     # Return completion status
     return st.session_state.get(SESSION_KEYS["is_complete"], False)
 
@@ -462,12 +462,12 @@ def _get_default_home_carry(zip_code: str | None) -> float:
         amount = lookup_result["amount"]
         src = lookup_result["source"]
         conf = int(lookup_result["confidence"] * 100)
-        
+
         # Log once per session
         if not st.session_state.get("_home_cost_logged"):
             print(f"[HOME_CARRY_DEFAULT] zip={zip_code} amount=${amount:,.0f} source={src} conf={conf}%")
             st.session_state["_home_cost_logged"] = True
-        
+
         return amount
 
     # Fallback to old regional scaling

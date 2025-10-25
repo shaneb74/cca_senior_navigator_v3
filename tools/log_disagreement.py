@@ -9,10 +9,10 @@ Files:
 - data/training/gcp_labels.jsonl: gold tier labels from reviewer
 """
 
-import json
-import time
 import hashlib
+import json
 import pathlib
+import time
 
 OUT = pathlib.Path("data/training/gcp_cases.jsonl")
 LBL = pathlib.Path("data/training/gcp_labels.jsonl")
@@ -51,10 +51,10 @@ def append_case(row: dict) -> str:
     row = dict(row)
     row["ts"] = int(time.time())
     row["id"] = _mk_id(row)
-    
+
     with OUT.open("a", encoding="utf-8") as f:
         f.write(json.dumps(row, ensure_ascii=False) + "\n")
-    
+
     return row["id"]
 
 
@@ -67,7 +67,7 @@ def append_label(case_id: str, gold_tier: str, note: str | None = None):
         note: Optional reviewer note
     """
     LBL.parent.mkdir(parents=True, exist_ok=True)
-    
+
     rec = {
         "id": case_id,
         "gold_tier": gold_tier,
@@ -75,6 +75,6 @@ def append_label(case_id: str, gold_tier: str, note: str | None = None):
     }
     if note:
         rec["note"] = note
-    
+
     with LBL.open("a", encoding="utf-8") as f:
         f.write(json.dumps(rec, ensure_ascii=False) + "\n")

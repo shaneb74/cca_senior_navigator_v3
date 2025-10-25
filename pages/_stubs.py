@@ -1,7 +1,13 @@
 
 import streamlit as st
 
-from core.ui import img_src
+from core.ui import img_src, safe_img_src
+
+
+@st.cache_resource
+def preload_hero_image(image_path: str) -> str | None:
+    """Pre-load and cache hero images to prevent flash during navigation."""
+    return safe_img_src(image_path)
 
 
 def _page(title: str, desc: str, ctas: list[tuple[str, str]] | None = None):
@@ -47,9 +53,15 @@ def _page(title: str, desc: str, ctas: list[tuple[str, str]] | None = None):
 
 
 def render_welcome():
-    hero = img_src("static/images/hero.png")
-    someone_img = img_src("static/images/welcome_someone_else.png")
-    self_img = img_src("static/images/welcome_self.png")
+    hero = safe_img_src("static/images/hero.png")
+    someone_img = safe_img_src("static/images/welcome_someone_else.png")
+    self_img = safe_img_src("static/images/welcome_self.png")
+    
+    # Only render if all images are available
+    if not (hero and someone_img and self_img):
+        st.markdown("Loading welcome page...", unsafe_allow_html=True)
+        return
+        
     st.markdown(
         f"""<section class="container section-hero">
 <div class="hero-grid">
@@ -97,19 +109,33 @@ def render_welcome():
 
 
 def render_welcome_contextual():
+    # Wrap entire page in root container for instant clearing
+    root = st.empty()
+    
+    # Add temporary render counter to catch double paints and banner transitions
+    counter = st.session_state.get("_welcome_renders", 0) + 1
+    st.session_state["_welcome_renders"] = counter
+    nav_pending = st.session_state.get("_nav_pending", False)
+    print(f"[BANNER_FLASH] Contextual Welcome render #{counter}, nav_pending={nav_pending}")
+    
     mode = st.query_params.get("who", "someone")
     is_me = mode == "me"
-    photo_back = (
-        img_src("static/images/contextual_self.png")
+    # Use single hero image instead of stacked photos (AI misunderstood the design)
+    # Pre-load image to prevent flash
+    image_path = (
+        "static/images/tell_us_about_you.png"
         if is_me
-        else img_src("static/images/contextual_someone_else.png")
+        else "static/images/tell_us_about_them.png"
     )
-    # foreground cards from design
-    photo_front = (
-        img_src("static/images/tell_us_about_you.png")
-        if is_me
-        else img_src("static/images/tell_us_about_them.png")
-    )
+    hero_image = preload_hero_image(image_path)
+    
+    # Temporary assertions to catch regressions
+    st.markdown("<!-- IMG_EMPTY_GUARD -->", unsafe_allow_html=True)
+    
+    # Assert we never create empty image sources
+    if hero_image is not None:
+        assert hero_image.startswith("data:image"), f"Invalid image source: {hero_image[:50]}..."
+    
     title_copy = "Getting Ready for Myself" if is_me else "Supporting Others"
     body_copy = (
         "Plan for your own future care with trusted guidance and peace of mind."
@@ -120,70 +146,118 @@ def render_welcome_contextual():
 
     # Don't initialize person_name - let it remain unset if not provided
 
-    # Apply the canvas background
-    st.markdown(
-        """<style>
-        .main .block-container {
-            background: #E6EEFF;
-            min-height: 72vh;
-        }
-        </style>""",
-        unsafe_allow_html=True,
-    )
-
-    # Create the layout using Streamlit columns
-    col1, col2 = st.columns([0.9, 1.1])
-
-    with col1:
+    with root.container():
+        # ALL of the welcome page UI goes inside this container
+        # Apply the canvas background
         st.markdown(
-            f"""<div class="modal-card stack-sm">
-      <div class="toggle">
-        <a class="pill{" is-selected" if not is_me else ""}" href="?page=welcome_contextual&who=someone">For someone</a>
-        <a class="pill{" is-selected" if is_me else ""}" href="?page=welcome_contextual&who=me">For me</a>
-      </div>
-      <h3 class="mt-space-4">{title_copy}</h3>
-      <p>{body_copy}</p>""",
+            """<style>
+            .main .block-container {
+                background: #E6EEFF;
+                min-height: 72vh;
+            }
+            
+            /* CSS safeguards for images */
+            .hero-image {
+                max-width: 100%;
+                height: auto;
+                display: block;
+            }
+            
+            /* Hide broken images */
+            .hero-image[src=""], .hero-image:not([src]) {
+                display: none;
+            }
+            
+            /* Ensure photo stack maintains layout */
+            .photo-stack {
+                position: relative;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+            </style>""",
             unsafe_allow_html=True,
         )
 
-        # Use Streamlit text input to capture the name
-        current_name = st.session_state.get("person_name", "")
-        person_name = st.text_input(
-            name_label,
-            value=current_name,
-            placeholder="Type a name",
-            key="person_name_input",
-        )
+        # Create the layout using Streamlit columns
+        col1, col2 = st.columns([0.9, 1.1])
 
-        # Update session state when name changes
-        if person_name != current_name:
-            st.session_state["person_name"] = person_name
+        with col1:
+            st.markdown(
+                f"""<div class="modal-card stack-sm">
+          <div class="toggle">
+            <a class="pill{" is-selected" if not is_me else ""}" href="?page=welcome_contextual&who=someone">For someone</a>
+            <a class="pill{" is-selected" if is_me else ""}" href="?page=welcome_contextual&who=me">For me</a>
+          </div>
+          <h3 class="mt-space-4">{title_copy}</h3>
+          <p>{body_copy}</p>""",
+                unsafe_allow_html=True,
+            )
 
-        st.markdown(
-            """
-      <div class="card-actions mt-space-4">
-        <a class="btn btn--primary" href="?page=hub_concierge">Continue</a>
-        <a class="btn btn--ghost" href="?page=welcome">Close</a>
-      </div>
-      <p class="helper-note mt-space-4">If you want to assess several people, you can move on to the next step later.</p>
-    </div>""",
-            unsafe_allow_html=True,
-        )
+            # Use Streamlit text input to capture the name
+            current_name = st.session_state.get("person_name", "")
+            person_name = st.text_input(
+                name_label,
+                value=current_name,
+                placeholder="Type a name",
+                key="person_name_input",
+            )
 
-    with col2:
-        st.markdown(
-            f"""<div class="photo-stack" aria-hidden="true">
-    <img class="photo-back" src="{photo_back}" alt=""/>
-    <img class="photo-front" src="{photo_front}" alt=""/>
-  </div>""",
-            unsafe_allow_html=True,
-        )
+            # Update session state when name changes
+            if person_name != current_name:
+                st.session_state["person_name"] = person_name
+
+            # Use Streamlit button for Continue with nav pending flag
+            col_continue, col_close = st.columns([1, 1])
+            
+            with col_continue:
+                if st.button("Continue", type="primary", use_container_width=True):
+                    # Store name using centralized function
+                    from core.state_name import set_person_name
+                    set_person_name(person_name)
+                    
+                    # [BANNER_FLASH_FIX] Clear the page instantly before navigation
+                    root.empty()
+                    
+                    # Set nav pending flag to prevent image flash
+                    st.session_state["_nav_pending"] = True
+                    
+                    # Debug logging for transition
+                    print(f"[BANNER_FLASH] Page cleared, navigating to concierge, has_name: {bool(person_name)}")
+                    
+                    # Navigate to concierge hub
+                    from core.nav import route_to
+                    route_to("hub_concierge")
+                    return
+            
+            with col_close:
+                if st.button("Close", use_container_width=True):
+                    from core.nav import route_to
+                    route_to("welcome")
+
+            st.markdown(
+                """
+          <p class="helper-note mt-space-4">If you want to assess several people, you can move on to the next step later.</p>
+        </div>""",
+                unsafe_allow_html=True,
+            )
+
+        with col2:
+            # STRICT: Only render if we have a real image source AND nav is not pending
+            # Hard rule: Never mount an <img> or container until we have non-empty source
+            if hero_image and not st.session_state.get("_nav_pending"):
+                st.markdown(
+                    f"""<div class="photo-stack" aria-hidden="true">
+        <img class="hero-image" src="{hero_image}" alt=""/>
+      </div>""",
+                    unsafe_allow_html=True,
+                )
+            # else: render nothing - no container, no space reservation
 
 
 def render_for_someone():
     """Dedicated page for 'For Someone' flow."""
-    photo_back = img_src("static/images/contextual_someone_else.png")
-    photo_front = img_src("static/images/tell_us_about_them.png")
+    hero_image = preload_hero_image("static/images/contextual_someone_else.png")
     title_copy = "Supporting Others"
     body_copy = "Helping you make confident care decisions for someone you love."
     name_label = "What's their name?"
@@ -239,19 +313,20 @@ def render_for_someone():
         )
 
     with col2:
-        st.markdown(
-            f"""<div class="photo-stack" aria-hidden="true">
-    <img class="photo-back" src="{photo_back}" alt=""/>
-    <img class="photo-front" src="{photo_front}" alt=""/>
+        # STRICT: Only render if we have a real image source AND nav is not pending
+        if hero_image and not st.session_state.get("_nav_pending"):
+            st.markdown(
+                f"""<div class="photo-stack" aria-hidden="true">
+    <img class="hero-image" src="{hero_image}" alt=""/>
   </div>""",
-            unsafe_allow_html=True,
-        )
+                unsafe_allow_html=True,
+            )
+        # else: render nothing - no container, no space reservation
 
 
 def render_for_me_contextual():
     """Dedicated page for 'For Me' flow."""
-    photo_back = img_src("static/images/contextual_self.png")
-    photo_front = img_src("static/images/tell_us_about_you.png")
+    hero_image = preload_hero_image("static/images/contextual_self.png")
     title_copy = "Getting Ready for Myself"
     body_copy = "Plan for your own future care with trusted guidance and peace of mind."
     name_label = "What's your name?"
@@ -307,13 +382,15 @@ def render_for_me_contextual():
         )
 
     with col2:
-        st.markdown(
-            f"""<div class="photo-stack" aria-hidden="true">
-    <img class="photo-back" src="{photo_back}" alt=""/>
-    <img class="photo-front" src="{photo_front}" alt=""/>
+        # STRICT: Only render if we have a real image source AND nav is not pending
+        if hero_image and not st.session_state.get("_nav_pending"):
+            st.markdown(
+                f"""<div class="photo-stack" aria-hidden="true">
+    <img class="hero-image" src="{hero_image}" alt=""/>
   </div>""",
-            unsafe_allow_html=True,
-        )
+                unsafe_allow_html=True,
+            )
+        # else: render nothing - no container, no space reservation
 
 
 def render_pro_welcome():

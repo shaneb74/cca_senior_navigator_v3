@@ -94,7 +94,7 @@ def render(ctx=None) -> None:
                 "Tailored answers for your journey",
             ],
             "actions": [
-                {"label": "Search FAQs", "route": "faqs"},
+                {"label": "Search FAQs", "route": "faq"},
                 {"label": "Contact support", "route": "pfma_stub"},
             ],
             "footnote": "AI summaries sync with your dashboard history.",

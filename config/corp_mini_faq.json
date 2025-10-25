@@ -1,0 +1,21 @@
+[
+  {
+    "id": "corp_who_is_cca",
+    "q": "Who is Concierge Care Advisors?",
+    "a": "Concierge Care Advisors (CCA) is a senior care guidance company that helps families evaluate options, navigate costs and benefits, and move forward with confidence. We provide personalized assessment tools, cost planning resources, and expert guidance to support families making care decisions.",
+    "ctas": [{"label": "Contact CCA", "route": "advisor_contact"}]
+  },
+  {
+    "id": "corp_leadership",
+    "q": "Who is on the leadership team?",
+    "a": "CCA's leadership team includes experienced professionals in senior care, healthcare, and business advisory. Our team brings decades of combined experience helping families navigate care transitions. Visit our Leadership page to meet the team.",
+    "ctas": [{"label": "Meet the Team", "route": "leadership_page"}]
+  },
+  {
+    "id": "corp_founded",
+    "q": "How long has CCA been in business?",
+    "a": "CCA has served families for years, building a reputation as a trusted standard in senior care transition. We combine deep industry experience with innovative AI-powered tools to help families make informed decisions. Learn more about our story on our About page.",
+    "ctas": [{"label": "About CCA", "route": "about_page"}]
+  }
+
+]

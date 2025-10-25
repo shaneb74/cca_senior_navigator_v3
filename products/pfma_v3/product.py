@@ -32,12 +32,12 @@ def render():
     # Log mount with Cost Planner state
     cost = st.session_state.get("cost", {})
     g = st.session_state.get("gcp", {})
-    
+
     chosen_path = cost.get("path_choice")
     zip_code = cost.get("inputs", {}).get("zip")
     home_hours = cost.get("home_hours_scalar")
     published_tier = g.get("published_tier")
-    
+
     print(
         f"[FA_MOUNT] chosen_path={chosen_path} zip={zip_code} "
         f"hours={home_hours} tier={published_tier}"

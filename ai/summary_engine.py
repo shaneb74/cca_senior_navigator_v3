@@ -1,10 +1,11 @@
 """LLM-powered summary generation for GCP recommendation page."""
 
 import json
+
 from openai import OpenAI
+
 from .llm_client import get_api_key, get_openai_model
 from .summary_schemas import SummaryAdvice
-
 
 SYSTEM_PROMPT = (
     "You are Navi, a calm, supportive care navigator. "
@@ -59,18 +60,18 @@ def generate_summary(
         Tuple of (success: bool, advice: SummaryAdvice | None)
     """
     import uuid
-    
+
     # Generate correlation ID for tracing
     if not correlation_id:
         correlation_id = str(uuid.uuid4())[:12]
-    
+
     if mode not in ("shadow", "assist"):
         return False, None
-    
+
     key = get_api_key()
     if not key:
         return False, None
-    
+
     client = OpenAI(api_key=key)
     model = get_openai_model()
 
@@ -79,7 +80,7 @@ def generate_summary(
         print(f"[GCP_SUMMARY_CALL] mode={mode} model={model} keys={list(context.keys())}")
     except Exception:
         pass
-    
+
     # Build payload for LLM
     payload = {
         "tier": deterministic_tier,
@@ -96,7 +97,7 @@ def generate_summary(
             "partner_at_home": context.get("has_partner", False)
         }
     }
-    
+
     try:
         resp = client.chat.completions.create(
             model=model,
@@ -107,26 +108,26 @@ def generate_summary(
                 {"role": "user", "content": "Context JSON:\n" + json.dumps(payload)}
             ]
         )
-        
+
         text = (resp.choices[0].message.content or "").strip()
-        
+
         # Always log raw response length
         try:
             print(f"[GCP_SUMMARY_RAW] len={len(text)}")
         except Exception:
             pass
-        
+
         # Strip code fences if present
         if text.startswith("```"):
             text = text.strip().strip("`")
             if text.lower().startswith("json"):
                 text = text[4:].lstrip()
-        
+
         # Try parsing as JSON
         try:
             # First parse as dict to allow defensive trimming
             data = json.loads(text)
-            
+
             # Defensive trim: ensure 'why' array has max 4 items
             if "why" in data and isinstance(data["why"], list) and len(data["why"]) > 4:
                 data["why"] = data["why"][:4]
@@ -134,18 +135,18 @@ def generate_summary(
                     print(f"[GCP_SUMMARY_TRIM] why field trimmed from {len(json.loads(text).get('why', []))} to 4 items")
                 except Exception:
                     pass
-            
+
             # Now validate with Pydantic
             adv = SummaryAdvice(**data)
-            
+
             # Log successful parse
             try:
                 print(f"[LLM_RESULT] ok=True len={len(text)} schema_ok=True id={correlation_id}")
             except Exception:
                 pass
-            
+
             return True, adv
-            
+
         except json.JSONDecodeError as e1:
             # Try direct Pydantic validation as fallback
             try:
@@ -162,7 +163,7 @@ def generate_summary(
             print(f"[GCP_SUMMARY_PARSE_ERROR] text_preview: {text[:200]}")
             print(f"[LLM_RESULT] ok=False len={len(text)} schema_ok=False id={correlation_id}")
             return False, None
-    
+
     except Exception as e:
         # Propagate a concise failure log but do not raise
         print(f"[GCP_SUMMARY_CALL_ERROR] {e}")

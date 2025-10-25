@@ -172,9 +172,9 @@
           "hidden": true
         },
         {
-          "key": "faqs",
-          "label": "FAQs",
-          "module": "pages._stubs:render_faqs",
+          "key": "faq",
+          "label": "AI Advisor",
+          "module": "pages.faq:render",
           "hidden": true
         },
         {

@@ -9,8 +9,8 @@ consistent data structure across the application.
 """
 
 from __future__ import annotations
-from typing import Optional
-from core.models import Household, Person, CarePlan, CostPlan
+
+from core.models import CarePlan, CostPlan, Household, Person
 
 
 def ensure_household_state(st, zip: str | None = None) -> Household:
@@ -47,16 +47,16 @@ def add_person(st, role: str, zip: str | None = None) -> Person:
     """
     hh = ensure_household_state(st, zip)
     p = Person(household_id=hh.uid, role=role)
-    
+
     # Add to household members
     if p.uid not in hh.members:
         hh.members.append(p.uid)
-    
+
     # Store person and update household
     st.session_state[f"person.{role}_id"] = p.uid
     st.session_state[f"person.{p.uid}.model"] = p.model_dump()
     st.session_state["household.model"] = hh.model_dump()
-    
+
     return p
 
 
@@ -71,7 +71,7 @@ def set_careplan_for(st, person_id: str, cp: CarePlan) -> None:
     st.session_state[f"careplan.{person_id}"] = cp.model_dump()
 
 
-def get_careplan_for(st, person_id: str) -> Optional[CarePlan]:
+def get_careplan_for(st, person_id: str) -> CarePlan | None:
     """Retrieve a CarePlan for a person.
     
     Args:
@@ -101,7 +101,7 @@ def set_costplan_for(st, person_id: str, cos: CostPlan) -> None:
     st.session_state[f"costplan.{person_id}"] = cos.model_dump()
 
 
-def get_costplan_for(st, person_id: str) -> Optional[CostPlan]:
+def get_costplan_for(st, person_id: str) -> CostPlan | None:
     """Retrieve a CostPlan for a person.
     
     Args:

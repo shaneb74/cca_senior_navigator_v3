@@ -2,7 +2,7 @@
   "key": "life_insurance",
   "title": "Life Insurance & Annuities",
   "icon": "📜",
-  "description": "Life insurance policies and annuity contracts that could help fund care",
+  "description": "Life insurance policies and cash value for {NAME}",
   "estimated_time": "4-6 min",
   "required": false,
   "sort_order": 5,
@@ -10,9 +10,9 @@
     {
       "id": "intro",
       "type": "intro",
-      "title": "Life Insurance & Annuities Assessment",
+      "title": "{NAME_POS} Life Insurance & Annuities Assessment",
       "icon": "📜",
-      "help_text": "Add any life insurance cash value or annuities that could help fund care.",
+      "help_text": "Add any life insurance cash value or annuities that could help fund {NAME_POS} care.",
       "fields": [],
       "info_boxes": [
         {

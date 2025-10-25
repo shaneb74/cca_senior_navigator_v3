@@ -1,6 +1,6 @@
-import streamlit as st
 import re
 
+import streamlit as st
 
 # ==============================================================================
 # NAVIGATION HELPERS
@@ -8,14 +8,14 @@ import re
 
 def go_to_intro():
     """Navigate to Cost Planner Intro (mini-form)."""
-    print(f"[NAV] go_to_intro() -> page=cost_intro")
+    print("[NAV] go_to_intro() -> page=cost_intro")
     st.query_params["page"] = "cost_intro"
     st.rerun()
 
 
 def go_to_quick_estimate():
     """Navigate to Quick Estimate (tabbed comparison)."""
-    print(f"[NAV] go_to_quick_estimate() -> page=cost_quick_estimate")
+    print("[NAV] go_to_quick_estimate() -> page=cost_quick_estimate")
     st.query_params["page"] = "cost_quick_estimate"
     st.rerun()
 
@@ -99,7 +99,7 @@ def ensure_home_hours_scalar() -> float | None:
     Returns the current hours value or None.
     """
     cost = st.session_state.setdefault("cost", {})
-    
+
     # Mirror from slider if set
     v = st.session_state.get("qe_home_hours")
     if isinstance(v, list):
@@ -107,17 +107,17 @@ def ensure_home_hours_scalar() -> float | None:
     if isinstance(v, (int, float)):
         cost["home_hours_scalar"] = float(v)
         return float(v)
-    
+
     # Fall back to existing scalar if present
     if "home_hours_scalar" in cost and isinstance(cost["home_hours_scalar"], (int, float)):
         return cost["home_hours_scalar"]
-    
+
     # Fall back to comparison_inhome_hours if present
     v2 = st.session_state.get("comparison_inhome_hours")
     if isinstance(v2, (int, float)):
         cost["home_hours_scalar"] = float(v2)
         return float(v2)
-    
+
     return None
 
 
@@ -128,28 +128,28 @@ def get_care_context_for_llm() -> dict:
     Falls back to empty/zero values if GCP hasn't run yet.
     """
     g = st.session_state.get("gcp", {})
-    
+
     # Count ADLs and IADLs from arrays
     badls = g.get("badls", [])
     iadls = g.get("iadls", [])
     adl_count = len(badls) if isinstance(badls, list) else 0
     iadl_count = len(iadls) if isinstance(iadls, list) else 0
-    
+
     # Get cognition level (0=none, 1=mild, 2=moderate, 3=severe)
     cognition_level = g.get("cognition_level")
-    
+
     # Get behaviors list
     behaviors = g.get("behaviors", [])
-    
+
     # Get falls risk from pills
     falls_pill = g.get("falls_pill")  # none | recent | multiple
-    
+
     # Get mobility level from pills
     mobility_pill = g.get("mobility_pill")  # independent | cane | walker | wheelchair | bedbound
-    
+
     # Get meds complexity
     meds_pill = g.get("meds_complexity_pill")  # simple | moderate | complex
-    
+
     ctx = {
         "cognition_level": cognition_level,
         "behaviors": behaviors,
@@ -162,7 +162,7 @@ def get_care_context_for_llm() -> dict:
         "meds_complexity": meds_pill,
         "isolation": None,  # Not tracked yet
     }
-    
+
     print(f"[CARE_CONTEXT] Extracted from GCP: adl={adl_count} iadl={iadl_count} cognition={cognition_level} behaviors={len(behaviors)} falls={falls_pill}")
     return ctx
 
@@ -195,63 +195,63 @@ def request_llm_hours_advice(ctx: dict, user_hours: float, llm_high: float) -> s
         HTML-formatted paragraph or None if LLM unavailable
     """
     print(f"[HOURS_ADVISORY_LLM] Attempting to generate advice: user={user_hours} suggested={llm_high}")
-    
+
     try:
         from ai.llm_client import get_client, get_feature_mode
-        
+
         # Check if LLM is enabled
         mode = get_feature_mode()
         print(f"[HOURS_ADVISORY_LLM] FEATURE_LLM_NAVI={mode}")
-        
+
         if mode == "off":
             print("[HOURS_ADVISORY_LLM] LLM disabled (mode=off), using fallback")
             return None
-        
+
         # Get LLM client
         client = get_client(timeout=5)
         if not client:
             print("[HOURS_ADVISORY_LLM] No LLM client available (get_client returned None)")
             return None
-        
+
         print(f"[HOURS_ADVISORY_LLM] Client acquired, building prompt with context: {ctx}")
-        
+
         # Build specific care details from context (None-safe comparisons)
         care_details = []
-        
+
         adl_count = ctx.get("adl_count") or 0
         iadl_count = ctx.get("iadl_count") or 0
         cognition_level = ctx.get("cognition_level")
         behaviors = ctx.get("behaviors") or []
         falls_risk = ctx.get("falls_risk")
         mobility_level = ctx.get("mobility_level")
-        
+
         if adl_count >= 3:
             care_details.append(f"assistance with {adl_count} daily activities")
         elif adl_count > 0:
             care_details.append(f"help with {adl_count} daily activities")
-        
+
         if iadl_count >= 3:
             care_details.append(f"{iadl_count} instrumental activities")
-        
+
         if falls_risk == "multiple":
             care_details.append("multiple falls")
         elif falls_risk == "recent":
             care_details.append("recent fall history")
-        
+
         if cognition_level in [2, 3]:  # moderate/high
             care_details.append("memory challenges")
-        
+
         if behaviors and len(behaviors) > 0:
             care_details.append("behavioral support needs")
-        
+
         if mobility_level in ["walker", "wheelchair"]:
             care_details.append(f"mobility support ({mobility_level})")
-        
+
         # Build prompt
         care_context = ", ".join(care_details) if care_details else "multiple care needs"
-        
+
         system_prompt = """You are a compassionate care planning advisor helping families understand realistic care hour requirements for in-home care."""
-        
+
         user_prompt = f"""The user selected {user_hours:.1f} hours/day of in-home care, but based on their care needs ({care_context}), we recommend {llm_high:.1f} hours/day.
 
 Write a warm, empathetic 2-3 sentence explanation that:
@@ -264,14 +264,14 @@ IMPORTANT FORMATTING:
 - Keep it to 2-3 sentences maximum
 - Tone: supportive, practical, cost-aware (not scary)
 - Return ONLY the paragraph text with HTML tags (no JSON, no preamble)"""
-        
+
         # Call LLM
         print(f"[HOURS_ADVISORY_LLM] Calling LLM with prompt (care_context={care_context})")
         text = client.generate_completion(
             system_prompt=system_prompt,
             user_prompt=user_prompt
         )
-        
+
         if text:
             # Clean up any markdown or extra formatting
             text = text.strip()
@@ -287,7 +287,7 @@ IMPORTANT FORMATTING:
         else:
             print("[HOURS_ADVISORY_LLM] ❌ FAILED - No response from LLM")
             return None
-            
+
     except Exception as e:
         print(f"[HOURS_ADVISORY_LLM_ERR] {e}")
         return None
@@ -298,7 +298,7 @@ def render_confirm_hours_if_needed(current_hours_key: str = "qe_home_hours"):
     cost = st.session_state.setdefault("cost", {})
     meta = cost.setdefault("meta", {})
     sel = cost.get("selected_assessment", "home")
-    
+
     print(f"[HOURS_CHECK] sel={sel}")
     if sel != "home":
         return  # only in the In-Home assessment
@@ -315,7 +315,7 @@ def render_confirm_hours_if_needed(current_hours_key: str = "qe_home_hours"):
 
     # 3) Don't show if close enough or already accepted/dismissed
     if current is None or not isinstance(current, (int, float)):
-        print(f"[HOURS_CHECK] current not a number, returning")
+        print("[HOURS_CHECK] current not a number, returning")
         return
     if abs(current - llm_high) < 0.5:
         print(f"[HOURS_CHECK] current close to llm_high (diff={abs(current - llm_high)}), returning")
@@ -326,48 +326,48 @@ def render_confirm_hours_if_needed(current_hours_key: str = "qe_home_hours"):
     if meta.get(decision_key):
         print(f"[HOURS_CHECK] already decided {decision_key}, returning")
         return
-    
+
     print(f"[HOURS_ADVISORY] show user={current} suggested={llm_high}")
 
     # 4) Get or generate LLM advice (empathetic, personalized)
     advice_key = f"home_hours_{llm_high}"
     advice = get_cached_hours_advice(advice_key)
-    
+
     if advice:
         print(f"[HOURS_ADVISORY] Using CACHED advice for key={advice_key}")
-    
+
     if not advice:
-        print(f"[HOURS_ADVISORY] No cached advice, requesting LLM generation...")
+        print("[HOURS_ADVISORY] No cached advice, requesting LLM generation...")
         # Build context for LLM
         ctx = get_care_context_for_llm()
-        
+
         # Request LLM-generated advice
         advice = request_llm_hours_advice(ctx, user_hours=current, llm_high=llm_high)
-        
+
         if advice:
             cache_hours_advice(advice_key, advice)
-            print(f"[HOURS_ADVISORY] LLM advice generated and cached")
+            print("[HOURS_ADVISORY] LLM advice generated and cached")
         else:
-            print(f"[HOURS_ADVISORY] LLM unavailable, building fallback")
-    
+            print("[HOURS_ADVISORY] LLM unavailable, building fallback")
+
     # 5) Use LLM advice or fallback
     if not advice:
-        print(f"[HOURS_ADVISORY] ⚠️  Using FALLBACK (static text builder) - LLM did not generate advice")
+        print("[HOURS_ADVISORY] ⚠️  Using FALLBACK (static text builder) - LLM did not generate advice")
         # Fallback: Build from actual GCP data
         g = st.session_state.get("gcp", {})
         needs_list = []
-        
+
         # Extract specific care needs from GCP state (use badls/iadls arrays)
         badls = g.get("badls", [])
         iadls = g.get("iadls", [])
         behaviors = g.get("behaviors", [])
-        
+
         # Build natural needs phrase from actual selections
         if badls:
             needs_list.extend([n.replace("_", " ") for n in badls[:3]])
         if iadls:
             needs_list.extend([n.replace("_", " ") for n in iadls[:2]])
-        
+
         # Build natural language list
         if needs_list:
             if len(needs_list) == 1:
@@ -378,26 +378,26 @@ def render_confirm_hours_if_needed(current_hours_key: str = "qe_home_hours"):
                 needs_phrase = ", ".join(needs_list[:-1]) + f", and {needs_list[-1]}"
         else:
             needs_phrase = "bathing, dressing, meals, medication, and mobility"
-        
+
         # Add memory/behavior context if applicable
         context_phrase = ""
         cognition_level = g.get("cognition_level")
         has_memory = cognition_level in [2, 3] if cognition_level else False
         has_behaviors = len(behaviors) > 0
-        
+
         if has_memory and has_behaviors:
             context_phrase = ", along with some memory and decision-making challenges"
         elif has_memory:
             context_phrase = ", along with some memory challenges"
         elif has_behaviors:
             context_phrase = ", along with some behavioral support needs"
-        
+
         # Construct the empathetic paragraph
         advice = f"""You mentioned needing help with {needs_phrase}{context_phrase}. That level of daily support often means several hours of hands-on care each day. <strong>In-home care can be one of the most significant expenses for families</strong>, and if those hours aren't planned for, the costs can rise quickly. Many families in similar situations find that planning for around {fmt_hours(llm_high)} of support a day gives a more realistic picture of what safe, consistent care at home will cost."""
         print(f"[HOURS_ADVISORY] FALLBACK text built with needs={needs_phrase[:40]}...")
     else:
         print(f"[HOURS_ADVISORY] ✅ Using LLM-generated advice: {advice[:80]}...")
-    
+
     print(f"[HOURS_ADVISORY] rendered=True user={current} suggested={llm_high} llm_advice={bool(advice)}")
 
     # 6) Render Navi-style advisory UI
@@ -410,7 +410,7 @@ def render_confirm_hours_if_needed(current_hours_key: str = "qe_home_hours"):
         """,
         unsafe_allow_html=True
     )
-    
+
     # 7) Two elegant buttons (primary = accept; secondary = keep)
     st.markdown('<div class="hours-actions">', unsafe_allow_html=True)
     col1, col2 = st.columns([1, 1], gap="small")
@@ -422,10 +422,10 @@ def render_confirm_hours_if_needed(current_hours_key: str = "qe_home_hours"):
             cost["home_hours_scalar"] = float(llm_high)
             meta[decision_key] = "accepted"
             print(f"[HOURS_CONFIRM] accept={llm_high}")
-            
+
             # Persist hours decision
             try:
-                from core.user_persist import persist_costplan, get_current_user_id
+                from core.user_persist import get_current_user_id, persist_costplan
                 persist_costplan(get_current_user_id(), {
                     "event": "hours_confirm_accept",
                     "corr_id": st.session_state.get("corr_id", "unknown"),
@@ -434,16 +434,16 @@ def render_confirm_hours_if_needed(current_hours_key: str = "qe_home_hours"):
                 })
             except Exception as e:
                 print(f"[USER_PERSIST_ERR] hours_confirm_accept failed: {e}")
-            
+
             st.rerun()
     with col2:
         if st.button(f"Keep {fmt_hours(current)}", key=f"btn_keep_{llm_high}", use_container_width=True):
             meta[decision_key] = "kept"
             print(f"[HOURS_CONFIRM] keep={current} (llm={llm_high})")
-            
+
             # Persist hours decision
             try:
-                from core.user_persist import persist_costplan, get_current_user_id
+                from core.user_persist import get_current_user_id, persist_costplan
                 persist_costplan(get_current_user_id(), {
                     "event": "hours_confirm_keep",
                     "corr_id": st.session_state.get("corr_id", "unknown"),
@@ -452,7 +452,7 @@ def render_confirm_hours_if_needed(current_hours_key: str = "qe_home_hours"):
                 })
             except Exception as e:
                 print(f"[USER_PERSIST_ERR] hours_confirm_keep failed: {e}")
-            
+
             st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)  # Close hours-actions div
 
@@ -524,7 +524,7 @@ def render_care_chunk_compare_blurb(active: str):
     al = segcache_get("al") or {}
     home_care = float(home.get("Care Services", 0))
     al_care = float(al.get("Care Services", 0))
-    
+
     if home_care > 0 and al_care > 0:
         ratio = home_care / al_care
         st.caption(f"💡 Care at home (~{money(home_care)}/mo) is **{ratio:,.1f}×** the care portion in Assisted Living (~{money(al_care)}/mo).")
@@ -545,24 +545,24 @@ def render_intro_navi(title: str = "Let's look at costs", reason: str = None) ->
         HTML string for Navi tip
     """
     from core.mcip import MCIP
-    
+
     if reason is None:
         # Auto-generate reason from GCP recommendation
         gcp_rec = MCIP.get_care_recommendation()
         rec_tier = None
         if gcp_rec and hasattr(gcp_rec, 'tier'):
             rec_tier = gcp_rec.tier
-        
+
         tier_display = None
         if rec_tier:
             tier_display = rec_tier.replace("_", " ").title()
-        
+
         reason = (
             f"I've pre-selected {tier_display} from your Guided Care Plan. You can explore other scenarios too."
             if tier_display
             else "We'll help you explore different care options and their costs."
         )
-    
+
     return f"""<div class="navi-tip" style="background: #f0f7ff; border-left: 4px solid #2563eb; padding: 1rem; margin-bottom: 1.5rem; border-radius: 4px;">
         <div style="font-weight: 600; font-size: 1.1rem; margin-bottom: 0.5rem;">💡 {title}</div>
         <div style="color: #475569;">{reason}</div>
@@ -640,12 +640,12 @@ def render_cp_tabs():
     Clicking a tab updates cost.selected_assessment and reruns.
     """
     import streamlit as st
-    
+
     available = st.session_state.get("cost.assessments_available", {"home": True, "al": True, "mc": False})
     sel = st.session_state.get("cost.selected_assessment", "home")
-    
+
     st.markdown('<div class="cp-tabs" role="tablist" aria-label="Cost options">', unsafe_allow_html=True)
-    
+
     # Render only available tabs
     cols = []
     if available.get("home"):
@@ -654,15 +654,15 @@ def render_cp_tabs():
         cols.append("al")
     if available.get("mc"):
         cols.append("mc")
-    
+
     tab_cols = st.columns(len(cols))
-    
+
     for idx, assessment in enumerate(cols):
         with tab_cols[idx]:
             is_active = (sel == assessment)
             label_map = {"home": "In-Home Care", "al": "Assisted Living", "mc": "Memory Care"}
             label = label_map.get(assessment, assessment)
-            
+
             # Render as a styled button
             if st.button(
                 label,
@@ -673,7 +673,7 @@ def render_cp_tabs():
                 if not is_active:
                     st.session_state["cost.selected_assessment"] = assessment
                     st.rerun()
-    
+
     st.markdown('</div>', unsafe_allow_html=True)
 
 
@@ -685,12 +685,12 @@ def render_cp_panel(assessment: str, render_card_fn):
         render_card_fn: Function to call to render the card content
     """
     import streamlit as st
-    
+
     # Single source of truth: cost["selected_assessment"]
     sel = st.session_state.get("cost", {}).get("selected_assessment", "home")
     is_active = (sel == assessment)
     panel_class = "cp-panel is-active" if is_active else "cp-panel"
-    
+
     st.markdown(f'<div class="{panel_class}" id="cp-panel-{assessment}" role="tabpanel">', unsafe_allow_html=True)
     if is_active:  # Only render content for active panel to save compute
         render_card_fn()
@@ -709,19 +709,19 @@ def render_cost_composition_bar(assessment: str):
     """
     import altair as alt
     import pandas as pd
-    
+
     segs = segcache_get(assessment) or {}
     # Filter to only non-zero segments
     segs = {k: float(v or 0) for k, v in segs.items() if v and float(v) > 0}
-    
+
     if not segs:
         # Graceful fallback: nothing to show yet
         return
-    
+
     # Build dataframe with segments
     df = pd.DataFrame({"label": list(segs.keys()), "value": list(segs.values())})
     df["bar"] = "total"  # ← Force single row
-    
+
     # Create compact stacked bar chart (thicker and rounded for visibility)
     bar = alt.Chart(df).mark_bar(cornerRadius=4).encode(
         x=alt.X("value:Q", stack="zero", axis=None),
@@ -736,11 +736,11 @@ def render_cost_composition_bar(assessment: str):
             alt.Tooltip("value:Q", format=",.0f", title="Amount")
         ]
     ).properties(height=28)  # Increased from 22 to 28 for better visibility
-    
+
     # Render chart with clean styling
     chart = bar.configure_view(stroke=None)
     st.altair_chart(chart, use_container_width=True)
-    
+
     # Pills under the bar
     st.markdown('<div class="cp-seg-pills">', unsafe_allow_html=True)
     for lbl, val in segs.items():
@@ -749,5 +749,5 @@ def render_cost_composition_bar(assessment: str):
             unsafe_allow_html=True
         )
     st.markdown('</div>', unsafe_allow_html=True)
-    
+
     print(f"[BAR_RENDER] {assessment} labels={list(segs.keys())} values={list(segs.values())}")

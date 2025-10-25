@@ -67,8 +67,11 @@ def run_module(config: ModuleConfig) -> dict[str, Any]:
 
     step = config.steps[step_index]
 
-    # Substitute {{name}} template in title
+    # Substitute {{name}} template in title and apply content contract interpolation
     title = _substitute_title(step.title, state)
+    
+    # Also apply content contract interpolation to subtitle
+    subtitle = _substitute_title(step.subtitle or "", state) if step.subtitle else None
 
     # Calculate progress BEFORE rendering header
     progress = _update_progress(config, state, step, step_index)
@@ -99,7 +102,7 @@ def run_module(config: ModuleConfig) -> dict[str, Any]:
         step_index,
         total_steps,
         title,
-        step.subtitle,
+        subtitle,
         progress,
         progress_total,
         show_step_dots,
@@ -108,7 +111,18 @@ def run_module(config: ModuleConfig) -> dict[str, Any]:
     )
 
     # Render content array (for info-type pages)
-    if step.content:
+    # Check for custom intro rendering first (GCP v4 special case)
+    custom_rendered = False
+    if step.content and config.product == "gcp_v4" and step.id == "intro":
+        try:
+            from products.gcp_v4.modules.care_recommendation.intro import render_custom_intro_if_needed
+            custom_rendered = render_custom_intro_if_needed()
+        except Exception:
+            # Fall back to default rendering if custom intro fails
+            custom_rendered = False
+    
+    # Use default content rendering if no custom renderer or it failed
+    if step.content and not custom_rendered:
         _render_content(step.content)
 
     new_values = _render_fields(step, state)
@@ -242,23 +256,41 @@ def _render_header(
 
 
 def _substitute_title(title: str, state: Mapping[str, Any]) -> str:
-    """Replace {{name}} with person's name from state or session."""
-    if "{{name}}" not in title:
-        return title
+    """Apply content contract interpolation to title and subtitle text."""
+    # Import here to avoid circular dependencies
+    from core.content_contract import build_token_context, interpolate
+    
+    # DEBUG: Log what's happening
+    print(f"[SUBSTITUTE_TITLE_DEBUG] Input title: '{title}'")
+    print(f"[SUBSTITUTE_TITLE_DEBUG] Session keys: {list(st.session_state.keys())}")
+    
+    # Build token context from current session state
+    try:
+        context = build_token_context(st.session_state)
+        print(f"[SUBSTITUTE_TITLE_DEBUG] Context NAME: '{context.name}', NAME_POS: '{context.name_possessive}'")
+        # Apply content contract interpolation
+        interpolated = interpolate(title, context)
+        print(f"[SUBSTITUTE_TITLE_DEBUG] Interpolated result: '{interpolated}'")
+        return interpolated
+    except Exception as e:
+        print(f"[SUBSTITUTE_TITLE_DEBUG] Exception: {e}")
+        # Fallback: try old {{name}} substitution for backward compatibility
+        if "{{name}}" not in title:
+            return title
 
-    # Try to get name from module state first
-    name = state.get("recipient_name") or state.get("person_name")
+        # Try to get name from module state first
+        name = state.get("recipient_name") or state.get("person_name")
 
-    # Fall back to session state
-    if not name:
-        profile = st.session_state.get("profile", {})
-        name = profile.get("recipient_name") or profile.get("person_name")
+        # Fall back to session state
+        if not name:
+            profile = st.session_state.get("profile", {})
+            name = profile.get("recipient_name") or profile.get("person_name")
 
-    # Default to generic text
-    if not name:
-        name = "This Person"
+        # Default to generic text
+        if not name:
+            name = "This Person"
 
-    return title.replace("{{name}}", name)
+        return title.replace("{{name}}", name)
 
 
 def _render_content(content: list[str]) -> None:
@@ -268,10 +300,20 @@ def _render_content(content: list[str]) -> None:
         content: List of content lines with markdown support.
                  Empty strings create spacing.
     """
+    from core.text import personalize_text
+    import re
+    import json
+    
     for line in content:
         if line.strip():
-            # Render non-empty lines with markdown
-            st.markdown(line)
+            # Apply personalization to non-empty lines before rendering
+            personalized_line = personalize_text(line)
+            
+            # Safety: assert no unresolved tokens remain
+            if re.search(r"\{NAME(_POS)?\}", personalized_line):
+                raise AssertionError(f"Unresolved name token found in content: '{personalized_line}'")
+            
+            st.markdown(personalized_line)
         else:
             # Empty lines add spacing
             st.markdown("<br/>", unsafe_allow_html=True)
@@ -491,14 +533,14 @@ def _ensure_outcomes(config: ModuleConfig, answers: dict[str, Any]) -> None:
     outcome = OutcomeContract()
     if config.outcomes_compute:
         fn = _resolve_callable(config.outcomes_compute)
-        
+
         # Single analysis spinner with controlled mounting/unmounting
         analysis_placeholder = st.empty()
-        
+
         # Set loading flags for deterministic state management
         st.session_state["llm_loading"] = True
         st.session_state["summary_ready"] = False
-        
+
         # Show analysis spinner
         with analysis_placeholder.container():
             st.markdown("""
@@ -512,7 +554,7 @@ def _ensure_outcomes(config: ModuleConfig, answers: dict[str, Any]) -> None:
                 </div>
             </div>
             """, unsafe_allow_html=True)
-        
+
         # Inject CSS once (outside conditional to avoid flicker)
         st.markdown("""
         <style>
@@ -597,7 +639,7 @@ def _ensure_outcomes(config: ModuleConfig, answers: dict[str, Any]) -> None:
         }
         </style>
         """, unsafe_allow_html=True)
-        
+
         try:
             result = fn(answers=answers, context=context)
             if isinstance(result, OutcomeContract):
@@ -618,12 +660,12 @@ def _ensure_outcomes(config: ModuleConfig, answers: dict[str, Any]) -> None:
                         "outcome": str(result.get("tier") or result.get("recommendation", "")),
                     },
                 )
-                
+
                 # Clear loading state and spinner after successful computation
                 st.session_state["llm_loading"] = False
                 st.session_state["summary_ready"] = True
                 analysis_placeholder.empty()
-                
+
                 return  # Early return - we're done
         except Exception as e:
             import traceback
@@ -631,7 +673,7 @@ def _ensure_outcomes(config: ModuleConfig, answers: dict[str, Any]) -> None:
             st.error(f"❌ Error computing outcomes: {type(e).__name__}: {str(e)}")
             st.text(traceback.format_exc())
             outcome = OutcomeContract()
-            
+
             # Clear loading state even on error
             st.session_state["llm_loading"] = False
             st.session_state["summary_ready"] = False
@@ -1138,35 +1180,35 @@ def _render_results_view(mod: dict[str, Any], config: ModuleConfig) -> None:
     # Check if user clicked Continue button (debounce mechanism)
     proceed_requested = st.session_state.get("gcp.proceed_requested", False)
     summary_ready = st.session_state.get("summary_ready", False) or st.session_state.get("gcp.llm_result_ready", False)
-    
+
     if proceed_requested:
         if summary_ready:
             # Clear the flag and navigate
             st.session_state["gcp.proceed_requested"] = False
-            print(f"[GCP_NAV] to=cost_v2 proceed=True ready=True")
-            
-            from core.nav import route_to
+            print("[GCP_NAV] to=cost_v2 proceed=True ready=True")
+
             from core.flags import get_flag
-            
+            from core.nav import route_to
+
             # Set handoff flag
             st.session_state["flow.from_gcp"] = True
-            
+
             # Check for partner interstitial requirement
             partner_flow_enabled = get_flag("FEATURE_HOUSEHOLD_PARTNER_FLOW")
             if partner_flow_enabled:
                 # TODO: Add partner interstitial logic here
                 # For now, proceed directly to cost planner
                 pass
-            
-            print(f"[GCP_NAV] Navigate to cost_intro")
+
+            print("[GCP_NAV] Navigate to cost_intro")
             route_to("cost_intro")
             return  # Exit early after navigation
         else:
             # Summary not ready yet - show loading state and block
-            print(f"[GCP_NAV] waiting proceed=True ready=False")
+            print("[GCP_NAV] waiting proceed=True ready=False")
             st.info("⏳ Preparing your summary...")
             st.stop()  # Stop rendering and wait for next rerun
-    
+
     # ========================================
     # NORMAL RESULTS RENDERING
     # ========================================
@@ -1265,19 +1307,19 @@ def _render_results_view(mod: dict[str, Any], config: ModuleConfig) -> None:
                 if k not in preserve:
                     if k.startswith("gcp_") or k in ("_summary_advice", "_hours_suggestion", "_hours_ack", "_hours_nudge_key", "_hours_nudge_new", "_gcp_llm_advice"):
                         st.session_state.pop(k, None)
-            
+
             # Reset to step 0 (first question - Age section)
             st.session_state[f"{config.state_key}._step"] = 0
-            
+
             # Update tile state to step 0
             tiles = st.session_state.setdefault("tiles", {})
             tile_state = tiles.setdefault(config.product, {})
             tile_state["last_step"] = 0
-            
+
             # Clear other progress markers
             for k in ("gcp_view", "persistence_loaded"):
                 st.session_state.pop(k, None)
-            
+
             # Rerun to show first question
             from core.modules.engine import safe_rerun
             safe_rerun()
@@ -1285,14 +1327,14 @@ def _render_results_view(mod: dict[str, Any], config: ModuleConfig) -> None:
     with col2:
         if st.button("💰 Explore Care Options & Costs", key="btn_costs", type="primary", use_container_width=True):
             from core.nav import route_to
-            print(f"[GCP_RESULTS] Navigate to cost_intro")
+            print("[GCP_RESULTS] Navigate to cost_intro")
             route_to("cost_intro")
 
     with col3:
         if st.button("🏠 Return to Concierge Hub", key="btn_hub", use_container_width=True):
             from core.nav import route_to
             route_to("hub_concierge")
-    
+
     # Bottom horizontal rule
     st.markdown("---")
 
@@ -1513,14 +1555,14 @@ def _render_results_ctas_once(config: ModuleConfig) -> None:
     if config.product == "gcp_v4":
         st.markdown("---")
         st.markdown('<div class="sn-app mod-actions">', unsafe_allow_html=True)
-        
+
         # Build streamlined CTA for Cost Planner handoff
         cta_label = "Next: Cost & Options →"
         cta_help = "Get personalized cost estimates and explore your care options"
-        
+
         # Disable button if summary not ready (extra safety)
         summary_ready = st.session_state.get("summary_ready", False) or st.session_state.get("gcp.llm_result_ready", False)
-        
+
         if st.button(
             cta_label,
             key="_results_next_cost",

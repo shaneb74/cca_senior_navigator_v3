@@ -23,6 +23,54 @@ __all__ = ["render"]
 
 def render(ctx=None) -> None:
     """Render the Concierge Hub with Navi orchestration."""
+    
+    # [BANNER_FLASH_DEBUG] Track render attempts
+    render_count = st.session_state.get("_concierge_render_count", 0) + 1
+    st.session_state["_concierge_render_count"] = render_count
+    nav_pending = st.session_state.get("_nav_pending", False)
+    print(f"[BANNER_FLASH] Concierge render #{render_count}, nav_pending={nav_pending}")
+    
+    # [BANNER_FLASH_FIX] Block rendering during navigation transition
+    if st.session_state.get("_nav_pending"):
+        st.markdown("Loading concierge...", unsafe_allow_html=True)
+        # Clear the pending flag now that we're in the target page
+        st.session_state["_nav_pending"] = False
+        print(f"[BANNER_FLASH] Navigation transition complete, cleared pending flag")
+        st.stop()
+
+    # Add global safety CSS to hide any stray empty images
+    st.markdown("""
+    <style>
+      /* Hide any empty/misapplied images */
+      img[src=""], img:not([src]) { display:none !important; }
+      .hero:empty { display:none !important; }
+      .photo-stack:empty { display:none !important; }
+      
+      /* Kill any leftover pseudo-icon badges */
+      .corner-icon::before, .corner-icon::after { content:none !important; background:none !important; }
+      .card-icon::before, .card-icon::after { content:none !important; background:none !important; }
+      
+      /* If someone used background-image for the badge on generic wrappers */
+      [data-icon], .badge-icon { background-image:none !important; }
+      
+      /* Prevent any card photo flashing during transitions */
+      .card-photo { transition: opacity 0.2s ease; }
+      .card-photo[src=""] { opacity: 0 !important; }
+      
+      /* Kill SVG icons during transitions to prevent black blob flash */
+      .context-pill-link svg { display: none !important; }
+      svg[viewBox*="M8 11a3 3 0 1 0-3-3"] { display: none !important; }
+      svg[viewBox*="M12 12a3.5 3.5 0 1 0-3.5-3.5"] { display: none !important; }
+      /* Kill any SVG with people/person paths */
+      svg path[d*="M8 11a3 3 0 1 0-3-3"] { display: none !important; }
+      svg path[d*="M12 12a3.5 3.5 0 1 0-3.5-3.5"] { display: none !important; }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # STRICT nav guard: do not create columns/grids if _nav_pending is set
+    if st.session_state.get("_nav_pending"):
+        st.session_state["_nav_pending"] = False
+        st.stop()  # do not render hero/columns yet
 
     # Initialize MCIP
     MCIP.initialize()
@@ -439,7 +487,7 @@ def _build_navi_guide_block(ctx) -> str:
 
     actions_html = (
         f'<a class="btn btn--primary" href="{action_route}" target="_self">{html.escape(action_label)}</a>'
-        '<a class="btn btn--secondary" href="?page=faqs" target="_self">Ask Navi →</a>'
+        '<a class="btn btn--secondary" href="?page=faq" target="_self">Ask Navi →</a>'
     )
 
     reason_html = html.escape(reason) if reason else ""
@@ -566,8 +614,8 @@ def _build_pfma_tile(hub_order: dict, ordered_index: dict, next_action: dict) ->
 def _build_faq_tile() -> ProductTileHub:
     """Build FAQ tile (always available, never locked)."""
     return ProductTileHub(
-        key="faqs",
-        title="FAQs & Answers",
+        key="faq",
+        title="AI Advisor",
         desc="Answers in plain language, available whenever you are.",
         blurb=(
             "Search our advisor-reviewed knowledge base or ask Senior Navigator AI for tailored guidance, "
@@ -580,7 +628,7 @@ def _build_faq_tile() -> ProductTileHub:
             "Available 24/7",
         ],
         primary_label="Open",
-        primary_route="?page=faqs",
+        primary_route="?page=faq",
         progress=0,
         variant="teal",
         order=40,

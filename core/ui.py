@@ -3,7 +3,6 @@ import functools
 import mimetypes
 import pathlib
 import sys
-from typing import Optional
 
 import streamlit as st
 
@@ -21,6 +20,7 @@ def img_src(rel_path: str) -> str:
     """
     Return a base64 data URI for an image at repo-relative rel_path.
     Example: img_src("static/images/hero.png")
+    WARNING: Returns empty string for missing files. Use safe_img_src() for None returns.
     """
     safe_rel = rel_path.lstrip("/").replace("\\", "/")
     p = (_REPO_ROOT / safe_rel).resolve()
@@ -37,10 +37,20 @@ def img_src(rel_path: str) -> str:
     return f"data:{mime or 'image/png'};base64,{b64}"
 
 
-def safe_img_src(filename: str) -> str:
+def safe_img_src(rel_path: str) -> str | None:
+    """
+    Safe image source that returns None for empty/invalid paths instead of empty string.
+    Use this for conditional rendering to prevent empty <img> tags.
+    """
+    uri = img_src(rel_path)
+    return uri if uri else None
+
+
+def legacy_safe_img_src(filename: str) -> str:
     """
     Resolve a static image by delegating to layout.static_url while avoiding circular imports.
     Accepts bare filenames or repo-relative static paths.
+    NOTE: This is the legacy function - use safe_img_src() for new code.
     """
     try:
         from layout import static_url  # type: ignore
@@ -77,7 +87,7 @@ def page_container_close():
     st.markdown("</main>", unsafe_allow_html=True)
 
 
-def hub_section(title: str, right_meta: Optional[str] = None):
+def hub_section(title: str, right_meta: str | None = None):
     right = f'<div class="tile-meta"><span>{right_meta}</span></div>' if right_meta else ""
     st.markdown(
         f"""<section class="container section">
@@ -244,8 +254,12 @@ def render_hub_tile(
                         route_to("cost_planner")
                     elif "Plan with My Advisor" in title:
                         route_to("pfma")
-                    elif "FAQs & Answers" in title or "FAQ Center" in title:
-                        route_to("faqs")
+                    elif (
+                        "AI Advisor" in title
+                        or "FAQs & Answers" in title
+                        or "FAQ Center" in title
+                    ):
+                        route_to("faq")
 
         with col2:
             if st.button(secondary_label, key=secondary_key, use_container_width=True):
@@ -270,8 +284,12 @@ def render_hub_tile(
                     route_to("cost_planner")
                 elif "Plan with My Advisor" in title:
                     route_to("pfma")
-                elif "FAQs & Answers" in title or "FAQ Center" in title:
-                    route_to("faqs")
+                elif (
+                    "AI Advisor" in title
+                    or "FAQs & Answers" in title
+                    or "FAQ Center" in title
+                ):
+                    route_to("faq")
 
     # Close the card-actions div and tile
     st.markdown("</div></article>", unsafe_allow_html=True)
@@ -494,11 +512,11 @@ def _render_celebration_effect() -> None:
 
 def render_navi_guide_bar(
     text: str,
-    subtext: Optional[str] = None,
+    subtext: str | None = None,
     icon: str = "🤖",
     show_progress: bool = False,
-    current_step: Optional[int] = None,
-    total_steps: Optional[int] = None,
+    current_step: int | None = None,
+    total_steps: int | None = None,
     color: str = "#8b5cf6",
 ) -> None:
     """Render persistent Navi guide bar at top of page.
@@ -556,14 +574,14 @@ def render_navi_guide_bar(
 
 
 def render_navi_panel_v2(
-    title: str,
+    title: str | None,
     reason: str,
     encouragement: dict,
     context_chips: list[dict],
     primary_action: dict,
-    secondary_action: Optional[dict] = None,
-    progress: Optional[dict] = None,
-    alert_html: Optional[str] = None,
+    secondary_action: dict | None = None,
+    progress: dict | None = None,
+    alert_html: str | None = None,
     variant: str = "hub",
 ) -> None:
     """Render refined Navi panel with structured layout using Streamlit native components.
@@ -572,10 +590,54 @@ def render_navi_panel_v2(
         variant: "hub" (default) or "module" - controls styling and layout
     """
     from core.url_helpers import add_uid_to_href
+    from core.text import personalize_text
+
+    # Personalize all text content before rendering
+    # Personalize title only if provided
+    if title is not None and title != "":
+        title = personalize_text(title)
+    reason = personalize_text(reason)
+    if encouragement and encouragement.get("text"):
+        encouragement = encouragement.copy()  # Don't mutate original
+        encouragement["text"] = personalize_text(encouragement["text"])
+    
+    # Personalize action labels
+    if primary_action and primary_action.get("label"):
+        primary_action = primary_action.copy()
+        primary_action["label"] = personalize_text(primary_action["label"])
+    if secondary_action and secondary_action.get("label"):
+        secondary_action = secondary_action.copy()
+        secondary_action["label"] = personalize_text(secondary_action["label"])
+    
+    # Personalize chip labels and values
+    if context_chips:
+        personalized_chips = []
+        for chip in context_chips:
+            chip_copy = chip.copy()
+            if chip_copy.get("label"):
+                chip_copy["label"] = personalize_text(chip_copy["label"])
+            if chip_copy.get("value"):
+                chip_copy["value"] = personalize_text(chip_copy["value"])
+            if chip_copy.get("sublabel"):
+                chip_copy["sublabel"] = personalize_text(chip_copy["sublabel"])
+            personalized_chips.append(chip_copy)
+        context_chips = personalized_chips
 
     # Inject CSS for Navi panel V2 (matches product tile styling)
     navi_css = """
     <style>
+    /* Compact variant (minimal, no banners/eyebrow/chips) */
+    .navi-compact {
+        max-width: 1120px;
+        margin: 0 auto 12px auto;
+        background: #F8FAFC;
+        border: 1px solid #E5E7EB;
+        border-radius: 12px;
+        padding: 12px 14px;
+    }
+    .navi-compact .navi-title { font-weight: 600; color: #0d1f4b; margin: 0 0 4px 0; }
+    .navi-compact .navi-line { color: #374151; margin: 0; }
+
     .navi-panel-v2 {
         max-width: 1120px;
         margin: 0 auto;
@@ -711,6 +773,17 @@ def render_navi_panel_v2(
     """
     st.markdown(navi_css, unsafe_allow_html=True)
 
+    # Special compact variant: render minimal panel and return early
+    if variant == "compact":
+        compact_html = "<div class='navi-compact'>"
+        if title is not None and str(title).strip() != "":
+            compact_html += f"<p class='navi-title'>{title}</p>"
+        if reason and str(reason).strip() != "":
+            compact_html += f"<p class='navi-line'>{reason}</p>"
+        compact_html += "</div>"
+        st.markdown(compact_html, unsafe_allow_html=True)
+        return
+
     # Build HTML components
     progress_badge = ""
     if progress and progress.get("current") is not None and progress.get("total"):
@@ -771,6 +844,8 @@ def render_navi_panel_v2(
         chips_html = ""
         actions_html = ""
 
-    panel_html = f'<div class="navi-panel-v2 {variant_class}"><div class="navi-panel-v2__header"><div class="navi-panel-v2__eyebrow">✨ Navi</div>{progress_badge}</div>{alert_section}<div class="navi-panel-v2__title">{title}</div><div class="navi-panel-v2__reason">{reason}</div><div class="navi-panel-v2__encouragement navi-panel-v2__encouragement--{status}"><span style="font-size: 18px;">{encouragement.get("icon", "💪")}</span><span>{encouragement.get("text", "")}</span></div>{chips_html}{actions_html}</div>'
+    # Title block is optional; omit entirely if no title provided
+    title_block = f'<div class="navi-panel-v2__title">{title}</div>' if (title is not None and str(title).strip() != "") else ""
+    panel_html = f'<div class="navi-panel-v2 {variant_class}"><div class="navi-panel-v2__header"><div class="navi-panel-v2__eyebrow">✨ Navi</div>{progress_badge}</div>{alert_section}{title_block}<div class="navi-panel-v2__reason">{reason}</div><div class="navi-panel-v2__encouragement navi-panel-v2__encouragement--{status}"><span style="font-size: 18px;">{encouragement.get("icon", "💪")}</span><span>{encouragement.get("text", "")}</span></div>{chips_html}{actions_html}</div>'
 
     st.markdown(panel_html, unsafe_allow_html=True)

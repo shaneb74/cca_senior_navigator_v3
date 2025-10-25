@@ -2,7 +2,7 @@
   "key": "medicaid_navigation",
   "title": "Medicaid Planning",
   "icon": "🏛️",
-  "description": "Long-term care Medicaid planning and eligibility",
+  "description": "Long-term care Medicaid planning and eligibility for {NAME}",
   "estimated_time": "4-6 min",
   "required": false,
   "sort_order": 6,
@@ -10,9 +10,9 @@
     {
       "id": "intro",
       "type": "intro",
-      "title": "Medicaid Planning Assessment",
+      "title": "{NAME_POS} Medicaid Planning Assessment",
       "icon": "🏛️",
-      "help_text": "If you're pursuing Medicaid, record your status and any spend-down planning so we can align your eligibility with your financial timeline.",
+      "help_text": "If you're pursuing Medicaid for {NAME}, record current status and any spend-down planning so we can align eligibility with the financial timeline.",
       "fields": [],
       "info_boxes": [
         {

@@ -12,11 +12,9 @@ PROTOTYPE KEY HANDLING:
 
 import os
 from pathlib import Path
-from typing import Optional
 
 try:
-    from openai import OpenAI
-    from openai import OpenAIError
+    from openai import OpenAI, OpenAIError
     HAS_OPENAI = True
 except ImportError:
     HAS_OPENAI = False
@@ -53,7 +51,7 @@ DEFAULT_TEMPERATURE = 0.2  # Low temperature for consistent, factual responses
 # KEY MANAGEMENT
 # ====================================================================
 
-def _embedded_key() -> Optional[str]:
+def _embedded_key() -> str | None:
     """Get embedded fallback key (prototype only).
     
     Returns:
@@ -77,7 +75,7 @@ def _load_env() -> None:
         pass  # Any other error, skip silently
 
 
-def get_api_key() -> Optional[str]:
+def get_api_key() -> str | None:
     """Get OpenAI API key with priority order.
     
     Priority:
@@ -90,7 +88,7 @@ def get_api_key() -> Optional[str]:
     """
     # Load .env file if present
     _load_env()
-    
+
     # 1) Try Streamlit Cloud secrets
     try:
         import streamlit as st
@@ -100,13 +98,13 @@ def get_api_key() -> Optional[str]:
             return key
     except Exception:
         pass  # Streamlit not available or secrets not configured
-    
+
     # 2) Try environment variables
     key = os.getenv("OPENAI_API_KEY")
     if key:
         _maybe_debug_masked_key(key)
         return key
-    
+
     # 3) Embedded fallback (prototype only)
     key = _embedded_key()
     if key:
@@ -126,7 +124,7 @@ def get_openai_model() -> str:
         Model name
     """
     _load_env()
-    
+
     # 1) Try Streamlit secrets
     try:
         import streamlit as st
@@ -136,7 +134,7 @@ def get_openai_model() -> str:
             return model
     except Exception:
         pass
-    
+
     # 2) Try environment variable or use default
     model = os.getenv("OPENAI_MODEL", DEFAULT_MODEL)
     _maybe_debug_model(str(model))
@@ -155,7 +153,7 @@ def get_feature_mode() -> str:
         Feature mode: "off" | "shadow" | "assist" | "adjust"
     """
     _load_env()
-    
+
     # 1) Try Streamlit secrets
     try:
         import streamlit as st
@@ -164,7 +162,7 @@ def get_feature_mode() -> str:
             return mode
     except Exception:
         pass
-    
+
     # 2) Try environment variable or use default
     return os.getenv("FEATURE_LLM_NAVI", "off")
 
@@ -181,7 +179,7 @@ def get_feature_gcp_mode() -> str:
         Feature mode: "off" | "shadow" | "assist"
     """
     _load_env()
-    
+
     # 1) Try Streamlit secrets
     try:
         import streamlit as st
@@ -190,7 +188,7 @@ def get_feature_gcp_mode() -> str:
             return mode
     except Exception:
         pass
-    
+
     # 2) Try environment variable or use default
     return os.getenv("FEATURE_LLM_GCP", "off")
 
@@ -213,7 +211,7 @@ def _flag_on(name: str) -> bool:
     return str(os.getenv(name, "off")).strip().strip('"').lower() == "on"
 
 
-def _maybe_debug_masked_key(key: Optional[str]) -> None:
+def _maybe_debug_masked_key(key: str | None) -> None:
     """If DEBUG_LLM is on, print masked key tail for verification."""
     if not key:
         return
@@ -224,7 +222,7 @@ def _maybe_debug_masked_key(key: Optional[str]) -> None:
     print(f"[LLM_CLIENT] key={prefix}***{last4}")
 
 
-def _maybe_debug_model(model: Optional[str]) -> None:
+def _maybe_debug_model(model: str | None) -> None:
     """If DEBUG_LLM is on, print selected model."""
     if not model:
         return
@@ -244,10 +242,10 @@ class LLMClient:
     Enforces strict timeouts, retry logic, and error handling to ensure
     LLM calls never block or crash the main application flow.
     """
-    
+
     def __init__(
         self,
-        api_key: Optional[str] = None,
+        api_key: str | None = None,
         model: str = DEFAULT_MODEL,
         timeout: int = DEFAULT_TIMEOUT,
         max_retries: int = DEFAULT_MAX_RETRIES,
@@ -270,7 +268,7 @@ class LLMClient:
             raise RuntimeError(
                 "openai package not installed. Install with: pip install openai"
             )
-        
+
         # Get API key with priority order: param → secrets → env → embedded
         self.api_key = api_key or get_api_key()
         if not self.api_key:
@@ -281,25 +279,25 @@ class LLMClient:
                 "  3. .env file\n"
                 "Or enable ALLOW_EMBEDDED_FALLBACK for prototype testing."
             )
-        
+
         self.model = model
         self.timeout = timeout
         self.max_retries = max_retries
         self.temperature = temperature
-        
+
         # Initialize OpenAI client
         self.client = OpenAI(
             api_key=self.api_key,
             timeout=self.timeout,
             max_retries=self.max_retries,
         )
-    
+
     def generate_completion(
         self,
         system_prompt: str,
         user_prompt: str,
-        response_format: Optional[dict] = None,
-    ) -> Optional[str]:
+        response_format: dict | None = None,
+    ) -> str | None:
         """Generate completion from OpenAI API.
         
         Args:
@@ -315,42 +313,42 @@ class LLMClient:
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
             ]
-            
+
             # Build request kwargs
             kwargs = {
                 "model": self.model,
                 "messages": messages,
                 "temperature": self.temperature,
             }
-            
+
             # Add JSON mode if requested
             if response_format:
                 kwargs["response_format"] = response_format
-            
+
             # Make API call
             response = self.client.chat.completions.create(**kwargs)
-            
+
             # Extract response text
             if response.choices and len(response.choices) > 0:
                 return response.choices[0].message.content
-            
+
             return None
-            
+
         except OpenAIError as e:
             # Log error but don't crash (shadow mode must be silent)
             print(f"[LLM_ERROR] OpenAI API error: {e}")
             return None
-        
+
         except Exception as e:
             # Catch-all for unexpected errors
             print(f"[LLM_ERROR] Unexpected error: {e}")
             return None
-    
+
     def generate_json(
         self,
         system_prompt: str,
         user_prompt: str,
-    ) -> Optional[str]:
+    ) -> str | None:
         """Generate JSON-formatted completion.
         
         Uses OpenAI's JSON mode to ensure valid JSON response.
@@ -372,7 +370,7 @@ class LLMClient:
 def get_client(
     model: str = DEFAULT_MODEL,
     timeout: int = DEFAULT_TIMEOUT,
-) -> Optional[LLMClient]:
+) -> LLMClient | None:
     """Get LLM client with default settings.
     
     Convenience function for creating client with standard configuration.

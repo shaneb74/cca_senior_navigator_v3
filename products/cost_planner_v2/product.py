@@ -34,15 +34,15 @@ def render():
     Note: GCP gate removed from workflow. GCP is recommended
     but accessed separately via navigation, not forced in flow.
     """
-    
+
     # DEBUG: Log GCP state on Cost Planner mount
-    print(f"[CP_MOUNT] Cost Planner v2 Loading")
+    print("[CP_MOUNT] Cost Planner v2 Loading")
     gcp_state = st.session_state.get("gcp", {})
     if gcp_state:
         print(f"[CP_GCP_STATE] published_tier={gcp_state.get('published_tier')} allowed_tiers={gcp_state.get('allowed_tiers')}")
     else:
-        print(f"[CP_GCP_STATE] No GCP state found - user may not have completed GCP yet")
-    
+        print("[CP_GCP_STATE] No GCP state found - user may not have completed GCP yet")
+
     # Check MCIP contract as fallback
     from core.mcip import MCIP
     mcip_rec = MCIP.get_care_recommendation()
@@ -74,14 +74,14 @@ def render():
         from core.household import get_careplan_for
         primary_id = st.session_state.get("person.primary_id")
         partner_id = st.session_state.get("person.partner_id")
-        
+
         cp_primary = get_careplan_for(st, primary_id) if primary_id else None
         cp_partner = get_careplan_for(st, partner_id) if partner_id else None
-        
+
         # Set dual mode flag if both CarePlans exist
         dual_mode = bool(cp_primary and cp_partner)
         st.session_state["cost.dual_mode"] = dual_mode
-        
+
         if dual_mode:
             print(f"[COST_PLANNER] Dual mode enabled: primary={cp_primary.uid} partner={cp_partner.uid}")
     except Exception:

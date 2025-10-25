@@ -140,7 +140,7 @@ FOOTER_HTML = dedent(
     f"""
     <footer class="footer">
     <div class="container footer__inner">
-    <div class="muted">© 2025 Concierge Care Senior Navigator™</div>
+    <div class="muted">© 2025 Concierge Care Advisors, Inc. | Senior Navigator™ | Patent Pending</div>
     <div class="cluster footer-links">
     <a href="?page=terms" class="nav-link">Terms &amp; Conditions</a>
     <a href="?page=privacy" class="nav-link">Privacy Policy</a>

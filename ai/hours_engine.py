@@ -7,11 +7,10 @@ Provides:
 """
 import json
 import os
-from typing import Optional, Tuple
 
 import streamlit as st
 
-from ai.hours_schemas import HoursBand, HoursAdvice, HoursContext
+from ai.hours_schemas import HoursAdvice, HoursBand, HoursContext
 
 try:
     from openai import OpenAI
@@ -32,11 +31,11 @@ def baseline_hours(context: HoursContext) -> HoursBand:
     # Priority 1: Safety/behavioral needs
     if context.overnight_needed or context.risky_behaviors:
         return "4-8h"  # Floor; LLM can escalate to "24h" with justification
-    
+
     # Priority 2: High ADL needs or fall risk
     if context.badls_count >= 3 or context.falls == "multiple":
         return "4-8h"
-    
+
     # Priority 3: Moderate ADL needs or mobility aids
     if (
         context.badls_count == 2
@@ -44,14 +43,14 @@ def baseline_hours(context: HoursContext) -> HoursBand:
         or context.mobility in {"walker", "wheelchair"}
     ):
         return "1-3h"
-    
+
     # Default: Light support
     return "<1h"
 
 
 def generate_hours_advice(
     context: HoursContext, mode: str
-) -> Tuple[bool, Optional[HoursAdvice]]:
+) -> tuple[bool, HoursAdvice | None]:
     """
     Generate LLM-refined hours/day suggestion.
     
@@ -66,11 +65,11 @@ def generate_hours_advice(
     """
     if mode == "off":
         return (False, None)
-    
+
     if OpenAI is None:
         print("[GCP_HOURS_WARN] OpenAI not available; falling back to baseline only")
         return (False, None)
-    
+
     # Get API key
     api_key = None
     try:
@@ -82,10 +81,10 @@ def generate_hours_advice(
     if not api_key:
         print("[GCP_HOURS_WARN] No OpenAI API key; falling back to baseline only")
         return (False, None)
-    
+
     # Build prompt
     baseline = baseline_hours(context)
-    
+
     prompt = f"""You are a care planning assistant helping estimate hours/day of care support needed.
 
 CONTEXT:
@@ -124,7 +123,7 @@ OUTPUT FORMAT (strict JSON):
 
 IMPORTANT: Output ONLY valid JSON. Do not invent band values outside the 4 allowed options.
 """
-    
+
     try:
         client = OpenAI(api_key=api_key, timeout=10.0)
         response = client.chat.completions.create(
@@ -133,21 +132,21 @@ IMPORTANT: Output ONLY valid JSON. Do not invent band values outside the 4 allow
             temperature=0.2,
             max_tokens=300,
         )
-        
+
         raw = response.choices[0].message.content.strip()
-        
+
         # Parse JSON
         if raw.startswith("```json"):
             raw = raw.split("```json")[1].split("```")[0].strip()
         elif raw.startswith("```"):
             raw = raw.split("```")[1].split("```")[0].strip()
-        
+
         data = json.loads(raw)
-        
+
         # Validate against schema
         advice = HoursAdvice(**data)
         return (True, advice)
-    
+
     except Exception as e:
         print(f"[GCP_HOURS_WARN] LLM refinement failed: {e}")
         return (False, None)
@@ -157,7 +156,7 @@ IMPORTANT: Output ONLY valid JSON. Do not invent band values outside the 4 allow
 _BAND_ORDER = ["<1h", "1-3h", "4-8h", "24h"]
 
 
-def under_selected(user_band: Optional[HoursBand], suggested: HoursBand) -> bool:
+def under_selected(user_band: HoursBand | None, suggested: HoursBand) -> bool:
     """Check if user's selection is lower than the suggested band.
     
     Args:
@@ -169,7 +168,7 @@ def under_selected(user_band: Optional[HoursBand], suggested: HoursBand) -> bool
     """
     if not user_band:
         return False
-    
+
     try:
         user_idx = _BAND_ORDER.index(user_band)
         suggested_idx = _BAND_ORDER.index(suggested)
@@ -181,9 +180,9 @@ def under_selected(user_band: Optional[HoursBand], suggested: HoursBand) -> bool
 def generate_hours_nudge_text(
     context: HoursContext,
     suggested: HoursBand,
-    user_band: Optional[HoursBand],
+    user_band: HoursBand | None,
     mode: str
-) -> Optional[str]:
+) -> str | None:
     """Generate firm but supportive nudge when user under-selects hours.
     
     Uses LLM to create personalized message referencing concrete care signals.
@@ -199,10 +198,10 @@ def generate_hours_nudge_text(
     """
     if mode == "off":
         return None
-    
+
     if OpenAI is None:
         return None
-    
+
     # Get API key
     api_key = None
     try:
@@ -214,10 +213,10 @@ def generate_hours_nudge_text(
     if not api_key:
         print("[GCP_HOURS_WARN] No API key; skipping nudge")
         return None
-    
+
     try:
         client = OpenAI(api_key=api_key, timeout=10.0)
-        
+
         # Build minimal, guardrailed system prompt (CONCISE VERSION)
         system_prompt = """You are 'Navi', a clinical care planning assistant. Your job is to suggest daily in-home care hours.
 
@@ -236,7 +235,7 @@ RULES:
 - No new band values (only use the 4 allowed bands)
 - No clinical guarantees or medical advice
 - Be firm but supportive and respectful"""
-        
+
         user_message = {
             "user_hours": user_band,
             "suggested_hours": suggested,
@@ -251,7 +250,7 @@ RULES:
                 "overnight_needed": context.overnight_needed
             }
         }
-        
+
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
@@ -261,23 +260,23 @@ RULES:
             max_tokens=80,  # Reduced from 160 for conciseness
             temperature=0.2,
         )
-        
+
         text = (response.choices[0].message.content or "").strip()
         if not text:
             return None
-        
+
         # Post-process: Keep first sentence only, trim to ≤ 160 chars
         sentences = text.split('.')
         first_sentence = sentences[0].strip()
         if first_sentence and not first_sentence.endswith('.'):
             first_sentence += '.'
-        
+
         # Trim to max 160 characters
         if len(first_sentence) > 160:
             first_sentence = first_sentence[:157] + '...'
-        
+
         return first_sentence
-    
+
     except Exception as e:
         print(f"[GCP_HOURS_WARN] Nudge generation error: {e}")
         return None

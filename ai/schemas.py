@@ -5,7 +5,7 @@ Defines strict data models for Cost Planner context and LLM advice responses.
 All models use strict validation to prevent injection or malformed data.
 """
 
-from typing import Literal, Optional
+from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -26,19 +26,19 @@ class CPContext(BaseModel):
         flags: List of user flags (medicaid_likely, veteran, homeowner, etc.)
         top_reasons: Top 3 reasons for seeking care (mobility, memory, etc.)
     """
-    
+
     tier: Literal["none", "in_home", "assisted_living", "memory_care", "memory_care_high_acuity"] = Field(
-        ..., 
+        ...,
         description="Care tier recommendation (canonical values only)"
     )
     has_partner: bool = Field(..., description="Has spouse/partner")
-    move_preference: Optional[str] = Field(None, description="Move timeline preference")
+    move_preference: str | None = Field(None, description="Move timeline preference")
     keep_home: bool = Field(default=False, description="Wants to keep home")
     monthly_adjusted: float = Field(..., ge=0, description="Monthly care cost estimate")
     region: str = Field(..., description="Geographic region")
     flags: list[str] = Field(default_factory=list, description="User context flags")
     top_reasons: list[str] = Field(default_factory=list, description="Top care reasons")
-    
+
     @field_validator("monthly_adjusted")
     @classmethod
     def validate_cost(cls, v: float) -> float:
@@ -46,7 +46,7 @@ class CPContext(BaseModel):
         if not 0 <= v <= 50000:
             raise ValueError(f"Monthly cost {v} outside valid range [0, 50000]")
         return v
-    
+
     @field_validator("top_reasons")
     @classmethod
     def validate_top_reasons(cls, v: list[str]) -> list[str]:
@@ -54,7 +54,7 @@ class CPContext(BaseModel):
         if len(v) > 5:
             return v[:5]  # Truncate to top 5
         return v
-    
+
     class Config:
         """Pydantic v2 config."""
         # Strict validation - no extra fields allowed
@@ -76,7 +76,7 @@ class CPAdvice(BaseModel):
         proposed_adjustments: Optional parameter adjustments (assist/adjust modes)
         confidence: LLM's confidence in advice (0.0 to 1.0)
     """
-    
+
     messages: list[str] = Field(
         default_factory=list,
         description="Short Navi messages (1-2 sentences each)",
@@ -92,7 +92,7 @@ class CPAdvice(BaseModel):
         description="Suggested follow-up questions",
         max_length=5,
     )
-    proposed_adjustments: Optional[dict[str, float]] = Field(
+    proposed_adjustments: dict[str, float] | None = Field(
         None,
         description="Optional parameter adjustments (adjust mode only)",
     )
@@ -102,7 +102,7 @@ class CPAdvice(BaseModel):
         le=1.0,
         description="Confidence score for advice quality",
     )
-    
+
     @field_validator("messages", "insights", "questions_next")
     @classmethod
     def validate_text_lists(cls, v: list[str]) -> list[str]:
@@ -115,23 +115,23 @@ class CPAdvice(BaseModel):
             if item and len(item) <= 500:  # Max 500 chars per item
                 cleaned.append(item)
         return cleaned
-    
+
     @field_validator("proposed_adjustments")
     @classmethod
-    def validate_adjustments(cls, v: Optional[dict[str, float]]) -> Optional[dict[str, float]]:
+    def validate_adjustments(cls, v: dict[str, float] | None) -> dict[str, float] | None:
         """Ensure adjustments are valid numeric values."""
         if v is None:
             return None
-        
+
         # Only allow known adjustment keys
         valid_keys = {"monthly_cost", "move_timeline_months", "savings_rate"}
         cleaned = {}
         for key, value in v.items():
             if key in valid_keys and isinstance(value, (int, float)):
                 cleaned[key] = float(value)
-        
+
         return cleaned if cleaned else None
-    
+
     class Config:
         """Pydantic v2 config."""
         extra = "ignore"  # Ignore extra fields from LLM response

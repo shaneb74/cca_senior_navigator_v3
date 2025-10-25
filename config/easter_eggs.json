@@ -1,0 +1,9 @@
+[
+  {
+    "id": "egg_who_is_shane",
+    "match": "(?i)\\bwho\\s+(is|the)\\s+(heck\\s+is\\s+)?shane(\\s+bray)?\\b",
+    "reply": "Who is Shane Bray? A question older than version control. He exists somewhere between design and deployment—a ripple in the commit log of the universe. Some call him a savant genius; others, a well-meaning madman armed with too much coffee and not enough regard for mortal deadlines. Legends claim he once solved a production outage using only optimism and a whiteboard marker. Whether architect or accident, one truth remains: when the build finally passes, somewhere, Shane Bray smiles.",
+    "cta": { "label": "Meet the (real) Team", "route": "leadership_page" },
+    "env": ["dev", "staging"]
+  }
+]

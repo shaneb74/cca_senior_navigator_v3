@@ -2,7 +2,7 @@
   "key": "va_benefits",
   "title": "VA Benefits",
   "icon": "🎖️",
-  "description": "Veterans Affairs benefits including disability compensation and Aid & Attendance",
+  "description": "VA Disability and Aid & Attendance benefits for {NAME}",
   "estimated_time": "3-5 min",
   "required": false,
   "sort_order": 3,
@@ -14,9 +14,9 @@
     {
       "id": "intro",
       "type": "intro",
-      "title": "VA Benefits Assessment",
+      "title": "{NAME_POS} VA Benefits Assessment",
       "icon": "🎖️",
-      "help_text": "Review your VA disability and Aid & Attendance benefits. We'll calculate current rates and eligibility based on your veteran status, income, and care needs.",
+      "help_text": "Review {NAME_POS} VA disability and Aid & Attendance benefits. We'll calculate current rates and eligibility based on veteran status, income, and care needs.",
       "fields": [],
       "info_boxes": [
         {

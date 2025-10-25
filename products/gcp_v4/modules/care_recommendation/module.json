@@ -7,7 +7,7 @@
     "results_step_id": "results",
     "display": {
       "title": "Find the Right Senior Care",
-      "subtitle": "We'll match you to the best living options based on daily needs, safety, cognition, and more. Takes two minutes.",
+      "subtitle": "We'll match {NAME} to the best living options based on daily needs, safety, cognition, and more. Takes two minutes.",
       "estimated_time": "≈2 min",
       "autosave": true,
       "progress_weight": 1.0
@@ -16,36 +16,28 @@
       "purpose": "Help users understand their care needs through a structured assessment",
       "outcome": "Personalized care tier recommendation with confidence score and risk flags",
       "next_step": "Cost Planner to estimate financial impact",
-      "encouragement": "This assessment helps us match you to the right level of care. Take your time and answer as accurately as you can.",
+      "encouragement": "This assessment helps us match {NAME} to the right level of care. Take your time and answer as accurately as you can.",
       "context_tips": {
-        "who_is_this_for": "Answer for the person who needs care (yourself, parent, spouse, etc.)",
+        "who_is_this_for": "Answer for {NAME} - the person who needs care",
         "be_honest": "Honest answers lead to better recommendations",
-        "cant_decide": "If you're unsure, choose the option that best describes the current situation",
-        "can_pause": "You can pause anytime - your progress is automatically saved"
+        "cant_decide": "If you're unsure, choose the option that best describes {NAME_POS} current situation",
+        "can_pause": "You can pause anytime - {NAME_POS} progress is automatically saved"
       },
       "intro_message": {
-        "text": "✨ Navi: Let's find the senior care option that fits best.",
-        "subtext": "You'll answer a few quick questions about daily needs, safety, and cognition. It takes about two minutes, and you can pause anytime—the plan saves automatically."
+        "text": "✨ Navi: Let's find the senior care option that fits {NAME} best.",
+        "subtext": "You'll answer a few quick questions about {NAME_POS} daily needs, safety, and cognition. It takes about two minutes, and you can pause anytime—the plan saves automatically."
       }
     }
   },
   "sections": [
     {
       "id": "intro",
-      "title": "Welcome to the Guided Care Plan",
+      "title": "",
       "type": "info",
       "content": [
-        "Quick two-minute check to match you with the right care setting.",
-        "Answer for the person who needs help—pause anytime and we'll save your place.",
+        "This quick check helps match {NAME} with the right level of support. We'll ask about safety, day-to-day help, health, and who's involved in care. It takes about two minutes, saves automatically, and you can pause anytime.",
         "",
-        "**What you'll cover:**",
-        "• Daily support and safety",
-        "• Health, medications, and falls",
-        "• Memory or behavior changes",
-        "• Who helps today",
-        "",
-        "**What you'll get:**",
-        "• A care match such as No Care Needed, In-Home Care, Assisted Living, Memory Care, or Memory Care (High Acuity)"
+        "Answer for {NAME} — the person who needs help — and we'll guide your next steps."
       ],
       "actions": [
         { "label": "Get Started", "action": "next" },
@@ -60,8 +52,8 @@
     },
     {
       "id": "about_you",
-      "title": "About You",
-      "description": "Tell us about the person's current situation.",
+      "title": "About {NAME}",
+      "description": "Tell us about {NAME_POS} current situation.",
       "navi_guidance": {
         "section_purpose": "Understand demographics and living context",
         "why_this_matters": "Age and living situation help us understand support networks and care accessibility",
@@ -73,7 +65,7 @@
           "id": "age_range",
           "type": "string",
           "select": "single",
-          "label": "What is this person's age range?",
+          "label": "What is {NAME_POS} age range?",
           "required": true,
           "default": "under_65",
           "options": [
@@ -241,7 +233,7 @@
           "id": "mood",
           "type": "string",
           "select": "single",
-          "label": "Overall, how would you describe this person's mood these days?",
+          "label": "Overall, how would you describe {NAME_POS} mood these days?",
           "required": true,
           "options": [
             { "label": "Great – always positive", "value": "great", "score": 0 },
@@ -294,7 +286,7 @@
           "id": "help_overall",
           "type": "string",
           "select": "single",
-          "label": "How much help does this person need with daily activities overall?",
+          "label": "How much help does {NAME} need with daily activities overall?",
           "required": true,
           "options": [
             { "label": "None – fully independent", "value": "independent", "score": 0 },
@@ -399,7 +391,7 @@
           "id": "move_preference",
           "type": "string",
           "select": "single",
-          "label": "How willing is this person to move?",
+          "label": "How willing is {NAME} to move?",
           "help": "Understanding openness to relocating helps us provide realistic care planning guidance.",
           "required": true,
           "default": "2",

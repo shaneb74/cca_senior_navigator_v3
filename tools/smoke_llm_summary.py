@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """Smoke test for LLM summary generation (no Streamlit required)."""
 
-import sys
-import json
 
 # Add parent to path for imports
 import os
+import sys
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from ai.summary_engine import generate_summary
 from ai.llm_client import get_openai_model
+from ai.summary_engine import generate_summary
 
 ctx = {
     "badls": ["bathing", "mobility"],

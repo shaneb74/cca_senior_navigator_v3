@@ -64,14 +64,22 @@ def load_nav(ctx: dict) -> dict[str, dict]:
     return pages
 
 
-def route_to(key: str) -> None:
+def route_to(key: str, **context) -> None:
     """Navigate to a page by updating query params and triggering rerun.
 
     Preserves UID in query params to maintain session across navigation.
+    
+    Optional context params are stored in session_state["_nav_context"] for
+    the target page to consume (e.g., seed tags, query prefill).
 
     Args:
         key: Page key from nav.json (e.g., "hub_concierge")
+        **context: Optional context data (seed, from_faq, tags, etc.)
     """
+    # Store context for target page
+    if context:
+        st.session_state["_nav_context"] = {"route": key, **context}
+    
     # Preserve UID when updating page
     current_uid = st.query_params.get("uid")
     st.query_params["page"] = key
@@ -91,6 +99,27 @@ def current_route(default: str, pages: dict[str, dict]) -> str:
     Returns:
         Current page key or default
     """
-    # Use query params for navigation (works with href links from tiles)
-    r = st.query_params.get("page", default)
-    return r if r in pages else default
+    # Normalize query params for navigation (works with href links from tiles)
+    aliases = {
+        "faqs": "faq",
+        "faq": "faq",
+        "faqs_and_answers": "faq",
+        "ai_advisor": "faq",
+        "advisor": "faq",
+    }
+
+    raw_page = st.query_params.get("page")
+    candidate = raw_page or default
+
+    if isinstance(candidate, str):
+        normalized = candidate.lower().strip()
+    else:
+        normalized = default
+
+    page = aliases.get(normalized, normalized)
+
+    if page not in pages:
+        page = default
+
+    st.session_state["current_route"] = page
+    return page

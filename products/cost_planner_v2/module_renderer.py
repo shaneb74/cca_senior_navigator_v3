@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 import streamlit as st
+from core.name_utils import personalize
 
 
 @lru_cache(maxsize=1)
@@ -54,8 +55,9 @@ def render_module(module_key: str):
         return
 
     # Render header
-    st.title(f"{module_def['icon']} {module_def['title']}")
-    st.markdown(f"### {module_def['description']}")
+    # Module header with personalization
+    st.title(f"{module_def['icon']} {personalize(module_def['title'])}")
+    st.markdown(f"### {personalize(module_def['description'])}")
 
     # Initialize session state for this module
     state_key = f"cost_v2_{module_key}"
@@ -137,11 +139,12 @@ def _render_section(section: dict[str, Any], state_key: str) -> dict[str, Any]:
     """
     # Section header
     icon = section.get("icon", "")
-    st.markdown(f"## {icon} {section['title']}")
+    # Section header with personalization
+    st.markdown(f"## {icon} {personalize(section['title'])}")
 
-    # Help text
+    # Help text with personalization
     if "help_text" in section:
-        st.caption(f"💡 **Tip:** {section['help_text']}")
+        st.caption(f"💡 **Tip:** {personalize(section['help_text'])}")
 
     # Render info boxes
     for info_box in section.get("info_boxes", []):
@@ -213,8 +216,10 @@ def _render_field(field: dict[str, Any], state_key: str) -> Any:
 
     field_type = field["type"]
     field_key = field["key"]
-    label = field["label"]
-    description = field.get("description", "")
+    # Field information with personalization
+    label = personalize(field["label"])
+    description = personalize(field.get("description", "")) if field.get("description") else ""
+    help_text = personalize(field.get("help", "")) if field.get("help") else None
 
     # Render label with description
     if description:
@@ -232,7 +237,7 @@ def _render_field(field: dict[str, Any], state_key: str) -> Any:
             max_value=field.get("max", 1000000),
             step=field.get("step", 1),
             value=st.session_state[state_key].get(field_key, field.get("default", 0)),
-            help=field.get("help"),
+            help=help_text,
             key=f"{state_key}_{field_key}",
             label_visibility="collapsed",
         )
@@ -243,7 +248,7 @@ def _render_field(field: dict[str, Any], state_key: str) -> Any:
             value=st.session_state[state_key].get(field_key, field.get("default", "")),
             max_chars=field.get("max_length"),
             placeholder=field.get("placeholder"),
-            help=field.get("help"),
+            help=help_text,
             key=f"{state_key}_{field_key}",
             label_visibility="collapsed",
         )
@@ -264,7 +269,7 @@ def _render_field(field: dict[str, Any], state_key: str) -> Any:
         value = st.checkbox(
             checkbox_label,
             value=st.session_state[state_key].get(field_key, field.get("default", False)),
-            help=field.get("help"),
+            help=help_text,
             key=f"{state_key}_{field_key}",
         )
 
@@ -280,7 +285,7 @@ def _render_field(field: dict[str, Any], state_key: str) -> Any:
             label,
             options=option_labels,
             index=default_index,
-            help=field.get("help"),
+            help=help_text,
             key=f"{state_key}_{field_key}_select",
         )
 
@@ -294,7 +299,7 @@ def _render_field(field: dict[str, Any], state_key: str) -> Any:
             max_value=field.get("max", 100),
             value=st.session_state[state_key].get(field_key, field.get("default", 0)),
             step=field.get("step", 1),
-            help=field.get("help"),
+            help=help_text,
             key=f"{state_key}_{field_key}",
             label_visibility="collapsed",
         )
@@ -303,7 +308,7 @@ def _render_field(field: dict[str, Any], state_key: str) -> Any:
         # Display-only field (calculated elsewhere)
         display_value = st.session_state[state_key].get(field_key, 0)
         format_str = field.get("display_format", "{}")
-        st.metric(label, format_str.format(display_value), help=field.get("help"))
+        st.metric(label, format_str.format(display_value), help=help_text)
         value = display_value
 
     elif field_type == "calculated":

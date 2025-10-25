@@ -2,7 +2,7 @@
   "key": "income",
   "title": "Income Sources",
   "icon": "💰",
-  "description": "Monthly income from all sources",
+  "description": "Monthly income from all sources for {NAME}",
   "estimated_time": "5-7 min",
   "required": true,
   "sort_order": 1,
@@ -10,9 +10,9 @@
     {
       "id": "intro",
       "type": "intro",
-      "title": "Income Assessment",
+      "title": "{NAME_POS} Income Assessment",
       "icon": "💰",
-      "help_text": "Let's capture your income. Use Basic for a quick total or Advanced if you want to break it down.",
+      "help_text": "Let's capture {NAME_POS} income. Use Basic for a quick total or Advanced if you want to break it down.",
       "fields": [],
       "info_boxes": [
         {
@@ -30,7 +30,7 @@
       "fields": [
         {
           "key": "has_partner",
-          "label": "Do you have a spouse or partner involved in your finances?",
+          "label": "Do you have a spouse or partner involved in {NAME_POS} finances?",
           "type": "select",
           "required": false,
           "level": "basic",
@@ -49,11 +49,11 @@
             }
           ],
           "default": "no_partner",
-          "help": "This helps me understand whether to account for shared household income."
+          "help": "This helps me understand whether to account for shared household income for {NAME_POS} care."
         },
         {
           "key": "partner_income_monthly",
-          "label": "Partner's Monthly Contribution Toward Care",
+          "label": "Partner's Monthly Contribution Toward {NAME_POS} Care",
           "type": "currency",
           "required": false,
           "level": "basic",
@@ -61,7 +61,7 @@
           "max": 50000,
           "step": 100,
           "default": 0,
-          "help": "If your spouse/partner will help cover care, enter the amount they can reliably contribute each month.",
+          "help": "If your spouse/partner will help cover {NAME_POS} care, enter the amount they can reliably contribute each month.",
           "visible_if": {
             "field": "has_partner",
             "equals": "partner_shared"

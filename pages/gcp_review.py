@@ -114,9 +114,10 @@ def _render_review_content(recommendation, assessment_data):
     # Check if hours/day nudge needs acknowledgement before allowing progression
     needs_ack = False
     try:
-        from ai.hours_engine import under_selected
         import os
-        
+
+        from ai.hours_engine import under_selected
+
         mode = None
         try:
             mode = st.secrets.get("FEATURE_GCP_HOURS")
@@ -124,7 +125,7 @@ def _render_review_content(recommendation, assessment_data):
             pass
         if not mode:
             mode = os.getenv("FEATURE_GCP_HOURS", "off")
-        
+
         if str(mode).lower() == "assist":
             ack = st.session_state.get("_hours_ack")
             sugg = st.session_state.get("_hours_suggestion")
@@ -135,7 +136,7 @@ def _render_review_content(recommendation, assessment_data):
                     needs_ack = True
     except Exception:
         pass  # Gracefully skip if hours engine not available
-    
+
     # Navigation buttons
     col1, col2, col3 = st.columns([1, 1, 1])
     with col1:
@@ -145,10 +146,10 @@ def _render_review_content(recommendation, assessment_data):
 
     with col2:
         if st.button("💰 View Costs", type="primary", use_container_width=True, disabled=needs_ack):
-            print(f"[GCP_REVIEW] Navigate to cost_intro")
+            print("[GCP_REVIEW] Navigate to cost_intro")
             st.query_params["page"] = "cost_intro"
             st.rerun()
-        
+
         if needs_ack:
             st.warning("⚠️ Please review Navi's hours recommendation above before continuing to costs.")
 

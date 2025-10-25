@@ -406,10 +406,12 @@ class ProductTileHub(BaseTile):
 
         # Add "recommended" class for MCIP gradient
         # Conditions: is the current next step, not complete, not FAQ tile
+        faq_keys = {"faq", "faqs"}
+
         is_recommended = (
             self.is_next_step
             and float(self.progress or 0) < 100
-            and getattr(self, "key", "") != "faqs"
+            and getattr(self, "key", "") not in faq_keys
         )
         if is_recommended:
             classes.append("tile--recommended")
@@ -424,7 +426,7 @@ class ProductTileHub(BaseTile):
 
         # Add completion badge for done tiles (not FAQ)
         is_complete = float(self.progress or 0) >= 100
-        is_faq = getattr(self, "key", "") == "faqs"
+        is_faq = getattr(self, "key", "") in faq_keys
         if is_complete and not is_faq:
             done_url, _ = _resolve_img("static/images/done.png")
             if done_url:

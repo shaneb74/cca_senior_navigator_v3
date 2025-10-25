@@ -243,13 +243,7 @@ def render(ctx=None) -> None:
     next_recommendation = _determine_next_recommendation()
 
     # Pull state safely with fallbacks for remaining tiles
-    appt = st.session_state.get("appointment", {}) or {}
-    appointment_summary = appt.get("summary", "No appointment scheduled")
-    appointment_countdown = appt.get("countdown", "No date")
     edu_progress = float((st.session_state.get("learning", {}) or {}).get("progress", 0))
-    gamification_progress = float(
-        (st.session_state.get("gamification", {}) or {}).get("progress", 0)
-    )
 
     # Build MCIP-driven tiles (orders 1-3)
     advisor_prep_tile = _build_advisor_prep_tile(
@@ -269,21 +263,6 @@ def render(ctx=None) -> None:
         partners_tile,       # Order 3
         # Remaining tiles (legacy order values)
         ProductTileHub(
-            key="appointment",
-            title="Your Upcoming Appointment",
-            desc=f"Starts in {appointment_countdown} • {appointment_summary}",
-            blurb="Review details, prepare questions, and confirm your concierge consult.",
-            primary_label="View details",
-            primary_go="appointment_details",
-            secondary_label="Reschedule",
-            secondary_go="appointment_reschedule",
-            progress=None,
-            status_text="Scheduled",
-            badges=["countdown"],
-            variant="warn",
-            order=10,
-        ),
-        ProductTileHub(
             key="educational_feed",
             title="Recommended Learning",
             desc="Videos, guides, and tips for your journey",
@@ -296,18 +275,6 @@ def render(ctx=None) -> None:
             badges=["personalized"],
             variant="teal",
             order=30,
-        ),
-        ProductTileHub(
-            key="entertainment",
-            title="While You Wait",
-            desc="Fun trivia and quick games",
-            blurb="Earn badges and stay relaxed before your consult.",
-            primary_label="Start playing",
-            primary_go="entertainment_deck",
-            progress=gamification_progress,
-            badges=["badges"],
-            variant="violet",
-            order=40,
         ),
     ]
 

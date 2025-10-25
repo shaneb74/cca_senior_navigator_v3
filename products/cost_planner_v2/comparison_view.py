@@ -87,17 +87,17 @@ def render_comparison_view(zip_code: str | None):
     Args:
         zip_code: ZIP code for regional pricing (None if not provided yet)
     """
-    
+
     # Initialize two-stage state keys
     st.session_state.setdefault("cost.tabs_revealed", False)
     st.session_state.setdefault("cost.compare_breadcrumb", False)
-    
+
     # Check if tabs should be shown
     tabs_revealed = st.session_state.get("cost.tabs_revealed", False)
-    
+
     # Check if ZIP is present for compute gating
     has_zip = bool(zip_code and len(str(zip_code)) == 5)
-    
+
     # Single source of truth for active tab
     cost = st.session_state.setdefault("cost", {})
     sel = cost.get("selected_assessment", "home")
@@ -129,7 +129,7 @@ def render_comparison_view(zip_code: str | None):
         default_sel = "mc"
     else:
         default_sel = "al"
-    
+
     st.session_state.setdefault("cost.selected_assessment", default_sel)
 
     # Ensure selected always points to a visible tab
@@ -163,23 +163,23 @@ def render_comparison_view(zip_code: str | None):
     # Also ensure comparison_hours_per_day is synced (used in calculations)
     if "comparison_hours_per_day" not in st.session_state:
         st.session_state.comparison_hours_per_day = st.session_state.comparison_inhome_hours
-    
+
     # ==============================================================================
     # TWO-STAGE CONDITIONAL RENDERING
     # ==============================================================================
-    
+
     if not tabs_revealed:
         # STAGE 1: Mini-form + CTA only (prepare gate handles this, nothing to render here)
         # The prepare gate is rendered in intro.py before this function is called
         # Return early so tabs/cards don't render
         return
-    
+
     # STAGE 2: Navi + back + tabs + cards + radios + CTAs
-    
+
     # Render Navi blurb based on selected assessment
     navi_blurb = NAVI_BLURBS.get(sel, "Adjust your inputs to see how costs change.")
     st.markdown(f'<div class="navi-tip" style="margin-bottom: 16px; color: var(--text-600); font-size: 0.95rem;">{navi_blurb}</div>', unsafe_allow_html=True)
-    
+
     # Render back button
     if st.session_state.get("cost.compare_breadcrumb", False):
         if st.button("← Back", key="cp_back_to_form", help="Return to options"):
@@ -187,19 +187,19 @@ def render_comparison_view(zip_code: str | None):
             st.session_state["cost.compare_breadcrumb"] = False
             st.rerun()
         st.markdown("")
-    
+
     # ZIP warning banner (shown at top if ZIP missing)
     if not has_zip:
         st.warning("⚠️ **ZIP code required:** Enter your ZIP code above to calculate accurate regional costs.")
         st.markdown("")
 
     # // reason: Render interactive tabbed comparison section
-    from products.cost_planner_v2.ui_helpers import render_cp_tabs, render_cp_panel
-    
+    from products.cost_planner_v2.ui_helpers import render_cp_panel, render_cp_tabs
+
     render_cp_tabs()
-    
+
     st.markdown("<div class='cp-panels'>", unsafe_allow_html=True)
-    
+
     # Render only available panels; each panel renders its own card
     if available.get("home"):
         def render_home_card():
@@ -212,7 +212,7 @@ def render_comparison_view(zip_code: str | None):
                 card_key="inhome_main"
             )
         render_cp_panel("home", render_home_card)
-    
+
     if available.get("al"):
         def render_al_card():
             al_breakdown = _calculate_facility_scenario("assisted_living", zip_code or "00000", debug_label="")
@@ -224,7 +224,7 @@ def render_comparison_view(zip_code: str | None):
                 card_key="al_main"
             )
         render_cp_panel("al", render_al_card)
-    
+
     if available.get("mc"):
         def render_mc_card():
             mc_breakdown = _calculate_facility_scenario("memory_care", zip_code or "00000", debug_label="")
@@ -235,15 +235,15 @@ def render_comparison_view(zip_code: str | None):
                 card_key="mc_main"
             )
         render_cp_panel("mc", render_mc_card)
-    
+
     st.markdown("</div>", unsafe_allow_html=True)
 
     # Plan selection and CTA
     st.markdown("---")
-    
+
     # HOUSEHOLD DUAL COMPARISON (behind FEATURE_DUAL_COST_PLANNER flag)
     _render_household_dual_comparison_if_applicable(zip_code)
-    
+
     _render_plan_selection_and_cta("assisted_living", show_both=True)
 
 
@@ -432,16 +432,16 @@ def _extract_segments_from_breakdown(breakdown: ScenarioBreakdown, is_facility: 
         Dict mapping segment label to amount (only non-zero segments)
     """
     segments = {}
-    
+
     if is_facility:
         # Facility: Housing/Room (base + regional) + Care Services (modifiers) + Home Carry (optional)
         housing_amt = 0.0
         care_amt = 0.0
         home_carry_amt = 0.0
-        
+
         for line in breakdown.lines:
             label_lower = line.label.lower()
-            
+
             # Base cost + regional = housing/room
             if "base cost" in label_lower or "regional adjustment" in label_lower:
                 if line.applied:
@@ -454,22 +454,22 @@ def _extract_segments_from_breakdown(breakdown: ScenarioBreakdown, is_facility: 
             else:
                 if line.applied and line.value > 0:
                     care_amt += line.value
-        
+
         if housing_amt > 0:
             segments["Housing/Room"] = housing_amt
         if care_amt > 0:
             segments["Care Services"] = care_amt
         if home_carry_amt > 0:
             segments["Home Carry"] = home_carry_amt
-    
+
     else:
         # In-Home: Care Services (base + regional + modifiers) + Home Carry (always present)
         care_amt = 0.0
         home_carry_amt = 0.0
-        
+
         for line in breakdown.lines:
             label_lower = line.label.lower()
-            
+
             # Home carry is separate
             if "home carry" in label_lower:
                 if line.applied:
@@ -478,12 +478,12 @@ def _extract_segments_from_breakdown(breakdown: ScenarioBreakdown, is_facility: 
             else:
                 if line.applied and line.value > 0:
                     care_amt += line.value
-        
+
         if care_amt > 0:
             segments["Care Services"] = care_amt
         if home_carry_amt > 0:
             segments["Home Carry"] = home_carry_amt
-    
+
     return segments
 
 
@@ -499,7 +499,7 @@ def _get_assessment_key_from_breakdown(breakdown: ScenarioBreakdown, is_facility
     """
     if not is_facility:
         return "home"
-    
+
     care_type = breakdown.care_type
     if "memory_care" in care_type:
         return "mc"
@@ -524,16 +524,20 @@ def _render_care_card(
         is_recommended: Whether this is the recommended plan (adds visual accent)
     """
     from products.cost_planner_v2.ui_helpers import (
-        segcache_set, segcache_get, totals_set, 
-        donut_cost_chart, money, render_care_chunk_compare_blurb
+        donut_cost_chart,
+        money,
+        render_care_chunk_compare_blurb,
+        segcache_get,
+        segcache_set,
+        totals_set,
     )
-    
+
     # Extract segments from breakdown for visualization (no new math)
     segments = _extract_segments_from_breakdown(breakdown, is_facility)
-    
+
     # Determine assessment key for caching
     assessment_key = _get_assessment_key_from_breakdown(breakdown, is_facility)
-    
+
     # Cache segments and total using helpers
     segcache_set(assessment_key, segments)
     monthly_total = breakdown.monthly_total
@@ -553,10 +557,10 @@ def _render_care_card(
     st.markdown("<div class='cost-card__caption'>Estimated monthly total</div>", unsafe_allow_html=True)
 
     # Totals display removed - now shown in donut center
-    
+
     # Donut chart (replaces bar + shows total in center)
     donut_cost_chart(segments, total_label=money(monthly_total), emphasize="Care Services")
-    
+
     # Care chunk comparison (when both cached)
     render_care_chunk_compare_blurb(assessment_key)
 
@@ -651,9 +655,9 @@ def _render_inhome_controls(card_key: str):
     # Try ZIP-based prefill if available and home carry cost not yet set
     prefill_value = st.session_state.comparison_home_carry_cost
     prefill_caption = None
-    
+
     # Prefill logic omitted in clean base design (presentation only)
-    
+
     st.markdown("<div class='cp-homecarry'>", unsafe_allow_html=True)
     home_carry = st.number_input(
         "Monthly home expense",
@@ -679,17 +683,17 @@ def _render_inhome_controls(card_key: str):
 def _render_48_hour_hint_if_applicable():
     """Render 48-hour hint when higher support flags are present."""
     from core.flags import get_all_flags
-    
+
     # Check for higher support flags
     flags = get_all_flags()
     higher_support_flags = [
-        "moderate_dependence", "high_dependence", "moderate_cognitive_decline", 
+        "moderate_dependence", "high_dependence", "moderate_cognitive_decline",
         "severe_cognitive_risk", "falls_multiple", "medication_management",
         "chronic_present", "behavioral_concerns"
     ]
-    
+
     has_higher_support = any(flags.get(flag, False) for flag in higher_support_flags)
-    
+
     if has_higher_support:
         from products.cost_planner_v2.ui_helpers import render_cp_hint
         render_cp_hint("💡 Based on your answers, many families need close to 48 hours/week of paid help to stay safely at home. Actual needs vary—adjust hours to see the impact.")
@@ -722,26 +726,26 @@ def _calculate_support_intensity() -> int:
         Support intensity score (0-5)
     """
     from core.flags import get_all_flags
-    
+
     flags = get_all_flags()
     score = 0
-    
+
     # Add +1 for each present, cap total at 5
     intensity_flags = [
         "moderate_dependence",
-        "mobility_limited", 
+        "mobility_limited",
         "moderate_cognitive_decline",
         "chronic_present"
     ]
-    
+
     for flag in intensity_flags:
         if flags.get(flag, False):
             score += 1
-    
+
     # Add +1 for falls_risk OR medication_management (max +1 for "extras")
     if flags.get("falls_risk", False) or flags.get("medication_management", False):
         score += 1
-    
+
     return min(score, 5)
 
 
@@ -772,9 +776,9 @@ def _render_cost_threshold_advisory(inhome_estimate: float, person_label: str = 
     intensity = _calculate_support_intensity()
     threshold = _get_cost_threshold(intensity)
     threshold_crossed = inhome_estimate >= threshold
-    
+
     person_prefix = f"**{person_label}:** " if person_label else ""
-    
+
     from products.cost_planner_v2.ui_helpers import render_cp_hint
     if threshold_crossed:
         render_cp_hint(f"{person_prefix}In-home care is feasible, but based on the level of help you'll likely need, the monthly cost (~${inhome_estimate:,.0f}/mo) approaches or exceeds what families often pay for Assisted Living. Consider touring Assisted Living communities as a more predictable alternative.")
@@ -792,73 +796,73 @@ def _render_household_dual_comparison_if_applicable(zip_code: str):
         zip_code: ZIP code for cost calculations
     """
     import os
-    
+
     # Check feature flag
     try:
         flag_value = st.secrets.get("FEATURE_DUAL_COST_PLANNER", "shadow")
     except Exception:
         flag_value = os.getenv("FEATURE_DUAL_COST_PLANNER", "shadow")
-    
+
     if str(flag_value).lower() not in {"on", "shadow"}:
         return
-    
+
     # Check if dual mode is enabled
     dual_mode = st.session_state.get("cost.dual_mode", False)
     if not dual_mode:
         return
-    
+
     # Get household data
     try:
         from products.cost_planner_v2.household import compute_household_total
         result = compute_household_total(st)
-        
+
         if not result.get("has_partner_plan"):
             # Show inline note if partner is expected but missing
             has_partner = st.session_state.get("has_partner", False)
             if has_partner:
                 st.info("👥 **Add partner assessment** to see combined household costs.")
             return
-        
+
         # Render compact dual comparison
         st.markdown("---")
         st.markdown("### 👥 Household Cost Summary")
-        
+
         # Display in compact columns
         col1, col2, col3, col4 = st.columns(4)
-        
+
         with col1:
             st.metric("Primary Monthly", f"${result['primary_total']:,.0f}")
-        
+
         with col2:
             st.metric("Partner Monthly", f"${result['partner_total']:,.0f}")
-        
+
         with col3:
             st.metric("Household Total", f"${result['household_total']:,.0f}")
-        
+
         with col4:
             st.metric("50/50 Split", f"${result['split']['primary']:,.0f} each")
-        
+
         # Keep-home toggle affects home_carry
         if result.get("home_carry", 0) > 0:
             st.caption(f"💡 Includes ${result['home_carry']:,.0f}/mo home carry cost")
-        
+
         # Per-person advisories (only for in-home scenarios)
         primary_tier = result.get("primary_tier", "")
         partner_tier = result.get("partner_tier", "")
-        
+
         if primary_tier == "in_home_care" or partner_tier == "in_home_care":
             st.markdown("**Cost Analysis:**")
-            
+
             if primary_tier == "in_home_care":
                 _render_cost_threshold_advisory(result['primary_total'], "Primary")
-            
+
             if partner_tier == "in_home_care":
                 _render_cost_threshold_advisory(result['partner_total'], "Partner")
-        
+
         # Shadow mode logging
         if str(flag_value).lower() == "shadow":
             print(f"[DUAL_COST_SHADOW] household={result['household_total']:.0f} primary={result['primary_total']:.0f} partner={result['partner_total']:.0f}")
-    
+
     except Exception as e:
         # Never fail the UI
         print(f"[DUAL_COST_ERROR] {e}")
@@ -878,7 +882,7 @@ def _render_plan_selection_and_cta(recommended_tier: str, show_both: bool):
     # // reason: Radio mirrors available tabs and syncs with cost.selected_assessment
     available = st.session_state.get("cost.assessments_available", {"home": True, "al": True, "mc": False})
     sel = st.session_state.get("cost.selected_assessment", "home")
-    
+
     # Build choices from available assessments
     choices = []
     labels_map = {"home": "In-Home Care", "al": "Assisted Living", "mc": "Memory Care"}
@@ -888,7 +892,7 @@ def _render_plan_selection_and_cta(recommended_tier: str, show_both: bool):
         choices.append("al")
     if available.get("mc"):
         choices.append("mc")
-    
+
     # Radio that mirrors tab selection
     current_index = choices.index(sel) if sel in choices else 0
     new_sel = st.radio(
@@ -900,12 +904,12 @@ def _render_plan_selection_and_cta(recommended_tier: str, show_both: bool):
         horizontal=True,
         label_visibility="collapsed"
     )
-    
+
     # Sync selection if changed
     if new_sel != sel:
         st.session_state["cost.selected_assessment"] = new_sel
         st.rerun()
-    
+
     # Map to plan key for handoff to FA
     plan_key_map = {
         "home": "inhome_in_home_care",

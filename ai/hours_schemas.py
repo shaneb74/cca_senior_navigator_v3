@@ -6,9 +6,9 @@ Defines:
 - HoursContext: Input signals for baseline + LLM
 - HoursAdvice: Validated LLM output (band + reasons + confidence)
 """
-from typing import List, Literal, Optional
-from pydantic import BaseModel, Field, field_validator
+from typing import Literal
 
+from pydantic import BaseModel, Field, field_validator
 
 # Canonical 4 bands (no other values allowed)
 HoursBand = Literal["<1h", "1-3h", "4-8h", "24h"]
@@ -21,13 +21,13 @@ class HoursContext(BaseModel):
     """
     badls_count: int = Field(ge=0, le=12)  # Basic ADLs (relaxed from 6 to 12)
     iadls_count: int = Field(ge=0, le=20)  # Instrumental ADLs (relaxed from 8 to 20)
-    falls: Optional[str] = None  # "none", "once", "multiple"
-    mobility: Optional[str] = None  # "independent", "cane", "walker", "wheelchair"
+    falls: str | None = None  # "none", "once", "multiple"
+    mobility: str | None = None  # "independent", "cane", "walker", "wheelchair"
     risky_behaviors: bool = False  # wandering, elopement, aggression, etc.
-    meds_complexity: Optional[str] = None  # "none", "simple", "moderate", "complex"
-    primary_support: Optional[str] = None  # "spouse", "adult_child", "paid", "none"
+    meds_complexity: str | None = None  # "none", "simple", "moderate", "complex"
+    primary_support: str | None = None  # "spouse", "adult_child", "paid", "none"
     overnight_needed: bool = False  # True if safety/medical needs require overnight
-    current_hours: Optional[HoursBand] = None  # User's current arrangement (if any)
+    current_hours: HoursBand | None = None  # User's current arrangement (if any)
 
 
 class HoursAdvice(BaseModel):
@@ -38,16 +38,16 @@ class HoursAdvice(BaseModel):
     Optional nudge fields are set when user under-selects (picks lower band than suggested).
     """
     band: HoursBand
-    reasons: List[str]  # Will be clipped to 3 by validator
+    reasons: list[str]  # Will be clipped to 3 by validator
     confidence: float = Field(ge=0.0, le=1.0)
-    
+
     # Optional nudge payload (only set when user under-selects)
-    nudge_text: Optional[str] = None
-    severity: Optional[Literal["info", "strong"]] = None
+    nudge_text: str | None = None
+    severity: Literal["info", "strong"] | None = None
 
     @field_validator("reasons")
     @classmethod
-    def validate_reasons(cls, v: List[str]) -> List[str]:
+    def validate_reasons(cls, v: list[str]) -> list[str]:
         """Clip to max 3 reasons; reject empty strings."""
         filtered = [r.strip() for r in v if r.strip()]
         return filtered[:3]  # Take first 3 only

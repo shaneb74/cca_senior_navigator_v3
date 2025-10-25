@@ -9,6 +9,7 @@ Usage:
 
 import json
 import pathlib
+
 import streamlit as st
 
 CASES = pathlib.Path("data/training/gcp_cases.jsonl")
@@ -63,11 +64,11 @@ for c in cases:
         continue
     if c["bands"]["sup"] not in sel_sup:
         continue
-    
+
     # Labeled filter
     if show_labeled and c["id"] not in labels:
         continue
-    
+
     todo.append(c)
 
 st.markdown(f"**{len(todo)}** cases match filters (showing first 50)")
@@ -77,9 +78,9 @@ st.markdown("---")
 for idx, c in enumerate(todo[:50]):
     cid = c["id"]
     current_label = labels.get(cid, {})
-    
+
     st.markdown(f"### Case {idx + 1}: `{cid}`")
-    
+
     # Summary row
     col1, col2, col3, col4 = st.columns(4)
     with col1:
@@ -91,12 +92,12 @@ for idx, c in enumerate(todo[:50]):
     with col4:
         if current_label.get("gold_tier"):
             st.metric("Gold (saved)", current_label["gold_tier"])
-    
+
     # Bands and flags
     st.text(f"Bands: cognition={c['bands']['cog']} × support={c['bands']['sup']}")
     st.text(f"Risky behaviors: {c['has_risky_behaviors']}")
     st.text(f"Allowed tiers: {', '.join(c.get('allowed_tiers', []))}")
-    
+
     # LLM reasons
     with st.expander("💬 LLM Reasons", expanded=False):
         reasons = c.get("reasons", [])
@@ -105,39 +106,39 @@ for idx, c in enumerate(todo[:50]):
                 st.markdown(f"- {r}")
         else:
             st.caption("No reasons provided")
-    
+
     # GCP context
     with st.expander("📋 GCP Context (flags, scores)", expanded=False):
         st.json(c["gcp_context"])
-    
+
     # Gold tier selection
     col_gold, col_note = st.columns([1, 2])
-    
+
     with col_gold:
         current_gold = current_label.get("gold_tier")
         gold_index = ALLOWED.index(current_gold) if current_gold in ALLOWED else 2  # Default to AL
-        
+
         gold = st.selectbox(
             "Gold tier",
             ALLOWED,
             index=gold_index,
             key=f"gold_{cid}"
         )
-    
+
     with col_note:
         note = st.text_input(
             "Note (optional)",
             value=current_label.get("note", ""),
             key=f"note_{cid}"
         )
-    
+
     # Save button
-    if st.button(f"💾 Save Gold Tier", key=f"save_{cid}"):
+    if st.button("💾 Save Gold Tier", key=f"save_{cid}"):
         from tools.log_disagreement import append_label
         append_label(cid, gold, note if note else None)
         st.success(f"✓ Saved: {cid} → {gold}")
         st.rerun()
-    
+
     st.markdown("---")
 
 # Footer

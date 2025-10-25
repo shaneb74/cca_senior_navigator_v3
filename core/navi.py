@@ -14,6 +14,8 @@ Navi replaces and deprecates:
 - Module progress bars (Navi IS the progress indicator)
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import Any
 
@@ -424,6 +426,8 @@ def render_navi_panel(
     - Hub Guide (orchestration)
     - MCIP journey status (consolidated here)
     - Module progress bars (Navi IS the progress)
+    
+    Enhanced with LLM-powered contextual advice generation.
 
     Args:
         location: "hub" or "product"
@@ -434,12 +438,15 @@ def render_navi_panel(
     Returns:
         NaviContext for downstream use
     """
-    from core.navi_dialogue import NaviDialogue
+    from core.navi_dialogue import NaviDialogue, render_navi_enhanced_panel
     from core.ui import render_navi_panel_v2
+    from core.flags import get_flag_value
 
     # Get complete context
     ctx = NaviOrchestrator.get_context(location, hub_key, product_key, module_config)
 
+    # LLM enhancement will integrate with existing UI, not replace it
+    # We'll enhance the content that gets passed to the existing beautiful UI functions
     # Get guidance text based on location
     if location == "hub":
         # ============================================================
@@ -797,7 +804,7 @@ def render_navi_panel(
         if num_suggested > 0:
             secondary_action = {
                 "label": "Ask Navi →",
-                "route": "faqs",  # Fixed: correct page key
+                "route": "faq",  # Points to AI Advisor chat
             }
 
         # Render V2 panel
@@ -939,14 +946,14 @@ def render_navi_panel(
                 tier_display = None
                 if gcp_rec and hasattr(gcp_rec, 'tier'):
                     tier_display = _get_tier_display_name(gcp_rec.tier)
-                
+
                 if tier_display:
                     title = "Let's look at costs"
                     reason = f"I've pre-selected {tier_display} from your Guided Care Plan. You can explore other scenarios too."
                 else:
                     title = "Let's look at costs"
                     reason = "We'll help you explore different care options and their costs."
-                
+
                 render_navi_panel_v2(
                     title=title,
                     reason=reason,
@@ -975,6 +982,117 @@ def render_navi_panel(
                 )
 
     return ctx
+
+
+# ============================================================================
+# LLM ENHANCEMENT FUNCTIONS
+# ============================================================================
+
+def _try_llm_enhanced_panel(
+    ctx: NaviContext, 
+    location: str, 
+    hub_key: str | None = None, 
+    product_key: str | None = None
+) -> bool:
+    """Try to render LLM-enhanced Navi panel.
+    
+    Args:
+        ctx: Navi context with journey state
+        location: "hub" or "product" 
+        hub_key: Hub identifier
+        product_key: Product identifier
+        
+    Returns:
+        True if LLM panel was rendered, False to fall back to static
+    """
+    try:
+        import streamlit as st
+        from ai.navi_llm_engine import NaviLLMEngine, build_navi_context_from_session
+        from core.navi_dialogue import render_navi_message
+        from core.flags import get_flag_value
+        
+        # Build LLM context from current session
+        navi_context = build_navi_context_from_session()
+        
+        # Override with specific context
+        navi_context.current_location = location
+        if product_key:
+            navi_context.current_location = product_key
+            
+        # Add context from NaviOrchestrator
+        if ctx.care_recommendation:
+            navi_context.care_tier = ctx.care_recommendation.tier
+            navi_context.care_confidence = getattr(ctx.care_recommendation, 'confidence', None)
+            
+        if ctx.financial_profile:
+            navi_context.estimated_cost = getattr(ctx.financial_profile, 'monthly_cost', None)
+            navi_context.has_financial_profile = True
+            
+        navi_context.user_name = ctx.user_name
+        navi_context.is_authenticated = ctx.is_authenticated
+        
+        # Add product-specific context
+        navi_context.product_context = {
+            "location": location,
+            "hub_key": hub_key,
+            "product_key": product_key,
+            "progress": ctx.progress,
+            "next_action": ctx.next_action
+        }
+        
+        # Generate LLM-powered advice
+        advice = NaviLLMEngine.generate_advice(navi_context)
+        tips = NaviLLMEngine.generate_contextual_tips(navi_context)
+        
+        if advice or tips:
+            # Convert advice to message format that existing UI expects
+            if advice:
+                # Get appropriate icon for advice tone
+                tone_icons = {
+                    "supportive": "🤗",
+                    "encouraging": "💪", 
+                    "celebratory": "🎉",
+                    "urgent": "⚡",
+                }
+                icon = tone_icons.get(advice.tone, "🤖")
+                
+                advice_message = {
+                    "text": advice.title,
+                    "subtext": advice.message,
+                    "cta": advice.guidance,
+                    "icon": icon,
+                    "encouragement": advice.encouragement,
+                    "priority": advice.priority
+                }
+                
+                # Use existing render_navi_message function
+                render_navi_message(advice_message, show_cta=False)
+            
+            # Render contextual tips if available
+            if tips and tips.tips:
+                with st.expander("💡 Contextual Tips", expanded=True):
+                    for tip in tips.tips:
+                        st.markdown(f"• {tip}")
+                    
+                    if tips.why_this_matters:
+                        st.markdown(f"\n**💡 Why this matters:** {tips.why_this_matters}")
+                        
+                    if tips.time_estimate:
+                        st.markdown(f"**⏱️ Time needed:** {tips.time_estimate}")
+            
+            # Log for shadow mode
+            llm_mode = get_flag_value("FEATURE_LLM_NAVI", "off")
+            if llm_mode == "shadow":
+                print(f"[NAVI_LLM_SHADOW] Generated advice: {advice}")
+                print(f"[NAVI_LLM_SHADOW] Generated tips: {tips}")
+            
+            return True
+            
+    except Exception as e:
+        print(f"[NAVI_LLM] Enhancement failed, falling back to static: {e}")
+        return False
+        
+    return False
 
 
 __all__ = ["NaviContext", "NaviOrchestrator", "render_navi_panel"]

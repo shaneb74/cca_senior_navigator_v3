@@ -2,14 +2,14 @@
 Configuration loader for GCP v4 care_recommendation module.
 
 Loads module.json and converts to ModuleConfig for the module engine.
-Converts sections-based schema to steps-based schema.
+Converts sections-based schema to steps-based schema with content contract system.
 """
 
 import json
-from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
+    # Remove legacy imports that are no longer used
 from core.modules.schema import FieldDef, ModuleConfig, StepDef
 
 
@@ -17,15 +17,24 @@ def get_config() -> ModuleConfig:
     """Load care_recommendation module configuration.
 
     Converts sections-based module.json to steps-based ModuleConfig.
+    Content contract resolution happens at render time, not config load time.
 
     Returns:
         ModuleConfig object for module engine
     """
-    raw = _load_module_json()
-    module_meta = raw.get("module", {})
-    sections = raw.get("sections", [])
+    # Load raw JSON without content contract resolution
+    # Resolution will happen at render time when session state is available
+    module_dir = Path(__file__).parent
+    spec_file = module_dir / "module.json"
+    
+    with spec_file.open('r', encoding='utf-8') as f:
+        raw_spec = json.load(f)
+    
+    # Extract raw data
+    module_meta = raw_spec.get("module", {})
+    sections = raw_spec.get("sections", [])
 
-    # Convert sections to steps
+    # Convert sections to steps (content will be resolved at render time)
     steps = []
     for section in sections:
         step = _convert_section_to_step(section)
@@ -60,7 +69,9 @@ def _convert_section_to_step(section: dict[str, Any]) -> StepDef:
     section_id = section["id"]
     title = section.get("title", "")
     description = section.get("description", "")
-    navi_guidance = section.get("navi_guidance")  # Extract Navi guidance
+    
+    # Extract Navi guidance (already interpolated by content contract)
+    navi_guidance = section.get("navi_guidance")
 
     # Handle info sections (intro pages)
     if section_type == "info":
@@ -133,12 +144,16 @@ def _convert_question_to_field(question: dict[str, Any]) -> FieldDef:
 
     # Handle visible_if condition
     visible_if = question.get("visible_if")
+    
+    # Extract label and help text (already interpolated by content contract)
+    label = question.get("label", "")
+    help_text = question.get("help") if question.get("help") else None
 
     return FieldDef(
         key=question_id,
-        label=question.get("label", ""),
+        label=label,
         type=_convert_type(question_type, select_type, ui_config),
-        help=question.get("help"),
+        help=help_text,
         required=question.get("required", False),
         options=question.get("options", []),
         min=question.get("min"),
@@ -225,7 +240,6 @@ def _build_effects_from_options(options: list[dict[str, Any]]) -> list[dict[str,
     return effects
 
 
-@lru_cache(maxsize=1)
 def _load_module_json() -> dict[str, Any]:
     """Load module.json from disk.
 

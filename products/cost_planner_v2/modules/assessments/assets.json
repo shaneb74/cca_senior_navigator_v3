@@ -2,7 +2,7 @@
   "key": "assets",
   "title": "Assets & Resources",
   "icon": "🏦",
-  "description": "Available financial assets and resources",
+  "description": "Available financial assets and resources for {NAME}",
   "estimated_time": "6-8 min",
   "required": true,
   "sort_order": 2,
@@ -10,9 +10,9 @@
     {
       "id": "intro",
       "type": "intro",
-      "title": "Assets Assessment",
+      "title": "{NAME_POS} Assets Assessment",
       "icon": "🏦",
-      "help_text": "Enter your asset details. All fields are optional - skip any that don't apply.",
+      "help_text": "Enter {NAME_POS} asset details. All fields are optional - skip any that don't apply.",
       "fields": [],
       "info_boxes": [
         {

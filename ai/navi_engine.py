@@ -6,11 +6,10 @@ Enforces strict JSON validation and timeout handling for shadow mode safety.
 """
 
 import json
-from typing import Literal, Optional
+from typing import Literal
 
 from ai.llm_client import get_client
 from ai.schemas import CPAdvice, CPContext
-
 
 # ====================================================================
 # TIER CANONICALIZATION
@@ -31,7 +30,7 @@ ALIASES = {
 FORBIDDEN_TERMS = {"skilled nursing", "independent living"}
 
 
-def normalize_tier(value: str) -> Optional[str]:
+def normalize_tier(value: str) -> str | None:
     """Normalize tier value to canonical form.
     
     Handles common aliases and variations, ensuring only canonical
@@ -45,19 +44,19 @@ def normalize_tier(value: str) -> Optional[str]:
     """
     if not value:
         return None
-    
+
     v = value.strip().lower()
     v = ALIASES.get(v, v)
-    
+
     # Check against canonical tiers
     if v in CANONICAL_TIERS:
         return v
-    
+
     # Check for forbidden terms
     for forbidden in FORBIDDEN_TERMS:
         if forbidden in v:
             return None
-    
+
     return None
 
 
@@ -72,7 +71,7 @@ def detect_dual_mode_from_careplans(careplans: list) -> bool:
     """
     if len(careplans) < 2:
         return False
-    
+
     # Extract tiers and normalize them
     tiers = set()
     for cp in careplans:
@@ -84,12 +83,12 @@ def detect_dual_mode_from_careplans(careplans: list) -> bool:
             normalized = normalize_tier(cp.final_tier)
             if normalized:
                 tiers.add(normalized)
-    
+
     # Dual mode if we have multiple different tiers
     return len(tiers) > 1
 
 
-def get_primary_tier_from_careplans(careplans: list) -> Optional[str]:
+def get_primary_tier_from_careplans(careplans: list) -> str | None:
     """Get the primary (most recent) care tier from care plans.
     
     Args:
@@ -100,21 +99,21 @@ def get_primary_tier_from_careplans(careplans: list) -> Optional[str]:
     """
     if not careplans:
         return None
-    
+
     # Use the most recent care plan (assume they're ordered)
     latest_cp = careplans[-1]
-    
+
     # Try tier first, then final_tier
     tier = getattr(latest_cp, 'tier', None) or getattr(latest_cp, 'final_tier', None)
     if tier:
         return normalize_tier(tier)
-    
+
     return None
 
 
 def generate_handoff_blurb(
-    primary_tier: str, 
-    dual_mode: bool = False, 
+    primary_tier: str,
+    dual_mode: bool = False,
     flags: list = None,
     partner_tier: str = None,
     threshold_crossed: bool = False,
@@ -136,7 +135,7 @@ def generate_handoff_blurb(
         Formatted blurb text for intro display using contextual templates
     """
     flags = flags or []
-    
+
     # Template selection based on context
     templates = _get_handoff_templates(
         primary_tier=primary_tier,
@@ -147,7 +146,7 @@ def generate_handoff_blurb(
         compare_inhome_suggested=compare_inhome_suggested,
         flags=flags
     )
-    
+
     # For now, select the first matching template
     # In future, this could use LLM to choose the best template
     return templates[0] if templates else _get_fallback_template(primary_tier, dual_mode)
@@ -168,11 +167,11 @@ def _get_handoff_templates(
     """
     flags = flags or []
     templates = []
-    
+
     # 1. Assisted Living (or Memory Care) Templates
     if primary_tier in ("assisted_living", "memory_care", "memory_care_high_acuity"):
         tier_name = "Assisted Living" if primary_tier == "assisted_living" else "Memory Care"
-        
+
         if dual_mode and partner_tier:
             templates.append(f"We'll compare {tier_name} costs with your partner's care options to find what works best for both of you.")
         elif compare_inhome_suggested or dual_mode:
@@ -183,8 +182,8 @@ def _get_handoff_templates(
             templates.append(f"We'll focus on {tier_name} communities with the specialized care level you need.")
         else:
             templates.append(f"We'll help you understand {tier_name} costs and what's included in monthly fees.")
-    
-    # 2. In-Home Care Templates  
+
+    # 2. In-Home Care Templates
     elif primary_tier == "in_home":
         if dual_mode and partner_tier in ("assisted_living", "memory_care"):
             templates.append("We'll compare in-home care costs with facility options so you can see all your choices.")
@@ -196,7 +195,7 @@ def _get_handoff_templates(
             templates.append("We'll help you customize in-home care hours and services to match your specific needs and budget.")
         else:
             templates.append("We'll break down in-home care costs by hours and services so you can plan what works best.")
-    
+
     # 3. Stay Home / Independent Templates
     elif primary_tier in ("none", "stay_home", "independent"):
         if dual_mode:
@@ -205,7 +204,7 @@ def _get_handoff_templates(
             templates.append("We'll focus on affordable support services that help you stay independent longer.")
         else:
             templates.append("We'll look at optional support services and costs that might be helpful as a safety net.")
-    
+
     # Add context-specific enhancements
     context_additions = []
     if "veteran_aanda_risk" in flags:
@@ -214,7 +213,7 @@ def _get_handoff_templates(
         context_additions.append("We'll highlight options that provide family support and respite.")
     if "fall_risk" in flags or "mobility_issues" in flags:
         context_additions.append("We'll emphasize safety features and emergency response options.")
-    
+
     # Combine templates with context additions
     enhanced_templates = []
     for template in templates:
@@ -222,7 +221,7 @@ def _get_handoff_templates(
             enhanced_template = f"{template} {context_additions[0]}"  # Add first relevant context
             enhanced_templates.append(enhanced_template)
         enhanced_templates.append(template)  # Also keep original
-    
+
     return enhanced_templates if enhanced_templates else templates
 
 
@@ -232,7 +231,7 @@ def _get_fallback_template(primary_tier: str, dual_mode: bool) -> str:
         return "We'll compare different care options and costs so you can make the best choice for your situation."
     else:
         return "We'll break down the costs and help you understand what's included in your care options."
-    
+
     return v if v in CANONICAL_TIERS else None
 
 
@@ -297,16 +296,16 @@ def _build_context_prompt(context: CPContext) -> str:
     except Exception:
         # Handle case where streamlit is not available
         pass
-    
+
     # Format flags as readable list
     flags_text = ", ".join(context.flags) if context.flags else "none"
-    
+
     # Format reasons as readable list
     reasons_text = ", ".join(context.top_reasons) if context.top_reasons else "general care needs"
-    
+
     # Prepend inhome context if available
     context_prefix = inhome_context if inhome_context else ""
-    
+
     # Build prompt
     prompt = f"""{context_prefix}USER CONTEXT:
 - Care Tier: {context.tier.replace('_', ' ').title()}
@@ -323,14 +322,14 @@ Focus on emotional support, practical next steps, and clarifying questions.
 
 Remember: You CANNOT change the care tier or cost estimates. Those are deterministic.
 Your role is to provide context, encouragement, and help them think through their options."""
-    
+
     return prompt
 
 
 def generate(
     context: CPContext,
     mode: Literal["shadow", "assist", "adjust"] = "shadow",
-) -> Optional[CPAdvice]:
+) -> CPAdvice | None:
     """Generate Navi advice from Cost Planner context.
     
     Args:
@@ -344,47 +343,47 @@ def generate(
     if mode not in ("shadow", "assist", "adjust"):
         print(f"[LLM_WARN] Invalid mode: {mode}. Using 'shadow'.")
         mode = "shadow"
-    
+
     # Get LLM client
     client = get_client()
     if client is None:
         print("[LLM_WARN] Could not create LLM client - skipping generation")
         return None
-    
+
     try:
         # Build prompts
         system_prompt = NAVI_SYSTEM_PROMPT
         user_prompt = _build_context_prompt(context)
-        
+
         # Generate JSON response
         response_text = client.generate_json(
             system_prompt=system_prompt,
             user_prompt=user_prompt,
         )
-        
+
         if response_text is None:
             print("[LLM_WARN] LLM returned None - skipping")
             return None
-        
+
         # Parse JSON
         try:
             response_data = json.loads(response_text)
         except json.JSONDecodeError as e:
             print(f"[LLM_WARN] Failed to parse JSON response: {e}")
             return None
-        
+
         # Validate with Pydantic
         try:
             advice = CPAdvice(**response_data)
-            
+
             # Post-filter: Remove any forbidden terms from advice
             advice = _filter_forbidden_terms(advice)
-            
+
             return advice
         except Exception as e:
             print(f"[LLM_WARN] Pydantic validation failed: {e}")
             return None
-    
+
     except Exception as e:
         # Catch-all for unexpected errors
         print(f"[LLM_ERROR] Unexpected error in generate(): {e}")
@@ -404,30 +403,30 @@ def _filter_forbidden_terms(advice: CPAdvice) -> CPAdvice:
         """Check if text contains any forbidden terms."""
         text_lower = text.lower()
         return any(term in text_lower for term in FORBIDDEN_TERMS)
-    
+
     # Filter messages
     advice.messages = [msg for msg in advice.messages if not contains_forbidden(msg)]
-    
+
     # Filter insights
     advice.insights = [insight for insight in advice.insights if not contains_forbidden(insight)]
-    
+
     # Filter questions
     advice.questions_next = [q for q in advice.questions_next if not contains_forbidden(q)]
-    
+
     return advice
 
 
 def generate_safe_with_normalization(
     tier: str,
     has_partner: bool,
-    move_preference: Optional[str],
+    move_preference: str | None,
     keep_home: bool,
     monthly_adjusted: float,
     region: str,
     flags: list[str],
     top_reasons: list[str],
     mode: Literal["shadow", "assist", "adjust"] = "shadow",
-) -> tuple[bool, Optional[CPAdvice]]:
+) -> tuple[bool, CPAdvice | None]:
     """Safe wrapper that normalizes tier before creating CPContext.
     
     This function should be used by calling code instead of directly
@@ -450,11 +449,11 @@ def generate_safe_with_normalization(
     """
     # Normalize tier
     normalized_tier = normalize_tier(tier)
-    
+
     if normalized_tier is None:
         print(f"[LLM_SHADOW] skip: non-canonical tier '{tier}'")
         return (False, None)
-    
+
     try:
         # Create context with normalized tier
         context = CPContext(
@@ -467,10 +466,10 @@ def generate_safe_with_normalization(
             flags=flags,
             top_reasons=top_reasons,
         )
-        
+
         # Generate advice
         return generate_safe(context, mode)
-    
+
     except Exception as e:
         print(f"[LLM_ERROR] Exception in generate_safe_with_normalization(): {e}")
         return (False, None)
@@ -479,7 +478,7 @@ def generate_safe_with_normalization(
 def generate_safe(
     context: CPContext,
     mode: Literal["shadow", "assist", "adjust"] = "shadow",
-) -> tuple[bool, Optional[CPAdvice]]:
+) -> tuple[bool, CPAdvice | None]:
     """Safe wrapper for generate() with explicit success flag.
     
     Returns a tuple of (success, advice) to make error handling explicit

@@ -13,9 +13,9 @@ def test_user_persist_keys_contract():
     """Snapshot test: USER_PERSIST_KEYS must not change without explicit review."""
     ss = importlib.import_module("core.session_store")
     assert hasattr(ss, "USER_PERSIST_KEYS"), "USER_PERSIST_KEYS is missing"
-    
-    keys = sorted(list(getattr(ss, "USER_PERSIST_KEYS")))
-    
+
+    keys = sorted(list(ss.USER_PERSIST_KEYS))
+
     # Snapshot: update intentionally with review if the contract changes.
     # These keys represent the persistence contract between app restarts.
     # Renaming or removing keys can cause data loss for existing users.
@@ -49,7 +49,7 @@ def test_user_persist_keys_contract():
         "progress",
         "tiles",
     ])
-    
+
     assert keys == expected, (
         f"USER_PERSIST_KEYS changed:\n"
         f"  Expected: {expected}\n"

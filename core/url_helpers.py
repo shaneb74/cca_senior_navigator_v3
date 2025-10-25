@@ -12,10 +12,10 @@ def add_uid_to_href(href: str) -> str:
     """Add current UID to href to preserve session across navigation.
 
     Args:
-        href: Original href string (e.g., "?page=faqs" or "?page=hub&foo=bar")
+        href: Original href string (e.g., "?page=faq" or "?page=hub&foo=bar")
 
     Returns:
-        href with uid appended (e.g., "?page=faqs&uid=anon_xxxxx")
+        href with uid appended (e.g., "?page=faq&uid=anon_xxxxx")
     """
     if not href or href == "#" or href.startswith("http"):
         return href

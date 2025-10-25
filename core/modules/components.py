@@ -10,22 +10,47 @@ from .schema import FieldDef
 
 
 def _label(label: str, help_text: str | None = None, a11y: str | None = None) -> None:
-    st.markdown(f"<div class='mod-label'><span>{H(label)}</span></div>", unsafe_allow_html=True)
-    if help_text:
-        st.markdown(f"<div class='mod-help'>{H(help_text)}</div>", unsafe_allow_html=True)
-    if a11y:
-        st.markdown(f"<div class='visually-hidden'>{H(a11y)}</div>", unsafe_allow_html=True)
+    from core.text import personalize_text
+    
+    # Apply personalization to all text content
+    personalized_label = personalize_text(label)
+    personalized_help = personalize_text(help_text) if help_text else None
+    personalized_a11y = personalize_text(a11y) if a11y else None
+    
+    st.markdown(f"<div class='mod-label'><span>{H(personalized_label)}</span></div>", unsafe_allow_html=True)
+    if personalized_help:
+        st.markdown(f"<div class='mod-help'>{H(personalized_help)}</div>", unsafe_allow_html=True)
+    if personalized_a11y:
+        st.markdown(f"<div class='visually-hidden'>{H(personalized_a11y)}</div>", unsafe_allow_html=True)
 
 
 def _safe_label(label: str | None, fallback: str) -> str:
+    from core.text import personalize_text
+    import re
+    
     candidate = (label or "").strip()
-    return candidate or fallback
+    safe_label = candidate or fallback
+    # Apply personalization to the final label
+    personalized_label = personalize_text(safe_label)
+    
+    # Safety: assert no unresolved tokens remain
+    if re.search(r"\{NAME(_POS)?\}", personalized_label):
+        raise AssertionError(f"Unresolved name token found in label: '{personalized_label}'")
+    
+    return personalized_label
 
 
 def _option_labels(options: list[dict[str, Any]] | None) -> list[str]:
+    from core.text import personalize_text
+    
     if not options:
         return []
-    return [str(opt.get("label", opt.get("value", ""))) for opt in options]
+    labels = []
+    for opt in options:
+        label = str(opt.get("label", opt.get("value", "")))
+        personalized_label = personalize_text(label)
+        labels.append(personalized_label)
+    return labels
 
 
 def _default_index(options: list[dict[str, Any]] | None, default: Any) -> int:

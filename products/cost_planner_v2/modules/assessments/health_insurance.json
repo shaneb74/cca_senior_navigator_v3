@@ -2,7 +2,7 @@
   "key": "health_insurance",
   "title": "Health Insurance",
   "icon": "🏥",
-  "description": "Medical coverage impacting out-of-pocket care costs",
+  "description": "Medical coverage impacting {NAME_POS} out-of-pocket care costs",
   "estimated_time": "5-7 min",
   "required": false,
   "sort_order": 4,
@@ -10,9 +10,9 @@
     {
       "id": "intro",
       "type": "intro",
-      "title": "Health Insurance Assessment",
+      "title": "{NAME_POS} Health Insurance Assessment",
       "icon": "🏥",
-      "help_text": "Review your health coverage so we can estimate out-of-pocket costs more accurately.",
+      "help_text": "Review {NAME_POS} health coverage so we can estimate out-of-pocket costs more accurately.",
       "fields": [],
       "info_boxes": [
         {
