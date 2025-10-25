@@ -46,7 +46,7 @@ def get_config() -> ModuleConfig:
         version=module_meta.get("version", "v2025.10"),
         steps=steps,
         state_key="gcp_care_recommendation",  # Must match module.id
-        outcomes_compute="products.gcp_v4.modules.care_recommendation.logic:derive_outcome",
+        outcomes_compute="products.concierge_hub.gcp_v4.modules.care_recommendation.logic:derive_outcome",
         results_step_id="results",
     )
 
