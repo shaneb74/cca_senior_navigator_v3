@@ -23,6 +23,54 @@ __all__ = ["render"]
 
 def render(ctx=None) -> None:
     """Render the Concierge Hub with Navi orchestration."""
+    
+    # [BANNER_FLASH_DEBUG] Track render attempts
+    render_count = st.session_state.get("_concierge_render_count", 0) + 1
+    st.session_state["_concierge_render_count"] = render_count
+    nav_pending = st.session_state.get("_nav_pending", False)
+    print(f"[BANNER_FLASH] Concierge render #{render_count}, nav_pending={nav_pending}")
+    
+    # [BANNER_FLASH_FIX] Block rendering during navigation transition
+    if st.session_state.get("_nav_pending"):
+        st.markdown("Loading concierge...", unsafe_allow_html=True)
+        # Clear the pending flag now that we're in the target page
+        st.session_state["_nav_pending"] = False
+        print(f"[BANNER_FLASH] Navigation transition complete, cleared pending flag")
+        st.stop()
+
+    # Add global safety CSS to hide any stray empty images
+    st.markdown("""
+    <style>
+      /* Hide any empty/misapplied images */
+      img[src=""], img:not([src]) { display:none !important; }
+      .hero:empty { display:none !important; }
+      .photo-stack:empty { display:none !important; }
+      
+      /* Kill any leftover pseudo-icon badges */
+      .corner-icon::before, .corner-icon::after { content:none !important; background:none !important; }
+      .card-icon::before, .card-icon::after { content:none !important; background:none !important; }
+      
+      /* If someone used background-image for the badge on generic wrappers */
+      [data-icon], .badge-icon { background-image:none !important; }
+      
+      /* Prevent any card photo flashing during transitions */
+      .card-photo { transition: opacity 0.2s ease; }
+      .card-photo[src=""] { opacity: 0 !important; }
+      
+      /* Kill SVG icons during transitions to prevent black blob flash */
+      .context-pill-link svg { display: none !important; }
+      svg[viewBox*="M8 11a3 3 0 1 0-3-3"] { display: none !important; }
+      svg[viewBox*="M12 12a3.5 3.5 0 1 0-3.5-3.5"] { display: none !important; }
+      /* Kill any SVG with people/person paths */
+      svg path[d*="M8 11a3 3 0 1 0-3-3"] { display: none !important; }
+      svg path[d*="M12 12a3.5 3.5 0 1 0-3.5-3.5"] { display: none !important; }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # STRICT nav guard: do not create columns/grids if _nav_pending is set
+    if st.session_state.get("_nav_pending"):
+        st.session_state["_nav_pending"] = False
+        st.stop()  # do not render hero/columns yet
 
     # Initialize MCIP
     MCIP.initialize()
