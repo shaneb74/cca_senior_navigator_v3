@@ -683,3 +683,127 @@ FAQ CONTEXT:
             "sources": [],
             "cta": policy.get("default_cta", {"label": "Open Guided Care Plan", "route": "gcp_intro"})
         }
+
+
+# ==============================================================================
+# CORPORATE KNOWLEDGE MEDIATOR (Stage 3.5)
+# ==============================================================================
+def answer_corp(
+    query: str,
+    name: str | None,
+    chunks: list[dict[str, Any]],
+    policy: dict[str, Any]
+) -> dict[str, Any]:
+    """
+    Generate LLM-powered corporate knowledge answer with policy guardrails.
+    
+    Used for queries about CCA: company info, leadership, history, services.
+    
+    Args:
+        query: User's natural language question
+        name: User's name for personalization (or None)
+        chunks: List of retrieved corp knowledge chunks from retrieve_corp()
+        policy: Policy dict from load_faq_policy()
+        
+    Returns:
+        Dict with schema:
+        {
+            "answer": str (max 120 words),
+            "sources": list[dict] ({"title": str, "url": str})
+        }
+    """
+    try:
+        from ai.llm_client import get_client
+        
+        # Build system prompt with policy constraints
+        allowed_products = policy.get("allowed_products", [])
+        allowed_terms = policy.get("allowed_terms", [])
+        banned_phrases = policy.get("banned_phrases", [])
+        fallback_name = policy.get("fallback_name", "the person you're helping")
+        
+        system_prompt = f"""You are a concise company explainer for Senior Navigator / Concierge Care Advisors.
+
+STRICT RULES:
+- Use ONLY the provided website chunks below. Never invent information.
+- Only mention products from this list: {', '.join(allowed_products)}
+- Use domain terms: {', '.join(allowed_terms)}
+- NEVER use these phrases: {', '.join(banned_phrases)}. Use "{fallback_name}" instead.
+- Answer in ≤120 words, plain language.
+- Cite sources by title with URLs.
+- Return JSON: {{"answer":"...","sources":[{{"title":"...","url":"..."}}]}}
+
+If the chunks don't cover the question, respond: "We don't have that information yet. You can start the Guided Care Plan or contact us for more details."
+"""
+        
+        # Format chunks for LLM
+        chunk_context = []
+        for i, c in enumerate(chunks, 1):
+            chunk_context.append({
+                "chunk_id": i,
+                "title": c["title"],
+                "heading": c["heading"],
+                "url": c["url"],
+                "text": c["text"][:500]  # Truncate long text
+            })
+        
+        user_prompt = {
+            "question": query,
+            "name": name or fallback_name,
+            "chunks": chunk_context,
+        }
+        
+        # Call LLM
+        client = get_client()
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": json.dumps(user_prompt)}
+            ],
+            temperature=0.3,
+            max_tokens=300,
+        )
+        
+        raw_text = response.choices[0].message.content.strip()
+        
+        # Try to parse JSON (handle markdown code blocks)
+        json_text = raw_text
+        if "```json" in raw_text:
+            json_text = raw_text.split("```json")[1].split("```")[0].strip()
+        elif "```" in raw_text:
+            json_text = raw_text.split("```")[1].split("```")[0].strip()
+            
+        try:
+            result = json.loads(json_text)
+            answer_text = result.get("answer", "")
+            sources = result.get("sources", [])
+        except json.JSONDecodeError:
+            # Fallback: use raw text as answer
+            answer_text = raw_text
+            sources = []
+        
+        # Post-validation: banned phrase filtering
+        for banned in banned_phrases:
+            if banned.lower() in answer_text.lower():
+                answer_text = answer_text.replace(banned, fallback_name)
+                answer_text = answer_text.replace(banned.capitalize(), fallback_name)
+                answer_text = answer_text.replace(banned.upper(), fallback_name.upper())
+        
+        # Word limit enforcement (120 words)
+        words = answer_text.split()
+        if len(words) > 120:
+            answer_text = " ".join(words[:120]) + "..."
+            
+        return {
+            "answer": answer_text[:800],  # Hard cap at 800 chars
+            "sources": sources[:5],  # Max 5 sources
+        }
+        
+    except Exception as e:
+        print(f"[CORP_LLM_ERROR] {e}")
+        # Safe fallback
+        return {
+            "answer": "We don't have that information yet. You can start the Guided Care Plan or contact us for more details.",
+            "sources": [],
+        }
+

@@ -60,3 +60,8 @@ stats:  ## Show repository statistics
 	@echo "Core modules:    $$(ls -1 core/*.py 2>/dev/null | wc -l | tr -d ' ')"
 	@echo "Static images:   $$(find static/images -type f | wc -l | tr -d ' ')"
 	@echo "Lines of code:   $$(find . -name '*.py' -type f ! -path './venv/*' ! -path './archive/*' -exec wc -l {} + | tail -1 | awk '{print $$1}')"
+
+sync-site:  ## Crawl CCA website and update corp knowledge base
+	@echo "=== Syncing Corporate Knowledge Base ==="
+	@python tools/sync_site.py || (echo "❌ Site sync failed" && exit 1)
+	@echo "✓ Knowledge base updated"

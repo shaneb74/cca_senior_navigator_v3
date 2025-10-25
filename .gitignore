@@ -19,6 +19,9 @@ data/users/
 !data/users/demo/*.json
 # Event logs (contains user queries, PII-light but excluded)
 data/events.log
+# Corporate knowledge base (generated from website crawl)
+config/corp_knowledge.jsonl
+config/corp_knowledge.meta.json
 *.lock
 
 # Linting and testing cache

@@ -107,6 +107,81 @@ def retrieve_faq(query: str, faqs: list[dict], k: int = 3) -> list[dict]:
         return []
 
 
+# ==============================================================================
+# CORPORATE KNOWLEDGE LOADER + RETRIEVER (Stage 3.5)
+# ==============================================================================
+@st.cache_data
+def load_corp_chunks() -> list[dict[str, Any]]:
+    """Load corporate knowledge chunks from config/corp_knowledge.jsonl.
+    
+    Returns:
+        List of chunk dicts with schema:
+        {
+            "doc_id": str,
+            "url": str,
+            "title": str,
+            "heading": str,
+            "text": str,
+            "last_fetched": str,
+            "tags": list[str]
+        }
+    """
+    try:
+        import os
+        chunks_path = "config/corp_knowledge.jsonl"
+        if not os.path.exists(chunks_path):
+            print(f"[CORP_KNOWLEDGE_WARN] {chunks_path} not found - run 'make sync-site'")
+            return []
+        
+        chunks = []
+        with open(chunks_path, "r", encoding="utf-8") as f:
+            for line in f:
+                try:
+                    chunks.append(json.loads(line))
+                except Exception:
+                    pass
+        return chunks
+    except Exception as e:
+        print(f"[CORP_CHUNKS_ERROR] {e}")
+        return []
+
+
+@st.cache_data
+def retrieve_corp(query: str, chunks: list[dict], k: int = 5) -> list[dict]:
+    """Retrieve top-k most relevant corp knowledge chunks using TF-IDF.
+    
+    Args:
+        query: User's natural language question
+        chunks: List of chunk dicts from load_corp_chunks()
+        k: Number of results to return (default 5)
+        
+    Returns:
+        List of top-k chunk dicts with similarity > 0, sorted by relevance
+    """
+    try:
+        from sklearn.feature_extraction.text import TfidfVectorizer
+        from sklearn.metrics.pairwise import cosine_similarity
+        
+        if not chunks:
+            return []
+        
+        # Combine heading + text for richer matching
+        texts = [f"{c['heading']} {c['text']}" for c in chunks]
+        
+        vectorizer = TfidfVectorizer(stop_words="english", max_features=500)
+        X = vectorizer.fit_transform(texts)
+        q_vec = vectorizer.transform([query])
+        
+        sims = cosine_similarity(q_vec, X).flatten()
+        top_idx = np.argsort(sims)[::-1][:k]
+        
+        # Only return results with positive similarity
+        return [chunks[i] for i in top_idx if sims[i] > 0]
+    except Exception as e:
+        print(f"[CORP_RETRIEVAL_ERROR] {e}")
+        return []
+
+
 # Load question database from JSON
 QUESTION_DATABASE = load_faq_items()
 
@@ -665,64 +740,126 @@ def render():
 
     if st.button("Get Answer", type="primary", key="faq_search_btn", use_container_width=True):
         if search_query.strip():
-            with st.spinner("Searching FAQs and crafting answer..."):
-                # Load FAQ corpus and policy
-                faqs = load_faq_items()
+            with st.spinner("Searching knowledge base..."):
+                # Load policy
                 policy = load_faq_policy()
-
-                # Retrieve top-k relevant FAQs
-                retrieved = retrieve_faq(search_query, faqs, k=3)
-
-                if not retrieved:
-                    st.warning("⚠️ No relevant FAQs found. Try rephrasing your question.")
+                
+                # ─── ROUTING: Corp Knowledge vs FAQ ───
+                # Check if query is about CCA company info
+                corp_keywords = [
+                    "cca", "concierge care advisors", "leadership", "team",
+                    "about", "founded", "business since", "history",
+                    "who is", "who are", "company", "organization"
+                ]
+                is_corp_query = any(kw in search_query.lower() for kw in corp_keywords)
+                
+                if is_corp_query:
+                    # ─── Corporate Knowledge Path ───
+                    corp_chunks = load_corp_chunks()
+                    corp_hits = retrieve_corp(search_query, corp_chunks, k=5)
                     
-                    # Log no-result queries for gap analysis
-                    from core.events import log_event
-                    log_event("faq_llm", {
-                        "query": search_query,
-                        "retrieved_ids": [],
-                        "used_sources": [],
-                        "cta_route": None,
-                        "feedback": None,
-                        "name_present": bool(st.session_state.get("person_a_name")),
-                    })
-                else:
-                    # Get user name for token interpolation
-                    from core.state import get_current_name
-
-                    name = get_current_name() or policy.get("fallback_name", "the person you're helping")
-
-                    # Call LLM mediator
-                    from ai.llm_mediator import answer_faq
-
-                    result = answer_faq(search_query, name, retrieved, policy)
-
-                    # Display answer
-                    st.markdown("##### Answer:")
-                    st.markdown(result["answer"])
-
-                    # Display sources
-                    if result.get("sources"):
-                        with st.expander("📚 Sources (FAQ IDs)", expanded=False):
+                    if corp_hits:
+                        from core.state import get_current_name
+                        from ai.llm_mediator import answer_corp
+                        
+                        name = get_current_name() or policy.get("fallback_name", "the person you're helping")
+                        result = answer_corp(search_query, name, corp_hits, policy)
+                        
+                        # Display answer
+                        st.markdown("##### Answer:")
+                        st.markdown(result["answer"])
+                        
+                        # Display sources with clickable links
+                        if result.get("sources"):
+                            st.markdown("##### Sources:")
                             for src in result["sources"]:
-                                st.caption(f"- FAQ #{src}")
+                                st.markdown(f"- [{src['title']}]({src['url']})")
+                        
+                        # ─── Feedback UI ───
+                        st.markdown("")
+                        st.caption("Was this helpful?")
+                        fb_col1, fb_col2 = st.columns(2)
+                        feedback = None
+                        if fb_col1.button("👍 Yes", key="corp_fb_yes"):
+                            feedback = True
+                        if fb_col2.button("👎 No", key="corp_fb_no"):
+                            feedback = False
+                            st.caption("Thanks — we'll improve this. You can contact us or start the Guided Care Plan.")
+                        
+                        st.session_state["faq_feedback"] = feedback
+                        
+                        # ─── Event Logging ───
+                        from core.events import log_event
+                        log_event("corp_llm", {
+                            "query": search_query,
+                            "retrieved_ids": [c["doc_id"] for c in corp_hits],
+                            "used_sources": [s.get("url", "") for s in result.get("sources", [])],
+                            "feedback": feedback,
+                            "name_present": bool(st.session_state.get("person_a_name")),
+                        })
+                    else:
+                        # No corp hits - try FAQ fallback
+                        st.info("ℹ️ No company info found. Searching FAQs...")
+                        is_corp_query = False  # Fall through to FAQ search
+                
+                # ─── FAQ Path (original logic) ───
+                if not is_corp_query:
+                    # Load FAQ corpus
+                    faqs = load_faq_items()
 
-                    # ─── Feedback UI (Stage 4) ───
-                    st.markdown("")  # Spacing
-                    st.caption("Was this helpful?")
-                    fb_col1, fb_col2 = st.columns(2)
-                    feedback = None
-                    if fb_col1.button("👍 Yes", key="faq_fb_yes"):
-                        feedback = True
-                    if fb_col2.button("👎 No", key="faq_fb_no"):
-                        feedback = False
-                        st.caption("Thanks — we'll improve this. You can also start the Guided Care Plan for tailored help.")
-                    
-                    st.session_state["faq_feedback"] = feedback
+                    # Retrieve top-k relevant FAQs
+                    retrieved = retrieve_faq(search_query, faqs, k=3)
 
-                    # ─── Event Logging (Stage 4) ───
-                    from core.events import log_event
-                    log_event("faq_llm", {
+                    if not retrieved:
+                        st.warning("⚠️ No relevant FAQs found. Try rephrasing your question.")
+                        
+                        # Log no-result queries for gap analysis
+                        from core.events import log_event
+                        log_event("faq_llm", {
+                            "query": search_query,
+                            "retrieved_ids": [],
+                            "used_sources": [],
+                            "cta_route": None,
+                            "feedback": None,
+                            "name_present": bool(st.session_state.get("person_a_name")),
+                        })
+                    else:
+                        # Get user name for token interpolation
+                        from core.state import get_current_name
+
+                        name = get_current_name() or policy.get("fallback_name", "the person you're helping")
+
+                        # Call LLM mediator
+                        from ai.llm_mediator import answer_faq
+
+                        result = answer_faq(search_query, name, retrieved, policy)
+
+                        # Display answer
+                        st.markdown("##### Answer:")
+                        st.markdown(result["answer"])
+
+                        # Display sources
+                        if result.get("sources"):
+                            with st.expander("📚 Sources (FAQ IDs)", expanded=False):
+                                for src in result["sources"]:
+                                    st.caption(f"- FAQ #{src}")
+
+                        # ─── Feedback UI (Stage 4) ───
+                        st.markdown("")  # Spacing
+                        st.caption("Was this helpful?")
+                        fb_col1, fb_col2 = st.columns(2)
+                        feedback = None
+                        if fb_col1.button("👍 Yes", key="faq_fb_yes"):
+                            feedback = True
+                        if fb_col2.button("👎 No", key="faq_fb_no"):
+                            feedback = False
+                            st.caption("Thanks — we'll improve this. You can also start the Guided Care Plan for tailored help.")
+                        
+                        st.session_state["faq_feedback"] = feedback
+
+                        # ─── Event Logging (Stage 4) ───
+                        from core.events import log_event
+                        log_event("faq_llm", {
                         "query": search_query,
                         "retrieved_ids": [f["id"] for f in retrieved],
                         "used_sources": result.get("sources", []),
