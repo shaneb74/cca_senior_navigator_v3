@@ -1,9 +1,9 @@
-# products/predictive_health/product.py
+# products/waiting_room/predictive_health/product.py
 """
 Predictive Health Analytics - Coming Soon Module
 """
 
-from products.resources_common.coming_soon import render_coming_soon
+from products.resources.resources_common.coming_soon import render_coming_soon
 
 __all__ = ["render"]
 

@@ -1,7 +1,7 @@
-# products/home_safety/product.py
+# products/waiting_room/home_safety/product.py
 """Home Safety Check - Coming Soon"""
 
-from products.resources_common.coming_soon import render_coming_soon
+from products.resources.resources_common.coming_soon import render_coming_soon
 
 
 def render():
