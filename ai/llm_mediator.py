@@ -557,3 +557,129 @@ def get_mediated_recommendation(
     """
     mediator = LLMGuardrailsMediator()
     return mediator.mediate_recommendation(base_tier, flags, answers, correlation_id)
+
+
+# ==============================================================================
+# FAQ MEDIATOR (Stage 3)
+# ==============================================================================
+def answer_faq(
+    query: str,
+    name: str | None,
+    faqs: list[dict[str, Any]],
+    policy: dict[str, Any]
+) -> dict[str, Any]:
+    """
+    Generate LLM-powered FAQ answer with policy guardrails.
+    
+    Args:
+        query: User's natural language question
+        name: User's name for personalization (or None)
+        faqs: List of retrieved FAQ dicts from retrieval layer
+        policy: Policy dict from load_faq_policy()
+        
+    Returns:
+        Dict with schema:
+        {
+            "answer": str (max 120 words),
+            "sources": list[str] (FAQ IDs used),
+            "cta": dict ({"label": str, "route": str})
+        }
+    """
+    try:
+        # Build system prompt with policy constraints
+        allowed_products = policy.get("allowed_products", [])
+        allowed_terms = policy.get("allowed_terms", [])
+        banned_phrases = policy.get("banned_phrases", [])
+        fallback_name = policy.get("fallback_name", "the person you're helping")
+        default_cta = policy.get("default_cta", {"label": "Open Guided Care Plan", "route": "gcp_intro"})
+        
+        system_prompt = f"""You are a concise assistant for Senior Navigator's FAQ.
+
+STRICT RULES:
+- Use ONLY the provided FAQ entries below. Never invent information.
+- Only mention products from this list: {', '.join(allowed_products)}
+- Use domain terms: {', '.join(allowed_terms)}
+- NEVER use these banned phrases: {', '.join(banned_phrases)}
+- Use "{name or fallback_name}" when referring to the care recipient
+- Maximum 120 words
+- Plain, warm, professional language
+- No medical advice or diagnoses
+
+OUTPUT FORMAT (valid JSON only):
+{{"answer": "your concise answer here", "sources": ["faq_id_1", "faq_id_2"], "cta": {{"label": "...", "route": "..."}}}}
+
+FAQ CONTEXT:
+"""
+        
+        # Add FAQ context
+        for faq in faqs[:3]:  # Max 3 sources
+            system_prompt += f"\n[{faq['id']}] Q: {faq['question']}\nA: {faq['answer'][:300]}...\n"
+        
+        user_prompt = f"Question: {query}\n\nProvide a concise answer using only the FAQ context above."
+        
+        # Call LLM
+        client = get_client()
+        if client is None:
+            return {
+                "answer": "We don't have that in our FAQ yet. You can start the Guided Care Plan to learn more.",
+                "sources": [],
+                "cta": default_cta
+            }
+        
+        response = client.client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            temperature=0.3,
+            max_tokens=250
+        )
+        
+        # Parse response
+        content = response.choices[0].message.content.strip()
+        
+        # Try to extract JSON (handle markdown code blocks)
+        if "```json" in content:
+            content = content.split("```json")[1].split("```")[0].strip()
+        elif "```" in content:
+            content = content.split("```")[1].split("```")[0].strip()
+            
+        result = json.loads(content)
+        
+        # Post-validation and safety
+        answer_text = result.get("answer", "")
+        
+        # Filter banned phrases
+        for banned in banned_phrases:
+            answer_text = answer_text.replace(banned, fallback_name)
+        
+        # Enforce word limit (approx 120 words)
+        words = answer_text.split()
+        if len(words) > 120:
+            answer_text = ' '.join(words[:120]) + "..."
+        
+        # Validate CTA
+        cta = result.get("cta", default_cta)
+        if not cta or not isinstance(cta, dict) or "route" not in cta:
+            cta = default_cta
+            
+        # Validate sources
+        sources = result.get("sources", [])
+        if not isinstance(sources, list):
+            sources = []
+            
+        return {
+            "answer": answer_text[:800],  # Hard cap at 800 chars
+            "sources": sources[:3],  # Max 3 sources
+            "cta": cta
+        }
+        
+    except Exception as e:
+        print(f"[FAQ_LLM_ERROR] {e}")
+        # Safe fallback
+        return {
+            "answer": "We don't have that in our FAQ yet. You can start the Guided Care Plan to learn more.",
+            "sources": [],
+            "cta": policy.get("default_cta", {"label": "Open Guided Care Plan", "route": "gcp_intro"})
+        }

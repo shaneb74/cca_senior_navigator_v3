@@ -9,12 +9,18 @@ FLAG-DRIVEN PERSONALIZATION:
 - Uses NaviOrchestrator.get_suggested_questions() for centralized flag logic
 - Surfaces 3 most relevant questions at any time
 - Auto-refreshes as user completes products and flags change
+
+LLM-POWERED FAQ (Stage 3):
+- Natural language query via TF-IDF retrieval
+- Grounded answers using ai/llm_mediator with policy enforcement
+- Max 120 words, no hallucinations, safe CTAs only
 """
 
 from typing import Any
 import json
 
 import streamlit as st
+import numpy as np
 
 from core.flags import get_all_flags
 from core.mcip import MCIP
@@ -63,6 +69,42 @@ def load_faq_policy() -> dict[str, Any]:
     """
     with open("config/faq_policy.json", "r", encoding="utf-8") as f:
         return json.load(f)
+
+
+# ==============================================================================
+# RETRIEVAL LAYER (TF-IDF)
+# ==============================================================================
+@st.cache_data
+def retrieve_faq(query: str, faqs: list[dict], k: int = 3) -> list[dict]:
+    """Retrieve top-k most relevant FAQs using TF-IDF cosine similarity.
+    
+    Args:
+        query: User's natural language question
+        faqs: List of FAQ dicts from load_faq_items()
+        k: Number of results to return (default 3)
+        
+    Returns:
+        List of top-k FAQ dicts with similarity > 0, sorted by relevance
+    """
+    try:
+        from sklearn.feature_extraction.text import TfidfVectorizer
+        from sklearn.metrics.pairwise import cosine_similarity
+        
+        # Combine question + answer for richer matching
+        texts = [f"{f['question']} {f['answer']}" for f in faqs]
+        
+        vectorizer = TfidfVectorizer(stop_words="english", max_features=500)
+        X = vectorizer.fit_transform(texts)
+        q_vec = vectorizer.transform([query])
+        
+        sims = cosine_similarity(q_vec, X).flatten()
+        top_idx = np.argsort(sims)[::-1][:k]
+        
+        # Only return results with positive similarity
+        return [faqs[i] for i in top_idx if sims[i] > 0]
+    except Exception as e:
+        print(f"[FAQ_RETRIEVAL_ERROR] {e}")
+        return []
 
 
 # Load question database from JSON
@@ -604,6 +646,102 @@ def render():
             else:
                 st.markdown(f"**Navi:** {msg}")
                 st.markdown("")  # Spacing
+
+    st.divider()
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # LLM-Powered FAQ Search (Stage 3)
+    # ─────────────────────────────────────────────────────────────────────────
+    st.markdown("#### 🔍 Search FAQs (AI-Powered)")
+    st.caption(
+        "Ask any question and I'll search our FAQ database for the best answer—rewritten just for you."
+    )
+
+    search_query = st.text_input(
+        "Type your question…",
+        key="faq_search_input",
+        placeholder="e.g., What is assisted living?",
+    )
+
+    if st.button("Get Answer", type="primary", key="faq_search_btn", use_container_width=True):
+        if search_query.strip():
+            with st.spinner("Searching FAQs and crafting answer..."):
+                # Load FAQ corpus and policy
+                faqs = load_faq_items()
+                policy = load_faq_policy()
+
+                # Retrieve top-k relevant FAQs
+                retrieved = retrieve_faq(search_query, faqs, k=3)
+
+                if not retrieved:
+                    st.warning("⚠️ No relevant FAQs found. Try rephrasing your question.")
+                    
+                    # Log no-result queries for gap analysis
+                    from core.events import log_event
+                    log_event("faq_llm", {
+                        "query": search_query,
+                        "retrieved_ids": [],
+                        "used_sources": [],
+                        "cta_route": None,
+                        "feedback": None,
+                        "name_present": bool(st.session_state.get("person_a_name")),
+                    })
+                else:
+                    # Get user name for token interpolation
+                    from core.state import get_current_name
+
+                    name = get_current_name() or policy.get("fallback_name", "the person you're helping")
+
+                    # Call LLM mediator
+                    from ai.llm_mediator import answer_faq
+
+                    result = answer_faq(search_query, name, retrieved, policy)
+
+                    # Display answer
+                    st.markdown("##### Answer:")
+                    st.markdown(result["answer"])
+
+                    # Display sources
+                    if result.get("sources"):
+                        with st.expander("📚 Sources (FAQ IDs)", expanded=False):
+                            for src in result["sources"]:
+                                st.caption(f"- FAQ #{src}")
+
+                    # ─── Feedback UI (Stage 4) ───
+                    st.markdown("")  # Spacing
+                    st.caption("Was this helpful?")
+                    fb_col1, fb_col2 = st.columns(2)
+                    feedback = None
+                    if fb_col1.button("👍 Yes", key="faq_fb_yes"):
+                        feedback = True
+                    if fb_col2.button("👎 No", key="faq_fb_no"):
+                        feedback = False
+                        st.caption("Thanks — we'll improve this. You can also start the Guided Care Plan for tailored help.")
+                    
+                    st.session_state["faq_feedback"] = feedback
+
+                    # ─── Event Logging (Stage 4) ───
+                    from core.events import log_event
+                    log_event("faq_llm", {
+                        "query": search_query,
+                        "retrieved_ids": [f["id"] for f in retrieved],
+                        "used_sources": result.get("sources", []),
+                        "cta_route": (result.get("cta") or {}).get("route"),
+                        "feedback": st.session_state.get("faq_feedback"),
+                        "name_present": bool(st.session_state.get("person_a_name")),
+                    })
+
+                    # Display CTA button
+                    if result.get("cta"):
+                        cta = result["cta"]
+                        st.markdown("---")
+                        if st.button(
+                            cta["label"],
+                            key="faq_search_cta",
+                            type="secondary",
+                            use_container_width=True,
+                        ):
+                            route_to(cta["route"])
 
     st.divider()
 

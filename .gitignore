@@ -17,6 +17,8 @@ data/users/
 # Exception: Include demo profiles for deployment
 !data/users/demo/
 !data/users/demo/*.json
+# Event logs (contains user queries, PII-light but excluded)
+data/events.log
 *.lock
 
 # Linting and testing cache
