@@ -650,251 +650,304 @@ def _get_legacy_response(question: str) -> str:
 
 
 def render():
-    """Render AI Advisor FAQ page."""
+    """Render AI Advisor FAQ page with modern chat interface."""
+    
+    # CSS Styling
+    st.markdown("""
+    <style>
+      /* Center the experience */
+      .faq-wrap { max-width: 960px; margin: 0 auto; padding: 12px 20px 28px; }
+      .faq-head h1 { margin: 0 0 6px; font-size: 2rem; }
+      .faq-head p  { color:#64748B; margin:0 0 20px; font-size: 1.05rem; }
 
-    st.markdown("## AI Advisor")
-    st.subheader("I'm Navi — your expert advisor.")
-    st.write(
-        "I help you see the whole map: care paths, hidden costs, decisions no one talks about. For your loved one."
+      /* Recommended chips */
+      .chips { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0 20px; }
+
+      /* Chat area */
+      .chat { display:flex; flex-direction:column; gap:16px; margin: 20px 0; min-height: 200px; }
+      .msg-wrapper { display: flex; width: 100%; }
+      .msg-wrapper.user { justify-content: flex-end; }
+      .msg-wrapper.assistant { justify-content: flex-start; }
+      
+      .msg { max-width: 75%; padding:12px 16px; border-radius:16px; line-height:1.6; word-wrap: break-word; }
+      .msg.user { background:#DCFCE7; border:1px solid #86EFAC; border-bottom-right-radius: 4px; }
+      .msg.assistant { background:#F8FAFC; border:1px solid #E5E7EB; border-bottom-left-radius: 4px; }
+
+      /* Sources & CTA */
+      .sources { color:#6B7280; font-size:0.875rem; margin-top:8px; }
+      .source-pill { 
+        background:#EEF2FF; 
+        border:1px solid #C7D2FE; 
+        border-radius:12px; 
+        padding:3px 10px; 
+        margin:4px 4px 4px 0; 
+        display:inline-block;
+        font-size: 0.85rem;
+      }
+      
+      .msg-divider { border-top: 1px solid #E5E7EB; margin: 12px 0; }
+
+      @media (max-width: 768px) {
+        .msg { max-width: 90%; }
+        .faq-wrap { padding: 8px 12px 20px; }
+      }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # Initialize session state for chat
+    if "faq_chat" not in st.session_state:
+        st.session_state["faq_chat"] = []
+    if "faq_composer" not in st.session_state:
+        st.session_state["faq_composer"] = ""
+    if "faq_send_now" not in st.session_state:
+        st.session_state["faq_send_now"] = False
+    
+    # Header
+    st.markdown('<div class="faq-wrap">', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="faq-head"><h1>Ask the AI Advisor</h1>'
+        '<p>Short, on-point answers grounded in our FAQ and company knowledge.</p></div>',
+        unsafe_allow_html=True
     )
-
-    # Initialize session state
-    if "ai_thread" not in st.session_state:
-        st.session_state["ai_thread"] = []
-    if "ai_asked_questions" not in st.session_state:
-        st.session_state["ai_asked_questions"] = []
-    if "ai_chip_clicks" not in st.session_state:
-        st.session_state["ai_chip_clicks"] = 0
-
-    # Suggested questions section
-    st.markdown("#### Suggested Questions")
-
-    # Get 3 dynamic questions based on user context
-    suggested = _get_top_3_suggestions()
-
-    # Display 3 question buttons with unique keys
+    
+    # ─── Recommended Questions (3 chips) ───
+    st.markdown("**Recommended questions:**")
+    
+    # Curated high-value questions
+    recommendations = [
+        "How long does the Guided Care Plan take?",
+        "What does the Cost Planner do?",
+        "Do I need a diagnosis for Memory Care?"
+    ]
+    
     cols = st.columns(3)
-    for i, question in enumerate(suggested):
-        # Use question hash + click counter for unique keys
-        unique_key = f"faq_suggested_{hash(question)}_{st.session_state['ai_chip_clicks']}"
-
-        if cols[i].button(question, use_container_width=True, key=unique_key):
-            # Increment click counter to force new keys on rerun
-            st.session_state["ai_chip_clicks"] += 1
-            _ask_question(question)
+    for i, rec_q in enumerate(recommendations):
+        if cols[i].button(
+            rec_q,
+            key=f"rec_chip_{i}",
+            use_container_width=True,
+            help="Click to ask"
+        ):
+            st.session_state["faq_composer"] = rec_q
+            st.session_state["faq_send_now"] = True
             st.rerun()
-
-    st.markdown("#### Ask Me Anything")
-
-    # Chat input
-    prompt = st.text_input(
-        "Your question…", key="ai_input", placeholder="e.g., How can I afford home care?", value=""
-    )
-
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        if st.button("Send", type="primary", key="ai_send", use_container_width=True):
-            if prompt.strip():
-                _ask_question(prompt.strip())
-                st.rerun()
-    with col2:
-        if st.button("Clear chat", key="ai_clear", use_container_width=True):
-            st.session_state["ai_thread"] = []
-            st.session_state["ai_asked_questions"] = []
-            st.rerun()
-
-    st.divider()
-
-    # Display conversation thread
-    st.markdown("#### Questions I've Asked")
-
-    thread = st.session_state.get("ai_thread", [])
-
-    if not thread:
-        st.caption(
-            "💡 Click a suggested question above or type your own to start chatting with Navi."
-        )
+    
+    st.markdown("---")
+    
+    # ─── Chat Transcript ───
+    chat = st.session_state["faq_chat"]
+    
+    if not chat:
+        st.info("💡 Click a recommended question above or type your own to start chatting.")
     else:
-        for role, msg in thread:
+        st.markdown('<div class="chat">', unsafe_allow_html=True)
+        
+        for idx, msg in enumerate(chat):
+            role = msg["role"]
+            text = msg["text"]
+            
             if role == "user":
-                st.markdown(f"**You:** {msg}")
-            else:
-                st.markdown(f"**Navi:** {msg}")
+                st.markdown(
+                    f'<div class="msg-wrapper user"><div class="msg user">{text}</div></div>',
+                    unsafe_allow_html=True
+                )
+            else:  # assistant
+                st.markdown(
+                    f'<div class="msg-wrapper assistant"><div class="msg assistant">{text}</div></div>',
+                    unsafe_allow_html=True
+                )
+                
+                # Sources (if FAQ)
+                sources = msg.get("sources", [])
+                if sources:
+                    pills_html = " ".join([
+                        f'<span class="source-pill">{src}</span>'
+                        for src in sources[:3]  # Max 3 visible
+                    ])
+                    st.markdown(
+                        f'<div class="sources">📚 Sources: {pills_html}</div>',
+                        unsafe_allow_html=True
+                    )
+                
+                # CTA Button
+                cta = msg.get("cta")
+                if cta:
+                    if st.button(
+                        cta["label"],
+                        key=f"cta_{idx}_{cta['route']}",
+                        type="secondary",
+                        use_container_width=False
+                    ):
+                        route_to(cta["route"])
+                
+                # Feedback buttons
                 st.markdown("")  # Spacing
-
-    st.divider()
-
-    # ─────────────────────────────────────────────────────────────────────────
-    # LLM-Powered FAQ Search (Stage 3)
-    # ─────────────────────────────────────────────────────────────────────────
-    st.markdown("#### 🔍 Search FAQs (AI-Powered)")
-    st.caption(
-        "Ask any question and I'll search our FAQ database for the best answer—rewritten just for you."
-    )
-
-    search_query = st.text_input(
-        "Type your question…",
-        key="faq_search_input",
-        placeholder="e.g., What is assisted living?",
-    )
-
-    if st.button("Get Answer", type="primary", key="faq_search_btn", use_container_width=True):
-        if search_query.strip():
-            with st.spinner("Searching knowledge base..."):
-                # Load policy
-                policy = load_faq_policy()
+                fb_col1, fb_col2 = st.columns([1, 1])
+                with fb_col1:
+                    if st.button("👍 Helpful", key=f"fb_yes_{idx}"):
+                        from core.events import log_event
+                        log_event("faq_feedback", {"helpful": True, "msg_idx": idx})
+                        st.toast("Thanks for the feedback!", icon="✅")
+                with fb_col2:
+                    if st.button("👎 Not helpful", key=f"fb_no_{idx}"):
+                        from core.events import log_event
+                        log_event("faq_feedback", {"helpful": False, "msg_idx": idx})
+                        st.toast("Thanks — we'll improve this!", icon="📝")
                 
-                # ─── ROUTING: Corp Knowledge vs FAQ ───
-                # Check if query is about CCA company info
-                corp_keywords = [
-                    "cca", "concierge care advisors", "leadership", "team",
-                    "about", "founded", "business since", "history",
-                    "who is", "who are", "company", "organization"
-                ]
-                is_corp_query = any(kw in search_query.lower() for kw in corp_keywords)
+                # Divider after each assistant message
+                if idx < len(chat) - 1:
+                    st.markdown('<div class="msg-divider"></div>', unsafe_allow_html=True)
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    st.markdown("---")
+    
+    # ─── Composer ───
+    col1, col2 = st.columns([5, 1])
+    
+    with col1:
+        user_q = st.text_input(
+            "Ask about planning, costs, eligibility, or our company…",
+            key="faq_composer_input",
+            placeholder="e.g., What is assisted living? Who is CCA?",
+            label_visibility="collapsed"
+        )
+    
+    with col2:
+        send_clicked = st.button("Send", type="primary", key="faq_send_btn")
+    
+    # Also trigger on chip click
+    send_now = st.session_state.pop("faq_send_now", False)
+    should_send = send_clicked or send_now
+    
+    # If chip was clicked, use the stored composer value
+    if send_now and st.session_state.get("faq_composer"):
+        user_q = st.session_state["faq_composer"]
+        st.session_state["faq_composer"] = ""
+    
+    # ─── Process Question ───
+    if should_send and user_q and user_q.strip():
+        q = user_q.strip()
+        
+        # Add user message
+        st.session_state["faq_chat"].append({"role": "user", "text": q})
+        
+        with st.spinner("🤔 Thinking..."):
+            # Load policy
+            policy = load_faq_policy()
+            
+            # ─── ROUTING: Corp Knowledge vs FAQ ───
+            corp_keywords = [
+                "cca", "concierge care advisors", "leadership", "team",
+                "about", "founded", "business since", "history",
+                "who is", "who are", "company", "organization"
+            ]
+            is_corp_query = any(kw in q.lower() for kw in corp_keywords)
+            
+            if is_corp_query:
+                # Try corporate knowledge first
+                corp_chunks = load_corp_chunks()
+                corp_hits = retrieve_corp(q, corp_chunks, k=5)
                 
-                if is_corp_query:
-                    # ─── Corporate Knowledge Path ───
-                    corp_chunks = load_corp_chunks()
-                    corp_hits = retrieve_corp(search_query, corp_chunks, k=5)
+                if corp_hits:
+                    from core.state import get_current_name
+                    from ai.llm_mediator import answer_corp
                     
-                    if corp_hits:
-                        from core.state import get_current_name
-                        from ai.llm_mediator import answer_corp
-                        
-                        name = get_current_name() or policy.get("fallback_name", "the person you're helping")
-                        result = answer_corp(search_query, name, corp_hits, policy)
-                        
-                        # Display answer
-                        st.markdown("##### Answer:")
-                        st.markdown(result["answer"])
-                        
-                        # Display sources with clickable links
-                        if result.get("sources"):
-                            st.markdown("##### Sources:")
-                            for src in result["sources"]:
-                                st.markdown(f"- [{src['title']}]({src['url']})")
-                        
-                        # ─── Feedback UI ───
-                        st.markdown("")
-                        st.caption("Was this helpful?")
-                        fb_col1, fb_col2 = st.columns(2)
-                        feedback = None
-                        if fb_col1.button("👍 Yes", key="corp_fb_yes"):
-                            feedback = True
-                        if fb_col2.button("👎 No", key="corp_fb_no"):
-                            feedback = False
-                            st.caption("Thanks — we'll improve this. You can contact us or start the Guided Care Plan.")
-                        
-                        st.session_state["faq_feedback"] = feedback
-                        
-                        # ─── Event Logging ───
-                        from core.events import log_event
-                        log_event("corp_llm", {
-                            "query": search_query,
-                            "retrieved_ids": [c["doc_id"] for c in corp_hits],
-                            "used_sources": [s.get("url", "") for s in result.get("sources", [])],
-                            "feedback": feedback,
-                            "name_present": bool(st.session_state.get("person_a_name")),
-                        })
-                    else:
-                        # No corp hits - try FAQ fallback
-                        st.info("ℹ️ No company info found. Searching FAQs...")
-                        is_corp_query = False  # Fall through to FAQ search
+                    name = get_current_name() or policy.get("fallback_name", "the person you're helping")
+                    result = answer_corp(q, name, corp_hits, policy)
+                    
+                    # Format sources for display
+                    source_titles = [f"{s['title']}" for s in result.get("sources", [])[:3]]
+                    
+                    msg = {
+                        "role": "assistant",
+                        "text": result["answer"],
+                        "sources": source_titles,
+                        "cta": None  # Corp answers don't have CTAs
+                    }
+                    
+                    # Log corp query
+                    from core.events import log_event
+                    log_event("corp_llm", {
+                        "query": q,
+                        "retrieved_ids": [c["doc_id"] for c in corp_hits],
+                        "used_sources": [s.get("url", "") for s in result.get("sources", [])],
+                        "name_present": bool(st.session_state.get("person_a_name")),
+                    })
+                    
+                    st.session_state["faq_chat"].append(msg)
+                    st.rerun()
+            
+            # ─── FAQ Path ───
+            if not is_corp_query or not corp_hits:
+                faqs = load_faq_items()
+                retrieved = retrieve_faq(q, faqs, k=3)
                 
-                # ─── FAQ Path (original logic) ───
-                if not is_corp_query:
-                    # Load FAQ corpus
-                    faqs = load_faq_items()
-
-                    # Retrieve top-k relevant FAQs
-                    retrieved = retrieve_faq(search_query, faqs, k=3)
-
-                    if not retrieved:
-                        st.warning("⚠️ No relevant FAQs found. Try rephrasing your question.")
-                        
-                        # Log no-result queries for gap analysis
-                        from core.events import log_event
-                        log_event("faq_llm", {
-                            "query": search_query,
-                            "retrieved_ids": [],
-                            "used_sources": [],
-                            "cta_route": None,
-                            "feedback": None,
-                            "name_present": bool(st.session_state.get("person_a_name")),
-                        })
-                    else:
-                        # Get user name for token interpolation
-                        from core.state import get_current_name
-
-                        name = get_current_name() or policy.get("fallback_name", "the person you're helping")
-
-                        # Call LLM mediator
-                        from ai.llm_mediator import answer_faq
-
-                        result = answer_faq(search_query, name, retrieved, policy)
-
-                        # Display answer
-                        st.markdown("##### Answer:")
-                        st.markdown(result["answer"])
-
-                        # Display sources
-                        if result.get("sources"):
-                            with st.expander("📚 Sources (FAQ IDs)", expanded=False):
-                                for src in result["sources"]:
-                                    st.caption(f"- FAQ #{src}")
-
-                        # ─── Feedback UI (Stage 4) ───
-                        st.markdown("")  # Spacing
-                        st.caption("Was this helpful?")
-                        fb_col1, fb_col2 = st.columns(2)
-                        feedback = None
-                        if fb_col1.button("👍 Yes", key="faq_fb_yes"):
-                            feedback = True
-                        if fb_col2.button("👎 No", key="faq_fb_no"):
-                            feedback = False
-                            st.caption("Thanks — we'll improve this. You can also start the Guided Care Plan for tailored help.")
-                        
-                        st.session_state["faq_feedback"] = feedback
-
-                        # ─── Event Logging (Stage 4) ───
-                        from core.events import log_event
-                        log_event("faq_llm", {
-                        "query": search_query,
+                if retrieved:
+                    from core.state import get_current_name
+                    from ai.llm_mediator import answer_faq
+                    
+                    name = get_current_name() or policy.get("fallback_name", "the person you're helping")
+                    result = answer_faq(q, name, retrieved, policy)
+                    
+                    # Map source IDs to FAQ questions for display
+                    used_ids = set(result.get("sources", []))
+                    source_titles = [
+                        f["question"][:50] + ("..." if len(f["question"]) > 50 else "")
+                        for f in retrieved if f["id"] in used_ids
+                    ]
+                    
+                    msg = {
+                        "role": "assistant",
+                        "text": result["answer"],
+                        "sources": source_titles,
+                        "cta": result.get("cta")
+                    }
+                    
+                    # Log FAQ query
+                    from core.events import log_event
+                    log_event("faq_llm", {
+                        "query": q,
                         "retrieved_ids": [f["id"] for f in retrieved],
                         "used_sources": result.get("sources", []),
                         "cta_route": (result.get("cta") or {}).get("route"),
-                        "feedback": st.session_state.get("faq_feedback"),
                         "name_present": bool(st.session_state.get("person_a_name")),
                     })
-
-                    # Display CTA button
-                    if result.get("cta"):
-                        cta = result["cta"]
-                        st.markdown("---")
-                        if st.button(
-                            cta["label"],
-                            key="faq_search_cta",
-                            type="secondary",
-                            use_container_width=True,
-                        ):
-                            route_to(cta["route"])
-
-    st.divider()
-
-    # Back to hub - use canonical hub route (same as other products)
-    if st.button("← Back to Hub", key="back_to_hub", use_container_width=True):
-        route_to("hub_concierge")
-
-
-def _ask_question(question: str):
-    """Process a question - add to thread, mark as asked, get response."""
-    # Add to thread
-    st.session_state["ai_thread"].append(("user", question))
-    st.session_state["ai_thread"].append(("assistant", _get_navi_response(question)))
-
-    # Add to asked questions (for filtering suggestions)
-    st.session_state["ai_asked_questions"].append(question)
+                else:
+                    # No results fallback
+                    msg = {
+                        "role": "assistant",
+                        "text": "We don't have that in our FAQ yet. You can start the Guided Care Plan to get a tailored next step.",
+                        "sources": [],
+                        "cta": {"label": "Open Guided Care Plan", "route": "gcp_intro"}
+                    }
+                    
+                    # Log no-result query
+                    from core.events import log_event
+                    log_event("faq_llm", {
+                        "query": q,
+                        "retrieved_ids": [],
+                        "used_sources": [],
+                        "cta_route": "gcp_intro",
+                        "name_present": bool(st.session_state.get("person_a_name")),
+                    })
+                
+                st.session_state["faq_chat"].append(msg)
+                st.rerun()
+    
+    # ─── Controls ───
+    col_clear, col_back = st.columns([1, 1])
+    
+    with col_clear:
+        if st.button("�️ Clear chat", key="clear_chat_btn", help="Reset conversation"):
+            st.session_state["faq_chat"] = []
+            st.rerun()
+    
+    with col_back:
+        if st.button("← Back to Hub", key="back_to_hub_btn", use_container_width=True):
+            route_to("hub_concierge")
+    
+    st.markdown('</div>', unsafe_allow_html=True)  # Close faq-wrap
 
 
 def _ask_question(question: str):
