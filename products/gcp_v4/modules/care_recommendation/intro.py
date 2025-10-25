@@ -62,23 +62,42 @@ def render_intro_step() -> None:
     with col2:
         hero = _load_planning_bytes()
         if hero:
-            st.image(hero, use_container_width=True, caption=None)
+            import base64
+            b64 = base64.b64encode(hero).decode("utf-8")
+            st.markdown(
+                f"""
+                <div class="gcp-hero-card">
+                  <img class="gcp-hero-img" src="data:image/png;base64,{b64}" alt="Planning together at a table" />
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
         else:
             st.info("📋 Planning your care journey...")
 
     # Minimal CSS clamp for hero and responsive stacking
-    st.markdown(
-        """
-        <style>
-          /* Prefer scoping to Streamlit image container */
-          .stImage img { max-width: 560px; height: auto; }
-          @media (max-width: 900px) {
-            .stImage img { max-width: 100%; }
-          }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
+        st.markdown(
+                """
+                <style>
+                    /* Card styling for hero */
+                    .gcp-hero-card {
+                            border-radius: 12px;
+                            box-shadow: 0 12px 28px rgba(16, 24, 40, 0.18);
+                            overflow: hidden;
+                            background: #ffffff;
+                            border: 10px solid #ffffff; /* Polaroid-style frame */
+                            width: clamp(220px, 28vw, 380px); /* Significantly reduced size */
+                            transform: rotate(24deg); /* Natural tilt */
+                            transform-origin: center;
+                    }
+                        .gcp-hero-img { width: 100%; height: auto; border-radius: 8px; display: block; }
+                    @media (max-width: 900px) {
+                            .gcp-hero-card { width: clamp(200px, 60vw, 320px); }
+                    }
+                </style>
+                """,
+                unsafe_allow_html=True,
+        )
 
 
 def should_use_custom_intro() -> bool:
