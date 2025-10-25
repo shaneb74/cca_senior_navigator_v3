@@ -64,14 +64,22 @@ def load_nav(ctx: dict) -> dict[str, dict]:
     return pages
 
 
-def route_to(key: str) -> None:
+def route_to(key: str, **context) -> None:
     """Navigate to a page by updating query params and triggering rerun.
 
     Preserves UID in query params to maintain session across navigation.
+    
+    Optional context params are stored in session_state["_nav_context"] for
+    the target page to consume (e.g., seed tags, query prefill).
 
     Args:
         key: Page key from nav.json (e.g., "hub_concierge")
+        **context: Optional context data (seed, from_faq, tags, etc.)
     """
+    # Store context for target page
+    if context:
+        st.session_state["_nav_context"] = {"route": key, **context}
+    
     # Preserve UID when updating page
     current_uid = st.query_params.get("uid")
     st.query_params["page"] = key

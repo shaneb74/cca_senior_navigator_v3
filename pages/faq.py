@@ -645,12 +645,72 @@ def _get_legacy_response(question: str) -> str:
 
 
 # ==============================================================================
+# UX ENHANCEMENT HELPERS
+# ==============================================================================
+def _copy_button(text: str, key: str) -> None:
+    """Render a copy-to-clipboard button with JS."""
+    import html
+    safe_text = html.escape(text).replace("'", "\\'").replace("\n", "\\n")
+    st.markdown(f"""
+    <button id="copy_{key}" style="
+        background: #F8FAFC;
+        border: 1px solid #E5E7EB;
+        border-radius: 6px;
+        padding: 4px 12px;
+        font-size: 0.875rem;
+        cursor: pointer;
+        margin-top: 8px;
+    " onclick="
+        navigator.clipboard.writeText('{safe_text}');
+        this.textContent = '✓ Copied!';
+        setTimeout(() => this.textContent = '📋 Copy answer', 1500);
+    ">📋 Copy answer</button>
+    """, unsafe_allow_html=True)
+
+
+def _get_follow_up_chips(used_ids: set[str], faqs: list[dict], max_chips: int = 3) -> list[dict]:
+    """Get follow-up FAQ suggestions based on shared tags with used sources.
+    
+    Args:
+        used_ids: Set of FAQ IDs used in the current answer
+        faqs: Full FAQ corpus
+        max_chips: Maximum number of chips to return
+        
+    Returns:
+        List of FAQ dicts for follow-up chips
+    """
+    # Get source items and collect tags
+    source_items = [f for f in faqs if f["id"] in used_ids]
+    tag_pool = {t for f in source_items for t in f.get("tags", [])}
+    
+    if not tag_pool:
+        return []
+    
+    # Find FAQs sharing tags (exclude already used)
+    candidates = [
+        f for f in faqs
+        if any(t in tag_pool for t in f.get("tags", []))
+        and f["id"] not in used_ids
+    ]
+    
+    # Prioritize by priority field, then limit
+    candidates.sort(key=lambda x: x.get("priority", 5), reverse=True)
+    return candidates[:max_chips]
+
+
+# ==============================================================================
 # PAGE RENDER
 # ==============================================================================
 
 
 def render():
     """Render AI Advisor FAQ page with modern chat interface."""
+    
+    # ─── Preload from Query Params (?q=) ───
+    qp = st.query_params
+    if qp.get("q") and not st.session_state.get("faq_chat"):
+        st.session_state["faq_composer"] = qp["q"]
+        st.session_state["faq_send_now"] = True
     
     # CSS Styling
     st.markdown("""
@@ -769,18 +829,74 @@ def render():
                         unsafe_allow_html=True
                     )
                 
-                # CTA Button
+                # ─── Copy & Share Actions ───
+                action_col1, action_col2 = st.columns([1, 1])
+                with action_col1:
+                    _copy_button(text, key=f"copy_{idx}")
+                with action_col2:
+                    # Share link with ?q= query param
+                    user_q = msg.get("user_query", "")
+                    if user_q and st.button("🔗 Share link", key=f"share_{idx}"):
+                        from urllib.parse import quote
+                        share_url = f"?q={quote(user_q)}"
+                        st.code(share_url, language="text")
+                        from core.events import log_event
+                        log_event("faq_action", {"share": True, "q": user_q})
+                        st.toast("Share this link!", icon="🔗")
+                
+                # ─── Follow-up Chips (contextual suggestions) ───
+                used_ids = set(msg.get("source_ids", []))
+                if used_ids:
+                    faqs = load_faq_items()
+                    follow_ups = _get_follow_up_chips(used_ids, faqs, max_chips=3)
+                    
+                    if follow_ups:
+                        st.caption("💡 You can also ask:")
+                        fu_cols = st.columns(min(3, len(follow_ups)))
+                        for i, fu in enumerate(follow_ups):
+                            if fu_cols[i].button(
+                                fu["question"][:40] + ("..." if len(fu["question"]) > 40 else ""),
+                                key=f"fu_{idx}_{fu['id']}",
+                                use_container_width=True
+                            ):
+                                st.session_state["faq_composer"] = fu["question"]
+                                st.session_state["faq_send_now"] = True
+                                from core.events import log_event
+                                log_event("faq_followup_chip", {"clicked_id": fu["id"], "from_idx": idx})
+                                st.rerun()
+                
+                # ─── CTA Button with Smart Chaining ───
                 cta = msg.get("cta")
                 if cta:
+                    # Collect seed tags for context passing
+                    seed_tags = list(msg.get("seed_tags", []))[:3]
+                    user_q = msg.get("user_query", "")
+                    
                     if st.button(
                         cta["label"],
                         key=f"cta_{idx}_{cta['route']}",
                         type="secondary",
                         use_container_width=False
                     ):
-                        route_to(cta["route"])
+                        # Log CTA navigation with context
+                        from core.events import log_event
+                        log_event("faq_cta_nav", {
+                            "route": cta["route"],
+                            "tags": seed_tags,
+                            "query": user_q
+                        })
+                        
+                        # Navigate with seed context
+                        route_to(
+                            cta["route"],
+                            seed={
+                                "from_faq": True,
+                                "q": user_q,
+                                "tags": seed_tags
+                            }
+                        )
                 
-                # Feedback buttons
+                # ─── Feedback buttons ───
                 st.markdown("")  # Spacing
                 fb_col1, fb_col2 = st.columns([1, 1])
                 with fb_col1:
@@ -859,11 +975,20 @@ def render():
                     # Format sources for display
                     source_titles = [f"{s['title']}" for s in result.get("sources", [])[:3]]
                     
+                    # Collect tags for smart CTA chaining (from corp chunks)
+                    seed_tags = []
+                    for chunk in corp_hits[:3]:
+                        seed_tags.extend(chunk.get("tags", []))
+                    seed_tags = list(set(seed_tags))[:5]  # Dedupe and limit
+                    
                     msg = {
                         "role": "assistant",
                         "text": result["answer"],
                         "sources": source_titles,
-                        "cta": None  # Corp answers don't have CTAs
+                        "source_ids": [],  # Corp doesn't use FAQ IDs
+                        "cta": None,  # Corp answers don't have CTAs
+                        "user_query": q,
+                        "seed_tags": seed_tags
                     }
                     
                     # Log corp query
@@ -897,11 +1022,21 @@ def render():
                         for f in retrieved if f["id"] in used_ids
                     ]
                     
+                    # Collect tags for smart CTA chaining and follow-ups
+                    seed_tags = []
+                    for f in retrieved:
+                        if f["id"] in used_ids:
+                            seed_tags.extend(f.get("tags", []))
+                    seed_tags = list(set(seed_tags))[:5]  # Dedupe and limit
+                    
                     msg = {
                         "role": "assistant",
                         "text": result["answer"],
                         "sources": source_titles,
-                        "cta": result.get("cta")
+                        "source_ids": list(used_ids),  # For follow-up chips
+                        "cta": result.get("cta"),
+                        "user_query": q,
+                        "seed_tags": seed_tags
                     }
                     
                     # Log FAQ query
@@ -919,7 +1054,10 @@ def render():
                         "role": "assistant",
                         "text": "We don't have that in our FAQ yet. You can start the Guided Care Plan to get a tailored next step.",
                         "sources": [],
-                        "cta": {"label": "Open Guided Care Plan", "route": "gcp_intro"}
+                        "source_ids": [],
+                        "cta": {"label": "Open Guided Care Plan", "route": "gcp_intro"},
+                        "user_query": q,
+                        "seed_tags": []
                     }
                     
                     # Log no-result query
