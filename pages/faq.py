@@ -12,6 +12,7 @@ FLAG-DRIVEN PERSONALIZATION:
 """
 
 from typing import Any
+import json
 
 import streamlit as st
 
@@ -20,19 +21,41 @@ from core.mcip import MCIP
 from core.nav import route_to
 from core.navi import NaviOrchestrator
 
-# ==============================================================================
-# QUESTION DATABASE - Flag-Tagged Questions
-# ==============================================================================
-# Each question has:
-# - flags: list of care/cost flags that make this question relevant
-# - priority: 1 (urgent/safety), 2 (important), 3 (informational)
-# - category: care, cost, benefits, planning
-# - question: display text
-# - triggers: keywords for natural language matching
-# - response: Navi's answer
-# ==============================================================================
 
-QUESTION_DATABASE = [
+# ==============================================================================
+# QUESTION DATABASE LOADER
+# ==============================================================================
+@st.cache_data
+def load_faq_items() -> list[dict[str, Any]]:
+    """Load FAQ questions from config/faq.json.
+    
+    Returns:
+        List of FAQ question dicts with schema:
+        {
+            "id": str,
+            "question": str,
+            "answer": str,
+            "tags": list[str],
+            "triggers": list[str],
+            "flags": list[str],
+            "priority": int,
+            "category": str,
+            "ctas": list[dict]
+        }
+    """
+    with open("config/faq.json", "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+# Load question database from JSON
+QUESTION_DATABASE = load_faq_items()
+
+
+# ==============================================================================
+# LEGACY HARDCODED DATABASE (removed - now loaded from config/faq.json)
+# ==============================================================================
+# Preserved for reference only - all questions now externalized
+_LEGACY_QUESTION_DATABASE = [
     # DEFAULT QUESTIONS - shown when no flags exist
     {
         "flags": [],  # Always available
@@ -439,13 +462,13 @@ def _get_navi_response(question_text: str) -> str:
     # Try exact match first
     for q in QUESTION_DATABASE:
         if q["question"].lower() == q_lower:
-            return q["response"]
+            return q["answer"]
 
     # Try trigger matching
     for q in QUESTION_DATABASE:
         for trigger in q["triggers"]:
             if trigger.lower() in q_lower:
-                return q["response"]
+                return q["answer"]
 
     # Legacy fallback for unmatched questions
     return _get_legacy_response(question_text)
