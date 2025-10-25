@@ -1,11 +1,11 @@
 """
-GCP v4 Intro Page - Custom two-column layout with hero image
+GCP v4 Intro Page - Custom centered layout with compact Navi and hero
 
-Visual-only restyle:
-- Two-column responsive layout (text left, image right)
-- Hero image with rounded frame and shadow
+Visual/design goals:
+- Centered container with two-column responsive grid
+- Compact Navi (no banners) with title + single line
+- Hero image with subtle tilt and frame
 - Copy via overrides with token interpolation
-- Single page title handled by module header (no duplicates here)
 """
 
 import json
@@ -44,7 +44,7 @@ def load_intro_overrides() -> dict:
 def render_intro_step() -> None:
     """Render custom intro step with two-column layout and hero image.
 
-    Header/title is rendered by the module engine; we render body + hero only.
+    Header title may be shown by the engine; this view focuses on Navi + body + hero.
     """
     # Resolve content (overrides + tokens)
     ctx = build_token_context(st.session_state, snapshot=None)
@@ -52,52 +52,80 @@ def render_intro_step() -> None:
     resolved = resolve_content({"copy": overrides.get("copy", {})}, context=ctx)
     C = resolved.get("copy", {})
 
-    # Two-column layout: text left, image right
-    col1, col2 = st.columns([7, 5], vertical_alignment="center")
+    # Inject page-scoped CSS (wrapper, grid, hero, and compact Navi reset)
+    st.markdown(
+        """
+        <style>
+          /* Centered wrapper */
+          #gcp-intro.intro-wrap { max-width: 1100px; margin: 0 auto; padding: 8px 24px 24px; }
+          #gcp-intro h3 { margin: 10px 0 8px; }
+          #gcp-intro .lead { margin-top: 8px; font-size: 1.05rem; color: #0d1f4b; line-height: 1.5; }
+          #gcp-intro .helper { color: #6b7280; font-size: 0.9rem; margin-top: 4px; }
+          #gcp-intro .intro-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 28px; align-items: center; }
 
-    with col1:
-        st.markdown(C.get("lead", ""))
-        st.caption(C.get("helper", ""))
+          /* Tilted hero card */
+          .gcp-hero-card { border-radius: 12px; box-shadow: 0 12px 28px rgba(16,24,40,.18); overflow: hidden; background: #fff; border: 10px solid #fff; width: clamp(240px, 32vw, 440px); transform: rotate(18deg); transform-origin: center; }
+          .gcp-hero-img { width: 100%; height: auto; border-radius: 8px; display: block; }
 
-    with col2:
-        hero = _load_planning_bytes()
-        if hero:
-            import base64
-            b64 = base64.b64encode(hero).decode("utf-8")
-            st.markdown(
-                f"""
-                <div class="gcp-hero-card">
-                  <img class="gcp-hero-img" src="data:image/png;base64,{b64}" alt="Planning together at a table" />
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-        else:
-            st.info("📋 Planning your care journey...")
+          @media (max-width: 900px) {
+            #gcp-intro .intro-grid { grid-template-columns: 1fr; gap: 18px; }
+            .gcp-hero-card { width: clamp(220px, 70vw, 360px); }
+          }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
 
-    # Minimal CSS clamp for hero and responsive stacking
-        st.markdown(
-                """
-                <style>
-                    /* Card styling for hero */
-                    .gcp-hero-card {
-                            border-radius: 12px;
-                            box-shadow: 0 12px 28px rgba(16, 24, 40, 0.18);
-                            overflow: hidden;
-                            background: #ffffff;
-                            border: 10px solid #ffffff; /* Polaroid-style frame */
-                            width: clamp(220px, 28vw, 380px); /* Significantly reduced size */
-                            transform: rotate(24deg); /* Natural tilt */
-                            transform-origin: center;
-                    }
-                        .gcp-hero-img { width: 100%; height: auto; border-radius: 8px; display: block; }
-                    @media (max-width: 900px) {
-                            .gcp-hero-card { width: clamp(200px, 60vw, 320px); }
-                    }
-                </style>
-                """,
-                unsafe_allow_html=True,
+    # Wrapper start
+    st.markdown('<div id="gcp-intro" class="intro-wrap">', unsafe_allow_html=True)
+
+    # Compact Navi (title + one line only)
+    try:
+        from core.ui import render_navi_panel_v2
+        render_navi_panel_v2(
+            title=C.get("navi_title"),
+            reason=C.get("navi_line", ""),
+            encouragement={"icon": "", "text": "", "status": "in_progress"},
+            context_chips=[],
+            primary_action={"label": "", "route": ""},
+            variant="compact",
         )
+    except Exception:
+        pass
+
+    # Two-column layout: text left, image right
+    st.markdown('<div class="intro-grid">', unsafe_allow_html=True)
+    st.markdown(
+        f"""
+        <div>
+          <h3>{C.get('page_title','')}</h3>
+          <p class="lead">{C.get('lead','')}</p>
+          <p class="helper">{C.get('helper','')}</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    # Hero column
+    hero = _load_planning_bytes()
+    if hero:
+        import base64
+        b64 = base64.b64encode(hero).decode("utf-8")
+        st.markdown(
+            f"""
+            <div class="hero">
+              <div class="gcp-hero-card">
+                <img class="gcp-hero-img" src="data:image/png;base64,{b64}" alt="Planning together at a table" />
+              </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    else:
+        st.info("📋 Planning your care journey...")
+
+    st.markdown('</div>', unsafe_allow_html=True)  # end grid
+    st.markdown('</div>', unsafe_allow_html=True)  # end wrapper
 
 
 def should_use_custom_intro() -> bool:

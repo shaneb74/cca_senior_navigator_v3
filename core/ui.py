@@ -618,6 +618,18 @@ def render_navi_panel_v2(
     # Inject CSS for Navi panel V2 (matches product tile styling)
     navi_css = """
     <style>
+    /* Compact variant (minimal, no banners/eyebrow/chips) */
+    .navi-compact {
+        max-width: 1120px;
+        margin: 0 auto 12px auto;
+        background: #F8FAFC;
+        border: 1px solid #E5E7EB;
+        border-radius: 12px;
+        padding: 12px 14px;
+    }
+    .navi-compact .navi-title { font-weight: 600; color: #0d1f4b; margin: 0 0 4px 0; }
+    .navi-compact .navi-line { color: #374151; margin: 0; }
+
     .navi-panel-v2 {
         max-width: 1120px;
         margin: 0 auto;
@@ -752,6 +764,17 @@ def render_navi_panel_v2(
     </style>
     """
     st.markdown(navi_css, unsafe_allow_html=True)
+
+    # Special compact variant: render minimal panel and return early
+    if variant == "compact":
+        compact_html = "<div class='navi-compact'>"
+        if title is not None and str(title).strip() != "":
+            compact_html += f"<p class='navi-title'>{title}</p>"
+        if reason and str(reason).strip() != "":
+            compact_html += f"<p class='navi-line'>{reason}</p>"
+        compact_html += "</div>"
+        st.markdown(compact_html, unsafe_allow_html=True)
+        return
 
     # Build HTML components
     progress_badge = ""
