@@ -1015,8 +1015,8 @@ def render():
     # CSS Styling
     st.markdown("""
     <style>
-      /* Hide global header on AI Advisor page */
-      header[data-testid="stHeader"] {
+      /* Hide custom navigation header on AI Advisor page (keep Streamlit controls) */
+      .sn-header {
         display: none !important;
       }
       
@@ -1174,8 +1174,8 @@ def render():
     </style>
     """, unsafe_allow_html=True)
 
-    # Render page chrome (header hidden via CSS for immersive chat experience)
-    # render_header_simple(active_route="faq")
+    # Render page chrome
+    render_header_simple(active_route="faq")
 
     # Initialize session state for chat
     if "faq_chat" not in st.session_state:
