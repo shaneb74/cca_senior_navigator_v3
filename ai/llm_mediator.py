@@ -659,6 +659,17 @@ FAQ CONTEXT:
         if len(words) > 120:
             answer_text = ' '.join(words[:120]) + "..."
         
+        # Sanitize HTML if present (prefer Markdown)
+        if "<" in answer_text and ">" in answer_text:
+            import re
+            # Strip common block tags
+            answer_text = re.sub(r'</?(div|span|p|section|article|header|footer)[^>]*>', '', answer_text, flags=re.I)
+            # Convert <br> to newlines
+            answer_text = re.sub(r'<br\s*/?>', '\n', answer_text, flags=re.I)
+            # Remove remaining tags
+            answer_text = re.sub(r'<[^>]+>', '', answer_text)
+            answer_text = answer_text.strip()
+        
         # Validate CTA
         cta = result.get("cta", default_cta)
         if not cta or not isinstance(cta, dict) or "route" not in cta:
@@ -793,6 +804,17 @@ If the chunks don't cover the question, respond: "We don't have that information
         words = answer_text.split()
         if len(words) > 120:
             answer_text = " ".join(words[:120]) + "..."
+        
+        # Sanitize HTML if present (prefer Markdown)
+        if "<" in answer_text and ">" in answer_text:
+            import re
+            # Strip common block tags
+            answer_text = re.sub(r'</?(div|span|p|section|article|header|footer)[^>]*>', '', answer_text, flags=re.I)
+            # Convert <br> to newlines
+            answer_text = re.sub(r'<br\s*/?>', '\n', answer_text, flags=re.I)
+            # Remove remaining tags
+            answer_text = re.sub(r'<[^>]+>', '', answer_text)
+            answer_text = answer_text.strip()
             
         return {
             "answer": answer_text[:800],  # Hard cap at 800 chars

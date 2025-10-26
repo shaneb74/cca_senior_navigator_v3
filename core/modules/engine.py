@@ -17,6 +17,107 @@ from . import components as components
 from .layout import actions
 from .schema import FieldDef, ModuleConfig, OutcomeContract, StepDef
 
+import logging
+from typing import Any, Dict, Iterable
+
+# Memory Care diagnosis flag constants
+_MC_DX_FLAG_IDS = {"memory_care_dx", "dementia_dx", "alzheimers_dx", "has_dementia_dx"}
+_MC_NO_DX_FLAG_IDS = {"likely_mc_no_dx", "mc_no_dx", "no_dx_memory_care"}
+_MC_TEXT_TOKENS = (
+    "dementia", "alzheimer", "alzheimers", "alzheimer's", "alzheimer's",
+    "lewy", "parkinson", "frontotemporal", "ftd", "vascular dementia"
+)
+
+
+def _get_outcome_flags() -> set[str]:
+    """
+    Extract flag ids from st.session_state["gcp_care_recommendation"]["_outcomes"]["flags"],
+    which is a list of dicts.
+    """
+    ss = st.session_state
+    try:
+        flags: Iterable[Dict[str, Any]] = (
+            ss.get("gcp_care_recommendation", {})
+              .get("_outcomes", {})
+              .get("flags", [])
+        )
+        return {f.get("id", "").lower() for f in flags if isinstance(f, dict) and f.get("id")}
+    except Exception as e:
+        logging.warning("MC_ELIG: Failed to parse outcome flags: %s", e)
+        return set()
+
+
+def _is_mc_recommended() -> bool:
+    """Check if Memory Care is the recommended tier."""
+    ss = st.session_state
+    tier = (
+        ss.get("gcp", {}).get("published_tier")
+        or ss.get("gcp_care_recommendation", {}).get("tier")
+        or ss.get("gcp_care_recommendation", {}).get("_outcomes", {}).get("tier")
+        or ""
+    )
+    return "memory" in str(tier).lower()
+
+
+def _has_dx_present() -> bool:
+    """Check if a formal diagnosis is present in flags or profile."""
+    ss = st.session_state
+    outcome_ids = _get_outcome_flags()
+    if outcome_ids & _MC_DX_FLAG_IDS:
+        return True
+
+    flags = ss.get("flags", {})
+    if any(flags.get(k) for k in _MC_DX_FLAG_IDS):
+        return True
+
+    dx_list = ss.get("profile", {}).get("diagnoses") or []
+    dx_text = " ".join(map(str, dx_list)).lower()
+    return any(tok in dx_text for tok in _MC_TEXT_TOKENS)
+
+
+def _mc_requires_eligibility_advice() -> bool:
+    """
+    True if Memory Care is recommended and:
+    - we have a likely_mc_no_dx flag, or
+    - no diagnosis present in flags/profile.
+    """
+    if not _is_mc_recommended():
+        return False
+
+    outcome_ids = _get_outcome_flags()
+    has_no_dx_flag = bool(outcome_ids & _MC_NO_DX_FLAG_IDS)
+    has_dx = _has_dx_present()
+    show = has_no_dx_flag or not has_dx
+
+    logging.info(
+        "MC_ELIG: memory_care recommended=%s, no_dx_flag=%s, has_dx=%s → show=%s",
+        _is_mc_recommended(), has_no_dx_flag, has_dx, show
+    )
+    return show
+
+
+def render_mc_eligibility_banner(name: str | None = None) -> None:
+    """
+    Render a friendly eligibility note (amber banner).
+    Scoped via class 'mc-eligibility-banner' to avoid global effects.
+    """
+    person = name or st.session_state.get("person_name") or st.session_state.get("person_a_name") or "your loved one"
+    st.markdown(
+        f"""
+<div class="mc-eligibility-banner" role="note" aria-label="Memory care eligibility note">
+  <div class="mc-eligibility-icon">🛈</div>
+  <div class="mc-eligibility-content">
+    <p><strong>Note on eligibility for Memory Care</strong></p>
+    <p>Based on {person}'s cognitive symptoms and daily needs, <strong>Memory Care may be appropriate</strong>.
+    However, many communities require a <strong>formal dementia/Alzheimer's diagnosis</strong> before admission.
+    If you don't have a diagnosis yet, <strong>Assisted Living</strong> can still provide daily support and safety
+    while you speak with a physician about next steps.</p>
+  </div>
+</div>
+        """,
+        unsafe_allow_html=True,
+    )
+
 
 def run_module(config: ModuleConfig) -> dict[str, Any]:
     """Run a module flow defined by ModuleConfig. Returns updated module state."""
@@ -1237,6 +1338,10 @@ def _render_results_view(mod: dict[str, Any], config: ModuleConfig) -> None:
     # 1. BLUE NAVI HEADER (skip if product already rendered one)
     # ========================================
     # Product pages (GCP) render the header at the top; avoid duplication here.
+    
+    # Open scoped wrapper for recommendation layout spacing
+    st.markdown('<div class="gcp-rec">', unsafe_allow_html=True)
+    
     try:
         if not st.session_state.get("_gcp_cp_header_rendered", False):
             from core.ui import render_navi_panel_v2
@@ -1256,12 +1361,22 @@ def _render_results_view(mod: dict[str, Any], config: ModuleConfig) -> None:
     except Exception:
         pass
 
+    # --- Conditional Memory Care eligibility banner ---
+    if _mc_requires_eligibility_advice():
+        logging.info("MC_ELIG: rendering eligibility advice banner")
+        render_mc_eligibility_banner()
+
+    # Wrap the recommendation body text so we can add spacing below
+    st.markdown('<div class="rec-body">', unsafe_allow_html=True)
+    
     # Clean paragraphs under header
     try:
         from products.concierge_hub.gcp_v4.ui_helpers import render_clean_summary
         render_clean_summary()
     except Exception:
         pass
+    
+    st.markdown('</div>', unsafe_allow_html=True)  # close rec-body
 
     # ========================================
     # 2. RECOMMENDATION CLARITY - Collapsible Drawer (Developer Tool)
@@ -1295,6 +1410,9 @@ def _render_results_view(mod: dict[str, Any], config: ModuleConfig) -> None:
     # ========================================
     # 2. NEXT ACTIONS - Three Simple Buttons
     # ========================================
+
+    # Wrap the 3-button row so we can add spacing above it
+    st.markdown('<div class="rec-actions">', unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns([1, 1, 1])
 
@@ -1335,8 +1453,12 @@ def _render_results_view(mod: dict[str, Any], config: ModuleConfig) -> None:
             from core.nav import route_to
             route_to("hub_concierge")
 
+    st.markdown('</div>', unsafe_allow_html=True)  # close rec-actions
+
     # Bottom horizontal rule
     st.markdown("---")
+    
+    st.markdown('</div>', unsafe_allow_html=True)  # close gcp-rec
 
 
 def _render_results_summary(state: dict[str, Any], config: ModuleConfig) -> None:

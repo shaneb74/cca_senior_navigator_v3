@@ -101,6 +101,21 @@ FLAG_REGISTRY: dict[str, dict[str, str]] = {
         "severity": "high",
         "description": "Severe memory issues, dementia, or Alzheimer's diagnosis",
     },
+    "cognitive_severe_any": {
+        "category": "cognitive",
+        "severity": "high",
+        "description": "Severe cognitive path indicator (gates Memory Care eligibility)",
+    },
+    "memory_care_dx": {
+        "category": "cognitive",
+        "severity": "high",
+        "description": "Formal dementia or Alzheimer's diagnosis confirmed by doctor",
+    },
+    "likely_mc_no_dx": {
+        "category": "cognitive",
+        "severity": "high",
+        "description": "Severe cognitive symptoms present but no formal diagnosis yet",
+    },
     # FALL & SAFETY FLAGS
     "moderate_safety_concern": {
         "category": "safety",

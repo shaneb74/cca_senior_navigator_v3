@@ -2195,3 +2195,65 @@ div[data-testid="stVerticalBlock"]:has(.chip-wrap.is-active) .stButton > button{
 .sn-app .cp-tab:focus-visible { outline: 3px solid var(--brand-300, #93C5FD); outline-offset: 2px; }
 
 
+/* ==== GCP Recommendation Layout Tweaks (scoped) ==== */
+.sn-app .gcp-rec .navi-panel-compact {
+  /* tighten gap between Navi panel and header/title below */
+  margin-bottom: 0.5rem !important; /* was ~0.75rem */
+}
+
+.sn-app .gcp-rec h2 {
+  /* reduce extra air above title under Navi */
+  margin-top: 0.5rem !important;    /* was 1.25rem */
+  margin-bottom: 0.75rem !important;
+}
+
+.sn-app .gcp-rec h3 {
+  /* reduce extra air above "What this means for you" title */
+  margin-top: 0.5rem !important;
+  margin-bottom: 0.75rem !important;
+}
+
+.sn-app .gcp-rec .rec-body {
+  /* add breathing room below the summary/body before CTAs */
+  margin-bottom: 1.25rem;            /* ~20px */
+}
+
+.sn-app .gcp-rec .rec-actions {
+  /* ensure CTAs don't collide with body text */
+  margin-top: 1rem;                  /* ~16px */
+}
+
+/* Optional: small vertical gap between the 3 column buttons, for narrow screens */
+@media (max-width: 700px) {
+  .sn-app .gcp-rec .rec-actions button {
+    margin-top: 8px;
+  }
+}
+
+/* ==== GCP Recommendation — Memory Care eligibility banner (scoped) ==== */
+.sn-app .gcp-rec .mc-eligibility-banner {
+  display: grid;
+  grid-template-columns: 2rem 1fr;
+  gap: 0.75rem;
+  background: #fff7e6;               /* soft amber */
+  border: 1px solid #ffd18a;
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  margin: 0.5rem 0 0.75rem;          /* fits under Navi, above H2/body */
+}
+
+.sn-app .gcp-rec .mc-eligibility-icon {
+  font-size: 1.25rem;
+  line-height: 1.25rem;
+  margin-top: 2px;
+}
+
+.sn-app .gcp-rec .mc-eligibility-content p {
+  margin: 0.1rem 0 0.4rem;
+}
+
+/* Safety net: collapse truly empty markdown blocks inside this scope */
+.sn-app .gcp-rec [data-testid="stMarkdown"] p:empty {
+  display: none !important;
+}
+

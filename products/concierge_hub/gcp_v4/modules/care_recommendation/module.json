@@ -225,7 +225,7 @@
             { "label": "No concerns", "value": "no_concerns", "score": 0 },
             { "label": "Occasional forgetfulness", "value": "occasional", "score": 1, "flags": ["mild_cognitive_decline"] },
             { "label": "Moderate memory or thinking issues", "value": "moderate", "score": 2, "flags": ["moderate_cognitive_decline"] },
-            { "label": "Severe memory issues or diagnosis like dementia or Alzheimer's", "value": "severe", "score": 3, "flags": ["severe_cognitive_risk"] }
+            { "label": "Severe memory issues or diagnosis like dementia or Alzheimer's", "value": "severe", "score": 3, "flags": ["severe_cognitive_risk", "cognitive_severe_any"] }
           ],
           "ui": { "widget": "chip", "orientation": "vertical" }
         },
@@ -267,6 +267,21 @@
             "orientation": "vertical"
           },
           "visible_if": { "key": "memory_changes", "in": ["moderate", "severe"] }
+        },
+        {
+          "id": "cognitive_dx_confirm",
+          "type": "string",
+          "select": "single",
+          "label": "Has a doctor formally diagnosed dementia or Alzheimer's?",
+          "help": "This helps confirm Memory Care eligibility. If you're not sure yet, choose \"Not sure.\"",
+          "required": false,
+          "options": [
+            { "label": "Yes, diagnosed", "value": "dx_yes", "flags": ["memory_care_dx"] },
+            { "label": "No", "value": "dx_no", "flags": ["likely_mc_no_dx"] },
+            { "label": "Not sure", "value": "dx_unsure", "flags": ["likely_mc_no_dx"] }
+          ],
+          "ui": { "widget": "chip", "orientation": "vertical" },
+          "visible_if": { "key": "memory_changes", "eq": "severe" }
         }
       ]
     },

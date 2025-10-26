@@ -34,6 +34,39 @@ from ui.footer_simple import render_footer_simple
 
 
 # ==============================================================================
+# HTML SANITIZATION
+# ==============================================================================
+_HTML_BLOCK_TAGS = re.compile(r'</?(div|span|p|section|article|header|footer)[^>]*>', re.I)
+
+
+def _sanitize_to_md(text: str) -> str:
+    """Strip common block tags and sanitize to safe Markdown.
+    
+    Removes HTML block tags while preserving inline Markdown formatting
+    (**bold**, *italics*, etc.).
+    
+    Args:
+        text: Raw text that may contain HTML
+        
+    Returns:
+        Sanitized text safe for Markdown rendering
+    """
+    if not isinstance(text, str):
+        return ""
+    
+    # Strip common block tags (div, span, p, section, etc.)
+    text = _HTML_BLOCK_TAGS.sub('', text)
+    
+    # Convert <br> tags to newlines
+    text = re.sub(r'<br\s*/?>', '\n', text, flags=re.I)
+    
+    # Remove any remaining HTML tags
+    text = re.sub(r'<[^>]+>', '', text)
+    
+    return text.strip()
+
+
+# ==============================================================================
 # QUESTION DATABASE LOADER
 # ==============================================================================
 @st.cache_data
@@ -1342,6 +1375,17 @@ def render():
                         elif msg.get("is_error"):
                             badge_html = '<span class="chat-badge">⚠️ Something went wrong</span>'
 
+                        # Sanitize message content unless explicitly marked as HTML
+                        is_html = msg.get("is_html", False)
+                        if not is_html:
+                            # Sanitize to prevent raw HTML in chat bubbles
+                            safe_text = _sanitize_to_md(text)
+                            # Escape for safe HTML embedding
+                            safe_text = html.escape(safe_text)
+                        else:
+                            # Only allow HTML when explicitly flagged
+                            safe_text = text
+
                         sources_html = ""
                         source_metas = msg.get("source_metas", [])
                         sources = msg.get("sources", [])
@@ -1375,7 +1419,7 @@ def render():
                               <div class=\"chat-avatar\">N</div>
                               <div class=\"chat-bubble chat-bubble--assistant\">
                                 {badge_html}
-                                <div class=\"chat-bubble__content\">{text}</div>
+                                <div class=\"chat-bubble__content\">{safe_text}</div>
                                 {sources_html}
                               </div>
                             </div>
@@ -1387,7 +1431,9 @@ def render():
                             st.markdown('<div class="chat-sentinel chat-action-sentinel"></div>', unsafe_allow_html=True)
                             action_cols = st.columns([1, 1, 1, 1], gap="small")
                             with action_cols[0]:
-                                _copy_button(text, key=f"copy_{idx}")
+                                # Copy button uses original text (sanitized but not HTML-escaped)
+                                copy_text = _sanitize_to_md(text) if not is_html else text
+                                _copy_button(copy_text, key=f"copy_{idx}")
                             with action_cols[1]:
                                 share_query = msg.get("user_query", "")
                                 if share_query and st.button("🔗 Share link", key=f"share_{idx}"):
