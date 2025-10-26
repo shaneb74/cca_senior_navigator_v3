@@ -735,7 +735,8 @@ def answer_corp(
         system_prompt = f"""You are a concise company explainer for Senior Navigator / Concierge Care Advisors.
 
 STRICT RULES:
-- Use ONLY the provided website chunks below. Never invent information.
+- Use the provided website chunks as your PRIMARY source. Extract relevant details.
+- If chunks partially answer, synthesize what's there and be transparent about coverage.
 - Only mention products from this list: {', '.join(allowed_products)}
 - Use domain terms: {', '.join(allowed_terms)}
 - NEVER use these phrases: {', '.join(banned_phrases)}. Use "{fallback_name}" instead.
@@ -743,7 +744,8 @@ STRICT RULES:
 - Cite sources by title with URLs.
 - Return JSON: {{"answer":"...","sources":[{{"title":"...","url":"..."}}]}}
 
-If the chunks don't cover the question, respond: "We don't have that information yet. You can start the Guided Care Plan or contact us for more details."
+FALLBACK ONLY IF: Chunks are completely unrelated to question (e.g., asking about pets when chunks are about care).
+Otherwise, answer with: "Based on our guides/resources: [answer using chunk info]"
 """
         
         # Format chunks for LLM

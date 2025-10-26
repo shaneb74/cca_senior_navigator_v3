@@ -1600,10 +1600,24 @@ def render():
                 st.rerun()
             
             # ─── ROUTING: Corp Knowledge vs FAQ ───
+            # Expanded routing to catch care-related queries (not just identity)
             corp_keywords = [
+                # Identity keywords (original)
                 "cca", "concierge care advisors", "leadership", "team",
                 "about", "founded", "business since", "history",
-                "who is", "who are", "company", "organization"
+                "who is", "who are", "company", "organization",
+                # Geographic keywords (Seattle, Washington, etc.)
+                "seattle", "washington state", "pacific northwest", "wa",
+                "bellevue", "tacoma", "spokane", "everett", "redmond",
+                # Care type keywords (living guides)
+                "senior living", "assisted living", "memory care",
+                "independent living", "adult family home", "retirement community",
+                # Service keywords (advisory/support)
+                "how do you", "how does your", "your service", "advisory",
+                "consultation", "free service", "how you help",
+                # Post-move support keywords
+                "after moving", "post-move", "follow-up", "adjustment",
+                "transition support", "settling in"
             ]
             is_corp_query = any(kw in q.lower() for kw in corp_keywords)
             
@@ -1785,7 +1799,78 @@ def render():
                     chat.insert(0, msg)
                     st.session_state["faq_chat"] = chat
                 else:
-                    # No results fallback
+                    # ─── FALLBACK: Try Corp Knowledge Before Giving Up ───
+                    # FAQ retrieval failed, try corp corpus as last resort
+                    print(f"[FAQ_FALLBACK] No FAQ results for query: {q[:50]}")
+                    
+                    corp_chunks = load_corp_chunks(_get_corp_chunks_mtime())
+                    corp_hits = retrieve_corp(q, corp_chunks, k=5)
+                    
+                    if corp_hits:
+                        # Found something in corp knowledge!
+                        from ai.llm_mediator import answer_corp
+                        
+                        name = st.session_state.get("ctx", {}).get("auth", {}).get("name") or policy.get("fallback_name", "the person you're helping")
+                        
+                        try:
+                            result = answer_corp(q, name, corp_hits, policy)
+                            
+                            # Format sources with freshness
+                            used_sources = result.get("sources", [])[:5]
+                            seen_urls = set()
+                            source_metas = []
+                            
+                            for s in used_sources:
+                                url = s.get("url", "")
+                                if url and url not in seen_urls:
+                                    seen_urls.add(url)
+                                    source_metas.append({
+                                        "title": s.get("title", "Untitled"),
+                                        "url": url,
+                                        "last_fetched": s.get("last_fetched", "")
+                                    })
+                            
+                            # Prefix answer to indicate it's from guide (not FAQ)
+                            answer_text = result.get("answer", "")
+                            if not answer_text.startswith("Based on"):
+                                answer_text = f"Based on our guides: {answer_text}"
+                            
+                            msg = {
+                                "role": "assistant",
+                                "text": answer_text,
+                                "sources": [],
+                                "source_metas": source_metas,
+                                "source_ids": [],
+                                "cta": None,
+                                "user_query": str(q),
+                                "seed_tags": [],
+                                "is_fallback": True  # Flag for UI badge
+                            }
+                            
+                            # Log corp fallback
+                            from core.events import log_event
+                            log_event("corp_fallback", {
+                                "query": q,
+                                "retrieved_ids": [c["doc_id"] for c in corp_hits],
+                                "used_sources": [s.get("url", "") for s in result.get("sources", [])],
+                                "name_present": bool(st.session_state.get("person_a_name")),
+                            })
+                            
+                            # Remove typing indicator and add response
+                            chat = list(st.session_state.get("faq_chat", []))
+                            if len(chat) > 1 and chat[1].get("role") == "typing":
+                                chat.pop(1)
+                            chat.insert(0, msg)
+                            st.session_state["faq_chat"] = chat
+                            st.session_state["faq_processing"] = False
+                            st.rerun()
+                            
+                        except Exception as e:
+                            print(f"[CORP_FALLBACK_ERROR] {e}")
+                            # Fall through to final fallback below
+                    
+                    # ─── FINAL FALLBACK: No Results Anywhere ───
+                    # Only bail if BOTH FAQ and corp failed
                     msg = {
                         "role": "assistant",
                         "text": "We don't have that in our FAQ yet. You can start the Guided Care Plan to get a tailored next step.",
@@ -1798,7 +1883,7 @@ def render():
                     
                     # Log no-result query
                     from core.events import log_event
-                    log_event("faq_llm", {
+                    log_event("faq_no_result", {
                         "query": q,
                         "retrieved_ids": [],
                         "used_sources": [],
