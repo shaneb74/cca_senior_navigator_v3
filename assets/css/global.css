@@ -624,3 +624,28 @@ div[data-role="secondary"] .stButton > button[kind="secondary"][data-testid="stB
   color: var(--brand-600) !important;
   font-weight: 600 !important;
 }
+
+/* ===== AI Advisor Text Wrapping ===== */
+/* Prevent layout overflow from long URLs/text in advisor answers */
+/* Streamlit chat_message components use this selector */
+[data-testid="stChatMessage"] [data-testid="stMarkdownContainer"],
+.stMarkdown > div {
+  /* Normal wrapping (not pre-formatted) */
+  white-space: normal !important;
+  
+  /* Break long words/URLs anywhere if needed */
+  overflow-wrap: anywhere !important;
+  word-break: break-word !important;
+  
+  /* Comfortable max reading width */
+  max-width: 72ch !important;
+}
+
+/* Ensure code blocks and preformatted text keep their formatting */
+[data-testid="stChatMessage"] pre,
+[data-testid="stChatMessage"] code {
+  white-space: pre-wrap !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+  max-width: 100% !important;
+}
