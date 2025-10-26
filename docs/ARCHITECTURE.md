@@ -259,14 +259,21 @@ else:
 - **Fallback:** Stock copy if disabled
 
 ### **AI Advisor / FAQ System** (`pages/faq.py`)
-- **Architecture:** Multi-tier retrieval + LLM synthesis
+- **Architecture:** Multi-tier retrieval + LLM synthesis with intelligent fallback
 - **Components:**
   - **Mini-FAQ:** Curated identity questions (instant answers, no LLM)
-  - **Corporate Knowledge:** RAG over company documentation (stored in `data/training/corp_chunks/`)
-  - **FAQ Database:** RAG over care planning FAQs (stored in `data/training/faq/`)
+  - **Corporate Knowledge:** RAG over company documentation (stored in `config/corp_knowledge.jsonl`, 3,110 chunks, 2.5 MB)
+  - **FAQ Database:** RAG over care planning FAQs (stored in `config/faq.json`)
   - **Easter Eggs:** Hidden dev-mode responses for testing
 - **Retrieval:** TF-IDF + cosine similarity (sklearn)
-- **LLM Integration:** OpenAI GPT-4o for answer synthesis
+- **LLM Integration:** OpenAI GPT-4o-mini for answer synthesis
+- **Routing Logic:**
+  - **Identity Keywords:** "cca", "leadership", "about", "founded" → Corp first
+  - **Geographic Keywords:** "seattle", "washington state", "pacific northwest" → Corp first
+  - **Care Type Keywords:** "senior living", "assisted living", "memory care" → Corp first
+  - **Service Keywords:** "how do you", "advisory", "consultation", "free service" → Corp first
+  - **Post-Move Keywords:** "after moving", "follow-up", "adjustment", "transition support" → Corp first
+  - **Fallback Path:** FAQ retrieval fails → Try corp corpus → Final fallback message
 - **UI Features:**
   - Headerless design (custom nav hidden, Streamlit controls preserved)
   - Newest-first message ordering (typical chat pattern)
@@ -275,10 +282,12 @@ else:
   - CSS spacing utilities for visual polish
 - **Message Flow:**
   1. User query → Mini-FAQ check (instant canonical answers)
-  2. If not found → Route to corporate knowledge (company info) or FAQ (care planning)
+  2. If not found → Route to corporate knowledge (identity/care/geo queries) or FAQ (care planning)
   3. Retrieve top K chunks → LLM synthesis with sources
-  4. Display with badges (canonical, instant, easter egg markers)
-  5. Insert at chat[0] for newest-first display
+  4. **If FAQ fails** → Fallback to corp corpus retrieval (with "Based on our guides:" prefix)
+  5. **If both fail** → Show "not in FAQ yet" with GCP CTA
+  6. Display with badges (canonical, instant, fallback, easter egg markers)
+  7. Insert at chat[0] for newest-first display
 - **Session State:**
   - `faq_chat`: List of message dicts (role, text, sources, CTAs)
   - `faq_processing`: Boolean flag for disable-during-response
