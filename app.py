@@ -52,22 +52,59 @@ def _sanitize_query_params_for_welcome(current_route: str) -> None:
         st.query_params[key] = value
 
 
+def _is_module_route() -> bool:
+    """Check if current route is a module page that needs module CSS.
+    
+    Returns:
+        True if on GCP, Cost Planner, or other module pages
+    """
+    # Check query params first
+    params = st.query_params
+    page = params.get("page", "")
+    product = params.get("product", "")
+    
+    # Check for module indicators in query params
+    module_indicators = (
+        "gcp",              # guided care plan
+        "cost_planner",     # cost planner v2 screens
+        "pfma",             # plan for my advisor (if it uses module chrome)
+        "advisor_prep",     # waiting room advisor prep (module-style)
+    )
+    
+    if any(indicator in page.lower() for indicator in module_indicators):
+        return True
+    if any(indicator in product.lower() for indicator in module_indicators):
+        return True
+    
+    # Fallback: check session state route
+    route = st.session_state.get("current_route", {})
+    if isinstance(route, dict):
+        page_val = str(route.get("page", "")).lower()
+        product_val = str(route.get("product", "")).lower()
+        return any(indicator in page_val or indicator in product_val 
+                   for indicator in module_indicators)
+    
+    return False
+
+
 def inject_css() -> None:
-    """Load global CSS and module-specific CSS."""
+    """Load global CSS and module-specific CSS (only on module routes)."""
     try:
-        # Load global CSS
+        # Load global CSS on ALL pages
         with open("assets/css/global.css", encoding="utf-8") as f:
             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
-        # Load module CSS (must come after global to override)
-        # Adding cache-busting comment to force browser reload
-        with open("assets/css/modules.css", encoding="utf-8") as f:
-            css_content = f.read()
-            # Add timestamp comment to bust cache
-            import time
+        # Load module CSS ONLY on module routes (not on home/hub)
+        if _is_module_route():
+            if not st.session_state.get("_module_css_loaded"):
+                with open("assets/css/modules.css", encoding="utf-8") as f:
+                    css_content = f.read()
+                    # Add timestamp comment to bust cache
+                    import time
 
-            cache_buster = f"/* Cache bust: {int(time.time())} */\n"
-            st.markdown(f"<style>{cache_buster}{css_content}</style>", unsafe_allow_html=True)
+                    cache_buster = f"/* Cache bust: {int(time.time())} */\n"
+                    st.markdown(f"<style>{cache_buster}{css_content}</style>", unsafe_allow_html=True)
+                    st.session_state["_module_css_loaded"] = True
 
     except FileNotFoundError:
         # no-op on Cloud if path differs; don't crash

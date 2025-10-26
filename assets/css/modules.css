@@ -73,10 +73,10 @@
    =================================================================== */
 /* This MUST come first to prevent radio circles from showing */
 
-/* Target ALL radio inputs in module context - GLOBAL OVERRIDE */
-[data-testid="stRadio"] input[type="radio"],
-div[data-testid="stRadio"] input[type="radio"],
-input[type="radio"] {
+/* Target ALL radio inputs in module context - SCOPED TO .sn-app */
+.sn-app [data-testid="stRadio"] input[type="radio"],
+.sn-app div[data-testid="stRadio"] input[type="radio"],
+.sn-app input[type="radio"] {
   appearance: none !important;
   -webkit-appearance: none !important;
   -moz-appearance: none !important;
@@ -92,8 +92,8 @@ input[type="radio"] {
 }
 
 /* Hide the radio circle container div too */
-[data-testid="stRadio"] label > div:first-child,
-div[data-testid="stRadio"] label > div:first-child {
+.sn-app [data-testid="stRadio"] label > div:first-child,
+.sn-app div[data-testid="stRadio"] label > div:first-child {
   display: none !important;
   width: 0 !important;
   height: 0 !important;
@@ -295,8 +295,8 @@ div.element-container:empty {
   padding: 0 !important;
 }
 
-/* Hide empty vertical blocks */
-[data-testid="stVerticalBlock"]:empty {
+/* Hide empty vertical blocks - SCOPED TO .sn-app */
+.sn-app [data-testid="stVerticalBlock"]:empty {
   display: none !important;
   height: 0 !important;
   margin: 0 !important;
@@ -304,7 +304,7 @@ div.element-container:empty {
 
 /* === Navi header inline recommendation tweaks === */
 #navi-header-text { margin-top: .25rem; line-height: 1.4; font-size: .95rem; }
-.stButton button { padding: .4rem .9rem; border-radius: .5rem; font-size: .9rem; }
+.sn-app .stButton button { padding: .4rem .9rem; border-radius: .5rem; font-size: .9rem; }
 
 /* Hide Streamlit's native widget labels (we use custom styled labels) */
 /* Hide widget labels ONLY within specific module field contexts to avoid breaking multiselect/other components */
@@ -1708,23 +1708,23 @@ div[data-testid="stVerticalBlock"]:has(.chip-wrap.is-active) .stButton > button{
 /* ===================================================================
    📝 NAVI SUMMARY - LIST SPACING & TYPOGRAPHY
    =================================================================== */
-/* Compact list spacing for Navi's next steps */
-.stMarkdown ul {
+/* Compact list spacing for Navi's next steps - SCOPED TO .sn-app */
+.sn-app .stMarkdown ul {
   margin-top: .25rem;
 }
 
-.stMarkdown li {
+.sn-app .stMarkdown li {
   margin-bottom: .25rem;
 }
 
 /* Clean typography for summary sections */
-.stMarkdown h3 {
+.sn-app .stMarkdown h3 {
   margin-top: 1.25rem;
   margin-bottom: .5rem;
   color: #0d1f4b;
 }
 
-.stMarkdown p {
+.sn-app .stMarkdown p {
   margin-bottom: .75rem;
 }
 
