@@ -560,6 +560,81 @@ def get_mediated_recommendation(
 
 
 # ==============================================================================
+# HTML SANITIZATION HELPERS
+# ==============================================================================
+def _strip_html_shell(text: str) -> str:
+    """
+    Remove legacy HTML wrappers and unescape HTML entities.
+    
+    Strips:
+    - <div class="chat-bubble__content">...</div> shells
+    - Common block tags (div, span, p, section, article, header, footer)
+    - <br> tags (converts to newlines)
+    - List tags (ul, ol, li) with spacing preservation
+    - All remaining HTML tags
+    - HTML entities (&nbsp;, &amp;, &lt;, &gt;, &quot;, &#39;)
+    
+    Args:
+        text: Answer text that may contain HTML
+        
+    Returns:
+        Clean plain text / Markdown
+    """
+    import re
+    import html
+    
+    if not text or not isinstance(text, str):
+        return text
+    
+    # Strip chat-bubble wrapper if present
+    text = re.sub(
+        r'<div\s+class=["\']chat-bubble__content["\'][^>]*>(.*?)</div>',
+        r'\1',
+        text,
+        flags=re.DOTALL | re.IGNORECASE
+    )
+    
+    # Convert list items to newlines with bullets
+    text = re.sub(r'</li>\s*<li>', '\n• ', text, flags=re.IGNORECASE)
+    text = re.sub(r'<li[^>]*>', '\n• ', text, flags=re.IGNORECASE)
+    text = re.sub(r'</li>', '', text, flags=re.IGNORECASE)
+    text = re.sub(r'</?[uo]l[^>]*>', '\n', text, flags=re.IGNORECASE)
+    
+    # Convert closing block tags to preserve spacing
+    text = re.sub(
+        r'</(p|div|section|article|header|footer|main|aside|blockquote|h[1-6])>',
+        '\n',
+        text,
+        flags=re.IGNORECASE
+    )
+    
+    # Convert <br> to newlines
+    text = re.sub(r'<br\s*/?>', '\n', text, flags=re.IGNORECASE)
+    
+    # Remove remaining opening tags (with spacing preservation)
+    text = re.sub(
+        r'<(p|div|section|article|header|footer|main|aside|blockquote|h[1-6])[^>]*>',
+        ' ',
+        text,
+        flags=re.IGNORECASE
+    )
+    
+    # Remove all other HTML tags
+    text = re.sub(r'<[^>]+>', '', text)
+    
+    # Unescape HTML entities (&nbsp; → space, &amp; → &, etc.)
+    text = html.unescape(text)
+    
+    # Clean up excess whitespace
+    text = re.sub(r'\n\s*\n\s*\n+', '\n\n', text)  # Max 2 consecutive newlines
+    text = re.sub(r'[ \t]+', ' ', text)  # Collapse spaces/tabs
+    text = re.sub(r'^\s+', '', text, flags=re.MULTILINE)  # Trim line starts
+    text = text.strip()
+    
+    return text
+
+
+# ==============================================================================
 # FAQ MEDIATOR (Stage 3)
 # ==============================================================================
 def answer_faq(
@@ -659,16 +734,8 @@ FAQ CONTEXT:
         if len(words) > 120:
             answer_text = ' '.join(words[:120]) + "..."
         
-        # Sanitize HTML if present (prefer Markdown)
-        if "<" in answer_text and ">" in answer_text:
-            import re
-            # Strip common block tags
-            answer_text = re.sub(r'</?(div|span|p|section|article|header|footer)[^>]*>', '', answer_text, flags=re.I)
-            # Convert <br> to newlines
-            answer_text = re.sub(r'<br\s*/?>', '\n', answer_text, flags=re.I)
-            # Remove remaining tags
-            answer_text = re.sub(r'<[^>]+>', '', answer_text)
-            answer_text = answer_text.strip()
+        # Strip HTML shells and unescape entities
+        answer_text = _strip_html_shell(answer_text)
         
         # Validate CTA
         cta = result.get("cta", default_cta)
@@ -806,16 +873,8 @@ Otherwise, answer with: "Based on our guides/resources: [answer using chunk info
         if len(words) > 120:
             answer_text = " ".join(words[:120]) + "..."
         
-        # Sanitize HTML if present (prefer Markdown)
-        if "<" in answer_text and ">" in answer_text:
-            import re
-            # Strip common block tags
-            answer_text = re.sub(r'</?(div|span|p|section|article|header|footer)[^>]*>', '', answer_text, flags=re.I)
-            # Convert <br> to newlines
-            answer_text = re.sub(r'<br\s*/?>', '\n', answer_text, flags=re.I)
-            # Remove remaining tags
-            answer_text = re.sub(r'<[^>]+>', '', answer_text)
-            answer_text = answer_text.strip()
+        # Strip HTML shells and unescape entities
+        answer_text = _strip_html_shell(answer_text)
             
         return {
             "answer": answer_text[:800],  # Hard cap at 800 chars
