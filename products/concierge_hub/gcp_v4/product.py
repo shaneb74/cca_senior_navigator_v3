@@ -7,6 +7,7 @@ the CareRecommendation contract to MCIP for consumption by other products.
 Uses Navi as the single intelligence layer for guidance and progress.
 """
 
+import logging
 from datetime import datetime
 
 import streamlit as st
@@ -398,10 +399,25 @@ def _publish_to_mcip(outcome, module_state: dict) -> None:
         return
 
     # Persist tier state for Cost Planner (before building CareRecommendation)
+    # NOTE: published_tier is already set by adjudication clamp in _ensure_outcomes()
+    # DO NOT overwrite it here - just ensure other keys are set
     allowed_tiers = outcome_data.get("allowed_tiers", [])
     g = st.session_state.setdefault("gcp", {})
-    g["published_tier"] = chosen_tier
-    g["recommended_tier"] = chosen_tier  # after adjudication, these are the same
+    
+    # Only set published_tier if not already set by adjudication
+    if "published_tier" not in g:
+        g["published_tier"] = chosen_tier
+        g["recommended_tier"] = chosen_tier
+        logging.info("GCP_PRODUCT: published_tier not found, setting to %s", chosen_tier)
+    else:
+        # Verify consistency
+        existing_tier = g.get("published_tier")
+        if existing_tier != chosen_tier:
+            logging.warning(
+                "GCP_PRODUCT: published_tier=%s differs from outcome tier=%s (adjudication clamp active)",
+                existing_tier, chosen_tier
+            )
+    
     g["allowed_tiers"] = allowed_tiers
     g["deterministic_tier"] = deterministic_tier  # for diagnostics
 

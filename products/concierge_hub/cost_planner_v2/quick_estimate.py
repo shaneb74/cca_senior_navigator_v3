@@ -201,6 +201,10 @@ def render():
     """Render Quick Estimate tabbed comparison view."""
 
     print("[PAGE_MOUNT] cost_quick_estimate")
+    
+    # Assert navigation consistency (verify interim flag matches published tier)
+    from core.modules.engine import assert_nav_consistency
+    assert_nav_consistency(st.session_state, where="CP")
 
     # Get ZIP from session state
     zip_code = st.session_state.get("cost.inputs", {}).get("zip") or st.session_state.get("cost_v2_quick_zip")
@@ -248,9 +252,10 @@ def render():
     # Enhanced debug output
     print(f"[QE_DEBUG] MC Tab Logic: mc_in_allowed={mc_in_allowed} (allowed={alwd}), mc_is_recommended={mc_is_recommended} (recommended={rec}), FINAL mc={avail['mc']}")
 
-    # Default selected tab (use published_tier for post-adjudication logic)
-    g = st.session_state.get("gcp", {})
-    final_tier = g.get("published_tier") or rec  # Fall back to legacy if published_tier not set
+    # Default selected tab (use final tier from canonical helper for post-adjudication logic)
+    from core.modules.engine import get_final_recommendation_tier
+    
+    final_tier = get_final_recommendation_tier(st.session_state)
     interim = bool(st.session_state.get("_show_mc_interim_advice", False))
     
     sel = cost.get("selected_assessment")

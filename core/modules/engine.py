@@ -145,10 +145,34 @@ def get_cached_interim_al() -> bool:
     return st.session_state[cache_key]
 
 
+def get_final_recommendation_tier(state=None) -> str:
+    """
+    Single source of truth for final recommendation tier (post-adjudication).
+    
+    Returns the clamped tier, respecting interim AL flag when set.
+    Use this everywhere instead of reading gcp.published_tier directly.
+    """
+    if state is None:
+        state = st.session_state
+    
+    g = state.get("gcp", {})
+    final_tier = g.get("published_tier") or g.get("recommended_tier") or g.get("deterministic_tier") or ""
+    
+    # Safety check: if interim flag is set but tier is still MC, force to AL
+    if state.get("_show_mc_interim_advice") and final_tier not in ("assisted_living",):
+        logging.warning(
+            "TIER_INCONSISTENCY: interim=True but tier=%s, forcing to assisted_living",
+            final_tier
+        )
+        final_tier = "assisted_living"
+    
+    return final_tier
+
+
 def get_results_subtitle(state=None) -> str:
     """
     Returns the subtitle under 'Your Guided Care Plan' based on final tier.
-    If clamped (no DX), show Assisted Living with memory support (interim).
+    If clamped (no DX), show Assisted Living with enhanced cognitive support.
     
     This ensures the subtitle always reflects the POST-ADJUDICATION tier,
     not the pre-clamp tier from the scoring engine.
@@ -157,32 +181,53 @@ def get_results_subtitle(state=None) -> str:
         state = st.session_state
     
     # Check if we're in interim AL case (MC clamped due to no DX)
-    interim = bool(state.get("_show_mc_interim_advice", False))
-    
-    # Get person name for personalization
-    person = (
-        state.get("person_name") 
-        or state.get("person_a_name") 
-        or "your loved one"
-    )
-    
-    if interim:
-        # Clamped case: MC suggested but no DX → AL interim
+    if state.get("_show_mc_interim_advice"):
         return "Assisted Living with enhanced cognitive support"
     
-    # Get final tier from canonical location
-    final_tier = state.get("gcp", {}).get("published_tier", "")
+    # Get final tier from canonical source
+    tier = get_final_recommendation_tier(state)
     
     # Map tier to subtitle
-    if final_tier == "memory_care" or final_tier == "memory_care_high_acuity":
+    if tier in ("memory_care", "memory_care_high_acuity"):
+        person = state.get("person_name") or state.get("person_a_name") or "your loved one"
         return f"Memory care is recommended for {person}."
-    elif final_tier == "assisted_living":
+    elif tier == "assisted_living":
+        person = state.get("person_name") or state.get("person_a_name") or "your loved one"
         return f"Assisted Living is recommended for {person}."
-    elif final_tier in ("in_home", "in_home_care"):
+    elif tier in ("in_home", "in_home_care"):
+        person = state.get("person_name") or state.get("person_a_name") or "your loved one"
         return f"In-home care is recommended for {person}."
     else:
-        # Fallback for any other tier
+        person = state.get("person_name") or state.get("person_a_name") or "your loved one"
         return f"Here's the best next step for {person}."
+
+
+def assert_nav_consistency(state=None, *, where: str = "UNKNOWN"):
+    """
+    Assert navigation consistency: verify interim flag matches published tier.
+    Logs warnings if state is inconsistent (interim=True but tier≠AL).
+    
+    Args:
+        state: Session state dict (defaults to st.session_state)
+        where: Location identifier for logging (e.g., "RESULTS", "CP")
+    """
+    if state is None:
+        state = st.session_state
+    
+    final_tier = get_final_recommendation_tier(state)
+    pub = state.get("gcp", {}).get("published_tier")
+    interim = bool(state.get("_show_mc_interim_advice"))
+    
+    if interim and pub != "assisted_living":
+        logging.error(
+            "NAV_ASSERT[%s]: interim=True but published_tier=%s (expected assisted_living)",
+            where, pub
+        )
+    
+    logging.info(
+        "NAV_ASSERT[%s]: final=%s published=%s interim=%s",
+        where, final_tier, pub, interim
+    )
 
 
 def adjudicate_final_tier(base_tier: str, llm_tier: str | None = None) -> tuple[str, dict[str, Any]]:

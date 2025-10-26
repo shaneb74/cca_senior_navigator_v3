@@ -458,9 +458,11 @@ def ensure_summary_ready(answers: dict, flags: list[str], tier: str) -> None:
         pass  # Never fail on logging
 
     # Clear hours suggestion for facility-based tiers when not comparing with in-home
-    # Use published tier (gcp.final_tier) not deterministic tier
+    # Use final tier from canonical helper (post-adjudication)
     # Hours only apply to in-home scenarios OR when comparing facility with in-home
-    published_tier = st.session_state.get("gcp.final_tier", tier)
+    from core.modules.engine import get_final_recommendation_tier
+    
+    published_tier = get_final_recommendation_tier(st.session_state)
     facility_tiers = ["assisted_living", "memory_care", "memory_care_high_acuity"]
     compare_inhome = st.session_state.get("cost.compare_inhome", False)
 
