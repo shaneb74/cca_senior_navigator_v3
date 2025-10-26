@@ -351,7 +351,7 @@ def build_corp_index(chunks: tuple) -> tuple:
     """Build and cache TF-IDF index for corp knowledge chunks (Stage 3.6).
     
     Args:
-        chunks: Tuple of chunk dicts (tuple for hashability)
+        chunks: Tuple of chunk JSON strings (for hashability)
         
     Returns:
         Tuple of (vectorizer, matrix, chunk_list) for reuse
@@ -362,7 +362,8 @@ def build_corp_index(chunks: tuple) -> tuple:
         if not chunks:
             return None, None, []
         
-        chunk_list = list(chunks)
+        # Deserialize JSON strings back to dicts
+        chunk_list = [json.loads(c) if isinstance(c, str) else c for c in chunks]
         texts = [f"{c.get('heading', '')} {c.get('text', '')}" for c in chunk_list]
         
         vectorizer = TfidfVectorizer(stop_words="english", max_features=500)
@@ -371,6 +372,8 @@ def build_corp_index(chunks: tuple) -> tuple:
         return vectorizer, X, chunk_list
     except Exception as e:
         print(f"[CORP_INDEX_BUILD_ERROR] {e}")
+        import traceback
+        traceback.print_exc()
         return None, None, []
 
 
@@ -1375,15 +1378,15 @@ def render():
                         elif msg.get("is_error"):
                             badge_html = '<span class="chat-badge">⚠️ Something went wrong</span>'
 
-                        # Sanitize message content unless explicitly marked as HTML
+                        # Message content handling
                         is_html = msg.get("is_html", False)
                         if not is_html:
-                            # Sanitize to prevent raw HTML in chat bubbles
-                            safe_text = _sanitize_to_md(text)
-                            # Escape for safe HTML embedding
-                            safe_text = html.escape(safe_text)
+                            # Answer is already normalized to Markdown by llm_mediator.
+                            # DON'T escape - let Streamlit render the Markdown.
+                            # The answer should be clean (no HTML) after normalization.
+                            safe_text = text
                         else:
-                            # Only allow HTML when explicitly flagged
+                            # Only allow HTML when explicitly flagged (e.g., for UI chrome)
                             safe_text = text
 
                         sources_html = ""

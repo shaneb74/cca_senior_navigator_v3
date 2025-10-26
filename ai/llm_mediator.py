@@ -560,6 +560,87 @@ def get_mediated_recommendation(
 
 
 # ==============================================================================
+# HTML SANITIZATION HELPERS
+# ==============================================================================
+
+# Precompiled patterns for efficient HTML sanitization (global removal, not just start/end)
+import re
+import html
+
+_CHAT_WRAPPERS_OPEN  = re.compile(r'<div[^>]+class=["\'](?:chat-bubble__content|chat-sources)["\'][^>]*>', re.I)
+_CHAT_WRAPPERS_CLOSE = re.compile(r'</div>', re.I)
+_A_TAG               = re.compile(r'<a\s+[^>]*?href=["\']([^"\']+)["\'][^>]*>(.*?)</a>', re.I | re.S)
+_BLOCK_TAGS          = re.compile(r'</?(ul|ol|li|p|div|span|strong|em|b|i|u|h[1-6])[^>]*>', re.I)
+_BR_TAG              = re.compile(r'<br\s*/?>', re.I)
+_P_CLOSE             = re.compile(r'</p\s*>', re.I)
+
+
+def _html_to_markdown(text: str) -> str:
+    """
+    Sanitize HTML to clean Markdown - GLOBAL removal of ALL wrappers.
+    
+    Strips LLM "helpful HTML" syndrome artifacts:
+    - <div class="chat-bubble__content"> wrappers (ALL occurrences, not just start/end)
+    - <div class="chat-sources"> wrappers (ALL occurrences, not just start/end)
+    - HTML tags (converts links, preserves structure)
+    - HTML entities (&#x27; → ', &quot; → ")
+    
+    Handles multiple sibling wrappers like:
+        <div class="chat-bubble__content">...</div>
+        <div class='chat-sources'>...</div>
+    
+    Previous bug: Only stripped ONE opening wrapper at start and ONE </div> at end,
+    allowing middle </div><div class='chat-sources'> to leak through.
+    
+    Fixed: Global regex substitution removes ALL wrapper occurrences anywhere in string.
+    
+    Returns clean Markdown suitable for st.markdown() without unsafe_allow_html.
+    """
+    if not text:
+        return ""
+    s = text.strip()
+
+    # 1) Remove ALL chat wrappers, wherever they appear (not just start/end)
+    s = _CHAT_WRAPPERS_OPEN.sub("", s)
+    s = _CHAT_WRAPPERS_CLOSE.sub("", s)  # Safe after removing opens
+
+    # 2) Convert links to markdown: <a href="url">text</a> → [text](url)
+    def _a2md(m):
+        url = m.group(1).strip()
+        inner = re.sub(r"<.*?>", "", m.group(2)).strip()
+        return f"[{inner}]({url})" if inner else f"<{url}>"
+    s = _A_TAG.sub(_a2md, s)
+
+    # 3) Structural tags → breaks/bullets, then strip remaining block tags
+    s = _BR_TAG.sub("\n", s)
+    s = _P_CLOSE.sub("\n\n", s)
+    s = re.sub(r"<li\s*>", "\n- ", s, flags=re.I)
+    s = _BLOCK_TAGS.sub("", s)
+
+    # 4) Unescape entities & tidy whitespace
+    s = html.unescape(s)
+    s = re.sub(r"[ \t]+\n", "\n", s)
+    s = re.sub(r"\n{3,}", "\n\n", s).strip()
+    
+    return s
+
+
+def _normalize_answer(answer: str) -> str:
+    """Normalize answer text to clean Markdown."""
+    return _html_to_markdown(answer)
+
+
+def _strip_html_shell(text: str) -> str:
+    """
+    DEPRECATED: Use _normalize_answer() instead.
+    
+    Remove legacy HTML wrappers and unescape HTML entities.
+    Kept for backward compatibility but prefer _normalize_answer().
+    """
+    return _normalize_answer(text)
+
+
+# ==============================================================================
 # FAQ MEDIATOR (Stage 3)
 # ==============================================================================
 def answer_faq(
@@ -604,6 +685,7 @@ STRICT RULES:
 - Maximum 120 words
 - Plain, warm, professional language
 - No medical advice or diagnoses
+- **Return Markdown only. Do not use HTML tags or inline styles. Do not wrap answers in <div> or other containers.**
 
 OUTPUT FORMAT (valid JSON only):
 {{"answer": "your concise answer here", "sources": ["faq_id_1", "faq_id_2"], "cta": {{"label": "...", "route": "..."}}}}
@@ -639,6 +721,12 @@ FAQ CONTEXT:
         # Parse response
         content = response.choices[0].message.content.strip()
         
+        # DEBUG: Log raw LLM output
+        print(f"[FAQ_LLM_RAW] Raw LLM response (first 200 chars):")
+        print(f"  {content[:200]}")
+        if "<" in content:
+            print(f"  ⚠️  WARNING: LLM returned HTML tags!")
+        
         # Try to extract JSON (handle markdown code blocks)
         if "```json" in content:
             content = content.split("```json")[1].split("```")[0].strip()
@@ -650,6 +738,12 @@ FAQ CONTEXT:
         # Post-validation and safety
         answer_text = result.get("answer", "")
         
+        # DEBUG: Log answer from JSON
+        print(f"[FAQ_LLM_PARSED] Parsed answer from JSON:")
+        print(f"  {answer_text[:200]}")
+        if "<" in answer_text:
+            print(f"  ⚠️  WARNING: Answer contains HTML!")
+        
         # Filter banned phrases
         for banned in banned_phrases:
             answer_text = answer_text.replace(banned, fallback_name)
@@ -659,16 +753,8 @@ FAQ CONTEXT:
         if len(words) > 120:
             answer_text = ' '.join(words[:120]) + "..."
         
-        # Sanitize HTML if present (prefer Markdown)
-        if "<" in answer_text and ">" in answer_text:
-            import re
-            # Strip common block tags
-            answer_text = re.sub(r'</?(div|span|p|section|article|header|footer)[^>]*>', '', answer_text, flags=re.I)
-            # Convert <br> to newlines
-            answer_text = re.sub(r'<br\s*/?>', '\n', answer_text, flags=re.I)
-            # Remove remaining tags
-            answer_text = re.sub(r'<[^>]+>', '', answer_text)
-            answer_text = answer_text.strip()
+        # Normalize to clean Markdown (strip HTML shells and unescape entities)
+        answer_text = _normalize_answer(answer_text)
         
         # Validate CTA
         cta = result.get("cta", default_cta)
@@ -743,6 +829,7 @@ STRICT RULES:
 - Answer in ≤120 words, plain language.
 - Cite sources by title with URLs.
 - Return JSON: {{"answer":"...","sources":[{{"title":"...","url":"..."}}]}}
+- **Return Markdown only. Do not use HTML tags or inline styles. Do not wrap answers in <div> or other containers.**
 
 FALLBACK ONLY IF: Chunks are completely unrelated to question (e.g., asking about pets when chunks are about care).
 Otherwise, answer with: "Based on our guides/resources: [answer using chunk info]"
@@ -765,19 +852,24 @@ Otherwise, answer with: "Based on our guides/resources: [answer using chunk info
             "chunks": chunk_context,
         }
         
-        # Call LLM
+        # Call LLM using our LLMClient wrapper
         client = get_client()
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": json.dumps(user_prompt)}
-            ],
-            temperature=0.3,
-            max_tokens=300,
+        raw_text = client.generate_completion(
+            system_prompt=system_prompt,
+            user_prompt=json.dumps(user_prompt),
         )
         
-        raw_text = response.choices[0].message.content.strip()
+        if not raw_text:
+            return {
+                "answer": "I'm having trouble accessing our knowledge base right now. Please try again in a moment.",
+                "sources": []
+            }
+        
+        # DEBUG: Log raw LLM output
+        print(f"[CORP_LLM_RAW] Raw LLM response (first 200 chars):")
+        print(f"  {raw_text[:200]}")
+        if "<" in raw_text:
+            print(f"  ⚠️  WARNING: LLM returned HTML tags!")
         
         # Try to parse JSON (handle markdown code blocks)
         json_text = raw_text
@@ -795,6 +887,12 @@ Otherwise, answer with: "Based on our guides/resources: [answer using chunk info
             answer_text = raw_text
             sources = []
         
+        # DEBUG: Log answer after parsing
+        print(f"[CORP_LLM_PARSED] Parsed answer:")
+        print(f"  {answer_text[:200]}")
+        if "<" in answer_text:
+            print(f"  ⚠️  WARNING: Answer contains HTML!")
+        
         # Post-validation: banned phrase filtering
         for banned in banned_phrases:
             if banned.lower() in answer_text.lower():
@@ -807,16 +905,8 @@ Otherwise, answer with: "Based on our guides/resources: [answer using chunk info
         if len(words) > 120:
             answer_text = " ".join(words[:120]) + "..."
         
-        # Sanitize HTML if present (prefer Markdown)
-        if "<" in answer_text and ">" in answer_text:
-            import re
-            # Strip common block tags
-            answer_text = re.sub(r'</?(div|span|p|section|article|header|footer)[^>]*>', '', answer_text, flags=re.I)
-            # Convert <br> to newlines
-            answer_text = re.sub(r'<br\s*/?>', '\n', answer_text, flags=re.I)
-            # Remove remaining tags
-            answer_text = re.sub(r'<[^>]+>', '', answer_text)
-            answer_text = answer_text.strip()
+        # Normalize to clean Markdown (strip HTML shells and unescape entities)
+        answer_text = _normalize_answer(answer_text)
             
         return {
             "answer": answer_text[:800],  # Hard cap at 800 chars
