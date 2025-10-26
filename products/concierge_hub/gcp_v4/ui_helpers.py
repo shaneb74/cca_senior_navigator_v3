@@ -642,3 +642,28 @@ def render_clean_summary():
             f"<div style='margin-top:.5rem;color:#0d1f4b'>{adv['next_line']}</div>",
             unsafe_allow_html=True,
         )
+
+
+def render_interim_al_callout():
+    """
+    Render interim Assisted Living callout card when Memory Care is recommended
+    but no formal diagnosis is present. Provides clear guidance on the interim step.
+    """
+    st.markdown("""
+<div class="interim-callout" role="note" aria-live="polite">
+  <div class="interim-callout__eyebrow">Interim next step</div>
+  <h4 class="interim-callout__title">Assisted Living is recommended while you seek a formal diagnosis</h4>
+  <p class="interim-callout__body">
+    Many Memory Care communities ask for a confirmed dementia/Alzheimer's (or related) diagnosis to enroll.
+    While you arrange an evaluation, Assisted Living with memory support can provide safety, structure, and continuity.
+  </p>
+</div>
+""", unsafe_allow_html=True)
+
+
+def vrhythm(section: str):
+    """
+    Render named vertical rhythm spacer for predictable layout spacing.
+    Use instead of st.write("") or st.markdown("") for consistency.
+    """
+    st.markdown(f'<div class="vr vr--{section}"></div>', unsafe_allow_html=True)

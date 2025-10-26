@@ -2261,3 +2261,54 @@ div[data-testid="stVerticalBlock"]:has(.chip-wrap.is-active) .stButton > button{
   display: none !important;
 }
 
+/* ==== GCP Recommendation — Interim AL Callout (scoped) ==== */
+/* Named spacers for predictable rhythm */
+.sn-app .gcp-rec .vr--after-navi { 
+  height: 8px; 
+}
+
+.sn-app .gcp-rec .vr--before-meaning { 
+  height: 12px; 
+}
+
+/* Interim callout card */
+.sn-app .gcp-rec .interim-callout {
+  background: #f1f8ff;               /* calm info tone */
+  border: 1px solid #cfe3ff;
+  border-radius: 12px;
+  padding: 16px 18px;
+  margin: 0;                         /* rhythm handled by vr spacers */
+  position: relative;
+  z-index: 2;                        /* above any low z-index backgrounds */
+}
+
+.sn-app .gcp-rec .interim-callout__eyebrow {
+  font-size: 12px;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+  opacity: .75;
+  margin-bottom: 6px;
+  color: #64748b;
+}
+
+.sn-app .gcp-rec .interim-callout__title {
+  margin: 0 0 6px 0;
+  font-size: 16px;
+  line-height: 1.35;
+  color: #0d1f4b;
+  font-weight: 600;
+}
+
+.sn-app .gcp-rec .interim-callout__body {
+  margin: 0;
+  color: #1e293b;
+  line-height: 1.5;
+}
+
+/* Ensure parent containers don't clip this row */
+.sn-app .gcp-rec .summary-section,
+.sn-app .gcp-rec .summary-panel {
+  overflow: visible;
+}
+
+

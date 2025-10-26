@@ -109,6 +109,35 @@ def _get_cached_mc_advice() -> bool:
     return st.session_state[cache_key]
 
 
+def is_interim_al_recommended() -> bool:
+    """
+    Presentational helper: true when MC is recommended but a formal dementia DX
+    is not present and the flow flagged likely_mc_no_dx. Used to:
+      - override subtitle under the results header
+      - render the interim callout card
+    Does not alter the computed recommendation.
+    """
+    if not _is_mc_recommended():
+        return False
+    if _has_dx_present():
+        return False
+    outcome_ids = _get_outcome_flags()
+    return bool(outcome_ids & _MC_NO_DX_FLAG_IDS)
+
+
+def get_cached_interim_al() -> bool:
+    """
+    Get cached interim AL decision. Computes once per results view,
+    then caches to prevent flashing during reruns.
+    """
+    cache_key = "_interim_al_cached"
+    if cache_key not in st.session_state:
+        decision = is_interim_al_recommended()
+        st.session_state[cache_key] = decision
+        logging.info("INTERIM_AL: cached decision=%s", decision)
+    return st.session_state[cache_key]
+
+
 def render_mc_eligibility_banner(name: str | None = None) -> None:
     """
     Render a friendly eligibility note (amber banner).
@@ -190,6 +219,7 @@ def run_module(config: ModuleConfig) -> dict[str, Any]:
     if step_index == 0:
         st.session_state.pop("_mc_advice_cached", None)
         st.session_state.pop("_mc_banner_rendered", None)
+        st.session_state.pop("_interim_al_cached", None)
 
     step = config.steps[step_index]
 
@@ -1367,11 +1397,21 @@ def _render_results_view(mod: dict[str, Any], config: ModuleConfig) -> None:
     # Open scoped wrapper for recommendation layout spacing
     st.markdown('<div class="gcp-rec">', unsafe_allow_html=True)
     
+    # Check if interim AL should be presented
+    show_interim_al = get_cached_interim_al()
+    
     try:
         if not st.session_state.get("_gcp_cp_header_rendered", False):
             from core.ui import render_navi_panel_v2
             header_title = "Your Guided Care Plan"
-            header_reason = f"Based on your answers, {rec_text} fits best right now."
+            
+            # Override subtitle for interim AL case
+            if show_interim_al:
+                person = st.session_state.get("person_name") or st.session_state.get("person_a_name") or "your loved one"
+                header_reason = f"Assisted Living is recommended for {person} (interim)."
+            else:
+                header_reason = f"Based on your answers, {rec_text} fits best right now."
+            
             render_navi_panel_v2(
                 title=header_title,
                 reason=header_reason,
@@ -1385,6 +1425,13 @@ def _render_results_view(mod: dict[str, Any], config: ModuleConfig) -> None:
             st.session_state["_gcp_cp_header_key"] = "gcp_cp_header::results"
     except Exception:
         pass
+
+    # --- Conditional interim AL callout (in white space) ---
+    if show_interim_al:
+        from products.concierge_hub.gcp_v4.ui_helpers import render_interim_al_callout, vrhythm
+        vrhythm("after-navi")
+        render_interim_al_callout()
+        vrhythm("before-meaning")
 
     # --- Conditional Memory Care eligibility banner ---
     show_banner = _get_cached_mc_advice()
@@ -1455,7 +1502,7 @@ def _render_results_view(mod: dict[str, Any], config: ModuleConfig) -> None:
             preserve = {"auth", "session_id", "dev_mode"}
             for k in list(st.session_state.keys()):
                 if k not in preserve:
-                    if k.startswith("gcp_") or k in ("_summary_advice", "_hours_suggestion", "_hours_ack", "_hours_nudge_key", "_hours_nudge_new", "_gcp_llm_advice", "_mc_advice_cached", "_mc_banner_rendered", "_gcp_cp_header_rendered"):
+                    if k.startswith("gcp_") or k in ("_summary_advice", "_hours_suggestion", "_hours_ack", "_hours_nudge_key", "_hours_nudge_new", "_gcp_llm_advice", "_mc_advice_cached", "_mc_banner_rendered", "_gcp_cp_header_rendered", "_interim_al_cached"):
                         st.session_state.pop(k, None)
 
             # Reset to step 0 (first question - Age section)
