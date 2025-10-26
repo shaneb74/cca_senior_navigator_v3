@@ -107,8 +107,8 @@ def current_route(default: str, pages: dict[str, dict]) -> str:
         "faqs": "faq",
         "faq": "faq",
         "faqs_and_answers": "faq",
-        "ai_advisor": "faq",
-        "advisor": "faq",
+        "ai_advisor": "ai_advisor",  # Route to dedicated AI Advisor product
+        "advisor": "ai_advisor",     # Alias for AI Advisor
     }
 
     raw_page = st.query_params.get("page")

@@ -86,6 +86,18 @@ ensure_session()
 _cleanup_legacy_gcp_state()
 
 # ====================================================================
+# RAG STATS - Log corpus size at boot
+# ====================================================================
+if "_rag_stats_logged" not in st.session_state:
+    try:
+        from pages.faq import load_corp_chunks
+        chunks = load_corp_chunks(_mtime=None)
+        print(f"[RAG_STATS] chunks={len(chunks)} source=config/corp_knowledge.jsonl")
+        st.session_state["_rag_stats_logged"] = True
+    except Exception as e:
+        print(f"[RAG_STATS] error loading chunks: {e}")
+
+# ====================================================================
 # URL-DRIVEN ROUTING - Hydrate from query params (do this ONCE at startup)
 # ====================================================================
 from core.url_helpers import current_route as get_current_route

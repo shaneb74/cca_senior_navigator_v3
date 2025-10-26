@@ -765,19 +765,18 @@ Otherwise, answer with: "Based on our guides/resources: [answer using chunk info
             "chunks": chunk_context,
         }
         
-        # Call LLM
+        # Call LLM using our LLMClient wrapper
         client = get_client()
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": json.dumps(user_prompt)}
-            ],
-            temperature=0.3,
-            max_tokens=300,
+        raw_text = client.generate_completion(
+            system_prompt=system_prompt,
+            user_prompt=json.dumps(user_prompt),
         )
         
-        raw_text = response.choices[0].message.content.strip()
+        if not raw_text:
+            return {
+                "answer": "I'm having trouble accessing our knowledge base right now. Please try again in a moment.",
+                "sources": []
+            }
         
         # Try to parse JSON (handle markdown code blocks)
         json_text = raw_text
