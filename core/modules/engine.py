@@ -96,11 +96,29 @@ def _mc_requires_eligibility_advice() -> bool:
     return show
 
 
+def _get_cached_mc_advice() -> bool:
+    """
+    Get cached MC eligibility advice decision. Computes once per results view,
+    then caches to prevent flashing during reruns.
+    """
+    cache_key = "_mc_advice_cached"
+    if cache_key not in st.session_state:
+        decision = _mc_requires_eligibility_advice()
+        st.session_state[cache_key] = decision
+        logging.info("MC_ELIG: cached decision=%s", decision)
+    return st.session_state[cache_key]
+
+
 def render_mc_eligibility_banner(name: str | None = None) -> None:
     """
     Render a friendly eligibility note (amber banner).
     Scoped via class 'mc-eligibility-banner' to avoid global effects.
+    Guarded to prevent duplicate renders during reruns.
     """
+    # Guard against duplicate renders
+    if st.session_state.get("_mc_banner_rendered", False):
+        return
+    
     person = name or st.session_state.get("person_name") or st.session_state.get("person_a_name") or "your loved one"
     st.markdown(
         f"""
@@ -117,6 +135,8 @@ def render_mc_eligibility_banner(name: str | None = None) -> None:
         """,
         unsafe_allow_html=True,
     )
+    st.session_state["_mc_banner_rendered"] = True
+    logging.info("MC_ELIG: banner rendered and guard set")
 
 
 def run_module(config: ModuleConfig) -> dict[str, Any]:
@@ -165,6 +185,11 @@ def run_module(config: ModuleConfig) -> dict[str, Any]:
 
     # Store step index for internal navigation
     st.session_state[f"{state_key}._step"] = step_index
+    
+    # Clear MC banner cache when starting fresh (step 0) to prevent stale state
+    if step_index == 0:
+        st.session_state.pop("_mc_advice_cached", None)
+        st.session_state.pop("_mc_banner_rendered", None)
 
     step = config.steps[step_index]
 
@@ -1362,7 +1387,14 @@ def _render_results_view(mod: dict[str, Any], config: ModuleConfig) -> None:
         pass
 
     # --- Conditional Memory Care eligibility banner ---
-    if _mc_requires_eligibility_advice():
+    show_banner = _get_cached_mc_advice()
+    
+    # Debug pin (visible only in dev_mode)
+    if st.session_state.get("dev_mode"):
+        outcome_ids = _get_outcome_flags()
+        st.caption(f"🔍 MC_ELIG pin: show={show_banner}, flags={sorted(outcome_ids)}")
+    
+    if show_banner:
         logging.info("MC_ELIG: rendering eligibility advice banner")
         render_mc_eligibility_banner()
 
@@ -1423,7 +1455,7 @@ def _render_results_view(mod: dict[str, Any], config: ModuleConfig) -> None:
             preserve = {"auth", "session_id", "dev_mode"}
             for k in list(st.session_state.keys()):
                 if k not in preserve:
-                    if k.startswith("gcp_") or k in ("_summary_advice", "_hours_suggestion", "_hours_ack", "_hours_nudge_key", "_hours_nudge_new", "_gcp_llm_advice"):
+                    if k.startswith("gcp_") or k in ("_summary_advice", "_hours_suggestion", "_hours_ack", "_hours_nudge_key", "_hours_nudge_new", "_gcp_llm_advice", "_mc_advice_cached", "_mc_banner_rendered", "_gcp_cp_header_rendered"):
                         st.session_state.pop(k, None)
 
             # Reset to step 0 (first question - Age section)
