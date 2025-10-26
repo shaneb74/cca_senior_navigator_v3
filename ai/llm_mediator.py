@@ -562,76 +562,53 @@ def get_mediated_recommendation(
 # ==============================================================================
 # HTML SANITIZATION HELPERS
 # ==============================================================================
-def _strip_html_shell(text: str) -> str:
-    """
-    Remove legacy HTML wrappers and unescape HTML entities.
-    
-    Strips:
-    - <div class="chat-bubble__content">...</div> shells
-    - Common block tags (div, span, p, section, article, header, footer)
-    - <br> tags (converts to newlines)
-    - List tags (ul, ol, li) with spacing preservation
-    - All remaining HTML tags
-    - HTML entities (&nbsp;, &amp;, &lt;, &gt;, &quot;, &#39;)
-    
-    Args:
-        text: Answer text that may contain HTML
-        
-    Returns:
-        Clean plain text / Markdown
-    """
+def _html_to_markdown(s: str) -> str:
+    """Best-effort HTML → Markdown sanitizer for advisor answers."""
     import re
     import html
     
-    if not text or not isinstance(text, str):
-        return text
+    if not s:
+        return ""
+    s = s.strip()
+
+    # 1) Strip known outer chat-bubble wrappers
+    s = re.sub(r"^<div[^>]*?chat-bubble__content[^>]*>", "", s, flags=re.I)
+    s = re.sub(r"</div>\s*$", "", s, flags=re.I)
+
+    # 2) Convert <a href="...">text</a> → [text](url)
+    def _a2md(m):
+        url = m.group(1).strip()
+        txt = re.sub(r"<.*?>", "", m.group(2)).strip()
+        return f"[{txt}]({url})" if txt else f"<{url}>"
+    s = re.sub(r'<a\s+[^>]*?href=["\']([^"\']+)["\'][^>]*>(.*?)</a>', _a2md, s, flags=re.I|re.S)
+
+    # 3) Replace <br>, <p>, <li>, <ul>/<ol> with markdowny breaks/bullets
+    s = re.sub(r"<br\s*/?>", "\n", s, flags=re.I)
+    s = re.sub(r"</p\s*>", "\n\n", s, flags=re.I)
+    s = re.sub(r"<li\s*>", "\n- ", s, flags=re.I)
+    s = re.sub(r"</li\s*>", "", s, flags=re.I)
+    s = re.sub(r"</?(ul|ol|p|div|span|strong|em|b|i|u)[^>]*>", "", s, flags=re.I)
+
+    # 4) Unescape entities and collapse whitespace
+    s = html.unescape(s)
+    s = re.sub(r"[ \t]+\n", "\n", s)
+    s = re.sub(r"\n{3,}", "\n\n", s).strip()
+    return s
+
+
+def _normalize_answer(answer: str) -> str:
+    """Normalize answer text to clean Markdown."""
+    return _html_to_markdown(answer)
+
+
+def _strip_html_shell(text: str) -> str:
+    """
+    DEPRECATED: Use _normalize_answer() instead.
     
-    # Strip chat-bubble wrapper if present
-    text = re.sub(
-        r'<div\s+class=["\']chat-bubble__content["\'][^>]*>(.*?)</div>',
-        r'\1',
-        text,
-        flags=re.DOTALL | re.IGNORECASE
-    )
-    
-    # Convert list items to newlines with bullets
-    text = re.sub(r'</li>\s*<li>', '\n• ', text, flags=re.IGNORECASE)
-    text = re.sub(r'<li[^>]*>', '\n• ', text, flags=re.IGNORECASE)
-    text = re.sub(r'</li>', '', text, flags=re.IGNORECASE)
-    text = re.sub(r'</?[uo]l[^>]*>', '\n', text, flags=re.IGNORECASE)
-    
-    # Convert closing block tags to preserve spacing
-    text = re.sub(
-        r'</(p|div|section|article|header|footer|main|aside|blockquote|h[1-6])>',
-        '\n',
-        text,
-        flags=re.IGNORECASE
-    )
-    
-    # Convert <br> to newlines
-    text = re.sub(r'<br\s*/?>', '\n', text, flags=re.IGNORECASE)
-    
-    # Remove remaining opening tags (with spacing preservation)
-    text = re.sub(
-        r'<(p|div|section|article|header|footer|main|aside|blockquote|h[1-6])[^>]*>',
-        ' ',
-        text,
-        flags=re.IGNORECASE
-    )
-    
-    # Remove all other HTML tags
-    text = re.sub(r'<[^>]+>', '', text)
-    
-    # Unescape HTML entities (&nbsp; → space, &amp; → &, etc.)
-    text = html.unescape(text)
-    
-    # Clean up excess whitespace
-    text = re.sub(r'\n\s*\n\s*\n+', '\n\n', text)  # Max 2 consecutive newlines
-    text = re.sub(r'[ \t]+', ' ', text)  # Collapse spaces/tabs
-    text = re.sub(r'^\s+', '', text, flags=re.MULTILINE)  # Trim line starts
-    text = text.strip()
-    
-    return text
+    Remove legacy HTML wrappers and unescape HTML entities.
+    Kept for backward compatibility but prefer _normalize_answer().
+    """
+    return _normalize_answer(text)
 
 
 # ==============================================================================
@@ -734,8 +711,8 @@ FAQ CONTEXT:
         if len(words) > 120:
             answer_text = ' '.join(words[:120]) + "..."
         
-        # Strip HTML shells and unescape entities
-        answer_text = _strip_html_shell(answer_text)
+        # Normalize to clean Markdown (strip HTML shells and unescape entities)
+        answer_text = _normalize_answer(answer_text)
         
         # Validate CTA
         cta = result.get("cta", default_cta)
@@ -810,6 +787,7 @@ STRICT RULES:
 - Answer in ≤120 words, plain language.
 - Cite sources by title with URLs.
 - Return JSON: {{"answer":"...","sources":[{{"title":"...","url":"..."}}]}}
+- **Return Markdown only. Do not use HTML tags or inline styles. Do not wrap answers in <div> or other containers.**
 
 FALLBACK ONLY IF: Chunks are completely unrelated to question (e.g., asking about pets when chunks are about care).
 Otherwise, answer with: "Based on our guides/resources: [answer using chunk info]"
@@ -873,8 +851,8 @@ Otherwise, answer with: "Based on our guides/resources: [answer using chunk info
         if len(words) > 120:
             answer_text = " ".join(words[:120]) + "..."
         
-        # Strip HTML shells and unescape entities
-        answer_text = _strip_html_shell(answer_text)
+        # Normalize to clean Markdown (strip HTML shells and unescape entities)
+        answer_text = _normalize_answer(answer_text)
             
         return {
             "answer": answer_text[:800],  # Hard cap at 800 chars
