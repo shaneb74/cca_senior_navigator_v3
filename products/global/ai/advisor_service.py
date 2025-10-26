@@ -96,6 +96,7 @@ def get_answer(
                 result = answer_faq(question, name, top_faqs, policy)
                 if result:
                     mode = "faq"
+                    print(f"[ADVISOR_FAQ] question='{question[:50]}...' faq_ids={used_faq_ids[:3]}")
         
         # PRIORITY 3: Suggestive guidance (no exact matches found)
         if not result:
