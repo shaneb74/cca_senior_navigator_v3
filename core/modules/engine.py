@@ -1237,6 +1237,10 @@ def _render_results_view(mod: dict[str, Any], config: ModuleConfig) -> None:
     # 1. BLUE NAVI HEADER (skip if product already rendered one)
     # ========================================
     # Product pages (GCP) render the header at the top; avoid duplication here.
+    
+    # Open scoped wrapper for recommendation layout spacing
+    st.markdown('<div class="gcp-rec">', unsafe_allow_html=True)
+    
     try:
         if not st.session_state.get("_gcp_cp_header_rendered", False):
             from core.ui import render_navi_panel_v2
@@ -1256,12 +1260,17 @@ def _render_results_view(mod: dict[str, Any], config: ModuleConfig) -> None:
     except Exception:
         pass
 
+    # Wrap the recommendation body text so we can add spacing below
+    st.markdown('<div class="rec-body">', unsafe_allow_html=True)
+    
     # Clean paragraphs under header
     try:
         from products.concierge_hub.gcp_v4.ui_helpers import render_clean_summary
         render_clean_summary()
     except Exception:
         pass
+    
+    st.markdown('</div>', unsafe_allow_html=True)  # close rec-body
 
     # ========================================
     # 2. RECOMMENDATION CLARITY - Collapsible Drawer (Developer Tool)
@@ -1295,6 +1304,9 @@ def _render_results_view(mod: dict[str, Any], config: ModuleConfig) -> None:
     # ========================================
     # 2. NEXT ACTIONS - Three Simple Buttons
     # ========================================
+
+    # Wrap the 3-button row so we can add spacing above it
+    st.markdown('<div class="rec-actions">', unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns([1, 1, 1])
 
@@ -1335,8 +1347,12 @@ def _render_results_view(mod: dict[str, Any], config: ModuleConfig) -> None:
             from core.nav import route_to
             route_to("hub_concierge")
 
+    st.markdown('</div>', unsafe_allow_html=True)  # close rec-actions
+
     # Bottom horizontal rule
     st.markdown("---")
+    
+    st.markdown('</div>', unsafe_allow_html=True)  # close gcp-rec
 
 
 def _render_results_summary(state: dict[str, Any], config: ModuleConfig) -> None:

@@ -2195,3 +2195,38 @@ div[data-testid="stVerticalBlock"]:has(.chip-wrap.is-active) .stButton > button{
 .sn-app .cp-tab:focus-visible { outline: 3px solid var(--brand-300, #93C5FD); outline-offset: 2px; }
 
 
+/* ==== GCP Recommendation Layout Tweaks (scoped) ==== */
+.sn-app .gcp-rec .navi-panel-compact {
+  /* tighten gap between Navi panel and header/title below */
+  margin-bottom: 0.5rem !important; /* was ~0.75rem */
+}
+
+.sn-app .gcp-rec h2 {
+  /* reduce extra air above title under Navi */
+  margin-top: 0.5rem !important;    /* was 1.25rem */
+  margin-bottom: 0.75rem !important;
+}
+
+.sn-app .gcp-rec h3 {
+  /* reduce extra air above "What this means for you" title */
+  margin-top: 0.5rem !important;
+  margin-bottom: 0.75rem !important;
+}
+
+.sn-app .gcp-rec .rec-body {
+  /* add breathing room below the summary/body before CTAs */
+  margin-bottom: 1.25rem;            /* ~20px */
+}
+
+.sn-app .gcp-rec .rec-actions {
+  /* ensure CTAs don't collide with body text */
+  margin-top: 1rem;                  /* ~16px */
+}
+
+/* Optional: small vertical gap between the 3 column buttons, for narrow screens */
+@media (max-width: 700px) {
+  .sn-app .gcp-rec .rec-actions button {
+    margin-top: 8px;
+  }
+}
+
