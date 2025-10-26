@@ -17,6 +17,7 @@ LLM-POWERED FAQ (Stage 3):
 """
 
 from typing import Any
+import html
 import json
 import re
 
@@ -27,6 +28,9 @@ from core.flags import get_all_flags
 from core.mcip import MCIP
 from core.nav import route_to
 from core.navi import NaviOrchestrator
+from core.url_helpers import add_uid_to_href
+from ui.header_simple import render_header_simple
+from ui.footer_simple import render_footer_simple
 
 
 # ==============================================================================
@@ -941,17 +945,21 @@ def fmt_date(iso: str) -> str | None:
 
 def _copy_button(text: str, key: str) -> None:
     """Render a copy-to-clipboard button with JS."""
-    import html
     safe_text = html.escape(text).replace("'", "\\'").replace("\n", "\\n")
     st.markdown(f"""
     <button id="copy_{key}" style="
-        background: #F8FAFC;
-        border: 1px solid #E5E7EB;
-        border-radius: 6px;
-        padding: 4px 12px;
-        font-size: 0.875rem;
+        width: 100%;
+        background: #ffffff;
+        border: 1px solid rgba(59,130,246,.25);
+        border-radius: 999px;
+        padding: 10px 18px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #1f3b7a;
         cursor: pointer;
-        margin-top: 8px;
+        margin-top: 4px;
+        box-shadow: 0 10px 24px rgba(15,23,42,.08);
+        transition: all .18s ease;
     " onclick="
         navigator.clipboard.writeText('{safe_text}');
         this.textContent = '✓ Copied!';
@@ -1007,45 +1015,149 @@ def render():
     # CSS Styling
     st.markdown("""
     <style>
-      /* Center the experience */
-      .faq-wrap { max-width: 960px; margin: 0 auto; padding: 12px 20px 28px; }
-      .faq-head h1 { margin: 0 0 6px; font-size: 2rem; }
-      .faq-head p  { color:#64748B; margin:0 0 20px; font-size: 1.05rem; }
-
-      /* Recommended chips */
-      .chips { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0 20px; }
-
-      /* Chat area */
-      .chat { display:flex; flex-direction:column; gap:16px; margin: 20px 0; min-height: 200px; }
-      .msg-wrapper { display: flex; width: 100%; }
-      .msg-wrapper.user { justify-content: flex-end; }
-      .msg-wrapper.assistant { justify-content: flex-start; }
-      
-      .msg { max-width: 75%; padding:12px 16px; border-radius:16px; line-height:1.6; word-wrap: break-word; }
-      .msg.user { background:#DCFCE7; border:1px solid #86EFAC; border-bottom-right-radius: 4px; }
-      .msg.assistant { background:#F8FAFC; border:1px solid #E5E7EB; border-bottom-left-radius: 4px; }
-
-      /* Sources & CTA */
-      .sources { color:#6B7280; font-size:0.875rem; margin-top:8px; }
-      .source-pill { 
-        background:#EEF2FF; 
-        border:1px solid #C7D2FE; 
-        border-radius:12px; 
-        padding:3px 10px; 
-        margin:4px 4px 4px 0; 
-        display:inline-block;
-        font-size: 0.85rem;
+      /* Remove default Streamlit spacing */
+      .main .block-container {
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+        max-width: 100% !important;
+      }
+      .main > div:first-child {
+        gap: 0 !important;
       }
       
-      .msg-divider { border-top: 1px solid #E5E7EB; margin: 12px 0; }
+      .faq-shell{min-height:100vh;padding:24px 0 80px;background:radial-gradient(circle at 10% -20%,#eef3ff 0%,#ffffff 58%);margin-top:0;}
+      .faq-layout{max-width:1080px;margin:0 auto;padding:0 24px;display:flex;flex-direction:column;gap:28px;}
+      .faq-header{background:#ffffff;border-radius:26px;padding:32px 40px;border:1px solid rgba(15,23,42,.06);box-shadow:0 30px 60px rgba(15,23,42,.12);} 
+      .faq-header__eyebrow{font-size:0.8rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#1d4ed8;margin-bottom:12px;} 
+      .faq-header__title{margin:0;font-size:2.6rem;line-height:1.1;color:#0f172a;letter-spacing:-.015em;} 
+      .faq-header__lead{margin:14px 0 0;font-size:1.05rem;color:#475569;max-width:60ch;}
 
-      @media (max-width: 768px) {
-        .msg { max-width: 90%; }
-        .faq-wrap { padding: 8px 12px 20px; }
+      .faq-recs{background:#ffffff;border-radius:22px;padding:22px 26px;border:1px solid rgba(15,23,42,.06);box-shadow:0 24px 44px rgba(15,23,42,.08);} 
+      .faq-recs__label{display:flex;align-items:center;gap:10px;font-weight:700;color:#1f3b7a;font-size:0.85rem;text-transform:uppercase;letter-spacing:.12em;margin-bottom:16px;} 
+      .faq-recs__label::before{content:"⭐";font-size:1rem;} 
+
+      .faq-shell div[data-testid="stButton"] > button{border-radius:999px;border:1px solid rgba(15,23,42,.08);padding:12px 20px;background:#f8fafc;color:#0f172a;font-weight:600;font-size:0.95rem;transition:all .18s ease;} 
+      .faq-shell div[data-testid="stButton"] > button:hover{border-color:#93abff;background:#eef3ff;color:#0f172a;box-shadow:0 14px 30px rgba(59,130,246,.18);} 
+      .faq-shell div[data-testid="stButton"] > button[kind="primary"]{background:#0f1b58;color:#fff;border-color:#0f1b58;box-shadow:0 18px 34px rgba(15,27,88,.32);} 
+      .faq-shell div[data-testid="stButton"] > button[kind="primary"]:hover{background:#16257a;border-color:#16257a;}
+
+      .chat-thread{display:flex;flex-direction:column;gap:26px;} 
+      .chat-message{display:flex;gap:18px;align-items:flex-start;} 
+      .chat-message--assistant{flex-direction:row;} 
+      .chat-message--user{flex-direction:row-reverse;} 
+      .chat-avatar{width:44px;height:44px;border-radius:16px;background:linear-gradient(135deg,#1d4ed8,#312e81);display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;box-shadow:0 16px 32px rgba(49,46,129,.25);} 
+      .chat-avatar--user{background:#0f172a;} 
+      .chat-bubble{flex:1;padding:24px;border-radius:24px;border:1px solid rgba(148,163,184,.35);background:#ffffff;box-shadow:0 24px 46px rgba(15,23,42,.12);color:#0f172a;font-size:1.02rem;line-height:1.6;} 
+      .chat-bubble--assistant{background:linear-gradient(180deg,#ffffff 0%,#f5f7ff 94%);border-color:rgba(59,130,246,.2);} 
+      .chat-bubble--user{background:#0f172a;border-color:#0f172a;color:#ffffff;box-shadow:0 24px 46px rgba(15,23,42,.35);} 
+      .chat-bubble p{margin:0 0 16px;} 
+      .chat-bubble p:last-child{margin-bottom:0;} 
+      .chat-bubble__content{display:block;color:inherit;} 
+
+      .chat-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;margin-bottom:18px;border-radius:999px;background:#e7f1ff;border:1px solid rgba(37,99,235,.32);font-size:0.82rem;font-weight:700;color:#1d3b8b;text-transform:uppercase;letter-spacing:.08em;} 
+      .chat-sources{margin-top:20px;display:flex;flex-wrap:wrap;gap:10px;} 
+      .chat-source-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;background:#eef3ff;border:1px solid rgba(59,130,246,.18);color:#1f3b7a;font-size:0.85rem;font-weight:600;text-decoration:none;} 
+
+      .chat-follow-ups__label{font-size:0.9rem;color:#1d3b8b;font-weight:700;margin-bottom:12px;} 
+
+      .chat-divider{height:1px;background:linear-gradient(90deg,rgba(148,163,184,.2) 0%,rgba(148,163,184,0) 100%);margin:32px 0;} 
+
+      .faq-shell .stAlert{border-radius:20px;border:1px solid rgba(59,130,246,.18);background:#f5f7ff;box-shadow:none;} 
+      .chat-sentinel{display:block;height:0;margin:0;padding:0;} 
+
+      .chat-action-sentinel + div[data-testid="stElementContainer"] > div[data-testid="stVerticalBlock"]{
+        background:#ffffff;
+        border-radius:18px;
+        border:1px solid rgba(148,163,184,.25);
+        box-shadow:0 18px 36px rgba(15,23,42,.12);
+        padding:16px 18px;
+        margin-top:20px;
+      }
+      .chat-action-sentinel + div[data-testid="stElementContainer"] div[data-testid="stHorizontalBlock"]{gap:12px;}
+      .chat-action-sentinel + div[data-testid="stElementContainer"] div[data-testid="column"]{padding:0!important;}
+      .chat-action-sentinel + div[data-testid="stElementContainer"] button{width:100%;border-radius:999px;font-weight:600;}
+
+      .chat-followup-sentinel + div[data-testid="stElementContainer"] > div[data-testid="stVerticalBlock"]{
+        background:#f0f4ff;
+        border-radius:18px;
+        border:1px solid rgba(59,130,246,.18);
+        padding:18px 20px;
+        margin-top:18px;
+      }
+      .chat-followup-sentinel + div[data-testid="stElementContainer"] div[data-testid="stHorizontalBlock"]{gap:12px;}
+      .chat-followup-sentinel + div[data-testid="stElementContainer"] div[data-testid="column"]{padding:0!important;}
+
+      .chat-cta-sentinel + div[data-testid="stElementContainer"] button{
+        width:100%;
+        padding:14px 0;
+        border-radius:14px;
+        font-size:1rem;
+        font-weight:700;
+      }
+
+      .chat-feedback-sentinel + div[data-testid="stElementContainer"] div[data-testid="column"]{padding:0!important;}
+      .chat-feedback-sentinel + div[data-testid="stElementContainer"] button{width:100%;border-radius:999px;font-weight:600;}
+
+      .composer-sentinel + div[data-testid="stElementContainer"] > div[data-testid="stVerticalBlock"]{
+        background:#ffffff;
+        border-radius:26px;
+        border:1px solid rgba(148,163,184,.25);
+        box-shadow:0 24px 50px rgba(15,23,42,.12);
+        padding:24px 24px 20px;
+      }
+      .composer-sentinel + div[data-testid="stElementContainer"] div[data-testid="stHorizontalBlock"]{gap:16px;}
+      .composer-sentinel + div[data-testid="stElementContainer"] div[data-testid="column"]{padding:0!important;}
+      .composer-sentinel + div[data-testid="stElementContainer"] input{
+        border-radius:16px;
+        border:1px solid rgba(148,163,184,.45);
+        padding:14px 18px;
+        font-size:1rem;
+        box-shadow:inset 0 2px 6px rgba(15,23,42,.08);
+      }
+      .composer-sentinel + div[data-testid="stElementContainer"] input:focus{
+        border-color:#2563eb;
+        outline:none;
+        box-shadow:0 0 0 3px rgba(37,99,235,.2);
+      }
+      .composer-sentinel + div[data-testid="stElementContainer"] .composer-meta{
+        display:flex;
+        justify-content:space-between;
+        flex-wrap:wrap;
+        gap:12px;
+        align-items:center;
+        font-size:0.9rem;
+        color:#475569;
+        margin-top:12px;
+      }
+      .composer-sentinel + div[data-testid="stElementContainer"] .composer-meta a{
+        color:#1f3b7a;
+        font-weight:600;
+        text-decoration:none;
+      }
+
+      .control-sentinel + div[data-testid="stElementContainer"] div[data-testid="stHorizontalBlock"]{gap:12px;}
+      .control-sentinel + div[data-testid="stElementContainer"] div[data-testid="column"]{padding:0!important;}
+      .control-sentinel + div[data-testid="stElementContainer"] button{width:100%;border-radius:12px;font-weight:600;}
+
+
+      @media (max-width:900px){
+        .faq-layout{padding:0 18px;}
+        .chat-message{gap:14px;}
+        .chat-bubble{padding:20px;}
+        .chat-avatar{width:40px;height:40px;border-radius:14px;}
+      }
+      @media (max-width:640px){
+        .faq-header{padding:24px;}
+        .chat-message{flex-direction:column;}
+        .chat-message--user{flex-direction:column;align-items:flex-end;}
+        .chat-message--user .chat-avatar{margin-bottom:12px;}
       }
     </style>
     """, unsafe_allow_html=True)
-    
+
+    # Render page chrome
+    render_header_simple(active_route="faq")
+
     # Initialize session state for chat
     if "faq_chat" not in st.session_state:
         st.session_state["faq_chat"] = []
@@ -1055,55 +1167,57 @@ def render():
         st.session_state["faq_send_now"] = False
     
     # Header
-    st.markdown('<div class="faq-wrap">', unsafe_allow_html=True)
+    top_padding = " style=\"margin-top:12px;\"" if st.session_state.get("_nav_context", {}).get("route") == "faq" else ""
+    st.markdown(f'<main class="faq-shell"{top_padding}><div class="faq-layout">', unsafe_allow_html=True)
     st.markdown(
-        '<div class="faq-head"><h1>Ask the AI Advisor</h1>'
-        '<p>Short, on-point answers grounded in our FAQ and company knowledge.</p></div>',
+        """
+        <section class="faq-header">
+          <div class="faq-header__eyebrow">Concierge Care Advisors</div>
+          <h1 class="faq-header__title">Ask the AI Advisor</h1>
+          <p class="faq-header__lead">Short, on-point answers grounded in our FAQ and company knowledge.</p>
+        </section>
+        """,
         unsafe_allow_html=True
     )
     
     # ─── Recommended Questions (3 canonical chips) ───
-    st.markdown("**Recommended questions:**")
-    
-    # Load canonical recommendations (bypasses retrieval, always works)
     recommendations = load_faq_recommended()
-    
-    cols = st.columns(len(recommendations))
-    for i, rec in enumerate(recommendations):
-        if cols[i].button(
-            rec["label"],
-            key=f"rec_chip_{rec['id']}",
-            use_container_width=True,
-            help="Canonical answer from CCA FAQ"
-        ):
-            # Direct FAQ answer (deterministic, no retrieval needed)
-            chat = list(st.session_state.get("faq_chat", []))
-            chat.append({"role": "user", "text": str(rec["label"])})
-            st.session_state["faq_chat"] = chat
-            
-            # Get direct answer from FAQ database
-            name = st.session_state.get("ctx", {}).get("auth", {}).get("name")
-            ans = ask_direct_faq(rec["id"], name)
-            
-            # Format sources
-            source_titles = [s["title"] for s in ans.get("sources", [])]
-            
-            # Add response
-            msg = {
-                "role": "assistant",
-                "text": str(ans["answer"]),
-                "sources": source_titles,
-                "source_ids": [],
-                "cta": ans.get("cta") if isinstance(ans.get("cta"), dict) else None,
-                "user_query": str(rec["label"]),
-                "seed_tags": [],
-                "is_canonical": True  # Flag for badge
-            }
-            chat.append(msg)
-            st.session_state["faq_chat"] = chat
-            st.rerun()
-    
-    st.markdown("---")
+
+    with st.container():
+        st.markdown('<section class="faq-recs"><div class="faq-recs__label">Recommended questions</div>', unsafe_allow_html=True)
+        cols = st.columns(len(recommendations), gap="medium")
+        for i, rec in enumerate(recommendations):
+            if cols[i].button(
+                rec["label"],
+                key=f"rec_chip_{rec['id']}",
+                use_container_width=True,
+                help="Canonical answer from CCA FAQ"
+            ):
+                chat = list(st.session_state.get("faq_chat", []))
+                chat.append({"role": "user", "text": str(rec["label"])})
+                st.session_state["faq_chat"] = chat
+
+                name = st.session_state.get("ctx", {}).get("auth", {}).get("name")
+                ans = ask_direct_faq(rec["id"], name)
+
+                source_titles = [s["title"] for s in ans.get("sources", [])]
+
+                msg = {
+                    "role": "assistant",
+                    "text": str(ans["answer"]),
+                    "sources": source_titles,
+                    "source_ids": [],
+                    "cta": ans.get("cta") if isinstance(ans.get("cta"), dict) else None,
+                    "user_query": str(rec["label"]),
+                    "seed_tags": [],
+                    "is_canonical": True
+                }
+                chat.append(msg)
+                st.session_state["faq_chat"] = chat
+                st.rerun()
+        st.markdown('</section>', unsafe_allow_html=True)
+
+    st.markdown('<div class="chat-divider"></div>', unsafe_allow_html=True)
     
     # ─── Chat Transcript ───
     chat = st.session_state["faq_chat"]
@@ -1112,170 +1226,167 @@ def render():
         # Simple empty state - recommended questions already shown above (#5)
         st.info("💡 Click a recommended question above or type your own to start chatting.")
     else:
-        st.markdown('<div class="chat">', unsafe_allow_html=True)
-        
+        st.markdown('<section class="chat-thread">', unsafe_allow_html=True)
+
         for idx, msg in enumerate(chat):
             role = msg["role"]
             text = msg["text"]
-            
+
             if role == "user":
                 st.markdown(
-                    f'<div class="msg-wrapper user"><div class="msg user">{text}</div></div>',
-                    unsafe_allow_html=True
+                    f"""
+                    <div class=\"chat-message chat-message--user\">
+                      <div class=\"chat-avatar chat-avatar--user\">You</div>
+                      <div class=\"chat-bubble chat-bubble--user\">{text}</div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
                 )
             elif role == "typing":
-                # Typing indicator (#4)
                 st.markdown(
-                    '<div class="msg-wrapper assistant"><div class="msg assistant"><em>Navi is typing...</em></div></div>',
-                    unsafe_allow_html=True
+                    """
+                    <div class=\"chat-message chat-message--assistant\">
+                      <div class=\"chat-avatar\">N</div>
+                      <div class=\"chat-bubble chat-bubble--assistant\"><em>Navi is typing...</em></div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
                 )
-            else:  # assistant
-                st.markdown(
-                    f'<div class="msg-wrapper assistant"><div class="msg assistant">{text}</div></div>',
-                    unsafe_allow_html=True
-                )
-                
-                # Mini-FAQ badge (#6), Canonical badge, or Easter Egg badge
+            else:
+                badge_html = ""
                 if msg.get("is_easter_egg"):
-                    st.markdown(
-                        '<div class="sources">🥚 <strong>Easter Egg found!</strong> (Dev mode only)</div>',
-                        unsafe_allow_html=True
-                    )
+                    badge_html = '<span class="chat-badge">🥚 Easter Egg found! (Dev mode only)</span>'
                 elif msg.get("is_mini_faq"):
-                    st.markdown(
-                        '<div class="sources">🚀 <strong>Instant answer</strong> from curated CCA content</div>',
-                        unsafe_allow_html=True
-                    )
+                    badge_html = '<span class="chat-badge">🚀 Instant answer</span>'
                 elif msg.get("is_canonical"):
-                    st.markdown(
-                        '<div class="sources">✅ <strong>Canonical answer</strong> from CCA FAQ</div>',
-                        unsafe_allow_html=True
-                    )
-                else:
-                    # Sources (if FAQ or corp with metadata)
-                    sources = msg.get("sources", [])
-                    source_metas = msg.get("source_metas", [])
-                    
-                    if source_metas:
-                        # Corp knowledge with freshness and clickable links (Stage 3.6, #7)
-                        pills_html = []
-                        for meta in source_metas[:3]:
-                            title = meta.get("title", "Untitled")
-                            url = meta.get("url", "")
-                            freshness = fmt_date(meta.get("last_fetched", ""))
-                            if freshness:
-                                pill_text = f"{title} (Updated {freshness})"
-                            else:
-                                pill_text = title
-                            
-                            # Make clickable if URL exists (#7)
-                            if url:
-                                pills_html.append(f'<a href="{url}" target="_blank" style="text-decoration: none;"><span class="source-pill">{pill_text}</span></a>')
-                            else:
-                                pills_html.append(f'<span class="source-pill">{pill_text}</span>')
-                        
-                        st.markdown(
-                            f'<div class="sources">📚 Sources: {" ".join(pills_html)}</div>',
-                            unsafe_allow_html=True
-                        )
-                    elif sources:
-                        # Legacy format or FAQ sources
-                        pills_html = " ".join([
-                            f'<span class="source-pill">{src}</span>'
-                            for src in sources[:3]  # Max 3 visible
-                        ])
-                        st.markdown(
-                            f'<div class="sources">📚 Sources: {pills_html}</div>',
-                            unsafe_allow_html=True
-                        )
-                
-                # ─── Copy & Share Actions ───
-                action_col1, action_col2 = st.columns([1, 1])
-                with action_col1:
-                    _copy_button(text, key=f"copy_{idx}")
-                with action_col2:
-                    # Share link with ?q= query param
-                    user_q = msg.get("user_query", "")
-                    if user_q and st.button("🔗 Share link", key=f"share_{idx}"):
-                        from urllib.parse import quote
-                        share_url = f"?q={quote(user_q)}"
-                        st.code(share_url, language="text")
-                        from core.events import log_event
-                        log_event("faq_action", {"share": True, "q": user_q})
-                        st.toast("Share this link!", icon="🔗")
-                
-                # ─── Follow-up Chips (contextual suggestions) ───
+                    badge_html = '<span class="chat-badge">✅ Canonical answer</span>'
+                elif msg.get("is_error"):
+                    badge_html = '<span class="chat-badge">⚠️ Something went wrong</span>'
+
+                sources_html = ""
+                source_metas = msg.get("source_metas", [])
+                sources = msg.get("sources", [])
+
+                if source_metas:
+                    pill_html = []
+                    for meta in source_metas[:3]:
+                        title = meta.get("title", "Untitled")
+                        url = meta.get("url", "")
+                        freshness = fmt_date(meta.get("last_fetched", ""))
+                        if freshness:
+                            pill_text = f"{title} (Updated {freshness})"
+                        else:
+                            pill_text = title
+                        pill_text = html.escape(pill_text)
+                        if url:
+                            pill_html.append(f'<a class="chat-source-pill" href="{url}" target="_blank">{pill_text}</a>')
+                        else:
+                            pill_html.append(f'<span class="chat-source-pill">{pill_text}</span>')
+                    sources_html = f"<div class='chat-sources'>{''.join(pill_html)}</div>"
+                elif sources:
+                    pill_html = [
+                        f"<span class='chat-source-pill'>{html.escape(src)}</span>"
+                        for src in sources[:3]
+                    ]
+                    sources_html = f"<div class='chat-sources'>{''.join(pill_html)}</div>"
+
+                assistant_html = (
+                    f"""
+                    <div class=\"chat-message chat-message--assistant\">
+                      <div class=\"chat-avatar\">N</div>
+                      <div class=\"chat-bubble chat-bubble--assistant\">
+                        {badge_html}
+                        <div class=\"chat-bubble__content\">{text}</div>
+                        {sources_html}
+                      </div>
+                    </div>
+                    """
+                )
+                st.markdown(assistant_html, unsafe_allow_html=True)
+
+                with st.container():
+                    st.markdown('<div class="chat-sentinel chat-action-sentinel"></div>', unsafe_allow_html=True)
+                    action_col1, action_col2 = st.columns([1, 1], gap="small")
+                    with action_col1:
+                        _copy_button(text, key=f"copy_{idx}")
+                    with action_col2:
+                        user_q = msg.get("user_query", "")
+                        if user_q and st.button("🔗 Share link", key=f"share_{idx}"):
+                            from urllib.parse import quote
+                            share_url = f"?q={quote(user_q)}"
+                            st.code(share_url, language="text")
+                            from core.events import log_event
+                            log_event("faq_action", {"share": True, "q": user_q})
+                            st.toast("Share this link!", icon="🔗")
+
                 used_ids = set(msg.get("source_ids", []))
                 if used_ids:
                     faqs = load_faq_items()
                     follow_ups = _get_follow_up_chips(used_ids, faqs, max_chips=3)
-                    
+
                     if follow_ups:
-                        st.caption("💡 You can also ask:")
-                        fu_cols = st.columns(min(3, len(follow_ups)))
-                        for i, fu in enumerate(follow_ups):
-                            if fu_cols[i].button(
-                                fu["question"][:40] + ("..." if len(fu["question"]) > 40 else ""),
-                                key=f"fu_{idx}_{fu['id']}",
-                                use_container_width=True
-                            ):
-                                st.session_state["faq_composer"] = fu["question"]
-                                st.session_state["faq_send_now"] = True
-                                from core.events import log_event
-                                log_event("faq_followup_chip", {"clicked_id": fu["id"], "from_idx": idx})
-                                st.rerun()
-                
-                # ─── CTA Button with Smart Chaining ───
+                        with st.container():
+                            st.markdown('<div class="chat-sentinel chat-followup-sentinel"></div>', unsafe_allow_html=True)
+                            st.markdown('<div class="chat-follow-ups__label">You can also ask</div>', unsafe_allow_html=True)
+                            fu_cols = st.columns(min(3, len(follow_ups)), gap="small")
+                            for i, fu in enumerate(follow_ups):
+                                label = fu["question"][:40] + ("..." if len(fu["question"]) > 40 else "")
+                                if fu_cols[i].button(label, key=f"fu_{idx}_{fu['id']}", use_container_width=True):
+                                    st.session_state["faq_composer"] = fu["question"]
+                                    st.session_state["faq_send_now"] = True
+                                    from core.events import log_event
+                                    log_event("faq_followup_chip", {"clicked_id": fu["id"], "from_idx": idx})
+                                    st.rerun()
+
                 cta = msg.get("cta")
                 if cta:
-                    # Collect seed tags for context passing
                     seed_tags = list(msg.get("seed_tags", []))[:3]
                     user_q = msg.get("user_query", "")
-                    
-                    if st.button(
-                        cta["label"],
-                        key=f"cta_{idx}_{cta['route']}",
-                        type="secondary",
-                        use_container_width=False
-                    ):
-                        # Log CTA navigation with context
-                        from core.events import log_event
-                        log_event("faq_cta_nav", {
-                            "route": cta["route"],
-                            "tags": seed_tags,
-                            "query": user_q
-                        })
-                        
-                        # Navigate with seed context
-                        route_to(
-                            cta["route"],
-                            seed={
-                                "from_faq": True,
-                                "q": user_q,
-                                "tags": seed_tags
-                            }
-                        )
-                
-                # ─── Feedback buttons ───
-                st.markdown("")  # Spacing
-                fb_col1, fb_col2 = st.columns([1, 1])
-                with fb_col1:
-                    if st.button("👍 Helpful", key=f"fb_yes_{idx}"):
-                        from core.events import log_event
-                        log_event("faq_feedback", {"helpful": True, "msg_idx": idx})
-                        st.toast("Thanks for the feedback!", icon="✅")
-                with fb_col2:
-                    if st.button("👎 Not helpful", key=f"fb_no_{idx}"):
-                        from core.events import log_event
-                        log_event("faq_feedback", {"helpful": False, "msg_idx": idx})
-                        st.toast("Thanks — we'll improve this!", icon="📝")
-                
-                # Divider after each assistant message
+
+                    with st.container():
+                        st.markdown('<div class="chat-sentinel chat-cta-sentinel"></div>', unsafe_allow_html=True)
+                        if st.button(
+                            cta["label"],
+                            key=f"cta_{idx}_{cta['route']}",
+                            type="secondary",
+                            use_container_width=True
+                        ):
+                            from core.events import log_event
+                            log_event("faq_cta_nav", {
+                                "route": cta["route"],
+                                "tags": seed_tags,
+                                "query": user_q
+                            })
+
+                            route_to(
+                                cta["route"],
+                                seed={
+                                    "from_faq": True,
+                                    "q": user_q,
+                                    "tags": seed_tags
+                                }
+                            )
+
+                with st.container():
+                    st.markdown('<div class="chat-sentinel chat-feedback-sentinel"></div>', unsafe_allow_html=True)
+                    fb_col1, fb_col2 = st.columns([1, 1], gap="small")
+                    with fb_col1:
+                        if st.button("👍 Helpful", key=f"fb_yes_{idx}"):
+                            from core.events import log_event
+                            log_event("faq_feedback", {"helpful": True, "msg_idx": idx})
+                            st.toast("Thanks for the feedback!", icon="✅")
+                    with fb_col2:
+                        if st.button("👎 Not helpful", key=f"fb_no_{idx}"):
+                            from core.events import log_event
+                            log_event("faq_feedback", {"helpful": False, "msg_idx": idx})
+                            st.toast("Thanks — we'll improve this!", icon="📝")
+
                 if idx < len(chat) - 1:
-                    st.markdown('<div class="msg-divider"></div>', unsafe_allow_html=True)
-        
-        # Auto-scroll anchor (#2)
+                    st.markdown('<div class="chat-divider"></div>', unsafe_allow_html=True)
+
         st.markdown('<div id="chat-bottom"></div>', unsafe_allow_html=True)
+
+        st.markdown('</section>', unsafe_allow_html=True)
         st.markdown("""
         <script>
             // Scroll to bottom of chat
@@ -1285,10 +1396,8 @@ def render():
             }
         </script>
         """, unsafe_allow_html=True)
-        
-        st.markdown('</div>', unsafe_allow_html=True)  # Close chat div
     
-    st.markdown("---")
+    st.markdown('<div class="chat-divider"></div>', unsafe_allow_html=True)
     
     # Check if currently processing (#3)
     is_processing = st.session_state.get("faq_processing", False)
@@ -1298,25 +1407,39 @@ def render():
         st.session_state["faq_composer_input"] = ""
         st.session_state.pop("faq_last_question", None)
     
+    advisor_href = add_uid_to_href("?page=hub_concierge")
+
     # ─── Composer ───
-    col1, col2 = st.columns([5, 1])
-    
-    with col1:
-        user_q = st.text_input(
-            "Ask about planning, costs, eligibility, or our company…",
-            key="faq_composer_input",
-            placeholder="e.g., What is assisted living? Who is CCA?",
-            label_visibility="collapsed",
-            on_change=lambda: st.session_state.update({"faq_enter_pressed": True}),
-            disabled=is_processing  # Disable during processing
-        )
-    
-    with col2:
-        send_clicked = st.button(
-            "Send", 
-            type="primary", 
-            key="faq_send_btn",
-            disabled=is_processing  # Disable during processing
+    with st.container():
+        st.markdown('<div class="chat-sentinel composer-sentinel"></div>', unsafe_allow_html=True)
+        col1, col2 = st.columns([5, 1], gap="medium")
+
+        with col1:
+            user_q = st.text_input(
+                "Ask about planning, costs, eligibility, or our company…",
+                key="faq_composer_input",
+                placeholder="e.g., What is assisted living? Who is CCA?",
+                label_visibility="collapsed",
+                on_change=lambda: st.session_state.update({"faq_enter_pressed": True}),
+                disabled=is_processing
+            )
+
+        with col2:
+            send_clicked = st.button(
+                "Send",
+                type="primary",
+                key="faq_send_btn",
+                disabled=is_processing
+            )
+
+        st.markdown(
+            f"""
+            <div class=\"composer-meta\">
+              <span>Tip: Ask about care costs, benefits, or what happens next.</span>
+              <a href=\"{advisor_href}\">Need a human advisor?</a>
+            </div>
+            """,
+            unsafe_allow_html=True,
         )
     
     # Detect Enter key press (text_input triggers rerun on Enter)
@@ -1629,18 +1752,22 @@ def render():
                 st.rerun()
     
     # ─── Controls ───
-    col_clear, col_back = st.columns([1, 1])
+    with st.container():
+        st.markdown('<div class="chat-sentinel control-sentinel"></div>', unsafe_allow_html=True)
+        col_clear, col_back = st.columns([1, 1], gap="small")
+
+        with col_clear:
+            if st.button("🧹 Clear chat", key="clear_chat_btn", help="Reset conversation"):
+                st.session_state["faq_chat"] = []
+                st.rerun()
+
+        with col_back:
+            if st.button("← Back to Hub", key="back_to_hub_btn", use_container_width=True):
+                route_to("hub_concierge")
     
-    with col_clear:
-        if st.button("�️ Clear chat", key="clear_chat_btn", help="Reset conversation"):
-            st.session_state["faq_chat"] = []
-            st.rerun()
-    
-    with col_back:
-        if st.button("← Back to Hub", key="back_to_hub_btn", use_container_width=True):
-            route_to("hub_concierge")
-    
-    st.markdown('</div>', unsafe_allow_html=True)  # Close faq-wrap
+    st.markdown('</div></main>', unsafe_allow_html=True)
+
+    render_footer_simple()
 
 
 def _ask_question(question: str):
