@@ -563,7 +563,17 @@ def get_mediated_recommendation(
 # HTML SANITIZATION HELPERS
 # ==============================================================================
 def _html_to_markdown(s: str) -> str:
-    """Best-effort HTML → Markdown sanitizer for advisor answers."""
+    """
+    Best-effort HTML → Markdown sanitizer for advisor answers.
+    
+    Strips LLM "helpful HTML" syndrome artifacts:
+    - <div class="chat-bubble__content"> wrappers
+    - <div class="chat-sources"> wrappers  
+    - HTML tags (converts links, preserves structure)
+    - HTML entities (&#x27; → ', &quot; → ")
+    
+    Returns clean Markdown suitable for st.markdown() without unsafe_allow_html.
+    """
     import re
     import html
     
@@ -571,8 +581,8 @@ def _html_to_markdown(s: str) -> str:
         return ""
     s = s.strip()
 
-    # 1) Strip known outer chat-bubble wrappers
-    s = re.sub(r"^<div[^>]*?chat-bubble__content[^>]*>", "", s, flags=re.I)
+    # 1) Strip known outer chat-bubble wrappers (LLM artifacts)
+    s = re.sub(r"^<div[^>]*?(chat-bubble__content|chat-sources)[^>]*>", "", s, flags=re.I)
     s = re.sub(r"</div>\s*$", "", s, flags=re.I)
 
     # 2) Convert <a href="...">text</a> → [text](url)
@@ -582,17 +592,23 @@ def _html_to_markdown(s: str) -> str:
         return f"[{txt}]({url})" if txt else f"<{url}>"
     s = re.sub(r'<a\s+[^>]*?href=["\']([^"\']+)["\'][^>]*>(.*?)</a>', _a2md, s, flags=re.I|re.S)
 
-    # 3) Replace <br>, <p>, <li>, <ul>/<ol> with markdowny breaks/bullets
+    # 3) Convert structural tags to markdown equivalents
     s = re.sub(r"<br\s*/?>", "\n", s, flags=re.I)
     s = re.sub(r"</p\s*>", "\n\n", s, flags=re.I)
     s = re.sub(r"<li\s*>", "\n- ", s, flags=re.I)
     s = re.sub(r"</li\s*>", "", s, flags=re.I)
-    s = re.sub(r"</?(ul|ol|p|div|span|strong|em|b|i|u)[^>]*>", "", s, flags=re.I)
+    
+    # 4) Strip remaining HTML tags (including h1-h6, which should be markdown)
+    s = re.sub(r"</?(ul|ol|p|div|span|strong|em|b|i|u|h[1-6])[^>]*>", "", s, flags=re.I)
 
-    # 4) Unescape entities and collapse whitespace
+    # 5) Unescape HTML entities (&#x27; → ', &quot; → ", etc.)
     s = html.unescape(s)
-    s = re.sub(r"[ \t]+\n", "\n", s)
-    s = re.sub(r"\n{3,}", "\n\n", s).strip()
+    
+    # 6) Clean up whitespace
+    s = re.sub(r"[ \t]+\n", "\n", s)  # Remove trailing spaces
+    s = re.sub(r"\n{3,}", "\n\n", s).strip()  # Max 2 consecutive newlines
+    
+    return s
     return s
 
 

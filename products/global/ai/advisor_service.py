@@ -3,11 +3,90 @@
 from typing import Optional, List, Dict, Any
 import time
 import os
+import re
+import html
 
 
 # RAG configuration
 RAG_TOP_K = int(os.getenv("RAG_TOP_K", "8"))
 MIN_SCORE = float(os.getenv("RAG_MIN_SCORE", "0.12"))
+
+
+# ===================================================================
+# HTML Sanitization - Convert any HTML to clean Markdown
+# ===================================================================
+
+def _a2md(m):
+    """Convert <a> tag to markdown link."""
+    url = m.group(1).strip()
+    txt = re.sub(r"<.*?>", "", m.group(2)).strip()
+    return f"[{txt}]({url})" if txt else f"<{url}>"
+
+
+def _to_markdown(text: str) -> str:
+    """
+    Sanitize answer text: strip HTML shells, convert to clean Markdown.
+    
+    Handles LLM "helpful HTML" syndrome where answers come wrapped in
+    <div class="chat-bubble__content"> or contain HTML tags.
+    
+    Returns clean Markdown suitable for st.markdown() without unsafe_allow_html.
+    """
+    if not text:
+        return ""
+    
+    s = text.strip()
+    
+    # 1) Remove known chat shells (LLM artifacts)
+    s = re.sub(r"^<div[^>]*?(chat-bubble__content|chat-sources)[^>]*>", "", s, flags=re.I)
+    s = re.sub(r"</div>\s*$", "", s, flags=re.I)
+    
+    # 2) Convert HTML links to markdown
+    s = re.sub(r'<a\s+[^>]*?href=["\']([^"\']+)["\'][^>]*>(.*?)</a>', _a2md, s, flags=re.I|re.S)
+    
+        # 3) Convert structural tags to markdown equivalents
+    s = re.sub(r"<br\s*/?>", "\n", s, flags=re.I)
+    s = re.sub(r"</p\s*>", "\n\n", s, flags=re.I)
+    s = re.sub(r"<li\s*>", "\n- ", s, flags=re.I)
+    s = re.sub(r"</li\s*>", "", s, flags=re.I)
+    
+    # 4) Strip remaining HTML tags (including h1-h6, which should be markdown)
+    s = re.sub(r"</?(ul|ol|p|div|span|strong|em|b|i|u|h[1-6])[^>]*>", "", s, flags=re.I)
+    
+    # 4) Strip remaining HTML tags
+    s = re.sub(r"</?(ul|ol|p|div|span|strong|em|b|i|u|h[1-6])[^>]*>", "", s, flags=re.I)
+    
+    # 5) Unescape HTML entities (&#x27; → ', &quot; → ", etc.)
+    s = html.unescape(s)
+    
+    # 6) Clean up whitespace
+    s = re.sub(r"[ \t]+\n", "\n", s)  # Remove trailing spaces
+    s = re.sub(r"\n{3,}", "\n\n", s)  # Max 2 consecutive newlines
+    
+    return s.strip()
+
+
+def _sanitize_answer_payload(resp: dict) -> dict:
+    """
+    Sanitize answer payload before returning to UI.
+    
+    Converts any HTML in the answer to clean Markdown and logs
+    if residual HTML tags remain (regression detection).
+    """
+    if not isinstance(resp, dict):
+        return resp
+    
+    if "answer" in resp:
+        original = resp["answer"]
+        resp["answer"] = _to_markdown(resp["answer"])
+        
+        # Regression detection: log if angle brackets remain
+        if "<" in resp["answer"]:
+            print(f"[ADVISOR_SANITY] residual angle bracket in answer after sanitize")
+            print(f"  Original: {original[:100]}...")
+            print(f"  Sanitized: {resp['answer'][:100]}...")
+    
+    return resp
 
 
 def get_answer(
@@ -133,7 +212,8 @@ def get_answer(
         elif mode == "faq":
             sources = result.get("sources", [])[:2]
         
-        return {
+        # Build final response
+        response = {
             "answer": result.get("answer", ""),
             "mode": mode,
             "sources": sources,
@@ -146,10 +226,15 @@ def get_answer(
             },
         }
         
+        # Sanitize answer: strip HTML, convert to clean Markdown
+        response = _sanitize_answer_payload(response)
+        
+        return response
+        
     except Exception as e:
         # Error fallback
         elapsed = int((time.time() - start) * 1000)
-        return {
+        response = {
             "answer": "We're having trouble fetching that right now. Please try again or start the Guided Care Plan.",
             "mode": "error",
             "sources": [],
@@ -163,3 +248,8 @@ def get_answer(
                 "error": str(e)
             },
         }
+        
+        # Sanitize even error responses
+        response = _sanitize_answer_payload(response)
+        
+        return response
