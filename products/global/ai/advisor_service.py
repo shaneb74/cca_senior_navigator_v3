@@ -78,13 +78,22 @@ def _sanitize_answer_payload(resp: dict) -> dict:
     
     if "answer" in resp:
         original = resp["answer"]
+        
+        # DEBUG: Always log what we're sanitizing
+        if "<" in original:
+            print(f"[ADVISOR_SANITIZE] Found HTML in answer, sanitizing...")
+            print(f"  Before: {original[:150]}")
+        
         resp["answer"] = _to_markdown(resp["answer"])
+        
+        # DEBUG: Log after sanitization
+        if "<" in original:
+            print(f"  After:  {resp['answer'][:150]}")
         
         # Regression detection: log if angle brackets remain
         if "<" in resp["answer"]:
-            print(f"[ADVISOR_SANITY] residual angle bracket in answer after sanitize")
-            print(f"  Original: {original[:100]}...")
-            print(f"  Sanitized: {resp['answer'][:100]}...")
+            print(f"[ADVISOR_SANITY] ⚠️  FAILED - residual angle bracket after sanitize!")
+            print(f"  Sanitized output still has: {resp['answer'][:200]}")
     
     return resp
 

@@ -708,6 +708,12 @@ FAQ CONTEXT:
         # Parse response
         content = response.choices[0].message.content.strip()
         
+        # DEBUG: Log raw LLM output
+        print(f"[FAQ_LLM_RAW] Raw LLM response (first 200 chars):")
+        print(f"  {content[:200]}")
+        if "<" in content:
+            print(f"  ⚠️  WARNING: LLM returned HTML tags!")
+        
         # Try to extract JSON (handle markdown code blocks)
         if "```json" in content:
             content = content.split("```json")[1].split("```")[0].strip()
@@ -718,6 +724,12 @@ FAQ CONTEXT:
         
         # Post-validation and safety
         answer_text = result.get("answer", "")
+        
+        # DEBUG: Log answer from JSON
+        print(f"[FAQ_LLM_PARSED] Parsed answer from JSON:")
+        print(f"  {answer_text[:200]}")
+        if "<" in answer_text:
+            print(f"  ⚠️  WARNING: Answer contains HTML!")
         
         # Filter banned phrases
         for banned in banned_phrases:
@@ -840,6 +852,12 @@ Otherwise, answer with: "Based on our guides/resources: [answer using chunk info
                 "sources": []
             }
         
+        # DEBUG: Log raw LLM output
+        print(f"[CORP_LLM_RAW] Raw LLM response (first 200 chars):")
+        print(f"  {raw_text[:200]}")
+        if "<" in raw_text:
+            print(f"  ⚠️  WARNING: LLM returned HTML tags!")
+        
         # Try to parse JSON (handle markdown code blocks)
         json_text = raw_text
         if "```json" in raw_text:
@@ -855,6 +873,12 @@ Otherwise, answer with: "Based on our guides/resources: [answer using chunk info
             # Fallback: use raw text as answer
             answer_text = raw_text
             sources = []
+        
+        # DEBUG: Log answer after parsing
+        print(f"[CORP_LLM_PARSED] Parsed answer:")
+        print(f"  {answer_text[:200]}")
+        if "<" in answer_text:
+            print(f"  ⚠️  WARNING: Answer contains HTML!")
         
         # Post-validation: banned phrase filtering
         for banned in banned_phrases:
