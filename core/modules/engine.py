@@ -29,10 +29,25 @@ def _mc_recommended_without_dx(tier: str, state: dict) -> bool:
     if not is_mc:
         return False
 
-    # 2) Any diagnosis flags present?
+    # 2) Check for explicit "likely MC but no DX" flag (from cognitive_dx_confirm question)
     ss = st.session_state
     
-    # Common places: ss["profile"]["diagnoses"], ss["flags"], contracts, or the outcome's flags
+    # If user explicitly answered "No" or "Not sure" to diagnosis question, show banner
+    flags_dict = {}
+    if ss.get("flags") and isinstance(ss.get("flags"), dict):
+        flags_dict = ss["flags"]
+    elif state and isinstance(state, dict) and state.get("flags") and isinstance(state.get("flags"), dict):
+        flags_dict = state["flags"]
+    
+    # Direct check: if likely_mc_no_dx is set, definitely show banner
+    if flags_dict.get("likely_mc_no_dx"):
+        return True
+    
+    # If memory_care_dx is explicitly set, don't show banner (they have diagnosis)
+    if flags_dict.get("memory_care_dx"):
+        return False
+    
+    # 3) Fallback: check profile diagnoses and other dx flags
     profile_dx = []
     if ss.get("profile") and isinstance(ss.get("profile"), dict):
         profile_dx = ss["profile"].get("diagnoses") or []
@@ -42,26 +57,20 @@ def _mc_recommended_without_dx(tier: str, state: dict) -> bool:
     # Normalize to string bag for cheap checks
     dx_text = " ".join(map(str, profile_dx)).lower()
 
-    has_dx_flag = any(
+    has_dx_in_profile = any(
         k in dx_text
         for k in ["dementia", "alzheimer", "alzheimers", "alzheimers'", "cognitive impairment"]
     )
-
-    # Fallback to boolean-style flags if present
-    flags = {}
-    if ss.get("flags") and isinstance(ss.get("flags"), dict):
-        flags = ss["flags"]
-    elif state and isinstance(state, dict) and state.get("flags") and isinstance(state.get("flags"), dict):
-        flags = state["flags"]
     
-    # A few common keys someone may already set
-    has_dx_key = any(
-        flags.get(k) for k in [
-            "mc_dx_present", "dementia_dx", "alzheimers_dx", "memory_care_dx"
+    # Check other possible dx flag keys
+    has_other_dx_key = any(
+        flags_dict.get(k) for k in [
+            "mc_dx_present", "dementia_dx", "alzheimers_dx"
         ]
     )
 
-    return bool(is_mc and not (has_dx_flag or has_dx_key))
+    # Show banner if Memory Care AND no diagnosis found anywhere
+    return bool(is_mc and not (has_dx_in_profile or has_other_dx_key))
 
 
 def render_mc_eligibility_banner(name: str | None = None) -> None:

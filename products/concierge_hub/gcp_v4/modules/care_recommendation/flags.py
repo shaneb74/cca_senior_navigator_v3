@@ -48,6 +48,39 @@ FLAG_DISPLAY_METADATA = {
             "filter": "memory_care",
         },
     },
+    "cognitive_severe_any": {
+        "label": "Severe Cognitive Path",
+        "description": "Severe memory changes requiring Memory Care evaluation",
+        "tone": "critical",
+        "priority": 0,
+        "cta": {
+            "label": "Learn About Memory Care",
+            "route": "learning",
+            "filter": "memory_care",
+        },
+    },
+    "memory_care_dx": {
+        "label": "Dementia/Alzheimer's Diagnosis",
+        "description": "Formal diagnosis of dementia or Alzheimer's disease confirmed by doctor",
+        "tone": "info",
+        "priority": 1,
+        "cta": {
+            "label": "Find Memory Care Resources",
+            "route": "partners",
+            "filter": "memory_care",
+        },
+    },
+    "likely_mc_no_dx": {
+        "label": "Memory Care Without Diagnosis",
+        "description": "Severe cognitive symptoms present but no formal diagnosis yet",
+        "tone": "warning",
+        "priority": 1,
+        "cta": {
+            "label": "Learn About Getting Diagnosed",
+            "route": "learning",
+            "filter": "memory_assessment",
+        },
+    },
     # FALL & SAFETY FLAGS
     "moderate_safety_concern": {
         "label": "Safety Monitoring Needed",
