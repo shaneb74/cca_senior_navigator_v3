@@ -9,6 +9,7 @@ remains the primary display; this is additive context only.
 import streamlit as st
 
 from ai.llm_client import get_feature_gcp_mode
+from core.modules.engine import is_results_view, is_cost_planner_inhome
 
 
 def render_gcp_navi_card():
@@ -398,24 +399,31 @@ def render_navi_header_message():
             navi_body = ""
             navi_info = ""
     elif can_recommend:
-        # Check for advisory metadata (clamp scenario)
+        # Check for interim AL flag (MC clamp scenario) - primary source of truth
+        show_interim = st.session_state.get("_show_mc_interim_advice", False)
+        
+        # Also check advisory metadata for additional context
         advisory_meta = st.session_state.get("gcp", {}).get("advisory_meta", {})
-        is_clamped = advisory_meta.get("clamped", False)
+        is_clamped = advisory_meta.get("clamped", False) or show_interim
         clamp_reason = advisory_meta.get("reason", "")
         suggested_tier = advisory_meta.get("suggested_tier", "")
         
-        # If clamped due to no_dx, customize headline
-        if is_clamped and clamp_reason == "no_dx":
+        # If clamped due to no_dx OR interim flag set, customize headline
+        if is_clamped or show_interim:
             # Override tier_txt to match published tier (AL)
-            tier_txt = "Assisted Living With Enhanced Cognitive Support"
+            tier_txt = "Assisted Living with enhanced cognitive support"
             headline = f"Based on your answers, I recommend {tier_txt}."
             
-            # Add diagnosis requirement note
-            suggested_display = suggested_tier.replace("_", " ").title()
-            advisory_note = f"💡 {suggested_display} may be ideal, but requires a physician's diagnosis of Alzheimer's or dementia."
+            # Add diagnosis requirement note if we know what was suggested
+            if suggested_tier:
+                suggested_display = suggested_tier.replace("_", " ").title()
+                advisory_note = f"💡 {suggested_display} may be ideal, but requires a physician's diagnosis of Alzheimer's or dementia."
+            else:
+                # Fallback advisory when suggested tier not in metadata
+                advisory_note = f"💡 Memory Care may be ideal, but requires a physician's diagnosis of Alzheimer's or dementia."
             
             # Log clamp override
-            print(f"[NAVI_CLAMP] tier={tier_txt} suggested={suggested_tier} reason={clamp_reason}")
+            print(f"[NAVI_CLAMP] tier={tier_txt} suggested={suggested_tier or 'unknown'} show_interim={show_interim} meta_clamped={advisory_meta.get('clamped', False)}")
         else:
             # Normal path - use headline from advice or generate default
             headline = (adv.get("headline") or f"Based on your answers, I recommend {tier_txt}.").strip()
@@ -472,9 +480,17 @@ def render_navi_header_message():
             adv_nudge = (adv.get("nudge") or adv.get("nudge_text") or "").strip()
             if adv_nudge:
                 navi_text += f"<br>💡 {adv_nudge}"
-        # PRIORITY 3: Show hours hint when appropriate
-        elif show_hours_hint:
+        # PRIORITY 3: Show hours hint ONLY in Cost Planner In-Home context (not GCP Summary)
+        elif show_hours_hint and is_cost_planner_inhome() and not is_results_view():
             navi_text += f"<br>💡 Navi suggests {band} (you selected {user}). {nudge_text}"
+        
+        # Belt-and-suspenders: sanitize any accidental hours text on GCP Summary
+        if is_results_view():
+            for needle in ("Navi suggests", "Accept", "hours per day", "per day"):
+                if needle in navi_text:
+                    # Strip everything after first <br> to remove hours hint
+                    navi_text = navi_text.split("<br>")[0]
+                    break
 
         # Add optional subtitle above text if present
         parts: list[str] = []
@@ -551,13 +567,15 @@ def render_navi_header_message():
         # If blue header unavailable, skip silently (no alternative banners)
         pass
 
-    # Render CTA buttons below header ONLY on RESULTS (assist + under-selected and not yet acknowledged + not facility-based)
+    # Render CTA buttons below header ONLY in Cost Planner In-Home (not GCP Summary)
     if (
         is_results
         and str(mode).lower() == "assist"
         and under
         and not st.session_state.get("_hours_ack")
         and not hours_for_facility
+        and is_cost_planner_inhome()
+        and not is_results_view()
     ):
         col1, col2, col3 = st.columns([2, 2, 6])
 
@@ -691,6 +709,13 @@ def render_clean_summary():
         f"<div style='margin-top:.5rem;color:#0d1f4b'>{cost_line}</div>",
         unsafe_allow_html=True,
     )
+    
+    # ========================================
+    # INTERIM BANNER: Show when Navi displays "AL with enhanced cognitive support"
+    # ========================================
+    # Use the same logic as Navi headline - if interim flag is set, show banner
+    if interim:
+        render_interim_al_callout()
 
 
 def render_interim_al_callout():

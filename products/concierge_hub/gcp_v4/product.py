@@ -107,6 +107,13 @@ def render():
         # Force compute summary advice BEFORE any UI on RESULTS
         if is_on_results_step:
             print("[GCP_RENDER] Entering RESULTS step, preparing summary advice")
+            
+            # Clear stray hour-nudge state on entering RESULTS (hours hints only in Cost Planner In-Home)
+            for key in ("_hours_nudge_key", "gcp_hours_user_choice", "_last_hours_selection", "_hours_ack"):
+                if key in st.session_state:
+                    del st.session_state[key]
+            print("[GCP_HOURS_CLEANUP] Cleared hours hint state on RESULTS entry")
+            
             try:
                 state_pre = st.session_state.get(state_key, {})
                 from products.concierge_hub.gcp_v4.modules.care_recommendation.flags import (

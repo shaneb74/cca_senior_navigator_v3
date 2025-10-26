@@ -169,6 +169,73 @@ def get_final_recommendation_tier(state=None) -> str:
     return final_tier
 
 
+def is_results_view(state=None) -> bool:
+    """
+    Check if user is on GCP Summary/Results screen.
+    
+    Used to suppress hours hints and buttons on final results,
+    while keeping them active in Cost Planner In-Home.
+    
+    Returns:
+        True if on GCP results/summary screen
+    """
+    if state is None:
+        state = st.session_state
+    
+    # Check route
+    route = (state.get("route") or state.get("current_route") or "").lower()
+    if "result" in route:
+        try:
+            print(f"[HOURS_GUARD] is_results_view=True (route={route})")
+        except Exception:
+            pass
+        return True
+    
+    # Check step ID (multiple possible keys)
+    step = (
+        state.get("gcp_current_step_id") or
+        state.get("gcp_care_recommendation._step") or
+        state.get("step_id") or
+        state.get("current_step") or
+        ""
+    ).lower()
+    
+    result = step == "results"
+    try:
+        print(f"[HOURS_GUARD] is_results_view={result} (step={step or 'None'})")
+    except Exception:
+        pass
+    return result
+
+
+def is_cost_planner_inhome(state=None) -> bool:
+    """
+    Check if Cost Planner is showing In-Home assessment.
+    
+    Hours hints should ONLY show in CP In-Home context,
+    not on GCP Summary or other CP tabs (AL/MC).
+    
+    Returns:
+        True if Cost Planner In-Home tab is selected
+    """
+    if state is None:
+        state = st.session_state
+    
+    # Check selected assessment/tab
+    selected = (state.get("cp_selected_assessment") or "").lower()
+    
+    # Also check if we're actually in CP (not GCP)
+    route = (state.get("route") or "").lower()
+    in_cp = "cost" in route or "planner" in route or state.get("cp_intro", False)
+    
+    result = in_cp and selected in ("home", "in_home", "in_home_care", "inhome")
+    try:
+        print(f"[HOURS_GUARD] is_cost_planner_inhome={result} (in_cp={in_cp} selected={selected or 'None'})")
+    except Exception:
+        pass
+    return result
+
+
 def get_results_subtitle(state=None) -> str:
     """
     Returns the subtitle under 'Your Guided Care Plan' based on final tier.
@@ -283,7 +350,10 @@ def adjudicate_final_tier(base_tier: str, llm_tier: str | None = None) -> tuple[
     else:
         final_tier = suggested_tier
         meta = {}
-        st.session_state["_show_mc_interim_advice"] = False
+        # Only clear interim flag if it wasn't already set by cognitive gate
+        # (cognitive gate may have blocked MC early, so tier is already AL)
+        if not st.session_state.get("_show_mc_interim_advice", False):
+            st.session_state["_show_mc_interim_advice"] = False
         logging.info(
             "MC_CLAMP: suggested=%s, has_dx=%s → approved (no clamp)",
             suggested_tier, has_dx
@@ -1639,7 +1709,8 @@ def _render_results_view(mod: dict[str, Any], config: ModuleConfig) -> None:
     try:
         from products.concierge_hub.gcp_v4.ui_helpers import render_clean_summary
         render_clean_summary()
-    except Exception:
+    except Exception as e:
+        print(f"[ENGINE] render_clean_summary() FAILED: {e}")
         pass
     
     st.markdown('</div>', unsafe_allow_html=True)  # close rec-body
