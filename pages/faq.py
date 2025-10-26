@@ -1015,6 +1015,11 @@ def render():
     # CSS Styling
     st.markdown("""
     <style>
+      /* Hide global header on AI Advisor page */
+      header[data-testid="stHeader"] {
+        display: none !important;
+      }
+      
       /* Remove default Streamlit spacing */
       .main .block-container {
         padding-top: 0 !important;
