@@ -548,7 +548,10 @@ def _load_tier_map() -> dict:
 def cognitive_gate(answers: dict[str, Any], flags: list[str]) -> bool:
     """Determine if cognitive criteria are met for memory care access.
     
-    Memory care requires moderate/severe memory changes OR risky behaviors.
+    Memory care requires BOTH:
+    1. Moderate/severe memory changes OR risky behaviors
+    2. Formal diagnosis (cognitive_dx_confirm == "dx_yes")
+    
     This is a HARD gate - without it, MC/MC-HA are blocked.
     
     Args:
@@ -558,22 +561,37 @@ def cognitive_gate(answers: dict[str, Any], flags: list[str]) -> bool:
     Returns:
         True if memory care access should be allowed
     """
-    # Check memory_changes level
+    # CRITICAL: Check for formal diagnosis FIRST
+    dx_confirm = (answers.get("cognitive_dx_confirm") or "").lower()
+    
+    # Diagnostic logging
     mem = (answers.get("memory_changes") or "").lower()
+    behaviors = answers.get("behaviors") or []
+    print(f"[COGNITIVE_GATE] dx_confirm='{dx_confirm}' memory={mem} behaviors={len(behaviors)}")
+    
+    if dx_confirm != "dx_yes":
+        # No formal diagnosis = MC not allowed
+        print(f"[COGNITIVE_GATE] FAILED - no formal diagnosis (dx_confirm={dx_confirm})")
+        return False
+    
+    # Check memory_changes level
     if mem in ("moderate", "severe"):
+        print(f"[COGNITIVE_GATE] PASSED - {mem} memory changes + diagnosis")
         return True
 
     # Check for risky behaviors
-    behaviors = answers.get("behaviors") or []
     risky_behav = set(b.lower() for b in behaviors)
     if len(risky_behav & COGNITIVE_HIGH_RISK) > 0:
+        print(f"[COGNITIVE_GATE] PASSED - risky behaviors + diagnosis")
         return True
 
     # Check for cognitive risk flags
     flags_lower = set(f.lower() for f in (flags or []))
     if len(flags_lower & COGNITIVE_HIGH_RISK) > 0:
+        print(f"[COGNITIVE_GATE] PASSED - cognitive risk flags + diagnosis")
         return True
 
+    print(f"[COGNITIVE_GATE] FAILED - no cognitive symptoms despite diagnosis")
     return False
 
 
@@ -1105,6 +1123,13 @@ def derive_outcome(
         # Block memory care tiers
         allowed_tiers -= {"memory_care", "memory_care_high_acuity"}
         print(f"[GCP_GUARD] Cognitive gate FAILED (cog={cog_band} sup={sup_band_for_routing}) - MC/MC-HA blocked")
+        
+        # CRITICAL: Set interim advice flag if tier mapping would have selected MC
+        # This ensures the interim banner shows even though MC is blocked
+        if tier_from_mapping in ("memory_care", "memory_care_high_acuity"):
+            import streamlit as st
+            st.session_state["_show_mc_interim_advice"] = True
+            print(f"[GCP_INTERIM] Would-be tier={tier_from_mapping} blocked by no DX → setting interim AL flag")
     else:
         print(f"[GCP_GUARD] Cognitive gate PASSED (cog={cog_band} sup={sup_band_for_routing}) - all tiers allowed")
 
