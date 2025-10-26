@@ -623,6 +623,9 @@ def render_clean_summary():
 
     Shows exactly one concise paragraph. If no LLM advice is available,
     renders a deterministic fallback so the body never appears blank.
+    
+    Dynamically generates the "costs" line based on the final tier to ensure
+    it matches the post-adjudication recommendation.
     """
     import streamlit as st
     adv = st.session_state.get("_summary_advice") or {}
@@ -637,11 +640,28 @@ def render_clean_summary():
     st.markdown("### What this means for you")
     st.markdown(body)
 
-    if adv.get("next_line"):
-        st.markdown(
-            f"<div style='margin-top:.5rem;color:#0d1f4b'>{adv['next_line']}</div>",
-            unsafe_allow_html=True,
-        )
+    # ========================================
+    # DYNAMIC COSTS LINE: Follows final tier (post-adjudication)
+    # ========================================
+    # Get the final tier from canonical location (after adjudication)
+    final_tier = st.session_state.get("gcp", {}).get("published_tier", "")
+    interim = bool(st.session_state.get("_show_mc_interim_advice", False))
+    
+    # Generate costs line based on final tier
+    if interim or final_tier == "assisted_living":
+        cost_line = "Let's explore the costs associated with assisted living options."
+    elif final_tier in ("memory_care", "memory_care_high_acuity"):
+        cost_line = "Let's explore the costs associated with memory care options."
+    elif final_tier in ("in_home", "in_home_care"):
+        cost_line = "Let's explore the costs for in-home care and support."
+    else:
+        # Fallback from LLM advice or generic
+        cost_line = adv.get("next_line") or "Let's explore the costs and see how to make it work for you."
+    
+    st.markdown(
+        f"<div style='margin-top:.5rem;color:#0d1f4b'>{cost_line}</div>",
+        unsafe_allow_html=True,
+    )
 
 
 def render_interim_al_callout():

@@ -145,6 +145,46 @@ def get_cached_interim_al() -> bool:
     return st.session_state[cache_key]
 
 
+def get_results_subtitle(state=None) -> str:
+    """
+    Returns the subtitle under 'Your Guided Care Plan' based on final tier.
+    If clamped (no DX), show Assisted Living with memory support (interim).
+    
+    This ensures the subtitle always reflects the POST-ADJUDICATION tier,
+    not the pre-clamp tier from the scoring engine.
+    """
+    if state is None:
+        state = st.session_state
+    
+    # Check if we're in interim AL case (MC clamped due to no DX)
+    interim = bool(state.get("_show_mc_interim_advice", False))
+    
+    # Get person name for personalization
+    person = (
+        state.get("person_name") 
+        or state.get("person_a_name") 
+        or "your loved one"
+    )
+    
+    if interim:
+        # Clamped case: MC suggested but no DX → AL interim
+        return f"Assisted Living with memory support is recommended for {person}."
+    
+    # Get final tier from canonical location
+    final_tier = state.get("gcp", {}).get("published_tier", "")
+    
+    # Map tier to subtitle
+    if final_tier == "memory_care" or final_tier == "memory_care_high_acuity":
+        return f"Memory care is recommended for {person}."
+    elif final_tier == "assisted_living":
+        return f"Assisted Living is recommended for {person}."
+    elif final_tier in ("in_home", "in_home_care"):
+        return f"In-home care is recommended for {person}."
+    else:
+        # Fallback for any other tier
+        return f"Here's the best next step for {person}."
+
+
 def adjudicate_final_tier(base_tier: str, llm_tier: str | None = None) -> tuple[str, dict[str, Any]]:
     """
     Adjudicate final tier recommendation with non-negotiable safety gates.
@@ -890,6 +930,23 @@ def _ensure_outcomes(config: ModuleConfig, answers: dict[str, Any]) -> None:
                     result["tier_original"] = base_tier  # Preserve original for analytics
                     result["advisory"] = advisory_meta.get("advisory", {})
                 
+                # ========================================
+                # PUBLISH FINAL TIER: Persist to canonical session keys
+                # ========================================
+                # Ensure the UI reads the POST-ADJUDICATION tier, not pre-clamp
+                g = st.session_state.setdefault("gcp", {})
+                g["published_tier"] = final_tier
+                g["recommended_tier"] = final_tier  # Mirror for backward compatibility
+                if advisory_meta:
+                    g["advisory_meta"] = advisory_meta
+                
+                logging.info(
+                    "GCP_PUBLISH: published_tier=%s (original=%s, advisory=%s)",
+                    final_tier, 
+                    result.get("tier_original", final_tier),
+                    bool(advisory_meta)
+                )
+                
                 # Don't wrap in OutcomeContract - store dict directly
                 # This allows product-specific schemas (e.g., GCP's tier/tier_score)
                 st.session_state[outcome_key] = result
@@ -1494,12 +1551,8 @@ def _render_results_view(mod: dict[str, Any], config: ModuleConfig) -> None:
             from core.ui import render_navi_panel_v2
             header_title = "Your Guided Care Plan"
             
-            # Override subtitle for interim AL case
-            if show_interim_al:
-                person = st.session_state.get("person_name") or st.session_state.get("person_a_name") or "your loved one"
-                header_reason = f"Assisted Living is recommended for {person} (interim)."
-            else:
-                header_reason = f"Based on your answers, {rec_text} fits best right now."
+            # Use helper to get subtitle based on final tier (post-adjudication)
+            header_reason = get_results_subtitle(st.session_state)
             
             render_navi_panel_v2(
                 title=header_title,
