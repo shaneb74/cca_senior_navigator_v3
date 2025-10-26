@@ -89,6 +89,7 @@ product.py           # Entry point with render() function
 - **Cost Planner v2:** Quick Estimate → Financial Assessment → Expert Review
 - **Advisor Prep:** Duck badge gamification for advisor readiness
 - **Senior Trivia:** Educational health trivia game
+- **AI Advisor (FAQ):** RAG-based Q&A with FAQ retrieval, corporate knowledge, and LLM-generated answers
 
 ### **Hub Pattern** (`hubs/`)
 
@@ -103,6 +104,7 @@ Flat structure (no subdirectories):
 Flat structure (no subdirectories):
 - `welcome.py` → Landing page
 - `login.py`, `signup.py` → Auth flows
+- `faq.py` → AI Advisor with RAG-based Q&A (headerless, immersive chat UI)
 - `_stubs.py` → Shared page stubs (about, logout, etc.)
 
 ---
@@ -256,6 +258,32 @@ else:
 - **Purpose:** AI-generated guidance messages
 - **Fallback:** Stock copy if disabled
 
+### **AI Advisor / FAQ System** (`pages/faq.py`)
+- **Architecture:** Multi-tier retrieval + LLM synthesis
+- **Components:**
+  - **Mini-FAQ:** Curated identity questions (instant answers, no LLM)
+  - **Corporate Knowledge:** RAG over company documentation (stored in `data/training/corp_chunks/`)
+  - **FAQ Database:** RAG over care planning FAQs (stored in `data/training/faq/`)
+  - **Easter Eggs:** Hidden dev-mode responses for testing
+- **Retrieval:** TF-IDF + cosine similarity (sklearn)
+- **LLM Integration:** OpenAI GPT-4o for answer synthesis
+- **UI Features:**
+  - Headerless design (custom nav hidden, Streamlit controls preserved)
+  - Newest-first message ordering (typical chat pattern)
+  - Recommended question chips for quick access
+  - Input repositioned below recommended questions
+  - CSS spacing utilities for visual polish
+- **Message Flow:**
+  1. User query → Mini-FAQ check (instant canonical answers)
+  2. If not found → Route to corporate knowledge (company info) or FAQ (care planning)
+  3. Retrieve top K chunks → LLM synthesis with sources
+  4. Display with badges (canonical, instant, easter egg markers)
+  5. Insert at chat[0] for newest-first display
+- **Session State:**
+  - `faq_chat`: List of message dicts (role, text, sources, CTAs)
+  - `faq_processing`: Boolean flag for disable-during-response
+  - `faq_composer_input`: Input field value (managed by Streamlit)
+
 ### **Hours/Day Suggestion** (Guarded Hybrid)
 - **Flag:** `FEATURE_GCP_HOURS` (`off` | `shadow` | `assist`)
 - **Modules:** `ai/hours_schemas.py`, `ai/hours_engine.py`
@@ -322,7 +350,69 @@ CMD ["streamlit", "run", "app.py"]
 
 ---
 
-## 🛠️ Development Workflow
+## 🎨 UI Architecture & Patterns
+
+### **Header System**
+- **Global Header:** `ui/header_simple.py` - Navigation header with logo and nav links
+- **Per-Page Control:** Pages can hide header for immersive experiences
+- **CSS Override Pattern:** Use `.sn-header { display: none !important; }` to hide custom nav while preserving Streamlit controls
+
+### **Chat Interface Pattern** (AI Advisor)
+- **Message Ordering:** Newest-first (insert at index 0)
+- **Component Hierarchy:**
+  1. Recommended question chips
+  2. Input composer (text field + send button)
+  3. Chat transcript (scrollable message list)
+  4. Controls (clear chat, back to hub)
+- **Spacing Utilities:**
+  - `.ai-rec-wrapper` - Recommended questions spacing
+  - `.ai-chip-row` - Chip button row spacing
+  - `.ai-input-wrap` - Input composer spacing
+- **Visual Design:**
+  - Gradient background: `radial-gradient(circle at 10% -20%, #eef3ff 0%, #ffffff 58%)`
+  - Rounded containers with subtle shadows
+  - User messages: dark background (#0f172a)
+  - Assistant messages: light gradient (#ffffff → #f5f7ff)
+  - Badges for message types (instant, canonical, easter egg)
+
+### **Responsive Design**
+- Mobile-first approach with breakpoints at 640px, 1024px
+- Flexbox layouts for adaptive spacing
+- Container max-width: 1080px (centered)
+
+---
+
+## 📝 Recent Architectural Changes
+
+### **Hub Reorganization (Oct 2025)**
+- Consolidated duplicate product shims into canonical hub-based paths
+- Created `products/global/` for shared utilities
+- Removed 13+ duplicate product directories
+- Fixed 26+ import path references
+- Normalized all helper imports to canonical locations
+- Result: Cleaner dependency graph, no circular imports
+
+### **AI Advisor UI Polish (Oct 2025)**
+- Implemented newest-first message ordering (chat.insert(0) pattern)
+- Repositioned input composer below recommended questions for better UX flow
+- Added CSS spacing utilities for visual polish
+- Hidden custom navigation header while preserving Streamlit developer controls
+- Fixed Python 3.9 type hint compatibility (str | None → Optional[str])
+- Fixed Streamlit widget state management (removed problematic input clearing)
+
+### **Type System Improvements (Oct 2025)**
+- Migrated from Python 3.10+ union syntax to typing.Optional for 3.9 compatibility
+- Updated core/ui.py with proper type hints
+- Ensured venv uses Python 3.11.14 for development
+
+### **Data Loader Enhancements (Oct 2025)**
+- Added robust path resolution for home costs CSV and VA rates JSON
+- Improved error handling with fallback mechanisms
+- Automatic file discovery for latest VA rates
+
+---
+
+## 🔧 Development Workflow
 
 1. **Local Setup:**
    ```bash
