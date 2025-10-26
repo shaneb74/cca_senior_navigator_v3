@@ -116,7 +116,14 @@ def is_interim_al_recommended() -> bool:
       - override subtitle under the results header
       - render the interim callout card
     Does not alter the computed recommendation.
+    
+    Also checks for _show_mc_interim_advice flag set by adjudication clamp.
     """
+    # Check if adjudication clamp set the interim advice flag
+    if st.session_state.get("_show_mc_interim_advice", False):
+        return True
+    
+    # Fallback to original logic for non-clamped cases
     if not _is_mc_recommended():
         return False
     if _has_dx_present():
@@ -136,6 +143,68 @@ def get_cached_interim_al() -> bool:
         st.session_state[cache_key] = decision
         logging.info("INTERIM_AL: cached decision=%s", decision)
     return st.session_state[cache_key]
+
+
+def adjudicate_final_tier(base_tier: str, llm_tier: str | None = None) -> tuple[str, dict[str, Any]]:
+    """
+    Adjudicate final tier recommendation with non-negotiable safety gates.
+    
+    CLAMP RULE: No Memory Care without formal diagnosis.
+    If MC is suggested without DX, downshift to Assisted Living with advisory.
+    
+    Args:
+        base_tier: Deterministic tier from scoring engine
+        llm_tier: Optional LLM-suggested tier (if LLM mode enabled)
+    
+    Returns:
+        tuple: (final_tier, meta_dict)
+            - final_tier: The adjudicated tier to publish
+            - meta_dict: Advisory metadata (e.g., {"advisory": {"id": "mc_interim_advice", "reason": "no_dx"}})
+    """
+    # Prefer LLM tier if available, otherwise use deterministic
+    suggested_tier = llm_tier or base_tier
+    
+    # Check for formal diagnosis
+    has_dx = _has_dx_present()
+    
+    # SAFETY GATE: Clamp Memory Care to Assisted Living if no diagnosis
+    if suggested_tier in ("memory_care", "memory_care_high_acuity") and not has_dx:
+        final_tier = "assisted_living"
+        meta = {
+            "advisory": {
+                "id": "mc_interim_advice",
+                "reason": "no_dx",
+                "suggested_tier": suggested_tier,
+                "clamped": True
+            }
+        }
+        logging.warning(
+            "MC_CLAMP: suggested=%s, has_dx=%s → clamped to %s",
+            suggested_tier, has_dx, final_tier
+        )
+        
+        # Set UI flag for interim advisory display
+        st.session_state["_show_mc_interim_advice"] = True
+        
+        # Ensure likely_mc_no_dx flag is present for downstream logic
+        outcome_ids = _get_outcome_flags()
+        if not (outcome_ids & _MC_NO_DX_FLAG_IDS):
+            logging.info("MC_CLAMP: adding likely_mc_no_dx flag")
+            # Add flag to outcomes if not already present
+            outcomes = st.session_state.get("gcp_care_recommendation", {}).get("_outcomes", {})
+            if "flags" not in outcomes:
+                outcomes["flags"] = []
+            outcomes["flags"].append({"id": "likely_mc_no_dx", "severity": "high"})
+    else:
+        final_tier = suggested_tier
+        meta = {}
+        st.session_state["_show_mc_interim_advice"] = False
+        logging.info(
+            "MC_CLAMP: suggested=%s, has_dx=%s → approved (no clamp)",
+            suggested_tier, has_dx
+        )
+    
+    return final_tier, meta
 
 
 def render_mc_eligibility_banner(name: str | None = None) -> None:
@@ -220,6 +289,7 @@ def run_module(config: ModuleConfig) -> dict[str, Any]:
         st.session_state.pop("_mc_advice_cached", None)
         st.session_state.pop("_mc_banner_rendered", None)
         st.session_state.pop("_interim_al_cached", None)
+        st.session_state.pop("_show_mc_interim_advice", None)
 
     step = config.steps[step_index]
 
@@ -801,6 +871,25 @@ def _ensure_outcomes(config: ModuleConfig, answers: dict[str, Any]) -> None:
             if isinstance(result, OutcomeContract):
                 outcome = result
             elif isinstance(result, dict):
+                # ========================================
+                # ADJUDICATION CLAMP: Apply safety gates before publishing
+                # ========================================
+                base_tier = result.get("tier", "")
+                llm_tier = result.get("llm_tier")  # If LLM mode is enabled
+                
+                # Apply adjudication clamp (non-negotiable safety gate)
+                final_tier, advisory_meta = adjudicate_final_tier(base_tier, llm_tier)
+                
+                # Update tier with adjudicated value
+                if final_tier != base_tier:
+                    logging.warning(
+                        "MC_ADJUDICATION: tier changed %s → %s (clamped=%s)",
+                        base_tier, final_tier, advisory_meta.get("advisory", {}).get("clamped", False)
+                    )
+                    result["tier"] = final_tier
+                    result["tier_original"] = base_tier  # Preserve original for analytics
+                    result["advisory"] = advisory_meta.get("advisory", {})
+                
                 # Don't wrap in OutcomeContract - store dict directly
                 # This allows product-specific schemas (e.g., GCP's tier/tier_score)
                 st.session_state[outcome_key] = result
@@ -1502,7 +1591,7 @@ def _render_results_view(mod: dict[str, Any], config: ModuleConfig) -> None:
             preserve = {"auth", "session_id", "dev_mode"}
             for k in list(st.session_state.keys()):
                 if k not in preserve:
-                    if k.startswith("gcp_") or k in ("_summary_advice", "_hours_suggestion", "_hours_ack", "_hours_nudge_key", "_hours_nudge_new", "_gcp_llm_advice", "_mc_advice_cached", "_mc_banner_rendered", "_gcp_cp_header_rendered", "_interim_al_cached"):
+                    if k.startswith("gcp_") or k in ("_summary_advice", "_hours_suggestion", "_hours_ack", "_hours_nudge_key", "_hours_nudge_new", "_gcp_llm_advice", "_mc_advice_cached", "_mc_banner_rendered", "_gcp_cp_header_rendered", "_interim_al_cached", "_show_mc_interim_advice"):
                         st.session_state.pop(k, None)
 
             # Reset to step 0 (first question - Age section)
