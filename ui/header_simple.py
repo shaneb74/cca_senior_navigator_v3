@@ -9,7 +9,28 @@ from textwrap import dedent
 import streamlit as st
 
 from core.ui import img_src
-from core.url_helpers import add_uid_to_href
+from core.url_helpers import add_uid_to_href, can_go_back, go_back, back_fallback, route_to
+
+
+def render_back_button(title: str = "") -> None:
+    """
+    Render a consistent Back button with optional title.
+    
+    Uses navigation stack if available, otherwise returns to hub.
+    
+    Args:
+        title: Optional title to display next to back button
+    """
+    cols = st.columns([1, 12])
+    with cols[0]:
+        if st.button("← Back", key="global_back_btn", use_container_width=True):
+            if can_go_back():
+                go_back()
+            else:
+                route_to(push=False, **back_fallback())
+    with cols[1]:
+        if title:
+            st.subheader(title)
 
 
 def render_header_simple(active_route: str | None = None) -> None:
@@ -223,4 +244,4 @@ def render_header_simple(active_route: str | None = None) -> None:
     st.markdown(html, unsafe_allow_html=True)
 
 
-__all__ = ["render_header_simple"]
+__all__ = ["render_header_simple", "render_back_button"]

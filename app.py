@@ -86,6 +86,16 @@ ensure_session()
 _cleanup_legacy_gcp_state()
 
 # ====================================================================
+# URL-DRIVEN ROUTING - Hydrate from query params (do this ONCE at startup)
+# ====================================================================
+from core.url_helpers import current_route as get_current_route
+
+if not st.session_state.get("_hydrated_from_qp"):
+    # Hydrate route from URL query params
+    st.session_state["current_route"] = get_current_route()
+    st.session_state["_hydrated_from_qp"] = True
+
+# ====================================================================
 # DEV MODE & FLAG VALIDATION
 # ====================================================================
 

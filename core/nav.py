@@ -3,6 +3,7 @@ import json
 from collections.abc import Callable
 
 import streamlit as st
+from core.url_helpers import route_to as url_route_to, current_route as url_current_route
 
 # Registry records
 PRODUCTS = {
@@ -68,6 +69,7 @@ def route_to(key: str, **context) -> None:
     """Navigate to a page by updating query params and triggering rerun.
 
     Preserves UID in query params to maintain session across navigation.
+    Uses URL-driven routing with history support.
     
     Optional context params are stored in session_state["_nav_context"] for
     the target page to consume (e.g., seed tags, query prefill).
@@ -80,13 +82,14 @@ def route_to(key: str, **context) -> None:
     if context:
         st.session_state["_nav_context"] = {"route": key, **context}
     
-    # Preserve UID when updating page
-    current_uid = st.query_params.get("uid")
-    st.query_params["page"] = key
-    if current_uid:
-        st.query_params["uid"] = current_uid
-
-    st.rerun()
+    # Preserve UID when routing
+    uid = st.query_params.get("uid")
+    route_params = {"page": key}
+    if uid:
+        route_params["uid"] = uid
+    
+    # Use URL-driven routing with history support
+    url_route_to(**route_params)
 
 
 def current_route(default: str, pages: dict[str, dict]) -> str:
