@@ -81,17 +81,19 @@ def header(app_title: str, current_key: str, pages: dict):
 
 
 def page_container_open():
-    st.markdown('<main class="container stack">', unsafe_allow_html=True)
+    """Open page container wrapper. Use sn-container to avoid class collisions."""
+    st.markdown('<div class="sn-container stack">', unsafe_allow_html=True)  # OPEN sn-container
 
 
 def page_container_close():
-    st.markdown("</main>", unsafe_allow_html=True)
+    """Close page container wrapper."""
+    st.markdown("</div>", unsafe_allow_html=True)  # CLOSE sn-container
 
 
 def hub_section(title: str, right_meta: Optional[str] = None):
     right = f'<div class="tile-meta"><span>{right_meta}</span></div>' if right_meta else ""
     st.markdown(
-        f"""<section class="container section">
+        f"""<section class="sn-container section">
 <div class="tile-head">
   <h2 class="section-title">{title}</h2>
   {right}
@@ -102,7 +104,7 @@ def hub_section(title: str, right_meta: Optional[str] = None):
 
 
 def tiles_open():
-    st.markdown('<div class="container"><div class="tiles">', unsafe_allow_html=True)
+    st.markdown('<div class="sn-container"><div class="tiles">', unsafe_allow_html=True)
 
 
 def tiles_close():

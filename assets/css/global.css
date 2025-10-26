@@ -79,6 +79,21 @@ section.main > div.block-container > div[data-testid="stVerticalBlock"] {
   gap: 0 !important;
 }
 
+/* ===== Scoped Layout Containers ===== */
+/* Use .sn-container to avoid collisions with Streamlit/library .container classes */
+.sn-container {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+.sn-container.stack {
+  display: block;
+}
+
+/* Prevent generic .container from clobbering our layouts */
+/* (Libraries may inject their own .container styles) */
+
 /* Ensure header sticks to top without gap */
 header.sn-global-header {
   margin-top: 0 !important;
