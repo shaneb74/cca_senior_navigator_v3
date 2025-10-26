@@ -398,7 +398,28 @@ def render_navi_header_message():
             navi_body = ""
             navi_info = ""
     elif can_recommend:
-        headline = (adv.get("headline") or f"Based on your answers, I recommend {tier_txt}.").strip()
+        # Check for advisory metadata (clamp scenario)
+        advisory_meta = st.session_state.get("gcp", {}).get("advisory_meta", {})
+        is_clamped = advisory_meta.get("clamped", False)
+        clamp_reason = advisory_meta.get("reason", "")
+        suggested_tier = advisory_meta.get("suggested_tier", "")
+        
+        # If clamped due to no_dx, customize headline
+        if is_clamped and clamp_reason == "no_dx":
+            # Override tier_txt to match published tier (AL)
+            tier_txt = "Assisted Living With Enhanced Cognitive Support"
+            headline = f"Based on your answers, I recommend {tier_txt}."
+            
+            # Add diagnosis requirement note
+            suggested_display = suggested_tier.replace("_", " ").title()
+            advisory_note = f"💡 {suggested_display} may be ideal, but requires a physician's diagnosis of Alzheimer's or dementia."
+            
+            # Log clamp override
+            print(f"[NAVI_CLAMP] tier={tier_txt} suggested={suggested_tier} reason={clamp_reason}")
+        else:
+            # Normal path - use headline from advice or generate default
+            headline = (adv.get("headline") or f"Based on your answers, I recommend {tier_txt}.").strip()
+            advisory_note = None
     else:
         # Use neutral anticipatory copy for early steps - ALWAYS show this until results ready
         # This prevents the header from disappearing on first widget interaction
@@ -442,10 +463,16 @@ def render_navi_header_message():
         reason_html = "<br/>".join(parts)
     else:
         navi_text = f"<strong>{headline}</strong>"
-        # If advice-level nudge exists, prefer it; else show hours hint when appropriate
-        adv_nudge = (adv.get("nudge") or adv.get("nudge_text") or "").strip()
-        if adv_nudge:
-            navi_text += f"<br>💡 {adv_nudge}"
+        
+        # PRIORITY 1: Check for clamp advisory note (diagnosis requirement)
+        if 'advisory_note' in locals() and advisory_note:
+            navi_text += f"<br>{advisory_note}"
+        # PRIORITY 2: If advice-level nudge exists, use it
+        elif adv.get("nudge") or adv.get("nudge_text"):
+            adv_nudge = (adv.get("nudge") or adv.get("nudge_text") or "").strip()
+            if adv_nudge:
+                navi_text += f"<br>💡 {adv_nudge}"
+        # PRIORITY 3: Show hours hint when appropriate
         elif show_hours_hint:
             navi_text += f"<br>💡 Navi suggests {band} (you selected {user}). {nudge_text}"
 

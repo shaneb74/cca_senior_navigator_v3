@@ -118,9 +118,20 @@ def render():
                     derive_outcome,
                     ensure_summary_ready,
                 )
+                from core.modules.engine import get_final_recommendation_tier
 
+                # CRITICAL: Use published_tier (post-adjudication) not outcome tier (pre-clamp)
+                # When clamped=True (e.g., MC without DX), published_tier=AL, outcome=MC
+                # Navi MUST use published_tier to match what user sees in UI
+                tier_pre = get_final_recommendation_tier(st.session_state)
+                
+                # Log tier source for debugging
                 outcome_pre = derive_outcome(state_pre)
-                tier_pre = outcome_pre.get("tier") if isinstance(outcome_pre, dict) else getattr(outcome_pre, "tier", None)
+                outcome_tier = outcome_pre.get("tier") if isinstance(outcome_pre, dict) else getattr(outcome_pre, "tier", None)
+                if tier_pre != outcome_tier:
+                    print(f"[GCP_NAVI_TIER] Using published={tier_pre} (clamped from outcome={outcome_tier})")
+                else:
+                    print(f"[GCP_NAVI_TIER] Using tier={tier_pre} (no clamp)")
 
                 if tier_pre:
                     mode = get_feature_gcp_mode()
