@@ -70,18 +70,23 @@ def _sanitize_answer_payload(resp: dict) -> dict:
     """
     Sanitize answer payload before returning to UI.
     
-    Converts any HTML in the answer to clean Markdown and logs
-    if residual HTML tags remain (regression detection).
+    Applies global HTML removal (not just start/end wrappers) to catch
+    multi-div patterns like:
+        <div class="chat-bubble__content">...</div>
+        <div class='chat-sources'>...</div>
+    
+    Tripwire logs if residual HTML tags remain after sanitization.
     """
     if not isinstance(resp, dict):
         return resp
     
     if "answer" in resp:
         original = resp["answer"]
+        mode = resp.get("mode", "unknown")
         
         # DEBUG: Always log what we're sanitizing
         if "<" in original:
-            print(f"[ADVISOR_SANITIZE] Found HTML in answer, sanitizing...")
+            print(f"[ADVISOR_SANITIZE] Found HTML in answer, sanitizing... (mode={mode})")
             print(f"  Before: {original[:150]}")
         
         resp["answer"] = _to_markdown(resp["answer"])
@@ -90,9 +95,9 @@ def _sanitize_answer_payload(resp: dict) -> dict:
         if "<" in original:
             print(f"  After:  {resp['answer'][:150]}")
         
-        # Regression detection: log if angle brackets remain
+        # TRIPWIRE: Regression detection - log if angle brackets remain
         if "<" in resp["answer"]:
-            print(f"[ADVISOR_SANITY] ⚠️  FAILED - residual angle bracket after sanitize!")
+            print(f"[ADVISOR_SANITY] ⚠️  FAILED - residual '<' after sanitize! mode={mode}")
             print(f"  Sanitized output still has: {resp['answer'][:200]}")
     
     return resp

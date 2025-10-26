@@ -562,53 +562,66 @@ def get_mediated_recommendation(
 # ==============================================================================
 # HTML SANITIZATION HELPERS
 # ==============================================================================
-def _html_to_markdown(s: str) -> str:
+
+# Precompiled patterns for efficient HTML sanitization (global removal, not just start/end)
+import re
+import html
+
+_CHAT_WRAPPERS_OPEN  = re.compile(r'<div[^>]+class=["\'](?:chat-bubble__content|chat-sources)["\'][^>]*>', re.I)
+_CHAT_WRAPPERS_CLOSE = re.compile(r'</div>', re.I)
+_A_TAG               = re.compile(r'<a\s+[^>]*?href=["\']([^"\']+)["\'][^>]*>(.*?)</a>', re.I | re.S)
+_BLOCK_TAGS          = re.compile(r'</?(ul|ol|li|p|div|span|strong|em|b|i|u|h[1-6])[^>]*>', re.I)
+_BR_TAG              = re.compile(r'<br\s*/?>', re.I)
+_P_CLOSE             = re.compile(r'</p\s*>', re.I)
+
+
+def _html_to_markdown(text: str) -> str:
     """
-    Best-effort HTML → Markdown sanitizer for advisor answers.
+    Sanitize HTML to clean Markdown - GLOBAL removal of ALL wrappers.
     
     Strips LLM "helpful HTML" syndrome artifacts:
-    - <div class="chat-bubble__content"> wrappers
-    - <div class="chat-sources"> wrappers  
+    - <div class="chat-bubble__content"> wrappers (ALL occurrences, not just start/end)
+    - <div class="chat-sources"> wrappers (ALL occurrences, not just start/end)
     - HTML tags (converts links, preserves structure)
     - HTML entities (&#x27; → ', &quot; → ")
     
+    Handles multiple sibling wrappers like:
+        <div class="chat-bubble__content">...</div>
+        <div class='chat-sources'>...</div>
+    
+    Previous bug: Only stripped ONE opening wrapper at start and ONE </div> at end,
+    allowing middle </div><div class='chat-sources'> to leak through.
+    
+    Fixed: Global regex substitution removes ALL wrapper occurrences anywhere in string.
+    
     Returns clean Markdown suitable for st.markdown() without unsafe_allow_html.
     """
-    import re
-    import html
-    
-    if not s:
+    if not text:
         return ""
-    s = s.strip()
+    s = text.strip()
 
-    # 1) Strip known outer chat-bubble wrappers (LLM artifacts)
-    s = re.sub(r"^<div[^>]*?(chat-bubble__content|chat-sources)[^>]*>", "", s, flags=re.I)
-    s = re.sub(r"</div>\s*$", "", s, flags=re.I)
+    # 1) Remove ALL chat wrappers, wherever they appear (not just start/end)
+    s = _CHAT_WRAPPERS_OPEN.sub("", s)
+    s = _CHAT_WRAPPERS_CLOSE.sub("", s)  # Safe after removing opens
 
-    # 2) Convert <a href="...">text</a> → [text](url)
+    # 2) Convert links to markdown: <a href="url">text</a> → [text](url)
     def _a2md(m):
         url = m.group(1).strip()
-        txt = re.sub(r"<.*?>", "", m.group(2)).strip()
-        return f"[{txt}]({url})" if txt else f"<{url}>"
-    s = re.sub(r'<a\s+[^>]*?href=["\']([^"\']+)["\'][^>]*>(.*?)</a>', _a2md, s, flags=re.I|re.S)
+        inner = re.sub(r"<.*?>", "", m.group(2)).strip()
+        return f"[{inner}]({url})" if inner else f"<{url}>"
+    s = _A_TAG.sub(_a2md, s)
 
-    # 3) Convert structural tags to markdown equivalents
-    s = re.sub(r"<br\s*/?>", "\n", s, flags=re.I)
-    s = re.sub(r"</p\s*>", "\n\n", s, flags=re.I)
+    # 3) Structural tags → breaks/bullets, then strip remaining block tags
+    s = _BR_TAG.sub("\n", s)
+    s = _P_CLOSE.sub("\n\n", s)
     s = re.sub(r"<li\s*>", "\n- ", s, flags=re.I)
-    s = re.sub(r"</li\s*>", "", s, flags=re.I)
-    
-    # 4) Strip remaining HTML tags (including h1-h6, which should be markdown)
-    s = re.sub(r"</?(ul|ol|p|div|span|strong|em|b|i|u|h[1-6])[^>]*>", "", s, flags=re.I)
+    s = _BLOCK_TAGS.sub("", s)
 
-    # 5) Unescape HTML entities (&#x27; → ', &quot; → ", etc.)
+    # 4) Unescape entities & tidy whitespace
     s = html.unescape(s)
+    s = re.sub(r"[ \t]+\n", "\n", s)
+    s = re.sub(r"\n{3,}", "\n\n", s).strip()
     
-    # 6) Clean up whitespace
-    s = re.sub(r"[ \t]+\n", "\n", s)  # Remove trailing spaces
-    s = re.sub(r"\n{3,}", "\n\n", s).strip()  # Max 2 consecutive newlines
-    
-    return s
     return s
 
 
