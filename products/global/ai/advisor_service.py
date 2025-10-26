@@ -6,6 +6,9 @@ import os
 import re
 import html
 
+# Use mediator sanitization for robust HTML -> Markdown conversion
+from ai.llm_mediator import _html_to_markdown
+
 
 # RAG configuration
 RAG_TOP_K = int(os.getenv("RAG_TOP_K", "8"))
@@ -83,18 +86,24 @@ def _sanitize_answer_payload(resp: dict) -> dict:
     if "answer" in resp:
         original = resp["answer"]
         mode = resp.get("mode", "unknown")
-        
+
         # DEBUG: Always log what we're sanitizing
         if "<" in original:
             print(f"[ADVISOR_SANITIZE] Found HTML in answer, sanitizing... (mode={mode})")
             print(f"  Before: {original[:150]}")
-        
-        resp["answer"] = _to_markdown(resp["answer"])
-        
+
+        # Use mediator's bullet-proof HTML -> Markdown conversion
+        try:
+            resp["answer"] = _html_to_markdown(resp.get("answer", ""))
+        except Exception as e:
+            print(f"[ADVISOR_SANITIZE_ERROR] _html_to_markdown failed: {e}")
+            # Fallback to existing lightweight converter
+            resp["answer"] = _to_markdown(resp.get("answer", ""))
+
         # DEBUG: Log after sanitization
         if "<" in original:
             print(f"  After:  {resp['answer'][:150]}")
-        
+
         # TRIPWIRE: Regression detection - log if angle brackets remain
         if "<" in resp["answer"]:
             print(f"[ADVISOR_SANITY] ⚠️  FAILED - residual '<' after sanitize! mode={mode}")

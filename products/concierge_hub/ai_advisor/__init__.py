@@ -1,6 +1,7 @@
 """AI Advisor product - RAG-powered Q&A using corporate content corpus."""
 
 import streamlit as st
+from ai.llm_mediator import _html_to_markdown
 from products.global.ai.advisor_service import get_answer
 
 
@@ -16,7 +17,9 @@ def describe():
 
 def render():
     """Render AI Advisor chat interface with RAG-first answers."""
-    
+    # Temporary route load log for verification
+    print("[ROUTE] ai_advisor loaded")
+
     st.markdown("### 💬 Ask Navi")
     st.markdown(
         "Ask about assisted living, memory care, cost planning, or any senior care topic. "
@@ -79,14 +82,15 @@ def render():
                 source="auto"  # Try corp first, then FAQ
             )
         
-        # Extract response data
-        answer = response.get("answer", "I couldn't generate an answer.")
+        # Extract response data and sanitize last-mile
+        raw_answer = response.get("answer", "I couldn't generate an answer.")
+        answer = _html_to_markdown(raw_answer)
         mode = response.get("mode", "unknown")
         sources = response.get("sources", [])
         cta = response.get("cta")
         meta = response.get("meta", {})
-        
-        # Add assistant response to history
+
+        # Add assistant response to history (content is Markdown-only)
         st.session_state.advisor_history.append({
             "role": "assistant",
             "content": answer,
@@ -95,6 +99,6 @@ def render():
             "cta": cta,
             "meta": meta
         })
-        
+
         # Rerun to show new messages
         st.rerun()
