@@ -404,19 +404,22 @@ def _publish_to_mcip(outcome, module_state: dict) -> None:
     allowed_tiers = outcome_data.get("allowed_tiers", [])
     g = st.session_state.setdefault("gcp", {})
     
-    # Only set published_tier if not already set by adjudication
-    if "published_tier" not in g:
+    # Get the FINAL tier (post-adjudication) - never overwrite
+    if "published_tier" in g:
+        # Adjudication already ran - use the clamped value
+        final_published_tier = g["published_tier"]
+        if final_published_tier != chosen_tier:
+            logging.warning(
+                "GCP_PRODUCT: adjudication active - published_tier=%s (clamped from outcome=%s)",
+                final_published_tier, chosen_tier
+            )
+            # DO NOT overwrite - adjudication is authoritative
+    else:
+        # No adjudication - use outcome tier
+        final_published_tier = chosen_tier
         g["published_tier"] = chosen_tier
         g["recommended_tier"] = chosen_tier
         logging.info("GCP_PRODUCT: published_tier not found, setting to %s", chosen_tier)
-    else:
-        # Verify consistency
-        existing_tier = g.get("published_tier")
-        if existing_tier != chosen_tier:
-            logging.warning(
-                "GCP_PRODUCT: published_tier=%s differs from outcome tier=%s (adjudication clamp active)",
-                existing_tier, chosen_tier
-            )
     
     g["allowed_tiers"] = allowed_tiers
     g["deterministic_tier"] = deterministic_tier  # for diagnostics
@@ -426,15 +429,17 @@ def _publish_to_mcip(outcome, module_state: dict) -> None:
     hours_user_band = g.get("hours_user_band")
     hours_llm_band = g.get("hours_llm") or g.get("hours_band")
 
-    print(f"[GCP_PERSIST_TIER] published={chosen_tier} recommended={chosen_tier} allowed={allowed_tiers}")
+    # Log using FINAL tier (post-adjudication)
+    print(f"[GCP_PERSIST_TIER] published={final_published_tier} outcome={chosen_tier} allowed={allowed_tiers}")
     print(f"[GCP_HOURS_PERSIST] user={hours_user_band} llm={hours_llm_band}")
     print(f"[GCP_STATE_WRITTEN] st.session_state['gcp'] keys: {list(g.keys())}")
 
-    # Build CareRecommendation contract with chosen (adjudicated) tier
+    # Build CareRecommendation contract with FINAL tier (post-adjudication)
+    # CRITICAL: Use final_published_tier not chosen_tier for MCIP contract
     try:
         recommendation = CareRecommendation(
-            # Core recommendation - MUST use chosen tier (not deterministic)
-            tier=chosen_tier,
+            # Core recommendation - MUST use FINAL (clamped) tier
+            tier=final_published_tier,
             tier_score=float(outcome_data.get("tier_score", 0.0)),
             tier_rankings=outcome_data.get("tier_rankings", []),
             confidence=float(outcome_data.get("confidence", 0.0)),
