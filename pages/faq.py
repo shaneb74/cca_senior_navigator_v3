@@ -17,46 +17,33 @@ LLM-POWERED FAQ (Stage 3):
 """
 
 from typing import Any
-import html
-import json
-import re
+                        # DO NOT wrap answers in HTML; Markdown only. Sources as markdown list.
+                        answer_md = safe_text  # already sanitized/markdown upstream
+                        st.markdown(answer_md)
 
-import streamlit as st
-import numpy as np
-
-from core.flags import get_all_flags
-from core.mcip import MCIP
-from core.nav import route_to
-from core.navi import NaviOrchestrator
-from core.url_helpers import add_uid_to_href
-from ui.header_simple import render_header_simple
-from ui.footer_simple import render_footer_simple
-
-
-# ==============================================================================
-# HTML SANITIZATION
-# ==============================================================================
-_HTML_BLOCK_TAGS = re.compile(r'</?(div|span|p|section|article|header|footer)[^>]*>', re.I)
-
-
-def _sanitize_to_md(text: str) -> str:
-    """Strip common block tags and sanitize to safe Markdown.
-    
-    Removes HTML block tags while preserving inline Markdown formatting
-    (**bold**, *italics*, etc.).
-    
-    Args:
-        text: Raw text that may contain HTML
-        
-    Returns:
-        Sanitized text safe for Markdown rendering
-    """
-    if not isinstance(text, str):
-        return ""
-    
-    # Strip common block tags (div, span, p, section, etc.)
-    text = _HTML_BLOCK_TAGS.sub('', text)
-    
+                        if msg.get("source_metas"):
+                            markdown_sources = []
+                            for meta in msg.get("source_metas")[:4]:
+                                title = meta.get("title", "Source")
+                                url = meta.get("url", "")
+                                if url:
+                                    markdown_sources.append(f"- [{title}]({url})")
+                                else:
+                                    markdown_sources.append(f"- {title}")
+                            st.markdown("**Sources**\n" + "\n".join(markdown_sources))
+                        elif msg.get("sources"):
+                            markdown_sources = []
+                            for src in msg.get("sources")[:4]:
+                                if isinstance(src, dict):
+                                    title = src.get("title", "Source")
+                                    url = src.get("url", "")
+                                    if url:
+                                        markdown_sources.append(f"- [{title}]({url})")
+                                    else:
+                                        markdown_sources.append(f"- {title}")
+                                else:
+                                    markdown_sources.append(f"- {html.escape(str(src))}")
+                            st.markdown("**Sources**\n" + "\n".join(markdown_sources))
     # Convert <br> tags to newlines
     text = re.sub(r'<br\s*/?>', '\n', text, flags=re.I)
     
@@ -1049,166 +1036,15 @@ def render():
         st.session_state["faq_send_now"] = True
     
     # CSS Styling
-    st.markdown("""
-    <style>
-      /* Hide custom navigation header on AI Advisor page (keep Streamlit controls) */
-      .sn-header {
-        display: none !important;
-      }
-      
-      /* Remove default Streamlit spacing */
-      .main .block-container {
-        padding-top: 0 !important;
-        padding-bottom: 0 !important;
-        max-width: 100% !important;
-      }
-      .main > div:first-child {
-        gap: 0 !important;
-      }
-      
-      .faq-shell-sentinel + div[data-testid="stElementContainer"] > div[data-testid="stVerticalBlock"]{
-        min-height:100vh;
-        padding:12px 0 72px;
-        background:radial-gradient(circle at 10% -20%,#eef3ff 0%,#ffffff 58%);
-      }
-      .faq-layout-sentinel + div[data-testid="stElementContainer"] > div[data-testid="stHorizontalBlock"]{
-        max-width:1080px;
-        margin:0 auto;
-        padding:0 24px;
-        display:flex;
-        flex-direction:column;
-        gap:28px;
-        width:100%;
-      }
-      .faq-header{background:#ffffff;border-radius:26px;padding:32px 40px;border:1px solid rgba(15,23,42,.06);box-shadow:0 30px 60px rgba(15,23,42,.12);} 
-      .faq-header__eyebrow{font-size:0.8rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#1d4ed8;margin-bottom:12px;} 
-      .faq-header__title{margin:0;font-size:2.6rem;line-height:1.1;color:#0f172a;letter-spacing:-.015em;} 
-      .faq-header__lead{margin:14px 0 0;font-size:1.05rem;color:#475569;max-width:60ch;}
-
-      /* AI Advisor layout spacing */
-      .ai-rec-wrapper { margin-top: 6px; margin-bottom: 10px; }
-      .ai-chip-row { margin-top: 8px; margin-bottom: 14px; }
-      .ai-input-wrap { margin-top: 12px; margin-bottom: 20px; }
-
-      .faq-recs{background:#ffffff;border-radius:22px;padding:22px 26px;border:1px solid rgba(15,23,42,.06);box-shadow:0 24px 44px rgba(15,23,42,.08);} 
-      .faq-recs__label{display:flex;align-items:center;gap:10px;font-weight:700;color:#1f3b7a;font-size:0.85rem;text-transform:uppercase;letter-spacing:.12em;margin-bottom:16px;} 
-      .faq-recs__label::before{content:"⭐";font-size:1rem;} 
-
-      .faq-shell div[data-testid="stButton"] > button{border-radius:999px;border:1px solid rgba(15,23,42,.08);padding:12px 20px;background:#f8fafc;color:#0f172a;font-weight:600;font-size:0.95rem;transition:all .18s ease;} 
-      .faq-shell div[data-testid="stButton"] > button:hover{border-color:#93abff;background:#eef3ff;color:#0f172a;box-shadow:0 14px 30px rgba(59,130,246,.18);} 
-      .faq-shell div[data-testid="stButton"] > button[kind="primary"]{background:#0f1b58;color:#fff;border-color:#0f1b58;box-shadow:0 18px 34px rgba(15,27,88,.32);} 
-      .faq-shell div[data-testid="stButton"] > button[kind="primary"]:hover{background:#16257a;border-color:#16257a;}
-
-      .chat-thread{display:flex;flex-direction:column;gap:26px;} 
-      .chat-message{display:flex;gap:18px;align-items:flex-start;} 
-      .chat-message--assistant{flex-direction:row;} 
-      .chat-message--user{flex-direction:row-reverse;} 
-      .chat-avatar{width:44px;height:44px;border-radius:16px;background:linear-gradient(135deg,#1d4ed8,#312e81);display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;box-shadow:0 16px 32px rgba(49,46,129,.25);} 
-      .chat-avatar--user{background:#0f172a;} 
-      .chat-bubble{flex:1;padding:24px;border-radius:24px;border:1px solid rgba(148,163,184,.35);background:#ffffff;box-shadow:0 24px 46px rgba(15,23,42,.12);color:#0f172a;font-size:1.02rem;line-height:1.6;} 
-      .chat-bubble--assistant{background:linear-gradient(180deg,#ffffff 0%,#f5f7ff 94%);border-color:rgba(59,130,246,.2);} 
-      .chat-bubble--user{background:#0f172a;border-color:#0f172a;color:#ffffff;box-shadow:0 24px 46px rgba(15,23,42,.35);} 
-      .chat-bubble p{margin:0 0 16px;} 
-      .chat-bubble p:last-child{margin-bottom:0;} 
-      .chat-bubble__content{display:block;color:inherit;} 
-
-      .chat-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;margin-bottom:18px;border-radius:999px;background:#e7f1ff;border:1px solid rgba(37,99,235,.32);font-size:0.82rem;font-weight:700;color:#1d3b8b;text-transform:uppercase;letter-spacing:.08em;} 
-      .chat-sources{margin-top:20px;display:flex;flex-wrap:wrap;gap:10px;} 
-      .chat-source-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;background:#eef3ff;border:1px solid rgba(59,130,246,.18);color:#1f3b7a;font-size:0.85rem;font-weight:600;text-decoration:none;} 
-
-      .chat-follow-ups__label{font-size:0.9rem;color:#1d3b8b;font-weight:700;margin-bottom:12px;} 
-
-      .chat-divider{height:1px;background:linear-gradient(90deg,rgba(148,163,184,.2) 0%,rgba(148,163,184,0) 100%);margin:32px 0;} 
-
-      .faq-shell .stAlert{border-radius:20px;border:1px solid rgba(59,130,246,.18);background:#f5f7ff;box-shadow:none;} 
-      .chat-sentinel{display:block;height:0;margin:0;padding:0;} 
-
-      .chat-action-sentinel + div[data-testid="stElementContainer"] > div[data-testid="stVerticalBlock"]{
-        background:#ffffff;
-        border-radius:18px;
-        border:1px solid rgba(148,163,184,.25);
-        box-shadow:0 18px 36px rgba(15,23,42,.12);
-        padding:16px 18px;
-        margin-top:20px;
-      }
-      .chat-action-sentinel + div[data-testid="stElementContainer"] div[data-testid="stHorizontalBlock"]{gap:12px;}
-      .chat-action-sentinel + div[data-testid="stElementContainer"] div[data-testid="column"]{padding:0!important;}
-      .chat-action-sentinel + div[data-testid="stElementContainer"] button{width:100%;border-radius:999px;font-weight:600;}
-
-      .chat-followup-sentinel + div[data-testid="stElementContainer"] > div[data-testid="stVerticalBlock"]{
-        background:#f0f4ff;
-        border-radius:18px;
-        border:1px solid rgba(59,130,246,.18);
-        padding:18px 20px;
-        margin-top:18px;
-      }
-      .chat-followup-sentinel + div[data-testid="stElementContainer"] div[data-testid="stHorizontalBlock"]{gap:12px;}
-      .chat-followup-sentinel + div[data-testid="stElementContainer"] div[data-testid="column"]{padding:0!important;}
-
-      .chat-cta-sentinel + div[data-testid="stElementContainer"] button{
-        width:100%;
-        padding:14px 0;
-        border-radius:14px;
-        font-size:1rem;
-        font-weight:700;
-      }
-
-      .composer-sentinel + div[data-testid="stElementContainer"] > div[data-testid="stVerticalBlock"]{
-        background:#ffffff;
-        border-radius:26px;
-        border:1px solid rgba(148,163,184,.25);
-        box-shadow:0 24px 50px rgba(15,23,42,.12);
-        padding:26px 26px 20px;
-      }
-      .composer-sentinel + div[data-testid="stElementContainer"] div[data-testid="stHorizontalBlock"]{gap:16px;}
-      .composer-sentinel + div[data-testid="stElementContainer"] div[data-testid="column"]{padding:0!important;}
-      .composer-sentinel + div[data-testid="stElementContainer"] input{
-        border-radius:16px;
-        border:1px solid rgba(148,163,184,.45);
-        padding:14px 18px;
-        font-size:1rem;
-        box-shadow:inset 0 2px 6px rgba(15,23,42,.08);
-      }
-      .composer-sentinel + div[data-testid="stElementContainer"] input:focus{
-        border-color:#2563eb;
-        outline:none;
-        box-shadow:0 0 0 3px rgba(37,99,235,.2);
-      }
-      .composer-sentinel + div[data-testid="stElementContainer"] .composer-meta{
-        display:flex;
-        justify-content:space-between;
-        flex-wrap:wrap;
-        gap:12px;
-        align-items:center;
-        font-size:0.9rem;
-        color:#475569;
-        margin-top:12px;
-      }
-      .composer-sentinel + div[data-testid="stElementContainer"] .composer-meta a{
-        color:#1f3b7a;
-        font-weight:600;
-        text-decoration:none;
-      }
-
-      .control-sentinel + div[data-testid="stElementContainer"] div[data-testid="stHorizontalBlock"]{gap:12px;}
-      .control-sentinel + div[data-testid="stElementContainer"] div[data-testid="column"]{padding:0!important;}
-      .control-sentinel + div[data-testid="stElementContainer"] button{width:100%;border-radius:12px;font-weight:600;}
-
-
-      @media (max-width:900px){
-        .faq-layout{padding:0 18px;}
-        .chat-message{gap:14px;}
-        .chat-bubble{padding:20px;}
-        .chat-avatar{width:40px;height:40px;border-radius:14px;}
-      }
-      @media (max-width:640px){
-        .faq-header{padding:24px;}
-        .chat-message{flex-direction:column;}
-        .chat-message--user{flex-direction:column;align-items:flex-end;}
-        .chat-message--user .chat-avatar{margin-bottom:12px;}
-      }
-    </style>
-    """, unsafe_allow_html=True)
+        # Legacy chat CSS (disabled) — use page-level Streamlit classes and scoped CSS elsewhere.
+        if False:
+                st.markdown("""
+                <style>
+                .chat-bubble__content{/* legacy styling disabled */}
+                .chat-sources{/* legacy styling disabled */}
+                .chat-source-pill{/* legacy styling disabled */}
+                </style>
+                """, unsafe_allow_html=True)
 
     # Render page chrome
     render_header_simple(active_route="faq")
@@ -1278,42 +1114,17 @@ def render():
                             "role": "assistant",
                             "text": str(ans["answer"]),
                             "sources": source_titles,
-                            "source_ids": [],
-                            "cta": ans.get("cta") if isinstance(ans.get("cta"), dict) else None,
-                            "user_query": str(rec["label"]),
-                            "seed_tags": [],
-                            "is_canonical": True
-                        }
-                        chat.insert(0, msg)
-                        chat.insert(0, {"role": "user", "text": str(rec["label"])})
-                        st.session_state["faq_chat"] = chat
-                        st.rerun()
-            st.markdown('</section></div>', unsafe_allow_html=True)
-            
-            # ─── Composer (moved here, under recommended questions) ───
-            advisor_href = add_uid_to_href("?page=hub_concierge")
-            st.markdown('<div class="ai-input-wrap">', unsafe_allow_html=True)
-            st.markdown('<div class="chat-sentinel composer-sentinel"></div>', unsafe_allow_html=True)
-            col1, col2 = st.columns([5, 1], gap="medium")
+                            # DO NOT wrap answers in HTML; Markdown only. Sources as markdown list.
+                            answer_md = safe_text  # already sanitized/markdown upstream
+                            st.markdown(answer_md)
 
-            with col1:
-                user_q = st.text_input(
-                    "Ask about planning, costs, eligibility, or our company…",
-                    key="faq_composer_input",
-                    placeholder="e.g., What is assisted living? Who is CCA?",
-                    label_visibility="collapsed",
-                    on_change=lambda: st.session_state.update({"faq_enter_pressed": True}),
-                    disabled=is_processing,
-                )
-
-            with col2:
-                send_clicked = st.button(
-                    "Send",
-                    type="primary",
-                    key="faq_send_btn",
-                    disabled=is_processing,
-                )
-
+                            if sources:
+                                markdown_sources = "\n".join(
+                                    f"- [{s.get('title','Source')}]({s.get('url','')})" if s.get('url')
+                                    else f"- {s.get('title','Source')}"
+                                    for s in sources[:4]
+                                )
+                                st.markdown("**Sources**\n" + markdown_sources)
             st.markdown(
                 f"""
                 <div class=\"composer-meta\">
@@ -1389,46 +1200,33 @@ def render():
                             # Only allow HTML when explicitly flagged (e.g., for UI chrome)
                             safe_text = text
 
-                        sources_html = ""
-                        source_metas = msg.get("source_metas", [])
-                        sources = msg.get("sources", [])
+                        # DO NOT wrap answers in HTML; Markdown only. Sources as markdown list.
+                        answer_md = safe_text  # already sanitized/markdown upstream
+                        st.markdown(answer_md)
 
-                        if source_metas:
-                            pill_html = []
-                            for meta in source_metas[:3]:
-                                title = meta.get("title", "Untitled")
+                        if msg.get("source_metas"):
+                            markdown_sources = []
+                            for meta in msg.get("source_metas")[:4]:
+                                title = meta.get("title", "Source")
                                 url = meta.get("url", "")
-                                freshness = fmt_date(meta.get("last_fetched", ""))
-                                if freshness:
-                                    pill_text = f"{title} (Updated {freshness})"
-                                else:
-                                    pill_text = title
-                                pill_text = html.escape(pill_text)
                                 if url:
-                                    pill_html.append(f'<a class="chat-source-pill" href="{url}" target="_blank">{pill_text}</a>')
+                                    markdown_sources.append(f"- [{title}]({url})")
                                 else:
-                                    pill_html.append(f'<span class="chat-source-pill">{pill_text}</span>')
-                            sources_html = f"<div class='chat-sources'>{''.join(pill_html)}</div>"
-                        elif sources:
-                            pill_html = [
-                                f"<span class='chat-source-pill'>{html.escape(src)}</span>"
-                                for src in sources[:3]
-                            ]
-                            sources_html = f"<div class='chat-sources'>{''.join(pill_html)}</div>"
-
-                        assistant_html = (
-                            f"""
-                            <div class=\"chat-message chat-message--assistant\">
-                              <div class=\"chat-avatar\">N</div>
-                              <div class=\"chat-bubble chat-bubble--assistant\">
-                                {badge_html}
-                                <div class=\"chat-bubble__content\">{safe_text}</div>
-                                {sources_html}
-                              </div>
-                            </div>
-                            """
-                        )
-                        st.markdown(assistant_html, unsafe_allow_html=True)
+                                    markdown_sources.append(f"- {title}")
+                            st.markdown("**Sources**\n" + "\n".join(markdown_sources))
+                        elif msg.get("sources"):
+                            markdown_sources = []
+                            for src in msg.get("sources")[:4]:
+                                if isinstance(src, dict):
+                                    title = src.get("title", "Source")
+                                    url = src.get("url", "")
+                                    if url:
+                                        markdown_sources.append(f"- [{title}]({url})")
+                                    else:
+                                        markdown_sources.append(f"- {title}")
+                                else:
+                                    markdown_sources.append(f"- {html.escape(str(src))}")
+                            st.markdown("**Sources**\n" + "\n".join(markdown_sources))
 
                         with st.container():
                             st.markdown('<div class="chat-sentinel chat-action-sentinel"></div>', unsafe_allow_html=True)
