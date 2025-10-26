@@ -18,28 +18,27 @@ from .layout import actions
 from .schema import FieldDef, ModuleConfig, OutcomeContract, StepDef
 
 
-def _mc_recommended_without_dx(state: dict) -> bool:
+def _mc_recommended_without_dx(tier: str, state: dict) -> bool:
     """
     True if Memory Care is the recommended tier AND we do not see
     a qualifying dementia/Alzheimer's diagnosis flag in state.
     This is defensive: it checks multiple likely places.
     """
-    ss = st.session_state
-    # 1) Recommended tier from the outcome/session
-    rec = (
-        ss.get("gcp_care_recommendation", {}).get("tier") or
-        ss.get("gcp_care_recommendation", {}).get("recommended_tier") or
-        state.get("recommended_tier")
-    )
-    is_mc = str(rec or "").lower().startswith("memory care")
+    # 1) Check if tier is Memory Care
+    is_mc = str(tier or "").lower().startswith("memory care")
+    if not is_mc:
+        return False
 
     # 2) Any diagnosis flags present?
+    ss = st.session_state
+    
     # Common places: ss["profile"]["diagnoses"], ss["flags"], contracts, or the outcome's flags
-    profile_dx = (
-        ss.get("profile", {}).get("diagnoses") or
-        state.get("profile", {}).get("diagnoses") or
-        []
-    )
+    profile_dx = []
+    if ss.get("profile") and isinstance(ss.get("profile"), dict):
+        profile_dx = ss["profile"].get("diagnoses") or []
+    elif state and isinstance(state, dict) and state.get("profile") and isinstance(state.get("profile"), dict):
+        profile_dx = state["profile"].get("diagnoses") or []
+    
     # Normalize to string bag for cheap checks
     dx_text = " ".join(map(str, profile_dx)).lower()
 
@@ -49,11 +48,12 @@ def _mc_recommended_without_dx(state: dict) -> bool:
     )
 
     # Fallback to boolean-style flags if present
-    flags = (
-        ss.get("flags", {}) or
-        ss.get("gcp_care_recommendation", {}).get("flags", {}) or
-        state.get("flags", {})
-    )
+    flags = {}
+    if ss.get("flags") and isinstance(ss.get("flags"), dict):
+        flags = ss["flags"]
+    elif state and isinstance(state, dict) and state.get("flags") and isinstance(state.get("flags"), dict):
+        flags = state["flags"]
+    
     # A few common keys someone may already set
     has_dx_key = any(
         flags.get(k) for k in [
@@ -1330,8 +1330,7 @@ def _render_results_view(mod: dict[str, Any], config: ModuleConfig) -> None:
         pass
 
     # --- Conditional Memory Care eligibility banner ---
-    route_state = st.session_state.get("current_route", {})
-    if _mc_recommended_without_dx(route_state):
+    if _mc_recommended_without_dx(tier, mod):
         render_mc_eligibility_banner()
 
     # Wrap the recommendation body text so we can add spacing below
