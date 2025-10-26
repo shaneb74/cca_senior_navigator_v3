@@ -78,8 +78,12 @@ def get_answer(
         # Final fallback if nothing worked
         if not result:
             fallback = True
+            fallback_md = (
+                "We don't have that in our FAQ yet. "
+                "You can start the **Guided Care Plan** to get a tailored next step."
+            )
             result = {
-                "answer": "We don't have that in our FAQ yet. You can start the Guided Care Plan to get a tailored next step.",
+                "answer": fallback_md,
                 "sources": [],
                 "cta": policy.get("default_cta", {
                     "label": "Start Guided Care Plan",
