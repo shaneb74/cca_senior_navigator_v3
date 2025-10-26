@@ -941,15 +941,24 @@ def render_navi_panel(
         else:
             # No module config - check for product-specific guidance
             if product_key in ("cost_planner", "cost_v2"):
-                # Cost Planner guidance
-                gcp_rec = ctx.care_recommendation
-                tier_display = None
-                if gcp_rec and hasattr(gcp_rec, 'tier'):
-                    tier_display = _get_tier_display_name(gcp_rec.tier)
-
-                if tier_display:
+                # Cost Planner guidance - use published_tier (post-adjudication)
+                g = st.session_state.get("gcp", {})
+                final_tier = g.get("published_tier") or g.get("recommended_tier")
+                interim = bool(st.session_state.get("_show_mc_interim_advice", False))
+                
+                # Generate tier display name and copy
+                if interim:
                     title = "Let's look at costs"
-                    reason = f"I've pre-selected {tier_display} from your Guided Care Plan. You can explore other scenarios too."
+                    reason = "I've pre-selected Assisted Living with enhanced cognitive support from your Guided Care Plan. You can explore other scenarios too."
+                elif final_tier == "memory_care" or final_tier == "memory_care_high_acuity":
+                    title = "Let's look at costs"
+                    reason = "I've pre-selected Memory Care from your Guided Care Plan. You can explore other scenarios too."
+                elif final_tier == "assisted_living":
+                    title = "Let's look at costs"
+                    reason = "I've pre-selected Assisted Living from your Guided Care Plan. You can explore other scenarios too."
+                elif final_tier in ("in_home", "in_home_care"):
+                    title = "Let's look at costs"
+                    reason = "I've pre-selected In-Home Care from your Guided Care Plan. You can explore other scenarios too."
                 else:
                     title = "Let's look at costs"
                     reason = "We'll help you explore different care options and their costs."

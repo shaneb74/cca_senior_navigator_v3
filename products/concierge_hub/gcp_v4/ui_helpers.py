@@ -648,7 +648,9 @@ def render_clean_summary():
     interim = bool(st.session_state.get("_show_mc_interim_advice", False))
     
     # Generate costs line based on final tier
-    if interim or final_tier == "assisted_living":
+    if interim:
+        cost_line = "Let's explore the costs associated with Assisted Living with enhanced cognitive support."
+    elif final_tier == "assisted_living":
         cost_line = "Let's explore the costs associated with assisted living options."
     elif final_tier in ("memory_care", "memory_care_high_acuity"):
         cost_line = "Let's explore the costs associated with memory care options."

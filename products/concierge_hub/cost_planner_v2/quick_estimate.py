@@ -248,23 +248,34 @@ def render():
     # Enhanced debug output
     print(f"[QE_DEBUG] MC Tab Logic: mc_in_allowed={mc_in_allowed} (allowed={alwd}), mc_is_recommended={mc_is_recommended} (recommended={rec}), FINAL mc={avail['mc']}")
 
-    # Default selected tab (prefer recommended, fallback gracefully)
+    # Default selected tab (use published_tier for post-adjudication logic)
+    g = st.session_state.get("gcp", {})
+    final_tier = g.get("published_tier") or rec  # Fall back to legacy if published_tier not set
+    interim = bool(st.session_state.get("_show_mc_interim_advice", False))
+    
     sel = cost.get("selected_assessment")
     if sel not in ("home", "al", "mc"):
-        # No valid selection yet - choose based on recommendation
-        if avail["mc"] and rec in ("memory_care", "memory_care_high_acuity"):
-            cost["selected_assessment"] = "mc"
-        elif rec == "assisted_living":
+        # No valid selection yet - choose based on final tier (post-adjudication)
+        if interim:
+            # Interim AL case (MC clamped due to no DX)
             cost["selected_assessment"] = "al"
+            print(f"[QE_PRESET] Interim AL selected (MC without DX)")
+        elif avail["mc"] and final_tier in ("memory_care", "memory_care_high_acuity"):
+            cost["selected_assessment"] = "mc"
+            print(f"[QE_PRESET] MC selected (final_tier={final_tier})")
+        elif final_tier == "assisted_living":
+            cost["selected_assessment"] = "al"
+            print(f"[QE_PRESET] AL selected (final_tier={final_tier})")
         else:
             cost["selected_assessment"] = "home"
+            print(f"[QE_PRESET] Home selected (final_tier={final_tier})")
     else:
         # if current selection is not available, fall back
         if not avail.get(sel, False):
             cost["selected_assessment"] = "al" if avail["al"] else "home"
 
     # Log availability with full context
-    print(f"[QE_AVAIL] recommended={rec} allowed={alwd} avail={avail} sel={cost['selected_assessment']}")
+    print(f"[QE_AVAIL] recommended={rec} final_tier={final_tier} interim={interim} allowed={alwd} avail={avail} sel={cost['selected_assessment']}")
     print(f"[QE] selected_assessment={cost['selected_assessment']}")
 
     # Persist initial state snapshot (after availability/selection computed)

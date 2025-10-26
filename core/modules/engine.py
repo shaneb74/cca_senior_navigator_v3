@@ -168,7 +168,7 @@ def get_results_subtitle(state=None) -> str:
     
     if interim:
         # Clamped case: MC suggested but no DX → AL interim
-        return f"Assisted Living with memory support is recommended for {person}."
+        return "Assisted Living with enhanced cognitive support"
     
     # Get final tier from canonical location
     final_tier = state.get("gcp", {}).get("published_tier", "")
