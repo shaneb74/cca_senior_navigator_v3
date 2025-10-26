@@ -1378,15 +1378,15 @@ def render():
                         elif msg.get("is_error"):
                             badge_html = '<span class="chat-badge">⚠️ Something went wrong</span>'
 
-                        # Sanitize message content unless explicitly marked as HTML
+                        # Message content handling
                         is_html = msg.get("is_html", False)
                         if not is_html:
                             # Answer is already normalized to Markdown by llm_mediator.
-                            # Since we're embedding in HTML (unsafe_allow_html=True),
-                            # we need to escape it to prevent injection, but preserve Markdown.
-                            safe_text = html.escape(text)
+                            # DON'T escape - let Streamlit render the Markdown.
+                            # The answer should be clean (no HTML) after normalization.
+                            safe_text = text
                         else:
-                            # Only allow HTML when explicitly flagged
+                            # Only allow HTML when explicitly flagged (e.g., for UI chrome)
                             safe_text = text
 
                         sources_html = ""
