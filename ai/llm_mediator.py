@@ -656,6 +656,7 @@ STRICT RULES:
 - Maximum 120 words
 - Plain, warm, professional language
 - No medical advice or diagnoses
+- **Return Markdown only. Do not use HTML tags or inline styles. Do not wrap answers in <div> or other containers.**
 
 OUTPUT FORMAT (valid JSON only):
 {{"answer": "your concise answer here", "sources": ["faq_id_1", "faq_id_2"], "cta": {{"label": "...", "route": "..."}}}}

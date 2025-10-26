@@ -1381,10 +1381,10 @@ def render():
                         # Sanitize message content unless explicitly marked as HTML
                         is_html = msg.get("is_html", False)
                         if not is_html:
-                            # Sanitize to prevent raw HTML in chat bubbles
-                            safe_text = _sanitize_to_md(text)
-                            # Escape for safe HTML embedding
-                            safe_text = html.escape(safe_text)
+                            # Answer is already normalized to Markdown by llm_mediator.
+                            # Since we're embedding in HTML (unsafe_allow_html=True),
+                            # we need to escape it to prevent injection, but preserve Markdown.
+                            safe_text = html.escape(text)
                         else:
                             # Only allow HTML when explicitly flagged
                             safe_text = text

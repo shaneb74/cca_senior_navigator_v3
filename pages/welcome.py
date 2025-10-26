@@ -457,11 +457,6 @@ def _welcome_body(
     hero_url = static_url("hero.png")
     family_main = static_url("welcome_someone_else.png")
     self_main = static_url("welcome_self.png")
-    
-    # Guard against empty image sources during transitions
-    if not (hero_url and family_main and self_main):
-        st.markdown("Loading welcome page...", unsafe_allow_html=True)
-        return
 
     # Build CTA buttons with UID preservation
     primary_href = add_uid_to_href(f"?page={primary_route}")
