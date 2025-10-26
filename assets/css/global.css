@@ -70,36 +70,14 @@ p {
 }
 
 /* Remove Streamlit's default top padding so the header can sit flush */
-/* NUCLEAR OPTION: Override all Streamlit width constraints */
-section.main,
-section.main > div,
-section.main > div.block-container,
-div.block-container,
-.block-container {
+section.main > div.block-container {
   padding-top: 0 !important;
-  max-width: 100% !important;
-  width: 100% !important;
 }
 
 /* Remove Streamlit's default vertical gap between header shell and first section */
 section.main > div.block-container > div[data-testid="stVerticalBlock"] {
   gap: 0 !important;
 }
-
-/* ===== Scoped Layout Containers ===== */
-/* Use .sn-container to avoid collisions with Streamlit/library .container classes */
-.sn-container {
-  max-width: 1120px;
-  margin: 0 auto;
-  padding: 0 16px;
-}
-
-.sn-container.stack {
-  display: block;
-}
-
-/* Prevent generic .container from clobbering our layouts */
-/* (Libraries may inject their own .container styles) */
 
 /* Ensure header sticks to top without gap */
 header.sn-global-header {
@@ -645,29 +623,4 @@ div[data-role="secondary"] .stButton > button[kind="secondary"][data-testid="stB
 .stSpinner > div:has-text("Summarizing your recommendation…") {
   color: var(--brand-600) !important;
   font-weight: 600 !important;
-}
-
-/* ===== AI Advisor Text Wrapping ===== */
-/* Prevent layout overflow from long URLs/text in advisor answers */
-/* Streamlit chat_message components use this selector */
-[data-testid="stChatMessage"] [data-testid="stMarkdownContainer"],
-.stMarkdown > div {
-  /* Normal wrapping (not pre-formatted) */
-  white-space: normal !important;
-  
-  /* Break long words/URLs anywhere if needed */
-  overflow-wrap: anywhere !important;
-  word-break: break-word !important;
-  
-  /* Comfortable max reading width */
-  max-width: 72ch !important;
-}
-
-/* Ensure code blocks and preformatted text keep their formatting */
-[data-testid="stChatMessage"] pre,
-[data-testid="stChatMessage"] code {
-  white-space: pre-wrap !important;
-  overflow-wrap: normal !important;
-  word-break: normal !important;
-  max-width: 100% !important;
 }
