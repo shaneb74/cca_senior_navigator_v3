@@ -17,60 +17,83 @@ from . import components as components
 from .layout import actions
 from .schema import FieldDef, ModuleConfig, OutcomeContract, StepDef
 
+import logging
+from typing import Any, Dict, Iterable
 
-def _mc_recommended_without_dx(tier: str, state: dict) -> bool:
-    """
-    True if Memory Care is the recommended tier AND we do not see
-    a qualifying dementia/Alzheimer's diagnosis flag in state.
-    This is defensive: it checks multiple likely places.
-    """
-    # 1) Check if tier is Memory Care
-    is_mc = str(tier or "").lower().startswith("memory care")
-    if not is_mc:
-        return False
+# Memory Care diagnosis flag constants
+_MC_DX_FLAG_IDS = {"memory_care_dx", "dementia_dx", "alzheimers_dx", "has_dementia_dx"}
+_MC_NO_DX_FLAG_IDS = {"likely_mc_no_dx", "mc_no_dx", "no_dx_memory_care"}
+_MC_TEXT_TOKENS = (
+    "dementia", "alzheimer", "alzheimers", "alzheimer's", "alzheimer's",
+    "lewy", "parkinson", "frontotemporal", "ftd", "vascular dementia"
+)
 
-    # 2) Check for explicit "likely MC but no DX" flag (from cognitive_dx_confirm question)
+
+def _get_outcome_flags() -> set[str]:
+    """
+    Extract flag ids from st.session_state["gcp_care_recommendation"]["_outcomes"]["flags"],
+    which is a list of dicts.
+    """
     ss = st.session_state
-    
-    # If user explicitly answered "No" or "Not sure" to diagnosis question, show banner
-    flags_dict = {}
-    if ss.get("flags") and isinstance(ss.get("flags"), dict):
-        flags_dict = ss["flags"]
-    elif state and isinstance(state, dict) and state.get("flags") and isinstance(state.get("flags"), dict):
-        flags_dict = state["flags"]
-    
-    # Direct check: if likely_mc_no_dx is set, definitely show banner
-    if flags_dict.get("likely_mc_no_dx"):
+    try:
+        flags: Iterable[Dict[str, Any]] = (
+            ss.get("gcp_care_recommendation", {})
+              .get("_outcomes", {})
+              .get("flags", [])
+        )
+        return {f.get("id", "").lower() for f in flags if isinstance(f, dict) and f.get("id")}
+    except Exception as e:
+        logging.warning("MC_ELIG: Failed to parse outcome flags: %s", e)
+        return set()
+
+
+def _is_mc_recommended() -> bool:
+    """Check if Memory Care is the recommended tier."""
+    ss = st.session_state
+    tier = (
+        ss.get("gcp", {}).get("published_tier")
+        or ss.get("gcp_care_recommendation", {}).get("tier")
+        or ss.get("gcp_care_recommendation", {}).get("_outcomes", {}).get("tier")
+        or ""
+    )
+    return "memory" in str(tier).lower()
+
+
+def _has_dx_present() -> bool:
+    """Check if a formal diagnosis is present in flags or profile."""
+    ss = st.session_state
+    outcome_ids = _get_outcome_flags()
+    if outcome_ids & _MC_DX_FLAG_IDS:
         return True
-    
-    # If memory_care_dx is explicitly set, don't show banner (they have diagnosis)
-    if flags_dict.get("memory_care_dx"):
+
+    flags = ss.get("flags", {})
+    if any(flags.get(k) for k in _MC_DX_FLAG_IDS):
+        return True
+
+    dx_list = ss.get("profile", {}).get("diagnoses") or []
+    dx_text = " ".join(map(str, dx_list)).lower()
+    return any(tok in dx_text for tok in _MC_TEXT_TOKENS)
+
+
+def _mc_requires_eligibility_advice() -> bool:
+    """
+    True if Memory Care is recommended and:
+    - we have a likely_mc_no_dx flag, or
+    - no diagnosis present in flags/profile.
+    """
+    if not _is_mc_recommended():
         return False
-    
-    # 3) Fallback: check profile diagnoses and other dx flags
-    profile_dx = []
-    if ss.get("profile") and isinstance(ss.get("profile"), dict):
-        profile_dx = ss["profile"].get("diagnoses") or []
-    elif state and isinstance(state, dict) and state.get("profile") and isinstance(state.get("profile"), dict):
-        profile_dx = state["profile"].get("diagnoses") or []
-    
-    # Normalize to string bag for cheap checks
-    dx_text = " ".join(map(str, profile_dx)).lower()
 
-    has_dx_in_profile = any(
-        k in dx_text
-        for k in ["dementia", "alzheimer", "alzheimers", "alzheimers'", "cognitive impairment"]
-    )
-    
-    # Check other possible dx flag keys
-    has_other_dx_key = any(
-        flags_dict.get(k) for k in [
-            "mc_dx_present", "dementia_dx", "alzheimers_dx"
-        ]
-    )
+    outcome_ids = _get_outcome_flags()
+    has_no_dx_flag = bool(outcome_ids & _MC_NO_DX_FLAG_IDS)
+    has_dx = _has_dx_present()
+    show = has_no_dx_flag or not has_dx
 
-    # Show banner if Memory Care AND no diagnosis found anywhere
-    return bool(is_mc and not (has_dx_in_profile or has_other_dx_key))
+    logging.info(
+        "MC_ELIG: memory_care recommended=%s, no_dx_flag=%s, has_dx=%s → show=%s",
+        _is_mc_recommended(), has_no_dx_flag, has_dx, show
+    )
+    return show
 
 
 def render_mc_eligibility_banner(name: str | None = None) -> None:
@@ -1339,7 +1362,8 @@ def _render_results_view(mod: dict[str, Any], config: ModuleConfig) -> None:
         pass
 
     # --- Conditional Memory Care eligibility banner ---
-    if _mc_recommended_without_dx(tier, mod):
+    if _mc_requires_eligibility_advice():
+        logging.info("MC_ELIG: rendering eligibility advice banner")
         render_mc_eligibility_banner()
 
     # Wrap the recommendation body text so we can add spacing below
