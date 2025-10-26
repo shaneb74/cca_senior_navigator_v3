@@ -2230,3 +2230,30 @@ div[data-testid="stVerticalBlock"]:has(.chip-wrap.is-active) .stButton > button{
   }
 }
 
+/* ==== GCP Recommendation — Memory Care eligibility banner (scoped) ==== */
+.sn-app .gcp-rec .mc-eligibility-banner {
+  display: grid;
+  grid-template-columns: 2rem 1fr;
+  gap: 0.75rem;
+  background: #fff7e6;               /* soft amber */
+  border: 1px solid #ffd18a;
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  margin: 0.5rem 0 0.75rem;          /* fits under Navi, above H2/body */
+}
+
+.sn-app .gcp-rec .mc-eligibility-icon {
+  font-size: 1.25rem;
+  line-height: 1.25rem;
+  margin-top: 2px;
+}
+
+.sn-app .gcp-rec .mc-eligibility-content p {
+  margin: 0.1rem 0 0.4rem;
+}
+
+/* Safety net: collapse truly empty markdown blocks inside this scope */
+.sn-app .gcp-rec [data-testid="stMarkdown"] p:empty {
+  display: none !important;
+}
+

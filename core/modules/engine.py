@@ -18,6 +18,75 @@ from .layout import actions
 from .schema import FieldDef, ModuleConfig, OutcomeContract, StepDef
 
 
+def _mc_recommended_without_dx(state: dict) -> bool:
+    """
+    True if Memory Care is the recommended tier AND we do not see
+    a qualifying dementia/Alzheimer's diagnosis flag in state.
+    This is defensive: it checks multiple likely places.
+    """
+    ss = st.session_state
+    # 1) Recommended tier from the outcome/session
+    rec = (
+        ss.get("gcp_care_recommendation", {}).get("tier") or
+        ss.get("gcp_care_recommendation", {}).get("recommended_tier") or
+        state.get("recommended_tier")
+    )
+    is_mc = str(rec or "").lower().startswith("memory care")
+
+    # 2) Any diagnosis flags present?
+    # Common places: ss["profile"]["diagnoses"], ss["flags"], contracts, or the outcome's flags
+    profile_dx = (
+        ss.get("profile", {}).get("diagnoses") or
+        state.get("profile", {}).get("diagnoses") or
+        []
+    )
+    # Normalize to string bag for cheap checks
+    dx_text = " ".join(map(str, profile_dx)).lower()
+
+    has_dx_flag = any(
+        k in dx_text
+        for k in ["dementia", "alzheimer", "alzheimers", "alzheimers'", "cognitive impairment"]
+    )
+
+    # Fallback to boolean-style flags if present
+    flags = (
+        ss.get("flags", {}) or
+        ss.get("gcp_care_recommendation", {}).get("flags", {}) or
+        state.get("flags", {})
+    )
+    # A few common keys someone may already set
+    has_dx_key = any(
+        flags.get(k) for k in [
+            "mc_dx_present", "dementia_dx", "alzheimers_dx", "memory_care_dx"
+        ]
+    )
+
+    return bool(is_mc and not (has_dx_flag or has_dx_key))
+
+
+def render_mc_eligibility_banner(name: str | None = None) -> None:
+    """
+    Render a friendly eligibility note (amber banner).
+    Scoped via class 'mc-eligibility-banner' to avoid global effects.
+    """
+    person = name or st.session_state.get("person_name") or st.session_state.get("person_a_name") or "your loved one"
+    st.markdown(
+        f"""
+<div class="mc-eligibility-banner" role="note" aria-label="Memory care eligibility note">
+  <div class="mc-eligibility-icon">🛈</div>
+  <div class="mc-eligibility-content">
+    <p><strong>Note on eligibility for Memory Care</strong></p>
+    <p>Based on {person}'s cognitive symptoms and daily needs, <strong>Memory Care may be appropriate</strong>.
+    However, many communities require a <strong>formal dementia/Alzheimer's diagnosis</strong> before admission.
+    If you don't have a diagnosis yet, <strong>Assisted Living</strong> can still provide daily support and safety
+    while you speak with a physician about next steps.</p>
+  </div>
+</div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def run_module(config: ModuleConfig) -> dict[str, Any]:
     """Run a module flow defined by ModuleConfig. Returns updated module state."""
     state_key = config.state_key
@@ -1259,6 +1328,11 @@ def _render_results_view(mod: dict[str, Any], config: ModuleConfig) -> None:
             st.session_state["_gcp_cp_header_key"] = "gcp_cp_header::results"
     except Exception:
         pass
+
+    # --- Conditional Memory Care eligibility banner ---
+    route_state = st.session_state.get("current_route", {})
+    if _mc_recommended_without_dx(route_state):
+        render_mc_eligibility_banner()
 
     # Wrap the recommendation body text so we can add spacing below
     st.markdown('<div class="rec-body">', unsafe_allow_html=True)
