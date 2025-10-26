@@ -70,8 +70,15 @@ p {
 }
 
 /* Remove Streamlit's default top padding so the header can sit flush */
-section.main > div.block-container {
+/* NUCLEAR OPTION: Override all Streamlit width constraints */
+section.main,
+section.main > div,
+section.main > div.block-container,
+div.block-container,
+.block-container {
   padding-top: 0 !important;
+  max-width: 100% !important;
+  width: 100% !important;
 }
 
 /* Remove Streamlit's default vertical gap between header shell and first section */
