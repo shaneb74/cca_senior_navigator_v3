@@ -12,6 +12,16 @@ Clean tabbed comparison view with:
 
 import hashlib
 import json
+import threading
+import time
+
+import streamlit as st
+
+from core import user_persist
+from core.mcip import MCIP
+from core.nav import route_to
+import hashlib
+import json
 import time
 
 import streamlit as st
@@ -502,6 +512,8 @@ def render():
     # Pre-warm ALL visible tabs BEFORE rendering strip (concurrent + cached)
     # Uses persistent cache keyed by inputs - no recompute on reruns if unchanged
     from concurrent.futures import ThreadPoolExecutor
+    from streamlit.runtime.scriptrunner import add_script_run_ctx, get_script_run_ctx
+    
     from products.concierge_hub.cost_planner_v2.calc import compute_totals_cached
     from products.concierge_hub.cost_planner_v2.ui_helpers import totals_set
     
@@ -509,14 +521,27 @@ def render():
     selected = cost.get("selected_assessment")
     visible_tabs = [k for k, ok in avail.items() if ok]
     
+    # Verify selection is valid before warming
+    if selected not in visible_tabs and visible_tabs:
+        selected = visible_tabs[0]
+        cost["selected_assessment"] = selected
+        print(f"[QE_NORMALIZE] Corrected selection to first visible: {selected}")
+    
     # Gather inputs for cache key
     zip_for_compute = zip_code or "00000"
     hours_per_day = ss.get("comparison_hours_per_day", 8.0)
     home_carry = float(ss.get("comparison_home_carry_cost", 0) or 0)
     keep_home = ss.get("comparison_keep_home", False)
     
+    # Get script context for worker threads (eliminates warnings)
+    ctx = get_script_run_ctx()
+    
     def _warm_one(key: str) -> tuple[str, dict]:
         """Warm one tab's totals (cached by inputs)."""
+        # Attach script context to avoid "missing ScriptRunContext" warnings
+        if ctx:
+            add_script_run_ctx(threading.current_thread(), ctx)
+        
         result = compute_totals_cached(
             key,
             zip_code=zip_for_compute,
@@ -530,7 +555,7 @@ def render():
     
     # Warm all visible tabs concurrently (max 4 threads)
     with ThreadPoolExecutor(max_workers=min(4, len(visible_tabs))) as ex:
-        warmed = dict(ex.map(lambda k: _warm_one(k), visible_tabs))
+        warmed = dict(ex.map(_warm_one, visible_tabs))
     
     # Build totals dict for tab strip (now fully populated)
     totals = {k: warmed[k]["total"] for k in visible_tabs}
