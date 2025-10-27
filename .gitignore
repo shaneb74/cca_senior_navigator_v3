@@ -19,8 +19,7 @@ data/users/
 !data/users/demo/*.json
 # Event logs (contains user queries, PII-light but excluded)
 data/events.log
-# Corporate knowledge base (generated from website crawl)
-config/corp_knowledge.jsonl
+# Corporate knowledge base metadata (generated from corpus)
 config/corp_knowledge.meta.json
 *.lock
 
