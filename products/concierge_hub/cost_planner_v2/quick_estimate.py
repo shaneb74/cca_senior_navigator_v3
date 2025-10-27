@@ -118,14 +118,21 @@ def compute_cached(prefix: str, signature: dict, fn, *args, **kwargs):
 def set_selected_assessment_once(new_sel: str):
     """Set selected assessment without triggering redundant tab switches.
     
+    Single source of truth for tab selection. Tracks timestamp to identify
+    most recent user intent and prevent bounce/flicker.
+    
     Args:
         new_sel: New assessment key ("home", "al", "mc")
     """
     ss = st.session_state
     cost = ss.setdefault("cost", {})
-    if cost.get("selected_assessment") != new_sel:
+    
+    # Only update if different from current selection
+    if new_sel and new_sel != cost.get("selected_assessment"):
         cost["selected_assessment"] = new_sel
+        ss["_cp_tab_ts"] = time.time()  # Mark most recent user intent
         ss["_cp_tab_changed"] = True
+        print(f"[CP_TAB] switched to {new_sel} at {ss['_cp_tab_ts']:.3f}")
 
 # ==============================================================================
 # HELPER: User Persistence
@@ -367,8 +374,13 @@ def render():
     interim = bool(st.session_state.get("_show_mc_interim_advice", False))
     
     sel = cost.get("selected_assessment")
-    if sel not in ("home", "al", "mc"):
-        # No valid selection yet - choose based on final tier (post-adjudication)
+    
+    # Only preset selection on first mount OR if current selection is invalid
+    # DO NOT overwrite user's explicit tab choice on subsequent renders
+    need_preset = (sel not in ("home", "al", "mc")) or not avail.get(sel, False)
+    
+    if need_preset:
+        # No valid selection yet OR current selection not available
         if interim:
             # Interim AL case (MC clamped due to no DX)
             cost["selected_assessment"] = "al"
@@ -383,9 +395,8 @@ def render():
             cost["selected_assessment"] = "home"
             print(f"[QE_PRESET] Home selected (final_tier={final_tier})")
     else:
-        # if current selection is not available, fall back
-        if not avail.get(sel, False):
-            cost["selected_assessment"] = "al" if avail["al"] else "home"
+        # Valid selection exists and is available - respect it (single source of truth)
+        print(f"[QE_RETAIN] Keeping user selection: {sel}")
 
     # Log availability with full context
     print(f"[QE_AVAIL] recommended={rec} final_tier={final_tier} interim={interim} allowed={alwd} avail={avail} sel={cost['selected_assessment']}")
