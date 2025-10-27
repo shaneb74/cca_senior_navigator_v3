@@ -1312,23 +1312,26 @@ def render():
                     key="faq_send_btn",
                     disabled=is_processing,
                 )
-
-            # JavaScript to make Enter key trigger Send button
+            
+            # Enable Enter key to trigger Send button (without on_change callback)
             st.markdown(
                 """
                 <script>
-                document.addEventListener('DOMContentLoaded', function() {
-                    const input = document.querySelector('[data-testid="stTextInput"] input');
-                    if (input) {
-                        input.addEventListener('keypress', function(e) {
-                            if (e.key === 'Enter') {
+                (function() {
+                    // Find the text input and send button
+                    const input = window.parent.document.querySelector('input[aria-label="Ask about planning, costs, eligibility, or our company…"]');
+                    const sendBtn = window.parent.document.querySelector('button[kind="primaryFormSubmit"]');
+                    
+                    if (input && sendBtn && !input.dataset.enterListenerAdded) {
+                        input.dataset.enterListenerAdded = 'true';
+                        input.addEventListener('keydown', function(e) {
+                            if (e.key === 'Enter' && !e.shiftKey) {
                                 e.preventDefault();
-                                const sendBtn = document.querySelector('[data-testid="baseButton-primary"]');
-                                if (sendBtn) sendBtn.click();
+                                sendBtn.click();
                             }
                         });
                     }
-                });
+                })();
                 </script>
                 """,
                 unsafe_allow_html=True,
@@ -1347,6 +1350,9 @@ def render():
             
             send_now = st.session_state.pop("faq_send_now", False)
             should_send = send_clicked or send_now
+            
+            # Capture the CURRENT question IMMEDIATELY before any processing
+            current_question = user_q.strip() if user_q else ""
 
             if send_now and st.session_state.get("faq_composer"):
                 user_q = st.session_state["faq_composer"]
@@ -1367,79 +1373,53 @@ def render():
                     text = msg["text"]
 
                     if role == "user":
-                        st.markdown(
-                            f"""
-                            <div class=\"chat-message chat-message--user\">
-                              <div class=\"chat-avatar chat-avatar--user\">You</div>
-                              <div class=\"chat-bubble chat-bubble--user\">{text}</div>
-                            </div>
-                            """,
-                            unsafe_allow_html=True,
-                        )
+                        # Skip rendering user messages - show question in input only
+                        pass
                     elif role == "typing":
-                        st.markdown(
-                            """
-                            <div class=\"chat-message chat-message--assistant\">
-                              <div class=\"chat-avatar\">N</div>
-                              <div class=\"chat-bubble chat-bubble--assistant\"><em>Navi is typing...</em></div>
-                            </div>
-                            """,
-                            unsafe_allow_html=True,
-                        )
+                        st.markdown("*Navi is typing...*")
                     else:
-                        badge_html = ""
-                        if msg.get("is_easter_egg"):
-                            badge_html = '<span class="chat-badge">🥚 Easter Egg found! (Dev mode only)</span>'
-                        elif msg.get("is_mini_faq"):
-                            badge_html = '<span class="chat-badge">🚀 Instant answer</span>'
-                        elif msg.get("is_canonical"):
-                            badge_html = '<span class="chat-badge">✅ Canonical answer</span>'
-                        elif msg.get("is_error"):
-                            badge_html = '<span class="chat-badge">⚠️ Something went wrong</span>'
-
-                        # Message content handling
-                        # Answer is already sanitized Markdown from llm_mediator
-                        # Use st.markdown to render it properly (no HTML escaping)
-                        safe_text = text
-
-                        sources_html = ""
-                        source_metas = msg.get("source_metas", [])
-                        sources = msg.get("sources", [])
-
-                        if source_metas:
-                            pill_html = []
-                            for meta in source_metas[:3]:
-                                title = meta.get("title", "Untitled")
+                        # Assistant message - simple, clean Markdown rendering
+                        
+                        # Prepare clean Markdown answer (already sanitized by llm_mediator)
+                        is_html = msg.get("is_html", False)
+                        answer_md = _sanitize_to_md(text) if not is_html else text
+                        
+                        # Prepare Markdown sources
+                        sources_lines = []
+                        if msg.get("source_metas"):
+                            for meta in msg.get("source_metas")[:4]:
+                                title = meta.get("title", "Source")
                                 url = meta.get("url", "")
-                                freshness = fmt_date(meta.get("last_fetched", ""))
-                                if freshness:
-                                    pill_text = f"{title} (Updated {freshness})"
-                                else:
-                                    pill_text = title
-                                pill_text = html.escape(pill_text)
                                 if url:
-                                    pill_html.append(f'<a class="chat-source-pill" href="{url}" target="_blank">{pill_text}</a>')
+                                    sources_lines.append(f"- [{title}]({url})")
                                 else:
-                                    pill_html.append(f'<span class="chat-source-pill">{pill_text}</span>')
-                            sources_html = f"<div class='chat-sources'>{''.join(pill_html)}</div>"
-                        elif sources:
-                            pill_html = [
-                                f"<span class='chat-source-pill'>{html.escape(src)}</span>"
-                                for src in sources[:3]
-                            ]
-                            sources_html = f"<div class='chat-sources'>{''.join(pill_html)}</div>"
-
-                        # Render assistant message with clean Markdown (no HTML wrappers)
-                        st.markdown(badge_html, unsafe_allow_html=True) if badge_html else None
-                        st.markdown(safe_text)  # Let Streamlit render Markdown naturally
-                        st.markdown(sources_html, unsafe_allow_html=True) if sources_html else None
+                                    sources_lines.append(f"- {title}")
+                        elif msg.get("sources"):
+                            for src in msg.get("sources")[:4]:
+                                if isinstance(src, dict):
+                                    title = src.get("title", "Source")
+                                    url = src.get("url", "")
+                                    if url:
+                                        sources_lines.append(f"- [{title}]({url})")
+                                    else:
+                                        sources_lines.append(f"- {title}")
+                                else:
+                                    sources_lines.append(f"- {html.escape(str(src))}")
+                        
+                        sources_md = ""
+                        if sources_lines:
+                            sources_md = "\n\n**Sources:**\n" + "\n".join(sources_lines)
+                        
+                        # Simple container for answer
+                        with st.container():
+                            st.markdown(answer_md + sources_md)
 
                         with st.container():
                             st.markdown('<div class="chat-sentinel chat-action-sentinel"></div>', unsafe_allow_html=True)
                             action_cols = st.columns([1, 1, 1, 1], gap="small")
                             with action_cols[0]:
-                                # Copy button uses sanitized Markdown text
-                                copy_text = _sanitize_to_md(text)
+                                # Copy button uses original text (sanitized but not HTML-escaped)
+                                copy_text = _sanitize_to_md(text) if not is_html else text
                                 _copy_button(copy_text, key=f"copy_{idx}")
                             with action_cols[1]:
                                 share_query = msg.get("user_query", "")
@@ -1530,8 +1510,8 @@ def render():
             st.markdown('<div class="chat-divider"></div>', unsafe_allow_html=True)
     
     # ─── Process Question ───
-    if should_send and user_q and user_q.strip():
-        q = user_q.strip()
+    if should_send and current_question:
+        q = current_question
         
         # Set processing flag (#3)
         st.session_state["faq_processing"] = True
