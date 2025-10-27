@@ -282,8 +282,9 @@ def _get_corp_chunks_mtime() -> float:
 
 @st.cache_data(show_spinner=False)
 def load_corp_chunks(_mtime: float | None = None) -> list[dict[str, Any]]:
-    """Load corporate knowledge chunks from config/corp_knowledge.jsonl.
+    """Load corporate knowledge chunks from prebuilt index or JSONL fallback.
     
+    Prefers config/corp_index.pkl (instant loading) over JSONL (slower parsing).
     Cache automatically refreshes when file is updated (via _mtime parameter).
     
     Args:
@@ -302,8 +303,25 @@ def load_corp_chunks(_mtime: float | None = None) -> list[dict[str, Any]]:
             "type": str  # about, leadership, services, blog (Stage 3.6)
         }
     """
+    import os
+    import pickle
+    from pathlib import Path
+    
+    # Try prebuilt index first (instant loading)
+    index_path = Path("config/corp_index.pkl")
+    if index_path.exists():
+        try:
+            with index_path.open("rb") as f:
+                index_data = pickle.load(f)
+            chunks = index_data['chunks']
+            built_at = index_data.get('built_at', 'unknown')
+            print(f"[RAG_STATS] chunks={len(chunks)} source=prebuilt_index built={built_at}")
+            return chunks
+        except Exception as e:
+            print(f"[RAG_LOAD_ERROR] Failed to load prebuilt index: {e}, falling back to JSONL")
+    
+    # Fallback to JSONL (original logic)
     try:
-        import os
         chunks_path = "config/corp_knowledge.jsonl"
         if not os.path.exists(chunks_path):
             print(f"[CORP_KNOWLEDGE_WARN] {chunks_path} not found - run 'make sync-site'")
@@ -316,6 +334,7 @@ def load_corp_chunks(_mtime: float | None = None) -> list[dict[str, Any]]:
                     chunks.append(json.loads(line))
                 except Exception:
                     pass
+        print(f"[RAG_STATS] chunks={len(chunks)} source=config/corp_knowledge.jsonl")
         return chunks
     except Exception as e:
         print(f"[CORP_CHUNKS_ERROR] {e}")
@@ -348,7 +367,9 @@ def load_corp_mini_faq() -> list[dict[str, Any]]:
 
 @st.cache_resource
 def build_corp_index(chunks: tuple) -> tuple:
-    """Build and cache TF-IDF index for corp knowledge chunks (Stage 3.6).
+    """Load prebuilt TF-IDF index or build in-memory fallback (Stage 3.6).
+    
+    Prefers loading from config/corp_index.pkl (instant) over rebuilding.
     
     Args:
         chunks: Tuple of chunk JSON strings (for hashability)
@@ -356,6 +377,20 @@ def build_corp_index(chunks: tuple) -> tuple:
     Returns:
         Tuple of (vectorizer, matrix, chunk_list) for reuse
     """
+    import pickle
+    from pathlib import Path
+    
+    # Try prebuilt index first
+    index_path = Path("config/corp_index.pkl")
+    if index_path.exists():
+        try:
+            with index_path.open("rb") as f:
+                index_data = pickle.load(f)
+            return index_data['vectorizer'], index_data['matrix'], index_data['chunks']
+        except Exception as e:
+            print(f"[RAG_INDEX_ERROR] Failed to load prebuilt index: {e}, rebuilding...")
+    
+    # Fallback: build in-memory (original logic)
     try:
         from sklearn.feature_extraction.text import TfidfVectorizer
         
@@ -369,6 +404,7 @@ def build_corp_index(chunks: tuple) -> tuple:
         vectorizer = TfidfVectorizer(stop_words="english", max_features=500)
         X = vectorizer.fit_transform(texts)
         
+        print("[RAG_INDEX_WARN] Built in-memory (should use prebuilt index)")
         return vectorizer, X, chunk_list
     except Exception as e:
         print(f"[CORP_INDEX_BUILD_ERROR] {e}")
@@ -1618,6 +1654,7 @@ def render():
                 "long-term care insurance", "trust"
             ]
             is_corp_query = any(kw in q.lower() for kw in corp_keywords)
+            corp_hits = []
             
             print(f"[CORP_ROUTING] query='{q}' is_corp_query={is_corp_query}")
             
