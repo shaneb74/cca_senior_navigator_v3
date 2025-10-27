@@ -406,6 +406,79 @@ def render_mc_eligibility_banner(name: str | None = None) -> None:
     logging.info("MC_ELIG: banner rendered and guard set")
 
 
+# ==============================================================================
+# GCP DECISION PIPELINE
+# ==============================================================================
+
+def run_gcp_decision_pipeline(state) -> tuple[str, dict[str, Any]]:
+    """
+    Centralized GCP decision pipeline - runs once at Daily Living Continue.
+    
+    1) Collect all step inputs
+    2) Compute deterministic tier
+    3) Ask LLM mediator (if enabled)
+    4) Adjudicate+publish into state['gcp'] and set summary_ready
+    5) Set move_required gating flag
+    6) Return (final_tier, meta)
+    
+    Args:
+        state: Streamlit session state
+    
+    Returns:
+        tuple: (final_tier, advisory_meta)
+    """
+    print("[GCP_PIPELINE] Starting centralized decision pipeline")
+    
+    # 1) Collect all GCP inputs from previous steps
+    gcp = state.setdefault("gcp", {})
+    module_state = state.get("gcp_care_recommendation", {})
+    
+    # 2) Compute deterministic tier using existing derive_outcome
+    from products.concierge_hub.gcp_v4.modules.care_recommendation.logic import derive_outcome
+    from products.concierge_hub.gcp_v4.modules.care_recommendation.flags import build_flags
+    
+    outcome = derive_outcome(module_state)
+    det_tier = outcome.get("tier") if isinstance(outcome, dict) else getattr(outcome, "tier", "in_home")
+    flags = build_flags(module_state)
+    
+    print(f"[GCP_PIPELINE] Deterministic tier: {det_tier}")
+    
+    # 3) Get LLM tier if enabled (derive_outcome already computed it)
+    llm_tier = outcome.get("llm_tier") if isinstance(outcome, dict) else getattr(outcome, "llm_tier", None)
+    allowed_tiers = outcome.get("allowed_tiers") if isinstance(outcome, dict) else getattr(outcome, "allowed_tiers", set())
+    
+    # 4) Adjudicate final tier (handles MC clamp logic)
+    final_tier, meta = adjudicate_final_tier(det_tier, llm_tier)
+    
+    print(f"[GCP_PIPELINE] Final tier after adjudication: {final_tier}")
+    
+    # 5) Publish to gcp state
+    gcp["published_tier"] = final_tier
+    gcp["recommended_tier"] = det_tier  # Keep original for reference
+    gcp["allowed_tiers"] = list(allowed_tiers) if allowed_tiers else []
+    gcp["advisory_meta"] = meta
+    gcp["flags"] = flags
+    
+    # 6) Set move preference gating
+    move_required = final_tier not in ("in_home", "in_home_care", "independent")
+    gcp["move_required"] = move_required
+    
+    # 7) Mark summary ready so Summary page can render immediately
+    gcp["summary_ready"] = True
+    state["summary_ready"] = True
+    
+    # 8) Set navigation override for next step
+    state["gcp_next_step_override"] = "move_preferences" if move_required else "results"
+    
+    print(f"[GCP_PIPELINE] Pipeline complete: tier={final_tier} move={move_required} next={state['gcp_next_step_override']}")
+    
+    # 9) Trigger LLM summary generation (ensure_summary_ready)
+    from products.concierge_hub.gcp_v4.modules.care_recommendation.logic import ensure_summary_ready
+    ensure_summary_ready(module_state, flags, final_tier)
+    
+    return final_tier, meta
+
+
 def run_module(config: ModuleConfig) -> dict[str, Any]:
     """Run a module flow defined by ModuleConfig. Returns updated module state."""
     state_key = config.state_key
@@ -820,6 +893,33 @@ def _handle_nav(
 ) -> None:
     if not (next_clicked or skip_clicked):
         return
+
+    # CRITICAL: Trigger GCP decision pipeline when leaving Daily Living step
+    if config.product == "gcp_v4" and step.id == "daily_living" and next_clicked:
+        print("[GCP_PIPELINE_TRIGGER] Daily Living complete - running decision pipeline")
+        try:
+            final_tier, meta = run_gcp_decision_pipeline(st.session_state)
+            print(f"[GCP_PIPELINE_TRIGGER] Pipeline complete: tier={final_tier}")
+            
+            # Check for next step override (move_preferences or results)
+            if "gcp_next_step_override" in st.session_state:
+                next_step = st.session_state.pop("gcp_next_step_override")
+                # Find the index of the target step
+                for idx, s in enumerate(config.steps):
+                    if s.id == next_step:
+                        st.session_state[f"{config.state_key}._step"] = idx
+                        
+                        # Update tile state
+                        tiles = st.session_state.setdefault("tiles", {})
+                        tile_state = tiles.setdefault(config.product, {})
+                        tile_state["last_step"] = idx
+                        
+                        print(f"[GCP_PIPELINE_TRIGGER] Routing to {next_step} (index {idx})")
+                        _rerun_app()
+                        return
+        except Exception as e:
+            print(f"[GCP_PIPELINE_ERROR] {e}")
+            # Continue with normal flow on error
 
     next_index = min(step_index + 1, total_steps - 1)
     st.session_state[f"{config.state_key}._step"] = next_index
