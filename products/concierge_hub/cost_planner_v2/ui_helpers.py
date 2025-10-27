@@ -307,7 +307,23 @@ def render_confirm_hours_if_needed(current_hours_key: str = "qe_home_hours"):
     llm_high = get_llm_hours_high_end_from_gcp()
     print(f"[HOURS_CHECK] llm_high={llm_high}")
     if llm_high is None:
-        return
+        # Heuristic fallback: compute a suggested band from ADLs/IADLs/Mobility,
+        # then take the high end of that band so the advisory can render.
+        ctx_llm = get_care_context_for_llm()  # already defined in this module
+        adl = int(ctx_llm.get("adl_count") or 0)
+        iadl = int(ctx_llm.get("iadl_count") or 0)
+        mobility = str(ctx_llm.get("mobility_level") or "independent").lower()
+        score = adl * 1.5 + iadl * 0.75 + (2 if mobility in ("wheelchair", "bedbound") else 0)
+        if score >= 6:
+            band = "8-12h/day"
+        elif score >= 3:
+            band = "4-8h/day"
+        else:
+            band = "2-4h/day"
+        llm_high = parse_hours_band_to_high_end(band)
+        print(f"[HOURS_CHECK] fallback_llm_high={llm_high} band={band}")
+        if llm_high is None:
+            return
 
     # 2) Current hours value (use new helper)
     current = ensure_home_hours_scalar()
