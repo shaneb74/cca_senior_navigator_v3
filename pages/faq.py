@@ -1312,6 +1312,30 @@ def render():
                     key="faq_send_btn",
                     disabled=is_processing,
                 )
+            
+            # Enable Enter key to trigger Send button (without on_change callback)
+            st.markdown(
+                """
+                <script>
+                (function() {
+                    // Find the text input and send button
+                    const input = window.parent.document.querySelector('input[aria-label="Ask about planning, costs, eligibility, or our company…"]');
+                    const sendBtn = window.parent.document.querySelector('button[kind="primaryFormSubmit"]');
+                    
+                    if (input && sendBtn && !input.dataset.enterListenerAdded) {
+                        input.dataset.enterListenerAdded = 'true';
+                        input.addEventListener('keydown', function(e) {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                sendBtn.click();
+                            }
+                        });
+                    }
+                })();
+                </script>
+                """,
+                unsafe_allow_html=True,
+            )
 
             st.markdown(
                 f"""
