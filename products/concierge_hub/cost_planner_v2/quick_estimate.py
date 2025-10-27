@@ -118,9 +118,15 @@ FINAL_SELECTION_CSS = """
 .sn-app .cp-finalselect .final-card.is-selected .radio-dot {
   border-color: #0D1F4B; box-shadow: inset 0 0 0 4px #0D1F4B;
 }
-/* ensure any invisible buttons used for click capture do not look like buttons */
+/* Ensure invisible Streamlit buttons do not render visible squares */
 .sn-app .cp-finalselect .stButton > button {
-  position: absolute; inset: 0; opacity: 0; border: 0; background: transparent !important;
+  position: absolute !important;
+  inset: 0 !important;
+  opacity: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  cursor: pointer !important;
 }
 .sn-app .cp-finalselect .current {
   margin-top: 10px; font-size: 0.95rem; color: #0D1F4B;
