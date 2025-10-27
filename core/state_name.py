@@ -2,6 +2,7 @@
 Central name helpers for robust name handling across all pages and reruns.
 """
 
+from typing import Optional
 import streamlit as st
 
 
@@ -99,7 +100,7 @@ def set_person_name(name: str) -> None:
     st.session_state["profile"]["person_name"] = trimmed_name
 
 
-def get_person_name() -> str | None:
+def get_person_name() -> Optional[str]:
     """Read person name in priority order: person_a_name, person_name, planning_for_name, profile.person_name.
     
     Returns:

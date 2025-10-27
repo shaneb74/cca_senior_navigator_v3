@@ -756,6 +756,13 @@ FAQ CONTEXT:
         # Normalize to clean Markdown (strip HTML shells and unescape entities)
         answer_text = _normalize_answer(answer_text)
         
+        # DEBUG: Verify sanitization worked
+        if "<" in answer_text:
+            print(f"[FAQ_SANITIZE_FAIL] ⚠️  HTML remained after _normalize_answer!")
+            print(f"  Output: {answer_text[:200]}")
+        else:
+            print(f"[FAQ_SANITIZE_OK] ✓ Clean Markdown output")
+        
         # Validate CTA
         cta = result.get("cta", default_cta)
         if not cta or not isinstance(cta, dict) or "route" not in cta:
