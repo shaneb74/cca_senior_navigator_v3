@@ -64,23 +64,23 @@ def flush_costplan_if_due(force: bool = False) -> None:
         ss.pop("_costplan_due_ts", None)
 
 
-def _maybe_cleanup_files():
+def _maybe_cleanup_files(force: bool = False):
     """Throttled cleanup - only run on route changes or every 60s.
     
     Prevents per-rerun cleanup spam while ensuring orphans are removed periodically.
-    Note: Placeholder for future cleanup logic - currently no orphan cleanup needed.
+    
+    Args:
+        force: If True, run cleanup immediately regardless of timeout
     """
     ss = st.session_state
     now = time.time()
-    route_changed = ss.pop("_route_changed", False)
     last_cleanup = ss.get("_last_cleanup_ts", 0)
     
-    if route_changed or (now - last_cleanup >= 60):
+    if force or (now - last_cleanup >= 60):
+        print("[CLEANUP] running...")
         # Placeholder for future cleanup logic
-        # Example: cleanup_orphans() from utils
+        # Example: cleanup_orphans() from utils when available
         ss["_last_cleanup_ts"] = now
-        if route_changed:
-            print(f"[CP_CLEANUP] route change detected (cleanup hook ready)")
 
 
 # ==============================================================================
@@ -438,6 +438,23 @@ def render():
     if not has_zip:
         st.warning("⚠️ **ZIP code required:** Return to the previous page to enter your ZIP code.")
         st.markdown("")
+
+    # Pre-warm totals for visible tabs to avoid flicker on first render
+    # Compute totals for recommended tab first, then other available tabs
+    from products.concierge_hub.cost_planner_v2.ui_helpers import get_cached_monthly_total
+    
+    selected = cost.get("selected_assessment")
+    totals_cache = cost.get("totals_cache") or {}
+    
+    # Priority order: selected first, then other available tabs
+    tabs_to_warm = [selected] + [k for k, v in avail.items() if v and k != selected]
+    
+    for key in tabs_to_warm:
+        if key not in totals_cache:
+            # Trigger lazy compute by calling get_cached - will populate totals_cache
+            _ = get_cached_monthly_total(key)
+    
+    print(f"[QE_PREWARM] warmed totals for tabs={tabs_to_warm} cache_keys={list(totals_cache.keys())}")
 
     # C) Compact cost tabs (horizontal with costs under labels)
     _render_compact_cost_tabs()
@@ -839,18 +856,18 @@ def _render_bottom_ctas():
 
                 # Navigate to Cost Planner v2 triage step
                 print(f"[CTA_PAY] → cost_v2 triage (path={cost['path_choice']})")
-                flush_costplan_if_due(force=True)
-                _maybe_cleanup_files()
                 st.session_state["_route_changed"] = True
+                flush_costplan_if_due(force=True)
+                _maybe_cleanup_files(force=True)
                 st.session_state.cost_v2_step = "triage"
                 st.query_params["page"] = "cost_v2"
                 st.rerun()
 
     with col2:
         if st.button("← Back to Hub", use_container_width=True, key="qe_back_hub"):
-            flush_costplan_if_due(force=True)
-            _maybe_cleanup_files()
             st.session_state["_route_changed"] = True
+            flush_costplan_if_due(force=True)
+            _maybe_cleanup_files(force=True)
             route_to("hub_concierge")
 
     # Display inline error if CTA validation failed
