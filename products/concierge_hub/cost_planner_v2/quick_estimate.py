@@ -71,6 +71,62 @@ PATH_CARDS_CSS = """
 .sn-app .cp-path .path-list a:hover { border-color: #CBD5E1; }
 """
 
+# Scoped styles for the final path selection (Choose Your Path Forward)
+FINAL_SELECTION_CSS = """
+/* === Scoped to Cost Planner final selection grid === */
+.sn-app .cp-finalselect { margin-top: 12px; }
+.sn-app .cp-finalselect .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+@media (max-width: 900px) {
+  .sn-app .cp-finalselect .grid { grid-template-columns: 1fr; }
+}
+.sn-app .cp-finalselect .final-card {
+  position: relative;
+  border: 1px solid var(--border-primary, #E5E7EB);
+  border-radius: 12px;
+  background: #FFF;
+  padding: 16px 48px 14px 16px;
+  min-height: 84px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  transition: box-shadow .15s ease, border-color .15s ease, transform .05s ease;
+}
+.sn-app .cp-finalselect .final-card:hover {
+  border-color: #CBD5E1;
+  box-shadow: 0 3px 10px rgba(13,31,75,0.08);
+  transform: translateY(-1px);
+}
+.sn-app .cp-finalselect .final-card.is-selected {
+  border-color: #0D1F4B;
+  box-shadow: 0 0 0 2px rgba(13,31,75,0.10);
+}
+.sn-app .cp-finalselect .icon {
+  display: inline-flex;
+  align-items: center; justify-content: center;
+  width: 32px; height: 32px; margin-right: 10px;
+  background: #F1F5F9; border-radius: 8px; font-size: 18px;
+}
+.sn-app .cp-finalselect .title {
+  font-weight: 700; color: #0D1F4B; margin: 0 0 4px 0;
+}
+.sn-app .cp-finalselect .sub {
+  margin: 0; color: #475569; font-size: 0.95rem;
+}
+.sn-app .cp-finalselect .radio-dot {
+  position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+  width: 18px; height: 18px; border-radius: 999px; border: 2px solid #94A3B8;
+  background: #FFF;
+}
+.sn-app .cp-finalselect .final-card.is-selected .radio-dot {
+  border-color: #0D1F4B; box-shadow: inset 0 0 0 4px #0D1F4B;
+}
+/* ensure any invisible buttons used for click capture do not look like buttons */
+.sn-app .cp-finalselect .stButton > button {
+  position: absolute; inset: 0; opacity: 0; border: 0; background: transparent !important;
+}
+.sn-app .cp-finalselect .current {
+  margin-top: 10px; font-size: 0.95rem; color: #0D1F4B;
+}
+"""
+
 
 # ==============================================================================
 # WRITE-BEHIND FOR COSTPLAN (DEBOUNCED, DEDUPED)
@@ -348,6 +404,7 @@ def render():
     
     # Inject scoped CSS for path forward cards (once per session)
     inject_module_css_once(PATH_CARDS_CSS)
+    inject_module_css_once(FINAL_SELECTION_CSS)
 
     # Get ZIP from session state
     zip_code = st.session_state.get("cost.inputs", {}).get("zip") or st.session_state.get("cost_v2_quick_zip")
@@ -491,9 +548,9 @@ def render():
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # E) Choose Your Path Forward (link-cards)
+    # E) Choose Your Path Forward (static selection grid)
     st.markdown("---")
-    cp_render_path_forward()
+    cp_render_final_selection_grid()
 
     # F) Bottom CTAs
     _render_bottom_ctas()
@@ -815,6 +872,97 @@ def _render_facility_card(tier: str, zip_code: str, show_keep_home: bool = False
 # ==============================================================================
 # PATH SELECTION
 # ==============================================================================
+
+# Map internal tier keys to display
+_PATH_META = {
+    "in_home": {
+        "icon": "🏠",
+        "title": "In-Home Care",
+        "sub": "Stay in your home with support",
+    },
+    "assisted_living": {
+        "icon": "⭐",
+        "title": "Assisted Living",
+        "sub": "Community living with assistance",
+    },
+    "memory_care": {
+        "icon": "🧠",
+        "title": "Memory Care",
+        "sub": "Specialized cognitive support",
+    },
+}
+
+
+def cp_render_final_selection_grid():
+    """Static, non-button selection tiles for the final path choice.
+       Writes to st.session_state['cp_final_choice'] only.
+       No tab-switching, no layout shift.
+    """
+    gcp = st.session_state.get("gcp", {})
+    allowed = gcp.get("allowed_tiers") or []
+    # Normalize to expected keys used in _PATH_META
+    norm = []
+    for k in ["in_home", "assisted_living", "memory_care"]:
+        # Check both exact match and variants (in_home_care)
+        if k in allowed or f"{k}_care" in allowed:
+            norm.append(k)
+    
+    if not norm:
+        return  # nothing to show
+
+    st.markdown("### Choose Your Path Forward")
+    st.markdown('<div class="cp-finalselect">', unsafe_allow_html=True)
+    st.caption("Select the care type that best fits your situation:")
+
+    # init selection if missing
+    if "cp_final_choice" not in st.session_state:
+        # default to recommended_tier if available and allowed, else first allowed
+        rec = gcp.get("recommended_tier")
+        # Normalize recommended tier (e.g., "in_home_care" -> "in_home")
+        rec_normalized = rec.replace("_care", "") if rec else None
+        st.session_state["cp_final_choice"] = rec_normalized if rec_normalized in norm else norm[0]
+
+    # Render grid
+    st.markdown('<div class="grid">', unsafe_allow_html=True)
+    cols = st.columns(len(norm))
+    for idx, key in enumerate(norm):
+        meta = _PATH_META.get(key, {})
+        icon = meta.get("icon", "•")
+        title = meta.get("title", key.replace("_", " ").title())
+        sub = meta.get("sub", "")
+
+        is_selected = (st.session_state.get("cp_final_choice") == key)
+
+        with cols[idx]:
+            # Invisible button to capture click; visual card is pure HTML
+            clicked = st.button("", key=f"cp_finalpick_{key}")
+            st.markdown(
+                f"""
+<div class="final-card {'is-selected' if is_selected else ''}">
+  <div class="icon">{icon}</div>
+  <div class="body">
+    <p class="title">{title}</p>
+    <p class="sub">{sub}</p>
+  </div>
+  <div class="radio-dot"></div>
+</div>
+""",
+                unsafe_allow_html=True,
+            )
+
+            if clicked:
+                st.session_state["cp_final_choice"] = key
+                print(f"[FINAL_PATH_SET] {key}")
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # show a non-invasive confirmation line; no layout shift elsewhere
+    chosen = st.session_state.get("cp_final_choice")
+    chosen_label = _PATH_META.get(chosen, {}).get("title", chosen)
+    st.markdown(f'<div class="current">Current selection: <strong>{chosen_label}</strong></div>', unsafe_allow_html=True)
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
 
 def cp_render_path_forward():
     """Render Choose Your Path Forward as link-cards with invisible button wiring."""
