@@ -450,22 +450,20 @@ def render():
         st.warning("⚠️ **ZIP code required:** Return to the previous page to enter your ZIP code.")
         st.markdown("")
 
-    # Pre-warm totals for visible tabs to avoid flicker on first render
-    # Compute totals for recommended tab first, then other available tabs
+    # Pre-warm totals for visible tabs BEFORE rendering to avoid flicker
+    # Compute selected tab first (active), then other available tabs
     from products.concierge_hub.cost_planner_v2.ui_helpers import get_cached_monthly_total
     
     selected = cost.get("selected_assessment")
-    totals_cache = cost.get("totals_cache") or {}
     
     # Priority order: selected first, then other available tabs
     tabs_to_warm = [selected] + [k for k, v in avail.items() if v and k != selected]
     
     for key in tabs_to_warm:
-        if key not in totals_cache:
-            # Trigger lazy compute by calling get_cached - will populate totals_cache
-            _ = get_cached_monthly_total(key)
+        # Eager compute to populate cost.totals_cache before render
+        _ = get_cached_monthly_total(key)
     
-    print(f"[QE_PREWARM] warmed totals for tabs={tabs_to_warm} cache_keys={list(totals_cache.keys())}")
+    print(f"[QE_PREWARM] warmed totals for tabs={tabs_to_warm} cache={cost.get('totals_cache', {})}")
 
     # C) Compact cost tabs (horizontal with costs under labels)
     _render_compact_cost_tabs()
@@ -885,6 +883,3 @@ def _render_bottom_ctas():
     err = st.session_state.get("cost", {}).pop("cta_error", None)
     if err:
         st.caption(f"⚠️ {err}")
-
-    # Idle flush at end of render (no force - only if timeout elapsed)
-    flush_costplan_if_due(force=False)
