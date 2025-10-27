@@ -22,7 +22,7 @@ from typing import Any
 import yaml
 
 # Import existing LLM infrastructure
-from ai.llm_client import get_client
+from ai.llm_client import get_client, get_http_session
 
 
 @dataclass
@@ -69,6 +69,21 @@ def load_guardrail_policy(policy_path: str | None = None) -> dict[str, Any]:
         # Fallback to basic policy if YAML fails to load
         print(f"[GCP_POLICY_WARN] Failed to load {policy_path}: {e}")
         return _get_fallback_policy()
+
+
+@cache
+def get_mediator(policy_path: str | None = None) -> "LLMGuardrailsMediator":
+    """Get singleton mediator instance with cached policy and HTTP session.
+    
+    Cached to prevent repeated policy loads and mediator initialization.
+    
+    Args:
+        policy_path: Optional custom policy path (defaults to standard location)
+        
+    Returns:
+        Singleton LLMGuardrailsMediator instance
+    """
+    return LLMGuardrailsMediator(policy_path=policy_path)
 
 
 def _get_fallback_policy() -> dict[str, Any]:

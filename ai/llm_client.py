@@ -10,9 +10,18 @@ PRODUCTION KEY HANDLING:
 - Set ALLOW_EMBEDDED_FALLBACK=1 environment variable to enable for local testing only
 """
 
+import logging
 import os
 from functools import cache
 from pathlib import Path
+
+try:
+    import requests
+    from requests.adapters import HTTPAdapter
+    from urllib3.util.retry import Retry
+    HAS_REQUESTS = True
+except ImportError:
+    HAS_REQUESTS = False
 
 try:
     from openai import OpenAI, OpenAIError
@@ -21,6 +30,43 @@ except ImportError:
     HAS_OPENAI = False
     OpenAI = None
     OpenAIError = Exception
+
+log = logging.getLogger("app.llm")
+
+
+# ====================================================================
+# PERSISTENT HTTP SESSION (POOLED CONNECTIONS)
+# ====================================================================
+
+@cache
+def get_http_session():
+    """Get persistent HTTP session with connection pooling and retries.
+    
+    Cached singleton that reuses connections across requests for better performance.
+    
+    Returns:
+        requests.Session with configured adapter
+    """
+    if not HAS_REQUESTS:
+        return None
+    
+    session = requests.Session()
+    retry_strategy = Retry(
+        total=3,
+        backoff_factor=0.3,
+        status_forcelist=[429, 500, 502, 503, 504],
+    )
+    adapter = HTTPAdapter(
+        pool_connections=16,
+        pool_maxsize=32,
+        max_retries=retry_strategy,
+    )
+    session.mount("https://", adapter)
+    session.mount("http://", adapter)
+    session.headers.update({"User-Agent": "cca-senior-navigator/1.0"})
+    
+    log.info("[HTTP] Persistent session initialized")
+    return session
 
 
 # ====================================================================
