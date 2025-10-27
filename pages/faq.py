@@ -1604,7 +1604,18 @@ def render():
                 "consultation", "free service", "how you help",
                 # Post-move support keywords
                 "after moving", "post-move", "follow-up", "adjustment",
-                "transition support", "settling in"
+                "transition support", "settling in",
+                # Alzheimer's/dementia keywords (alz.org content)
+                "alzheimer", "dementia", "memory loss", "cognitive",
+                "stages of dementia", "diagnosis", "symptoms",
+                "caregiver", "caregiving", "behaviors", "wandering",
+                # VA benefits keywords (va.gov content)
+                "va ", "veteran", "aid and attendance", "pension",
+                "va benefits", "military", "service connected",
+                # Legal/financial planning keywords
+                "legal", "financial planning", "estate", "will",
+                "power of attorney", "advance directive", "medicaid",
+                "long-term care insurance", "trust"
             ]
             is_corp_query = any(kw in q.lower() for kw in corp_keywords)
             
