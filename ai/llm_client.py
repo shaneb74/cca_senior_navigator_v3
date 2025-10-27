@@ -4,10 +4,10 @@ OpenAI LLM client with retry logic and timeout handling.
 Reads API key from environment variables, enforces strict timeouts,
 and handles failures gracefully for shadow mode operation.
 
-PROTOTYPE KEY HANDLING:
-- Priority: st.secrets → env vars → embedded fallback
-- Embedded fallback is for local testing only
-- Set ALLOW_EMBEDDED_FALLBACK = False before production
+PRODUCTION KEY HANDLING:
+- Priority: st.secrets → env vars → (no fallback)
+- Embedded fallback DISABLED in production
+- Set ALLOW_EMBEDDED_FALLBACK=1 environment variable to enable for local testing only
 """
 
 import os
@@ -23,15 +23,15 @@ except ImportError:
 
 
 # ====================================================================
-# PROTOTYPE CONFIGURATION - REMOVE BEFORE PRODUCTION
+# PRODUCTION HYGIENE FLAG
 # ====================================================================
 
-# Allow embedded fallback key for prototype testing
-# SET TO FALSE BEFORE PRODUCTION DEPLOYMENT
-ALLOW_EMBEDDED_FALLBACK = True  # TODO: Disable before prod
+# Allow embedded fallback key ONLY if environment variable is set
+# Production deployments should NOT set this variable
+ALLOW_EMBEDDED_FALLBACK = os.getenv("ALLOW_EMBEDDED_FALLBACK", "0") == "1"
 
 # Embedded key chunks (assembled at runtime to reduce scanner detection)
-# REMOVE THESE BEFORE PRODUCTION
+# ONLY used when ALLOW_EMBEDDED_FALLBACK=1 (local testing)
 _K1 = "sk-proj-0iZdKgzfl"
 _K2 = "t0xCiPDvdRTbNThO34gbftmNGVt5p2hSU4DSRDsRn"
 _K3 = "Nxg2DwIo2N_ZSTwjvOPZ6QRhT3BlbkFJ7KoTloFKECU"
@@ -105,11 +105,14 @@ def get_api_key() -> str | None:
         _maybe_debug_masked_key(key)
         return key
 
-    # 3) Embedded fallback (prototype only)
-    key = _embedded_key()
-    if key:
-        _maybe_debug_masked_key(key)
-    return key
+    # 3) Embedded fallback (ONLY if explicitly enabled via environment variable)
+    if ALLOW_EMBEDDED_FALLBACK:
+        key = _embedded_key()
+        if key:
+            _maybe_debug_masked_key(key)
+            return key
+    
+    return None
 
 
 def get_openai_model() -> str:

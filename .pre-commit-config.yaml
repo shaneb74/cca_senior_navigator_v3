@@ -1,0 +1,22 @@
+repos:
+  - repo: local
+    hooks:
+      - id: ci-guard
+        name: CI Guard (CSS/HTML Regression Check)
+        entry: python tools/ci_guard.py
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [commit]
+      
+      - id: sanitizer-tests
+        name: Sanitizer Tests
+        entry: pytest tests/test_sanitizer.py -v
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [commit]
+
+# To install:
+# pip install pre-commit
+# pre-commit install

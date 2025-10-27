@@ -132,7 +132,7 @@ def get_answer(
         elif mode == "faq":
             sources = result.get("sources", [])[:2]
         
-        return {
+        response = {
             "answer": result.get("answer", ""),
             "mode": mode,
             "sources": sources,
@@ -144,6 +144,13 @@ def get_answer(
                 "urls": used_urls if used_urls else None,
             },
         }
+        
+        # Telemetry: log routing and sanity check for HTML residue
+        print(f"[ADVISOR_ROUTE] mode={response.get('mode')} hits={len(response.get('sources',[])) if isinstance(response.get('sources'), list) else 0}")
+        if "<" in response.get("answer", ""):
+            print("[ADVISOR_SANITY] ⚠️  residual '<' after sanitize")
+        
+        return response
         
     except Exception as e:
         # Error fallback
