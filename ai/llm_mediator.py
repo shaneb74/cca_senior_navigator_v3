@@ -16,6 +16,7 @@ import json
 import pathlib
 import uuid
 from dataclasses import dataclass
+from functools import cache
 from typing import Any
 
 import yaml
@@ -40,6 +41,48 @@ class PolicyDecision:
     correlation_id: str
 
 
+@cache
+def load_guardrail_policy(policy_path: str | None = None) -> dict[str, Any]:
+    """Load and validate guardrails policy from YAML (cached).
+    
+    Args:
+        policy_path: Path to policy YAML file, defaults to ai/policy/llm_guardrails.yaml
+    
+    Returns:
+        Validated policy dict
+    """
+    if policy_path is None:
+        policy_path = str(pathlib.Path(__file__).parent / "policy" / "llm_guardrails.yaml")
+    
+    try:
+        with open(policy_path) as f:
+            policy = yaml.safe_load(f)
+
+        # Validate required sections
+        required_sections = ['gates', 'escalation', 'clamps', 'weights', 'confidence', 'output_contract']
+        for section in required_sections:
+            if section not in policy:
+                raise ValueError(f"Missing required policy section: {section}")
+
+        return policy
+    except Exception as e:
+        # Fallback to basic policy if YAML fails to load
+        print(f"[GCP_POLICY_WARN] Failed to load {policy_path}: {e}")
+        return _get_fallback_policy()
+
+
+def _get_fallback_policy() -> dict[str, Any]:
+    """Minimal fallback policy when YAML loading fails."""
+    return {
+        'gates': {'mc_block_if_absent': True, 'memory_care_requires_any': ['severe_cognitive_risk']},
+        'escalation': {'bump_to_assisted_living_when': {'all_of': []}},
+        'clamps': {'strong_stay_home_to': 'in_home_plus'},
+        'weights': {'safety': 0.4, 'emotional_fit': 0.3, 'cost': 0.2, 'preference': 0.1},
+        'confidence': {'min_threshold': 0.8, 'fallback_to': 'deterministic'},
+        'output_contract': {'empathy_validation': {'min_score': 8}}
+    }
+
+
 class LLMGuardrailsMediator:
     """
     Policy wrapper that ensures LLM recommendations stay within safety bounds.
@@ -56,40 +99,18 @@ class LLMGuardrailsMediator:
 
     def __init__(self, policy_path: str | None = None):
         """Initialize mediator with guardrails policy."""
-        if policy_path is None:
-            policy_path = pathlib.Path(__file__).parent / "policy" / "llm_guardrails.yaml"
-
-        self.policy_path = pathlib.Path(policy_path)
-        self.policy = self._load_policy()
+        self.policy_path = policy_path
+        self.policy = load_guardrail_policy(policy_path)
 
     def _load_policy(self) -> dict[str, Any]:
         """Load and validate guardrails policy from YAML."""
-        try:
-            with open(self.policy_path) as f:
-                policy = yaml.safe_load(f)
-
-            # Validate required sections
-            required_sections = ['gates', 'escalation', 'clamps', 'weights', 'confidence', 'output_contract']
-            for section in required_sections:
-                if section not in policy:
-                    raise ValueError(f"Missing required policy section: {section}")
-
-            return policy
-        except Exception as e:
-            # Fallback to basic policy if YAML fails to load
-            print(f"[GCP_POLICY_WARN] Failed to load {self.policy_path}: {e}")
-            return self._get_fallback_policy()
+        # Now just calls the cached function
+        return load_guardrail_policy(self.policy_path)
 
     def _get_fallback_policy(self) -> dict[str, Any]:
         """Minimal fallback policy when YAML loading fails."""
-        return {
-            'gates': {'mc_block_if_absent': True, 'memory_care_requires_any': ['severe_cognitive_risk']},
-            'escalation': {'bump_to_assisted_living_when': {'all_of': []}},
-            'clamps': {'strong_stay_home_to': 'in_home_plus'},
-            'weights': {'safety': 0.4, 'emotional_fit': 0.3, 'cost': 0.2, 'preference': 0.1},
-            'confidence': {'min_threshold': 0.8, 'fallback_to': 'deterministic'},
-            'output_contract': {'empathy_validation': {'min_score': 8}}
-        }
+        # Now just calls the module-level function
+        return _get_fallback_policy()
 
     def mediate_recommendation(
         self,
