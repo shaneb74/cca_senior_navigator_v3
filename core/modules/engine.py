@@ -452,12 +452,26 @@ def run_gcp_decision_pipeline(state) -> tuple[str, dict[str, Any]]:
     
     print(f"[GCP_PIPELINE] Final tier after adjudication: {final_tier}")
     
-    # 5) Publish to gcp state
+    # 5) Publish to gcp state (new fields)
     gcp["published_tier"] = final_tier
     gcp["recommended_tier"] = det_tier  # Keep original for reference
+    gcp["deterministic_tier"] = det_tier  # Alias for clarity
     gcp["allowed_tiers"] = list(allowed_tiers) if allowed_tiers else []
     gcp["advisory_meta"] = meta
     gcp["flags"] = flags
+    
+    # 5b) Back-fill legacy structure for older Summary code compatibility
+    # Summary may read: state["gcp_care_recommendation"]["_outcomes"]["tier"]
+    legacy = state.setdefault("gcp_care_recommendation", {})
+    legacy["_outcomes"] = {
+        "tier": final_tier,
+        "tier_rankings": outcome.get("tier_rankings", []) if isinstance(outcome, dict) else [],
+        "confidence": outcome.get("confidence", 0.0) if isinstance(outcome, dict) else 0.0,
+        "flags": flags,
+        "allowed_tiers": list(allowed_tiers) if allowed_tiers else [],
+        "rationale": outcome.get("rationale", []) if isinstance(outcome, dict) else [],
+        "tier_score": outcome.get("tier_score", 0) if isinstance(outcome, dict) else 0,
+    }
     
     # 6) Set move preference gating
     move_required = final_tier not in ("in_home", "in_home_care", "independent")
@@ -471,6 +485,7 @@ def run_gcp_decision_pipeline(state) -> tuple[str, dict[str, Any]]:
     state["gcp_next_step_override"] = "move_preferences" if move_required else "results"
     
     print(f"[GCP_PIPELINE] Pipeline complete: tier={final_tier} move={move_required} next={state['gcp_next_step_override']}")
+    print(f"[GCP_PIPELINE] Published to gcp.published_tier and back-filled legacy _outcomes")
     
     # 9) Trigger LLM summary generation (ensure_summary_ready)
     from products.concierge_hub.gcp_v4.modules.care_recommendation.logic import ensure_summary_ready
