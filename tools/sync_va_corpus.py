@@ -9,6 +9,7 @@ VA_URLS = [
     "https://www.va.gov/pension/aid-attendance-housebound/",
     "https://www.va.gov/pension/eligibility/",
     "https://www.va.gov/family-member-benefits/",
+    "https://www.va.gov/health-care/about-va-health-benefits/long-term-care/",
     "https://www.caregiver.va.gov/",
 ]
 
