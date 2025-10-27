@@ -25,144 +25,37 @@ from core.user_persist import get_current_user_id, persist_costplan
 
 
 # ==============================================================================
-# SCOPED CSS FOR PATH FORWARD CARDS
+# ACTIVE TAB HELPERS
 # ==============================================================================
 
-# Scoped styles for "Choose Your Path Forward" (Cost Planner)
-PATH_CARDS_CSS = """
-/* === Scoped to Cost Planner: Choose Your Path Forward === */
-.sn-app .cp-path { margin-top: 12px; }
-.sn-app .cp-path .path-card {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  border: 1px solid var(--border-primary, #E5E7EB);
-  background: #fff;
-  border-radius: 12px;
-  padding: 14px 16px;
-  text-decoration: none;
-  color: var(--text-primary, #0D1F4B);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-  transition: box-shadow .15s ease, transform .05s ease, border-color .15s ease;
-  cursor: pointer;
-}
-.sn-app .cp-path .path-card:hover {
-  border-color: #CBD5E1;
-  box-shadow: 0 3px 10px rgba(13,31,75,0.08);
-  transform: translateY(-1px);
-}
-.sn-app .cp-path .path-card__icon {
-  flex: 0 0 36px;
-  height: 36px; width: 36px;
-  display: grid; place-items: center;
-  background: #F1F5F9; border-radius: 10px;
-  font-size: 18px;
-}
-.sn-app .cp-path .path-card__body { flex: 1 1 auto; }
-.sn-app .cp-path .path-card__title { font-weight: 700; margin: 0; }
-.sn-app .cp-path .path-card__sub { margin: 4px 0 0 0; font-size: 0.95rem; color: #475569; }
-.sn-app .cp-path .path-card__chev { flex: 0 0 auto; color: #94A3B8; }
-
-/* Optional list-link style (non-interactive variant, if used) */
-.sn-app .cp-path .path-list a {
-  display: inline-flex; align-items: center; gap: 8px;
-  color: #0D1F4B; text-decoration: none; border-bottom: 1px solid transparent;
-}
-.sn-app .cp-path .path-list a:hover { border-color: #CBD5E1; }
-"""
-
-# Scoped styles for the final path selection (Choose Your Path Forward)
-FINAL_SELECTION_CSS = """
-/* === Scoped to Cost Planner: final selection grid (no icons, no buttons) === */
-#cp-finalselect { margin-top: 12px; }
-#cp-finalselect .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-@media (max-width: 900px) {
-  #cp-finalselect .grid { grid-template-columns: 1fr; }
+# Maps internal assessment keys to display labels used in UI
+CP_LABELS = {
+    "home": "In-Home Care",
+    "al":   "Assisted Living",
+    "mc":   "Memory Care",
 }
 
-/* Each tile wrapper ensures overlay button anchors correctly */
-#cp-finalselect .finalwrap { position: relative; }
 
-/* The visual card */
-#cp-finalselect .final-card {
-  position: relative;
-  border: 1px solid var(--border-primary, #E5E7EB);
-  border-radius: 12px;
-  background: #FFF;
-  padding: 16px 48px 14px 16px; /* space on right for radio-dot */
-  min-height: 84px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-  transition: box-shadow .15s ease, border-color .15s ease, transform .05s ease;
-}
-#cp-finalselect .final-card:hover {
-  border-color: #CBD5E1;
-  box-shadow: 0 3px 10px rgba(13,31,75,0.08);
-  transform: translateY(-1px);
-}
-#cp-finalselect .final-card.is-selected {
-  border-color: #0D1F4B;
-  box-shadow: 0 0 0 2px rgba(13,31,75,0.10);
-}
-
-#cp-finalselect .body .title { font-weight: 700; color: #0D1F4B; margin: 0 0 4px 0; }
-#cp-finalselect .body .sub   { margin: 0; color: #475569; font-size: 0.95rem; }
-
-/* Right-side radio dot indicator (visual only) */
-#cp-finalselect .radio-dot {
-  position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
-  width: 18px; height: 18px; border-radius: 999px; border: 2px solid #94A3B8; background: #FFF;
-}
-#cp-finalselect .final-card.is-selected .radio-dot {
-  border-color: #0D1F4B; box-shadow: inset 0 0 0 4px #0D1F4B;
-}
-
-/* CRITICAL: make the Streamlit button fully invisible & full-tile */
-#cp-finalselect .finalwrap [data-testid="stButton"] { position: absolute; inset: 0; }
-#cp-finalselect .finalwrap [data-testid="stButton"] > button,
-#cp-finalselect .finalwrap .stButton > button {
-  position: absolute !important;
-  inset: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  opacity: 0 !important;
-  border: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  cursor: pointer !important;
-}
-
-/* Force invisible click overlays to be truly invisible */
-#cp-finalselect [data-testid="stButton"] > button,
-#cp-finalselect .stButton > button {
-  position: absolute !important;
-  inset: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  background: transparent !important;
-  color: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  opacity: 0 !important;
-  cursor: pointer !important;
-  z-index: 5 !important; /* keeps it clickable */
-}
-
-/* Remove hover/focus states Streamlit adds dynamically */
-#cp-finalselect .stButton > button:hover,
-#cp-finalselect .stButton > button:focus,
-#cp-finalselect .stButton > button:focus-visible {
-  background: transparent !important;
-  box-shadow: none !important;
-  outline: none !important;
-}
-
-/* Confirmation line */
-#cp-finalselect .current {
-  margin-top: 10px;
-  font-size: 0.95rem;
-  color: #0D1F4B;
-}
-"""
+def get_active_assessment():
+    """Return the current active tab's key.
+    Prefer cp_selected_assessment if present; otherwise compute a valid default
+    from allowed_tiers in state['gcp'].
+    """
+    ss = st.session_state
+    k = ss.get("cp_selected_assessment")
+    if k:
+        return k
+    # Fallback to first allowed tier mapping -> our local keys
+    allowed = (ss.get("gcp", {}) or {}).get("allowed_tiers") or []
+    # Map allowed_tiers (in_home / assisted_living / memory_care) to cp keys
+    if "in_home" in allowed or "in_home_care" in allowed:
+        return "home"
+    if "assisted_living" in allowed:
+        return "al"
+    if "memory_care" in allowed or "memory_care_high_acuity" in allowed:
+        return "mc"
+    # Absolute fallback to current behavior's default
+    return "home"
 
 
 # ==============================================================================
@@ -436,12 +329,8 @@ def render():
     print("[PAGE_MOUNT] cost_quick_estimate")
     
     # Assert navigation consistency (verify interim flag matches published tier)
-    from core.modules.engine import assert_nav_consistency, inject_module_css_once
+    from core.modules.engine import assert_nav_consistency
     assert_nav_consistency(st.session_state, where="CP")
-    
-    # Inject scoped CSS for path forward cards (once per session)
-    inject_module_css_once(PATH_CARDS_CSS)
-    inject_module_css_once(FINAL_SELECTION_CSS)
 
     # Get ZIP from session state
     zip_code = st.session_state.get("cost.inputs", {}).get("zip") or st.session_state.get("cost_v2_quick_zip")
@@ -585,9 +474,12 @@ def render():
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # E) Choose Your Path Forward (static selection grid - no tab switching)
+    # E) Choose Your Path Forward (dynamic heading based on active tab)
     st.markdown("---")
-    cp_render_final_selection_grid()
+    active_key = get_active_assessment()
+    active_label = CP_LABELS.get(active_key, active_key.title().replace("_", " "))
+    st.markdown(f"### Choose Your Path Forward: {active_label}")
+    st.caption("The selected care type is based on your current tab. Change tabs above to compare paths.")
 
     # F) Bottom CTAs
     _render_bottom_ctas()
@@ -650,6 +542,10 @@ def _render_compact_cost_tabs():
             ):
                 if not is_active:
                     set_selected_assessment_once(assessment)
+                    # Mirror to cp_selected_assessment for single source of truth
+                    if assessment != st.session_state.get("cp_selected_assessment"):
+                        st.session_state["cp-selected-updated-at"] = time.time()
+                        st.session_state["cp_selected_assessment"] = assessment
                     _snapshot_costplan("tab_change")
                     st.rerun()
 
@@ -910,238 +806,6 @@ def _render_facility_card(tier: str, zip_code: str, show_keep_home: bool = False
 # PATH SELECTION
 # ==============================================================================
 
-# Map internal tier keys to display text (no icons per request)
-_PATH_META = {
-    "in_home": {
-        "title": "In-Home Care",
-        "sub": "Stay in your home with support",
-    },
-    "assisted_living": {
-        "title": "Assisted Living",
-        "sub": "Community living with assistance",
-    },
-    "memory_care": {
-        "title": "Memory Care",
-        "sub": "Specialized cognitive support",
-    },
-}
-
-
-def cp_render_final_selection_grid():
-    """Static, non-button selection tiles for final path choice.
-       Writes to st.session_state['cp_final_choice'] only.
-       No tab switching. No layout shift.
-    """
-    gcp = st.session_state.get("gcp", {})
-    allowed = gcp.get("allowed_tiers") or []
-    order = ["in_home", "assisted_living", "memory_care"]
-    choices = [k for k in order if k in allowed]
-
-    if not choices:
-        return
-
-    # Initialize selection
-    if "cp_final_choice" not in st.session_state:
-        rec = gcp.get("recommended_tier")
-        st.session_state["cp_final_choice"] = rec if rec in choices else choices[0]
-
-    st.markdown("### Choose Your Path Forward")
-    st.markdown('<div id="cp-finalselect">', unsafe_allow_html=True)
-    st.caption("Select the care type that best fits your situation:")
-
-    cols = st.columns(len(choices))
-    for idx, key in enumerate(choices):
-        meta = _PATH_META.get(key, {"title": key.replace("_", " ").title(), "sub": ""})
-        is_selected = (st.session_state.get("cp_final_choice") == key)
-
-        with cols[idx]:
-            # Wrap each tile in a positioned container so the invisible button can sit on top
-            st.markdown('<div class="finalwrap">', unsafe_allow_html=True)
-            # Invisible button to capture the click (will be stretched by CSS)
-            clicked = st.button("", key=f"cp_finalpick_{key}", use_container_width=True)
-            # Visual tile (no icons, no button look)
-            st.markdown(
-                f"""
-<div class="final-card {'is-selected' if is_selected else ''}">
-  <div class="body">
-    <p class="title">{meta['title']}</p>
-    <p class="sub">{meta['sub']}</p>
-  </div>
-  <div class="radio-dot" aria-hidden="true"></div>
-</div>
-""",
-                unsafe_allow_html=True,
-            )
-            st.markdown("</div>", unsafe_allow_html=True)
-
-            if clicked:
-                st.session_state["cp_final_choice"] = key
-                print(f"[FINAL_PATH_SET] {key}")
-
-    # Non-intrusive confirmation line (no layout change)
-    chosen = st.session_state.get("cp_final_choice")
-    chosen_label = _PATH_META.get(chosen, {}).get("title", chosen)
-    st.markdown(f'<div class="current">Current selection: <strong>{chosen_label}</strong></div>', unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
-
-
-def cp_render_path_forward():
-    """Render Choose Your Path Forward as link-cards with invisible button wiring."""
-    st.markdown("### Choose Your Path Forward")
-    
-    cost = st.session_state.get("cost", {})
-    available = cost.get("assessments_available", {"home": True, "al": True, "mc": False})
-    sel = cost.get("selected_assessment", "home")
-    
-    # Get GCP recommendation to highlight recommended path
-    gcp = st.session_state.get("gcp", {})
-    recommended_tier = gcp.get("published_tier") or gcp.get("recommended_tier")
-    
-    # Map tier to assessment key
-    tier_to_assessment = {
-        "in_home_care": "home",
-        "assisted_living": "al",
-        "memory_care": "mc",
-        "memory_care_high_acuity": "mc"
-    }
-    recommended_assessment = tier_to_assessment.get(recommended_tier)
-    
-    choices = [k for k, v in available.items() if v]
-    if not choices:
-        return
-    
-    st.markdown('<div class="cp-path">', unsafe_allow_html=True)
-    
-    # Render cards in columns based on how many are available
-    cols = st.columns(len(choices))
-    
-    card_config = {
-        "home": {
-            "icon": "🏠",
-            "title": "In-Home Care",
-            "subtitle": "Stay in your home with support"
-        },
-        "al": {
-            "icon": "⭐",
-            "title": "Assisted Living",
-            "subtitle": "Community living with assistance"
-        },
-        "mc": {
-            "icon": "🧠",
-            "title": "Memory Care",
-            "subtitle": "Specialized care for memory needs"
-        }
-    }
-    
-    clicked_choice = None
-    
-    for idx, choice in enumerate(choices):
-        with cols[idx]:
-            config = card_config.get(choice, {})
-            is_selected = (choice == sel)
-            is_recommended = (choice == recommended_assessment)
-            
-            # Add recommended star if this is the GCP recommendation
-            icon = config.get("icon", "")
-            if is_recommended and icon != "⭐":
-                icon = f"⭐ {icon}"
-            
-            # Invisible button for click detection
-            clicked = st.button(
-                label="",
-                key=f"path_forward_{choice}",
-                help=f"Explore {config.get('title', choice)} costs" + (" (Recommended for you)" if is_recommended else ""),
-                type="primary" if is_selected else "secondary",
-                use_container_width=True
-            )
-            
-            if clicked:
-                clicked_choice = choice
-            
-            # Render link-card HTML
-            selected_class = " path-card--selected" if is_selected else ""
-            st.markdown(f"""
-            <a class="path-card{selected_class}" style="display: block; margin-top: -48px;">
-              <div class="path-card__icon">{icon}</div>
-              <div class="path-card__body">
-                <div class="path-card__title">{config.get('title', '')}</div>
-                <div class="path-card__sub">{config.get('subtitle', '')}</div>
-              </div>
-              <div class="path-card__chev">›</div>
-            </a>
-            """, unsafe_allow_html=True)
-    
-    st.markdown("</div>", unsafe_allow_html=True)
-    
-    # Handle click after render to avoid rerun during render
-    if clicked_choice:
-        set_selected_assessment_once(clicked_choice, ss=st.session_state)
-        print(f"[PATH_FORWARD] clicked={clicked_choice}")
-
-
-def _render_path_selection():
-    """Render Choose Your Path Forward as clickable buttons."""
-    st.markdown("### Choose Your Path Forward")
-
-    cost = st.session_state.get("cost", {})
-    available = cost.get("assessments_available", {"home": True, "al": True, "mc": False})
-    sel = cost.get("selected_assessment", "home")
-
-    # Get GCP recommendation to highlight recommended path
-    gcp = st.session_state.get("gcp", {})
-    recommended_tier = gcp.get("published_tier") or gcp.get("recommended_tier")
-
-    # Map tier to assessment key
-    tier_to_assessment = {
-        "in_home_care": "home",
-        "assisted_living": "al",
-        "memory_care": "mc",
-        "memory_care_high_acuity": "mc"
-    }
-    recommended_assessment = tier_to_assessment.get(recommended_tier)
-
-    labels = {"home": "In-Home Care", "al": "Assisted Living", "mc": "Memory Care"}
-    choices = [k for k, v in available.items() if v]
-
-    if not choices:
-        return
-
-    # Render as button group
-    cols = st.columns(len(choices))
-
-    for idx, choice in enumerate(choices):
-        with cols[idx]:
-            is_selected = (choice == sel)
-            is_recommended = (choice == recommended_assessment)
-
-            # Button label with optional badge
-            label = labels[choice]
-            if is_recommended:
-                label = f"⭐ {label}"
-
-            # Use primary type for selected, secondary for others
-            btn_type = "primary" if is_selected else "secondary"
-
-            if st.button(
-                label,
-                key=f"path_btn_{choice}",
-                type=btn_type,
-                use_container_width=True,
-                help=f"Explore {labels[choice]} costs" + (" (Recommended for you)" if is_recommended else "")
-            ):
-                if choice != sel:
-                    st.session_state["cost.selected_assessment"] = choice
-                    _snapshot_costplan("path_change")
-                    # Update selected plan for handoff to FA
-                    plan_key_map = {
-                        "home": "inhome_in_home_care",
-                        "al": "facility_assisted_living",
-                        "mc": "facility_memory_care"
-                    }
-                    st.session_state.comparison_selected_plan = plan_key_map.get(choice, "inhome_in_home_care")
-                    st.rerun()
-
-
 # ==============================================================================
 # BOTTOM CTAs
 # ==============================================================================
@@ -1159,20 +823,29 @@ def _render_bottom_ctas():
             use_container_width=True,
             key="qe_continue"
         ):
-            # Ensure path_choice is set from selected_assessment
-            cost = st.session_state.setdefault("cost", {})
-            selected = cost.get("selected_assessment")
-            if selected:
-                # Map assessment to path_choice for PFMA compatibility
-                path_map = {"home": "in_home_care", "al": "assisted_living", "mc": "memory_care"}
-                cost["path_choice"] = path_map.get(selected, selected)
+            ss = st.session_state
+            cost = ss.setdefault("cost", {})
+            
+            # Use active tab as the selection
+            active = get_active_assessment()
+            
+            # Persist the final choice for downstream steps
+            ss["cp_final_choice"] = active
+            
+            # Ensure path_choice is set from active assessment
+            # Map assessment to path_choice for PFMA compatibility
+            path_map = {"home": "in_home_care", "al": "assisted_living", "mc": "memory_care"}
+            cost["path_choice"] = path_map.get(active, active)
+            cost["selected_assessment"] = active
+            
+            print(f"[CP_CTA] help_pay_for={active} (from active tab)")
 
             # Validate QE is ready for PFMA handoff
             ok, err = _validate_qe_ready(cost)
 
             if not ok:
                 # Store error in cost state to display inline
-                st.session_state["cost"]["cta_error"] = err
+                ss["cost"]["cta_error"] = err
                 print(f"[CTA_PAY] blocked: {err}")
                 st.rerun()
             else:
@@ -1182,8 +855,8 @@ def _render_bottom_ctas():
                 # Navigate to Cost Planner v2 triage step
                 print(f"[CTA_PAY] → cost_v2 triage (path={cost['path_choice']})")
                 flush_costplan_if_due(force=True)
-                st.session_state["_route_changed"] = True
-                st.session_state.cost_v2_step = "triage"
+                ss["_route_changed"] = True
+                ss.cost_v2_step = "triage"
                 st.query_params["page"] = "cost_v2"
                 st.rerun()
 
