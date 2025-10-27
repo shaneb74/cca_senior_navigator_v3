@@ -876,10 +876,10 @@ Otherwise, answer with: "Based on our guides/resources: [answer using chunk info
         for i, c in enumerate(chunks, 1):
             chunk_context.append({
                 "chunk_id": i,
-                "title": c["title"],
-                "heading": c["heading"],
-                "url": c["url"],
-                "text": c["text"][:500]  # Truncate long text
+                "title": c.get("title", ""),
+                "heading": c.get("heading") or c.get("section", ""),  # Handle both formats
+                "url": c.get("url", ""),
+                "text": c.get("text", "")[:500]  # Truncate long text
             })
         
         user_prompt = {

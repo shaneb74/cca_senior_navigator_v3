@@ -1619,10 +1619,16 @@ def render():
             ]
             is_corp_query = any(kw in q.lower() for kw in corp_keywords)
             
+            print(f"[CORP_ROUTING] query='{q}' is_corp_query={is_corp_query}")
+            
             if is_corp_query:
                 # Try corporate knowledge first (auto-refreshes when corpus updates)
                 corp_chunks = load_corp_chunks(_get_corp_chunks_mtime())
                 corp_hits = retrieve_corp(q, corp_chunks, k=5)
+                
+                print(f"[CORP_RETRIEVAL] total_chunks={len(corp_chunks)} retrieved={len(corp_hits)}")
+                if corp_hits:
+                    print(f"[CORP_HITS] {[(h.get('title', '')[:50], h.get('source', '')) for h in corp_hits[:3]]}")
                 
                 if corp_hits:
                     from ai.llm_mediator import answer_corp
