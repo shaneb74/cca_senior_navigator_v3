@@ -7,6 +7,7 @@ Set PERF_THRESH_MS to control logging threshold (default: 25ms).
 
 import contextlib
 import os
+import sys
 import time
 
 # Enable with PERF_TRACE=1 (default on for dev). Set PERF_THRESH_MS to control logging threshold.
@@ -33,4 +34,6 @@ def perf(tag: str):
     finally:
         dt = (time.perf_counter() - t0) * 1000.0
         if dt >= THRESH_MS:
-            print(f"[PERF] {tag} {dt:.1f} ms")
+            # Use stderr to avoid Streamlit stdout capture
+            sys.stderr.write(f"[PERF] {tag} {dt:.1f} ms\n")
+            sys.stderr.flush()

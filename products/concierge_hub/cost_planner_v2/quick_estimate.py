@@ -64,6 +64,25 @@ def flush_costplan_if_due(force: bool = False) -> None:
         ss.pop("_costplan_due_ts", None)
 
 
+def _maybe_cleanup_files(force: bool = False):
+    """Throttled cleanup - only run on route changes or every 60s.
+    
+    Prevents per-rerun cleanup spam while ensuring orphans are removed periodically.
+    
+    Args:
+        force: If True, run cleanup immediately regardless of timeout
+    """
+    ss = st.session_state
+    now = time.time()
+    last_cleanup = ss.get("_last_cleanup_ts", 0)
+    
+    if force or (now - last_cleanup >= 60):
+        print("[CLEANUP] running...")
+        # Placeholder for future cleanup logic
+        # Example: cleanup_orphans() from utils when available
+        ss["_last_cleanup_ts"] = now
+
+
 # ==============================================================================
 # PER-SIGNATURE COMPUTE CACHE
 # ==============================================================================
@@ -99,18 +118,74 @@ def compute_cached(prefix: str, signature: dict, fn, *args, **kwargs):
 def set_selected_assessment_once(new_sel: str):
     """Set selected assessment without triggering redundant tab switches.
     
+    Single source of truth for tab selection. Tracks timestamp to identify
+    most recent user intent and prevent bounce/flicker.
+    
     Args:
         new_sel: New assessment key ("home", "al", "mc")
     """
     ss = st.session_state
     cost = ss.setdefault("cost", {})
-    if cost.get("selected_assessment") != new_sel:
+    
+    # Only update if different from current selection
+    if new_sel and new_sel != cost.get("selected_assessment"):
         cost["selected_assessment"] = new_sel
+        ss["_cp_tab_ts"] = time.time()  # Mark most recent user intent
         ss["_cp_tab_changed"] = True
+        print(f"[CP_TAB] switched to {new_sel} at {ss['_cp_tab_ts']:.3f}")
 
 # ==============================================================================
 # HELPER: User Persistence
 # ==============================================================================
+
+def _eager_compute_totals(assessment: str, zip_code: str) -> float:
+    """Eagerly compute monthly total for an assessment (for pre-warming).
+    
+    Computes the total and caches it via totals_set() so it's available
+    before the card renders.
+    
+    Args:
+        assessment: Assessment key ("home", "al", "mc")
+        zip_code: ZIP code for regional pricing
+        
+    Returns:
+        Monthly total (float)
+    """
+    from products.concierge_hub.cost_planner_v2.comparison_calcs import (
+        calculate_facility_scenario,
+        calculate_inhome_scenario,
+    )
+    from products.concierge_hub.cost_planner_v2.ui_helpers import totals_set
+    
+    ss = st.session_state
+    
+    if assessment == "home":
+        breakdown = calculate_inhome_scenario(
+            zip_code=zip_code,
+            hours_per_day=ss.get("comparison_hours_per_day", 8),
+            home_carry_override=ss.get("comparison_home_carry_cost", 0) or None
+        )
+    elif assessment == "al":
+        breakdown = calculate_facility_scenario(
+            care_type="assisted_living",
+            zip_code=zip_code,
+            keep_home=ss.get("comparison_keep_home", False),
+            home_carry_override=ss.get("comparison_home_carry_cost", 0) or None
+        )
+    elif assessment == "mc":
+        breakdown = calculate_facility_scenario(
+            care_type="memory_care",
+            zip_code=zip_code,
+            keep_home=ss.get("comparison_keep_home", False),
+            home_carry_override=ss.get("comparison_home_carry_cost", 0) or None
+        )
+    else:
+        return 0.0
+    
+    monthly_total = breakdown.monthly_total
+    totals_set(assessment, monthly_total)
+    return monthly_total
+
 
 def _snapshot_costplan(event: str):
     """Persist CostPlan snapshot to disk (debounced, deduped).
@@ -265,13 +340,10 @@ def _snapshot_for_pfma(event: str = "qe_pay_cta"):
         },
     }
 
-    try:
-        persist_costplan(get_current_user_id(), snap)
-        print(f"[CTA_PAY] persisted costplan snapshot event={event}")
-        # Force flush immediately for PFMA handoff
-        flush_costplan_if_due(force=True)
-    except Exception as e:
-        print(f"[CTA_PAY] persist failed: {e}")
+    # Debounce write instead of immediate persist - will flush on route
+    with perf("persist.debounce"):
+        persist_costplan_debounced(snap, delay_ms=600)
+    print(f"[CTA_PAY] debounced costplan snapshot event={event}")
 
 
 # ==============================================================================
@@ -351,8 +423,13 @@ def render():
     interim = bool(st.session_state.get("_show_mc_interim_advice", False))
     
     sel = cost.get("selected_assessment")
-    if sel not in ("home", "al", "mc"):
-        # No valid selection yet - choose based on final tier (post-adjudication)
+    
+    # Only preset selection on first mount OR if current selection is invalid
+    # DO NOT overwrite user's explicit tab choice on subsequent renders
+    need_preset = (sel not in ("home", "al", "mc")) or not avail.get(sel, False)
+    
+    if need_preset:
+        # No valid selection yet OR current selection not available
         if interim:
             # Interim AL case (MC clamped due to no DX)
             cost["selected_assessment"] = "al"
@@ -367,9 +444,8 @@ def render():
             cost["selected_assessment"] = "home"
             print(f"[QE_PRESET] Home selected (final_tier={final_tier})")
     else:
-        # if current selection is not available, fall back
-        if not avail.get(sel, False):
-            cost["selected_assessment"] = "al" if avail["al"] else "home"
+        # Valid selection exists and is available - respect it (single source of truth)
+        print(f"[QE_RETAIN] Keeping user selection: {sel}")
 
     # Log availability with full context
     print(f"[QE_AVAIL] recommended={rec} final_tier={final_tier} interim={interim} allowed={alwd} avail={avail} sel={cost['selected_assessment']}")
@@ -422,6 +498,19 @@ def render():
     if not has_zip:
         st.warning("⚠️ **ZIP code required:** Return to the previous page to enter your ZIP code.")
         st.markdown("")
+
+    # Pre-warm ALL visible tabs BEFORE rendering strip to avoid flicker
+    # Force-compute totals for every available tab so first render is complete
+    selected = cost.get("selected_assessment")
+    visible_tabs = [k for k, ok in avail.items() if ok]
+    
+    # Eager compute all visible tabs (selected first for priority)
+    priority_order = [selected] + [k for k in visible_tabs if k != selected]
+    for key in priority_order:
+        _ = _eager_compute_totals(key, zip_code or "00000")
+    
+    # Now totals_cache is fully populated before rendering strip
+    print(f"[QE_PREWARM] computed all visible tabs={visible_tabs} cache={cost.get('totals_cache', {})}")
 
     # C) Compact cost tabs (horizontal with costs under labels)
     _render_compact_cost_tabs()
@@ -823,16 +912,18 @@ def _render_bottom_ctas():
 
                 # Navigate to Cost Planner v2 triage step
                 print(f"[CTA_PAY] → cost_v2 triage (path={cost['path_choice']})")
-                flush_costplan_if_due(force=True)
                 st.session_state["_route_changed"] = True
+                flush_costplan_if_due(force=True)
+                _maybe_cleanup_files(force=True)
                 st.session_state.cost_v2_step = "triage"
                 st.query_params["page"] = "cost_v2"
                 st.rerun()
 
     with col2:
         if st.button("← Back to Hub", use_container_width=True, key="qe_back_hub"):
-            flush_costplan_if_due(force=True)
             st.session_state["_route_changed"] = True
+            flush_costplan_if_due(force=True)
+            _maybe_cleanup_files(force=True)
             route_to("hub_concierge")
 
     # Display inline error if CTA validation failed

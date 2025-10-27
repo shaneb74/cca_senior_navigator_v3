@@ -1,7 +1,20 @@
 {
-  "python.defaultInterpreterPath": "${workspaceFolder}/venv/bin/python",
-  "python.analysis.extraPaths": ["${workspaceFolder}"],
+  // --- Python environment ---
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
   "python.terminal.activateEnvironment": true,
+
+  // --- Tell Pylance/Pyright the language level ---
+  "python.analysis.typeCheckingMode": "basic",
+  "python.analysis.diagnosticMode": "workspace",
+  "python.analysis.autoImportCompletions": true,
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}/core",
+    "${workspaceFolder}/products"
+  ],
+  "python.analysis.stubPath": "typings",
+  "python.analysis.pyrightConfigPath": "pyrightconfig.json",
+
+  // --- File system optimization ---
   "files.watcherExclude": {
     "**/venv/**": true,
     "**/.venv/**": true,

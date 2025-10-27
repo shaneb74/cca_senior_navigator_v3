@@ -485,65 +485,68 @@ def run_gcp_decision_pipeline(state) -> tuple[str, dict[str, Any]]:
     Returns:
         tuple: (final_tier, advisory_meta)
     """
-    print("[GCP_PIPELINE] Starting centralized decision pipeline")
+    from core.perf import perf
     
-    # 1) Collect all GCP inputs from previous steps
-    gcp = state.setdefault("gcp", {})
-    module_state = state.get("gcp_care_recommendation", {})
-    
-    # 2) Compute deterministic tier using existing derive_outcome
-    from products.concierge_hub.gcp_v4.modules.care_recommendation.logic import derive_outcome
-    from products.concierge_hub.gcp_v4.modules.care_recommendation.flags import build_flags
-    
-    outcome = derive_outcome(module_state)
-    det_tier = outcome.get("tier") if isinstance(outcome, dict) else getattr(outcome, "tier", "in_home")
-    flags = build_flags(module_state)
-    
-    print(f"[GCP_PIPELINE] Deterministic tier: {det_tier}")
-    
-    # 3) Get LLM tier if enabled (derive_outcome already computed it)
-    llm_tier = outcome.get("llm_tier") if isinstance(outcome, dict) else getattr(outcome, "llm_tier", None)
-    allowed_tiers = outcome.get("allowed_tiers") if isinstance(outcome, dict) else getattr(outcome, "allowed_tiers", set())
-    tier_rankings = outcome.get("tier_rankings", []) if isinstance(outcome, dict) else []
-    rationale = outcome.get("rationale", []) if isinstance(outcome, dict) else []
-    confidence = outcome.get("confidence", 0.0) if isinstance(outcome, dict) else 0.0
-    
-    # 4) Adjudicate final tier (handles MC clamp logic)
-    final_tier, meta = adjudicate_final_tier(det_tier, llm_tier)
-    
-    print(f"[GCP_PIPELINE] Final tier after adjudication: {final_tier}")
-    
-    # 5) Publish to ALL summary bindings (new + legacy)
-    publish_gcp_summary_bindings(
-        state,
-        final_tier=final_tier,
-        allowed_tiers=list(allowed_tiers) if allowed_tiers else [],
-        flags=flags,
-        rankings=tier_rankings,
-        rationale=rationale,
-        confidence=confidence,
-        advisory_meta=meta or {},
-    )
-    
-    # 6) Set additional GCP state fields
-    gcp["recommended_tier"] = det_tier  # Keep original for reference
-    gcp["deterministic_tier"] = det_tier  # Alias for clarity
-    
-    # 7) Set move preference gating
-    move_required = final_tier not in ("in_home", "in_home_care", "independent")
-    gcp["move_required"] = move_required
-    
-    # 8) Set navigation override for next step
-    state["gcp_next_step_override"] = "move_preferences" if move_required else "results"
-    
-    print(f"[GCP_PIPELINE] Pipeline complete: tier={final_tier} move={move_required} next={state['gcp_next_step_override']}")
-    print(f"[GCP_PIPELINE] Published to gcp.published_tier and back-filled legacy _outcomes")
-    
-    # 9) Trigger LLM summary generation (ensure_summary_ready)
-    from products.concierge_hub.gcp_v4.modules.care_recommendation.logic import ensure_summary_ready
-    ensure_summary_ready(module_state, flags, final_tier)
-    
-    return final_tier, meta
+    with perf("gcp.pipeline"):
+        print("[GCP_PIPELINE] Starting centralized decision pipeline")
+        
+        # 1) Collect all GCP inputs from previous steps
+        gcp = state.setdefault("gcp", {})
+        module_state = state.get("gcp_care_recommendation", {})
+        
+        # 2) Compute deterministic tier using existing derive_outcome
+        from products.concierge_hub.gcp_v4.modules.care_recommendation.logic import derive_outcome
+        from products.concierge_hub.gcp_v4.modules.care_recommendation.flags import build_flags
+        
+        outcome = derive_outcome(module_state)
+        det_tier = outcome.get("tier") if isinstance(outcome, dict) else getattr(outcome, "tier", "in_home")
+        flags = build_flags(module_state)
+        
+        print(f"[GCP_PIPELINE] Deterministic tier: {det_tier}")
+        
+        # 3) Get LLM tier if enabled (derive_outcome already computed it)
+        llm_tier = outcome.get("llm_tier") if isinstance(outcome, dict) else getattr(outcome, "llm_tier", None)
+        allowed_tiers = outcome.get("allowed_tiers") if isinstance(outcome, dict) else getattr(outcome, "allowed_tiers", set())
+        tier_rankings = outcome.get("tier_rankings", []) if isinstance(outcome, dict) else []
+        rationale = outcome.get("rationale", []) if isinstance(outcome, dict) else []
+        confidence = outcome.get("confidence", 0.0) if isinstance(outcome, dict) else 0.0
+        
+        # 4) Adjudicate final tier (handles MC clamp logic)
+        final_tier, meta = adjudicate_final_tier(det_tier, llm_tier)
+        
+        print(f"[GCP_PIPELINE] Final tier after adjudication: {final_tier}")
+        
+        # 5) Publish to ALL summary bindings (new + legacy)
+        publish_gcp_summary_bindings(
+            state,
+            final_tier=final_tier,
+            allowed_tiers=list(allowed_tiers) if allowed_tiers else [],
+            flags=flags,
+            rankings=tier_rankings,
+            rationale=rationale,
+            confidence=confidence,
+            advisory_meta=meta or {},
+        )
+        
+        # 6) Set additional GCP state fields
+        gcp["recommended_tier"] = det_tier  # Keep original for reference
+        gcp["deterministic_tier"] = det_tier  # Alias for clarity
+        
+        # 7) Set move preference gating
+        move_required = final_tier not in ("in_home", "in_home_care", "independent")
+        gcp["move_required"] = move_required
+        
+        # 8) Set navigation override for next step
+        state["gcp_next_step_override"] = "move_preferences" if move_required else "results"
+        
+        print(f"[GCP_PIPELINE] Pipeline complete: tier={final_tier} move={move_required} next={state['gcp_next_step_override']}")
+        print(f"[GCP_PIPELINE] Published to gcp.published_tier and back-filled legacy _outcomes")
+        
+        # 9) Trigger LLM summary generation (ensure_summary_ready)
+        from products.concierge_hub.gcp_v4.modules.care_recommendation.logic import ensure_summary_ready
+        ensure_summary_ready(module_state, flags, final_tier)
+        
+        return final_tier, meta
 
 
 def run_module(config: ModuleConfig) -> dict[str, Any]:

@@ -11,6 +11,7 @@ PRODUCTION KEY HANDLING:
 """
 
 import os
+from functools import cache
 from pathlib import Path
 
 try:
@@ -370,18 +371,20 @@ class LLMClient:
         )
 
 
+@cache
 def get_client(
     model: str = DEFAULT_MODEL,
     timeout: int = DEFAULT_TIMEOUT,
 ) -> LLMClient | None:
-    """Get LLM client with default settings.
+    """Get LLM client with default settings (cached).
     
     Convenience function for creating client with standard configuration.
     Returns None if client cannot be created (missing API key, etc.).
+    Client instance is cached to avoid repeated initialization.
     
     Args:
         model: Model to use (default: gpt-4o-mini)
-        timeout: Request timeout in seconds (default: 5)
+        timeout: Request timeout in seconds (default: 10)
     
     Returns:
         LLMClient instance or None if creation fails

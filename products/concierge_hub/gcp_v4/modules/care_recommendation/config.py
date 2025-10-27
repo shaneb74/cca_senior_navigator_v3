@@ -6,6 +6,7 @@ Converts sections-based schema to steps-based schema with content contract syste
 """
 
 import json
+from functools import cache
 from pathlib import Path
 from typing import Any
 
@@ -13,6 +14,7 @@ from typing import Any
 from core.modules.schema import FieldDef, ModuleConfig, StepDef
 
 
+@cache
 def get_config() -> ModuleConfig:
     """Load care_recommendation module configuration.
 
@@ -171,7 +173,7 @@ def _convert_question_to_field(question: dict[str, Any]) -> FieldDef:
     )
 
 
-def _convert_type(question_type: str, select_type: str, ui: dict[str, Any] = None) -> str:
+def _convert_type(question_type: str, select_type: str, ui: dict[str, Any] | None = None) -> str:
     """Convert module.json type to FieldDef type.
 
     Args:
