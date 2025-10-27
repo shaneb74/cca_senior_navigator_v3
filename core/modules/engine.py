@@ -410,6 +410,64 @@ def render_mc_eligibility_banner(name: str | None = None) -> None:
 # GCP DECISION PIPELINE
 # ==============================================================================
 
+def publish_gcp_summary_bindings(
+    state,
+    final_tier: str,
+    allowed_tiers: list[str] | None = None,
+    flags: list[dict] | list[str] | None = None,
+    rankings: list[tuple] | None = None,
+    rationale: list[str] | None = None,
+    confidence: float | None = None,
+    advisory_meta: dict | None = None,
+):
+    """
+    Publish the final decision to *all* fields that Summary or legacy code may read.
+    This prevents 'blank until refresh' by making the data available immediately.
+    
+    Writes to:
+    - gcp.{published_tier, allowed_tiers, flags, rankings, rationale, confidence, advisory_meta, summary_ready}
+    - gcp.final_tier (nested)
+    - gcp.final_tier (dotted key for legacy)
+    - gcp_care_recommendation._outcomes (legacy structure)
+    
+    Args:
+        state: Streamlit session state
+        final_tier: Final adjudicated care tier
+        allowed_tiers: List of tiers user can select
+        flags: Risk/eligibility flags
+        rankings: Tier rankings if available
+        rationale: Tier rationale if available
+        confidence: Confidence score if available
+        advisory_meta: Advisory metadata (e.g., MC clamp info)
+    """
+    g = state.setdefault("gcp", {})
+    g["published_tier"]  = final_tier
+    g["allowed_tiers"]   = allowed_tiers or []
+    g["flags"]           = flags or []
+    g["rankings"]        = rankings or []
+    g["rationale"]       = rationale or []
+    g["confidence"]      = confidence
+    g["advisory_meta"]   = advisory_meta or {}
+    g["summary_ready"]   = True
+
+    # Legacy "final" fields various parts still read
+    g["final_tier"] = final_tier                 # nested
+    state["gcp.final_tier"] = final_tier         # dotted legacy key (seen in older code)
+
+    # Back-fill legacy outcomes object some Summary code uses
+    legacy = state.setdefault("gcp_care_recommendation", {})
+    legacy["_outcomes"] = {
+        "tier": final_tier,
+        "tier_rankings": rankings or [],
+        "confidence": confidence,
+        "flags": flags or [],
+        "allowed_tiers": allowed_tiers or [],
+        "rationale": rationale or [],
+    }
+    
+    print(f"[GCP_PUBLISH] Published tier={final_tier} to all summary bindings (gcp.published_tier, gcp.final_tier, gcp.final_tier, _outcomes)")
+
+
 def run_gcp_decision_pipeline(state) -> tuple[str, dict[str, Any]]:
     """
     Centralized GCP decision pipeline - runs once at Daily Living Continue.
@@ -446,40 +504,34 @@ def run_gcp_decision_pipeline(state) -> tuple[str, dict[str, Any]]:
     # 3) Get LLM tier if enabled (derive_outcome already computed it)
     llm_tier = outcome.get("llm_tier") if isinstance(outcome, dict) else getattr(outcome, "llm_tier", None)
     allowed_tiers = outcome.get("allowed_tiers") if isinstance(outcome, dict) else getattr(outcome, "allowed_tiers", set())
+    tier_rankings = outcome.get("tier_rankings", []) if isinstance(outcome, dict) else []
+    rationale = outcome.get("rationale", []) if isinstance(outcome, dict) else []
+    confidence = outcome.get("confidence", 0.0) if isinstance(outcome, dict) else 0.0
     
     # 4) Adjudicate final tier (handles MC clamp logic)
     final_tier, meta = adjudicate_final_tier(det_tier, llm_tier)
     
     print(f"[GCP_PIPELINE] Final tier after adjudication: {final_tier}")
     
-    # 5) Publish to gcp state (new fields)
-    gcp["published_tier"] = final_tier
+    # 5) Publish to ALL summary bindings (new + legacy)
+    publish_gcp_summary_bindings(
+        state,
+        final_tier=final_tier,
+        allowed_tiers=list(allowed_tiers) if allowed_tiers else [],
+        flags=flags,
+        rankings=tier_rankings,
+        rationale=rationale,
+        confidence=confidence,
+        advisory_meta=meta or {},
+    )
+    
+    # 6) Set additional GCP state fields
     gcp["recommended_tier"] = det_tier  # Keep original for reference
     gcp["deterministic_tier"] = det_tier  # Alias for clarity
-    gcp["allowed_tiers"] = list(allowed_tiers) if allowed_tiers else []
-    gcp["advisory_meta"] = meta
-    gcp["flags"] = flags
     
-    # 5b) Back-fill legacy structure for older Summary code compatibility
-    # Summary may read: state["gcp_care_recommendation"]["_outcomes"]["tier"]
-    legacy = state.setdefault("gcp_care_recommendation", {})
-    legacy["_outcomes"] = {
-        "tier": final_tier,
-        "tier_rankings": outcome.get("tier_rankings", []) if isinstance(outcome, dict) else [],
-        "confidence": outcome.get("confidence", 0.0) if isinstance(outcome, dict) else 0.0,
-        "flags": flags,
-        "allowed_tiers": list(allowed_tiers) if allowed_tiers else [],
-        "rationale": outcome.get("rationale", []) if isinstance(outcome, dict) else [],
-        "tier_score": outcome.get("tier_score", 0) if isinstance(outcome, dict) else 0,
-    }
-    
-    # 6) Set move preference gating
+    # 7) Set move preference gating
     move_required = final_tier not in ("in_home", "in_home_care", "independent")
     gcp["move_required"] = move_required
-    
-    # 7) Mark summary ready so Summary page can render immediately
-    gcp["summary_ready"] = True
-    state["summary_ready"] = True
     
     # 8) Set navigation override for next step
     state["gcp_next_step_override"] = "move_preferences" if move_required else "results"

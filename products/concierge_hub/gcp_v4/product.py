@@ -147,15 +147,19 @@ def render():
                 from ai.llm_client import get_feature_gcp_mode
                 from core.modules.engine import get_final_recommendation_tier
 
-                # CRITICAL: Use published_tier from pipeline (no computation needed)
-                # Pipeline already ran at Daily Living and published the tier
-                tier_pre = gcp.get("published_tier")
+                # CRITICAL: Read from ALL possible key paths the pipeline publishes to
+                # Pipeline writes to: published_tier, final_tier (nested), gcp.final_tier (dotted), _outcomes.tier
+                tier_pre = (
+                    gcp.get("published_tier") or 
+                    gcp.get("final_tier") or 
+                    st.session_state.get("gcp.final_tier")
+                )
                 
                 # Fallback to get_final_recommendation_tier helper if needed
                 if not tier_pre:
                     tier_pre = get_final_recommendation_tier(st.session_state)
                 
-                # Fallback to legacy _outcomes if still not found
+                # Final fallback to legacy _outcomes if still not found
                 if not tier_pre:
                     legacy = st.session_state.get("gcp_care_recommendation", {})
                     outcome = legacy.get("_outcomes", {})
