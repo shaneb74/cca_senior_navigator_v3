@@ -138,6 +138,55 @@ def set_selected_assessment_once(new_sel: str):
 # HELPER: User Persistence
 # ==============================================================================
 
+def _eager_compute_totals(assessment: str, zip_code: str) -> float:
+    """Eagerly compute monthly total for an assessment (for pre-warming).
+    
+    Computes the total and caches it via totals_set() so it's available
+    before the card renders.
+    
+    Args:
+        assessment: Assessment key ("home", "al", "mc")
+        zip_code: ZIP code for regional pricing
+        
+    Returns:
+        Monthly total (float)
+    """
+    from products.concierge_hub.cost_planner_v2.comparison_calcs import (
+        calculate_facility_scenario,
+        calculate_inhome_scenario,
+    )
+    from products.concierge_hub.cost_planner_v2.ui_helpers import totals_set
+    
+    ss = st.session_state
+    
+    if assessment == "home":
+        breakdown = calculate_inhome_scenario(
+            zip_code=zip_code,
+            hours_per_day=ss.get("comparison_hours_per_day", 8),
+            home_carry_override=ss.get("comparison_home_carry_cost", 0) or None
+        )
+    elif assessment == "al":
+        breakdown = calculate_facility_scenario(
+            care_type="assisted_living",
+            zip_code=zip_code,
+            keep_home=ss.get("comparison_keep_home", False),
+            home_carry_override=ss.get("comparison_home_carry_cost", 0) or None
+        )
+    elif assessment == "mc":
+        breakdown = calculate_facility_scenario(
+            care_type="memory_care",
+            zip_code=zip_code,
+            keep_home=ss.get("comparison_keep_home", False),
+            home_carry_override=ss.get("comparison_home_carry_cost", 0) or None
+        )
+    else:
+        return 0.0
+    
+    monthly_total = breakdown.monthly_total
+    totals_set(assessment, monthly_total)
+    return monthly_total
+
+
 def _snapshot_costplan(event: str):
     """Persist CostPlan snapshot to disk (debounced, deduped).
     
@@ -450,20 +499,18 @@ def render():
         st.warning("⚠️ **ZIP code required:** Return to the previous page to enter your ZIP code.")
         st.markdown("")
 
-    # Pre-warm totals for visible tabs BEFORE rendering to avoid flicker
-    # Compute selected tab first (active), then other available tabs
-    from products.concierge_hub.cost_planner_v2.ui_helpers import get_cached_monthly_total
-    
+    # Pre-warm ALL visible tabs BEFORE rendering strip to avoid flicker
+    # Force-compute totals for every available tab so first render is complete
     selected = cost.get("selected_assessment")
+    visible_tabs = [k for k, ok in avail.items() if ok]
     
-    # Priority order: selected first, then other available tabs
-    tabs_to_warm = [selected] + [k for k, v in avail.items() if v and k != selected]
+    # Eager compute all visible tabs (selected first for priority)
+    priority_order = [selected] + [k for k in visible_tabs if k != selected]
+    for key in priority_order:
+        _ = _eager_compute_totals(key, zip_code or "00000")
     
-    for key in tabs_to_warm:
-        # Eager compute to populate cost.totals_cache before render
-        _ = get_cached_monthly_total(key)
-    
-    print(f"[QE_PREWARM] warmed totals for tabs={tabs_to_warm} cache={cost.get('totals_cache', {})}")
+    # Now totals_cache is fully populated before rendering strip
+    print(f"[QE_PREWARM] computed all visible tabs={visible_tabs} cache={cost.get('totals_cache', {})}")
 
     # C) Compact cost tabs (horizontal with costs under labels)
     _render_compact_cost_tabs()
