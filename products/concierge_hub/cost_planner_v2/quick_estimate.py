@@ -131,6 +131,31 @@ FINAL_SELECTION_CSS = """
   cursor: pointer !important;
 }
 
+/* Force invisible click overlays to be truly invisible */
+#cp-finalselect [data-testid="stButton"] > button,
+#cp-finalselect .stButton > button {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  background: transparent !important;
+  color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  opacity: 0 !important;
+  cursor: pointer !important;
+  z-index: 5 !important; /* keeps it clickable */
+}
+
+/* Remove hover/focus states Streamlit adds dynamically */
+#cp-finalselect .stButton > button:hover,
+#cp-finalselect .stButton > button:focus,
+#cp-finalselect .stButton > button:focus-visible {
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
 /* Confirmation line */
 #cp-finalselect .current {
   margin-top: 10px;
