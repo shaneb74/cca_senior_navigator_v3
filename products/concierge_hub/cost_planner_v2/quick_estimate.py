@@ -17,11 +17,60 @@ import time
 import streamlit as st
 
 from core import user_persist
+from core.debug import dbg
 from core.mcip import MCIP
 from core.nav import route_to
 from core.navi import render_navi_panel
 from core.perf import perf
 from core.user_persist import get_current_user_id, persist_costplan
+
+
+# ==============================================================================
+# SCOPED CSS FOR PATH FORWARD CARDS
+# ==============================================================================
+
+# Scoped styles for "Choose Your Path Forward" (Cost Planner)
+PATH_CARDS_CSS = """
+/* === Scoped to Cost Planner: Choose Your Path Forward === */
+.sn-app .cp-path { margin-top: 12px; }
+.sn-app .cp-path .path-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--border-primary, #E5E7EB);
+  background: #fff;
+  border-radius: 12px;
+  padding: 14px 16px;
+  text-decoration: none;
+  color: var(--text-primary, #0D1F4B);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  transition: box-shadow .15s ease, transform .05s ease, border-color .15s ease;
+  cursor: pointer;
+}
+.sn-app .cp-path .path-card:hover {
+  border-color: #CBD5E1;
+  box-shadow: 0 3px 10px rgba(13,31,75,0.08);
+  transform: translateY(-1px);
+}
+.sn-app .cp-path .path-card__icon {
+  flex: 0 0 36px;
+  height: 36px; width: 36px;
+  display: grid; place-items: center;
+  background: #F1F5F9; border-radius: 10px;
+  font-size: 18px;
+}
+.sn-app .cp-path .path-card__body { flex: 1 1 auto; }
+.sn-app .cp-path .path-card__title { font-weight: 700; margin: 0; }
+.sn-app .cp-path .path-card__sub { margin: 4px 0 0 0; font-size: 0.95rem; color: #475569; }
+.sn-app .cp-path .path-card__chev { flex: 0 0 auto; color: #94A3B8; }
+
+/* Optional list-link style (non-interactive variant, if used) */
+.sn-app .cp-path .path-list a {
+  display: inline-flex; align-items: center; gap: 8px;
+  color: #0D1F4B; text-decoration: none; border-bottom: 1px solid transparent;
+}
+.sn-app .cp-path .path-list a:hover { border-color: #CBD5E1; }
+"""
 
 
 # ==============================================================================
@@ -295,8 +344,11 @@ def render():
     print("[PAGE_MOUNT] cost_quick_estimate")
     
     # Assert navigation consistency (verify interim flag matches published tier)
-    from core.modules.engine import assert_nav_consistency
+    from core.modules.engine import assert_nav_consistency, inject_module_css_once
     assert_nav_consistency(st.session_state, where="CP")
+    
+    # Inject scoped CSS for path forward cards (once per session)
+    inject_module_css_once(PATH_CARDS_CSS)
 
     # Get ZIP from session state
     zip_code = st.session_state.get("cost.inputs", {}).get("zip") or st.session_state.get("cost_v2_quick_zip")
@@ -440,9 +492,9 @@ def render():
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # E) Choose Your Path Forward (radios)
+    # E) Choose Your Path Forward (link-cards)
     st.markdown("---")
-    _render_path_selection()
+    cp_render_path_forward()
 
     # F) Bottom CTAs
     _render_bottom_ctas()
@@ -764,6 +816,100 @@ def _render_facility_card(tier: str, zip_code: str, show_keep_home: bool = False
 # ==============================================================================
 # PATH SELECTION
 # ==============================================================================
+
+def cp_render_path_forward():
+    """Render Choose Your Path Forward as link-cards with invisible button wiring."""
+    st.markdown("### Choose Your Path Forward")
+    
+    cost = st.session_state.get("cost", {})
+    available = cost.get("assessments_available", {"home": True, "al": True, "mc": False})
+    sel = cost.get("selected_assessment", "home")
+    
+    # Get GCP recommendation to highlight recommended path
+    gcp = st.session_state.get("gcp", {})
+    recommended_tier = gcp.get("published_tier") or gcp.get("recommended_tier")
+    
+    # Map tier to assessment key
+    tier_to_assessment = {
+        "in_home_care": "home",
+        "assisted_living": "al",
+        "memory_care": "mc",
+        "memory_care_high_acuity": "mc"
+    }
+    recommended_assessment = tier_to_assessment.get(recommended_tier)
+    
+    choices = [k for k, v in available.items() if v]
+    if not choices:
+        return
+    
+    st.markdown('<div class="cp-path">', unsafe_allow_html=True)
+    
+    # Render cards in columns based on how many are available
+    cols = st.columns(len(choices))
+    
+    card_config = {
+        "home": {
+            "icon": "🏠",
+            "title": "In-Home Care",
+            "subtitle": "Stay in your home with support"
+        },
+        "al": {
+            "icon": "⭐",
+            "title": "Assisted Living",
+            "subtitle": "Community living with assistance"
+        },
+        "mc": {
+            "icon": "🧠",
+            "title": "Memory Care",
+            "subtitle": "Specialized care for memory needs"
+        }
+    }
+    
+    clicked_choice = None
+    
+    for idx, choice in enumerate(choices):
+        with cols[idx]:
+            config = card_config.get(choice, {})
+            is_selected = (choice == sel)
+            is_recommended = (choice == recommended_assessment)
+            
+            # Add recommended star if this is the GCP recommendation
+            icon = config.get("icon", "")
+            if is_recommended and icon != "⭐":
+                icon = f"⭐ {icon}"
+            
+            # Invisible button for click detection
+            clicked = st.button(
+                label="",
+                key=f"path_forward_{choice}",
+                help=f"Explore {config.get('title', choice)} costs" + (" (Recommended for you)" if is_recommended else ""),
+                type="primary" if is_selected else "secondary",
+                use_container_width=True
+            )
+            
+            if clicked:
+                clicked_choice = choice
+            
+            # Render link-card HTML
+            selected_class = " path-card--selected" if is_selected else ""
+            st.markdown(f"""
+            <a class="path-card{selected_class}" style="display: block; margin-top: -48px;">
+              <div class="path-card__icon">{icon}</div>
+              <div class="path-card__body">
+                <div class="path-card__title">{config.get('title', '')}</div>
+                <div class="path-card__sub">{config.get('subtitle', '')}</div>
+              </div>
+              <div class="path-card__chev">›</div>
+            </a>
+            """, unsafe_allow_html=True)
+    
+    st.markdown("</div>", unsafe_allow_html=True)
+    
+    # Handle click after render to avoid rerun during render
+    if clicked_choice:
+        set_selected_assessment_once(clicked_choice, ss=st.session_state)
+        dbg("PATH_FORWARD", f"clicked={clicked_choice}", ss=st.session_state)
+
 
 def _render_path_selection():
     """Render Choose Your Path Forward as clickable buttons."""
