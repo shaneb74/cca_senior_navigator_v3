@@ -8,6 +8,7 @@ Uses Navi as the single intelligence layer for guidance and progress.
 """
 
 import logging
+import time
 from datetime import datetime
 
 import streamlit as st
@@ -15,7 +16,19 @@ import streamlit as st
 from core.mcip import MCIP, CareRecommendation
 from core.modules.engine import run_module
 from core.modules.schema import ModuleConfig
+from core.perf import perf
 from ui.product_shell import product_shell_end, product_shell_start
+
+
+def _maybe_cleanup_files() -> None:
+    """Throttled file cleanup (runs at most once per 60s or on route change)."""
+    ss = st.session_state
+    now = time.time()
+    if (now - ss.get("_last_cleanup_ts", 0) >= 60) or ss.pop("_route_changed", False):
+        with perf("gcp.cleanup"):
+            # Placeholder for cleanup logic - add your cleanup_orphans() call here
+            pass
+        ss["_last_cleanup_ts"] = now
 
 
 def _route() -> str:
@@ -487,7 +500,8 @@ def _publish_to_mcip(outcome, module_state: dict) -> None:
         )
 
         # Publish to MCIP (single source of truth)
-        MCIP.publish_care_recommendation(recommendation)
+        with perf("gcp.publish"):
+            MCIP.publish_care_recommendation(recommendation)
         print(f"[MCIP_PUBLISH] tier={recommendation.tier} allowed={recommendation.allowed_tiers}")
 
         # Persist CarePlan snapshot to disk for training/debugging

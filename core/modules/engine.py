@@ -20,6 +20,20 @@ from .schema import FieldDef, ModuleConfig, OutcomeContract, StepDef
 import logging
 from typing import Any, Dict, Iterable
 
+
+def inject_module_css_once(css_text: str) -> None:
+    """Inject module CSS once per session to avoid repeated injection.
+    
+    Args:
+        css_text: CSS string to inject
+    """
+    ss = st.session_state
+    if ss.get("_module_css_loaded"):
+        return
+    st.markdown(f"<style>{css_text}</style>", unsafe_allow_html=True)
+    ss["_module_css_loaded"] = True
+
+
 # Memory Care diagnosis flag constants
 _MC_DX_FLAG_IDS = {"memory_care_dx", "dementia_dx", "alzheimers_dx", "has_dementia_dx"}
 _MC_NO_DX_FLAG_IDS = {"likely_mc_no_dx", "mc_no_dx", "no_dx_memory_care"}
