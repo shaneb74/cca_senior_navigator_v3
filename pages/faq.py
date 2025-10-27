@@ -1699,7 +1699,7 @@ def render():
                     from core.events import log_event
                     log_event("corp_llm", {
                         "query": q,
-                        "retrieved_ids": [c["doc_id"] for c in corp_hits],
+                        "retrieved_ids": [c.get("doc_id") or c.get("id", "unknown") for c in corp_hits],
                         "used_sources": [s.get("url", "") for s in result.get("sources", [])],
                         "name_present": bool(st.session_state.get("person_a_name")),
                     })
