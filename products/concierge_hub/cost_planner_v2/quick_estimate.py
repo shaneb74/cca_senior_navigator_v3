@@ -64,6 +64,25 @@ def flush_costplan_if_due(force: bool = False) -> None:
         ss.pop("_costplan_due_ts", None)
 
 
+def _maybe_cleanup_files():
+    """Throttled cleanup - only run on route changes or every 60s.
+    
+    Prevents per-rerun cleanup spam while ensuring orphans are removed periodically.
+    Note: Placeholder for future cleanup logic - currently no orphan cleanup needed.
+    """
+    ss = st.session_state
+    now = time.time()
+    route_changed = ss.pop("_route_changed", False)
+    last_cleanup = ss.get("_last_cleanup_ts", 0)
+    
+    if route_changed or (now - last_cleanup >= 60):
+        # Placeholder for future cleanup logic
+        # Example: cleanup_orphans() from utils
+        ss["_last_cleanup_ts"] = now
+        if route_changed:
+            print(f"[CP_CLEANUP] route change detected (cleanup hook ready)")
+
+
 # ==============================================================================
 # PER-SIGNATURE COMPUTE CACHE
 # ==============================================================================
@@ -265,13 +284,10 @@ def _snapshot_for_pfma(event: str = "qe_pay_cta"):
         },
     }
 
-    try:
-        persist_costplan(get_current_user_id(), snap)
-        print(f"[CTA_PAY] persisted costplan snapshot event={event}")
-        # Force flush immediately for PFMA handoff
-        flush_costplan_if_due(force=True)
-    except Exception as e:
-        print(f"[CTA_PAY] persist failed: {e}")
+    # Debounce write instead of immediate persist - will flush on route
+    with perf("persist.debounce"):
+        persist_costplan_debounced(snap, delay_ms=600)
+    print(f"[CTA_PAY] debounced costplan snapshot event={event}")
 
 
 # ==============================================================================
@@ -824,6 +840,7 @@ def _render_bottom_ctas():
                 # Navigate to Cost Planner v2 triage step
                 print(f"[CTA_PAY] → cost_v2 triage (path={cost['path_choice']})")
                 flush_costplan_if_due(force=True)
+                _maybe_cleanup_files()
                 st.session_state["_route_changed"] = True
                 st.session_state.cost_v2_step = "triage"
                 st.query_params["page"] = "cost_v2"
@@ -832,6 +849,7 @@ def _render_bottom_ctas():
     with col2:
         if st.button("← Back to Hub", use_container_width=True, key="qe_back_hub"):
             flush_costplan_if_due(force=True)
+            _maybe_cleanup_files()
             st.session_state["_route_changed"] = True
             route_to("hub_concierge")
 
@@ -839,3 +857,6 @@ def _render_bottom_ctas():
     err = st.session_state.get("cost", {}).pop("cta_error", None)
     if err:
         st.caption(f"⚠️ {err}")
+
+    # Idle flush at end of render (no force - only if timeout elapsed)
+    flush_costplan_if_due(force=False)
