@@ -1302,7 +1302,6 @@ def render():
                     key="faq_composer_input",
                     placeholder="e.g., What is assisted living? Who is CCA?",
                     label_visibility="collapsed",
-                    on_change=lambda: st.session_state.update({"faq_enter_pressed": True}),
                     disabled=is_processing,
                 )
 
@@ -1313,6 +1312,27 @@ def render():
                     key="faq_send_btn",
                     disabled=is_processing,
                 )
+
+            # JavaScript to make Enter key trigger Send button
+            st.markdown(
+                """
+                <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    const input = document.querySelector('[data-testid="stTextInput"] input');
+                    if (input) {
+                        input.addEventListener('keypress', function(e) {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                                const sendBtn = document.querySelector('[data-testid="baseButton-primary"]');
+                                if (sendBtn) sendBtn.click();
+                            }
+                        });
+                    }
+                });
+                </script>
+                """,
+                unsafe_allow_html=True,
+            )
 
             st.markdown(
                 f"""
@@ -1325,9 +1345,8 @@ def render():
             )
             st.markdown('</div>', unsafe_allow_html=True)
             
-            enter_pressed = st.session_state.pop("faq_enter_pressed", False)
             send_now = st.session_state.pop("faq_send_now", False)
-            should_send = send_clicked or send_now or (enter_pressed and user_q and user_q.strip())
+            should_send = send_clicked or send_now
 
             if send_now and st.session_state.get("faq_composer"):
                 user_q = st.session_state["faq_composer"]
@@ -1379,15 +1398,9 @@ def render():
                             badge_html = '<span class="chat-badge">⚠️ Something went wrong</span>'
 
                         # Message content handling
-                        is_html = msg.get("is_html", False)
-                        if not is_html:
-                            # Answer is already normalized to Markdown by llm_mediator.
-                            # DON'T escape - let Streamlit render the Markdown.
-                            # The answer should be clean (no HTML) after normalization.
-                            safe_text = text
-                        else:
-                            # Only allow HTML when explicitly flagged (e.g., for UI chrome)
-                            safe_text = text
+                        # Answer is already sanitized Markdown from llm_mediator
+                        # Use st.markdown to render it properly (no HTML escaping)
+                        safe_text = text
 
                         sources_html = ""
                         source_metas = msg.get("source_metas", [])
@@ -1416,26 +1429,17 @@ def render():
                             ]
                             sources_html = f"<div class='chat-sources'>{''.join(pill_html)}</div>"
 
-                        assistant_html = (
-                            f"""
-                            <div class=\"chat-message chat-message--assistant\">
-                              <div class=\"chat-avatar\">N</div>
-                              <div class=\"chat-bubble chat-bubble--assistant\">
-                                {badge_html}
-                                <div class=\"chat-bubble__content\">{safe_text}</div>
-                                {sources_html}
-                              </div>
-                            </div>
-                            """
-                        )
-                        st.markdown(assistant_html, unsafe_allow_html=True)
+                        # Render assistant message with clean Markdown (no HTML wrappers)
+                        st.markdown(badge_html, unsafe_allow_html=True) if badge_html else None
+                        st.markdown(safe_text)  # Let Streamlit render Markdown naturally
+                        st.markdown(sources_html, unsafe_allow_html=True) if sources_html else None
 
                         with st.container():
                             st.markdown('<div class="chat-sentinel chat-action-sentinel"></div>', unsafe_allow_html=True)
                             action_cols = st.columns([1, 1, 1, 1], gap="small")
                             with action_cols[0]:
-                                # Copy button uses original text (sanitized but not HTML-escaped)
-                                copy_text = _sanitize_to_md(text) if not is_html else text
+                                # Copy button uses sanitized Markdown text
+                                copy_text = _sanitize_to_md(text)
                                 _copy_button(copy_text, key=f"copy_{idx}")
                             with action_cols[1]:
                                 share_query = msg.get("user_query", "")

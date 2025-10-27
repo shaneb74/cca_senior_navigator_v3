@@ -88,23 +88,21 @@ def _is_module_route() -> bool:
 
 
 def inject_css() -> None:
-    """Load global CSS and module-specific CSS (only on module routes)."""
+    """Load global CSS and module-specific CSS."""
     try:
-        # Load global CSS on ALL pages
+        # Load global CSS
         with open("assets/css/global.css", encoding="utf-8") as f:
             st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
-        # Load module CSS ONLY on module routes (not on home/hub)
-        if _is_module_route():
-            if not st.session_state.get("_module_css_loaded"):
-                with open("assets/css/modules.css", encoding="utf-8") as f:
-                    css_content = f.read()
-                    # Add timestamp comment to bust cache
-                    import time
+        # Load module CSS (must come after global to override)
+        # Adding cache-busting comment to force browser reload
+        with open("assets/css/modules.css", encoding="utf-8") as f:
+            css_content = f.read()
+            # Add timestamp comment to bust cache
+            import time
 
-                    cache_buster = f"/* Cache bust: {int(time.time())} */\n"
-                    st.markdown(f"<style>{cache_buster}{css_content}</style>", unsafe_allow_html=True)
-                    st.session_state["_module_css_loaded"] = True
+            cache_buster = f"/* Cache bust: {int(time.time())} */\n"
+            st.markdown(f"<style>{cache_buster}{css_content}</style>", unsafe_allow_html=True)
 
     except FileNotFoundError:
         # no-op on Cloud if path differs; don't crash
