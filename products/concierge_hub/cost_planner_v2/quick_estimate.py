@@ -71,6 +71,74 @@ PATH_CARDS_CSS = """
 .sn-app .cp-path .path-list a:hover { border-color: #CBD5E1; }
 """
 
+# Scoped styles for the final path selection (Choose Your Path Forward)
+FINAL_SELECTION_CSS = """
+/* === Scoped to Cost Planner: final selection grid (no icons, no buttons) === */
+#cp-finalselect { margin-top: 12px; }
+#cp-finalselect .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+@media (max-width: 900px) {
+  #cp-finalselect .grid { grid-template-columns: 1fr; }
+}
+
+/* Each tile wrapper ensures overlay button anchors correctly */
+#cp-finalselect .finalwrap { position: relative; }
+
+/* The visual card */
+#cp-finalselect .final-card {
+  position: relative;
+  border: 1px solid var(--border-primary, #E5E7EB);
+  border-radius: 12px;
+  background: #FFF;
+  padding: 16px 48px 14px 16px; /* space on right for radio-dot */
+  min-height: 84px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  transition: box-shadow .15s ease, border-color .15s ease, transform .05s ease;
+}
+#cp-finalselect .final-card:hover {
+  border-color: #CBD5E1;
+  box-shadow: 0 3px 10px rgba(13,31,75,0.08);
+  transform: translateY(-1px);
+}
+#cp-finalselect .final-card.is-selected {
+  border-color: #0D1F4B;
+  box-shadow: 0 0 0 2px rgba(13,31,75,0.10);
+}
+
+#cp-finalselect .body .title { font-weight: 700; color: #0D1F4B; margin: 0 0 4px 0; }
+#cp-finalselect .body .sub   { margin: 0; color: #475569; font-size: 0.95rem; }
+
+/* Right-side radio dot indicator (visual only) */
+#cp-finalselect .radio-dot {
+  position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+  width: 18px; height: 18px; border-radius: 999px; border: 2px solid #94A3B8; background: #FFF;
+}
+#cp-finalselect .final-card.is-selected .radio-dot {
+  border-color: #0D1F4B; box-shadow: inset 0 0 0 4px #0D1F4B;
+}
+
+/* CRITICAL: make the Streamlit button fully invisible & full-tile */
+#cp-finalselect .finalwrap [data-testid="stButton"] { position: absolute; inset: 0; }
+#cp-finalselect .finalwrap [data-testid="stButton"] > button,
+#cp-finalselect .finalwrap .stButton > button {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  opacity: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  cursor: pointer !important;
+}
+
+/* Confirmation line */
+#cp-finalselect .current {
+  margin-top: 10px;
+  font-size: 0.95rem;
+  color: #0D1F4B;
+}
+"""
+
 
 # ==============================================================================
 # WRITE-BEHIND FOR COSTPLAN (DEBOUNCED, DEDUPED)
@@ -348,6 +416,7 @@ def render():
     
     # Inject scoped CSS for path forward cards (once per session)
     inject_module_css_once(PATH_CARDS_CSS)
+    inject_module_css_once(FINAL_SELECTION_CSS)
 
     # Get ZIP from session state
     zip_code = st.session_state.get("cost.inputs", {}).get("zip") or st.session_state.get("cost_v2_quick_zip")
@@ -491,9 +560,9 @@ def render():
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # E) Choose Your Path Forward (link-cards)
+    # E) Choose Your Path Forward (static selection grid - no tab switching)
     st.markdown("---")
-    cp_render_path_forward()
+    cp_render_final_selection_grid()
 
     # F) Bottom CTAs
     _render_bottom_ctas()
@@ -815,6 +884,81 @@ def _render_facility_card(tier: str, zip_code: str, show_keep_home: bool = False
 # ==============================================================================
 # PATH SELECTION
 # ==============================================================================
+
+# Map internal tier keys to display text (no icons per request)
+_PATH_META = {
+    "in_home": {
+        "title": "In-Home Care",
+        "sub": "Stay in your home with support",
+    },
+    "assisted_living": {
+        "title": "Assisted Living",
+        "sub": "Community living with assistance",
+    },
+    "memory_care": {
+        "title": "Memory Care",
+        "sub": "Specialized cognitive support",
+    },
+}
+
+
+def cp_render_final_selection_grid():
+    """Static, non-button selection tiles for final path choice.
+       Writes to st.session_state['cp_final_choice'] only.
+       No tab switching. No layout shift.
+    """
+    gcp = st.session_state.get("gcp", {})
+    allowed = gcp.get("allowed_tiers") or []
+    order = ["in_home", "assisted_living", "memory_care"]
+    choices = [k for k in order if k in allowed]
+
+    if not choices:
+        return
+
+    # Initialize selection
+    if "cp_final_choice" not in st.session_state:
+        rec = gcp.get("recommended_tier")
+        st.session_state["cp_final_choice"] = rec if rec in choices else choices[0]
+
+    st.markdown("### Choose Your Path Forward")
+    st.markdown('<div id="cp-finalselect">', unsafe_allow_html=True)
+    st.caption("Select the care type that best fits your situation:")
+
+    cols = st.columns(len(choices))
+    for idx, key in enumerate(choices):
+        meta = _PATH_META.get(key, {"title": key.replace("_", " ").title(), "sub": ""})
+        is_selected = (st.session_state.get("cp_final_choice") == key)
+
+        with cols[idx]:
+            # Wrap each tile in a positioned container so the invisible button can sit on top
+            st.markdown('<div class="finalwrap">', unsafe_allow_html=True)
+            # Invisible button to capture the click (will be stretched by CSS)
+            clicked = st.button("", key=f"cp_finalpick_{key}", use_container_width=True)
+            # Visual tile (no icons, no button look)
+            st.markdown(
+                f"""
+<div class="final-card {'is-selected' if is_selected else ''}">
+  <div class="body">
+    <p class="title">{meta['title']}</p>
+    <p class="sub">{meta['sub']}</p>
+  </div>
+  <div class="radio-dot" aria-hidden="true"></div>
+</div>
+""",
+                unsafe_allow_html=True,
+            )
+            st.markdown("</div>", unsafe_allow_html=True)
+
+            if clicked:
+                st.session_state["cp_final_choice"] = key
+                print(f"[FINAL_PATH_SET] {key}")
+
+    # Non-intrusive confirmation line (no layout change)
+    chosen = st.session_state.get("cp_final_choice")
+    chosen_label = _PATH_META.get(chosen, {}).get("title", chosen)
+    st.markdown(f'<div class="current">Current selection: <strong>{chosen_label}</strong></div>', unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+
 
 def cp_render_path_forward():
     """Render Choose Your Path Forward as link-cards with invisible button wiring."""
