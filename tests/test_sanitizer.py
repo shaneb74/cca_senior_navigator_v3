@@ -96,7 +96,9 @@ class TestAdvisorServiceSanitization:
     
     def test_sanitize_answer_payload(self):
         """Verify _sanitize_answer_payload exists and works."""
-        from products.global.ai.advisor_service import _sanitize_answer_payload
+        import importlib
+        advisor_service = importlib.import_module('products.global.ai.advisor_service')
+        _sanitize_answer_payload = advisor_service._sanitize_answer_payload
         
         payload = {
             "answer": '<div class="chat-bubble__content">Test</div>',
@@ -110,7 +112,9 @@ class TestAdvisorServiceSanitization:
     
     def test_get_answer_returns_clean_markdown(self):
         """Integration test: get_answer should return Markdown."""
-        from products.global.ai.advisor_service import get_answer
+        import importlib
+        advisor_service = importlib.import_module('products.global.ai.advisor_service')
+        get_answer = advisor_service.get_answer
         
         # This will actually hit the LLM/RAG, so we just check the contract
         response = get_answer("What is CCA?", name="Test User")
