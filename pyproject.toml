@@ -1,5 +1,5 @@
 [tool.ruff]
-target-version = "py313"
+target-version = "py311"
 line-length = 100
 exclude = [
   "venv", ".venv", "_backup", "build", "dist", ".git", ".streamlit", "__pycache__", "archive", "_archive_debug_docs"
@@ -36,14 +36,14 @@ skip-magic-trailing-comma = false
 line-ending = "auto"
 
 [tool.black]
-target-version = ["py313"]
+target-version = ["py311"]
 line-length = 100
 exclude = '''
 (venv|_backup|build|dist|\.git|\.streamlit|__pycache__)
 '''
 
 [tool.mypy]
-python_version = "3.13"
+python_version = "3.11"
 warn_unused_ignores = true
 ignore_missing_imports = true
 disallow_untyped_defs = false
