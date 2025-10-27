@@ -10,26 +10,115 @@ Clean tabbed comparison view with:
 - Bottom CTAs
 """
 
+import hashlib
+import json
+import time
+
 import streamlit as st
 
+from core import user_persist
 from core.mcip import MCIP
 from core.nav import route_to
 from core.navi import render_navi_panel
+from core.perf import perf
 from core.user_persist import get_current_user_id, persist_costplan
+
+
+# ==============================================================================
+# WRITE-BEHIND FOR COSTPLAN (DEBOUNCED, DEDUPED)
+# ==============================================================================
+
+def _payload_hash(d: dict) -> str:
+    """Generate SHA1 hash of payload for deduplication."""
+    return hashlib.sha1(json.dumps(d, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+
+def persist_costplan_debounced(payload: dict, delay_ms: int = 600) -> None:
+    """Debounce and deduplicate costplan writes.
+    
+    Args:
+        payload: Costplan data to persist
+        delay_ms: Milliseconds to wait before flushing (default: 600)
+    """
+    ss = st.session_state
+    h = _payload_hash(payload)
+    if ss.get("_costplan_last_hash") == h:
+        return  # unchanged
+    ss["_costplan_last_hash"] = h
+    ss["_costplan_pending"] = payload
+    ss["_costplan_due_ts"] = time.time() + (delay_ms / 1000.0)
+
+
+def flush_costplan_if_due(force: bool = False) -> None:
+    """Flush pending costplan write if due or forced.
+    
+    Args:
+        force: If True, flush immediately regardless of timeout
+    """
+    ss = st.session_state
+    due = time.time() >= ss.get("_costplan_due_ts", 0)
+    if ("_costplan_pending" in ss) and (force or due):
+        with perf("write.flush"):
+            user_persist.persist_costplan(ss.get("anonymous_uid"), ss["_costplan_pending"])
+        ss.pop("_costplan_pending", None)
+        ss.pop("_costplan_due_ts", None)
+
+
+# ==============================================================================
+# PER-SIGNATURE COMPUTE CACHE
+# ==============================================================================
+
+def _sig(prefix: str, obj: dict) -> str:
+    """Generate cache key from prefix + object signature."""
+    h = hashlib.sha1(json.dumps(obj, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+    return f"cp_cache::{prefix}::{h}"
+
+
+def compute_cached(prefix: str, signature: dict, fn, *args, **kwargs):
+    """Cache expensive computation by input signature.
+    
+    Args:
+        prefix: Cache namespace (e.g., "totals", "compose")
+        signature: Dictionary of inputs that determine output
+        fn: Function to call if cache miss
+        *args, **kwargs: Arguments to pass to fn
+        
+    Returns:
+        Cached or freshly computed result
+    """
+    ss = st.session_state
+    key = _sig(prefix, signature)
+    if key in ss:
+        return ss[key]
+    with perf(f"{prefix}"):
+        out = fn(*args, **kwargs)
+    ss[key] = out
+    return out
+
+
+def set_selected_assessment_once(new_sel: str):
+    """Set selected assessment without triggering redundant tab switches.
+    
+    Args:
+        new_sel: New assessment key ("home", "al", "mc")
+    """
+    ss = st.session_state
+    cost = ss.setdefault("cost", {})
+    if cost.get("selected_assessment") != new_sel:
+        cost["selected_assessment"] = new_sel
+        ss["_cp_tab_changed"] = True
 
 # ==============================================================================
 # HELPER: User Persistence
 # ==============================================================================
 
 def _snapshot_costplan(event: str):
-    """Persist CostPlan snapshot to disk (non-blocking).
+    """Persist CostPlan snapshot to disk (debounced, deduped).
     
     Args:
         event: Event name (qe_mount, tab_change, path_change, etc.)
     """
     try:
-        from core.user_persist import get_current_user_id, persist_costplan
-
         cost = st.session_state.get("cost", {})
         g = st.session_state.get("gcp", {})
 
@@ -52,7 +141,8 @@ def _snapshot_costplan(event: str):
             },
         }
 
-        persist_costplan(get_current_user_id(), snap)
+        with perf("persist.debounce"):
+            persist_costplan_debounced(snap)
 
     except Exception as e:
         print(f"[USER_PERSIST_ERR] _snapshot_costplan({event}) failed: {e}")
@@ -178,6 +268,8 @@ def _snapshot_for_pfma(event: str = "qe_pay_cta"):
     try:
         persist_costplan(get_current_user_id(), snap)
         print(f"[CTA_PAY] persisted costplan snapshot event={event}")
+        # Force flush immediately for PFMA handoff
+        flush_costplan_if_due(force=True)
     except Exception as e:
         print(f"[CTA_PAY] persist failed: {e}")
 
@@ -358,6 +450,12 @@ def render():
     # Close container
     st.markdown("</div>", unsafe_allow_html=True)
 
+    # Debounced write flush (idle flush)
+    flush_costplan_if_due(force=False)
+    
+    # Reset tab changed flag after render
+    st.session_state.pop("_cp_tab_changed", None)
+
 
 # ==============================================================================
 # TAB RENDERING
@@ -406,8 +504,7 @@ def _render_compact_cost_tabs():
                 help=f"View {label} details"
             ):
                 if not is_active:
-                    st.session_state["cost"]["selected_assessment"] = assessment
-                    print(f"[COMPACT_TABS] Switched to {assessment}")
+                    set_selected_assessment_once(assessment)
                     _snapshot_costplan("tab_change")
                     st.rerun()
 
@@ -770,12 +867,16 @@ def _render_bottom_ctas():
 
                 # Navigate to Cost Planner v2 triage step
                 print(f"[CTA_PAY] → cost_v2 triage (path={cost['path_choice']})")
+                flush_costplan_if_due(force=True)
+                st.session_state["_route_changed"] = True
                 st.session_state.cost_v2_step = "triage"
                 st.query_params["page"] = "cost_v2"
                 st.rerun()
 
     with col2:
         if st.button("← Back to Hub", use_container_width=True, key="qe_back_hub"):
+            flush_costplan_if_due(force=True)
+            st.session_state["_route_changed"] = True
             route_to("hub_concierge")
 
     # Display inline error if CTA validation failed
