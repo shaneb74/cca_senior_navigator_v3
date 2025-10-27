@@ -17,6 +17,8 @@ def describe():
 def render():
     """Render AI Advisor chat interface with RAG-first answers."""
     
+    print("[ROUTE] ai_advisor loaded")
+    
     st.markdown("### 💬 Ask Navi")
     st.markdown(
         "Ask about assisted living, memory care, cost planning, or any senior care topic. "
