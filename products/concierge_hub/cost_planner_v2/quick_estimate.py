@@ -17,7 +17,6 @@ import time
 import streamlit as st
 
 from core import user_persist
-from core.debug import dbg
 from core.mcip import MCIP
 from core.nav import route_to
 from core.navi import render_navi_panel
@@ -908,7 +907,7 @@ def cp_render_path_forward():
     # Handle click after render to avoid rerun during render
     if clicked_choice:
         set_selected_assessment_once(clicked_choice, ss=st.session_state)
-        dbg("PATH_FORWARD", f"clicked={clicked_choice}", ss=st.session_state)
+        print(f"[PATH_FORWARD] clicked={clicked_choice}")
 
 
 def _render_path_selection():
