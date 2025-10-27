@@ -1146,162 +1146,6 @@ def derive_outcome(
             print(f"[GCP_GUARD] moderate×high without risky behaviors → remove {{'memory_care','memory_care_high_acuity'}} from allowed: {sorted(list(allowed_tiers))}")
     # --- end behavior gate ---
 
-    # ====================================================================
-    # HOURS/DAY SUGGESTION (GUARDED): Baseline + LLM refinement + Nudge
-    # ====================================================================
-    # Compute hours/day suggestion if enabled (shadow/assist mode)
-    hours_mode = gcp_hours_mode()
-    if hours_mode in {"shadow", "assist"}:
-        try:
-            from ai.hours_engine import (
-                baseline_hours,
-                generate_hours_advice,
-                generate_hours_nudge_text,
-                under_selected,
-            )
-
-            # Build context
-            hours_ctx = _build_hours_context(answers, flags)
-
-            # Get baseline
-            baseline = baseline_hours(hours_ctx)
-
-            # Get LLM refinement
-            ok, advice = generate_hours_advice(hours_ctx, hours_mode)
-
-            # Determine suggested band (prefer LLM if available, else baseline)
-            suggested = advice.band if (ok and advice) else baseline
-            user_band = hours_ctx.current_hours
-
-            # Generate nudge if user under-selected
-            nudge_text = None
-            severity = None
-            if under_selected(user_band, suggested):
-                nudge_text = generate_hours_nudge_text(hours_ctx, suggested, user_band, hours_mode)
-                if nudge_text:
-                    severity = "strong"
-                    # Store nudge in advice object if available
-                    if ok and advice:
-                        advice.nudge_text = nudge_text
-                        advice.severity = severity
-
-            # Persist hours bands to GCP state for Cost Planner
-            try:
-                import streamlit as st
-                gcp_state = st.session_state.setdefault("gcp", {})
-                gcp_state["hours_user_band"] = user_band or "1-3h"
-                gcp_state["hours_llm"] = suggested or baseline
-                gcp_state["hours_band"] = suggested or baseline  # legacy key
-                print(f"[GCP_HOURS_PERSIST] user={gcp_state['hours_user_band']} llm={gcp_state['hours_llm']}")
-            except Exception as persist_err:
-                print(f"[GCP_HOURS_PERSIST_ERROR] {persist_err}")
-
-            # Store suggestion in session state
-            try:
-                import streamlit as st
-                sugg = {
-                    "band": suggested,
-                    "base": baseline,
-                    "llm": advice.band if (ok and advice) else None,
-                    "conf": advice.confidence if (ok and advice) else None,
-                    "reasons": advice.reasons if (ok and advice) else [],
-                    "mode": hours_mode,
-                    "user": user_band,
-                    "nudge_text": nudge_text,
-                    "severity": severity,
-                }
-                # Compute under-selected and nudge key strictly by band order
-                ORDER = ["<1h", "1-3h", "4-8h", "24h"]
-                def _band_index(b):
-                    try:
-                        return ORDER.index(b)
-                    except Exception:
-                        return -1
-
-                user_band_cur = user_band
-                suggested_band_cur = suggested
-                under_selected_flag = (
-                    (user_band_cur in ORDER)
-                    and (suggested_band_cur in ORDER)
-                    and (_band_index(user_band_cur) < _band_index(suggested_band_cur))
-                )
-
-                # store on the suggestion dict too for UI use
-                sugg["user"] = user_band_cur
-                sugg["under_selected"] = bool(under_selected_flag)
-
-                # Persist suggestion first
-                st.session_state["_hours_suggestion"] = sugg
-
-                # nudge-key changes only when the (user,suggested) pair changes
-                key = f"{user_band_cur or '-'}->{suggested_band_cur or '-'}"
-                prev = st.session_state.get("_hours_nudge_key")
-                st.session_state["_hours_nudge_new"] = bool(under_selected_flag and key != prev)
-                st.session_state["_hours_nudge_key"] = key
-                print(
-                    f"[HOURS_NUDGE] key={key} under={under_selected_flag} new={st.session_state['_hours_nudge_new']}"
-                )
-            except Exception:
-                pass
-
-            # Log (dev-only) - include user selection
-            user_choice = user_band or "-"
-            if ok and advice:
-                print(f"[GCP_HOURS_{hours_mode.upper()}] base={baseline} user={user_choice} llm={advice.band} conf={advice.confidence:.2f}")
-            else:
-                print(f"[GCP_HOURS_{hours_mode.upper()}] base={baseline} user={user_choice} llm=None (fallback to baseline)")
-
-            # Log nudge if generated (shadow mode visibility)
-            if nudge_text:
-                print(f"[GCP_HOURS_NUDGE_{hours_mode.upper()}] user={user_choice} → suggest={suggested} | {nudge_text}")
-
-            # Log case for offline analysis (training data)
-            try:
-                from tools.log_hours import log_hours_case
-                log_hours_case(
-                    context=hours_ctx,
-                    base_band=baseline,
-                    llm_band=advice.band if (ok and advice) else None,
-                    llm_conf=advice.confidence if (ok and advice) else None,
-                    mode=hours_mode
-                )
-            except Exception as log_err:
-                print(f"[HOURS_LOG_ERROR] Failed to log case: {log_err}")
-
-        except Exception as e:
-            print(f"[GCP_HOURS_FALLBACK] {e}")
-            # Graceful degradation: persist user band and provide safe default
-            try:
-                import streamlit as st
-
-                # Try to get user's current selection
-                raw_hours = answers.get("hours_per_day")
-                valid_bands = {"<1h", "1-3h", "4-8h", "24h"}
-                user_band = raw_hours if raw_hours in valid_bands else "1-3h"
-
-                # Determine if high cognition + high support (conservative default)
-                cog_level = answers.get("cognition", {}).get("level", "none")
-                is_high_cog = cog_level in {"moderate", "advanced"}
-
-                badls_raw = answers.get("badls", [])
-                iadls_raw = answers.get("iadls", [])
-                is_high_support = len(badls_raw) >= 3 or len(iadls_raw) >= 4
-
-                # Provide conservative LLM band when in doubt
-                if is_high_cog and is_high_support:
-                    llm_band = "4-8h"
-                else:
-                    llm_band = user_band  # match user if unsure
-
-                gcp_state = st.session_state.setdefault("gcp", {})
-                gcp_state["hours_user_band"] = user_band
-                gcp_state["hours_llm"] = llm_band
-                gcp_state["hours_band"] = llm_band  # legacy key
-
-                print(f"[GCP_HOURS_PERSIST] user={user_band} llm={llm_band} (fallback)")
-            except Exception as fallback_err:
-                print(f"[GCP_HOURS_PERSIST_ERROR] fallback failed: {fallback_err}")
-
     # Choose final deterministic tier
     # Priority: mapping (if available and in allowed) > score-based (if in allowed) > fallback to best permitted
     chosen = None
@@ -1328,6 +1172,178 @@ def derive_outcome(
         det_tier = "assisted_living"
 
     tier = det_tier
+
+    # ====================================================================
+    # HOURS/DAY SUGGESTION (GATED): Baseline + LLM refinement + Nudge
+    # ====================================================================
+    # Gate hours LLM calls based on tier - only needed for in-home paths or when comparing
+    import streamlit as st
+    compare_inhome = st.session_state.get("cost.compare_inhome", False)
+    need_hours = (tier in ("in_home", "in_home_plus")) or bool(compare_inhome)
+
+    # Debug log for gating decision (dev visibility)
+    from core.debug import debug_enabled
+    if debug_enabled():
+        print(f"[HOURS_LLM_GATED] need_hours={need_hours} tier={tier} compare={compare_inhome}")
+
+    # Compute hours/day suggestion if enabled (shadow/assist mode) AND needed
+    hours_mode = gcp_hours_mode()
+    if hours_mode in {"shadow", "assist"} and need_hours:
+        from core.perf import perf
+        
+        with perf("llm.hours"):
+            try:
+                from ai.hours_engine import (
+                    baseline_hours,
+                    generate_hours_advice,
+                    generate_hours_nudge_text,
+                    under_selected,
+                )
+
+                # Build context
+                hours_ctx = _build_hours_context(answers, flags)
+
+                # Get baseline
+                baseline = baseline_hours(hours_ctx)
+
+                # Get LLM refinement
+                ok, advice = generate_hours_advice(hours_ctx, hours_mode)
+
+                # Determine suggested band (prefer LLM if available, else baseline)
+                suggested = advice.band if (ok and advice) else baseline
+                user_band = hours_ctx.current_hours
+
+                # Generate nudge if user under-selected
+                nudge_text = None
+                severity = None
+                if under_selected(user_band, suggested):
+                    nudge_text = generate_hours_nudge_text(hours_ctx, suggested, user_band, hours_mode)
+                    if nudge_text:
+                        severity = "strong"
+                        # Store nudge in advice object if available
+                        if ok and advice:
+                            advice.nudge_text = nudge_text
+                            advice.severity = severity
+
+                # Persist hours bands to GCP state for Cost Planner
+                try:
+                    import streamlit as st
+                    gcp_state = st.session_state.setdefault("gcp", {})
+                    gcp_state["hours_user_band"] = user_band or "1-3h"
+                    gcp_state["hours_llm"] = suggested or baseline
+                    gcp_state["hours_band"] = suggested or baseline  # legacy key
+                    print(f"[GCP_HOURS_PERSIST] user={gcp_state['hours_user_band']} llm={gcp_state['hours_llm']}")
+                except Exception as persist_err:
+                    print(f"[GCP_HOURS_PERSIST_ERROR] {persist_err}")
+
+                # Store suggestion in session state
+                try:
+                    import streamlit as st
+                    sugg = {
+                        "band": suggested,
+                        "base": baseline,
+                        "llm": advice.band if (ok and advice) else None,
+                        "conf": advice.confidence if (ok and advice) else None,
+                        "reasons": advice.reasons if (ok and advice) else [],
+                        "mode": hours_mode,
+                        "user": user_band,
+                        "nudge_text": nudge_text,
+                        "severity": severity,
+                    }
+                    # Compute under-selected and nudge key strictly by band order
+                    ORDER = ["<1h", "1-3h", "4-8h", "24h"]
+                    def _band_index(b):
+                        try:
+                            return ORDER.index(b)
+                        except Exception:
+                            return -1
+
+                    user_band_cur = user_band
+                    suggested_band_cur = suggested
+                    under_selected_flag = (
+                        (user_band_cur in ORDER)
+                        and (suggested_band_cur in ORDER)
+                        and (_band_index(user_band_cur) < _band_index(suggested_band_cur))
+                    )
+
+                    # store on the suggestion dict too for UI use
+                    sugg["user"] = user_band_cur
+                    sugg["under_selected"] = bool(under_selected_flag)
+
+                    # Persist suggestion first
+                    st.session_state["_hours_suggestion"] = sugg
+
+                    # nudge-key changes only when the (user,suggested) pair changes
+                    key = f"{user_band_cur or '-'}->{suggested_band_cur or '-'}"
+                    prev = st.session_state.get("_hours_nudge_key")
+                    st.session_state["_hours_nudge_new"] = bool(under_selected_flag and key != prev)
+                    st.session_state["_hours_nudge_key"] = key
+                    print(
+                        f"[HOURS_NUDGE] key={key} under={under_selected_flag} new={st.session_state['_hours_nudge_new']}"
+                    )
+                except Exception:
+                    pass
+
+                # Log (dev-only) - include user selection
+                user_choice = user_band or "-"
+                if ok and advice:
+                    print(f"[GCP_HOURS_{hours_mode.upper()}] base={baseline} user={user_choice} llm={advice.band} conf={advice.confidence:.2f}")
+                else:
+                    print(f"[GCP_HOURS_{hours_mode.upper()}] base={baseline} user={user_choice} llm=None (fallback to baseline)")
+
+                # Log nudge if generated (shadow mode visibility)
+                if nudge_text:
+                    print(f"[GCP_HOURS_NUDGE_{hours_mode.upper()}] user={user_choice} → suggest={suggested} | {nudge_text}")
+
+                # Log case for offline analysis (training data)
+                try:
+                    from tools.log_hours import log_hours_case
+                    log_hours_case(
+                        context=hours_ctx,
+                        base_band=baseline,
+                        llm_band=advice.band if (ok and advice) else None,
+                        llm_conf=advice.confidence if (ok and advice) else None,
+                        mode=hours_mode
+                    )
+                except Exception as log_err:
+                    print(f"[HOURS_LOG_ERROR] Failed to log case: {log_err}")
+
+            except Exception as e:
+                print(f"[GCP_HOURS_FALLBACK] {e}")
+                # Graceful degradation: persist user band and provide safe default
+                try:
+                    import streamlit as st
+
+                    # Try to get user's current selection
+                    raw_hours = answers.get("hours_per_day")
+                    valid_bands = {"<1h", "1-3h", "4-8h", "24h"}
+                    user_band = raw_hours if raw_hours in valid_bands else "1-3h"
+
+                    # Determine if high cognition + high support (conservative default)
+                    cog_level = answers.get("cognition", {}).get("level", "none")
+                    is_high_cog = cog_level in {"moderate", "advanced"}
+
+                    badls_raw = answers.get("badls", [])
+                    iadls_raw = answers.get("iadls", [])
+                    is_high_support = len(badls_raw) >= 3 or len(iadls_raw) >= 4
+
+                    # Provide conservative LLM band when in doubt
+                    if is_high_cog and is_high_support:
+                        llm_band = "4-8h"
+                    else:
+                        llm_band = user_band  # match user if unsure
+
+                    gcp_state = st.session_state.setdefault("gcp", {})
+                    gcp_state["hours_user_band"] = user_band
+                    gcp_state["hours_llm"] = llm_band
+                    gcp_state["hours_band"] = llm_band  # legacy key
+
+                    print(f"[GCP_HOURS_PERSIST] user={user_band} llm={llm_band} (fallback)")
+                except Exception as fallback_err:
+                    print(f"[GCP_HOURS_PERSIST_ERROR] fallback failed: {fallback_err}")
+    elif not need_hours and hours_mode in {"shadow", "assist"}:
+        # Hours not needed - log skip for visibility
+        print(f"[HOURS_LLM_SKIP] tier={tier} compare={compare_inhome} → skipping hours LLM calls (expected: 500-1500ms saved)")
 
     # NOTE: Hours clearing moved to ensure_summary_ready AFTER adjudication
     # This ensures we use the published tier (not deterministic) and check compare mode
