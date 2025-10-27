@@ -13,8 +13,10 @@ showErrorDetails = false
 gatherUsageStats = false
 
 [logger]
-level = "error"
-messageFormat = "%(asctime)s %(message)s"
+# Suppress Streamlit internal logs (warning level filters "Removing orphaned files")
+# App logs (logging.getLogger("app")) still show at INFO if configured in app.py
+level = "warning"
+messageFormat = "%(asctime)s %(levelname)s %(message)s"
 
 [server]
 fileWatcherType = "poll"

@@ -1,8 +1,23 @@
-# Silence Streamlit file watcher spam
+# Bootstrap logging before anything else
 import logging
+import os
 
 import streamlit as st
 
+# Configure root logger
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+)
+
+# App logger with optional debug mode
+app_log = logging.getLogger("app")
+if os.getenv("GCP_DEBUG") == "1":
+    app_log.setLevel(logging.DEBUG)
+else:
+    app_log.setLevel(logging.INFO)
+
+# Silence Streamlit file watcher spam
 logging.getLogger("streamlit.watcher.local_sources_watcher").setLevel(logging.ERROR)
 logging.getLogger("streamlit.watcher").setLevel(logging.ERROR)
 
