@@ -224,6 +224,24 @@
           "label": "Senior Trivia & Brain Games",
           "module": "products.waiting_room.senior_trivia.product:render",
           "hidden": true
+        },
+        {
+          "key": "ccr_overview",
+          "label": "Concierge Clinical Review",
+          "module": "products.waiting_room.concierge_clinical_review.product:render",
+          "hidden": true
+        },
+        {
+          "key": "ccr_checklist",
+          "label": "Provider Checklist",
+          "module": "products.waiting_room.concierge_clinical_review.product:render",
+          "hidden": true
+        },
+        {
+          "key": "ccr_schedule",
+          "label": "Schedule Specialist",
+          "module": "products.waiting_room.concierge_clinical_review.product:render",
+          "hidden": true
         }
       ]
     }

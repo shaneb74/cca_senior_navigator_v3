@@ -200,6 +200,53 @@ def _build_featured_partners_tile(is_next_recommended: bool) -> ProductTileHub:
     )
 
 
+def _is_gcp_complete() -> bool:
+    """Check if Guided Care Plan is complete.
+    
+    Returns:
+        True if GCP summary_ready flag is set
+    """
+    g = st.session_state.get("gcp", {})
+    # summary_ready is set at Daily Living → Continue; this is the contract used elsewhere
+    return bool(g.get("summary_ready"))
+
+
+def _is_cost_planner_complete() -> bool:
+    """Check if Cost Planner is complete.
+    
+    Returns:
+        True if cost totals exist in state
+    """
+    # Mirror whatever completion key CP sets; fallback to presence of a last costplan snapshot if needed
+    cost = st.session_state.get("cost", {})
+    # If you track explicit completion, prefer that; otherwise assume true if any totals exist in state
+    return bool(cost.get("completed") or cost.get("last_totals") or st.session_state.get("_qe_totals"))
+
+
+def _build_clinical_review_tile() -> ProductTileHub:
+    """Build Concierge Clinical Review tile.
+    
+    Returns:
+        ProductTileHub (visible but locked until GCP & CP complete)
+    """
+    _ccr_locked = not (_is_gcp_complete() and _is_cost_planner_complete())
+
+    return ProductTileHub(
+        key="concierge_clinical_review",
+        title="Concierge Clinical Review",
+        desc="Review your plan with your doctor or a clinical specialist",
+        blurb="Providers use both your care and financial info to give precise guidance.",
+        primary_label="Start Clinical Review" if not _ccr_locked else "Complete Required Steps",
+        primary_route="?page=ccr_overview" if not _ccr_locked else "?page=gcp_v4",
+        primary_go="ccr_overview" if not _ccr_locked else "gcp_v4",
+        badges=["new"] if not _ccr_locked else None,
+        variant="purple",
+        order=4,
+        locked=_ccr_locked,
+        lock_msg="Unlocks after Guided Care Plan and Cost Planner. Providers use both your care and financial info to give precise guidance." if _ccr_locked else None,
+    )
+
+
 def _determine_next_recommendation() -> str:
     """Determine next recommended activity using MCIP logic.
     
@@ -255,12 +302,14 @@ def render(ctx=None) -> None:
     partners_tile = _build_featured_partners_tile(
         is_next_recommended=(next_recommendation == "partners_spotlight")
     )
+    clinical_review_tile = _build_clinical_review_tile()
 
     # Assemble tiles in MCIP-driven order
     cards = [
         advisor_prep_tile,  # Order 1 (if available)
         trivia_tile,         # Order 2
         partners_tile,       # Order 3
+        clinical_review_tile,  # Order 4 (visible-always; locked until GCP & CP complete)
         # Remaining tiles (legacy order values)
         ProductTileHub(
             key="educational_feed",
