@@ -711,18 +711,29 @@ def render_clean_summary():
     )
     
     # ========================================
-    # INTERIM BANNER: Show when Navi displays "AL with enhanced cognitive support"
+    # INTERIM BANNER: Removed duplicate call
     # ========================================
-    # Use the same logic as Navi headline - if interim flag is set, show banner
-    if interim:
-        render_interim_al_callout()
+    # The interim callout is now rendered by engine.py (_render_results_view)
+    # with proper spacing/rhythm helpers. This duplicate call was causing
+    # the callout to appear twice on the results page.
+    # if interim:
+    #     render_interim_al_callout()
 
 
 def render_interim_al_callout():
     """
     Render interim Assisted Living callout card when Memory Care is recommended
     but no formal diagnosis is present. Provides clear guidance on the interim step.
+    
+    Includes render guard to prevent duplicate rendering.
     """
+    import streamlit as st
+    
+    # Render guard: Prevent duplicate calls
+    if st.session_state.get("_interim_callout_rendered"):
+        print("[INTERIM_CALLOUT] skipped (already rendered)")
+        return
+    
     st.markdown("""
 <div class="interim-callout" role="note" aria-live="polite">
   <div class="interim-callout__eyebrow">Interim next step</div>
@@ -733,6 +744,10 @@ def render_interim_al_callout():
   </p>
 </div>
 """, unsafe_allow_html=True)
+    
+    # Mark as rendered
+    st.session_state["_interim_callout_rendered"] = True
+    print("[INTERIM_CALLOUT] rendered once")
 
 
 def vrhythm(section: str):
