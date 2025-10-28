@@ -17,7 +17,7 @@ def _suppress_header_navi_for_current_route() -> bool:
     
     Suppresses on:
     - Cost Planner pages (route starts with "cost_")
-    - GCP Summary/Results step (step_id="results")
+    - GCP Summary/Results step (step_id="results" OR final step index)
     
     Allows skinny headers on GCP question steps:
     - intro, about_you, health_safety, daily_living, move_preferences
@@ -33,9 +33,24 @@ def _suppress_header_navi_for_current_route() -> bool:
     
     # Suppress on GCP Summary/Results
     if route == "gcp":
+        # Check step_id first (primary signal)
         step_id = (st.session_state.get("gcp_current_step_id") or "").lower()
-        if step_id in ("results",):  # add more step IDs here if needed
+        if step_id in ("results",):
             return True
+        
+        # Fallback: check module state step index (in case step_id not set yet)
+        try:
+            state_key = st.session_state.get("gcp_state_key") or "gcp_care_recommendation"
+            step_idx = int(st.session_state.get(f"{state_key}._step", -1))
+            gcp_steps = st.session_state.get("gcp_steps", [])
+            # Suppress if on final step (results) by index
+            if step_idx >= 0 and gcp_steps and step_idx == len(gcp_steps) - 1:
+                return True
+            # Also suppress if step index is 5 (common results index)
+            if step_idx == 5:
+                return True
+        except Exception:
+            pass  # Fail open: allow header if we can't determine step
     
     return False
 
