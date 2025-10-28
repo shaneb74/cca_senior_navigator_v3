@@ -12,6 +12,34 @@ from ai.llm_client import get_feature_gcp_mode
 from core.modules.engine import is_results_view, is_cost_planner_inhome
 
 
+def _suppress_header_navi_for_current_route() -> bool:
+    """Check if skinny header Navi should be suppressed for the current route.
+    
+    Suppresses on:
+    - Cost Planner pages (route starts with "cost_")
+    - GCP Summary/Results step (step_id="results")
+    
+    Allows skinny headers on GCP question steps:
+    - intro, about_you, health_safety, daily_living, move_preferences
+    
+    Returns:
+        True if header should be suppressed, False to show header
+    """
+    route = (st.session_state.get("route") or st.query_params.get("page") or "").lower()
+    
+    # Suppress on Cost Planner pages
+    if route.startswith("cost_"):
+        return True
+    
+    # Suppress on GCP Summary/Results
+    if route == "gcp":
+        step_id = (st.session_state.get("gcp_current_step_id") or "").lower()
+        if step_id in ("results",):  # add more step IDs here if needed
+            return True
+    
+    return False
+
+
 def render_gcp_navi_card():
     """Render Navi advice card if LLM assist mode is enabled.
     
@@ -289,19 +317,21 @@ def render_hours_nudge():
 
 
 def render_navi_header_message():
-    """Render the single blue Navi header (module variant) with quote + hours hint.
-
-    Inside the blue header panel, show:
-    - Step title (or "Your Guided Care Plan") and optional subtitle
-    - One-line Navi quote (LLM headline) under title
-    - If FEATURE_GCP_HOURS=assist and user under-selected: a single subtle hours hint line
-
-    Below the header (still at top of page), render Accept/Keep hours CTAs ONLY on GCP route.
-    Play the chime once when a NEW nudge appears (only on GCP route) and then clear the flag.
+    """Render the full Navi coaching panel with distinctive blue left border.
+    
+    Shows:
+    - ✨ NAVI header
+    - Large bold coaching headline
+    - Italic explanatory subtitle
+    - Light blue reassurance box (when applicable)
     """
     import os
 
     import streamlit as st
+
+    # Suppress header on Cost Planner and GCP Summary/Results
+    if _suppress_header_navi_for_current_route():
+        return
 
     # Single-render guard to prevent recursion/duplication per page
     # Scope by a simple per-page key so a stale flag from a previous page doesn't block first paint
@@ -633,6 +663,10 @@ def render_navi_header_and_summary():
     Only renders if _summary_advice is available in session state.
     """
     import streamlit as st
+
+    # Suppress header on Cost Planner and GCP Summary/Results
+    if _suppress_header_navi_for_current_route():
+        return
 
     adv = st.session_state.get("_summary_advice")
     if not adv:
