@@ -202,14 +202,15 @@ def render():
 
         for key, demo in DEMO_USERS.items():
             button_label = f"👤 {demo['name']}"
+            uid_display = demo.get('runtime_uid', demo.get('uid', key))
             if st.button(
                 button_label,
                 key=f"demo_btn_{key}",
                 use_container_width=True,
-                help=f"{demo['description']}\nUID: {demo['uid']}",
+                help=f"{demo['description']}\nUID: {uid_display}",
             ):
                 st.info(f"Loading demo user: {demo['name']}")
-                st.caption(f"UID: `{demo['uid']}`")
+                st.caption(f"UID: `{uid_display}`")
                 st.query_params["demo_user"] = key
                 st.rerun()
 
