@@ -950,6 +950,10 @@ def _split_totals_for_persistence(result: dict) -> tuple[float, float, float]:
     care_total = total - carry_total
     combined_total = total
     
+    # Debug: log the split logic
+    print(f"[SPLIT_DEBUG] result.total={total} segments={segments}")
+    print(f"[SPLIT_DEBUG] carry_total={carry_total} care_total={care_total} combined={combined_total}")
+    
     return (float(care_total), float(carry_total), float(combined_total))
 
 
