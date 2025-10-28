@@ -1,10 +1,12 @@
 from textwrap import dedent
+import os
 
 import streamlit as st
 
 from core.nav import route_to
 from core.state import authenticate_user
 from core.ui import img_src
+from core.session_store import ensure_runtime_from_seed, load_user, merge_into_state
 
 
 def _go_next_after_auth():
@@ -19,6 +21,15 @@ def _go_next_after_auth():
     route_to(return_page)
 
 
+def _switch_to(uid: str):
+    """Load user data and switch to that user."""
+    data = load_user(uid)
+    merge_into_state(st.session_state, data)
+    st.session_state["uid"] = uid
+    st.session_state["anonymous_uid"] = uid
+    authenticate_user(name=data.get("profile", {}).get("first_name", "Demo"), email=f"{uid}@demo.test")
+
+
 # Demo/test user profiles with fixed UIDs for consistent testing
 DEMO_USERS = {
     "demo_sarah": {
@@ -28,10 +39,11 @@ DEMO_USERS = {
         "description": "Assisted Living - GCP + CP complete, CCR unlocked",
     },
     "demo_mary_memorycare": {
-        "name": "Mary Memory Care",
+        "name": "Mary MemoryCare",
         "email": "mary.memorycare@demo.test",
-        "uid": "demo_mary_memorycare",
-        "description": "Memory Care - GCP + CP complete, CCR unlocked",
+        "seed_uid": "demo_mary_memorycare",
+        "runtime_uid": "mary_memorycare",
+        "description": "Assisted Living with memory-care considerations - GCP + CP complete, CCR unlocked",
     },
 }
 
@@ -44,14 +56,24 @@ def render():
     if demo_user_key and demo_user_key in DEMO_USERS:
         demo = DEMO_USERS[demo_user_key]
 
-        # Set the specific demo UID in session state
-        st.session_state["anonymous_uid"] = demo["uid"]
-
-        # Authenticate with demo user info
-        authenticate_user(name=demo["name"], email=demo["email"])
-
-        # Update URL to include demo UID
-        st.query_params["uid"] = demo["uid"]
+        # Handle Mary MemoryCare with immutable seed -> runtime flow
+        if demo_user_key == "demo_mary_memorycare":
+            # 1) Copy seed -> runtime (never modify seed)
+            force = os.getenv("FORCE_DEMO_RESET", "0") in ("1", "true", "True", "YES", "yes")
+            ensure_runtime_from_seed(
+                seed_uid=demo["seed_uid"],
+                runtime_uid=demo["runtime_uid"],
+                force_reset=force
+            )
+            # 2) Load runtime and switch
+            _switch_to(demo["runtime_uid"])
+            # 3) Update URL with runtime UID
+            st.query_params["uid"] = demo["runtime_uid"]
+        else:
+            # Legacy flow for other demos
+            st.session_state["anonymous_uid"] = demo["uid"]
+            authenticate_user(name=demo["name"], email=demo["email"])
+            st.query_params["uid"] = demo["uid"]
 
         # Navigate to next page (respects return param)
         _go_next_after_auth()

@@ -60,6 +60,10 @@ DATA_DIR = Path("data/users")
 # Demo profiles directory (read-only, protected from overwrite)
 DEMO_DIR = Path("data/users/demo")
 
+# Immutable seed root (never modified at runtime)
+SEED_ROOT = Path("data/users/demo")
+USER_ROOT = Path("data/users")
+
 # Session file name pattern
 SESSION_FILE_PATTERN = "session_{session_id}.json"
 
@@ -754,6 +758,53 @@ def safe_rerun():
     st.rerun()
 
 
+# ====================================================================
+# IMMUTABLE DEMO SEED LOADER
+# ====================================================================
+
+
+def load_demo_seed(seed_uid: str) -> dict:
+    """Load read-only seed JSON from data/users/demo/<seed_uid>/session.json.
+    
+    Args:
+        seed_uid: Demo seed identifier (e.g., "demo_mary_memorycare")
+        
+    Returns:
+        Seed data dict
+        
+    Raises:
+        FileNotFoundError: If seed doesn't exist
+    """
+    import json
+    seed_path = SEED_ROOT / seed_uid / "session.json"
+    with seed_path.open("r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def ensure_runtime_from_seed(seed_uid: str, runtime_uid: str, *, force_reset: bool = False) -> None:
+    """Copy demo seed into data/users/<runtime_uid>/ if runtime profile doesn't exist
+    or if force_reset=True. Never write to data/users/demo/*.
+    
+    Args:
+        seed_uid: Demo seed identifier (e.g., "demo_mary_memorycare")
+        runtime_uid: Runtime user identifier (e.g., "mary_memorycare")
+        force_reset: If True, overwrite existing runtime copy with fresh seed
+        
+    Side Effects:
+        Creates data/users/<runtime_uid>/session.json from seed
+    """
+    import shutil
+    src = SEED_ROOT / seed_uid
+    dst = USER_ROOT / runtime_uid
+    dst.mkdir(parents=True, exist_ok=True)
+    session_src = src / "session.json"
+    session_dst = dst / "session.json"
+
+    if force_reset or not session_dst.exists():
+        shutil.copy2(session_src, session_dst)  # immutable seed -> fresh runtime copy
+        print(f"[DEMO_SEED] Copied {seed_uid} -> {runtime_uid} (force_reset={force_reset})")
+
+
 __all__ = [
     # Session operations
     "generate_session_id",
@@ -775,4 +826,7 @@ __all__ = [
     "switch_user",
     # Rerun helper
     "safe_rerun",
+    # Immutable demo seed
+    "load_demo_seed",
+    "ensure_runtime_from_seed",
 ]

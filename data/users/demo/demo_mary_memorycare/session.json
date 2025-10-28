@@ -1,0 +1,32 @@
+{
+  "profile": { "first_name": "Mary", "last_name": "MemoryCare", "age_band": "80–89" },
+
+  "gcp": {
+    "summary_ready": true,
+    "published_tier": "assisted_living",
+    "flags": [
+      { "id": "moderate_cognitive_decline", "label": "Moderate cognitive decline" },
+      { "id": "fall_risk", "label": "Fall risk" },
+      { "id": "medication_management", "label": "Complex medication regimen" },
+      { "id": "adl_support_high", "label": "Multiple ADLs require assistance" }
+    ],
+    "advisory_meta": {
+      "id": "mc_interim_advice",
+      "reason": "consider_memory_care",
+      "note": "Cognitive indicators suggest memory-support features may be appropriate."
+    }
+  },
+
+  "cost": {
+    "completed": true,
+    "monthly_total": 5175.0,
+    "last_totals": { "al": 5175.0, "home": 5000.0 },
+    "affordability": { "years_funded": 8 }
+  },
+
+  "_qe_totals": { "al": 5175.0, "home": 5000.0 },
+
+  "qe_home_hours": 4.0,
+
+  "ccr": { "checklist_generated": false, "appt_scheduled": false }
+}
