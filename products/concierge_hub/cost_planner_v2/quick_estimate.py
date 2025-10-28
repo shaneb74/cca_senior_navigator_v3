@@ -1045,6 +1045,17 @@ def _render_bottom_ctas():
                 
                 print(f"[CP_PERSIST] sel={active} care={c['monthly_total']} carry={c['home_carry_monthly']} comb={c['combined_monthly']}")
                 
+                # ALSO persist to cost_v2_quick_estimate (for Financial Review/expert_review.py)
+                ss["cost_v2_quick_estimate"] = {
+                    "estimate": {
+                        "monthly_adjusted": float(care_total),      # care-only (what FA displays)
+                        "monthly_total": float(combined_total),     # care + carry
+                        "care_type": cost.get("path_choice", active),
+                        "selected_plan": active,
+                    }
+                }
+                print(f"[CP_PERSIST_FA] cost_v2_quick_estimate.monthly_adjusted={care_total}")
+                
                 # Persist CostPlan snapshot for PFMA
                 _snapshot_for_pfma()
 
