@@ -81,6 +81,10 @@ def render():
 
     product_shell_start()
 
+    # Render module-level Navi coach at top of every screen
+    from core.navi_module import render_module_navi_coach
+    render_module_navi_coach("Answer these questions to match the right level of support.")
+
     try:
         # Check if we're CURRENTLY VIEWING the results step
         # Need to check BOTH session state AND tile state (for resume functionality)

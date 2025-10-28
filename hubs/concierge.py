@@ -139,8 +139,9 @@ def render(ctx=None) -> None:
 
     # Use callback pattern to render Navi AFTER header but BEFORE body
     def render_content():
-        # Render Navi panel (after header, before hub content)
-        render_navi_panel(location="hub", hub_key="concierge")
+        # Render hub-level Navi "What's Next" panel
+        from core.navi_hub import render_hub_navi_next
+        render_hub_navi_next()
 
         # Render hub body HTML WITHOUT title/subtitle/chips (Navi replaces them)
         body_html = render_dashboard_body(
