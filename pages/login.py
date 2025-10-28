@@ -24,32 +24,14 @@ DEMO_USERS = {
     "demo_sarah": {
         "name": "Sarah",
         "email": "sarah@demo.test",
-        "uid": "demo_sarah_cost_planner",
-        "description": "Memory Care (8.5 years) - diabetes, memory issues, multiple ADLs",
+        "uid": "demo_sarah",
+        "description": "Assisted Living - GCP + CP complete, CCR unlocked",
     },
-    "demo_john": {
-        "name": "John Test",
-        "email": "john@demo.test",
-        "uid": "demo_john_cost_planner",
-        "description": "Assisted Living (10+ years) - complete GCP + Cost Planner",
-    },
-    "demo_mary": {
+    "demo_mary_memorycare": {
         "name": "Mary Memory Care",
         "email": "mary.memorycare@demo.test",
-        "uid": "demo_mary_memory_care",
-        "description": "Memory Care High Acuity - Well-funded, 15yr+ timeline",
-    },
-    "demo_andy": {
-        "name": "Andy Assisted GCP Complete",
-        "email": "andy@demo.test",
-        "uid": "demo_andy_assisted_gcp_complete",
-        "description": "Assisted Living - GCP complete with VA A&A eligibility flag",
-    },
-    "demo_vic": {
-        "name": "Veteran Vic",
-        "email": "vic@demo.test",
-        "uid": "demo_vic_veteran_borderline",
-        "description": "Borderline In-Home/Assisted Living - Service-connected veteran",
+        "uid": "demo_mary_memorycare",
+        "description": "Memory Care - GCP + CP complete, CCR unlocked",
     },
 }
 
@@ -219,19 +201,16 @@ def render():
     - Data files: `data/users/{uid}.json`
     
     **Testing Persistence:**
-    1. Login as a demo user (e.g., "John Test")
-    2. Fill out Cost Planner assessments
-    3. Note the UID in the URL: `?uid=demo_john_cost_planner`
+    1. Login as a demo user (e.g., "Sarah")
+    2. Navigate to Waiting Room to verify CCR tile unlocked
+    3. Note the UID in the URL: `?uid=demo_sarah`
     4. Restart the app
     5. Login as same demo user → **Data restored!**
     
     **UID Mapping:**
     ```
-    Sarah Demo  → demo_sarah_test_001
-    John Test   → demo_john_cost_planner
-    Mary Memory Care → demo_mary_memory_care
-    Andy Assisted GCP Complete → demo_andy_assisted_gcp_complete
-    Veteran Vic → demo_vic_veteran_borderline
+    Sarah               → demo_sarah (Assisted Living, CCR unlocked)
+    Mary Memory Care    → demo_mary_memorycare (Memory Care, CCR unlocked)
     ```
     """)
 
