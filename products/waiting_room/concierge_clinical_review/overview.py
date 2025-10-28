@@ -89,4 +89,10 @@ def render_overview():
             st.session_state["ccr.view"] = "schedule"
             st.rerun()
 
+    # Navigation back to Waiting Room
+    st.markdown("---")
+    if st.button("← Back to Waiting Room", use_container_width=True, key="ccr_back_to_hub"):
+        from core.nav import route_to
+        route_to("hub_waiting_room")
+
     print("[CCR] opened", datetime.utcnow().isoformat() + "Z")

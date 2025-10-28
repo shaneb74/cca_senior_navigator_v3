@@ -52,10 +52,13 @@ def render_checklist():
     st.session_state["ccr"]["checklist_generated"] = True
     print("[CCR] checklist.created", datetime.utcnow().isoformat() + "Z")
 
-    c1, c2 = st.columns(2)
+    c1, c2, c3 = st.columns(3)
     if c1.button("Download (HTML)", use_container_width=True, key="ccr_dl_html"):
         # Future: export to PDF/HTML; for now just acknowledge
         st.success("Checklist generated. (Export scaffolding can be added later.)")
     if c2.button("Back to Review", use_container_width=True, key="ccr_back_overview"):
         st.session_state["ccr.view"] = "overview"
         st.rerun()
+    if c3.button("← Waiting Room", use_container_width=True, key="ccr_checklist_to_hub"):
+        from core.nav import route_to
+        route_to("hub_waiting_room")

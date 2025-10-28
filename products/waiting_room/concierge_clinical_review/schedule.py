@@ -17,7 +17,7 @@ def render_schedule():
         "Friday, 9:00 AM"
     ], key="ccr.slot")
 
-    c1, c2 = st.columns(2)
+    c1, c2, c3 = st.columns(3)
     if c1.button("Confirm Appointment", use_container_width=True, key="ccr_confirm"):
         st.session_state.setdefault("ccr", {})
         st.session_state["ccr"]["appt_scheduled"] = True
@@ -27,3 +27,7 @@ def render_schedule():
     if c2.button("Back to Review", use_container_width=True, key="ccr_back2"):
         st.session_state["ccr.view"] = "overview"
         st.rerun()
+    
+    if c3.button("← Waiting Room", use_container_width=True, key="ccr_schedule_to_hub"):
+        from core.nav import route_to
+        route_to("hub_waiting_room")
