@@ -9,7 +9,11 @@ import streamlit as st
 
 
 def render_module_navi_coach(primary_msg: str, why_text: str | None = None):
-    """Compact module coach with optional 'Why this question?' slot and plan summary."""
+    """Compact module coach with optional 'Why this question?' slot and plan summary.
+    
+    This function renders a lean coaching panel and returns immediately,
+    allowing the rest of the module page to render normally.
+    """
     ss = st.session_state
     gcp = ss.get("gcp") or {}
     cost = ss.get("cost") or {}
@@ -41,3 +45,6 @@ def render_module_navi_coach(primary_msg: str, why_text: str | None = None):
         st.caption("(Home carry tracked separately if you keep your home.)")
 
     st.markdown("</div>", unsafe_allow_html=True)
+    
+    # Function completes and returns control to caller
+    print("[NAVI_MODULE] rendered; continuing page content")

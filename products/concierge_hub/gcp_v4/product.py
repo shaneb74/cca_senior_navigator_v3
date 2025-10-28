@@ -84,6 +84,7 @@ def render():
     # Render module-level Navi coach at top of every screen
     from core.navi_module import render_module_navi_coach
     render_module_navi_coach("Answer these questions to match the right level of support.")
+    print("[GCP_PRODUCT] Module Navi rendered, continuing with product logic")
 
     try:
         # Check if we're CURRENTLY VIEWING the results step
