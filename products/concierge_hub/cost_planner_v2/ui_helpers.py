@@ -535,7 +535,18 @@ def donut_cost_chart(segments: dict[str, float], total_label: str, emphasize: st
 
 
 def render_care_chunk_compare_blurb(active: str):
-    """Render care chunk comparison when both home and AL segments are cached."""
+    """Render care chunk comparison when both home and AL segments are cached.
+    
+    This is a debug/education formula showing the ratio between home care cost
+    and AL care services. Only displays on home tab with FEATURE_DEBUG_FORMULA=1.
+    """
+    import os
+    FEATURE_DEBUG_FORMULA = os.getenv("FEATURE_DEBUG_FORMULA", "0") == "1"
+    
+    # Only show on home tab with debug flag enabled
+    if active != "home" or not FEATURE_DEBUG_FORMULA:
+        return
+    
     home = segcache_get("home") or {}
     al = segcache_get("al") or {}
     home_care = float(home.get("Care Services", 0))

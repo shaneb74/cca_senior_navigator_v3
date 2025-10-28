@@ -107,7 +107,7 @@ def calculate_expert_review(
         regional_modifier = 1.0  # Already included in intro estimate
         # [FA_DEBUG] Source: Quick Estimate (quieted - uncomment block below to see details)
         # print("\n[FA_DEBUG] ========== EXPERT FORMULAS: USING ESTIMATE ==========")
-        # print("[FA_DEBUG] Source: Quick Estimate (passed from comparison_view)")
+        # print("[FA_DEBUG] Source: Quick Estimate")
         # print(f"[FA_DEBUG] Estimated Monthly Cost: ${estimated_monthly_cost:,.0f}")
         # print("[FA_DEBUG] ===================================================\n")
     else:
