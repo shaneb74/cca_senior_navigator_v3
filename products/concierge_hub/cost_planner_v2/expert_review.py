@@ -13,6 +13,63 @@ from products.concierge_hub.cost_planner_v2.expert_formulas import calculate_exp
 from products.concierge_hub.cost_planner_v2.financial_profile import get_financial_profile, publish_to_mcip
 
 
+def _ensure_financial_defaults():
+    """
+    Seed default asset selections once per session.
+    
+    DEFAULTS (first render only):
+    - ✅ Monthly Income: Always included (built into base calculation)
+    - ✅ Liquid Assets: Selected by default
+    - ❌ All other assets: NOT selected (retirement, home equity, etc.)
+    
+    PROTECTION:
+    - Only seeds once per uid/session
+    - Never resets after user makes changes
+    """
+    ss = st.session_state
+    
+    # Protect against resetting after the user changes toggles
+    if ss.get("_fin_defaults_seeded"):
+        return
+    
+    uid = ss.get("uid") or "anon"
+    
+    # Seed only once per uid/session
+    if ss.get(f"_fin_seeded_for_{uid}"):
+        ss["_fin_defaults_seeded"] = True
+        return
+    
+    # Initialize expert_review_selected_assets if not exists
+    # Default: ONLY liquid_assets selected (income is always in base calc)
+    if "expert_review_selected_assets" not in ss:
+        ss["expert_review_selected_assets"] = {}
+    
+    # Set defaults for known asset categories (will be overridden by actual categories later)
+    # Using setdefault ensures we don't overwrite existing user selections
+    defaults = {
+        "liquid_assets": True,           # ✅ Selected by default
+        "retirement_accounts": False,    # ❌ Not selected
+        "life_insurance": False,         # ❌ Not selected
+        "annuities": False,              # ❌ Not selected
+        "home_equity": False,            # ❌ Not selected
+        "other_real_estate": False,      # ❌ Not selected
+        "other_resources": False,        # ❌ Not selected
+    }
+    
+    for key, default_value in defaults.items():
+        ss["expert_review_selected_assets"].setdefault(key, default_value)
+    
+    # Mark as seeded
+    ss[f"_fin_seeded_for_{uid}"] = True
+    ss["_fin_defaults_seeded"] = True
+    
+    # Debug log (remove after verification)
+    print("[FIN_DEFAULTS]", 
+          "liquid_assets=", ss["expert_review_selected_assets"].get("liquid_assets"),
+          "retirement_accounts=", ss["expert_review_selected_assets"].get("retirement_accounts"),
+          "home_equity=", ss["expert_review_selected_assets"].get("home_equity"))
+
+
 def render():
     """
     Render expert financial review page.
@@ -20,6 +77,9 @@ def render():
     Shows financial analysis with clean, professional design.
     Navi handles all communication, UI stays minimal.
     """
+
+    # Seed default selections once per session (income + liquid assets only)
+    _ensure_financial_defaults()
 
     # Get financial profile
     profile = get_financial_profile()
@@ -811,13 +871,15 @@ def _render_available_resources_cards(analysis, profile):
         return
 
     # Initialize selection state if not exists
+    # NOTE: Defaults are set by _ensure_financial_defaults() at page load
+    # This ensures any new categories discovered are initialized to False (not selected)
     if "expert_review_selected_assets" not in st.session_state:
-        # Default: Select liquid assets + retirement accounts (most common scenario)
-        # User can adjust from here
-        st.session_state.expert_review_selected_assets = {
-            name: name in ["liquid_assets", "retirement_accounts"]
-            for name, category in analysis.asset_categories.items()
-        }
+        st.session_state.expert_review_selected_assets = {}
+    
+    # Add any new categories that weren't seeded yet (default to False = not selected)
+    for name in analysis.asset_categories.keys():
+        if name not in st.session_state.expert_review_selected_assets:
+            st.session_state.expert_review_selected_assets[name] = False
 
     # Guidance text based on context
     if analysis.monthly_gap > 0:
