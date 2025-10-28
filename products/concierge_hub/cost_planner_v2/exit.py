@@ -36,6 +36,11 @@ def render():
     if "_cost_v2_restart_handled" in st.session_state:
         del st.session_state._cost_v2_restart_handled
 
+    # Set canonical completion flag (gate contract for CCR tile)
+    c = st.session_state.setdefault("cost", {})
+    c["completed"] = True
+    print("[COST_V2_EXIT] Set cost.completed=True (canonical gate)")
+
     _render_navi_completion()
     st.markdown('<div style="height: 24px;"></div>', unsafe_allow_html=True)
 

@@ -1,6 +1,7 @@
 # hubs/waiting_room.py
 
 
+import os
 import streamlit as st
 
 from core.additional_services import get_additional_services
@@ -12,6 +13,19 @@ from ui.footer_simple import render_footer_simple
 from ui.header_simple import render_header_simple
 
 __all__ = ["render"]
+
+
+def _dev_unlock_tiles() -> bool:
+    """Check if dev unlock mode is enabled for tile gating.
+    
+    Returns:
+        True if DEV_UNLOCK_TILES env var or session state flag is set
+    """
+    if st.session_state.get("_DEV_UNLOCK_TILES") is True:
+        return True
+    if os.getenv("DEV_UNLOCK_TILES", "0") in ("1", "true", "True", "YES", "yes"):
+        return True
+    return False
 
 
 def _get_trivia_badges():
@@ -204,23 +218,39 @@ def _is_gcp_complete() -> bool:
     """Check if Guided Care Plan is complete.
     
     Returns:
-        True if GCP summary_ready flag is set
+        True if GCP summary_ready flag is set (canonical or legacy)
     """
-    g = st.session_state.get("gcp", {})
-    # summary_ready is set at Daily Living → Continue; this is the contract used elsewhere
-    return bool(g.get("summary_ready"))
+    ss = st.session_state
+    g = ss.get("gcp", {})
+    # Canonical: set at Daily Living → Continue
+    if g.get("summary_ready"):
+        return True
+    # Legacy/alias support
+    if ss.get("summary_ready") or ss.get("_summary_ready"):
+        return True
+    # Fallback: legacy outcomes imply a computed recommendation
+    if ss.get("gcp.final_tier") or ss.get("gcp_care_recommendation", {}).get("_outcomes", {}).get("tier"):
+        return True
+    return False
 
 
 def _is_cost_planner_complete() -> bool:
     """Check if Cost Planner is complete.
     
     Returns:
-        True if cost totals exist in state
+        True if cost completed flag or totals exist in state
     """
-    # Mirror whatever completion key CP sets; fallback to presence of a last costplan snapshot if needed
-    cost = st.session_state.get("cost", {})
-    # If you track explicit completion, prefer that; otherwise assume true if any totals exist in state
-    return bool(cost.get("completed") or cost.get("last_totals") or st.session_state.get("_qe_totals"))
+    ss = st.session_state
+    cost = ss.get("cost", {})
+    # Preferred explicit flag (we set this in step 3)
+    if cost.get("completed"):
+        return True
+    # Practical fallbacks that reflect "the user has results"
+    if ss.get("_qe_totals"):      # quick estimate totals cache
+        return True
+    if cost.get("last_totals"):   # any persisted totals snapshot
+        return True
+    return False
 
 
 def _build_clinical_review_tile() -> ProductTileHub:
@@ -229,7 +259,15 @@ def _build_clinical_review_tile() -> ProductTileHub:
     Returns:
         ProductTileHub (visible but locked until GCP & CP complete)
     """
-    _ccr_locked = not (_is_gcp_complete() and _is_cost_planner_complete())
+    _gcp_done = _is_gcp_complete()
+    _cp_done = _is_cost_planner_complete()
+    
+    _ccr_locked = not (_gcp_done and _cp_done)
+    if _dev_unlock_tiles():
+        _ccr_locked = False
+    
+    # TEMP: gate decision log (remove when stable)
+    print(f"[CCR_GATE] dev={_dev_unlock_tiles()} gcp={_gcp_done} cp={_cp_done} locked={_ccr_locked}")
 
     return ProductTileHub(
         key="concierge_clinical_review",

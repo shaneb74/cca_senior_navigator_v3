@@ -971,6 +971,12 @@ def _handle_nav(
             final_tier, meta = run_gcp_decision_pipeline(st.session_state)
             print(f"[GCP_PIPELINE_TRIGGER] Pipeline complete: tier={final_tier}")
             
+            # Set canonical summary_ready flag (gate contract for CCR tile + other features)
+            g = st.session_state.setdefault("gcp", {})
+            g["summary_ready"] = True            # canonical
+            st.session_state["summary_ready"] = True  # backfill legacy readers (optional)
+            print(f"[GCP_PIPELINE_TRIGGER] Set summary_ready=True (canonical gate)")
+            
             # Check for next step override (move_preferences or results)
             if "gcp_next_step_override" in st.session_state:
                 next_step = st.session_state.pop("gcp_next_step_override")
