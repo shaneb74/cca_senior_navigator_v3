@@ -1,43 +1,49 @@
 #!/usr/bin/env python3
-"""Create demo_sarah user with GCP+CP complete flags for CCR tile unlock."""
-from __future__ import annotations
+"""Seed demo_sarah user with GCP + CP complete (unlocks CCR tile).
+
+Creates protected demo profile in data/users/demo/ directory.
+This file is never modified by the app - it's copied to data/users/ on first load.
+"""
 import json
-import pathlib
-import time
+from pathlib import Path
 
-# Use current directory as root
-ROOT = pathlib.Path.cwd()
-user_dir = ROOT / "data" / "users" / "demo_sarah"
-user_dir.mkdir(parents=True, exist_ok=True)
-
-now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-
-session = {
-    # canonical GCP publish keys
+# Demo user session data
+session_data = {
     "gcp": {
-        "summary_ready": True,
+        "summary_ready": True,  # GCP complete (canonical gate)
         "published_tier": "assisted_living",
         "flags": [
-            {"id": "moderate_cognitive_decline", "label": "Moderate cognitive decline"},
+            {"id": "moderate_cognitive_risk", "label": "Moderate cognitive decline"},
             {"id": "fall_risk", "label": "Fall risk"},
-            {"id": "medication_management", "label": "Complex medication regimen"},
-        ],
+            {"id": "medication_management", "label": "Medication management"},
+        ]
     },
-    # cost planner completion + postcard
     "cost": {
-        "completed": True,
+        "completed": True,  # CP complete (canonical gate)
         "monthly_total": 5175.0,
-        "last_totals": {"al": 5175.0, "home": 5000.0},
+        "last_totals": {
+            "al": 5175.0,
+            "home": 5000.0,
+        }
     },
-    # quick estimate cache (so CP is instant)
-    "_qe_totals": {"al": 5175.0, "home": 5000.0},
-    # mark CCR in a clean initial state
-    "ccr": {"checklist_generated": False, "appt_scheduled": False},
-    # optional: simple identity
-    "profile": {"first_name": "Sarah", "age_band": "75–84"},
+    "_qe_totals": {
+        "al": 5175.0,
+        "home": 5000.0,
+    },
+    "ccr": {
+        "checklist_generated": False,
+        "appt_scheduled": False,
+    },
+    "profile": {
+        "first_name": "Sarah",
+        "age_band": "75–84",
+    },
 }
 
-with (user_dir / "session.json").open("w", encoding="utf-8") as f:
-    json.dump(session, f, ensure_ascii=False, indent=2)
-
-print(f"[DEMO] wrote demo user at {user_dir}/session.json")
+# Write to protected demo directory (read-only source for app)
+demo_dir = Path.cwd() / "data" / "users" / "demo"
+demo_dir.mkdir(parents=True, exist_ok=True)
+demo_path = demo_dir / "demo_sarah.json"
+demo_path.write_text(json.dumps(session_data, indent=2))
+print(f"[DEMO] wrote protected demo profile at {demo_path}")
+print(f"[DEMO] app will copy to data/users/demo_sarah.json on first load")

@@ -1,0 +1,40 @@
+{
+  "gcp": {
+    "summary_ready": true,
+    "published_tier": "assisted_living",
+    "flags": [
+      {
+        "id": "moderate_cognitive_decline",
+        "label": "Moderate cognitive decline"
+      },
+      {
+        "id": "fall_risk",
+        "label": "Fall risk"
+      },
+      {
+        "id": "medication_management",
+        "label": "Complex medication regimen"
+      }
+    ]
+  },
+  "cost": {
+    "completed": true,
+    "monthly_total": 5175.0,
+    "last_totals": {
+      "al": 5175.0,
+      "home": 5000.0
+    }
+  },
+  "_qe_totals": {
+    "al": 5175.0,
+    "home": 5000.0
+  },
+  "ccr": {
+    "checklist_generated": false,
+    "appt_scheduled": false
+  },
+  "profile": {
+    "first_name": "Sarah",
+    "age_band": "75–84"
+  }
+}

@@ -16,7 +16,9 @@ LLM-POWERED FAQ (Stage 3):
 - Max 120 words, no hallucinations, safe CTAs only
 """
 
-from typing import Any
+from __future__ import annotations
+
+from typing import Any, Optional
 import html
 import json
 import re

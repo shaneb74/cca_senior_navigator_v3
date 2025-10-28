@@ -2,11 +2,13 @@
 Early rehydration for name state from snapshots.
 """
 
+from typing import Optional
+
 import streamlit as st
 from core.state_name import set_person_name
 
 
-def rehydrate_name_from_snapshot(snapshot: dict | None) -> None:
+def rehydrate_name_from_snapshot(snapshot: Optional[dict]) -> None:
     """If the snapshot contains any name, call set_person_name to restore it.
     
     Args:
