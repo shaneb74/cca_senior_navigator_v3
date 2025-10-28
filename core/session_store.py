@@ -578,6 +578,9 @@ USER_PERSIST_KEYS = {
     "auth",
     "flags",
     # Cost Planner v2 state keys
+    "cost",  # Top-level cost state (completed, monthly_total, last_totals, affordability)
+    "_qe_totals",  # Quick estimate totals cache (for instant CP load)
+    "qe_home_hours",  # Quick estimate home hours
     "cost_v2_step",
     "cost_v2_guest_mode",
     "cost_v2_triage",
@@ -605,6 +608,8 @@ USER_PERSIST_KEYS = {
     "gcp_care_recommendation",  # All GCP assessment answers (legacy)
     "gcp_v4_published",
     "gcp_v4_complete",
+    # CCR state
+    "ccr",  # Concierge Clinical Review state (checklist_generated, appt_scheduled)
 }
 
 
@@ -782,7 +787,7 @@ def load_demo_seed(seed_uid: str) -> dict:
 
 
 def ensure_runtime_from_seed(seed_uid: str, runtime_uid: str, *, force_reset: bool = False) -> None:
-    """Copy demo seed into data/users/<runtime_uid>/ if runtime profile doesn't exist
+    """Copy demo seed into data/users/<runtime_uid>.json if runtime profile doesn't exist
     or if force_reset=True. Never write to data/users/demo/*.
     
     Args:
@@ -791,17 +796,14 @@ def ensure_runtime_from_seed(seed_uid: str, runtime_uid: str, *, force_reset: bo
         force_reset: If True, overwrite existing runtime copy with fresh seed
         
     Side Effects:
-        Creates data/users/<runtime_uid>/session.json from seed
+        Creates data/users/<runtime_uid>.json from seed
     """
     import shutil
-    src = SEED_ROOT / seed_uid
-    dst = USER_ROOT / runtime_uid
-    dst.mkdir(parents=True, exist_ok=True)
-    session_src = src / "session.json"
-    session_dst = dst / "session.json"
+    src = SEED_ROOT / seed_uid / "session.json"
+    dst = USER_ROOT / f"{runtime_uid}.json"  # Flat file, not directory
 
-    if force_reset or not session_dst.exists():
-        shutil.copy2(session_src, session_dst)  # immutable seed -> fresh runtime copy
+    if force_reset or not dst.exists():
+        shutil.copy2(src, dst)  # immutable seed -> fresh runtime copy
         print(f"[DEMO_SEED] Copied {seed_uid} -> {runtime_uid} (force_reset={force_reset})")
 
 
