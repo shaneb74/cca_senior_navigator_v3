@@ -3,7 +3,7 @@ Cost Planner v2 - Prepare for Quick Estimate Gate
 
 Lightweight personalization gate that collects essential context before showing
 the Quick Estimate comparison view. Asks location and home carry questions based
-on the GCP recommendation, then passes data to comparison_view.
+on the GCP recommendation.
 
 Architecture:
 - Part of Step 1 (Intro) - precedes Quick Estimate
@@ -378,8 +378,6 @@ def _render_facility_questions():
         # Clear single-path tier to ensure comparison renders
         if "cost.single_path_tier" in st.session_state:
             del st.session_state["cost.single_path_tier"]
-        # Sync ZIP and other data (even if ZIP missing, sync what we have)
-        _sync_to_comparison_view()
         # Log action
         print(f"[COST_CTA] action=compare tier={rec_tier} zip_present={has_zip} view_mode=compare tabs_revealed=True")
         st.rerun()
@@ -503,34 +501,6 @@ def _validate_inputs() -> bool:
             return False
 
     return True
-
-
-def _sync_to_comparison_view():
-    """Sync prepare gate data to comparison_view session keys.
-    
-    This bridges the prepare gate to the comparison view component.
-    """
-
-    # ZIP code (use cost.inputs as source of truth, fallback to prepare gate key)
-    zip_code = st.session_state.get("cost.inputs", {}).get("zip") or st.session_state.get(SESSION_KEYS["zip"])
-    if zip_code:
-        st.session_state["cost_v2_quick_zip"] = zip_code
-
-    # Home carry cost
-    home_carry = st.session_state.get(SESSION_KEYS["home_carry_base"])
-    if home_carry is not None:
-        st.session_state["comparison_home_carry_cost"] = home_carry
-
-    # Keep home flag
-    keep_home = st.session_state.get(SESSION_KEYS["keep_home"])
-    if keep_home is not None:
-        st.session_state["comparison_keep_home"] = keep_home
-
-    # Show comparison flag
-    # Note: comparison_view doesn't currently read this, but we store it for future use
-    st.session_state["comparison_show_both"] = st.session_state.get(
-        SESSION_KEYS["show_comparison"], True
-    )
 
 
 # ==============================================================================
