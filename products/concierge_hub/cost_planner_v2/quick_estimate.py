@@ -923,6 +923,41 @@ def cp_render_path_forward():
 
 
 # ==============================================================================
+# HELPER: SPLIT TOTALS FOR PERSISTENCE
+# ==============================================================================
+
+def _split_totals_for_persistence(result: dict) -> tuple[float, float, float]:
+    """Split computed result into care-only, carry, and combined totals.
+    
+    Args:
+        result: Dict with {"total": float, "segments": dict}
+        
+    Returns:
+        Tuple of (care_total, carry_total, combined_total)
+    """
+    segments = result.get("segments", {})
+    total = result.get("total", 0.0)
+    
+    # Extract home carry from segments
+    carry_total = 0.0
+    carry_keys = {"Home Carry", "Home Expense", "Keep Home"}
+    
+    for key, value in segments.items():
+        if key in carry_keys:
+            carry_total += float(value)
+    
+    # Care-only is total minus carry
+    care_total = total - carry_total
+    combined_total = total
+    
+    # Debug: log the split logic
+    print(f"[SPLIT_DEBUG] result.total={total} segments={segments}")
+    print(f"[SPLIT_DEBUG] carry_total={carry_total} care_total={care_total} combined={combined_total}")
+    
+    return (float(care_total), float(carry_total), float(combined_total))
+
+
+# ==============================================================================
 # BOTTOM CTAs
 # ==============================================================================
 
@@ -940,7 +975,8 @@ def _render_bottom_ctas():
             key="qe_continue"
         ):
             # Ensure path_choice is set from selected_assessment
-            cost = st.session_state.setdefault("cost", {})
+            ss = st.session_state
+            cost = ss.setdefault("cost", {})
             selected = cost.get("selected_assessment")
             if selected:
                 # Map assessment to path_choice for PFMA compatibility
@@ -952,19 +988,87 @@ def _render_bottom_ctas():
 
             if not ok:
                 # Store error in cost state to display inline
-                st.session_state["cost"]["cta_error"] = err
+                ss["cost"]["cta_error"] = err
                 print(f"[CTA_PAY] blocked: {err}")
                 st.rerun()
             else:
+                # PERSIST TOTALS: care vs carry vs combined (before routing)
+                # Get warmed results for all visible tabs
+                from products.concierge_hub.cost_planner_v2.calc import compute_totals_cached
+                
+                # Get inputs for compute
+                zip_for_compute = cost.get("inputs", {}).get("zip") or "00000"
+                hours_per_day = ss.get("comparison_hours_per_day", 8.0)
+                home_carry = float(ss.get("comparison_home_carry_cost", 0) or 0)
+                keep_home = ss.get("comparison_keep_home", False)
+                
+                # Get visible tabs
+                avail = cost.get("assessments_available", {"home": True, "al": True, "mc": False})
+                visible = [k for k, ok in avail.items() if ok]
+                
+                # Compute all visible tabs and split totals
+                last_totals = {}
+                for key in visible:
+                    result = compute_totals_cached(
+                        key,
+                        zip_code=zip_for_compute,
+                        hours_per_day=hours_per_day,
+                        home_carry=home_carry,
+                        keep_home=keep_home,
+                    )
+                    care_total, carry_total, combined_total = _split_totals_for_persistence(result)
+                    last_totals[key] = {
+                        "care": float(care_total),
+                        "carry": float(carry_total),
+                        "combined": float(combined_total)
+                    }
+                
+                # Get active selection totals
+                active = selected or "al"
+                result_active = compute_totals_cached(
+                    active,
+                    zip_code=zip_for_compute,
+                    hours_per_day=hours_per_day,
+                    home_carry=home_carry,
+                    keep_home=keep_home,
+                )
+                
+                # Log the warmed result to verify we're using computed total, not a segment
+                print(f"[QE_WARMED] active={active} result={result_active}")
+                
+                care_total, carry_total, combined_total = _split_totals_for_persistence(result_active)
+                
+                # Persist selection and totals
+                ss["cp.persisted_selection"] = active
+                c = ss.setdefault("cost", {})
+                c["monthly_total"] = float(care_total)  # canonical: care-only base
+                c["home_carry_monthly"] = float(carry_total)
+                c["combined_monthly"] = float(combined_total)
+                c["last_totals"] = last_totals
+                c["completed"] = True
+                
+                print(f"[CP_PERSIST] sel={active} care={c['monthly_total']} carry={c['home_carry_monthly']} comb={c['combined_monthly']}")
+                
+                # ALSO persist to cost_v2_quick_estimate (for Financial Review/expert_review.py)
+                ss["cost_v2_quick_estimate"] = {
+                    "estimate": {
+                        "monthly_adjusted": float(care_total),      # care-only (what FA displays)
+                        "monthly_total": float(combined_total),     # care + carry
+                        "care_type": cost.get("path_choice", active),
+                        "selected_plan": active,
+                    }
+                }
+                print(f"[CP_PERSIST_FA] cost_v2_quick_estimate.monthly_adjusted={care_total}")
+                
                 # Persist CostPlan snapshot for PFMA
                 _snapshot_for_pfma()
 
                 # Navigate to Cost Planner v2 triage step
                 print(f"[CTA_PAY] → cost_v2 triage (path={cost['path_choice']})")
-                st.session_state["_route_changed"] = True
+                ss["_route_changed"] = True
                 flush_costplan_if_due(force=True)
                 _maybe_cleanup_files(force=True)
-                st.session_state.cost_v2_step = "triage"
+                ss.cost_v2_step = "triage"
                 st.query_params["page"] = "cost_v2"
                 st.rerun()
 
