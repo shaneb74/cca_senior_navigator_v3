@@ -107,6 +107,60 @@ def _render_plan_highlights_card():
     # Get financial metrics
     metrics = _calculate_completion_metrics()
 
+    # Extract base_care, home_carry, combined using persisted selection
+    ss = st.session_state
+    cost = ss.get("cost", {}) or {}
+    
+    # Log which plan we're picking to verify correct selection logic
+    print(f"[FIN_PICK] persisted_selection={ss.get('cp.persisted_selection')} current_tab={ss.get('cp_selected_assessment')}")
+    
+    # 1) Use the user's choice from Quick Estimate
+    active = ss.get("cp.persisted_selection") or ss.get("cp_selected_assessment")
+    
+    # 2) Fallback: map GCP tier -> cp key only if needed
+    if not active:
+        gcp_tier = (ss.get("gcp") or {}).get("published_tier")
+        if gcp_tier in ("memory_care", "memory_care_high_acuity"):
+            active = "mc"
+        elif gcp_tier == "assisted_living":
+            active = "al"
+        else:
+            active = "home"
+    
+    # Base comparator: CARE ONLY
+    base_care = cost.get("monthly_total")
+    
+    # Fallbacks
+    if base_care is None and isinstance(cost.get("last_totals"), dict):
+        lt = cost["last_totals"].get(active)
+        if isinstance(lt, dict):
+            base_care = lt.get("care")
+    if base_care is None and isinstance(ss.get("_qe_totals"), dict):
+        # final fallback to legacy numeric cache if present
+        base_care = ss["_qe_totals"].get(active)
+    
+    try:
+        base_care = float(base_care) if base_care is not None else metrics['monthly_cost']
+    except Exception:
+        base_care = metrics['monthly_cost']
+    
+    # Carry for display and optional combined
+    home_carry = cost.get("home_carry_monthly")
+    try:
+        home_carry = float(home_carry) if home_carry is not None else 0.0
+    except Exception:
+        home_carry = 0.0
+    
+    combined = (base_care or 0.0) + home_carry
+    
+    print(f"[FIN_BASE] sel={active} care={base_care} carry={home_carry} combined={combined}")
+    
+    # Temporary guard: catch segment misuse
+    lt = (cost.get("last_totals") or {}).get(active) or {}
+    if isinstance(lt, dict) and base_care is not None and lt.get("care"):
+        if base_care < float(lt["care"]) - 1e-6:
+            print(f"[WARN] base_care({base_care}) < last_totals.care({lt['care']}) -> possible segment misuse")
+
     # Display highlights
     col1, col2 = st.columns(2, gap="large")
 
@@ -121,7 +175,13 @@ def _render_plan_highlights_card():
             st.markdown("**Confidence Level:** —")
 
     with col2:
-        st.markdown(f"**Monthly Care Cost:** ${metrics['monthly_cost']:,.0f}")
+        # Build combined display line (hide when home_carry is 0)
+        parts = [f"**Care:** ${base_care:,.0f}/mo"]
+        if home_carry and home_carry > 0:
+            parts.append(f"**Home carry:** ${home_carry:,.0f}/mo")
+            parts.append(f"**Combined:** ${combined:,.0f}/mo")
+        st.markdown("  •  ".join(parts))
+        
         if metrics["monthly_gap"] >= 0:
             st.markdown(f"**Monthly Surplus:** +${metrics['monthly_gap']:,.0f}")
         else:
