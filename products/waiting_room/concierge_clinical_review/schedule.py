@@ -30,4 +30,4 @@ def render_schedule():
     
     if c3.button("← Waiting Room", use_container_width=True, key="ccr_schedule_to_hub"):
         from core.nav import route_to
-        route_to("hub_waiting_room")
+        route_to("hub_waiting")

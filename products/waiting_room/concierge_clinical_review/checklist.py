@@ -61,4 +61,4 @@ def render_checklist():
         st.rerun()
     if c3.button("← Waiting Room", use_container_width=True, key="ccr_checklist_to_hub"):
         from core.nav import route_to
-        route_to("hub_waiting_room")
+        route_to("hub_waiting")

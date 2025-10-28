@@ -93,6 +93,6 @@ def render_overview():
     st.markdown("---")
     if st.button("← Back to Waiting Room", use_container_width=True, key="ccr_back_to_hub"):
         from core.nav import route_to
-        route_to("hub_waiting_room")
+        route_to("hub_waiting")
 
     print("[CCR] opened", datetime.utcnow().isoformat() + "Z")
