@@ -51,6 +51,14 @@ def _suppress_header_navi_for_current_route() -> bool:
                 return True
         except Exception:
             pass  # Fail open: allow header if we can't determine step
+        
+        # Additional fallback: check if GCP summary is ready and tier is published
+        try:
+            gcp_state = st.session_state.get("gcp", {})
+            if gcp_state.get("summary_ready") and gcp_state.get("published_tier"):
+                return True
+        except Exception:
+            pass
     
     return False
 
