@@ -29,7 +29,8 @@ from apps.navi_core.ui_components import (
     navi_progress_widget,
     navi_compact_progress,
     navi_milestone_badge,
-    navi_progress_summary
+    navi_progress_summary,
+    navi_auto_progress
 )
 
 __all__ = [
@@ -65,4 +66,5 @@ __all__ = [
     "navi_compact_progress",
     "navi_milestone_badge",
     "navi_progress_summary",
+    "navi_auto_progress",
 ]

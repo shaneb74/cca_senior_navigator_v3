@@ -247,6 +247,16 @@ def render_header(active_route: str | None = None) -> None:
         return
     st.session_state[_HEADER_SENTINEL] = True
     st.markdown(_build_header(active_route=active_route), unsafe_allow_html=True)
+    
+    # Inject NAVI global compact progress tracker just below the header
+    try:
+        from apps.navi_core.ui_components import navi_auto_progress
+        from core.url_helpers import current_route
+        
+        route = current_route()
+        navi_auto_progress(route)
+    except Exception:
+        pass
 
 
 def render_footer() -> None:

@@ -185,3 +185,40 @@ def navi_progress_summary() -> dict:
     """
     from apps.navi_core.progress_manager import get_progress_stats
     return get_progress_stats()
+
+
+# ==============================================================
+# Global Auto Progress Integration
+# ==============================================================
+
+def navi_auto_progress(page_name: str | None = None):
+    """
+    Automatically update NAVI context, mark completion,
+    and render the compact global progress tracker.
+    Safe to call from any hub or page entry.
+    
+    Args:
+        page_name: Optional page name. If None, uses session_state current_page.
+    """
+    import streamlit as st
+    from apps.navi_core.context_manager import update_context
+    from apps.navi_core.progress_manager import mark_page_complete, calculate_progress
+    
+    try:
+        # Resolve page name from session if not passed
+        if not page_name:
+            page_name = st.session_state.get("current_page", "Unknown")
+        
+        # Update NAVI context + progress state
+        update_context(page_name)
+        mark_page_complete(page_name)
+        
+        # Only display tracker if user has started journey
+        percent, _ = calculate_progress()
+        if percent > 0:
+            st.markdown("<div class='navi-progress-container'>", unsafe_allow_html=True)
+            navi_compact_progress()
+            st.markdown("</div>", unsafe_allow_html=True)
+    except Exception as e:
+        # Fail silently - don't break page rendering if progress unavailable
+        pass
