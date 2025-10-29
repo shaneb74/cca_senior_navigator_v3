@@ -106,30 +106,32 @@ def _render_unified_audience_selection() -> None:
             unsafe_allow_html=True,
         )
         
-        # Form (no relationship dropdown in self mode)
-        form = st.form(f"welcome-form-{mode}", clear_on_submit=False)
-        with form:
-            # Name input + Continue button (always visible)
-            st.markdown('<div class="context-form-row">', unsafe_allow_html=True)
-            input_col, button_col = st.columns([3, 2], gap="small")
-            with input_col:
-                st.markdown('<div class="context-input">', unsafe_allow_html=True)
-                name_value = st.text_input(
-                    placeholder,
-                    key=f"welcome-name-{mode}",
-                    label_visibility="collapsed",
-                    placeholder=placeholder,
-                )
-                st.markdown("</div>", unsafe_allow_html=True)
-            with button_col:
-                st.markdown('<div class="context-submit">', unsafe_allow_html=True)
-                # Disable button until name is provided
-                can_continue = name_value and name_value.strip()
-                submitted = st.form_submit_button("Continue", disabled=not can_continue)
-                st.markdown("</div>", unsafe_allow_html=True)
+        # Name input + Continue button (reactive state, no form wrapper)
+        st.markdown('<div class="context-form-row">', unsafe_allow_html=True)
+        input_col, button_col = st.columns([3, 2], gap="small")
+        with input_col:
+            st.markdown('<div class="context-input">', unsafe_allow_html=True)
+            # Get current value from session state or empty string
+            current_name = st.session_state.get("audience_name_input", "")
+            name_value = st.text_input(
+                placeholder,
+                value=current_name,
+                key=f"welcome-name-{mode}",
+                label_visibility="collapsed",
+                placeholder=placeholder,
+            )
+            # Save to session state immediately for reactive updates
+            st.session_state["audience_name_input"] = name_value
             st.markdown("</div>", unsafe_allow_html=True)
+        with button_col:
+            st.markdown('<div class="context-submit">', unsafe_allow_html=True)
+            # Enable button only if name has content
+            button_disabled = not (name_value and name_value.strip())
+            submitted = st.button("Continue", disabled=button_disabled, key=f"continue-{mode}")
+            st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
         
-        # Handle form submission
+        # Handle button click
         if submitted and name_value and name_value.strip():
             # Store using specified session state keys
             st.session_state["audience_mode"] = mode
