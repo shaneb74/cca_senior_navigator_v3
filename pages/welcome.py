@@ -15,6 +15,14 @@ from layout import static_url  # Keep static_url for now
 from ui.footer_simple import render_footer_simple
 from ui.header_simple import render_header_simple
 
+# Phase 5: Contextual Guidance Layer
+try:
+    from apps.navi_core.context_manager import update_context
+    from apps.navi_core.guidance_manager import get_guidance
+    _GUIDANCE_AVAILABLE = True
+except ImportError:
+    _GUIDANCE_AVAILABLE = False
+
 _CSS_FLAG = "_welcome_css_main"
 
 _PILLS: dict[str, dict[str, str | None]] = {
@@ -548,6 +556,10 @@ def _welcome_body(
 
 def render(ctx: dict | None = None) -> None:
     """Render welcome page with adaptive behavior based on auth state."""
+    # Phase 5: Track page context for contextual guidance
+    if _GUIDANCE_AVAILABLE:
+        update_context("Welcome")
+    
     # ============================================================
     # AUTHENTICATION DISABLED FOR DEVELOPMENT TESTING
     # ============================================================

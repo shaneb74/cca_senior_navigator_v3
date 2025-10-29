@@ -10,6 +10,8 @@ from ui.header_simple import render_header_simple
 # Import NAVI Core components for persona selection
 try:
     from apps.navi_core import PERSONA_CHOICES, UserProfile
+    from apps.navi_core.context_manager import update_context
+    from apps.navi_core.guidance_manager import get_guidance
     _NAVI_AVAILABLE = True
 except ImportError:
     _NAVI_AVAILABLE = False
@@ -17,6 +19,10 @@ except ImportError:
 
 
 def _page_content(ctx=None):
+    # Phase 5: Track page context for contextual guidance
+    if _NAVI_AVAILABLE:
+        update_context("For Someone Else")
+    
     # Check if authenticated user already has planning context
     if is_authenticated():
         has_context = st.session_state.get("planning_for_name") or st.session_state.get(
@@ -54,6 +60,11 @@ def _render_enhanced_welcome_card():
             '<h1 class="context-title">We\'re here to help you find the support your loved ones need.</h1>',
             unsafe_allow_html=True,
         )
+        
+        # Phase 5: Display contextual guidance
+        if _NAVI_AVAILABLE:
+            guidance_msg = get_guidance()
+            st.info(f"💡 {guidance_msg}")
         
         # Persona selection form
         form = st.form("welcome-form-someone", clear_on_submit=False)
