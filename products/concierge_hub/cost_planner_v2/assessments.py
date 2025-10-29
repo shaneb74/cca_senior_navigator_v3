@@ -532,10 +532,11 @@ def _render_single_page_assessment(
     # Ensure derived fields are populated even on initial load
     _persist_assessment_state(product_key, assessment_key, state)
 
-    st.markdown('<div class="sn-app module-container">', unsafe_allow_html=True)
+    # Render compact Navi panel at top
+    from core.navi_module import render_module_navi_coach
+    render_module_navi_coach("Complete these assessments to build your financial profile for care planning.")
 
-    # Navi panel removed - now rendered once at assessment hub level
-    # Individual assessment-specific Navi configs in _SINGLE_PAGE_ASSESSMENTS are no longer used
+    st.markdown('<div class="sn-app module-container">', unsafe_allow_html=True)
 
     title = assessment_config.get("title", "Assessment")
     icon = assessment_config.get("icon", "📋")
