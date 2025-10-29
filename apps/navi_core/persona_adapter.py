@@ -17,13 +17,12 @@ from .paths import get_config_path
 
 # Mapping from UI-friendly labels to internal persona IDs
 # Used for explicit persona selection in onboarding flow
+# Note: "Veteran" and "Self" are handled in dedicated flows
 PERSONA_CHOICES = {
     "Adult Child (Son or Daughter)": "AdultChild",
     "Spouse / Partner": "Spouse",
     "Friend or Neighbor": "SelfSenior",  # fallback neutral role
-    "Veteran": "Veteran",
     "Advisor / Professional": "Advisor",
-    "Self (I'm the one seeking care)": "SelfSenior",
     "Other / Unsure": "Unknown",
 }
 

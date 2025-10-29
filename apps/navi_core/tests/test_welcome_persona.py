@@ -17,7 +17,7 @@ class TestPersonaChoicesMapping:
         """Test that PERSONA_CHOICES constant is defined."""
         assert PERSONA_CHOICES is not None
         assert isinstance(PERSONA_CHOICES, dict)
-        assert len(PERSONA_CHOICES) > 0
+        assert len(PERSONA_CHOICES) == 5  # Updated: 5 options (removed Veteran and Self)
     
     def test_adult_child_mapping(self):
         """Test that Adult Child maps to AdultChild."""
@@ -27,17 +27,13 @@ class TestPersonaChoicesMapping:
         """Test that Spouse / Partner maps to Spouse."""
         assert PERSONA_CHOICES["Spouse / Partner"] == "Spouse"
     
-    def test_veteran_mapping(self):
-        """Test that Veteran maps to Veteran."""
-        assert PERSONA_CHOICES["Veteran"] == "Veteran"
+    def test_friend_neighbor_mapping(self):
+        """Test that Friend or Neighbor maps to SelfSenior."""
+        assert PERSONA_CHOICES["Friend or Neighbor"] == "SelfSenior"
     
     def test_advisor_mapping(self):
         """Test that Advisor / Professional maps to Advisor."""
         assert PERSONA_CHOICES["Advisor / Professional"] == "Advisor"
-    
-    def test_self_senior_mapping(self):
-        """Test that Self maps to SelfSenior."""
-        assert PERSONA_CHOICES["Self (I'm the one seeking care)"] == "SelfSenior"
     
     def test_unknown_mapping(self):
         """Test that Other / Unsure maps to Unknown."""
@@ -93,9 +89,9 @@ class TestUserProfileIntegration:
         assert profile.role == "AdultChild"
         assert profile.relationship == "Adult Child (Son or Daughter)"
     
-    def test_create_profile_with_veteran_role(self):
-        """Test creating UserProfile with Veteran role from UI selection."""
-        relationship = "Veteran"
+    def test_create_profile_with_friend_neighbor_role(self):
+        """Test creating UserProfile with Friend/Neighbor role from UI selection."""
+        relationship = "Friend or Neighbor"
         role = PERSONA_CHOICES[relationship]
         
         profile = UserProfile(
@@ -105,8 +101,8 @@ class TestUserProfileIntegration:
             relationship=relationship
         )
         
-        assert profile.role == "Veteran"
-        assert profile.relationship == "Veteran"
+        assert profile.role == "SelfSenior"
+        assert profile.relationship == "Friend or Neighbor"
     
     def test_profile_serialization_with_persona(self):
         """Test that UserProfile with persona can be serialized to dict."""
