@@ -534,24 +534,8 @@ def _render_single_page_assessment(
 
     st.markdown('<div class="sn-app module-container">', unsafe_allow_html=True)
 
-    navi = settings.get("navi")
-    if navi:
-        nav_cols = st.columns([1, 2, 1])
-        with nav_cols[1]:
-            encouragement = navi.get("encouragement", {})
-            render_navi_panel_v2(
-                title=navi.get("title", ""),
-                reason=navi.get("reason", ""),
-                encouragement={
-                    "icon": encouragement.get("icon", "💡"),
-                    "text": encouragement.get("text", ""),
-                    "status": encouragement.get("status", "getting_started"),
-                },
-                context_chips=navi.get("context_chips", []),
-                primary_action={"label": "", "action": None},
-                variant="module",
-            )
-        st.markdown("<div style='margin: 24px 0;'></div>", unsafe_allow_html=True)
+    # Navi panel removed - now rendered once at assessment hub level
+    # Individual assessment-specific Navi configs in _SINGLE_PAGE_ASSESSMENTS are no longer used
 
     title = assessment_config.get("title", "Assessment")
     icon = assessment_config.get("icon", "📋")
