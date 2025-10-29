@@ -80,7 +80,11 @@ def render():
 
     # Render compact Navi panel at top
     from core.navi_module import render_module_navi_coach
-    render_module_navi_coach("We'll show coverage from income and assets and highlight next steps.")
+    render_module_navi_coach(
+        title_text="Planning Opportunity",
+        body_text="We'll show coverage from income and assets and highlight next steps.",
+        tip_text="Your income provides partial coverage. Adding more resources will help extend your plan.",
+    )
 
     # Seed default selections once per session (income + liquid assets only)
     _ensure_financial_defaults()

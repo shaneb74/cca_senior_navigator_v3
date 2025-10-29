@@ -43,12 +43,15 @@ def render():
 
     # Render compact Navi panel at top
     from core.navi_module import render_module_navi_coach
-    render_module_navi_coach("Your data is saved. You can download, share, or review your plan with an advisor.")
+    render_module_navi_coach(
+        title_text="Your Financial Plan is Complete!",
+        body_text="You can download a copy, share it with your family, or review it with an advisor.",
+        tip_text=None,
+    )
 
     st.markdown('<div style="height: 24px;"></div>', unsafe_allow_html=True)
 
-    st.markdown("## 🎯 Your Financial Plan is Complete")
-    st.markdown('<div style="height: 16px;"></div>', unsafe_allow_html=True)
+    # Heading removed - now shown in compact Navi panel above
 
     _render_accomplishments_card()
     st.markdown('<div style="height: 32px;"></div>', unsafe_allow_html=True)
