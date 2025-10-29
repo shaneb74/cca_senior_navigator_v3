@@ -140,6 +140,10 @@ def render_assessment_hub(product_key: str = "cost_planner_v2") -> None:
         product_key: Product key for state management
     """
 
+    # Render compact Navi panel at top
+    from core.navi_module import render_module_navi_coach
+    render_module_navi_coach("Complete these assessments to build your financial profile for care planning.")
+
     # Check if a specific assessment is selected
     current_assessment = st.session_state.get(f"{product_key}_current_assessment")
 

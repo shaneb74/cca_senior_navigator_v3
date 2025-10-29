@@ -43,6 +43,10 @@ def _load_module_config() -> dict:
 def render():
     """Render module hub with financial assessment modules."""
 
+    # Render compact Navi panel at top
+    from core.navi_module import render_module_navi_coach
+    render_module_navi_coach("Your data is saved. You can download, share, or review your plan with an advisor.")
+
     # Get flags from session state (matches Phase 3 flag-based visibility)
     flags = st.session_state.get("flags", {})
     is_veteran = flags.get("is_veteran", False)

@@ -78,6 +78,10 @@ def render():
     Navi handles all communication, UI stays minimal.
     """
 
+    # Render compact Navi panel at top
+    from core.navi_module import render_module_navi_coach
+    render_module_navi_coach("We'll show coverage from income and assets and highlight next steps.")
+
     # Seed default selections once per session (income + liquid assets only)
     _ensure_financial_defaults()
 

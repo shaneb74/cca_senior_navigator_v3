@@ -69,11 +69,6 @@ def render():
 
     product_shell_start()
 
-    # Render module-level Navi coach at top of every screen
-    from core.navi_module import render_module_navi_coach
-    render_module_navi_coach("Costs shown reflect care only; home expenses are tracked separately.")
-    print("[COST_PLANNER] Module Navi rendered, continuing with product logic")
-
     # HOUSEHOLD FLOW: Detect dual-person mode for cost planning
     try:
         from core.household import get_careplan_for
