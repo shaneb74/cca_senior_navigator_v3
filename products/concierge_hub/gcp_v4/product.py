@@ -124,7 +124,8 @@ def render():
             # HARD GATE: Check if summary is ready (set by pipeline at Daily Living)
             gcp = st.session_state.get("gcp", {})
             if not gcp.get("summary_ready"):
-                st.info("ℹ️ Please complete the Daily Living step to view your recommendation.")
+                # Use caption instead of st.info banner
+                st.caption("ℹ️ Please complete the Daily Living step to view your recommendation.")
                 print("[GCP_SUMMARY_READY] false - blocking render")
                 # Close container and stop
                 st.markdown("</div>", unsafe_allow_html=True)
@@ -204,15 +205,13 @@ def render():
         st.session_state["gcp_step_title"] = step_title
         st.session_state["gcp_step_subtitle"] = step_subtitle
 
-        # Single Navi header at the top of all GCP pages (including results)
-        try:
-            from products.concierge_hub.gcp_v4.ui_helpers import render_navi_header_message
-            # Render header only when on GCP route (prevent leaks)
-            route = st.session_state.get("route") or st.query_params.get("page") or ""
-            if route == "gcp":
-                render_navi_header_message()
-        except Exception:
-            pass
+        # Render compact Navi panel at top of question pages only
+        # (Summary/Results has its own detailed panel)
+        from core.navi_helpers import render_module_navi_coach
+        step_id = (st.session_state.get("gcp_current_step_id") or "").lower()
+        if step_id and step_id not in ("results",):
+            render_module_navi_coach("Answer these questions to match the right level of support.")
+            print("[NAVI_MODULE] rendered (questions); continuing page content")
 
         # Run module engine (handles all rendering and navigation)
         # The engine stores state in st.session_state[config.state_key]
