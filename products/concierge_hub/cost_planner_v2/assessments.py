@@ -154,6 +154,14 @@ def render_assessment_hub(product_key: str = "cost_planner_v2") -> None:
 def _render_hub_view(product_key: str) -> None:
     """Render the hub view with assessment cards."""
 
+    # Render compact Navi panel at top
+    from core.navi_module import render_module_navi_coach
+    render_module_navi_coach(
+        title_text="Let's work through these financial assessments together",
+        body_text="Completing them will help us figure out how to pay for the care that was recommended.",
+        tip_text="Each assessment takes just a few minutes and helps build your complete financial picture.",
+    )
+
     # Load all assessment configs
     assessments = _load_all_assessments(product_key)
 
@@ -163,7 +171,7 @@ def _render_hub_view(product_key: str) -> None:
 
     # Hub header
     st.markdown("## Financial Assessments")
-    st.markdown("Complete these assessments to build your financial profile for care planning.")
+    # Caption removed - now shown in compact Navi panel above
     st.markdown("<div style='margin: 24px 0;'></div>", unsafe_allow_html=True)
 
     # Calculate overall progress
@@ -528,26 +536,30 @@ def _render_single_page_assessment(
     # Ensure derived fields are populated even on initial load
     _persist_assessment_state(product_key, assessment_key, state)
 
-    st.markdown('<div class="sn-app module-container">', unsafe_allow_html=True)
+    # Render compact Navi panel at top (content varies by assessment type)
+    from core.navi_module import render_module_navi_coach
+    
+    if assessment_key == "income_sources":
+        render_module_navi_coach(
+            title_text="Enter monthly income from all sources",
+            body_text="Use Basic for a quick total or Advanced if you want to break it down.",
+            tip_text=None,
+        )
+    elif assessment_key == "assets_resources":
+        render_module_navi_coach(
+            title_text="Enter available assets and resources",
+            body_text="Include only assets that can realistically support care costs.",
+            tip_text=None,
+        )
+    else:
+        # Default for other assessments
+        render_module_navi_coach(
+            title_text="Complete this assessment",
+            body_text="This information helps us build your complete financial picture.",
+            tip_text=None,
+        )
 
-    navi = settings.get("navi")
-    if navi:
-        nav_cols = st.columns([1, 2, 1])
-        with nav_cols[1]:
-            encouragement = navi.get("encouragement", {})
-            render_navi_panel_v2(
-                title=navi.get("title", ""),
-                reason=navi.get("reason", ""),
-                encouragement={
-                    "icon": encouragement.get("icon", "💡"),
-                    "text": encouragement.get("text", ""),
-                    "status": encouragement.get("status", "getting_started"),
-                },
-                context_chips=navi.get("context_chips", []),
-                primary_action={"label": "", "action": None},
-                variant="module",
-            )
-        st.markdown("<div style='margin: 24px 0;'></div>", unsafe_allow_html=True)
+    st.markdown('<div class="sn-app module-container">', unsafe_allow_html=True)
 
     title = assessment_config.get("title", "Assessment")
     icon = assessment_config.get("icon", "📋")

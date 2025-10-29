@@ -78,6 +78,14 @@ def render():
     Navi handles all communication, UI stays minimal.
     """
 
+    # Render compact Navi panel at top
+    from core.navi_module import render_module_navi_coach
+    render_module_navi_coach(
+        title_text="Planning Opportunity",
+        body_text="We'll show coverage from income and assets and highlight next steps.",
+        tip_text="Your income provides partial coverage. Adding more resources will help extend your plan.",
+    )
+
     # Seed default selections once per session (income + liquid assets only)
     _ensure_financial_defaults()
 
@@ -124,9 +132,8 @@ def render():
     # Publish summary to MCIP
     publish_to_mcip(analysis, profile)
 
-    # NEW FLOW: Render sections in logical decision order
-    # 1. Navi guidance with coverage duration headline
-    _render_navi_guidance(analysis, profile)
+    # Navi guidance removed - now using compact panel at page top (line 83)
+    # Old _render_navi_guidance() created duplicate "Planning Opportunity" panel
 
     # Main content container
     st.markdown('<div class="sn-app module-container">', unsafe_allow_html=True)
@@ -161,19 +168,7 @@ def render():
 def _render_incomplete_state():
     """Show state when required assessments not complete."""
 
-    # Navi communication
-    render_navi_panel_v2(
-        title="Complete Required Assessments",
-        reason="Please complete Income and Assets assessments to see your financial review.",
-        encouragement={
-            "icon": "📋",
-            "text": "These two assessments are essential for accurate cost analysis.",
-            "status": "active",
-        },
-        context_chips=[],
-        primary_action={"label": "", "route": ""},
-        variant="module",
-    )
+    # Navi panel removed - compact Navi at page top handles all messaging
 
     # Minimal content
     st.markdown('<div class="sn-app module-container">', unsafe_allow_html=True)
@@ -358,14 +353,15 @@ def _render_navi_guidance(analysis, profile):
     # Context chips - removed (info now in reason text)
     context_chips = []
 
-    render_navi_panel_v2(
-        title=title,
-        reason=reason,
-        encouragement=encouragement,
-        context_chips=context_chips,
-        primary_action={"label": "", "route": ""},
-        variant="module",
-    )
+    # DEPRECATED: Hero Navi panel removed - using compact panel at page top instead
+    # render_navi_panel_v2(
+    #     title=title,
+    #     reason=reason,
+    #     encouragement=encouragement,
+    #     context_chips=context_chips,
+    #     primary_action={"label": "", "route": ""},
+    #     variant="module",
+    # )
 
 
 def _calculate_timeline_segments(analysis, selected_assets):

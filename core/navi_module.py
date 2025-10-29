@@ -8,43 +8,51 @@ explanation, and current plan summary (recommendation + care costs).
 import streamlit as st
 
 
-def render_module_navi_coach(primary_msg: str, why_text: str | None = None):
-    """Compact module coach with optional 'Why this question?' slot and plan summary.
+def render_module_navi_coach(title_text: str, body_text: str, tip_text: str | None = None):
+    """Compact module coach with title, body, and optional tip.
     
-    This function renders a lean coaching panel and returns immediately,
-    allowing the rest of the module page to render normally.
+    Renders a minimal coaching panel with:
+    - Title text (h4 weight)
+    - One-sentence body text (≤120 chars)
+    - Optional small tip
+    
+    Uses standard navi-panel-compact styling:
+    - 4px blue left border (#3B82F6)
+    - White background
+    - 8px rounded corners
+    - Subtle shadow
+    - Max-width 1120px centered
+    
+    This function renders and returns immediately, allowing the page to continue.
     """
-    ss = st.session_state
-    gcp = ss.get("gcp") or {}
-    cost = ss.get("cost") or {}
-
-    tier = gcp.get("published_tier")
-    plan = (
-        "Assisted Living (memory support)"
-        if tier == "assisted_living"
-        else (tier or "").replace("_", " ").title()
+    # Build tip HTML if provided
+    tip_html = f"<p style='font-size:0.9rem;color:#555;margin-top:.75rem;'>{tip_text}</p>" if tip_text else ""
+    
+    # Render compact Navi card with inline styling
+    st.markdown(
+        """
+        <div class="navi-panel-compact"
+             style="
+                background:#fff;
+                border-left:4px solid rgb(59,130,246);
+                border-radius:8px;
+                padding:1.25rem;
+                margin:0 auto 1.5rem;
+                max-width:1120px;
+                box-shadow:0 0 4px 1px rgba(0,0,0,0.05);
+             ">
+          <p style="color:rgb(59,130,246);font-weight:600;margin:0 0 .5rem;">✨ NAVI</p>
+          <p style="font-weight:600;font-size:1rem;margin:0;">{title_text}</p>
+          <p style="margin:0.25rem 0 0;">{body_text}</p>
+          {tip_html}
+        </div>
+        """.format(
+            title_text=title_text,
+            body_text=body_text,
+            tip_html=tip_html,
+        ),
+        unsafe_allow_html=True,
     )
-    care = cost.get("monthly_total")
-
-    st.markdown("<div class='navi-panel-compact'>", unsafe_allow_html=True)
-    st.write(f"✨ {primary_msg}")
-
-    # Why this question? (render only when provided by caller)
-    if why_text:
-        st.markdown("**[?] Why this question?**")
-        st.caption(why_text)
-
-    # Prominent current plan summary (always present if available)
-    if plan or care:
-        line = "**Current Plan:** "
-        if plan:
-            line += plan
-        if care:
-            line += f" · Care: ${int(care):,}/mo"
-        st.markdown(line)
-        st.caption("(Home carry tracked separately if you keep your home.)")
-
-    st.markdown("</div>", unsafe_allow_html=True)
     
     # Function completes and returns control to caller
     print("[NAVI_MODULE] rendered; continuing page content")
