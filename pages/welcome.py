@@ -260,6 +260,18 @@ def _inject_welcome_css() -> None:
         }
         .context-close:hover{background:#e1e7ff;color:#1f2937;}
         .context-title{font-size:1.35rem;font-weight:700;margin:12px 0 28px;line-height:1.45;}
+        
+        /* Pill button styling for inline toggle */
+        .context-top .stButton button{
+          border-radius:999px;padding:10px 18px;font-weight:700;font-size:.95rem;
+          border:1px solid #d9e3f8;background:#f1f4ff;color:#1f2937;
+          transition:all .18s ease;line-height:1;
+        }
+        .context-top .stButton button:hover{
+          background:#e5ecff;border-color:#c7d7fb;color:#0f172a;
+        }
+        /* Active state styling would need JavaScript or different approach */
+        
         .context-form-section{margin-bottom:20px;}
         .context-label{display:block;font-weight:600;color:var(--ink);margin-bottom:8px;font-size:.95rem;}
         .context-form-row{display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap;}
