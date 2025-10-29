@@ -1,0 +1,78 @@
+# NAVI Core Defaults Configuration
+#
+# Fallback values and thresholds for profile-driven personalization.
+
+# Default user profile when none exists
+default_profile:
+  role: "AdultChild"
+  stage: "Awareness"
+  relationship: null
+  preferences:
+    tone_preference: null  # Let empathy map decide
+    detail_level: "moderate"
+    communication_frequency: "responsive"
+
+# Detection thresholds
+detection:
+  role:
+    confidence_threshold: 0.5  # Min confidence to assign role
+    keyword_match_min: 1       # Min keyword matches for role detection
+    session_persistence: true  # Keep role across session
+    allow_override: true       # Allow explicit role setting
+    
+  stage:
+    confidence_threshold: 0.6  # Min confidence to change stage
+    keyword_match_min: 2       # Min keyword matches for stage change
+    progression_only: false    # Allow backward stage transitions
+    session_persistence: true  # Keep stage across session
+    auto_advance: false        # Don't auto-advance without triggers
+    
+  sentiment:
+    override_threshold: 0.8    # When sentiment overrides persona tone
+    blend_mode: true           # Blend persona + sentiment tones
+    
+# Tone selection rules
+tone_selection:
+  empathy_map_priority: true   # Empathy map > sentiment analysis
+  fallback_chain:
+    - "empathy_map"            # Try persona × stage mapping first
+    - "sentiment_analysis"     # Fall back to Tier 2 sentiment
+    - "default_guidance"       # Ultimate fallback
+  intensity_multiplier: 1.0    # Adjust tone intensity (0.5-2.0)
+  
+# CTA (Call-to-Action) rules
+cta:
+  enabled: true
+  max_length: 120                # Characters
+  placement: "suffix"            # Where to add CTA: prefix, suffix, inline
+  frequency: "always"            # always, occasional, stage_dependent
+  personalization_level: "high"  # how much to tailor CTAs
+  
+# Memory and persistence
+memory:
+  profile_ttl_days: 90          # Days to keep user profile
+  conversation_ttl_days: 7      # Days to keep conversation history
+  stage_history_length: 10      # Max stage events to track
+  auto_save: true               # Save profile changes automatically
+  
+# Feature toggles
+features:
+  enable_persona_detection: true
+  enable_journey_tracking: true
+  enable_empathy_map: true
+  enable_profile_learning: false  # Phase 4 feature
+  enable_advisor_assist: false    # Phase 5 feature
+  
+# Logging and debugging
+logging:
+  log_role_detection: true
+  log_stage_transitions: true
+  log_tone_selection: true
+  log_cta_generation: true
+  debug_mode: false
+  
+# Validation rules
+validation:
+  require_profile_id: false      # Can operate without profile
+  validate_stage_progression: false  # Allow any stage transition
+  strict_persona_matching: false     # Allow fuzzy persona detection
