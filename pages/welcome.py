@@ -261,42 +261,99 @@ def _inject_welcome_css() -> None:
         .context-close:hover{background:#e1e7ff;color:#1f2937;}
         .context-title{font-size:1.35rem;font-weight:700;margin:12px 0 28px;line-height:1.45;}
         
-        /* === Audience Toggle Styling (Designer Pill Restoration) === */
-        .audience-toggle-container {
+        /* === Audience Selection - Designer Exact Replica === */
+        
+        /* Soft blue gradient background */
+        .stApp {
+          background: linear-gradient(180deg, #F3F6FB 0%, #E6ECF7 100%) !important;
+        }
+        
+        /* Centered card container */
+        .audience-card {
+          background: #ffffff;
+          border-radius: 20px;
+          padding: 2.5rem;
+          max-width: 560px;
+          box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+          position: relative;
+          z-index: 5;
+        }
+        
+        /* Pills container */
+        .pill-container {
           display: flex;
-          justify-content: flex-start;
           gap: 1rem;
           margin-bottom: 1.5rem;
         }
         
-        /* Reset Streamlit button styling for pill appearance */
-        .context-top .stButton {
+        /* Pill wrapper styling */
+        .pill-wrapper {
           flex: 1;
         }
         
-        .context-top .stButton>button {
+        .pill-wrapper .stButton button {
           border-radius: 999px !important;
           font-weight: 600 !important;
-          letter-spacing: 0.3px;
-          padding: 0.5rem 1.5rem !important;
+          padding: 0.5rem 1.2rem !important;
+          background: #F3F6FA !important;
+          color: #1B2A4A !important;
+          border: 1px solid #E0E5ED !important;
           transition: all 0.25s ease-in-out !important;
-          font-size: .95rem !important;
+          font-size: 0.95rem !important;
           width: 100% !important;
-          border: 1px solid #e0e5ee !important;
           cursor: pointer !important;
         }
         
-        .context-top .stButton>button:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1) !important;
+        /* Active pill: Black background */
+        .pill-wrapper.active .stButton button {
+          background: #0B132B !important;
+          color: #fff !important;
+          border: none !important;
         }
         
-        /* Inactive pill: Light gray background */
-        .context-top .stButton button[data-baseweb="button"][kind="secondary"] {
-          background: #f5f7fb !important;
-          color: #001F66 !important;
-          border: 1px solid #e0e5ee !important;
-          box-shadow: 0 3px 6px rgba(0, 0, 0, 0.05) !important;
+        /* Hover effect */
+        .pill-wrapper .stButton button:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 8px rgba(0,0,0,0.08) !important;
+        }
+        
+        /* Hero image positioning - positioned absolutely to overlap */
+        .audience-background {
+          position: absolute !important;
+          right: 0;
+          top: 60px;
+          width: 50%;
+          max-width: 700px;
+          z-index: 1;
+          opacity: 0.95;
+        }
+        
+        /* Ensure card content is above background */
+        .audience-card * {
+          position: relative;
+          z-index: 10;
+        }
+        
+        /* Adjust context styling for centered card layout */
+        @supports(selector(div:has(.welcome-context-sentinel))){
+          div.block-container:has(.welcome-context-sentinel){
+            padding-top: 2rem !important;
+            padding-bottom: 2rem !important;
+            max-width: none !important;
+          }
+          div[data-testid="stVerticalBlock"]:has(.welcome-context-sentinel){
+            background: transparent !important;
+            padding: 40px 0;
+          }
+          div[data-testid="stVerticalBlock"]:has(.welcome-context-sentinel) > div[data-testid="stHorizontalBlock"]{
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 0 24px;
+            gap: 60px;
+            align-items: center;
+            flex-wrap: nowrap;
+          }
         }
         
         /* Active pill: Deep navy gradient with glow */

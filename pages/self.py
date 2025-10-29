@@ -40,10 +40,10 @@ def _inject_welcome_css() -> None:
 
 
 def _render_unified_audience_selection() -> None:
-    """Unified audience selection with two-pill toggle.
+    """Designer-accurate audience selection with centered card and black/gray pills.
     
     This is the "For Me" mode - no relationship dropdown needed.
-    Uses smooth state updates without full page reruns to eliminate flicker.
+    Preserves smooth behavior without st.rerun() calls.
     """
     _inject_welcome_css()
     
@@ -75,33 +75,35 @@ def _render_unified_audience_selection() -> None:
     left_col, right_col = st.columns([1.05, 0.95], gap="large")
     
     with left_col:
-        st.markdown('<span class="context-card-sentinel"></span>', unsafe_allow_html=True)
+        # Start centered card container
+        st.markdown('<div class="audience-card">', unsafe_allow_html=True)
         
-        # Inline pill toggle with polished styling (matches Guided Care Plan)
-        st.markdown('<div class="context-top"><div class="audience-toggle-container">', unsafe_allow_html=True)
+        # Designer pills - use Streamlit buttons styled with CSS
+        st.markdown('<div class="pill-container">', unsafe_allow_html=True)
         
-        # Pill buttons in a row
         pill_col1, pill_col2 = st.columns([1, 1])
         
         with pill_col1:
-            # Primary button when active, secondary when inactive
-            button_type = "primary" if mode == "someone" else "secondary"
-            if st.button("👥 For someone", key="pill-someone", type=button_type, use_container_width=True):
+            # Use custom CSS class based on active state
+            pill_class = "active" if mode == "someone" else ""
+            st.markdown(f'<div class="pill-wrapper {pill_class}">', unsafe_allow_html=True)
+            if st.button("👥 For someone", key="pill-someone", use_container_width=True):
                 st.session_state["audience_mode"] = "someone"
-                # No st.rerun() - state update triggers natural rerender
+            st.markdown('</div>', unsafe_allow_html=True)
         
         with pill_col2:
-            button_type = "primary" if mode == "self" else "secondary"
-            if st.button("🙋 For me", key="pill-self", type=button_type, use_container_width=True):
+            pill_class = "active" if mode == "self" else ""
+            st.markdown(f'<div class="pill-wrapper {pill_class}">', unsafe_allow_html=True)
+            if st.button("🙋 For me", key="pill-self", use_container_width=True):
                 st.session_state["audience_mode"] = "self"
-                # No st.rerun() - state update triggers natural rerender
+            st.markdown('</div>', unsafe_allow_html=True)
         
         st.markdown('</div>', unsafe_allow_html=True)
         
-        # Back button in separate row
+        # Back button
         back_href = add_uid_to_href("?page=welcome")
         st.markdown(
-            f'<div style="text-align: right; margin-top: -45px;"><a class="context-close" href="{back_href}" aria-label="Back to welcome">×</a></div></div>',
+            f'<div style="text-align: right; margin-top: -10px;"><a class="context-close" href="{back_href}" aria-label="Back to welcome">×</a></div>',
             unsafe_allow_html=True,
         )
         
@@ -165,6 +167,9 @@ def _render_unified_audience_selection() -> None:
                 '<div class="context-note">If you want to assess several people, don\'t worry – you can easily move on to the next step!</div>',
                 unsafe_allow_html=True,
             )
+        
+        # Close audience card
+        st.markdown('</div>', unsafe_allow_html=True)
     
     with right_col:
         if photo_data:
