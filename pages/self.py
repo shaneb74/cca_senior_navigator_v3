@@ -123,34 +123,34 @@ def _render_unified_audience_selection() -> None:
                 st.markdown("</div>", unsafe_allow_html=True)
             with button_col:
                 st.markdown('<div class="context-submit">', unsafe_allow_html=True)
-                submitted = st.form_submit_button("Continue")
+                # Disable button until name is provided
+                can_continue = name_value and name_value.strip()
+                submitted = st.form_submit_button("Continue", disabled=not can_continue)
                 st.markdown("</div>", unsafe_allow_html=True)
             st.markdown("</div>", unsafe_allow_html=True)
         
         # Handle form submission
-        if submitted:
-            # Store relationship and audience context
+        if submitted and name_value and name_value.strip():
+            # Store using specified session state keys
+            st.session_state["audience_mode"] = mode
+            st.session_state["audience_name"] = name_value.strip()
+            
             if mode == "someone":
-                # If they toggle to someone mode, we need to capture relationship
-                # This shouldn't happen in self.py normally, but handle it for completeness
-                st.session_state["relationship_type"] = "Parent"
+                # If they somehow got to someone mode on self.py (edge case)
+                st.session_state["relationship"] = "Adult Child (Son or Daughter)"
+                st.session_state["relationship_type"] = "Adult Child (Son or Daughter)"
                 st.session_state["planning_for_relationship"] = "someone_else"
             else:  # self
+                st.session_state["relationship"] = "Myself"
                 st.session_state["relationship_type"] = "Myself"
                 st.session_state["planning_for_relationship"] = "self"
             
-            # Store audience mode
-            st.session_state["audience_mode"] = mode
-            
-            # Store person's name
+            # Store person's name in legacy system
             from core.state_name import set_person_name
-            if name_value and name_value.strip():
-                set_person_name(name_value.strip())
-            else:
-                set_person_name("")
+            set_person_name(name_value.strip())
             
-            # Navigate to hub
-            route_to("hub_concierge")
+            # Navigate to hub using switch_page
+            st.switch_page("pages/hub_concierge.py")
         
         # Optional note (only show in "someone" mode, not typical for self.py)
         if show_note:
