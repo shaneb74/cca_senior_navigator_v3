@@ -1,6 +1,6 @@
 # App runtime (pin to known-good)
 streamlit==1.37.1
-openai==1.40.2
+openai==1.51.2
 pydantic==2.7.4
 filelock==3.15.4
 PyYAML==6.0.1
@@ -9,7 +9,7 @@ altair==5.3.0
 plotly==5.22.0
 
 # FAQ / AI retrieval
-scikit-learn==1.4.2
+scikit-learn==1.5.2
 beautifulsoup4==4.12.3
 lxml==5.2.1
 requests==2.32.3
