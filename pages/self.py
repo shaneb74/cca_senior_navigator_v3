@@ -43,13 +43,15 @@ def _render_unified_audience_selection() -> None:
     """Unified audience selection with two-pill toggle.
     
     This is the "For Me" mode - no relationship dropdown needed.
+    Uses smooth state updates without full page reruns to eliminate flicker.
     """
     _inject_welcome_css()
     
-    # Initialize session state for audience mode
+    # Initialize session state for audience mode (no rerun needed)
     if "audience_mode" not in st.session_state:
         st.session_state["audience_mode"] = "self"
     
+    # Get current mode from state
     mode = st.session_state.get("audience_mode", "self")
     
     # Configure content based on mode
@@ -86,13 +88,13 @@ def _render_unified_audience_selection() -> None:
             button_type = "primary" if mode == "someone" else "secondary"
             if st.button("👥 For someone", key="pill-someone", type=button_type, use_container_width=True):
                 st.session_state["audience_mode"] = "someone"
-                st.rerun()
+                # No st.rerun() - state update triggers natural rerender
         
         with pill_col2:
             button_type = "primary" if mode == "self" else "secondary"
             if st.button("🙋 For me", key="pill-self", type=button_type, use_container_width=True):
                 st.session_state["audience_mode"] = "self"
-                st.rerun()
+                # No st.rerun() - state update triggers natural rerender
         
         st.markdown('</div>', unsafe_allow_html=True)
         

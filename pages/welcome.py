@@ -307,6 +307,15 @@ def _inject_welcome_css() -> None:
           }
         }
         
+        /* Smooth fade-in to eliminate visible flashing on state updates */
+        .stApp {
+          animation: fadein 0.2s ease-in;
+        }
+        @keyframes fadein {
+          from { opacity: 0.92; }
+          to { opacity: 1; }
+        }
+        
         .context-form-section{margin-bottom:20px;}
         .context-label{display:block;font-weight:600;color:var(--ink);margin-bottom:8px;font-size:.95rem;}
         .context-form-row{display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap;}
