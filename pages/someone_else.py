@@ -84,32 +84,33 @@ def _render_unified_audience_selection() -> None:
     with left_col:
         st.markdown('<span class="context-card-sentinel"></span>', unsafe_allow_html=True)
         
-        # Inline pill toggle (no navigation, pure state management)
-        st.markdown('<div class="context-top">', unsafe_allow_html=True)
+        # Inline pill toggle with polished styling (matches Guided Care Plan)
+        st.markdown('<div class="context-top"><div class="audience-toggle-container">', unsafe_allow_html=True)
         
         # Pill buttons in a row
-        pill_col1, pill_col2, spacer, back_col = st.columns([1, 1, 2, 0.3])
+        pill_col1, pill_col2 = st.columns([1, 1])
         
         with pill_col1:
-            someone_class = "context-pill-link is-active" if mode == "someone" else "context-pill-link"
-            if st.button("👥 For someone", key="pill-someone", help="Help someone else", use_container_width=True):
+            # Primary button when active, secondary when inactive
+            button_type = "primary" if mode == "someone" else "secondary"
+            if st.button("👥 For someone", key="pill-someone", type=button_type, use_container_width=True):
                 st.session_state["audience_mode"] = "someone"
                 st.rerun()
         
         with pill_col2:
-            self_class = "context-pill-link is-active" if mode == "self" else "context-pill-link"
-            if st.button("🙋 For me", key="pill-self", help="Help yourself", use_container_width=True):
+            button_type = "primary" if mode == "self" else "secondary"
+            if st.button("🙋 For me", key="pill-self", type=button_type, use_container_width=True):
                 st.session_state["audience_mode"] = "self"
                 st.rerun()
         
-        with back_col:
-            back_href = add_uid_to_href("?page=welcome")
-            st.markdown(
-                f'<a class="context-close" href="{back_href}" aria-label="Back to welcome">×</a>',
-                unsafe_allow_html=True,
-            )
-        
         st.markdown('</div>', unsafe_allow_html=True)
+        
+        # Back button in separate row
+        back_href = add_uid_to_href("?page=welcome")
+        st.markdown(
+            f'<div style="text-align: right; margin-top: -45px;"><a class="context-close" href="{back_href}" aria-label="Back to welcome">×</a></div></div>',
+            unsafe_allow_html=True,
+        )
         
         # Title
         st.markdown(
