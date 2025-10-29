@@ -261,49 +261,66 @@ def _inject_welcome_css() -> None:
         .context-close:hover{background:#e1e7ff;color:#1f2937;}
         .context-title{font-size:1.35rem;font-weight:700;margin:12px 0 28px;line-height:1.45;}
         
-        /* === Audience Toggle Styling (Guided Care Plan Consistency) === */
+        /* === Audience Toggle Styling (Designer Pill Restoration) === */
         .audience-toggle-container {
           display: flex;
           justify-content: flex-start;
-          gap: 0.75rem;
+          gap: 1rem;
           margin-bottom: 1.5rem;
         }
         
-        /* Polished pill button styling with gradient and glow */
+        /* Reset Streamlit button styling for pill appearance */
+        .context-top .stButton {
+          flex: 1;
+        }
+        
         .context-top .stButton>button {
           border-radius: 999px !important;
           font-weight: 600 !important;
           letter-spacing: 0.3px;
-          padding: 0.5rem 1.3rem !important;
+          padding: 0.5rem 1.5rem !important;
           transition: all 0.25s ease-in-out !important;
-          border: none !important;
           font-size: .95rem !important;
+          width: 100% !important;
+          border: 1px solid #e0e5ee !important;
+          cursor: pointer !important;
         }
         
         .context-top .stButton>button:hover {
           transform: translateY(-1px);
-          box-shadow: 0 5px 10px rgba(0, 0, 0, 0.15) !important;
+          box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1) !important;
         }
         
-        /* Active state: Deep navy gradient with glow */
+        /* Inactive pill: Light gray background */
+        .context-top .stButton button[data-baseweb="button"][kind="secondary"] {
+          background: #f5f7fb !important;
+          color: #001F66 !important;
+          border: 1px solid #e0e5ee !important;
+          box-shadow: 0 3px 6px rgba(0, 0, 0, 0.05) !important;
+        }
+        
+        /* Active pill: Deep navy gradient with glow */
         .context-top .stButton button[data-baseweb="button"][kind="primary"] {
           background: linear-gradient(180deg, #0B132B, #1E254A) !important;
           color: white !important;
-          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25) !important;
-        }
-        
-        /* Inactive state: Soft gray gradient */
-        .context-top .stButton button[data-baseweb="button"][kind="secondary"] {
-          background: linear-gradient(180deg, #F5F7FB, #E8ECF5) !important;
-          color: #001F66 !important;
-          border: 1px solid #DCE2EE !important;
-          box-shadow: 0 3px 6px rgba(0, 0, 0, 0.08) !important;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+          border: none !important;
         }
         
         /* Accessibility: Reduced motion support */
         @media (prefers-reduced-motion: reduce) {
           .context-top .stButton>button {
             transition: none !important;
+          }
+        }
+        
+        /* Mobile: Stack pills vertically */
+        @media (max-width: 768px) {
+          .audience-toggle-container {
+            flex-direction: column;
+          }
+          .context-top .stButton {
+            width: 100%;
           }
         }
         
