@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "NAVI Core API Schema",
+  "description": "Schema for NAVI Core question answering API",
+  "type": "object",
+  "properties": {
+    "question": {
+      "type": "string",
+      "description": "User's question",
+      "minLength": 1,
+      "maxLength": 1000
+    },
+    "name": {
+      "type": "string",
+      "description": "User's name for personalization",
+      "maxLength": 100
+    },
+    "tags": {
+      "type": "array",
+      "description": "Context tags for routing and analytics",
+      "items": {
+        "type": "string",
+        "enum": ["gcp", "cost_planner", "financial", "partner", "resource", "faq", "hub"]
+      }
+    },
+    "source": {
+      "type": "string",
+      "description": "Source of the question",
+      "enum": ["hub", "faq_page", "chat", "guided_flow", "api"]
+    },
+    "conversation_id": {
+      "type": "string",
+      "description": "Conversation identifier for context tracking",
+      "pattern": "^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"
+    },
+    "mode": {
+      "type": "string",
+      "description": "Operation mode for LLM control",
+      "enum": ["off", "shadow", "assist", "adjust"],
+      "default": "assist"
+    }
+  },
+  "required": ["question"],
+  "additionalProperties": false
+}

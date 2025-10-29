@@ -1,0 +1,49 @@
+{
+  "description": "Knowledge sources for NAVI semantic retrieval (Tier-2)",
+  "sources": [
+    {
+      "id": "gcp_knowledge",
+      "name": "Guided Care Plan Knowledge Base",
+      "path": "data/training/gcp_cases.jsonl",
+      "type": "jsonl",
+      "enabled": true,
+      "priority": 1
+    },
+    {
+      "id": "cost_knowledge",
+      "name": "Cost Planning Knowledge Base",
+      "path": "data/training/cost_cases.jsonl",
+      "type": "jsonl",
+      "enabled": true,
+      "priority": 2
+    },
+    {
+      "id": "partner_knowledge",
+      "name": "Partner & Services Database",
+      "path": "config/partners.json",
+      "type": "json",
+      "enabled": true,
+      "priority": 3
+    },
+    {
+      "id": "faq_knowledge",
+      "name": "FAQ Repository",
+      "path": "data/training/faq_corpus.txt",
+      "type": "text",
+      "enabled": false,
+      "priority": 4,
+      "note": "Not yet implemented"
+    }
+  ],
+  "embedding_config": {
+    "model": "text-embedding-3-small",
+    "dimensions": 1536,
+    "chunk_size": 512,
+    "chunk_overlap": 50
+  },
+  "retrieval_config": {
+    "default_top_k": 5,
+    "similarity_threshold": 0.7,
+    "reranking_enabled": false
+  }
+}

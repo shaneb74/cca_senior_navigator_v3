@@ -1,0 +1,86 @@
+# NAVI Core Persona Definitions
+#
+# Defines user roles/personas with characteristics and tone preferences.
+# Used for profile-driven personalization in Phase 3.
+
+AdultChild:
+  description: "Adult son or daughter making care decisions for parent(s)"
+  aliases: ["daughter", "son", "child", "kids", "mother", "father", "mom", "dad", "parent", "parents"]
+  characteristics:
+    - "Often juggling family and career responsibilities"
+    - "May feel guilt or uncertainty about placement decisions"
+    - "Values reassurance and step-by-step guidance"
+  default_tone: "Empathetic"
+  communication_style: "Supportive, patient, validating emotions"
+  common_concerns:
+    - "Is this the right decision?"
+    - "How will my parent adjust?"
+    - "Can I afford quality care?"
+  cta_style: "Gentle prompts with emotional validation"
+
+Spouse:
+  description: "Husband or wife making care decisions for partner"
+  aliases: ["wife", "husband", "partner", "spouse"]
+  characteristics:
+    - "Deep emotional connection and shared history"
+    - "May feel loss of independence or partnership"
+    - "Values collaborative decision-making language"
+  default_tone: "Collaborative"
+  communication_style: "Respectful of partnership, acknowledging loss while maintaining hope"
+  common_concerns:
+    - "How do we maintain our relationship?"
+    - "Will I be involved in daily care?"
+    - "What if they don't want to go?"
+  cta_style: "Partnership language, shared decision framing"
+
+SelfSenior:
+  description: "Senior adult planning their own care proactively"
+  aliases: ["myself", "me", "i am", "my own"]
+  characteristics:
+    - "Values autonomy and independence"
+    - "May resist loss of control"
+    - "Appreciates straightforward, respectful communication"
+  default_tone: "Respectful"
+  communication_style: "Direct, empowering, focused on maintaining dignity"
+  common_concerns:
+    - "Will I lose my independence?"
+    - "Can I still make my own choices?"
+    - "What activities are available?"
+  cta_style: "Empowering choices, autonomy-focused options"
+
+Veteran:
+  description: "Military veteran or family member seeking VA benefits"
+  aliases: ["veteran", "military", "va", "served"]
+  characteristics:
+    - "Entitled to specific VA benefits for care"
+    - "Values clear, mission-focused communication"
+    - "Appreciates recognition of service"
+  default_tone: "Empowering"
+  communication_style: "Direct, benefit-focused, honoring service"
+  common_concerns:
+    - "What VA benefits am I eligible for?"
+    - "How do I apply for Aid & Attendance?"
+    - "Which facilities accept VA benefits?"
+  cta_style: "Action-oriented, benefit eligibility checks"
+
+Advisor:
+  description: "Professional advisor, social worker, or care coordinator"
+  aliases: ["advisor", "social worker", "coordinator", "professional", "client"]
+  characteristics:
+    - "Supporting multiple families/clients"
+    - "Needs efficient, data-driven information"
+    - "Values professional collaboration tools"
+  default_tone: "Professional"
+  communication_style: "Concise, data-focused, outcome-oriented"
+  common_concerns:
+    - "What documentation do families need?"
+    - "How quickly can placement happen?"
+    - "Which facilities have immediate availability?"
+  cta_style: "Efficiency-focused, CRM integration opportunities"
+
+# Fallback persona when detection is ambiguous
+Unknown:
+  description: "User role not yet determined"
+  default_tone: "Guidance"
+  communication_style: "Neutral, informational"
+  cta_style: "Broad exploratory prompts"

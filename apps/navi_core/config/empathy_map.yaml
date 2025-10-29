@@ -1,0 +1,177 @@
+# NAVI Core Empathy Map
+#
+# Maps Persona × Journey Stage to optimal Tone + CTA combinations.
+# 5 personas × 5 stages = 25 unique personalization cells.
+
+# AdultChild persona across journey stages
+AdultChild:
+  Awareness:
+    tone: "Empathetic"
+    tone_intensity: "high"
+    cta: "Would you like to review early signs that care might help?"
+    messaging_focus: "You're not alone in this - many families face similar decisions"
+    
+  Assessment:
+    tone: "Guidance"
+    tone_intensity: "moderate"
+    cta: "Let's compare care types side by side to help clarify your options."
+    messaging_focus: "Here's a practical framework to evaluate what fits best"
+    
+  Decision:
+    tone: "Empathetic"
+    tone_intensity: "moderate"
+    cta: "You've done thorough research - would a decision checklist help?"
+    messaging_focus: "This is a significant step, and you're approaching it thoughtfully"
+    
+  Placement:
+    tone: "Guidance"
+    tone_intensity: "low"
+    cta: "Want tips for helping your parent adjust to their new home?"
+    messaging_focus: "Practical preparation makes transitions smoother for everyone"
+    
+  FollowUp:
+    tone: "Encouraging"
+    tone_intensity: "moderate"
+    cta: "How is your parent adjusting? I can suggest family engagement activities."
+    messaging_focus: "You made a caring decision - let's support their continued wellbeing"
+
+# Spouse persona across journey stages
+Spouse:
+  Awareness:
+    tone: "Empathetic"
+    tone_intensity: "high"
+    cta: "This transition affects you both - would exploring options together feel supportive?"
+    messaging_focus: "Maintaining your partnership throughout this process is important"
+    
+  Assessment:
+    tone: "Collaborative"
+    tone_intensity: "high"
+    cta: "Let's find care that keeps you connected while providing needed support."
+    messaging_focus: "The right care enhances your relationship, not replaces it"
+    
+  Decision:
+    tone: "Collaborative"
+    tone_intensity: "moderate"
+    cta: "How involved do you want to be in daily care routines?"
+    messaging_focus: "Your continued involvement can be part of the care plan"
+    
+  Placement:
+    tone: "Empathetic"
+    tone_intensity: "moderate"
+    cta: "Would you like ideas for maintaining closeness during the adjustment?"
+    messaging_focus: "This change is emotional - your feelings are completely valid"
+    
+  FollowUp:
+    tone: "Encouraging"
+    tone_intensity: "low"
+    cta: "Many spouses find new ways to connect - want to explore those options?"
+    messaging_focus: "You're adapting to a new chapter together"
+
+# SelfSenior persona across journey stages
+SelfSenior:
+  Awareness:
+    tone: "Respectful"
+    tone_intensity: "moderate"
+    cta: "Want to explore how to stay independent longer with the right support?"
+    messaging_focus: "Proactive planning helps you maintain control over your choices"
+    
+  Assessment:
+    tone: "Empowering"
+    tone_intensity: "moderate"
+    cta: "What matters most to you in choosing where you live?"
+    messaging_focus: "Your priorities shape the best option - let's identify them"
+    
+  Decision:
+    tone: "Empowering"
+    tone_intensity: "high"
+    cta: "Ready to visit top choices and see which feels right to you?"
+    messaging_focus: "This is your decision - I'm here to provide information you need"
+    
+  Placement:
+    tone: "Respectful"
+    tone_intensity: "low"
+    cta: "How can I help you prepare for this transition on your terms?"
+    messaging_focus: "You're taking charge of this change - that's empowering"
+    
+  FollowUp:
+    tone: "Encouraging"
+    tone_intensity: "moderate"
+    cta: "How are you settling in? Want suggestions for getting involved?"
+    messaging_focus: "New chapters offer new opportunities for connection and growth"
+
+# Veteran persona across journey stages
+Veteran:
+  Awareness:
+    tone: "Empowering"
+    tone_intensity: "moderate"
+    cta: "Let's check your VA eligibility for care benefits."
+    messaging_focus: "You've earned these benefits through your service"
+    
+  Assessment:
+    tone: "Professional"
+    tone_intensity: "moderate"
+    cta: "Here are facilities that accept VA benefits - want to compare costs?"
+    messaging_focus: "Strategic use of VA benefits maximizes your care options"
+    
+  Decision:
+    tone: "Empowering"
+    tone_intensity: "high"
+    cta: "Ready to apply for Aid & Attendance? I'll walk you through it."
+    messaging_focus: "Taking action on benefits is mission-critical for quality care"
+    
+  Placement:
+    tone: "Professional"
+    tone_intensity: "low"
+    cta: "Need help coordinating VA benefit paperwork for move-in?"
+    messaging_focus: "Efficient benefit processing ensures smooth transition"
+    
+  FollowUp:
+    tone: "Encouraging"
+    tone_intensity: "moderate"
+    cta: "How are your VA benefits working out? Any issues to address?"
+    messaging_focus: "Monitoring benefit performance ensures you get what you've earned"
+
+# Advisor persona across journey stages
+Advisor:
+  Awareness:
+    tone: "Professional"
+    tone_intensity: "low"
+    cta: "What client profile are you working with? I can suggest tailored resources."
+    messaging_focus: "Efficient triage starts with clear needs assessment"
+    
+  Assessment:
+    tone: "Professional"
+    tone_intensity: "moderate"
+    cta: "Want a comparison matrix for your client to review?"
+    messaging_focus: "Data-driven tools accelerate client decision-making"
+    
+  Decision:
+    tone: "Professional"
+    tone_intensity: "low"
+    cta: "Need documentation checklist for your client's application?"
+    messaging_focus: "Streamlined paperwork reduces placement delays"
+    
+  Placement:
+    tone: "Professional"
+    tone_intensity: "low"
+    cta: "Tracking placement outcomes? I can log this for your records."
+    messaging_focus: "Outcome documentation supports continuous improvement"
+    
+  FollowUp:
+    tone: "Professional"
+    tone_intensity: "moderate"
+    cta: "Ready for post-placement check-in protocol?"
+    messaging_focus: "Structured follow-up ensures client satisfaction and retention"
+
+# Fallback mappings for unknown personas or stages
+Unknown:
+  Awareness:
+    tone: "Guidance"
+    tone_intensity: "moderate"
+    cta: "What brings you here today? I can tailor my guidance to your situation."
+    messaging_focus: "Let's identify what would be most helpful for you"
+
+# Tone intensity modifiers
+# high: Maximum empathy/formality adjustments
+# moderate: Balanced personalization
+# low: Subtle tone shifts, mostly informational
