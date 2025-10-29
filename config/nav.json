@@ -11,6 +11,12 @@
           "module": "pages.welcome:render"
         },
         {
+          "key": "audience",
+          "label": "Audience Selection",
+          "module": "pages.audience:render",
+          "hidden": true
+        },
+        {
           "key": "someone_else",
           "label": "For Someone",
           "module": "pages.someone_else:render",

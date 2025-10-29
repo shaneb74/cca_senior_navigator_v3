@@ -261,11 +261,11 @@ def _inject_welcome_css() -> None:
         .context-close:hover{background:#e1e7ff;color:#1f2937;}
         .context-title{font-size:1.35rem;font-weight:700;margin:12px 0 28px;line-height:1.45;}
         
-        /* === Audience Selection - Designer Exact Replica === */
+        /* === White Background (Reset from Blue Gradient) === */
         
-        /* Soft blue gradient background */
+        /* White background globally */
         .stApp {
-          background: linear-gradient(180deg, #F3F6FB 0%, #E6ECF7 100%) !important;
+          background-color: #ffffff !important;
         }
         
         /* Centered card container */
@@ -652,7 +652,7 @@ def _welcome_body(
                       Helping you make confident care decisions for someone you love.
                     </p>
                     <div class="card-actions">
-                      <a href="{add_uid_to_href("?page=someone_else")}" class="btn btn--primary">For someone</a>
+                      <a href="{add_uid_to_href("?page=audience&mode=someone")}" class="btn btn--primary">For someone</a>
                     </div>
                   </article>
 
@@ -666,7 +666,7 @@ def _welcome_body(
                       Plan for your own future care with trusted guidance and peace of mind.
                     </p>
                     <div class="card-actions">
-                      <a href="{add_uid_to_href("?page=self")}" class="btn btn--primary">For myself</a>
+                      <a href="{add_uid_to_href("?page=audience&mode=self")}" class="btn btn--primary">For myself</a>
                     </div>
                   </article>
                 </div>
@@ -717,14 +717,14 @@ def render(ctx: dict | None = None) -> None:
 
     # Button configuration based on state
     if not authenticated:
-        # State: Not logged in
+        # State: Not logged in - route to unified audience page
         primary_label = "Start Now"
-        primary_route = "someone_else"
+        primary_route = "audience"
         show_secondary = True
     elif authenticated and not has_planning_context:
-        # State: Logged in, no planning context
+        # State: Logged in, no planning context - route to unified audience page
         primary_label = "Start Planning"
-        primary_route = "someone_else"
+        primary_route = "audience"
         show_secondary = False
     else:
         # State: Logged in, planning context known
