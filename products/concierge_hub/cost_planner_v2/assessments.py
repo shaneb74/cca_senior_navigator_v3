@@ -167,7 +167,7 @@ def _render_hub_view(product_key: str) -> None:
 
     # Hub header
     st.markdown("## Financial Assessments")
-    st.markdown("Complete these assessments to build your financial profile for care planning.")
+    # Caption removed - now shown in compact Navi panel above
     st.markdown("<div style='margin: 24px 0;'></div>", unsafe_allow_html=True)
 
     # Calculate overall progress
