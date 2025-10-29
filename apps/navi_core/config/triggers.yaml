@@ -1,0 +1,73 @@
+# Smart Triggers Configuration
+# Phase 5.1: Smart Triggers Layer
+#
+# Controls WHEN contextual guidance appears based on:
+# - show_once_per_session: Hide after first display (bool)
+# - cool_down_seconds: Minimum time between displays (int)
+# - stage_allowed: Only show for specific journey stages (list)
+
+Welcome:
+  show_once_per_session: true
+  cool_down_seconds: 0
+  stage_allowed: ["Awareness"]
+  # First-time visitors get welcoming guidance, repeat visits skip it
+
+For Someone Else:
+  show_once_per_session: true
+  cool_down_seconds: 0
+  stage_allowed: ["Awareness", "Assessment"]
+  # Show guidance when starting to gather info about care recipient
+
+For Me:
+  show_once_per_session: true
+  cool_down_seconds: 0
+  stage_allowed: ["Awareness"]
+  # Self-referral gets one-time guidance on independence options
+
+Care Preferences:
+  show_once_per_session: false
+  cool_down_seconds: 60
+  stage_allowed: ["Awareness", "Assessment"]
+  # Can revisit care options, but throttle to avoid repetition
+
+Cost Calculator:
+  show_once_per_session: true
+  cool_down_seconds: 0
+  stage_allowed: ["Decision", "Placement"]
+  # Financial planning appears once user is ready to decide
+
+Financial Assessment:
+  show_once_per_session: false
+  cool_down_seconds: 120
+  stage_allowed: ["Assessment", "Decision"]
+  # Complex financial topics can be revisited, but not too frequently
+
+Move Preferences:
+  show_once_per_session: true
+  cool_down_seconds: 0
+  stage_allowed: ["Decision", "Placement"]
+  # Location selection guidance shows once during placement phase
+
+GCP Assessment:
+  show_once_per_session: false
+  cool_down_seconds: 0
+  stage_allowed: ["Assessment", "Decision"]
+  # Assessment guidance can appear on each page of the flow
+
+Summary:
+  show_once_per_session: false
+  cool_down_seconds: 0
+  stage_allowed: []
+  # Summary page always shows guidance (no restrictions)
+
+FAQ:
+  show_once_per_session: false
+  cool_down_seconds: 30
+  stage_allowed: []
+  # FAQ guidance available anytime, throttled to avoid spam
+
+Default:
+  show_once_per_session: true
+  cool_down_seconds: 30
+  stage_allowed: []
+  # Default fallback: show once, then 30-second cooldown

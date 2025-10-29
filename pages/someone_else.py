@@ -61,10 +61,11 @@ def _render_enhanced_welcome_card():
             unsafe_allow_html=True,
         )
         
-        # Phase 5: Display contextual guidance
+        # Phase 5.1: Display contextual guidance with smart triggers
         if _NAVI_AVAILABLE:
             guidance_msg = get_guidance()
-            st.info(f"💡 {guidance_msg}")
+            if guidance_msg:  # Only display if not suppressed by triggers
+                st.info(f"💡 {guidance_msg}")
         
         # Persona selection form
         form = st.form("welcome-form-someone", clear_on_submit=False)

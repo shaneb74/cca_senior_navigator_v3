@@ -11,6 +11,7 @@ from typing import Optional
 
 from apps.navi_core.context_manager import get_current_context
 from apps.navi_core.profile_manager import ProfileManager
+from apps.navi_core.trigger_manager import should_show
 
 
 # Path to guidance configuration file
@@ -35,25 +36,34 @@ def load_guidance() -> dict:
         return yaml.safe_load(f)
 
 
-def get_guidance(page: Optional[str] = None, persona: Optional[str] = None) -> str:
+def get_guidance(page: Optional[str] = None, persona: Optional[str] = None) -> Optional[str]:
     """
     Return persona-specific guidance message for the active page.
+    
+    Respects smart triggers to avoid showing guidance too frequently.
+    Returns None if triggers prevent display.
     
     Args:
         page: Page name (if None, uses get_current_context())
         persona: User persona/role (if None, uses profile_manager)
         
     Returns:
-        Guidance message string tailored to page + persona
+        Guidance message string tailored to page + persona, or None if suppressed by triggers
         
     Example:
         >>> get_guidance(page="Welcome", persona="AdultChild")
         "Welcome! I'll help you explore care options for your parent."
+        >>> get_guidance(page="Welcome", persona="AdultChild")  # Second call
+        None  # (if show_once_per_session is True)
     """
     data = load_guidance()
     
     # Determine page context
     page = page or get_current_context()
+    
+    # Check smart triggers - return None if suppressed
+    if not should_show(page):
+        return None
     
     # Determine user persona
     if persona is None:

@@ -11,10 +11,15 @@ from apps.navi_core.guidance_manager import get_guidance, load_guidance, GUIDANC
 from apps.navi_core.context_manager import update_context
 from apps.navi_core.models import UserProfile
 from apps.navi_core.profile_manager import ProfileManager
+from apps.navi_core.trigger_manager import reset_triggers
 
 
 class TestGuidanceLoading:
     """Test guidance configuration loading."""
+    
+    def setup_method(self):
+        """Reset triggers before each test."""
+        reset_triggers()
     
     def test_guidance_file_exists(self):
         """Test that guidance.yaml file exists."""
@@ -46,6 +51,10 @@ class TestGuidanceLoading:
 
 class TestGuidanceRetrieval:
     """Test guidance message retrieval with different personas."""
+    
+    def setup_method(self):
+        """Reset triggers before each test."""
+        reset_triggers()
     
     def test_get_guidance_default_message(self):
         """Test that get_guidance returns fallback for unknown page."""
@@ -110,11 +119,21 @@ class TestGuidanceRetrieval:
     
     def test_get_guidance_for_cost_calculator(self):
         """Test Cost Calculator page guidance."""
+        # Cost Calculator requires Decision or Placement stage
+        profile = UserProfile(id="test", name="Test", role="AdultChild")
+        profile.stage = "Decision"
+        st.session_state["user_profile"] = profile
+        
         msg = get_guidance(page="Cost Calculator", persona="AdultChild")
         assert "cost" in msg.lower() or "estimate" in msg.lower()
     
     def test_get_guidance_for_care_preferences(self):
         """Test Care Preferences page guidance."""
+        # Care Preferences requires Awareness or Assessment stage
+        profile = UserProfile(id="test", name="Test", role="Spouse")
+        profile.stage = "Assessment"
+        st.session_state["user_profile"] = profile
+        
         msg = get_guidance(page="Care Preferences", persona="Spouse")
         assert "care" in msg.lower() and ("balance" in msg.lower() or "well-being" in msg.lower())
 
@@ -122,16 +141,27 @@ class TestGuidanceRetrieval:
 class TestGuidanceIntegration:
     """Test integration between context and guidance managers."""
     
+    def setup_method(self):
+        """Reset triggers before each test."""
+        reset_triggers()
+    
     def test_context_driven_guidance_workflow(self):
         """Test full workflow: update context → get guidance."""
+        # Set up profile with appropriate stage for Cost Calculator
+        profile = UserProfile(id="test", name="Test", role="AdultChild")
+        profile.stage = "Decision"  # Cost Calculator requires Decision/Placement
+        st.session_state["user_profile"] = profile
+        
         # Navigate to different pages and verify guidance changes
         pages_to_test = [
-            ("Welcome", "AdultChild"),
-            ("Care Preferences", "Spouse"),
-            ("Cost Calculator", "Advisor"),
+            ("Welcome", "AdultChild", "Awareness"),  # Override stage for Welcome
+            ("Care Preferences", "Spouse", "Assessment"),
+            ("Cost Calculator", "Advisor", "Decision"),
         ]
         
-        for page, persona in pages_to_test:
+        for page, persona, stage in pages_to_test:
+            reset_triggers()  # Reset for each page
+            profile.stage = stage
             update_context(page)
             msg = get_guidance(persona=persona)
             
@@ -142,8 +172,23 @@ class TestGuidanceIntegration:
         """Test that same persona gets different guidance on different pages."""
         persona = "AdultChild"
         
+        # Set up profile with appropriate stages for each page
+        profile = UserProfile(id="test", name="Test", role="AdultChild")
+        st.session_state["user_profile"] = profile
+        
+        # Welcome requires Awareness
+        reset_triggers()
+        profile.stage = "Awareness"
         welcome_msg = get_guidance(page="Welcome", persona=persona)
+        
+        # Care Preferences requires Awareness or Assessment
+        reset_triggers()
+        profile.stage = "Assessment"
         care_msg = get_guidance(page="Care Preferences", persona=persona)
+        
+        # Cost Calculator requires Decision or Placement
+        reset_triggers()
+        profile.stage = "Decision"
         cost_msg = get_guidance(page="Cost Calculator", persona=persona)
         
         # Messages should differ by page
