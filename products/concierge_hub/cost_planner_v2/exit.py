@@ -26,7 +26,7 @@ def render():
     """Render exit step with clean card-based completion layout.
 
     Layout:
-    1. Navi Panel (celebratory, encouraging)
+    1. Compact Navi Panel at top
     2. Accomplishments Card (checklist of completed items)
     3. Plan Highlights Card (key metrics summary)
     4. What's Next Grid (3 actionable paths)
@@ -41,7 +41,10 @@ def render():
     c["completed"] = True
     print("[COST_V2_EXIT] Set cost.completed=True (canonical gate)")
 
-    _render_navi_completion()
+    # Render compact Navi panel at top
+    from core.navi_module import render_module_navi_coach
+    render_module_navi_coach("Your data is saved. You can download, share, or review your plan with an advisor.")
+
     st.markdown('<div style="height: 24px;"></div>', unsafe_allow_html=True)
 
     st.markdown("## 🎯 Your Financial Plan is Complete")
@@ -57,19 +60,12 @@ def render():
 
 
 def _render_navi_completion():
-    """Render Navi panel with celebratory, encouraging tone."""
-
-    render_navi_panel_v2(
-        title="Your Financial Plan is Complete!",
-        reason="You've completed your financial plan — great work! You can download a copy, share it with your family, or meet with an advisor to review it together. Everything you've entered is saved and ready for next steps.",
-        encouragement={
-            "icon": "💡",
-            "message": "The more details you add over time, the clearer your plan becomes — and I'll keep helping you update it whenever you need.",
-            "status": "complete",
-        },
-        context_chips=[{"label": "All modules completed"}, {"label": "Ready to download or share"}],
-        primary_action=None,  # No action in Navi here
-    )
+    """DEPRECATED - Replaced by compact Navi at page top.
+    
+    Old function that rendered full Navi panel with celebratory tone.
+    Now using render_module_navi_coach() instead.
+    """
+    pass  # No longer used
 
 
 def _render_accomplishments_card():
