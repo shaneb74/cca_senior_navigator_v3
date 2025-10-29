@@ -1,0 +1,130 @@
+# NAVI Core Journey Stage Definitions
+#
+# Defines the 5-stage care decision journey with triggers and progression rules.
+# Used for stage detection and personalized guidance in Phase 3.
+
+Awareness:
+  description: "Initial exploration - recognizing need for care"
+  order: 1
+  keywords:
+    - "thinking about"
+    - "considering"
+    - "not sure"
+    - "starting to look"
+    - "just beginning"
+    - "heard about"
+    - "wondering if"
+  triggers:
+    - "First visit to site"
+    - "General questions about care types"
+    - "Expressing uncertainty or early concerns"
+  typical_questions:
+    - "What is assisted living?"
+    - "How do I know if my parent needs care?"
+    - "What are my options?"
+  guidance_focus: "Education, reassurance, reducing overwhelm"
+  next_stages: ["Assessment", "Decision"]
+  average_duration_days: 30
+
+Assessment:
+  description: "Active comparison - evaluating specific options"
+  order: 2
+  keywords:
+    - "compare"
+    - "options"
+    - "difference between"
+    - "tour"
+    - "visit"
+    - "evaluate"
+    - "which is better"
+    - "pros and cons"
+  triggers:
+    - "Requesting comparisons"
+    - "Using cost calculator"
+    - "Asking about specific facilities"
+  typical_questions:
+    - "What's the difference between assisted living and memory care?"
+    - "How much does it cost?"
+    - "Can I schedule a tour?"
+  guidance_focus: "Side-by-side comparisons, practical details, decision frameworks"
+  next_stages: ["Decision", "Awareness"]  # Can return to Awareness if overwhelmed
+  average_duration_days: 45
+
+Decision:
+  description: "Active decision-making - ready to commit"
+  order: 3
+  keywords:
+    - "choose"
+    - "select"
+    - "decide"
+    - "ready to"
+    - "which one"
+    - "narrowed down"
+    - "leaning toward"
+    - "final choice"
+  triggers:
+    - "Requesting application materials"
+    - "Asking about availability"
+    - "Inquiring about deposit/contracts"
+  typical_questions:
+    - "How do I apply?"
+    - "When can they move in?"
+    - "What paperwork do I need?"
+  guidance_focus: "Action steps, logistics, final reassurance"
+  next_stages: ["Placement", "Assessment"]  # Can return to Assessment for last-minute review
+  average_duration_days: 14
+
+Placement:
+  description: "Transition execution - moving in process"
+  order: 4
+  keywords:
+    - "move in"
+    - "moving"
+    - "sign"
+    - "deposit"
+    - "contract"
+    - "start date"
+    - "transition"
+    - "packing"
+  triggers:
+    - "Signed contract"
+    - "Deposit paid"
+    - "Move-in date scheduled"
+  typical_questions:
+    - "What should I bring on move-in day?"
+    - "How long does the adjustment period take?"
+    - "What happens on the first day?"
+  guidance_focus: "Transition support, adjustment tips, family involvement"
+  next_stages: ["FollowUp"]
+  average_duration_days: 7
+
+FollowUp:
+  description: "Post-placement - ensuring successful adjustment"
+  order: 5
+  keywords:
+    - "after"
+    - "settled"
+    - "adjusting"
+    - "how is"
+    - "feedback"
+    - "concern"
+    - "issue"
+    - "since moving"
+  triggers:
+    - "2+ weeks post-placement"
+    - "Adjustment questions"
+    - "Satisfaction check-ins"
+  typical_questions:
+    - "How can I help them adjust?"
+    - "What if they're unhappy?"
+    - "Can they visit home?"
+  guidance_focus: "Adjustment support, family engagement, long-term care planning"
+  next_stages: ["FollowUp", "Assessment"]  # Can loop or restart if situation changes
+  average_duration_days: 90
+
+# Stage transition rules
+transition_rules:
+  confidence_threshold: 0.6  # Minimum confidence to trigger stage change
+  keyword_match_min: 2       # Minimum keyword matches for high confidence
+  session_persistence: true  # Maintain stage across session
+  fallback_stage: "Awareness"  # Default when uncertain
