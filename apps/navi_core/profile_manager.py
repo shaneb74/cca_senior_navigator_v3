@@ -39,19 +39,32 @@ class ProfileManager:
         # Track stage history
         self._stage_history: Dict[str, list[JourneyEvent]] = {}
     
-    def get_profile(self, user_id: str, create_if_missing: bool = True) -> Optional[UserProfile]:
+    def get_profile(self, user_id: str, create_if_missing: bool = True, session_state: Optional[Dict] = None) -> Optional[UserProfile]:
         """
         Retrieve user profile by ID.
         
         Args:
             user_id: User identifier
             create_if_missing: Create new profile with defaults if not found
+            session_state: Optional session state dict to check for pre-existing profile
         
         Returns:
             UserProfile or None if not found and create_if_missing=False
         """
+        # Check if profile exists in storage
         if user_id in self._profiles:
             return self._profiles[user_id]
+        
+        # Check if profile exists in session_state (from onboarding)
+        if session_state and "user_profile" in session_state:
+            try:
+                profile = UserProfile(**session_state["user_profile"])
+                self._profiles[user_id] = profile
+                self._stage_history[user_id] = []
+                return profile
+            except Exception:
+                # If profile data is invalid, continue to create new
+                pass
         
         if create_if_missing:
             # Create new profile with defaults

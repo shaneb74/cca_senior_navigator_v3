@@ -15,6 +15,19 @@ from dataclasses import dataclass
 from .paths import get_config_path
 
 
+# Mapping from UI-friendly labels to internal persona IDs
+# Used for explicit persona selection in onboarding flow
+PERSONA_CHOICES = {
+    "Adult Child (Son or Daughter)": "AdultChild",
+    "Spouse / Partner": "Spouse",
+    "Friend or Neighbor": "SelfSenior",  # fallback neutral role
+    "Veteran": "Veteran",
+    "Advisor / Professional": "Advisor",
+    "Self (I'm the one seeking care)": "SelfSenior",
+    "Other / Unsure": "Unknown",
+}
+
+
 @dataclass
 class RoleDetection:
     """Result of role detection analysis."""

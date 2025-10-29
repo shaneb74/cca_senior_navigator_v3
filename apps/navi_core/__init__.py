@@ -11,7 +11,7 @@ from apps.navi_core.api import get_answer, reload_config, clear_conversation
 from apps.navi_core.models import NaviAnswer, ValidationResult, ChunkMetadata, UserProfile, JourneyEvent
 from apps.navi_core.tone_adapter import ToneAdapter
 from apps.navi_core.sentiment import SentimentAnalyzer
-from apps.navi_core.persona_adapter import PersonaAdapter, RoleDetection
+from apps.navi_core.persona_adapter import PersonaAdapter, RoleDetection, PERSONA_CHOICES
 from apps.navi_core.journey_manager import JourneyManager
 from apps.navi_core.profile_manager import ProfileManager
 
@@ -28,6 +28,7 @@ __all__ = [
     "SentimentAnalyzer",
     "PersonaAdapter",
     "RoleDetection",
+    "PERSONA_CHOICES",
     "JourneyManager",
     "ProfileManager"
 ]
