@@ -12,6 +12,7 @@ try:
     from apps.navi_core import PERSONA_CHOICES, UserProfile
     from apps.navi_core.context_manager import update_context
     from apps.navi_core.guidance_manager import get_guidance
+    from apps.navi_core.progress_manager import mark_page_complete
     _NAVI_AVAILABLE = True
 except ImportError:
     _NAVI_AVAILABLE = False
@@ -22,6 +23,7 @@ def _page_content(ctx=None):
     # Phase 5: Track page context for contextual guidance
     if _NAVI_AVAILABLE:
         update_context("For Someone Else")
+        mark_page_complete("For Someone Else")
     
     # Check if authenticated user already has planning context
     if is_authenticated():

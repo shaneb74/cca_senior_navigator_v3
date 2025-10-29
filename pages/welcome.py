@@ -19,6 +19,7 @@ from ui.header_simple import render_header_simple
 try:
     from apps.navi_core.context_manager import update_context
     from apps.navi_core.guidance_manager import get_guidance
+    from apps.navi_core.progress_manager import mark_page_complete
     _GUIDANCE_AVAILABLE = True
 except ImportError:
     _GUIDANCE_AVAILABLE = False
@@ -559,6 +560,7 @@ def render(ctx: dict | None = None) -> None:
     # Phase 5: Track page context for contextual guidance
     if _GUIDANCE_AVAILABLE:
         update_context("Welcome")
+        mark_page_complete("Welcome")
     
     # ============================================================
     # AUTHENTICATION DISABLED FOR DEVELOPMENT TESTING
