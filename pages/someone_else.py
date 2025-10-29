@@ -176,8 +176,8 @@ def _render_unified_audience_selection() -> None:
             from core.state_name import set_person_name
             set_person_name(name_value.strip())
             
-            # Navigate to hub using switch_page
-            st.switch_page("pages/hub_concierge.py")
+            # Navigate to hub using route_to (compatible with nav system)
+            route_to("hub_concierge")
         
         # Optional note for "someone" mode
         if mode == "someone":
