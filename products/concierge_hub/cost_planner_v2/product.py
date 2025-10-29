@@ -141,99 +141,15 @@ def render():
 
 
 def _render_navi_with_context(current_step: str):
-    """Render Navi panel with context-aware guidance.
-
-    Provides specific, helpful guidance based on:
-    - Current step in Cost Planner workflow
-    - Whether user has completed GCP
-    - GCP recommendation if available
+    """DEPRECATED - Hero Navi panels removed from Cost Planner.
+    
+    This function is no longer used. All Cost Planner pages now use
+    compact Navi panels at the page level via render_module_navi_coach().
+    
+    Old implementation created hero-style Navi panels that duplicated
+    content and cluttered the UI. Now each page owns its compact panel.
     """
-    from core.ui import render_navi_panel_v2
-
-    # Get GCP recommendation if available
-    gcp_rec = MCIP.get_care_recommendation()
-    has_gcp = gcp_rec and gcp_rec.tier
-
-    # Care tier display names
-    tier_display_map = {
-        "no_care_needed": "No Care Recommended",
-        "in_home_care": "In-Home Care",
-        "assisted_living": "Assisted Living",
-        "memory_care": "Memory Care",
-        "memory_care_high_acuity": "Memory Care (High Acuity)",
-    }
-
-    # Build context-aware message based on step
-    if current_step == "intro":
-        # Intro page renders its own header inside products/cost_planner_v2/intro.py
-        # Skip here to avoid duplicate panel rendering
-        return
-
-    elif current_step == "auth":
-        # Authentication step - explain requirement and reassure about security
-        title = "Sign in to continue"
-        reason = "You'll need to sign in to continue to the Financial Assessment."
-        encouragement = {
-            "icon": "🔒",
-            "status": "info",
-            "text": "Your data is protected and securely stored in compliance with HIPAA standards.",
-        }
-
-        # Render Navi panel V2 with security reassurance
-        render_navi_panel_v2(
-            title=title,
-            reason=reason,
-            encouragement=encouragement,
-            context_chips=[],
-            primary_action={"label": "Continue", "action": None},
-            variant="module",
-        )
-
-    elif current_step == "triage":
-        # Quick qualifier questions - explain why we're asking
-        title = "Just a few quick questions"
-        reason = "I'll use your answers to personalize the upcoming sections and keep this quick and efficient."
-        encouragement = {
-            "icon": "⚡",
-            "status": "info",
-            "text": "This helps me show you only what's relevant to your situation.",
-        }
-
-        # Render Navi panel V2 with encouragement
-        render_navi_panel_v2(
-            title=title,
-            reason=reason,
-            encouragement=encouragement,
-            context_chips=[],
-            primary_action={"label": "Continue", "action": None},
-            variant="module",
-        )
-
-    elif current_step in ["modules", "assessments"]:
-        # Financial Assessment hub - explain module purpose
-        title = "Let's work through these financial assessments together"
-        reason = (
-            "Completing them will help us figure out how to pay for the care that was recommended."
-        )
-        encouragement = {
-            "icon": "💪",
-            "status": "info",
-            "text": "Each assessment takes just a few minutes and helps build your complete financial picture.",
-        }
-
-        # Render Navi panel V2 with financial guidance
-        render_navi_panel_v2(
-            title=title,
-            reason=reason,
-            encouragement=encouragement,
-            context_chips=[],
-            primary_action={"label": "Continue", "action": None},
-            variant="module",
-        )
-
-    else:
-        # For other steps, use default Navi guidance
-        render_navi_panel(location="product", product_key="cost_planner_v2")
+    pass  # Function deprecated, call site already commented out
 
 
 def _render_intro_step():

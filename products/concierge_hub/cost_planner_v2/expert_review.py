@@ -349,14 +349,15 @@ def _render_navi_guidance(analysis, profile):
     # Context chips - removed (info now in reason text)
     context_chips = []
 
-    render_navi_panel_v2(
-        title=title,
-        reason=reason,
-        encouragement=encouragement,
-        context_chips=context_chips,
-        primary_action={"label": "", "route": ""},
-        variant="module",
-    )
+    # DEPRECATED: Hero Navi panel removed - using compact panel at page top instead
+    # render_navi_panel_v2(
+    #     title=title,
+    #     reason=reason,
+    #     encouragement=encouragement,
+    #     context_chips=context_chips,
+    #     primary_action={"label": "", "route": ""},
+    #     variant="module",
+    # )
 
 
 def _calculate_timeline_segments(analysis, selected_assets):
