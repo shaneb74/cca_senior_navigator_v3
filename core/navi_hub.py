@@ -22,8 +22,8 @@ def render_hub_navi_next():
         else (tier or "").replace("_", " ").title()
     )
 
-    # Panel shell
-    st.markdown("<div class='navi-panel-v2'>", unsafe_allow_html=True)
+    # Panel shell with Phase 5K AI shimmer pulse
+    st.markdown("<div class='navi-panel-v2 navi-card ai-card animate-border'>", unsafe_allow_html=True)
     st.markdown("### ✨ NAVI — What's Next")
 
     if plan:

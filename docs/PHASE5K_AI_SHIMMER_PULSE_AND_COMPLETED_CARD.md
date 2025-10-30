@@ -1,29 +1,31 @@
-/* ==========================================
-   PHASE 5H SAFE OVERRIDES — VISUAL POLISH
-   ========================================== */
+Excellent question — those two markdowns are sequential phases of the *same feature evolution*, not conflicting instructions.
 
-/* ====== TILE JOURNEY BORDERS ====== */
-.tile-discovery { border-left: 4px solid #3A7BFF !important; }
-.tile-planning  { border-left: 4px solid #2ECC71 !important; }
-.tile-post_planning { border-left: 4px solid #8A4FFF !important; }
-.tile-service   { border-left: 4px solid #CCCCCC !important; }
+Here’s how to think of them:
 
-/* ====== CONTEXTUAL CARD ALIGNMENT ====== */
-.navi-card { border-left: 4px solid #3A7BFF !important; border-radius: 8px !important; }
+| Phase  | Feature                             | Status             | Notes                                                                  |
+| ------ | ----------------------------------- | ------------------ | ---------------------------------------------------------------------- |
+| **5J** | Gradient + Animated Gradient Border | ✅ Baseline version | Adds the static + gradient border animation and completed-card styling |
+| **5K** | Shimmer Pulse Extension             | 🔄 Enhancement     | Builds directly on 5J, adding the subtle shimmer-pulse overlay         |
 
-/* ====== TYPOGRAPHY CLEANUP ====== */
-h1, h2, h3, h4 { font-weight: 600; letter-spacing: -0.02em; }
+So the second one **replaces and extends** the first.
+To avoid confusion, here’s the **merged single markdown** you can give Claude, containing everything from both 5J and 5K in one authoritative spec.
 
-/* ====== LAYOUT SMOOTHING ====== */
-section, .container, .tile-grid { gap: 1.5rem !important; }
+---
 
-/* ====== LOCKED ELEMENTS ====== */
-.pill-black, .pill-white, .welcome-container {
-  all: revert !important;
-  filter: none !important;
-  box-shadow: none !important;
-}
+## 📘 `PHASE5K_AI_SHIMMER_PULSE_AND_COMPLETED_CARD.md`
 
+### 🎯 Objectives
+
+1. Apply a **purple→pink gradient** border to AI-related tiles (e.g. NAVI).
+2. Add a **soft shimmer-pulse effect** for subtle movement and “intelligence.”
+3. Maintain and polish the **Completed Journey Card** style.
+4. Keep all motion smooth, lightweight, and compliant with `prefers-reduced-motion`.
+
+---
+
+### 🎨 CSS Additions (`assets/css/overrides.css`)
+
+```css
 /* ==========================================
    PHASE 5K — AI SHIMMER PULSE + COMPLETED CARD
    ========================================== */
@@ -124,3 +126,41 @@ section, .container, .tile-grid { gap: 1.5rem !important; }
     align-items: center;
     justify-content: center;
 }
+```
+
+---
+
+### 🧩 Example Usage in Streamlit
+
+```python
+# NAVI / AI card
+st.markdown("""
+<div class="navi-card ai-card animate-border">
+    <h4>✨ NAVI</h4>
+    <p>Answer these questions to match the right level of support.</p>
+</div>
+""", unsafe_allow_html=True)
+
+# Completed Journey card
+st.markdown("""
+<div class="completed-card">
+    <h4>Guided Care Plan</h4>
+    <p>Your personalized care plan recommendation.</p>
+</div>
+""", unsafe_allow_html=True)
+```
+
+---
+
+### 🧭 Claude Task Directive
+
+> **Claude**, on branch `feature/phase5k_ai_shimmer_pulse`:
+>
+> * Append the above CSS to `assets/css/overrides.css`.
+> * Apply `.animate-border` to all AI-driven or NAVI cards.
+> * Keep the shimmer pulse and hover glow subtle.
+> * Retain completed card styling from previous phase.
+> * Verify animation fluidity and accessibility (`prefers-reduced-motion`).
+
+---
+
