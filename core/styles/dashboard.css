@@ -143,3 +143,52 @@ h2, h3 {
   font-size: 1.5rem;
   color: #4BBE83;
 }
+
+/* ---------- TILE COMPLETION ICON (Phase 5E) ---------- */
+.tile-completion-badge {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background-color: #4BBE83;
+  color: #ffffff;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+  z-index: 10;
+}
+
+.tile-completion-icon {
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* ---------- PERSONALIZATION STYLES (Phase 5E) ---------- */
+.personalized-tone-encouraging {
+  border-left: 4px solid #5BA3FF;
+}
+
+.personalized-tone-supportive {
+  border-left: 4px solid #4BBE83;
+}
+
+.personalized-tone-reassuring {
+  border-left: 4px solid #B974E4;
+}
+
+.tier-independent .dashboard-card {
+  background: linear-gradient(to right, #ffffff 0%, #F0F7FF 100%);
+}
+
+.tier-assisted .dashboard-card {
+  background: linear-gradient(to right, #ffffff 0%, #F0FFF4 100%);
+}
+
+.tier-memory-care .dashboard-card {
+  background: linear-gradient(to right, #ffffff 0%, #FAF5FF 100%);
+}
+

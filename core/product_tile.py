@@ -429,13 +429,12 @@ class ProductTileHub(BaseTile):
         is_complete = float(self.progress or 0) >= 100
         is_faq = getattr(self, "key", "") in faq_keys
         if is_complete and not is_faq:
-            done_url, _ = _resolve_img("static/images/done.png")
-            if done_url:
-                out.append(
-                    f'<div class="tile-completion-badge" aria-label="Complete">'
-                    f'<img src="{done_url}" alt="Complete" />'
-                    "</div>"
-                )
+            # Phase 5E: Use CSS-based checkmark instead of PNG
+            out.append(
+                '<div class="tile-completion-badge" aria-label="Complete">'
+                '<span class="tile-completion-icon">✓</span>'
+                "</div>"
+            )
 
         # Phase 5A: Add phase pill if phase attribute exists
         if self.phase:

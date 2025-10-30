@@ -1,6 +1,9 @@
 """
 core/personalizer.py
 Phase 5E - Dynamic Personalization Engine
+
+Provides schema-driven personalization based on user tier, cognition band,
+support level, and journey phase. Integrates with session_store for persistence.
 """
 
 import json
@@ -18,6 +21,14 @@ def load_schema():
 # --- Merge rules by precedence ---
 def get_user_context(uid=None, flags=None):
     schema = load_schema()
+
+    # Get UID from parameter, session state, or anonymous
+    if uid is None:
+        uid = st.session_state.get("user_id") or st.session_state.get("anonymous_uid", "anonymous")
+    
+    # Phase 5E: Persist uid in session state for cross-navigation tracking
+    if uid != "anonymous":
+        st.session_state["_personalization_uid"] = uid
 
     # In a real app, this would pull from the user profile or DB
     user = st.session_state.get("user_profile", {
