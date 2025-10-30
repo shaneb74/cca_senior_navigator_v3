@@ -144,57 +144,32 @@ h2, h3 {
   color: #4BBE83;
 }
 
-/* ---------- PERSONALIZATION STYLES (Phase 5E) ---------- */
-.personalized-tone-encouraging {
-  border-left: 4px solid #5BA3FF;
+/* ---------- JOURNEY PHASE VISUAL IDENTITY (Phase 5G) ---------- */
+/* Clean left-border accents replace gradients - no backgrounds */
+
+.tile-discovery {
+  border-left: 4px solid #3B82F6;  /* blue */
 }
 
-.personalized-tone-supportive {
-  border-left: 4px solid #4BBE83;
+.tile-planning {
+  border-left: 4px solid #10B981;  /* green */
 }
 
-.personalized-tone-reassuring {
-  border-left: 4px solid #B974E4;
+.tile-post_planning {
+  border-left: 4px solid #8B5CF6;  /* violet */
 }
 
-.tier-independent .dashboard-card {
-  background: linear-gradient(to right, #ffffff 0%, #F0F7FF 100%);
+.tile-service {
+  border-left: 4px solid #9CA3AF;  /* gray */
 }
 
-.tier-assisted .dashboard-card {
-  background: linear-gradient(to right, #ffffff 0%, #F0FFF4 100%);
-}
-
-.tier-memory-care .dashboard-card {
-  background: linear-gradient(to right, #ffffff 0%, #FAF5FF 100%);
-}
-
-/* ---------- PHASE GRADIENTS (Phase 5F Visual Polish) ---------- */
-/* Subtle, accessible background gradients for journey phase tiles */
-
-.tile-gradient-discovery {
-  background: linear-gradient(180deg, #E8F1FF 0%, #FFFFFF 100%);
-}
-
-.tile-gradient-planning {
-  background: linear-gradient(180deg, #EAFBF0 0%, #FFFFFF 100%);
-}
-
-.tile-gradient-post_planning {
-  background: linear-gradient(180deg, #F3EEFF 0%, #FFFFFF 100%);
-}
-
-.tile-gradient-service {
-  background: linear-gradient(180deg, #F7F7F7 0%, #FFFFFF 100%);
-}
-
-/* Ensure gradients don't interfere with hover states */
-.dashboard-card.tile-gradient-discovery:hover,
-.dashboard-card.tile-gradient-planning:hover,
-.dashboard-card.tile-gradient-post_planning:hover,
-.dashboard-card.tile-gradient-service:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+/* Section note styling */
+.section-note {
+  font-size: 0.85rem;
+  color: #666;
+  margin: 1rem 0 0.5rem 0;
+  text-align: center;
+  font-style: italic;
 }
 
 

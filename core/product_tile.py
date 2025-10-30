@@ -405,9 +405,9 @@ class ProductTileHub(BaseTile):
         if self.variant:
             classes.append(f"tile--{self.variant}")
 
-        # Phase 5F: Add gradient class based on journey phase
+        # Phase 5G: Add left-border class based on journey phase (no gradients)
         if self.phase:
-            classes.append(f"tile-gradient-{self.phase}")
+            classes.append(f"tile-{self.phase}")
 
         # Add "recommended" class for MCIP gradient
         # Conditions: is the current next step, not complete, not FAQ tile

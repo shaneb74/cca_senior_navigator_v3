@@ -205,8 +205,8 @@ def _apply_tile_state(tile: ProductTileHub, state: str) -> ProductTileHub:
         tile.desc = "Complete previous steps to unlock"
         
     elif state == "completed":
-        # Show completion indicator
-        tile.primary_label = "✓ Completed"
+        # Phase 5G: Show completion indicator (text-only, no emoji)
+        tile.primary_label = "Completed"
         tile.variant = "success"  # Use success variant if available
         
         # Add outcome display for completed products (Phase 3B)
@@ -619,17 +619,20 @@ def render(ctx=None) -> None:
     active_tiles.sort(key=lambda t: t.order)
     
     # ========================================
+    # COMPLETED JOURNEYS SECTION (Phase 5G)
+    # ========================================
+    completed_tiles = _build_completed_tiles()
+    
+    # ========================================
     # ADDITIONAL SERVICES (Phase 4A Revision)
     # ========================================
     # Only partner upsells and NAVI-driven recommendations
     additional_services = get_additional_services("lobby")
     
     # ========================================
-    # COMPLETED JOURNEYS SECTION (Phase 4A)
+    # RENDER ACTIVE JOURNEYS (Phase 5G)
     # ========================================
-    completed_tiles = _build_completed_tiles()
-    
-    # Render main hub body with active tiles and additional services
+    # Render main hub body with active tiles only (no additional services inline)
     body_html = render_dashboard_body(
         title="",  # NAVI provides context
         subtitle=None,
@@ -637,19 +640,45 @@ def render(ctx=None) -> None:
         hub_guide_block=None,
         hub_order=None,
         cards=active_tiles,
-        additional_services=additional_services,
+        additional_services=[],  # Phase 5G: additional services rendered separately
     )
     
     st.markdown(body_html, unsafe_allow_html=True)
     
     # ========================================
-    # ⭐ MY COMPLETED JOURNEY (Phase 5D)
+    # INFORMATIONAL TEXT (Phase 5G)
     # ========================================
-    # Appears BELOW Additional Services as separate section
+    # Show only when completed journeys exist
+    if completed_tiles:
+        st.markdown(
+            '<p class="section-note">Your completed journeys are shown below.</p>',
+            unsafe_allow_html=True
+        )
+    
+    # ========================================
+    # ADDITIONAL SERVICES SECTION (Phase 5G)
+    # ========================================
+    # Render as separate section above completed journeys
+    if additional_services:
+        additional_html = render_dashboard_body(
+            title="",
+            subtitle=None,
+            chips=None,
+            hub_guide_block=None,
+            hub_order=None,
+            cards=[],
+            additional_services=additional_services,
+        )
+        st.markdown(additional_html, unsafe_allow_html=True)
+    
+    # ========================================
+    # MY COMPLETED JOURNEYS (Phase 5G)
+    # ========================================
+    # Appears at bottom after additional services
     if completed_tiles:
         st.markdown('<div class="completed-journey-section">', unsafe_allow_html=True)
         st.markdown(
-            '<div class="completed-journey-header">⭐ My Completed Journey</div>',
+            '<div class="completed-journey-header">My Completed Journeys</div>',
             unsafe_allow_html=True
         )
         
@@ -659,11 +688,11 @@ def render(ctx=None) -> None:
             col = cols[idx % len(cols)]
             with col:
                 st.markdown('<div class="dashboard-card completed-card">', unsafe_allow_html=True)
-                st.markdown('<div class="completed-overlay">✓</div>', unsafe_allow_html=True)
                 st.markdown(f"### {tile.title}")
                 st.markdown(f"{tile.desc}")
+                # Phase 5G: Text-only completed badge (no emoji)
                 st.markdown(
-                    '<span class="completed-badge">✓ Completed</span>',
+                    '<span class="completed-badge">Completed</span>',
                     unsafe_allow_html=True
                 )
                 if st.button("Review Again", key=f"review_{tile.key}", use_container_width=True):
