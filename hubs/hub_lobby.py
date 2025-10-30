@@ -257,12 +257,25 @@ def _build_planning_tiles() -> list[ProductTileHub]:
     """Build Planning Tools tiles (unlocked after GCP).
     
     Phase 4A Revision: Planning tiles include Cost Planner and Plan With Advisor.
+    Phase 4B: Added Learn About My Recommendation between GCP and Cost Planner.
     FAQ removed (integrated into NAVI).
     
     Returns:
         List of planning tiles with MCIP state applied
     """
     tiles = [
+        ProductTileHub(
+            key="learn_recommendation",
+            title="Learn About My Recommendation",
+            desc="Understand your care option before planning costs.",
+            blurb="Educational step to learn what your recommendation means and how to prepare.",
+            image_square="gcp.png",  # TODO: Get dedicated image
+            primary_route="?page=learn_recommendation",
+            primary_label="Learn More",
+            variant="brand",
+            order=15,  # Between GCP (10) and Cost Planner (20)
+            visible=True,
+        ),
         ProductTileHub(
             key="cost_v2",
             title="Cost Planner",

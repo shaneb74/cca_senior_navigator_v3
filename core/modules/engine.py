@@ -1804,11 +1804,12 @@ def _render_results_view(mod: dict[str, Any], config: ModuleConfig) -> None:
             partner_flow_enabled = get_flag("FEATURE_HOUSEHOLD_PARTNER_FLOW")
             if partner_flow_enabled:
                 # TODO: Add partner interstitial logic here
-                # For now, proceed directly to cost planner
+                # For now, proceed directly to learn recommendation
                 pass
 
-            print("[GCP_NAV] Navigate to cost_intro")
-            route_to("cost_intro")
+            # Phase 4B: Route to Learn About My Recommendation instead of directly to Cost Planner
+            print("[GCP_NAV] Navigate to learn_recommendation (Phase 4B)")
+            route_to("learn_recommendation")
             return  # Exit early after navigation
         else:
             # Summary not ready yet - show loading state and block
@@ -2205,9 +2206,9 @@ def _render_results_ctas_once(config: ModuleConfig) -> None:
         st.markdown("---")
         st.markdown('<div class="sn-app mod-actions">', unsafe_allow_html=True)
 
-        # Build streamlined CTA for Cost Planner handoff
-        cta_label = "Next: Cost & Options →"
-        cta_help = "Get personalized cost estimates and explore your care options"
+        # Build streamlined CTA for Learn About Recommendation handoff (Phase 4B)
+        cta_label = "Next: Learn About Your Care Option →"
+        cta_help = "Understand your recommendation before exploring costs"
 
         # Disable button if summary not ready (extra safety)
         summary_ready = st.session_state.get("summary_ready", False) or st.session_state.get("gcp.llm_result_ready", False)
