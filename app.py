@@ -292,7 +292,6 @@ LAYOUT_CHROME_ROUTES = {
     "someone_else",
     "professionals",
     "hub_lobby",
-    "hub_concierge",
     "hub_waiting",
     "hub_learning",
     "hub_trusted",

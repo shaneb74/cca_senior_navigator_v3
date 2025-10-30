@@ -227,7 +227,7 @@ def render_welcome_contextual():
                     
                     # Navigate to concierge hub
                     from core.nav import route_to
-                    route_to("hub_concierge")
+                    route_to("hub_lobby")
                     return
             
             with col_close:
@@ -304,7 +304,7 @@ def render_for_someone():
         st.markdown(
             """
       <div class="card-actions mt-space-4">
-        <a class="btn btn--primary" href="?page=hub_concierge">Continue</a>
+        <a class="btn btn--primary" href="?page=hub_lobby">Continue</a>
         <a class="btn btn--ghost" href="?page=welcome">Close</a>
       </div>
       <p class="helper-note mt-space-4">If you want to assess several people, you can move on to the next step later.</p>
@@ -373,7 +373,7 @@ def render_for_me_contextual():
         st.markdown(
             """
       <div class="card-actions mt-space-4">
-        <a class="btn btn--primary" href="?page=hub_concierge">Continue</a>
+        <a class="btn btn--primary" href="?page=hub_lobby">Continue</a>
         <a class="btn btn--ghost" href="?page=welcome">Close</a>
       </div>
       <p class="helper-note mt-space-4">If you want to assess several people, you can move on to the next step later.</p>
@@ -960,5 +960,5 @@ Progress: {completed}/3 Products Completed
     # Back to hub
     from core.nav import route_to
 
-    if st.button("← Back to Concierge Hub", use_container_width=True):
-        route_to("hub_concierge")
+    if st.button("← Back to Dashboard", use_container_width=True):
+        route_to("hub_lobby")

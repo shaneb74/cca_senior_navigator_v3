@@ -110,7 +110,7 @@ class TrustedPartnersHub(BaseHub):
                     },
                     {
                         "label": "Share with family",
-                        "route": "hub_concierge",
+                        "route": "hub_lobby",
                         "variant": "ghost",
                     },
                 ],

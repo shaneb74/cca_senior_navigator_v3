@@ -310,7 +310,7 @@ def build_navi_context_from_session() -> NaviContext:
         is_auth = is_authenticated()
         
         # Determine current location
-        current_page = st.query_params.get("page", "hub_concierge")
+        current_page = st.query_params.get("page", "hub_lobby")
         if "gcp" in current_page:
             current_location = "gcp"
         elif "cost" in current_page:

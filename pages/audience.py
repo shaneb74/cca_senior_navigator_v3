@@ -320,7 +320,7 @@ def _page_content():
             set_person_name(name_value.strip())
             
             # Navigate to Concierge Hub
-            route_to("hub_concierge")
+            route_to("hub_lobby")
         
         # Optional note for "someone" mode
         if mode == "someone":

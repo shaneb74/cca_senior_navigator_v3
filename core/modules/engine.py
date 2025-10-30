@@ -1036,7 +1036,7 @@ def _hub_route_for_product(product_key: str) -> str:
             continue
         hub_id = info.get("hub") or "concierge"
         return hub_id if hub_id.startswith("hub_") else f"hub_{hub_id}"
-    return "hub_concierge"
+    return "hub_lobby"
 
 
 def _handle_save_exit(
@@ -1976,9 +1976,9 @@ def _render_results_view(mod: dict[str, Any], config: ModuleConfig) -> None:
             route_to("cost_intro")
 
     with col3:
-        if st.button("🏠 Return to Concierge Hub", key="btn_hub", use_container_width=True):
+        if st.button("🏠 Return to Dashboard", key="btn_hub", use_container_width=True):
             from core.nav import route_to
-            route_to("hub_concierge")
+            route_to("hub_lobby")
 
     st.markdown('</div>', unsafe_allow_html=True)  # close rec-actions
 
