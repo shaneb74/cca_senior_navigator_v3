@@ -145,22 +145,22 @@ h2, h3 {
 }
 
 /* ---------- JOURNEY PHASE VISUAL IDENTITY (Phase 5G) ---------- */
-/* Clean left-border accents replace gradients - no backgrounds */
+/* Clean left-border accents match NAVI panel styling - 3px solid borders */
 
 .tile-discovery {
-  border-left: 4px solid #3B82F6;  /* blue */
+  border-left: 3px solid #2563eb;  /* blue - matches NAVI */
 }
 
 .tile-planning {
-  border-left: 4px solid #10B981;  /* green */
+  border-left: 3px solid #10B981;  /* green */
 }
 
 .tile-post_planning {
-  border-left: 4px solid #8B5CF6;  /* violet */
+  border-left: 3px solid #8B5CF6;  /* violet */
 }
 
 .tile-service {
-  border-left: 4px solid #9CA3AF;  /* gray */
+  border-left: 3px solid #9CA3AF;  /* gray */
 }
 
 /* Section note styling */
