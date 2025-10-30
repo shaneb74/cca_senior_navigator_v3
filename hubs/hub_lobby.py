@@ -4,6 +4,18 @@ Lobby Hub - Visual Dashboard Entry Point
 
 Modernized dashboard design matching Senior Navigator design system.
 Provides entry point to core products: GCP, Cost Planner, PFMA, and FAQ.
+
+Architecture Note (Phase 2B):
+--------------
+This hub uses dynamic product tile rendering via ProductTileHub objects.
+Products are registered in config/nav.json and loaded via the module engine.
+
+The Senior Navigator architecture already supports:
+  - Dynamic module discovery (core/modules/engine.py::run_module)
+  - JSON-driven module configs (products/*/modules/*/config.py)
+  - Dynamic product tiles (ProductTileHub with routes)
+
+No hard-coded imports or manual module registration required.
 """
 
 import streamlit as st
