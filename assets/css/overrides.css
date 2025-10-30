@@ -3,19 +3,19 @@
    ========================================== */
 
 /* ====== TILE JOURNEY BORDERS ====== */
-.tile-discovery { border-left: 4px solid #3A7BFF !important; }
-.tile-planning  { border-left: 4px solid #2ECC71 !important; }
-.tile-post_planning { border-left: 4px solid #8A4FFF !important; }
-.tile-service   { border-left: 4px solid #CCCCCC !important; }
+.tile-discovery { border-left: 4px solid #3A7BFF; }
+.tile-planning  { border-left: 4px solid #2ECC71; }
+.tile-post_planning { border-left: 4px solid #8A4FFF; }
+.tile-service   { border-left: 4px solid #CCCCCC; }
 
 /* ====== CONTEXTUAL CARD ALIGNMENT ====== */
-.navi-card { border-left: 4px solid #3A7BFF !important; border-radius: 8px !important; }
+.navi-card { border-left: 4px solid #3A7BFF; border-radius: 8px; }
 
 /* ====== TYPOGRAPHY CLEANUP ====== */
 h1, h2, h3, h4 { font-weight: 600; letter-spacing: -0.02em; }
 
 /* ====== LAYOUT SMOOTHING ====== */
-section, .container, .tile-grid { gap: 1.5rem !important; }
+section, .container, .tile-grid { gap: 1.5rem; }
 
 /* ====== LOCKED ELEMENTS ====== */
 .pill-black, .pill-white, .welcome-container {
@@ -102,6 +102,8 @@ section, .container, .tile-grid { gap: 1.5rem !important; }
     padding: 1.25rem 1.5rem;
     position: relative;
     transition: 0.2s ease-in-out;
+    max-width: 700px;
+    margin: 0 auto;
 }
 .completed-card:hover {
     background: linear-gradient(180deg, #f2fcf7 0%, #ffffff 100%);
@@ -124,3 +126,122 @@ section, .container, .tile-grid { gap: 1.5rem !important; }
     align-items: center;
     justify-content: center;
 }
+
+/* ==========================================
+   PHASE 5M — CSS NORMALIZATION & PROGRESS BAR
+   ========================================== */
+
+/* --- Discovery Progress Bar (in NAVI card) --- */
+.progress-wrapper {
+    margin: 1rem 0;
+}
+
+.progress-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 0.5rem;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 999px;
+    overflow: hidden;
+    position: relative;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+    border-radius: 999px;
+    transition: width 0.3s ease;
+}
+
+.progress-bar-fill.shimmer {
+    position: relative;
+    overflow: hidden;
+}
+
+.progress-bar-fill.shimmer::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255,255,255,0.4) 50%,
+        transparent 100%
+    );
+    animation: shimmerProgress 2s infinite;
+}
+
+@keyframes shimmerProgress {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+/* --- CTA Button Row --- */
+.cta-row {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.cta-primary {
+    flex: 1;
+    padding: 0.625rem 1.25rem;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.cta-primary:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.25);
+}
+
+.cta-secondary {
+    flex: 1;
+    padding: 0.625rem 1.25rem;
+    background: white;
+    color: #3b82f6;
+    border: 1px solid #3b82f6;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.cta-secondary:hover {
+    background: #eff6ff;
+    border-color: #2563eb;
+    transform: translateY(-1px);
+}
+
+/* --- Product/Module Layout Constraints --- */
+.product-container,
+.module-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+}
+
+/* --- Responsive Scaling --- */
+@media (max-width: 1400px) {
+    .ai-card, .navi-card, .completed-card {
+        max-width: 100%;
+    }
+}
+

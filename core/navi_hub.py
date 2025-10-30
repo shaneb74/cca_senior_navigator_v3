@@ -26,6 +26,23 @@ def render_hub_navi_next():
     st.markdown("<div class='navi-panel-v2 navi-card ai-card animate-border'>", unsafe_allow_html=True)
     st.markdown("### ✨ NAVI — What's Next")
 
+    # Phase 5M: Show discovery progress if in discovery journey stage
+    journey_stage = ss.get("journey_stage", "discovery")
+    if journey_stage == "discovery":
+        # Calculate discovery progress based on completed discovery modules
+        discovery_modules = ["discovery_learning", "assessment_tool"]
+        completed_count = sum(1 for mod in discovery_modules if ss.get(f"{mod}_completed"))
+        progress_pct = int((completed_count / len(discovery_modules)) * 100) if discovery_modules else 0
+        
+        st.markdown(f"""
+        <div class="progress-wrapper">
+            <div class="progress-label">Discovery Progress: {progress_pct}% Complete</div>
+            <div class="progress-bar">
+                <div class="progress-bar-fill shimmer" style="width:{progress_pct}%;"></div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
     if plan:
         st.write(f"**Recommendation:** {plan}")
     # Clinical Review
