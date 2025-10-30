@@ -204,6 +204,72 @@ In `/core/nav.json`:
 
 ---
 
+Got it — here’s the **revision block** you can copy and paste directly into the end of your existing
+`docs/phase4a_waiting_room_consolidation.md` file.
+
+This will make the correction explicit and keep Claude perfectly aligned:
+
+---
+
+````markdown
+---
+
+## 🔧 Phase 4A Revision Note — Product vs. Additional Services  
+**Date:** 2025-10-30  
+
+During implementation review, it was confirmed that two elements previously associated with the “Waiting Room” — **Trivia** and **Concierge Clinical Review** — are *not* additional services.  
+They are **core product tiles** and must remain part of the main product flow.
+
+### ✅ Corrected Hierarchy
+
+The **Lobby Hub** will render tiles in this order:
+
+```python
+render_discovery_tiles()      # Discovery Journey
+render_planning_tiles()       # Guided Care Plan, Cost Planner, Plan with My Advisor
+render_engagement_tiles()     # Trivia, Concierge Clinical Review
+render_additional_services()  # OmCare, SeniorLife, VA A&A, ElderLaw, etc.
+render_completed_tiles()      # Closed-out journeys
+````
+
+### ✅ Implementation Rules
+
+1. **Trivia** and **Concierge Clinical Review**:
+
+   * Stay in the **main product tile grid** (not under “Additional Services”).
+   * Retain full routing via `route_to("trivia")` and `route_to("concierge_review")`.
+   * Continue using their existing module and config structures.
+2. **Additional Services**:
+
+   * Reserved only for NAVI-driven upsells and partner recommendations.
+   * Examples: OmCare (Medication Management), SeniorLife (Cognitive/Fall Risk), VA A&A, ElderLaw, etc.
+3. **Labeling** inside `hub_lobby.py` should be:
+
+   ```
+   # --- Discovery Journey ---
+   # --- Planning Tools ---
+   # --- Engagement Products ---
+   # --- Additional Services / Partner Upsells ---
+   # --- Completed Journeys ---
+   ```
+4. Maintain dynamic rendering across all categories using the same product-tile renderer.
+5. Update any internal comments or section headers to reflect this corrected hierarchy.
+
+### 🧩 Result
+
+* Trivia and Concierge Clinical Review now appear alongside other products.
+* The “Additional Services” area remains distinct for external partner integrations.
+* The Lobby serves as the single, unified hub for all product experiences.
+
+---
+
+**End of Revision Note**
+
+```
+
+---
+
+
 **End of Document**
 
 ```
