@@ -28,9 +28,10 @@ Phase 3A Enhancements:
 import streamlit as st
 from core.product_tile import ProductTileHub
 from core.base_hub import render_dashboard_body
-from core.navi import render_navi_panel
+from core.ui import render_navi_panel_v2
 from core.mcip import MCIP
 from core.additional_services import get_additional_services
+from core.product_outcomes import get_product_outcome
 from ui.header_simple import render_header_simple
 from ui.footer_simple import render_footer_simple
 
@@ -40,12 +41,18 @@ __all__ = ["render"]
 def _get_product_state(product_key: str) -> str:
     """Determine product state based on MCIP status.
     
+    Phase 3B: FAQ/AI Advisor is always available.
+    
     Args:
         product_key: Product identifier (e.g., 'gcp_v4', 'cost_v2')
     
     Returns:
         State string: 'locked', 'available', or 'completed'
     """
+    # FAQ/AI Advisor is always unlocked (Phase 3B)
+    if product_key in ('faq', 'ai_advisor'):
+        return "available"
+    
     # Normalize product keys (handle aliases)
     key_map = {
         'gcp_v4': 'gcp',
@@ -55,7 +62,6 @@ def _get_product_state(product_key: str) -> str:
         'cost_intro': 'cost_planner',
         'pfma_v3': 'pfma',
         'pfma': 'pfma',
-        'faq': 'faq',
     }
     
     normalized_key = key_map.get(product_key, product_key)
@@ -75,12 +81,14 @@ def _get_product_state(product_key: str) -> str:
 def _apply_tile_state(tile: ProductTileHub, state: str) -> ProductTileHub:
     """Apply visual state to a product tile.
     
+    Phase 3B: Also adds product outcomes to completed tiles.
+    
     Args:
         tile: Original ProductTileHub object
         state: State to apply ('locked', 'available', 'completed')
     
     Returns:
-        Modified tile with state-specific properties
+        Modified tile with state-specific properties and outcomes
     """
     if state == "locked":
         # Grey out tile and disable interaction
@@ -93,6 +101,12 @@ def _apply_tile_state(tile: ProductTileHub, state: str) -> ProductTileHub:
         tile.primary_label = "✓ Completed"
         tile.variant = "success"  # Use success variant if available
         
+        # Add outcome display for completed products (Phase 3B)
+        outcome = get_product_outcome(tile.key)
+        if outcome:
+            # Show outcome as prominent subtitle
+            tile.desc = outcome
+    
     # 'available' state keeps original tile properties
     return tile
 
@@ -166,13 +180,20 @@ def _build_product_tiles() -> list[ProductTileHub]:
 
 
 def render(ctx=None) -> None:
-    """Render the Lobby Hub with NAVI guidance, MCIP gating, and Additional Services.
+    """Render the Lobby Hub - Central control center for Senior Navigator.
     
     Phase 3A Features:
     - NAVI panel at top for journey guidance
     - MCIP-based product availability gating
     - Product state indicators (locked/available/completed)
     - Additional Services section at bottom
+    
+    Phase 3B Enhancements:
+    - Personalized NAVI with render_navi_panel_v2()
+    - Removed redundant "Dashboard" title (NAVI provides context)
+    - Product outcomes display on completed tiles
+    - FAQ/AI Advisor always unlocked
+    - Lobby is now the default hub (replaces Concierge)
     """
     
     # Initialize MCIP to ensure journey state is ready
@@ -188,24 +209,63 @@ def render(ctx=None) -> None:
     render_header_simple(active_route="hub_lobby")
     
     # ========================================
-    # NAVI GUIDANCE PANEL (Phase 3A)
+    # NAVI GUIDANCE PANEL (Phase 3B - Personalized)
     # ========================================
-    # Render NAVI at the top to guide user through journey
-    render_navi_panel(
-        location="hub",
-        hub_key="lobby",
-        product_key=None,
-        module_config=None
+    # Build personalized NAVI data
+    person_name = st.session_state.get("person_name", "").strip()
+    person = person_name if person_name else "you"
+    
+    # Determine title and reason based on MCIP state
+    care_rec = MCIP.get_care_recommendation()
+    if care_rec and care_rec.tier:
+        title = f"Hi, {person_name}!" if person_name else "Welcome back!"
+        tier_display = care_rec.tier.replace("_", " ").title()
+        reason = f"Your personalized care plan recommends: {tier_display}"
+    else:
+        title = "Let's get started."
+        reason = "Answer a few questions to build your personalized care plan."
+    
+    encouragement = {
+        "icon": "🧭",
+        "text": "I'll guide you through each step with context and next actions.",
+        "status": "getting_started",
+    }
+    
+    # Context chips (empty for now, can be populated with progress)
+    context_chips = []
+    
+    # Primary action - determine based on what's not completed
+    if not MCIP.is_product_complete("gcp"):
+        primary_action = {"label": "Start Care Plan", "route": "gcp_v4"}
+    elif not MCIP.is_product_complete("cost_planner"):
+        primary_action = {"label": "Calculate Care Costs", "route": "cost_intro"}
+    else:
+        primary_action = {"label": "Ask NAVI", "route": "faq"}
+    
+    # Secondary action - FAQ is always available
+    secondary_action = {"label": "Get Help from NAVI", "route": "faq"}
+    
+    # Render personalized NAVI panel V2
+    render_navi_panel_v2(
+        title=title,
+        reason=reason,
+        encouragement=encouragement,
+        context_chips=context_chips,
+        primary_action=primary_action,
+        secondary_action=secondary_action,
+        progress=None,
+        alert_html="",
+        variant="hub",
     )
     
     # Add spacing after NAVI panel
     st.markdown("<br/>", unsafe_allow_html=True)
     
     # ========================================
-    # PAGE TITLE & SUBTITLE
+    # PAGE TITLE & SUBTITLE (Phase 3B: Removed - NAVI provides context)
     # ========================================
-    st.title("Senior Navigator Dashboard")
-    st.markdown("Choose a tool to get started with your care planning journey.")
+    # st.title("Senior Navigator Dashboard")
+    # st.markdown("Choose a tool to get started with your care planning journey.")
     
     # ========================================
     # PRODUCT TILES WITH MCIP GATING (Phase 3A)

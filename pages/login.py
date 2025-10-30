@@ -13,9 +13,9 @@ def _go_next_after_auth():
     """Navigate to next page after successful authentication.
     
     Reads 'return' query param to determine destination.
-    Defaults to hub_concierge if no return param.
+    Phase 3B: Changed default from hub_concierge to hub_lobby
     """
-    return_page = st.query_params.get("return", "hub_concierge")
+    return_page = st.query_params.get("return", "hub_lobby")
     print(f"[AUTH] success -> {return_page}")
     st.query_params.clear()
     route_to(return_page)
