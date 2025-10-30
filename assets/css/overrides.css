@@ -3,10 +3,10 @@
    ========================================== */
 
 /* ====== TILE JOURNEY BORDERS ====== */
-.tile-discovery { border-left: 4px solid #3A7BFF; }
-.tile-planning  { border-left: 4px solid #2ECC71; }
-.tile-post_planning { border-left: 4px solid #8A4FFF; }
-.tile-service   { border-left: 4px solid #CCCCCC; }
+.tile-discovery { border-left: 4px solid #3A7BFF !important; }
+.tile-planning  { border-left: 4px solid #2ECC71 !important; }
+.tile-post_planning { border-left: 4px solid #8A4FFF !important; }
+.tile-service   { border-left: 4px solid #CCCCCC !important; }
 
 /* ====== CONTEXTUAL CARD ALIGNMENT ====== */
 /* Phase 5M: Removed - conflict with Phase 5K gradient border */
@@ -295,8 +295,8 @@ section, .container, .tile-grid { gap: 1.5rem; }
 
 /* Ensure hub and product tiles inherit the same aesthetic */
 .module-card, .product-tile {
-    border-left: 4px solid #306DFF;
-    border-radius: 12px;
+    border-left: 4px solid #306DFF !important;
+    border-radius: 12px !important;
 }
 
 /* Respect Welcome pixel precision — exclude that page */
