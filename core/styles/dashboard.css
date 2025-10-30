@@ -12,9 +12,9 @@ html, body, [data-testid="stAppViewContainer"] {
 /* ---------- CARD GRID ---------- */
 .dashboard-row {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-  gap: 1.5rem;
-  margin-top: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.75rem;
+  align-items: start;
 }
 
 .dashboard-card {
@@ -59,4 +59,11 @@ h2, h3 {
   background: linear-gradient(135deg, #BFD8FF 0%, #F3D6FF 100%);
   color: #1E1E1E;
   border: none;
+}
+
+/* ---------- LAYOUT CONTAINMENT ---------- */
+.lobby-wrapper {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
 }

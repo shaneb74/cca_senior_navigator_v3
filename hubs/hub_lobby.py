@@ -29,7 +29,9 @@ def render(ctx=None) -> None:
     st.title("Senior Navigator Dashboard")
     st.markdown("Choose a tool to get started with your care planning journey.")
     
-    # Dashboard cards in grid layout
+    # Dashboard cards in grid layout with containment wrapper
+    st.markdown('<div class="lobby-wrapper">', unsafe_allow_html=True)
+    
     with st.container():
         st.markdown('<div class="dashboard-row">', unsafe_allow_html=True)
         
@@ -70,6 +72,8 @@ def render(ctx=None) -> None:
         st.markdown('</div>', unsafe_allow_html=True)
         
         st.markdown('</div>', unsafe_allow_html=True)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
     
     # Render footer
     render_footer_simple()
