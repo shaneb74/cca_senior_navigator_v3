@@ -22,15 +22,21 @@ RELATIONSHIP_CHOICES = [
 
 
 def _inject_audience_css() -> None:
-    """Inject designer-style CSS for audience page."""
+    """Inject designer-style CSS for audience page with pure white background."""
     if st.session_state.get("_audience_css_injected"):
         return
     
     st.markdown("""
     <style>
-    /* White background globally */
-    .stApp {
+    /* Force pure white background globally - no gray backgrounds */
+    html, body, [data-testid="stAppViewContainer"], [data-testid="stVerticalBlock"], .stApp {
       background-color: #ffffff !important;
+    }
+    
+    /* Remove any default Streamlit padding/background */
+    .main .block-container {
+      background-color: #ffffff !important;
+      padding-top: 3rem !important;
     }
     
     /* Layout container */
@@ -42,11 +48,13 @@ def _inject_audience_css() -> None:
       margin: 3rem auto;
       padding: 0 2rem;
       align-items: center;
+      background-color: #ffffff !important;
     }
     
-    /* Left content panel */
+    /* Left content panel - white background */
     .audience-content {
       max-width: 500px;
+      background-color: #ffffff !important;
     }
     
     /* Right image panel */
@@ -152,7 +160,7 @@ def _inject_audience_css() -> None:
       font-size: 0.9rem;
     }
     
-    /* Form note */
+    /* Form note - only the note box has light background, not the page */
     .form-note {
       color: #64748b;
       font-size: 0.9rem;
