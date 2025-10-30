@@ -167,6 +167,38 @@ def get_current_journey() -> str:
     return st.session_state.get("journey_stage", "discovery")
 
 
+def mark_tile_complete(key: str, phase: str) -> None:
+    """Add a completed tile entry for the phase.
+    
+    Args:
+        key: Tile/product key (e.g., "discovery_learning", "learn_recommendation")
+        phase: Journey phase ("discovery", "planning", "post_planning")
+        
+    Phase 5B Enhancement:
+        Tracks completion of learning tiles and updates journey stage.
+        Used by learning_template.py for completion tracking.
+    
+    Examples:
+        >>> mark_tile_complete("discovery_learning", "discovery")
+        # Adds to completed_tiles and sets journey_stage
+    """
+    # Initialize completed_tiles list if not exists
+    if "completed_tiles" not in st.session_state:
+        st.session_state["completed_tiles"] = []
+    
+    # Add completion entry
+    completed = st.session_state["completed_tiles"]
+    
+    # Avoid duplicates
+    if not any(t.get("key") == key for t in completed):
+        completed.append({"key": key, "phase": phase})
+    
+    # Update journey stage to current phase
+    st.session_state["journey_stage"] = phase
+    
+    print(f"[JOURNEY] Tile '{key}' marked complete in phase '{phase}'")
+
+
 __all__ = [
     "get_journey_phase",
     "is_tile_active",
@@ -174,4 +206,5 @@ __all__ = [
     "get_phase_completion",  # Phase 5A
     "advance_to",  # Phase 5A
     "get_current_journey",  # Phase 5A
+    "mark_tile_complete",  # Phase 5B
 ]

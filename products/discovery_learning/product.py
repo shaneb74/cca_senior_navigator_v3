@@ -1,22 +1,116 @@
-"""Discovery Learning Product - Phase 5A
+"""Discovery Learning Product - First-Touch Onboarding
 
-First-touch onboarding experience that introduces NAVI and orients users
-to the Senior Navigator application.
+Phase 5A: First-touch onboarding experience that introduces NAVI and the journey.
+Phase 5B: Refactored to use learning_template.py for consistent UX.
 
 Purpose:
-- Welcome users to the application
-- Introduce NAVI as their guide
-- Explain what to expect in the discovery journey
-- Set expectations for the care planning process
+- Welcome new users to Senior Navigator
+- Introduce NAVI persona and capabilities
+- Explain the three-phase journey (Discovery → Planning → Post-Planning)
+- Provide scoped NAVI chat for questions about the platform
 
 Flow:
-1. Welcome message and NAVI introduction
-2. Overview of the discovery process
-3. What to expect next
-4. Continue to Guided Care Plan
-
-Phase: Discovery (first tile in journey)
+1. Welcome and NAVI introduction
+2. Journey overview with phase visualization
+3. Scoped NAVI chat for platform questions
+4. Continue to GCP or return to Lobby
 """
+
+from core.learning_template import render_learning
+
+
+def render():
+    """Render Discovery Learning using the learning template.
+    
+    Phase 5B: Uses standardized learning_template for consistent UX.
+    """
+    
+    # Introduction text
+    intro = """
+### 👋 Welcome to Senior Navigator!
+
+Hi, I'm **NAVI** — your personal guide through the senior care planning process. 
+I'm here to help you explore options, understand costs, and make informed decisions 
+with confidence and support every step of the way.
+
+💡 **What Makes This Different:**
+- **Personalized & Empathetic** - Your journey is unique, and I'll adapt to your needs
+- **Expert-Backed** - Our recommendations are based on industry standards and clinical expertise
+- **At Your Pace** - No pressure, no rush. Take the time you need to feel confident
+
+Let's take a moment to understand what we'll do together.
+"""
+    
+    # Content sections
+    sections = [
+        {
+            "title": "🎯 What We'll Do Together",
+            "content": """
+We'll guide you through three key phases:
+
+**1. Discovery Phase 🔵**
+- Complete the Guided Care Plan to understand your care needs
+- Get a personalized care recommendation
+- Learn what your recommendation means
+
+**2. Planning Phase 🟢**
+- Explore cost estimates and financial options
+- Connect with professional advisors
+- Build your personalized care plan
+
+**3. Post-Planning Phase 🟣**
+- Access additional resources and support services
+- Prepare for advisor consultations
+- Continue learning with educational content
+
+Each phase builds on the last, but you can always move at your own pace.
+"""
+        },
+        {
+            "title": "🧭 Your Journey Ahead",
+            "content": """
+```
+Discovery  →  Planning  →  Post-Planning
+   🔵           🟢             🟣
+```
+
+**Right now:** You're in the **Discovery Phase**  
+**Next step:** Complete your Guided Care Plan to get started
+
+Don't worry — I'll be with you every step of the way, providing guidance and answering 
+your questions as they come up.
+"""
+        },
+    ]
+    
+    # Resources
+    resources = [
+        {
+            "type": "link",
+            "url": "https://www.conciergecareadvisors.com/about",
+            "title": "About Concierge Care Advisors",
+            "description": "Learn more about our team and mission"
+        },
+        {
+            "type": "link",
+            "url": "https://www.medicare.gov/what-medicare-covers/what-part-a-covers/long-term-care",
+            "title": "Understanding Long-Term Care",
+            "description": "Medicare's guide to long-term care options"
+        },
+    ]
+    
+    # Render using learning template
+    render_learning(
+        title="🧭 Start Your Discovery Journey",
+        intro=intro,
+        topic="senior_navigator_overview",
+        resources=resources,
+        phase="discovery",
+        tile_key="discovery_learning",
+        sections=sections,
+        next_route="gcp_v4",  # Continue to GCP after completion
+    )
+
 
 import streamlit as st
 
