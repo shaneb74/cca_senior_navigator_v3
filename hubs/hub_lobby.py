@@ -5,18 +5,24 @@ Lobby Hub - Unified Dashboard Entry Point
 Phase 4A: Consolidated Waiting Room and Lobby into single adaptive hub.
 Manages the entire user journey lifecycle: Discovery → Planning → Post-Planning.
 
+Phase 5E: Dynamic Personalization integration.
+Personalized navigation, tone, and visible modules based on user tier, cognition, and phase.
+
 Architecture:
 --------------
 - Dynamic product tile rendering via ProductTileHub objects
 - MCIP-based journey phase detection and product gating
 - Organized tile categories: Discovery, Planning, Engagement, Additional Services, Completed
 - NAVI-integrated FAQ (no longer a tile)
+- Phase 5E: Schema-driven personalization via core.personalizer
 
 Phase History:
 --------------
 Phase 3A: NAVI integration, MCIP gating, Additional Services
 Phase 3B: Personalized NAVI, product outcomes, FAQ always unlocked
 Phase 4A: Waiting Room consolidation, completed journeys, FAQ→NAVI integration
+Phase 5D: Journey alignment, navigation fixes, 4-section structure
+Phase 5E: Dynamic personalization engine integration
 """
 
 import os
@@ -28,6 +34,7 @@ from core.mcip import MCIP
 from core.additional_services import get_additional_services
 from core.product_outcomes import get_product_outcome
 from core.journeys import get_journey_phase
+from core.personalizer import get_user_context, get_visible_modules
 from ui.header_simple import render_header_simple
 from ui.footer_simple import render_footer_simple
 
@@ -495,6 +502,10 @@ def render(ctx=None) -> None:
     # Initialize MCIP to ensure journey state is ready
     MCIP.initialize()
     
+    # Phase 5E: Get personalization context
+    user_ctx = get_user_context()
+    visible_modules = get_visible_modules()
+    
     # Load dashboard CSS
     st.markdown(
         f"<style>{open('core/styles/dashboard.css').read()}</style>",
@@ -505,20 +516,27 @@ def render(ctx=None) -> None:
     render_header_simple(active_route="hub_lobby")
     
     # ========================================
-    # NAVI GUIDANCE PANEL (Phase 3B - Personalized)
+    # NAVI GUIDANCE PANEL (Phase 3B - Personalized, Phase 5E - Dynamic)
     # ========================================
     # Build personalized NAVI data
     person_name = st.session_state.get("person_name", "").strip()
     
-    # Determine title and reason based on MCIP state
+    # Phase 5E: Use personalized header message
+    navi_header_message = user_ctx.get("navi_header_message", "Continue your personalized journey.")
+    
+    # Phase 5E: Use personalized header message
+    navi_header_message = user_ctx.get("navi_header_message", "Continue your personalized journey.")
+    header_text = user_ctx.get("header_text", "")
+    
+    # Determine title and reason based on MCIP state and personalization
     care_rec = MCIP.get_care_recommendation()
     if care_rec and care_rec.tier:
-        title = f"Hi, {person_name}!" if person_name else "Welcome back!"
+        title = f"Hi, {person_name}!" if person_name else navi_header_message
         tier_display = care_rec.tier.replace("_", " ").title()
-        reason = f"Your personalized care plan recommends: {tier_display}"
+        reason = header_text or f"Your personalized care plan recommends: {tier_display}"
     else:
         title = "Let's get started."
-        reason = "Answer a few questions to build your personalized care plan."
+        reason = header_text or "Answer a few questions to build your personalized care plan."
     
     encouragement = {
         "icon": "🧭",
@@ -576,7 +594,7 @@ def render(ctx=None) -> None:
     st.markdown("<br/>", unsafe_allow_html=True)
     
     # ========================================
-    # PRODUCT TILES - ORGANIZED BY CATEGORY (Phase 4A)
+    # PRODUCT TILES - ORGANIZED BY CATEGORY (Phase 4A, Phase 5E - Filtered)
     # ========================================
     
     # --- Discovery Journey ---
@@ -590,6 +608,10 @@ def render(ctx=None) -> None:
     
     # Combine active tiles
     active_tiles = discovery_tiles + planning_tiles + engagement_tiles
+    
+    # Phase 5E: Filter tiles by visible modules from personalization
+    if visible_modules:
+        active_tiles = [t for t in active_tiles if t.key in visible_modules or t.key.startswith("discovery_")]
     
     # Sort by order
     active_tiles.sort(key=lambda t: t.order)

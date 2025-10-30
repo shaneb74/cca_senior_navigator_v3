@@ -333,7 +333,7 @@ def _render_assessment(assessment_key: str, product_key: str) -> None:
 
     if not assessment_config:
         st.error(f"⚠️ Assessment '{assessment_key}' not found.")
-        if st.button("← Back to Hub"):
+        if st.button("← Back to Lobby"):
             st.session_state[f"{product_key}_current_assessment"] = None
             st.rerun()
         return
