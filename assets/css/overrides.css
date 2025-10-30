@@ -30,23 +30,23 @@ section, .container, .tile-grid { gap: 1.5rem; }
 
 /* --- AI / NAVI Card Base --- */
 .ai-card, .navi-card {
-    border-left: 5px solid transparent;
-    border-image: linear-gradient(180deg, #9b5de5, #f15bb5);
-    border-image-slice: 1;
-    border-radius: 10px;
-    background: #fff;
-    box-shadow: 0 1px 6px rgba(0,0,0,0.05);
-    padding: 1.25rem 1.5rem;
-    position: relative;
-    overflow: hidden;
+    border-left: 5px solid transparent !important;
+    border-image: linear-gradient(180deg, #9b5de5, #f15bb5) !important;
+    border-image-slice: 1 !important;
+    border-radius: 10px !important;
+    background: #fff !important;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.05) !important;
+    padding: 1.25rem 1.5rem !important;
+    position: relative !important;
+    overflow: visible !important;
     transition: box-shadow 0.3s ease;
 }
 
 /* --- Animated Gradient Flow --- */
 .ai-card.animate-border, .navi-card.animate-border {
-    border-image: linear-gradient(180deg, #9b5de5, #f15bb5, #9b5de5);
-    animation: borderGradient 8s ease-in-out infinite;
-    border-image-slice: 1;
+    border-image: linear-gradient(180deg, #9b5de5, #f15bb5, #9b5de5) !important;
+    animation: borderGradient 8s ease-in-out infinite !important;
+    border-image-slice: 1 !important;
 }
 @keyframes borderGradient {
     0%   { border-image-source: linear-gradient(180deg, #9b5de5, #f15bb5); }
@@ -245,3 +245,33 @@ section, .container, .tile-grid { gap: 1.5rem; }
     }
 }
 
+/* ==========================================
+   PHASE 5M — SECTION VISIBILITY FIXES
+   ========================================== */
+
+/* Prevent section collapse and ensure visibility */
+.section, .content-container, .dashboard-shell {
+    overflow: visible !important;
+    display: block !important;
+}
+
+/* Flex containers should wrap */
+.dashboard-row, .tile-grid, .card-container {
+    flex-wrap: wrap !important;
+    overflow: visible !important;
+}
+
+/* Additional Services section visibility */
+.additional-services-section {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* Completed Journey section visibility */
+.completed-journey-section {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    margin-top: 2rem !important;
+}

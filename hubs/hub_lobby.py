@@ -660,6 +660,7 @@ def render(ctx=None) -> None:
     # ========================================
     # Render as separate section above completed journeys
     if additional_services:
+        st.markdown('<div class="additional-services-section">', unsafe_allow_html=True)
         additional_html = render_dashboard_body(
             title="",
             subtitle=None,
@@ -670,6 +671,7 @@ def render(ctx=None) -> None:
             additional_services=additional_services,
         )
         st.markdown(additional_html, unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
     
     # ========================================
     # MY COMPLETED JOURNEYS (Phase 5G)
