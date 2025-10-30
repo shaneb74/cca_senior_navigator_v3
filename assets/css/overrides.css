@@ -78,7 +78,7 @@ section, .container, .tile-grid { gap: 1.5rem !important; }
 
 /* --- Hover Depth + Optional Glow --- */
 .ai-card:hover, .navi-card:hover {
-    box-shadow: 0 4px 14px rgba(241,91,181,0.18);
+    box-shadow: 0 4px 12px rgba(155,93,229,0.15);
     transform: translateY(-1px);
     transition: all 0.25s ease-in-out;
 }
