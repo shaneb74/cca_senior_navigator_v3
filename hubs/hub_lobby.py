@@ -328,6 +328,19 @@ def _build_planning_tiles() -> list[ProductTileHub]:
             visible=True,
             phase="planning",  # Phase 5A: journey phase tag
         ),
+        ProductTileHub(
+            key="additional_services",
+            title="Additional Services",
+            desc="Explore value-added services and programs available through Concierge Care Advisors.",
+            blurb="Access partner services, wellness programs, and specialized support tailored to your care plan.",
+            image_square=None,  # Phase 5E: No PNG, CSS icon
+            primary_route="?page=hub_services",
+            primary_label="View",
+            variant="brand",
+            order=40,
+            visible=True,
+            phase="planning",  # Phase 5K: planning category
+        ),
     ]
     
     # Apply MCIP state to each tile

@@ -443,3 +443,40 @@ body.welcome .navi-card::before {
 [data-testid="stHorizontalBlock"] {
   flex-wrap: wrap;
 }
+
+/* =====================================================
+   RESTORE GRADIENT AND CATEGORY BORDERS — Phase 5K final
+   ===================================================== */
+
+.navi-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 4px;
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
+  background: var(--gradient-accent);
+  opacity: 0.8;
+}
+
+/* Product and Hub category accents */
+.product-card.discovery::before,
+.hub-card.discovery::before {
+  background: var(--discovery-accent);
+}
+
+.product-card.planning::before,
+.hub-card.planning::before {
+  background: var(--planning-accent);
+}
+
+.product-card.analysis::before,
+.hub-card.analysis::before {
+  background: var(--analysis-accent);
+}
+
+/* Prevent double borders from shared base selector */
+.ai-card::before {
+  content: none !important;
+}
