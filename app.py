@@ -118,9 +118,9 @@ def inject_css() -> None:
         with open("assets/css/modules.css", encoding="utf-8") as f:
             st.markdown(f"<style>{cache_buster}{f.read()}</style>", unsafe_allow_html=True)
         
-        # Phase 5H: Safe override layer for visual polish
+        # Phase 5K: Final override layer (z_ prefix ensures alphabetically-last loading)
         # Protects Welcome.py and pills while allowing contextual/lobby refinement
-        override_path = "assets/css/overrides.css"
+        override_path = "assets/css/z_overrides.css"
         if os.path.exists(override_path):
             with open(override_path, encoding="utf-8") as f:
                 st.markdown(f"<style>{cache_buster}{f.read()}</style>", unsafe_allow_html=True)
