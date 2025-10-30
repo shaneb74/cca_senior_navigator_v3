@@ -119,6 +119,12 @@
           "hidden": true
         },
         {
+          "key": "learn_recommendation",
+          "label": "Learn About My Recommendation",
+          "module": "products.learn_recommendation.product:render",
+          "hidden": true
+        },
+        {
           "key": "cost_v2",
           "label": "Cost Planner v2",
           "module": "products.concierge_hub.cost_planner_v2.product:render",
