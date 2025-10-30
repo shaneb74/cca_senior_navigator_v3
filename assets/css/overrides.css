@@ -1,0 +1,25 @@
+/* ==========================================
+   PHASE 5H SAFE OVERRIDES — VISUAL POLISH
+   ========================================== */
+
+/* ====== TILE JOURNEY BORDERS ====== */
+.tile-discovery { border-left: 4px solid #3A7BFF !important; }
+.tile-planning  { border-left: 4px solid #2ECC71 !important; }
+.tile-post_planning { border-left: 4px solid #8A4FFF !important; }
+.tile-service   { border-left: 4px solid #CCCCCC !important; }
+
+/* ====== CONTEXTUAL CARD ALIGNMENT ====== */
+.navi-card { border-left: 4px solid #3A7BFF !important; border-radius: 8px !important; }
+
+/* ====== TYPOGRAPHY CLEANUP ====== */
+h1, h2, h3, h4 { font-weight: 600; letter-spacing: -0.02em; }
+
+/* ====== LAYOUT SMOOTHING ====== */
+section, .container, .tile-grid { gap: 1.5rem !important; }
+
+/* ====== LOCKED ELEMENTS ====== */
+.pill-black, .pill-white, .welcome-container {
+  all: revert !important;
+  filter: none !important;
+  box-shadow: none !important;
+}

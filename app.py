@@ -103,21 +103,27 @@ def _is_module_route() -> bool:
 
 
 def inject_css() -> None:
-    """Load global CSS and module-specific CSS."""
+    """Load global CSS, module-specific CSS, and Phase 5H safe overrides."""
+    import time
+    
     try:
+        # Cache-busting timestamp for browser reload
+        cache_buster = f"/* Cache bust: {int(time.time())} */\n"
+        
         # Load global CSS
         with open("assets/css/global.css", encoding="utf-8") as f:
-            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+            st.markdown(f"<style>{cache_buster}{f.read()}</style>", unsafe_allow_html=True)
 
         # Load module CSS (must come after global to override)
-        # Adding cache-busting comment to force browser reload
         with open("assets/css/modules.css", encoding="utf-8") as f:
-            css_content = f.read()
-            # Add timestamp comment to bust cache
-            import time
-
-            cache_buster = f"/* Cache bust: {int(time.time())} */\n"
-            st.markdown(f"<style>{cache_buster}{css_content}</style>", unsafe_allow_html=True)
+            st.markdown(f"<style>{cache_buster}{f.read()}</style>", unsafe_allow_html=True)
+        
+        # Phase 5H: Safe override layer for visual polish
+        # Protects Welcome.py and pills while allowing contextual/lobby refinement
+        override_path = "assets/css/overrides.css"
+        if os.path.exists(override_path):
+            with open(override_path, encoding="utf-8") as f:
+                st.markdown(f"<style>{cache_buster}{f.read()}</style>", unsafe_allow_html=True)
 
     except FileNotFoundError:
         # no-op on Cloud if path differs; don't crash
