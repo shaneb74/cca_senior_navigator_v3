@@ -220,11 +220,25 @@ def _build_discovery_tiles() -> list[ProductTileHub]:
     """Build Discovery Journey tiles (first-time user experience).
     
     Phase 4A Revision: Discovery tiles are GCP-focused.
+    Phase 5A: Added Discovery Learning first-touch onboarding tile.
     
     Returns:
         List of discovery tiles with MCIP state applied
     """
     tiles = [
+        ProductTileHub(
+            key="discovery_learning",
+            title="Start Your Discovery Journey",
+            desc="Welcome! Let NAVI introduce you to the care planning process.",
+            blurb="First-time here? Learn what to expect and how we'll guide you step-by-step.",
+            image_square="gcp.png",  # TODO: Get dedicated image
+            primary_route="?page=discovery_learning",
+            primary_label="Start Here",
+            variant="brand",
+            order=5,  # Before GCP (10)
+            visible=True,
+            phase="discovery",  # Phase 5A: journey phase tag
+        ),
         ProductTileHub(
             key="gcp_v4",
             title="Guided Care Plan",
@@ -236,6 +250,7 @@ def _build_discovery_tiles() -> list[ProductTileHub]:
             variant="brand",
             order=10,
             visible=True,
+            phase="discovery",  # Phase 5A: journey phase tag
         ),
     ]
     
@@ -258,6 +273,7 @@ def _build_planning_tiles() -> list[ProductTileHub]:
     
     Phase 4A Revision: Planning tiles include Cost Planner and Plan With Advisor.
     Phase 4B: Added Learn About My Recommendation between GCP and Cost Planner.
+    Phase 5A: Added journey phase tags to all planning tiles.
     FAQ removed (integrated into NAVI).
     
     Returns:
@@ -275,6 +291,7 @@ def _build_planning_tiles() -> list[ProductTileHub]:
             variant="brand",
             order=15,  # Between GCP (10) and Cost Planner (20)
             visible=True,
+            phase="planning",  # Phase 5A: journey phase tag
         ),
         ProductTileHub(
             key="cost_v2",
@@ -287,6 +304,7 @@ def _build_planning_tiles() -> list[ProductTileHub]:
             variant="brand",
             order=20,
             visible=True,
+            phase="planning",  # Phase 5A: journey phase tag
         ),
         ProductTileHub(
             key="pfma_v3",
@@ -299,6 +317,7 @@ def _build_planning_tiles() -> list[ProductTileHub]:
             variant="brand",
             order=30,
             visible=True,
+            phase="planning",  # Phase 5A: journey phase tag
         ),
     ]
     
@@ -320,6 +339,7 @@ def _build_advisor_prep_tile() -> ProductTileHub | None:
     """Build Advisor Prep tile if PFMA booking exists.
     
     Phase 4A Revision: Part of Engagement Products (not additional services).
+    Phase 5A: Added journey phase tag.
     
     Returns:
         ProductTileHub or None if not available
@@ -369,6 +389,7 @@ def _build_advisor_prep_tile() -> ProductTileHub | None:
         variant="purple",
         order=100,
         locked=False,
+        phase="post_planning",  # Phase 5A: journey phase tag
     )
 
 
@@ -376,6 +397,7 @@ def _build_trivia_tile() -> ProductTileHub:
     """Build Senior Trivia tile.
     
     Phase 4A Revision: Core engagement product (not additional service).
+    Phase 5A: Added journey phase tag.
     
     Returns:
         ProductTileHub
@@ -394,6 +416,7 @@ def _build_trivia_tile() -> ProductTileHub:
         badges=trivia_badges,
         variant="teal",
         order=110,
+        phase="post_planning",  # Phase 5A: journey phase tag
     )
 
 
@@ -401,6 +424,7 @@ def _build_clinical_review_tile() -> ProductTileHub:
     """Build Concierge Clinical Review tile.
     
     Phase 4A Revision: Core engagement product (not additional service).
+    Phase 5A: Added journey phase tag.
     
     Returns:
         ProductTileHub (visible but locked until GCP & CP complete)
@@ -425,6 +449,7 @@ def _build_clinical_review_tile() -> ProductTileHub:
         order=120,
         locked=_ccr_locked,
         lock_msg="Unlocks after Guided Care Plan and Cost Planner. Providers use both your care and financial info to give precise guidance." if _ccr_locked else None,
+        phase="post_planning",  # Phase 5A: journey phase tag
     )
 
 

@@ -107,6 +107,12 @@
           "hidden": true
         },
         {
+          "key": "discovery_learning",
+          "label": "Start Your Discovery Journey",
+          "module": "products.discovery_learning.product:render",
+          "hidden": true
+        },
+        {
           "key": "gcp_v4",
           "label": "Guided Care Plan",
           "module": "products.concierge_hub.gcp_v4.product:render",

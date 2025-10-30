@@ -3,6 +3,12 @@
 Phase 4B: Educational and empathetic step between GCP and Cost Planner.
 Helps users understand their recommendation before planning costs or scheduling advisors.
 
+Phase 5A enhancements:
+- Extended NAVI dialogue with phase-aware guidance
+- Interactive "Tell Me More" button with deeper educational content
+- Enhanced resource linking and next-step guidance
+- Integration with journey phase tracking
+
 Flow:
 1. Display personalized care recommendation from GCP
 2. NAVI provides educational context and resources
@@ -20,8 +26,10 @@ import streamlit as st
 
 from core.mcip import MCIP
 from core.nav import route_to
+from core.journeys import get_phase_completion, get_current_journey
 from ui.header_simple import render_header_simple
 from ui.footer_simple import render_footer_simple
+from apps.navi_core.guidance_manager import get_phase_guidance
 
 
 def render():
@@ -50,14 +58,71 @@ def render():
     # Page title
     st.title("🧭 Understanding Your Care Recommendation")
     
-    # NAVI Introduction
+    # Phase 5A: Show journey progress
+    current_phase = get_current_journey()
+    discovery_completion = get_phase_completion("discovery")
+    st.caption(f"**Discovery Phase** | {discovery_completion:.0%} Complete")
+    
+    # NAVI Introduction - Phase 5A Enhanced
     st.markdown("---")
+    
+    # Get phase-aware guidance
+    phase_guidance = get_phase_guidance("Learn About My Recommendation")
+    
     st.markdown(f"""
     ### 👋 Hi{f", {person_name}" if person_name else ""}! I'm NAVI
     
+    {phase_guidance or "Great! Let's explore what this care level means and how it can support your needs."}
+    
     Before we dive into costs and planning, let's take a moment to understand what your 
     care recommendation means and how it can support you or your loved one.
+    
+    💡 **Why This Step Matters:** Understanding your care level helps you make confident, 
+    informed decisions about the future. There's no rush—take the time you need to explore 
+    and reflect.
     """)
+    
+    # Phase 5A: Tell Me More interactive section
+    if st.button("📘 Tell Me More About Care Recommendations", use_container_width=True):
+        st.session_state["show_care_education"] = not st.session_state.get("show_care_education", False)
+    
+    if st.session_state.get("show_care_education", False):
+        with st.container():
+            st.markdown("""
+            ---
+            ### 🎓 How We Determine Your Care Recommendation
+            
+            Your personalized care recommendation is based on:
+            
+            1. **Health & Mobility Assessment** 🏥
+               - Your current physical health and mobility needs
+               - Medical conditions that may require specialized care
+               - Activities of Daily Living (ADLs) support required
+            
+            2. **Cognitive & Memory Considerations** 🧠
+               - Memory challenges or cognitive decline patterns
+               - Need for structured environments or supervision
+               - Safety considerations related to cognitive health
+            
+            3. **Social & Emotional Well-Being** 🤝
+               - Current living situation and social support network
+               - Desire for community engagement and activities
+               - Emotional health and companionship needs
+            
+            4. **Safety & Environment** 🏡
+               - Home safety concerns and fall risks
+               - Need for 24/7 supervision or emergency response
+               - Ability to manage daily routines independently
+            
+            **Our Approach:** We use evidence-based assessment criteria aligned with industry 
+            standards from organizations like the American Health Care Association (AHCA) and 
+            National Institute on Aging (NIA). Your recommendation is a starting point for 
+            conversation—not a final verdict.
+            
+            **Remember:** Care needs can evolve. Many communities offer "continuum of care" 
+            options that adapt as your needs change.
+            ---
+            """)
     
     # Display recommendation
     st.markdown("---")
@@ -231,20 +296,37 @@ def _render_reflection_questions(tier: str):
 
 
 def _render_additional_resources(tier: str):
-    """Render additional educational resources."""
+    """Render additional educational resources - Phase 5A Enhanced."""
     
     st.markdown("""
-    **Educational Resources:**
-    - 📖 [A Place for Mom - Care Options Guide](https://www.aplaceformom.com/)
+    **🌐 Trusted Educational Resources:**
+    - 📖 [A Place for Mom - Care Options Guide](https://www.aplaceformom.com/senior-care-resources)
     - 🏥 [Medicare - Long-Term Care Information](https://www.medicare.gov/what-medicare-covers/what-part-a-covers/long-term-care)
     - 💼 [Eldercare Locator - Find Local Resources](https://eldercare.acl.gov/)
-    - 📞 **Questions?** Reach out to your Care Advisor after scheduling your appointment
+    - 🧠 [Alzheimer's Association - Care Options](https://www.alz.org/help-support/caregiving)
+    - 🏡 [AARP Caregiving Resource Center](https://www.aarp.org/caregiving/)
     
-    **Next Steps:**
-    1. Review the cost estimates in the Cost Planner
-    2. Discuss options with family members
-    3. Schedule a call with your Care Advisor to ask questions
-    4. Tour facilities or interview in-home care providers
+    **📞 Questions? I'm Here to Help:**
+    
+    After you complete the Cost Planner, you can schedule a personalized consultation with 
+    your Care Advisor to discuss:
+    - Specific facility or provider recommendations in your area
+    - Detailed cost breakdowns and payment options
+    - How to tour facilities or interview in-home care agencies
+    - Family discussion strategies and decision-making support
+    
+    **🎯 Your Next Steps:**
+    1. ✅ Review the cost estimates in the Cost Planner
+    2. 💬 Discuss options with family members and loved ones
+    3. 📅 Schedule a call with your Care Advisor to ask detailed questions
+    4. 🏢 Tour facilities or interview in-home care providers
+    5. 📋 Create a decision timeline that feels right for you
+    
+    ---
+    
+    💙 **Remember:** There's no "perfect" answer—only the right choice for your unique situation. 
+    Take the time you need, ask questions, and trust your instincts. I'll be here to guide you 
+    every step of the way.
     """)
 
 

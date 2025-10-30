@@ -61,6 +61,30 @@ h2, h3 {
   border: none;
 }
 
+/* ---------- PHASE PILLS (Phase 5A) ---------- */
+.phase-pill {
+  position: absolute;
+  top: 0.8rem;
+  right: 0.8rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #fff;
+  padding: 0.25rem 0.7rem;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+.phase-pill.discovery {
+  background-color: #5BA3FF;
+}
+.phase-pill.planning {
+  background-color: #4BBE83;
+}
+.phase-pill.postplanning {
+  background-color: #B974E4;
+}
+
 /* ---------- LAYOUT CONTAINMENT ---------- */
 .lobby-wrapper {
   max-width: 1100px;

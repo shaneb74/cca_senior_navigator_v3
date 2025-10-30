@@ -4,6 +4,11 @@ Determines the current journey phase (discovery, planning, post-planning) based
 on user state and MCIP completion flags.
 
 Used by hub_lobby.py to determine which tiles appear active, locked, or completed.
+
+Phase 5A enhancements:
+- get_phase_completion() for phase-based progress tracking
+- advance_to() for explicit phase transitions
+- get_current_journey() for session-based phase reading
 """
 
 from __future__ import annotations
@@ -12,6 +17,8 @@ from typing import TYPE_CHECKING, Literal
 
 if TYPE_CHECKING:
     from typing import Any
+    
+import streamlit as st
 
 JourneyPhase = Literal["discovery", "planning", "post_planning"]
 
@@ -98,4 +105,73 @@ def is_tile_active(tile_key: str, journey_phase: JourneyPhase) -> bool:
     return False
 
 
-__all__ = ["get_journey_phase", "is_tile_active", "JourneyPhase"]
+# ==============================================================================
+# PHASE 5A ENHANCEMENTS: Phase completion tracking and transitions
+# ==============================================================================
+
+def get_phase_completion(phase: str) -> float:
+    """Return percentage of completion within a given journey phase.
+    
+    Args:
+        phase: Journey phase ("discovery", "planning", "post_planning")
+        
+    Returns:
+        float: Completion percentage (0.0 to 1.0)
+        
+    Phase 5A Logic:
+        Calculates completion based on tiles registered and completed within
+        the specified phase.
+        
+    Examples:
+        >>> get_phase_completion("discovery")
+        0.5  # 50% of discovery tiles completed
+    """
+    # Get registered tiles for this phase from session
+    registered_tiles = st.session_state.get("registered_tiles", [])
+    completed_tiles = st.session_state.get("completed_tiles", [])
+    
+    # Filter by phase
+    phase_tiles = [t for t in registered_tiles if t.get("phase") == phase]
+    phase_completed = [t for t in completed_tiles if t.get("phase") == phase]
+    
+    # Calculate percentage
+    if not phase_tiles:
+        return 0.0
+    
+    return len(phase_completed) / len(phase_tiles)
+
+
+def advance_to(stage: str) -> None:
+    """Advance the user to a specific journey stage.
+    
+    Args:
+        stage: Journey stage to advance to ("discovery", "planning", "post_planning")
+        
+    Phase 5A Enhancement:
+        Sets journey_stage in session state and provides user feedback via toast.
+    """
+    st.session_state["journey_stage"] = stage
+    st.toast(f"🧭 Journey advanced to: {stage.replace('_', ' ').title()}")
+    print(f"[JOURNEY] Advanced to stage: {stage}")
+
+
+def get_current_journey() -> str:
+    """Return the current user journey stage from session state.
+    
+    Returns:
+        str: Current journey stage ("discovery", "planning", "post_planning")
+        
+    Phase 5A Enhancement:
+        Reads from journey_stage in session state, defaults to "discovery".
+    """
+    return st.session_state.get("journey_stage", "discovery")
+
+
+__all__ = [
+    "get_journey_phase",
+    "is_tile_active",
+    "JourneyPhase",
+    "get_phase_completion",  # Phase 5A
+    "advance_to",  # Phase 5A
+    "get_current_journey",  # Phase 5A
+]
