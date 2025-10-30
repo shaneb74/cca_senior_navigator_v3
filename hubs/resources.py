@@ -152,7 +152,7 @@ def _build_fall_risk_tile() -> ProductTileHub:
         title="Fall Risk",
         desc="Identify and manage fall risk factors.",
         blurb="Learn about fall prevention strategies, home modifications, and safety assessments to reduce the risk of falls and injuries.",
-        image_square="fall.png",
+        image_square=None,  # Phase 5E: No PNG, CSS icon
         meta_lines=["≈5 min • Auto-saves"],
         primary_label="Start",
         primary_route="?page=fall_risk",
@@ -171,7 +171,7 @@ def _build_disease_mgmt_tile() -> ProductTileHub:
         title="Disease Management Program",
         desc="Ongoing disease management support and coordination.",
         blurb="Access information on chronic disease management programs, care coordination, and support services to help manage ongoing health conditions.",
-        image_square="d_management.png",
+        image_square=None,  # Phase 5E: No PNG, CSS icon
         meta_lines=["≈8 min • Auto-saves"],
         primary_label="Start",
         primary_route="?page=disease_mgmt",

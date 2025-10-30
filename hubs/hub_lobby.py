@@ -5,18 +5,24 @@ Lobby Hub - Unified Dashboard Entry Point
 Phase 4A: Consolidated Waiting Room and Lobby into single adaptive hub.
 Manages the entire user journey lifecycle: Discovery → Planning → Post-Planning.
 
+Phase 5E: Dynamic Personalization integration.
+Personalized navigation, tone, and visible modules based on user tier, cognition, and phase.
+
 Architecture:
 --------------
 - Dynamic product tile rendering via ProductTileHub objects
 - MCIP-based journey phase detection and product gating
 - Organized tile categories: Discovery, Planning, Engagement, Additional Services, Completed
 - NAVI-integrated FAQ (no longer a tile)
+- Phase 5E: Schema-driven personalization via core.personalizer
 
 Phase History:
 --------------
 Phase 3A: NAVI integration, MCIP gating, Additional Services
 Phase 3B: Personalized NAVI, product outcomes, FAQ always unlocked
 Phase 4A: Waiting Room consolidation, completed journeys, FAQ→NAVI integration
+Phase 5D: Journey alignment, navigation fixes, 4-section structure
+Phase 5E: Dynamic personalization engine integration
 """
 
 import os
@@ -28,6 +34,7 @@ from core.mcip import MCIP
 from core.additional_services import get_additional_services
 from core.product_outcomes import get_product_outcome
 from core.journeys import get_journey_phase
+from core.personalizer import get_user_context, get_visible_modules
 from ui.header_simple import render_header_simple
 from ui.footer_simple import render_footer_simple
 
@@ -219,8 +226,9 @@ def _apply_tile_state(tile: ProductTileHub, state: str) -> ProductTileHub:
 def _build_discovery_tiles() -> list[ProductTileHub]:
     """Build Discovery Journey tiles (first-time user experience).
     
-    Phase 4A Revision: Discovery tiles are GCP-focused.
+    Phase 4A Revision: Discovery tiles focus on first-touch onboarding.
     Phase 5A: Added Discovery Learning first-touch onboarding tile.
+    Phase 5F: Moved GCP to Planning phase for proper journey flow.
     
     Returns:
         List of discovery tiles with MCIP state applied
@@ -231,24 +239,11 @@ def _build_discovery_tiles() -> list[ProductTileHub]:
             title="Start Your Discovery Journey",
             desc="Welcome! Let NAVI introduce you to the care planning process.",
             blurb="First-time here? Learn what to expect and how we'll guide you step-by-step.",
-            image_square="gcp.png",  # TODO: Get dedicated image
+            image_square=None,  # Phase 5E: No PNG, CSS icon
             primary_route="?page=discovery_learning",
             primary_label="Start Here",
             variant="brand",
-            order=5,  # Before GCP (10)
-            visible=True,
-            phase="discovery",  # Phase 5A: journey phase tag
-        ),
-        ProductTileHub(
-            key="gcp_v4",
-            title="Guided Care Plan",
-            desc="Explore and compare care options.",
-            blurb="Answer a few short questions about your daily needs, health, and safety.",
-            image_square="gcp.png",
-            primary_route="?page=gcp_v4",
-            primary_label="Start",
-            variant="brand",
-            order=10,
+            order=5,
             visible=True,
             phase="discovery",  # Phase 5A: journey phase tag
         ),
@@ -274,6 +269,7 @@ def _build_planning_tiles() -> list[ProductTileHub]:
     Phase 4A Revision: Planning tiles include Cost Planner and Plan With Advisor.
     Phase 4B: Added Learn About My Recommendation between GCP and Cost Planner.
     Phase 5A: Added journey phase tags to all planning tiles.
+    Phase 5F: Moved GCP here from Discovery - proper planning journey flow.
     FAQ removed (integrated into NAVI).
     
     Returns:
@@ -281,11 +277,24 @@ def _build_planning_tiles() -> list[ProductTileHub]:
     """
     tiles = [
         ProductTileHub(
+            key="gcp_v4",
+            title="Guided Care Plan",
+            desc="Explore and compare care options.",
+            blurb="Answer a few short questions about your daily needs, health, and safety.",
+            image_square=None,  # Phase 5E: No PNG, CSS icon
+            primary_route="?page=gcp_v4",
+            primary_label="Start",
+            variant="brand",
+            order=10,
+            visible=True,
+            phase="planning",  # Phase 5F: Corrected to planning phase
+        ),
+        ProductTileHub(
             key="learn_recommendation",
             title="Learn About My Recommendation",
             desc="Understand your care option before planning costs.",
             blurb="Educational step to learn what your recommendation means and how to prepare.",
-            image_square="gcp.png",  # TODO: Get dedicated image
+            image_square=None,  # Phase 5E: No PNG, CSS icon
             primary_route="?page=learn_recommendation",
             primary_label="Learn More",
             variant="brand",
@@ -298,7 +307,7 @@ def _build_planning_tiles() -> list[ProductTileHub]:
             title="Cost Planner",
             desc="Estimate and plan financial coverage.",
             blurb="Project expenses, compare living options, and see how long current funds will last.",
-            image_square="cp.png",
+            image_square=None,  # Phase 5E: No PNG, CSS icon
             primary_route="?page=cost_intro",
             primary_label="Start",
             variant="brand",
@@ -311,7 +320,7 @@ def _build_planning_tiles() -> list[ProductTileHub]:
             title="My Advisor",
             desc="Schedule and prepare for your next advisor meeting.",
             blurb="Get matched with the right advisor to coordinate care, benefits, and trusted partners.",
-            image_square="pfma.png",
+            image_square=None,  # Phase 5E: No PNG, CSS icon
             primary_route="?page=pfma_v3",
             primary_label="Open",
             variant="brand",
@@ -495,6 +504,10 @@ def render(ctx=None) -> None:
     # Initialize MCIP to ensure journey state is ready
     MCIP.initialize()
     
+    # Phase 5E: Get personalization context
+    user_ctx = get_user_context()
+    visible_modules = get_visible_modules()
+    
     # Load dashboard CSS
     st.markdown(
         f"<style>{open('core/styles/dashboard.css').read()}</style>",
@@ -505,20 +518,27 @@ def render(ctx=None) -> None:
     render_header_simple(active_route="hub_lobby")
     
     # ========================================
-    # NAVI GUIDANCE PANEL (Phase 3B - Personalized)
+    # NAVI GUIDANCE PANEL (Phase 3B - Personalized, Phase 5E - Dynamic)
     # ========================================
     # Build personalized NAVI data
     person_name = st.session_state.get("person_name", "").strip()
     
-    # Determine title and reason based on MCIP state
+    # Phase 5E: Use personalized header message
+    navi_header_message = user_ctx.get("navi_header_message", "Continue your personalized journey.")
+    
+    # Phase 5E: Use personalized header message
+    navi_header_message = user_ctx.get("navi_header_message", "Continue your personalized journey.")
+    header_text = user_ctx.get("header_text", "")
+    
+    # Determine title and reason based on MCIP state and personalization
     care_rec = MCIP.get_care_recommendation()
     if care_rec and care_rec.tier:
-        title = f"Hi, {person_name}!" if person_name else "Welcome back!"
+        title = f"Hi, {person_name}!" if person_name else navi_header_message
         tier_display = care_rec.tier.replace("_", " ").title()
-        reason = f"Your personalized care plan recommends: {tier_display}"
+        reason = header_text or f"Your personalized care plan recommends: {tier_display}"
     else:
         title = "Let's get started."
-        reason = "Answer a few questions to build your personalized care plan."
+        reason = header_text or "Answer a few questions to build your personalized care plan."
     
     encouragement = {
         "icon": "🧭",
@@ -576,7 +596,7 @@ def render(ctx=None) -> None:
     st.markdown("<br/>", unsafe_allow_html=True)
     
     # ========================================
-    # PRODUCT TILES - ORGANIZED BY CATEGORY (Phase 4A)
+    # PRODUCT TILES - ORGANIZED BY CATEGORY (Phase 4A, Phase 5E - Filtered)
     # ========================================
     
     # --- Discovery Journey ---
@@ -590,6 +610,10 @@ def render(ctx=None) -> None:
     
     # Combine active tiles
     active_tiles = discovery_tiles + planning_tiles + engagement_tiles
+    
+    # Phase 5E: Filter tiles by visible modules from personalization
+    if visible_modules:
+        active_tiles = [t for t in active_tiles if t.key in visible_modules or t.key.startswith("discovery_")]
     
     # Sort by order
     active_tiles.sort(key=lambda t: t.order)

@@ -405,6 +405,10 @@ class ProductTileHub(BaseTile):
         if self.variant:
             classes.append(f"tile--{self.variant}")
 
+        # Phase 5F: Add gradient class based on journey phase
+        if self.phase:
+            classes.append(f"tile-gradient-{self.phase}")
+
         # Add "recommended" class for MCIP gradient
         # Conditions: is the current next step, not complete, not FAQ tile
         faq_keys = {"faq", "faqs"}
@@ -419,23 +423,8 @@ class ProductTileHub(BaseTile):
 
         out.append(f'<div class="{" ".join(classes)}"{self._variant()}{self._style()}>')
 
-        lock_icon = ""
-        if self.locked:
-            lock_label = f"Locked: {self.lock_msg}" if self.lock_msg else "Locked"
-            lock_icon = f'<span class="icon-lock" aria-label="{html_escape(lock_label)}"></span>'
-            out.append(lock_icon)
-
-        # Add completion badge for done tiles (not FAQ)
-        is_complete = float(self.progress or 0) >= 100
-        is_faq = getattr(self, "key", "") in faq_keys
-        if is_complete and not is_faq:
-            done_url, _ = _resolve_img("static/images/done.png")
-            if done_url:
-                out.append(
-                    f'<div class="tile-completion-badge" aria-label="Complete">'
-                    f'<img src="{done_url}" alt="Complete" />'
-                    "</div>"
-                )
+        # Phase 5F: Lock status shown via text/button only, no icon
+        # Phase 5F: Completion status shown via text only, no checkmark icon
 
         # Phase 5A: Add phase pill if phase attribute exists
         if self.phase:
@@ -443,17 +432,7 @@ class ProductTileHub(BaseTile):
             out.append(f'<span class="phase-pill {self.phase}">{html_escape(phase_label)}</span>')
 
         out.append('<div class="ptile__head">')
-        logo_src, logo_path = _resolve_img(getattr(self, "image_square", None))
-        if logo_src:
-            debug_html = (
-                f"<div class='tile-logo-debug'>img: {H(logo_path)}</div>" if SN_DEBUG_TILES else ""
-            )
-            out.append(
-                '<div class="tile-logo" aria-hidden="true" '
-                f"style=\"background-image:url('{logo_src}')\">"
-                "</div>"
-                f"{debug_html}"
-            )
+        # Phase 5F: No logos, no images, no icons - text-only tiles
         out.append('<div class="ptile__heading">')
 
         step_chip = ""
