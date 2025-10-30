@@ -70,6 +70,11 @@
       "label": "Hubs",
       "items": [
         {
+          "key": "hub_lobby",
+          "label": "Lobby",
+          "module": "hubs.hub_lobby:render"
+        },
+        {
           "key": "hub_concierge",
           "label": "Concierge",
           "module": "hubs.concierge:render"
