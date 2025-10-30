@@ -7,10 +7,67 @@ Provides entry point to core products: GCP, Cost Planner, PFMA, and FAQ.
 """
 
 import streamlit as st
+from core.product_tile import ProductTileHub
+from core.base_hub import render_dashboard_body
 from ui.header_simple import render_header_simple
 from ui.footer_simple import render_footer_simple
 
 __all__ = ["render"]
+
+
+def _build_product_tiles() -> list[ProductTileHub]:
+    """Build product tiles for Lobby hub."""
+    tiles = [
+        ProductTileHub(
+            key="gcp_v4",
+            title="Guided Care Plan",
+            desc="Explore and compare care options.",
+            blurb="Answer a few short questions about your daily needs, health, and safety.",
+            image_square="gcp.png",
+            primary_route="?page=gcp_v4",
+            primary_label="Start",
+            variant="brand",
+            order=10,
+            visible=True,
+        ),
+        ProductTileHub(
+            key="cost_v2",
+            title="Cost Planner",
+            desc="Estimate and plan financial coverage.",
+            blurb="Project expenses, compare living options, and see how long current funds will last.",
+            image_square="cp.png",
+            primary_route="?page=cost_intro",
+            primary_label="Start",
+            variant="brand",
+            order=20,
+            visible=True,
+        ),
+        ProductTileHub(
+            key="pfma_v3",
+            title="Plan With My Advisor",
+            desc="Schedule and prepare for your next advisor meeting.",
+            blurb="Get matched with the right advisor to coordinate care, benefits, and trusted partners.",
+            image_square="pfma.png",
+            primary_route="?page=pfma_v3",
+            primary_label="Open",
+            variant="brand",
+            order=30,
+            visible=True,
+        ),
+        ProductTileHub(
+            key="faq",
+            title="FAQs & Answers",
+            desc="Instant help from NAVI AI.",
+            blurb="Search our advisor-reviewed knowledge base or ask Senior Navigator AI for tailored guidance.",
+            image_square="faq.png",
+            primary_route="?page=faq",
+            primary_label="Open",
+            variant="teal",
+            order=40,
+            visible=True,
+        ),
+    ]
+    return tiles
 
 
 def render(ctx=None) -> None:
@@ -29,51 +86,21 @@ def render(ctx=None) -> None:
     st.title("Senior Navigator Dashboard")
     st.markdown("Choose a tool to get started with your care planning journey.")
     
-    # Dashboard cards in grid layout with containment wrapper
-    st.markdown('<div class="lobby-wrapper">', unsafe_allow_html=True)
+    # Get product tiles
+    cards = _build_product_tiles()
     
-    with st.container():
-        st.markdown('<div class="dashboard-row">', unsafe_allow_html=True)
-        
-        # Card 1: Guided Care Plan
-        st.markdown('<div class="dashboard-card">', unsafe_allow_html=True)
-        st.subheader("Guided Care Plan")
-        st.markdown('<p class="subtext">Explore and compare care options.</p>', unsafe_allow_html=True)
-        if st.button("Start", key="gcp_start"):
-            from core.nav import route_to
-            route_to("gcp_v4")
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-        # Card 2: Cost Planner
-        st.markdown('<div class="dashboard-card">', unsafe_allow_html=True)
-        st.subheader("Cost Planner")
-        st.markdown('<p class="subtext">Estimate and plan financial coverage.</p>', unsafe_allow_html=True)
-        if st.button("Start", key="cost_start"):
-            from core.nav import route_to
-            route_to("cost_intro")
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-        # Card 3: Plan With My Advisor
-        st.markdown('<div class="dashboard-card">', unsafe_allow_html=True)
-        st.subheader("Plan With My Advisor")
-        st.markdown('<p class="subtext">Schedule and prepare for your next advisor meeting.</p>', unsafe_allow_html=True)
-        if st.button("Open", key="pfma_open"):
-            from core.nav import route_to
-            route_to("pfma_v3")
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-        # Card 4: FAQs & Answers
-        st.markdown('<div class="dashboard-card gradient-box">', unsafe_allow_html=True)
-        st.subheader("FAQs & Answers")
-        st.markdown('<p class="subtext">Instant help from NAVI AI.</p>', unsafe_allow_html=True)
-        if st.button("Open", key="faq_open"):
-            from core.nav import route_to
-            route_to("faq")
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-        st.markdown('</div>', unsafe_allow_html=True)
+    # Render dashboard body with dynamic tiles
+    body_html = render_dashboard_body(
+        title=None,  # Already rendered above
+        subtitle=None,
+        chips=None,
+        hub_guide_block=None,
+        hub_order=None,
+        cards=cards,
+        additional_services=None,
+    )
     
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown(body_html, unsafe_allow_html=True)
     
     # Render footer
     render_footer_simple()
