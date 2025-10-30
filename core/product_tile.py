@@ -409,6 +409,9 @@ class ProductTileHub(BaseTile):
         if self.phase:
             classes.append(f"tile-{self.phase}")
 
+        # Phase 5K: Add unified card classes for consistent styling
+        classes.extend(["product-card", "ai-card", "animate-border"])
+
         # Add "recommended" class for MCIP gradient
         # Conditions: is the current next step, not complete, not FAQ tile
         faq_keys = {"faq", "faqs"}
