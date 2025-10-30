@@ -564,13 +564,14 @@ def render(ctx=None) -> None:
     from apps.navi_core.context_manager import apply_phase_context
     apply_phase_context()
     
-    # Phase 5A.1: Journey progress bar (temporary UI for testing)
-    from core.journeys import get_phase_completion
-    journey_stage = st.session_state.get("journey_stage", "discovery")
-    completion = get_phase_completion(journey_stage)
-    st.caption(f"**{journey_stage.replace('_', ' ').title()} Phase Progress**")
-    st.progress(completion)
-    st.markdown("<br/>", unsafe_allow_html=True)
+    # Phase 5M: Journey progress bar moved inside NAVI card (core/navi_hub.py)
+    # Removed temporary top header progress display
+    # from core.journeys import get_phase_completion
+    # journey_stage = st.session_state.get("journey_stage", "discovery")
+    # completion = get_phase_completion(journey_stage)
+    # st.caption(f"**{journey_stage.replace('_', ' ').title()} Phase Progress**")
+    # st.progress(completion)
+    # st.markdown("<br/>", unsafe_allow_html=True)
     
     # Render personalized NAVI panel V2
     render_navi_panel_v2(
