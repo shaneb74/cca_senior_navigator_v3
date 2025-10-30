@@ -3,10 +3,7 @@
    ========================================== */
 
 /* ====== TILE JOURNEY BORDERS ====== */
-.tile-discovery { border-left: 4px solid #3A7BFF !important; }
-.tile-planning  { border-left: 4px solid #2ECC71 !important; }
-.tile-post_planning { border-left: 4px solid #8A4FFF !important; }
-.tile-service   { border-left: 4px solid #CCCCCC !important; }
+/* Phase 5K: Moved to unified card framework below (using ::before pseudo-elements) */
 
 /* ====== CONTEXTUAL CARD ALIGNMENT ====== */
 /* Phase 5M: Removed - conflict with Phase 5K gradient border */
@@ -25,14 +22,11 @@ section, .container, .tile-grid { gap: 1.5rem; }
   box-shadow: none !important;
 }
 
-/* ==========================================
-   PHASE 5K — UNIFIED CARD FRAMEWORK
-   ========================================== */
+/* =====================================================
+   FINAL CARD FRAMEWORK — PHASE 5K
+   ===================================================== */
 
-/* ============================================
-   Unified Card Style — Gentle Left Border Accent
-   ============================================ */
-
+/* Base shared layout */
 .ai-card,
 .navi-card,
 .product-card,
@@ -47,11 +41,8 @@ section, .container, .tile-grid { gap: 1.5rem; }
   transition: box-shadow 0.25s ease, transform 0.25s ease;
 }
 
-/* Subtle gradient left edge only */
-.ai-card::before,
-.navi-card::before,
-.product-card::before,
-.hub-card::before {
+/* ------------- NAVI ONLY (gradient accent) ------------- */
+.navi-card::before {
   content: "";
   position: absolute;
   top: 0;
@@ -60,11 +51,65 @@ section, .container, .tile-grid { gap: 1.5rem; }
   width: 4px;
   border-radius: 12px 0 0 12px;
   background: linear-gradient(180deg, #a89cf8 0%, #7fd9b2 100%);
-  opacity: 0.6; /* soft accent */
+  opacity: 0.6;
   pointer-events: none;
 }
 
-/* Hover elevation */
+/* Disable global gradient for all other ai-cards */
+.ai-card::before {
+  content: none !important;
+}
+
+/* ------------- PRODUCT / HUB CATEGORY COLORS ------------- */
+.product-card.tile-discovery::before,
+.hub-card.tile-discovery::before,
+.product-card.discovery::before,
+.hub-card.discovery::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; bottom: 0;
+  width: 4px;
+  border-radius: 12px 0 0 12px;
+  background: #4d7cff; /* blue */
+}
+
+.product-card.tile-planning::before,
+.hub-card.tile-planning::before,
+.product-card.planning::before,
+.hub-card.planning::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; bottom: 0;
+  width: 4px;
+  border-radius: 12px 0 0 12px;
+  background: #42ba96; /* green */
+}
+
+.product-card.tile-post_planning::before,
+.hub-card.tile-post_planning::before,
+.product-card.analysis::before,
+.hub-card.analysis::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; bottom: 0;
+  width: 4px;
+  border-radius: 12px 0 0 12px;
+  background: #f5a623; /* amber/orange */
+}
+
+.product-card.tile-service::before,
+.hub-card.tile-service::before,
+.product-card.service::before,
+.hub-card.service::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; bottom: 0;
+  width: 4px;
+  border-radius: 12px 0 0 12px;
+  background: #cccccc; /* gray */
+}
+
+/* ------------- Hover effect ------------- */
 .ai-card:hover,
 .navi-card:hover,
 .product-card:hover,
@@ -73,9 +118,7 @@ section, .container, .tile-grid { gap: 1.5rem; }
   transform: translateY(-2px);
 }
 
-/* --------------------------------------------
-   Dark Mode Adaptation
-   -------------------------------------------- */
+/* ------------- Dark mode adaptation ------------- */
 @media (prefers-color-scheme: dark) {
   .ai-card,
   .navi-card,
@@ -86,10 +129,7 @@ section, .container, .tile-grid { gap: 1.5rem; }
     box-shadow: 0 2px 6px rgba(0,0,0,0.3);
   }
 
-  .ai-card::before,
-  .navi-card::before,
-  .product-card::before,
-  .hub-card::before {
+  .navi-card::before {
     background: linear-gradient(180deg, #9d91f7 0%, #72d9b4 100%);
     opacity: 0.5;
   }
@@ -278,16 +318,14 @@ section, .container, .tile-grid { gap: 1.5rem; }
     margin-top: 2rem !important;
 }
 
-/* === Legacy definitions removed - see unified AI/NAVI card definition above === */
-
-/* Ensure hub and product tiles inherit the same aesthetic */
-.module-card, .product-tile {
-    border-left: 4px solid #306DFF !important;
-    border-radius: 12px !important;
-}
+/* === Phase 5K: Legacy border rules removed - now using unified card framework ::before pseudo-elements === */
 
 /* Respect Welcome pixel precision — exclude that page */
 body.welcome .ai-card,
 body.welcome .navi-card {
     border: none !important;
+}
+body.welcome .ai-card::before,
+body.welcome .navi-card::before {
+    content: none !important;
 }
