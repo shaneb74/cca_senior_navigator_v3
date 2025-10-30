@@ -1,6 +1,7 @@
-# App runtime
-streamlit>=1.50
-openai>=1.0.0
+# App runtime (hybrid: flexible for performance, pinned where needed for compatibility)
+streamlit>=1.40.0      # Modern version for widget performance/reactivity
+openai>=1.51.2         # AI Advisor requires 1.51.2+ for proper client initialization
+httpx<0.27.0           # openai 1.51.2 needs httpx <0.27 (0.27+ removed 'proxies' param)
 pydantic>=2.0
 filelock>=3.12
 PyYAML>=6.0
@@ -9,7 +10,7 @@ altair>=5.0.0
 plotly>=5.18
 
 # FAQ / AI retrieval (Stage 3 & 3.5)
-scikit-learn>=1.3.0
+scikit-learn>=1.5.0    # Need 1.5+ for corpus pickle compatibility
 beautifulsoup4>=4.12.0
 lxml>=4.9.0
 requests>=2.31.0

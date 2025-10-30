@@ -1036,7 +1036,7 @@ def _hub_route_for_product(product_key: str) -> str:
             continue
         hub_id = info.get("hub") or "concierge"
         return hub_id if hub_id.startswith("hub_") else f"hub_{hub_id}"
-    return "hub_concierge"
+    return "hub_lobby"
 
 
 def _handle_save_exit(
@@ -1804,11 +1804,12 @@ def _render_results_view(mod: dict[str, Any], config: ModuleConfig) -> None:
             partner_flow_enabled = get_flag("FEATURE_HOUSEHOLD_PARTNER_FLOW")
             if partner_flow_enabled:
                 # TODO: Add partner interstitial logic here
-                # For now, proceed directly to cost planner
+                # For now, proceed directly to learn recommendation
                 pass
 
-            print("[GCP_NAV] Navigate to cost_intro")
-            route_to("cost_intro")
+            # Phase 4B: Route to Learn About My Recommendation instead of directly to Cost Planner
+            print("[GCP_NAV] Navigate to learn_recommendation (Phase 4B)")
+            route_to("learn_recommendation")
             return  # Exit early after navigation
         else:
             # Summary not ready yet - show loading state and block
@@ -1976,9 +1977,9 @@ def _render_results_view(mod: dict[str, Any], config: ModuleConfig) -> None:
             route_to("cost_intro")
 
     with col3:
-        if st.button("🏠 Return to Concierge Hub", key="btn_hub", use_container_width=True):
+        if st.button("🏠 Return to Lobby", key="btn_hub", use_container_width=True):
             from core.nav import route_to
-            route_to("hub_concierge")
+            route_to("hub_lobby")
 
     st.markdown('</div>', unsafe_allow_html=True)  # close rec-actions
 
@@ -2205,9 +2206,9 @@ def _render_results_ctas_once(config: ModuleConfig) -> None:
         st.markdown("---")
         st.markdown('<div class="sn-app mod-actions">', unsafe_allow_html=True)
 
-        # Build streamlined CTA for Cost Planner handoff
-        cta_label = "Next: Cost & Options →"
-        cta_help = "Get personalized cost estimates and explore your care options"
+        # Build streamlined CTA for Learn About Recommendation handoff (Phase 4B)
+        cta_label = "Next: Learn About Your Care Option →"
+        cta_help = "Understand your recommendation before exploring costs"
 
         # Disable button if summary not ready (extra safety)
         summary_ready = st.session_state.get("summary_ready", False) or st.session_state.get("gcp.llm_result_ready", False)
@@ -2354,4 +2355,94 @@ def _render_navi_guide_bar(
         print(f"[WARN] Navi guide bar failed: {e}", file=sys.stderr)
 
 
-__all__ = ["run_module"]
+def load_modules_for_product(product_key: str) -> list[dict[str, Any]]:
+    """Load module metadata for a given product.
+    
+    Discovers modules associated with a product by checking the products/
+    directory structure. Each product can have multiple modules in its
+    modules/ subdirectory with config.py files.
+    
+    This function provides explicit module discovery for the Lobby Hub
+    and other product navigation systems, making the dynamic architecture
+    more visible.
+    
+    Args:
+        product_key: Product identifier (e.g., 'gcp_v4', 'cost_planner_v2')
+    
+    Returns:
+        List of module metadata dicts with keys:
+            - module_id: Unique module identifier
+            - title: Display title
+            - enabled: Whether module is active
+            - weight: Sort order
+            - config: ModuleConfig object if available
+    
+    Example:
+        >>> modules = load_modules_for_product('gcp_v4')
+        >>> for mod in modules:
+        ...     print(f"{mod['title']}: {mod['module_id']}")
+    
+    Note:
+        The existing run_module() function handles actual module execution.
+        This function is for discovery/navigation purposes only.
+    """
+    modules = []
+    
+    # Map product_key to product path
+    product_paths = {
+        'gcp_v4': 'products/concierge_hub/gcp_v4',
+        'cost_planner_v2': 'products/concierge_hub/cost_planner_v2',
+        'cost_v2': 'products/concierge_hub/cost_planner_v2',
+        'pfma_v3': 'products/concierge_hub/pfma_v3',
+    }
+    
+    product_path = product_paths.get(product_key)
+    if not product_path:
+        return modules
+    
+    # Check if product has a modules directory
+    import os
+    modules_path = os.path.join(product_path, 'modules')
+    
+    if not os.path.exists(modules_path):
+        return modules
+    
+    # Discover module configs
+    for module_name in os.listdir(modules_path):
+        module_dir = os.path.join(modules_path, module_name)
+        if not os.path.isdir(module_dir):
+            continue
+        
+        config_file = os.path.join(module_dir, 'config.py')
+        if not os.path.exists(config_file):
+            continue
+        
+        # Load module config
+        try:
+            from core.modules.schema import ModuleConfig
+            config_module = importlib.import_module(
+                f"{product_path.replace('/', '.')}.modules.{module_name}.config"
+            )
+            
+            if hasattr(config_module, 'get_config'):
+                config = config_module.get_config()
+                
+                modules.append({
+                    'module_id': config.state_key,
+                    'title': config.title or module_name,
+                    'enabled': True,
+                    'weight': getattr(config, 'weight', 10),
+                    'config': config,
+                })
+        except Exception as e:
+            # Skip modules that can't be loaded
+            print(f"[MODULE_DISCOVERY] Failed to load {module_name}: {e}")
+            continue
+    
+    # Sort by weight
+    modules.sort(key=lambda m: m['weight'])
+    
+    return modules
+
+
+__all__ = ["run_module", "load_modules_for_product"]

@@ -41,7 +41,7 @@
       ],
       "actions": [
         { "label": "Get Started", "action": "next" },
-        { "label": "Back to Concierge Hub", "action": "route", "value": "hub_concierge" }
+        { "label": "Back to Lobby", "action": "route", "value": "hub_lobby" }
       ],
       "navi_guidance": {
         "section_purpose": "Set expectations for the guided plan.",

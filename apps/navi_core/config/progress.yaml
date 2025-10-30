@@ -1,0 +1,69 @@
+# Journey Progress Configuration
+# Phase 5.2: Global Progress Tracker
+#
+# Defines all hubs/pages in the user journey, their stage mapping,
+# and relative importance weights for progress calculation
+
+pages:
+  - Welcome
+  - For Someone Else
+  - Care Preferences
+  - Cost Calculator
+  - Guided Care Plan (GCP)
+  - Financial Assessment
+  - Move Preferences
+  - Lobby Hub
+  - Follow-Up
+
+stages:
+  # Stage → List of pages that belong to that stage
+  Awareness:
+    - Welcome
+    - For Someone Else
+    - Care Preferences
+  
+  Assessment:
+    - Cost Calculator
+    - Guided Care Plan (GCP)
+    - Financial Assessment
+  
+  Decision:
+    - Move Preferences
+    - Lobby Hub
+  
+  Placement:
+    - Lobby Hub
+    - Follow-Up
+  
+  FollowUp:
+    - Follow-Up
+
+weights:
+  # Relative importance of each page (out of 100 total)
+  Welcome: 5
+  For Someone Else: 10
+  Care Preferences: 15
+  Cost Calculator: 15
+  Guided Care Plan (GCP): 20
+  Financial Assessment: 10
+  Move Preferences: 10
+  Lobby Hub: 10
+  Follow-Up: 5
+
+milestones:
+  # Special messages at key completion percentages
+  25:
+    message: "Great start! You've completed the basics."
+    badge: "🌟 Getting Started"
+  
+  50:
+    message: "Halfway there! You're making excellent progress."
+    badge: "⭐ Midpoint Milestone"
+  
+  75:
+    message: "Almost done! Just a few more steps."
+    badge: "🎯 Nearly Complete"
+  
+  100:
+    message: "Congratulations! You've completed your care journey planning."
+    badge: "🏆 Journey Complete"

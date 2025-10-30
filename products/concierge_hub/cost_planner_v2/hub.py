@@ -43,6 +43,14 @@ def _load_module_config() -> dict:
 def render():
     """Render module hub with financial assessment modules."""
 
+    # Render compact Navi panel at top
+    from core.navi_module import render_module_navi_coach
+    render_module_navi_coach(
+        title_text="Let's work through these financial assessments together",
+        body_text="Completing them will help us figure out how to pay for the care that was recommended.",
+        tip_text="Each assessment takes just a few minutes and helps build your complete financial picture.",
+    )
+
     # Get flags from session state (matches Phase 3 flag-based visibility)
     flags = st.session_state.get("flags", {})
     is_veteran = flags.get("is_veteran", False)
@@ -265,7 +273,7 @@ def render():
             with col2:
                 st.markdown('<div data-role="secondary">', unsafe_allow_html=True)
                 if st.button(
-                    "🏠 Return to Concierge",
+                    "🏠 Return to Lobby",
                     use_container_width=True,
                     key="return_concierge_all_done",
                 ):
@@ -308,7 +316,7 @@ def render():
             with col2:
                 st.markdown('<div data-role="secondary">', unsafe_allow_html=True)
                 if st.button(
-                    "🏠 Return to Concierge",
+                    "🏠 Return to Lobby",
                     use_container_width=True,
                     key="return_concierge_req_done",
                 ):
@@ -343,7 +351,7 @@ def render():
             with col2:
                 st.markdown('<div data-role="secondary">', unsafe_allow_html=True)
                 if st.button(
-                    "🏠 Return to Concierge",
+                    "🏠 Return to Lobby",
                     use_container_width=True,
                     key="return_concierge_incomplete",
                 ):

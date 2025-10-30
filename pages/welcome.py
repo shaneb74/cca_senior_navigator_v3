@@ -15,6 +15,15 @@ from layout import static_url  # Keep static_url for now
 from ui.footer_simple import render_footer_simple
 from ui.header_simple import render_header_simple
 
+# Phase 5: Contextual Guidance Layer
+try:
+    from apps.navi_core.context_manager import update_context
+    from apps.navi_core.guidance_manager import get_guidance
+    from apps.navi_core.progress_manager import mark_page_complete
+    _GUIDANCE_AVAILABLE = True
+except ImportError:
+    _GUIDANCE_AVAILABLE = False
+
 _CSS_FLAG = "_welcome_css_main"
 
 _PILLS: dict[str, dict[str, str | None]] = {
@@ -251,6 +260,138 @@ def _inject_welcome_css() -> None:
         }
         .context-close:hover{background:#e1e7ff;color:#1f2937;}
         .context-title{font-size:1.35rem;font-weight:700;margin:12px 0 28px;line-height:1.45;}
+        
+        /* === White Background (Reset from Blue Gradient) === */
+        
+        /* White background globally */
+        .stApp {
+          background-color: #ffffff !important;
+        }
+        
+        /* Centered card container */
+        .audience-card {
+          background: #ffffff;
+          border-radius: 20px;
+          padding: 2.5rem;
+          max-width: 560px;
+          box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+          position: relative;
+          z-index: 5;
+        }
+        
+        /* Pills container */
+        .pill-container {
+          display: flex;
+          gap: 1rem;
+          margin-bottom: 1.5rem;
+        }
+        
+        /* Pill wrapper styling */
+        .pill-wrapper {
+          flex: 1;
+        }
+        
+        .pill-wrapper .stButton button {
+          border-radius: 999px !important;
+          font-weight: 600 !important;
+          padding: 0.5rem 1.2rem !important;
+          background: #F3F6FA !important;
+          color: #1B2A4A !important;
+          border: 1px solid #E0E5ED !important;
+          transition: all 0.25s ease-in-out !important;
+          font-size: 0.95rem !important;
+          width: 100% !important;
+          cursor: pointer !important;
+        }
+        
+        /* Active pill: Black background */
+        .pill-wrapper.active .stButton button {
+          background: #0B132B !important;
+          color: #fff !important;
+          border: none !important;
+        }
+        
+        /* Hover effect */
+        .pill-wrapper .stButton button:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 8px rgba(0,0,0,0.08) !important;
+        }
+        
+        /* Hero image positioning - positioned absolutely to overlap */
+        .audience-background {
+          position: absolute !important;
+          right: 0;
+          top: 60px;
+          width: 50%;
+          max-width: 700px;
+          z-index: 1;
+          opacity: 0.95;
+        }
+        
+        /* Ensure card content is above background */
+        .audience-card * {
+          position: relative;
+          z-index: 10;
+        }
+        
+        /* Adjust context styling for centered card layout */
+        @supports(selector(div:has(.welcome-context-sentinel))){
+          div.block-container:has(.welcome-context-sentinel){
+            padding-top: 2rem !important;
+            padding-bottom: 2rem !important;
+            max-width: none !important;
+          }
+          div[data-testid="stVerticalBlock"]:has(.welcome-context-sentinel){
+            background: transparent !important;
+            padding: 40px 0;
+          }
+          div[data-testid="stVerticalBlock"]:has(.welcome-context-sentinel) > div[data-testid="stHorizontalBlock"]{
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 0 24px;
+            gap: 60px;
+            align-items: center;
+            flex-wrap: nowrap;
+          }
+        }
+        
+        /* Active pill: Deep navy gradient with glow */
+        .context-top .stButton button[data-baseweb="button"][kind="primary"] {
+          background: linear-gradient(180deg, #0B132B, #1E254A) !important;
+          color: white !important;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+          border: none !important;
+        }
+        
+        /* Accessibility: Reduced motion support */
+        @media (prefers-reduced-motion: reduce) {
+          .context-top .stButton>button {
+            transition: none !important;
+          }
+        }
+        
+        /* Mobile: Stack pills vertically */
+        @media (max-width: 768px) {
+          .audience-toggle-container {
+            flex-direction: column;
+          }
+          .context-top .stButton {
+            width: 100%;
+          }
+        }
+        
+        /* Smooth fade-in to eliminate visible flashing on state updates */
+        .stApp {
+          animation: fadein 0.2s ease-in;
+        }
+        @keyframes fadein {
+          from { opacity: 0.92; }
+          to { opacity: 1; }
+        }
+        
+        .context-form-section{margin-bottom:20px;}
+        .context-label{display:block;font-weight:600;color:var(--ink);margin-bottom:8px;font-size:.95rem;}
         .context-form-row{display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap;}
         .context-input{flex:1 1 220px;}
         .context-submit{flex:0 0 160px;}
@@ -313,7 +454,7 @@ def render_welcome_card(
     placeholder: str,
     note: str,
     image_path: str,
-    submit_route: str | None = "hub_concierge",
+    submit_route: str | None = "hub_lobby",
 ) -> None:
     _inject_welcome_css()
 
@@ -511,7 +652,7 @@ def _welcome_body(
                       Helping you make confident care decisions for someone you love.
                     </p>
                     <div class="card-actions">
-                      <a href="{add_uid_to_href("?page=someone_else")}" class="btn btn--primary">For someone</a>
+                      <a href="{add_uid_to_href("?page=audience&mode=someone")}" class="btn btn--primary">For someone</a>
                     </div>
                   </article>
 
@@ -525,7 +666,7 @@ def _welcome_body(
                       Plan for your own future care with trusted guidance and peace of mind.
                     </p>
                     <div class="card-actions">
-                      <a href="{add_uid_to_href("?page=self")}" class="btn btn--primary">For myself</a>
+                      <a href="{add_uid_to_href("?page=audience&mode=self")}" class="btn btn--primary">For myself</a>
                     </div>
                   </article>
                 </div>
@@ -548,6 +689,11 @@ def _welcome_body(
 
 def render(ctx: dict | None = None) -> None:
     """Render welcome page with adaptive behavior based on auth state."""
+    # Phase 5: Track page context for contextual guidance
+    if _GUIDANCE_AVAILABLE:
+        update_context("Welcome")
+        mark_page_complete("Welcome")
+    
     # ============================================================
     # AUTHENTICATION DISABLED FOR DEVELOPMENT TESTING
     # ============================================================
@@ -571,21 +717,21 @@ def render(ctx: dict | None = None) -> None:
 
     # Button configuration based on state
     if not authenticated:
-        # State: Not logged in
+        # State: Not logged in - route to unified audience page
         primary_label = "Start Now"
-        primary_route = "someone_else"
+        primary_route = "audience"
         show_secondary = True
     elif authenticated and not has_planning_context:
-        # State: Logged in, no planning context
+        # State: Logged in, no planning context - route to unified audience page
         primary_label = "Start Planning"
-        primary_route = "someone_else"
+        primary_route = "audience"
         show_secondary = False
     else:
         # State: Logged in, planning context known
         # Use Navi's recommendation for next action
         next_action = MCIP.get_recommended_next_action()
         primary_label = "Continue where you left off"
-        primary_route = next_action.get("route", "hub_concierge")
+        primary_route = next_action.get("route", "hub_lobby")
         show_secondary = False
 
     # Render with simple header/footer (no layout.py wrapper)

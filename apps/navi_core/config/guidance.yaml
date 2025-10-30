@@ -1,0 +1,111 @@
+# Contextual Guidance Configuration
+# Phase 5: Contextual Guidance Layer
+#
+# Structure: page → persona → guidance data
+# Each entry provides an empathetic, context-aware message for that page/persona combination
+
+Welcome:
+  AdultChild:
+    message: "Welcome! I'll help you explore care options for your parent."
+  Spouse:
+    message: "Let's take this one step at a time — you're doing great."
+  SelfSenior:
+    message: "I'll help you find choices that keep your independence."
+  Advisor:
+    message: "Let's make sure the intake info is complete before proceeding."
+  Unknown:
+    message: "Welcome! I'll walk you through each section as we go."
+  Default:
+    message: "Welcome! Ready to get started?"
+
+For Someone Else:
+  AdultChild:
+    message: "Tell me about the person you're helping — I'll tailor my guidance to their situation."
+  Spouse:
+    message: "I understand this is a deeply personal journey. Let's start with who needs care."
+  Advisor:
+    message: "Please provide the care recipient's basic information to begin the assessment."
+  Default:
+    message: "Let's start by understanding who you're helping today."
+
+For Me:
+  SelfSenior:
+    message: "I'm here to help you explore options that honor your independence and preferences."
+  Default:
+    message: "Let's explore care options that work best for you."
+
+Care Preferences:
+  AdultChild:
+    message: "Think about your loved one's daily needs — I'll explain each option."
+  Spouse:
+    message: "Together we can balance care and well-being."
+  SelfSenior:
+    message: "Consider what level of support would help you maintain your lifestyle."
+  Advisor:
+    message: "You can review standard care-level guidelines here."
+  Default:
+    message: "Let's review care preferences step by step."
+
+Cost Calculator:
+  AdultChild:
+    message: "I can help estimate monthly costs and potential coverage options."
+  Spouse:
+    message: "Let's ensure financial planning feels manageable."
+  Advisor:
+    message: "Cross-check values with CRM cost tables."
+  Default:
+    message: "Review cost estimates carefully before proceeding."
+
+Financial Assessment:
+  AdultChild:
+    message: "Let's look at what resources are available to support your loved one's care."
+  Spouse:
+    message: "We'll explore financial options together, including benefits you may qualify for."
+  Advisor:
+    message: "Verify income sources and asset documentation for accurate assessment."
+  Default:
+    message: "Understanding available resources helps create a sustainable care plan."
+
+Move Preferences:
+  AdultChild:
+    message: "Location and community features matter. Let's find the right fit for your parent."
+  Spouse:
+    message: "Consider proximity to family, medical services, and familiar surroundings."
+  Advisor:
+    message: "Review geographic preferences and accessibility requirements."
+  Default:
+    message: "Let's identify important location factors and community amenities."
+
+GCP Assessment:
+  AdultChild:
+    message: "I'll guide you through questions that help determine the best care level."
+  Spouse:
+    message: "These questions help us understand current needs and plan for the future."
+  Advisor:
+    message: "Complete all sections for accurate care level recommendation."
+  Default:
+    message: "This assessment helps identify the most appropriate care setting."
+
+Summary:
+  AdultChild:
+    message: "Here's what we've learned about your parent's care needs and next steps."
+  Spouse:
+    message: "Let's review the plan we've created together."
+  SelfSenior:
+    message: "Here's a summary of your care preferences and recommended options."
+  Advisor:
+    message: "Review all collected data before finalizing recommendations."
+  Default:
+    message: "Review your assessment results and recommended care options."
+
+FAQ:
+  AdultChild:
+    message: "Ask me anything about senior care — I'm here to help clarify your questions."
+  Spouse:
+    message: "I can answer questions about care options, costs, or next steps."
+  SelfSenior:
+    message: "Feel free to ask about any aspect of senior living or care services."
+  Advisor:
+    message: "Access quick answers to common client questions and care scenarios."
+  Default:
+    message: "What questions can I help answer today?"

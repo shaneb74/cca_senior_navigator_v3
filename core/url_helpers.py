@@ -120,10 +120,12 @@ def can_go_back() -> bool:
 def back_fallback() -> Dict[str, str]:
     """Get sensible fallback route when navigation stack is empty.
     
+    Phase 3B: Changed default from hub_concierge to hub_lobby
+    
     Returns:
-        Default route (concierge hub)
+        Default route (Lobby hub)
     """
-    return {"page": "hub_concierge"}
+    return {"page": "hub_lobby"}
 
 
 def go_back() -> None:

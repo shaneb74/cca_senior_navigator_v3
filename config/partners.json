@@ -115,7 +115,7 @@
           "We'll answer any questions about insurance, costs, and setup"
         ],
         "cta": {
-          "label": "Return to Concierge",
+          "label": "Return to Lobby",
           "action": "close"
         }
       }

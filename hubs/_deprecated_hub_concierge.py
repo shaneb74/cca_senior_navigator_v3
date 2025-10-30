@@ -1,5 +1,16 @@
 # hubs/concierge.py
 """
+DEPRECATED: Concierge Hub - Functionality migrated to hub_lobby.py (Phase 3B)
+
+This hub is deprecated as of Phase 3B (2025-10-29).
+All personalized NAVI functionality, product tiles, and additional services
+have been migrated to the Lobby Hub (hub_lobby.py).
+
+Legacy hub kept for backwards compatibility during transition period.
+All routes should redirect to hub_lobby going forward.
+
+Original Purpose:
+-----------------
 Concierge Hub - Navi-Powered Polymorphic Display
 
 This hub uses Navi as the single intelligence layer.
@@ -13,7 +24,7 @@ import streamlit as st
 from core.additional_services import get_additional_services
 from core.base_hub import render_dashboard_body
 from core.mcip import MCIP
-from core.navi import NaviOrchestrator, render_navi_panel
+from core.navi import NaviOrchestrator  # render_navi_panel removed - using render_hub_navi_next instead
 from core.product_tile import ProductTileHub
 from ui.footer_simple import render_footer_simple
 from ui.header_simple import render_header_simple
@@ -93,12 +104,8 @@ def render(ctx=None) -> None:
         step = save_msg.get("step", 0)
         total = save_msg.get("total", 0)
 
-        if prog >= 100:
-            st.success(f"✅ {product_name} complete! You can review your results anytime.")
-        else:
-            st.info(
-                f"💾 Progress saved! You're {prog:.0f}% through the {product_name} (step {step} of {total}). Click Continue below to pick up where you left off."
-            )
+        # Progress alert is rendered via alert_html (passed to render_navi_panel_v2)
+        # No need for separate st.info() call here
 
     # Get MCIP data for tiles
     progress = MCIP.get_journey_progress()
@@ -139,8 +146,48 @@ def render(ctx=None) -> None:
 
     # Use callback pattern to render Navi AFTER header but BEFORE body
     def render_content():
-        # Render Navi panel (after header, before hub content)
-        render_navi_panel(location="hub", hub_key="concierge")
+        # Render Navi panel with "What's Next" content inside hero
+        from core.ui import render_navi_panel_v2
+        
+        # Build Navi data for hero
+        person_name = st.session_state.get("person_name", "").strip()
+        person = person_name if person_name else "you"
+        
+        title = "Let's get started."
+        reason = "Answer a few questions to build your personalized care plan."
+        
+        encouragement = {
+            "icon": "🧭",
+            "text": "I'll guide you through each step with context and next actions.",
+            "status": "getting_started",
+        }
+        
+        # Placeholder context chips
+        context_chips = []
+        
+        # Primary action
+        primary_action = {"label": "Start Care Plan", "route": "gcp"}
+        
+        # No secondary action for now
+        secondary_action = None
+        
+        # Render Navi panel V2 (creates hero container with What's Next section inside)
+        render_navi_panel_v2(
+            title=title,
+            reason=reason,
+            encouragement=encouragement,
+            context_chips=context_chips,
+            primary_action=primary_action,
+            secondary_action=secondary_action,
+            progress=None,
+            alert_html="",  # No blue banner
+        )
+        
+        # If there was a save message, show it as a subtle caption below hero
+        if save_msg:
+            prog = save_msg.get("progress", 0)
+            if prog > 0 and prog < 100:
+                st.caption("Progress saved. Continue below to pick up where you left off.")
 
         # Render hub body HTML WITHOUT title/subtitle/chips (Navi replaces them)
         body_html = render_dashboard_body(

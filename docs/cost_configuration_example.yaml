@@ -1,0 +1,179 @@
+# Example cost configuration capturing all cost drivers referenced in the current codebase.
+# Purpose: communicate required inputs/structures to engineering before productionizing.
+# Sources: 
+#   - products/concierge_hub/cost_planner_v2/utils/cost_calculator.py
+#   - products/concierge_hub/cost_planner_v2/comparison_calcs.py
+#   - products/concierge_hub/cost_planner_v2/utils/regional_data.py
+#   - config/regional_cost_config.json
+#   - products/concierge_hub/cost_planner_v2/hub.py (sample data)
+#   - tests covering assisted living base cost assumptions
+
+metadata:
+  version: "example-2025-02"
+  currency: USD
+  notes:
+    - "Values below mirror hard-coded fallbacks in the calculator modules so devs understand current assumptions."
+    - "Modify to match source-of-truth data feeds (e.g., Genworth survey) when wiring up production config."
+
+regional_pricing:
+  config_source: "config/regional_cost_config.json"
+  multiplier_resolution_order:
+    - zip_exact_wa
+    - zip3_wa
+    - state_wa
+    - zip_exact
+    - zip3
+    - state
+    - default
+  default_multiplier: 1.00
+  description: >
+    Multipliers scale facility base rates, in-home hourly rates, and (dampened) home carry costs.
+    See RegionalDataProvider for lookup precedence.
+
+home_carry_cost:
+  base_monthly_usd: 4500.00
+  regional_dampening_factor: 0.50  # Only 50% of the care multiplier deviation is applied.
+  included_in:
+    - "Facility scenarios when the user keeps their home (toggle controlled in UI)."
+    - "All in-home scenarios."
+  rationale: "Mortgage/rent, property tax, insurance, maintenance per comparison_calcs.HOME_CARRY_BASE."
+
+care_tiers:
+  no_care_needed:
+    monthly_base: 500.0
+    description: "Check-ins / minimal services baseline used for fallback calculations."
+  in_home_care:
+    # Base rate can be expressed either as a monthly fallback or as hourly inputs.
+    monthly_base_fallback: 3500.0  # Used when hourly detail is unavailable.
+    hourly_rate_base: 30.0
+    hours_per_day_default: 8.0  # comparison_calcs defaults to 8h/day for scenario view.
+    monthly_hours_formula: "hours_per_day * 30.4"  # 30.4 = average days per month.
+    includes_home_carry: true
+    condition_modifiers:
+      memory_support: { pct: 0.25, label: "Memory Care Support" }
+      mobility_limited: { pct: 0.20, label: "Mobility/Transfer Assistance" }
+      adl_support_high: { pct: 0.15, label: "Extensive ADL Support" }
+      medication_management: { pct: 0.10, label: "Medication Management" }
+      behavioral_concerns: { pct: 0.15, label: "Behavioral Support" }
+      falls_risk: { pct: 0.10, label: "Fall Prevention & Monitoring" }
+      chronic_conditions: { pct: 0.12, label: "Chronic Condition Management" }
+  assisted_living:
+    monthly_base: 4500.0
+    includes_home_carry: false  # Only added if household opts to keep home.
+    condition_modifiers:
+      memory_support: { pct: 0.20, label: "Memory Care Support" }
+      mobility_limited: { pct: 0.15, label: "Mobility/Transfer Assistance" }
+      adl_support_high: { pct: 0.10, label: "Extensive ADL Support" }
+      medication_management: { pct: 0.08, label: "Medication Management" }
+      behavioral_concerns: { pct: 0.12, label: "Behavioral Support" }
+      falls_risk: { pct: 0.08, label: "Fall Prevention & Monitoring" }
+      chronic_conditions: { pct: 0.10, label: "Chronic Condition Management" }
+  memory_care:
+    monthly_base: 6500.0
+    includes_home_carry: false
+    condition_modifiers:
+      memory_support: { pct: 0.15, label: "Memory Care Support" }
+      mobility_limited: { pct: 0.12, label: "Mobility/Transfer Assistance" }
+      adl_support_high: { pct: 0.08, label: "Extensive ADL Support" }
+      medication_management: { pct: 0.06, label: "Medication Management" }
+      behavioral_concerns: { pct: 0.10, label: "Behavioral Support" }
+      falls_risk: { pct: 0.06, label: "Fall Prevention & Monitoring" }
+      chronic_conditions: { pct: 0.08, label: "Chronic Condition Management" }
+  memory_care_high_acuity:
+    monthly_base: 9000.0
+    includes_home_carry: false
+    condition_modifiers:
+      memory_support: { pct: 0.10, label: "Memory Care Support" }
+      mobility_limited: { pct: 0.10, label: "Mobility/Transfer Assistance" }
+      adl_support_high: { pct: 0.06, label: "Extensive ADL Support" }
+      medication_management: { pct: 0.05, label: "Medication Management" }
+      behavioral_concerns: { pct: 0.08, label: "Behavioral Support" }
+      falls_risk: { pct: 0.05, label: "Fall Prevention & Monitoring" }
+      chronic_conditions: { pct: 0.06, label: "Chronic Condition Management" }
+      high_acuity_tier: { pct: 0.25, label: "High-Acuity Intensive Care (always applied)" }
+
+flag_adjustments:
+  # Shared percentages used by quick estimates (applied cumulatively on base + regional total).
+  base_percentages:
+    memory_support:
+      pct: 0.20
+      label: "Severe Cognitive Impairment"
+      rationale: "Alzheimer's/dementia requiring memory care expertise."
+    mobility_limited:
+      pct: 0.15
+      label: "Serious Mobility Issues"
+      rationale: "Wheelchair/bedbound residents needing lifts/equipment."
+    adl_support_high:
+      pct: 0.10
+      label: "High ADL Support"
+      rationale: "Extensive help with bathing, dressing, eating, toileting."
+    medication_management:
+      pct: 0.08
+      label: "Complex Medication Management"
+      rationale: "Multiple prescriptions that require professional oversight."
+    behavioral_concerns:
+      pct: 0.12
+      label: "Behavioral/Psychiatric Care"
+      rationale: "Wandering/aggression mitigation."
+    falls_risk:
+      pct: 0.08
+      label: "Fall Risk Monitoring"
+      rationale: "Enhanced supervision after repeated falls."
+    chronic_conditions:
+      pct: 0.10
+      label: "Multiple Chronic Conditions"
+      rationale: "Coordinated medical oversight across conditions."
+  flag_mappings:
+    severe_cognitive_risk: memory_support
+    moderate_cognitive_decline: memory_support
+    high_mobility_dependence: mobility_limited
+    high_dependence: adl_support_high
+    moderate_dependence: adl_support_high
+    mental_health_concern: behavioral_concerns
+    high_risk: behavioral_concerns
+    moderate_risk: behavioral_concerns
+    falls_multiple: falls_risk
+    high_safety_concern: falls_risk
+    # Note: moderate_safety_concern currently maps to "safety_concerns" in code, which has no cost adjustment defined.
+    moderate_safety_concern: safety_concerns
+    chronic_present: chronic_conditions
+
+additional_services:
+  description: >
+    Optional monthly add-ons pulled from cost_config.v3.json (fallback is empty).
+    Services are multiplied by the same regional multiplier as base care.
+  example_services:
+    medication_delivery:
+      monthly_cost: 150
+      applies_to: ["in_home_care", "assisted_living"]
+    transportation_package:
+      monthly_cost: 200
+      applies_to: ["in_home_care", "assisted_living", "memory_care"]
+    therapy_visits:
+      monthly_cost: 300
+      applies_to: ["memory_care", "memory_care_high_acuity"]
+    respite_care_days:
+      monthly_cost: 400
+      applies_to: ["in_home_care"]
+  implementation_notes:
+    - "Calculator expects keys under additional_services.{service_key}.monthly_cost."
+    - "Enable/disable flags are provided by user selections in the detailed estimator."
+
+user_offsets:
+  veteran_benefit:
+    type: "monthly_credit"
+    description: "Dollar amount deducted from subtotal when VA benefit is entered."
+  insurance_coverage:
+    type: "monthly_credit"
+    description: "Dollar amount deducted when long-term care insurance pays out."
+
+calculations:
+  projections:
+    annual: "monthly_adjusted * 12"
+    three_year: "annual * 3"
+    five_year: "annual * 5"
+  cumulative_modifier_behavior: "Each active flag percentage is applied sequentially to the running total."
+  rounding_guidelines:
+    monthly: "Keep cents for internal calc; round to nearest dollar for display."
+    projections: "Round to nearest dollar."
+

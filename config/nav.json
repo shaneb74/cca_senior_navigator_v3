@@ -11,15 +11,9 @@
           "module": "pages.welcome:render"
         },
         {
-          "key": "someone_else",
-          "label": "For Someone",
-          "module": "pages.someone_else:render",
-          "hidden": true
-        },
-        {
-          "key": "self",
-          "label": "For Me",
-          "module": "pages.self:render",
+          "key": "audience",
+          "label": "Audience Selection",
+          "module": "pages.audience:render",
           "hidden": true
         },
         {
@@ -76,14 +70,9 @@
       "label": "Hubs",
       "items": [
         {
-          "key": "hub_concierge",
-          "label": "Concierge",
-          "module": "hubs.concierge:render"
-        },
-        {
-          "key": "hub_waiting",
-          "label": "Waiting Room",
-          "module": "hubs.waiting_room:render"
+          "key": "hub_lobby",
+          "label": "Lobby",
+          "module": "hubs.hub_lobby:render"
         },
         {
           "key": "hub_learning",
@@ -127,6 +116,12 @@
           "key": "gcp_review",
           "label": "GCP Assessment Review",
           "module": "pages.gcp_review:render",
+          "hidden": true
+        },
+        {
+          "key": "learn_recommendation",
+          "label": "Learn About My Recommendation",
+          "module": "products.learn_recommendation.product:render",
           "hidden": true
         },
         {

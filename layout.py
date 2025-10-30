@@ -95,8 +95,7 @@ def _build_header(active_route: str | None = None) -> str:
     # Build navigation links
     nav_links = [
         _nav_link("Welcome", "welcome", current),
-        _nav_link("Concierge", "hub_concierge", current),
-        _nav_link("Waiting Room", "hub_waiting", current),
+        _nav_link("Lobby", "hub_lobby", current),
         _nav_link("Learning", "hub_learning", current),
         _nav_link("Trusted Partners", "hub_trusted", current),
         _nav_link("Professional", "hub_professional", current),
@@ -247,6 +246,16 @@ def render_header(active_route: str | None = None) -> None:
         return
     st.session_state[_HEADER_SENTINEL] = True
     st.markdown(_build_header(active_route=active_route), unsafe_allow_html=True)
+    
+    # Inject NAVI global compact progress tracker just below the header
+    try:
+        from apps.navi_core.ui_components import navi_auto_progress
+        from core.url_helpers import current_route
+        
+        route = current_route()
+        navi_auto_progress(route)
+    except Exception:
+        pass
 
 
 def render_footer() -> None:

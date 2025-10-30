@@ -775,7 +775,7 @@ def render_navi_panel(
             # Concierge complete - route to Waiting Room
             title = journey_msg.get("text", "Congratulations!")
             reason = journey_msg.get("subtext", "You've completed the Concierge journey.")
-            primary_action = {"label": "Go to Waiting Room", "route": "hub_waiting"}
+            primary_action = {"label": "Return to Lobby", "route": "hub_lobby"}
         else:
             # Standard title and action logic
             if ctx.user_name:
@@ -791,7 +791,7 @@ def render_navi_panel(
                 "reason", "This will help us find the right support for your situation."
             )
             primary_label = next_action.get("action", "Continue")
-            primary_route = next_action.get("route", "hub_concierge")
+            primary_route = next_action.get("route", "hub_lobby")
             primary_action = {"label": primary_label, "route": primary_route}
 
         # Build secondary action (Ask Navi → FAQ)
