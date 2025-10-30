@@ -226,8 +226,9 @@ def _apply_tile_state(tile: ProductTileHub, state: str) -> ProductTileHub:
 def _build_discovery_tiles() -> list[ProductTileHub]:
     """Build Discovery Journey tiles (first-time user experience).
     
-    Phase 4A Revision: Discovery tiles are GCP-focused.
+    Phase 4A Revision: Discovery tiles focus on first-touch onboarding.
     Phase 5A: Added Discovery Learning first-touch onboarding tile.
+    Phase 5F: Moved GCP to Planning phase for proper journey flow.
     
     Returns:
         List of discovery tiles with MCIP state applied
@@ -242,20 +243,7 @@ def _build_discovery_tiles() -> list[ProductTileHub]:
             primary_route="?page=discovery_learning",
             primary_label="Start Here",
             variant="brand",
-            order=5,  # Before GCP (10)
-            visible=True,
-            phase="discovery",  # Phase 5A: journey phase tag
-        ),
-        ProductTileHub(
-            key="gcp_v4",
-            title="Guided Care Plan",
-            desc="Explore and compare care options.",
-            blurb="Answer a few short questions about your daily needs, health, and safety.",
-            image_square=None,  # Phase 5E: No PNG, CSS icon
-            primary_route="?page=gcp_v4",
-            primary_label="Start",
-            variant="brand",
-            order=10,
+            order=5,
             visible=True,
             phase="discovery",  # Phase 5A: journey phase tag
         ),
@@ -281,12 +269,26 @@ def _build_planning_tiles() -> list[ProductTileHub]:
     Phase 4A Revision: Planning tiles include Cost Planner and Plan With Advisor.
     Phase 4B: Added Learn About My Recommendation between GCP and Cost Planner.
     Phase 5A: Added journey phase tags to all planning tiles.
+    Phase 5F: Moved GCP here from Discovery - proper planning journey flow.
     FAQ removed (integrated into NAVI).
     
     Returns:
         List of planning tiles with MCIP state applied
     """
     tiles = [
+        ProductTileHub(
+            key="gcp_v4",
+            title="Guided Care Plan",
+            desc="Explore and compare care options.",
+            blurb="Answer a few short questions about your daily needs, health, and safety.",
+            image_square=None,  # Phase 5E: No PNG, CSS icon
+            primary_route="?page=gcp_v4",
+            primary_label="Start",
+            variant="brand",
+            order=10,
+            visible=True,
+            phase="planning",  # Phase 5F: Corrected to planning phase
+        ),
         ProductTileHub(
             key="learn_recommendation",
             title="Learn About My Recommendation",

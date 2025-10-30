@@ -257,3 +257,32 @@ h2, h3 {
   display: none;
 }
 
+/* ---------- PHASE GRADIENTS (Phase 5F Visual Polish) ---------- */
+/* Subtle, accessible background gradients for journey phase tiles */
+
+.tile-gradient-discovery {
+  background: linear-gradient(180deg, #E8F1FF 0%, #FFFFFF 100%);
+}
+
+.tile-gradient-planning {
+  background: linear-gradient(180deg, #EAFBF0 0%, #FFFFFF 100%);
+}
+
+.tile-gradient-post_planning {
+  background: linear-gradient(180deg, #F3EEFF 0%, #FFFFFF 100%);
+}
+
+.tile-gradient-service {
+  background: linear-gradient(180deg, #F7F7F7 0%, #FFFFFF 100%);
+}
+
+/* Ensure gradients don't interfere with hover states */
+.dashboard-card.tile-gradient-discovery:hover,
+.dashboard-card.tile-gradient-planning:hover,
+.dashboard-card.tile-gradient-post_planning:hover,
+.dashboard-card.tile-gradient-service:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+
+

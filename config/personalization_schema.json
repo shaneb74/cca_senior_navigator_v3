@@ -61,7 +61,7 @@
 
   "phases": {
     "discovery": {
-      "visible_modules": ["gcp_v4"],
+      "visible_modules": ["discovery_learning"],
       "header_text": "Begin your discovery journey."
     },
     "planning": {
