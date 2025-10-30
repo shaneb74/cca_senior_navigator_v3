@@ -20,6 +20,9 @@
   --planning-accent: #42ba96;
   --analysis-accent: #f5a623;
   --service-accent: #cccccc;
+  
+  /* NAVI AI accent — modern purple with good contrast */
+  --navi-accent: #7c5cff;
 
   /* ----- Spacing scale ----- */
   --space-xs: 0.25rem;

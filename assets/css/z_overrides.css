@@ -42,6 +42,25 @@ section, .container, .tile-grid {
 }
 
 /* =====================================================
+   NAVI CARD — AI ACCENT FINAL (STREAMLINED)
+   ===================================================== */
+
+.navi-card {
+  border-left: 4px solid var(--navi-accent) !important;
+  overflow: hidden;
+}
+
+.navi-card::before {
+  content: none !important;
+}
+
+.navi-card:hover {
+  box-shadow: var(--shadow-md);
+  border-left-color: color-mix(in srgb, var(--navi-accent) 80%, white 20%);
+  transition: border-left-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* =====================================================
    COMPLETED JOURNEY CARDS
    ===================================================== */
 .completed-card {
@@ -348,53 +367,60 @@ body.welcome .navi-card::before {
 }
 
 /* =====================================================
-   FINAL LEFT-BORDER ACCENT RULES — PHASE 5K LOCK-IN
+   PRODUCT & HUB CARD — CATEGORY ACCENTS (STREAMLINED)
    ===================================================== */
 
-/* Base pseudo-element for all cards - NAVI gradient */
-.navi-card::before,
+/* Disable pseudo-elements for product/hub cards */
 .product-card::before,
 .hub-card::before {
-  content: "" !important;  /* Override any content:none from other rules */
-  position: absolute;
-  top: 0; 
-  left: 0; 
-  bottom: 0;
-  width: 4px;
-  border-radius: var(--radius-md) 0 0 var(--radius-md);
-  background: var(--gradient-accent);
-  opacity: 0.7;
+  content: none !important;
 }
 
-/* Category-specific color overrides */
-.product-card.tile-discovery::before,
-.product-card.discovery::before,
-.hub-card.tile-discovery::before,
-.hub-card.discovery::before {
-  background: var(--discovery-accent) !important;
-  opacity: 1;
+/* Default product/hub card border - gradient accent */
+.product-card,
+.hub-card {
+  border-left: 4px solid transparent;
+  background: linear-gradient(white, white) padding-box,
+              var(--gradient-accent) border-box;
+  border-radius: var(--radius-md);
 }
 
-.product-card.tile-planning::before,
-.product-card.planning::before,
-.hub-card.tile-planning::before,
-.hub-card.planning::before {
-  background: var(--planning-accent) !important;
-  opacity: 1;
+/* Category-specific direct borders */
+.product-card.tile-discovery,
+.hub-card.tile-discovery,
+.product-card.discovery,
+.hub-card.discovery {
+  border-left: 4px solid var(--discovery-accent) !important;
+  background: var(--surface-card);
 }
 
-.product-card.tile-post_planning::before,
-.product-card.analysis::before,
-.hub-card.tile-post_planning::before,
-.hub-card.analysis::before {
-  background: var(--analysis-accent) !important;
-  opacity: 1;
+.product-card.tile-planning,
+.hub-card.tile-planning,
+.product-card.planning,
+.hub-card.planning {
+  border-left: 4px solid var(--planning-accent) !important;
+  background: var(--surface-card);
 }
 
-.product-card.tile-service::before,
-.product-card.service::before,
-.hub-card.tile-service::before,
-.hub-card.service::before {
-  background: var(--service-accent) !important;
-  opacity: 1;
+.product-card.tile-post_planning,
+.hub-card.tile-post_planning,
+.product-card.analysis,
+.hub-card.analysis {
+  border-left: 4px solid var(--analysis-accent) !important;
+  background: var(--surface-card);
+}
+
+.product-card.tile-service,
+.hub-card.tile-service,
+.product-card.service,
+.hub-card.service {
+  border-left: 4px solid var(--service-accent) !important;
+  background: var(--surface-card);
+}
+
+/* Hover effects for product/hub cards */
+.product-card:hover,
+.hub-card:hover {
+  box-shadow: var(--shadow-md);
+  transition: box-shadow 0.2s ease;
 }
