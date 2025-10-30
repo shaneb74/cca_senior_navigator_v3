@@ -359,7 +359,7 @@ body.welcome .navi-card::before {
 .navi-card::before,
 .product-card::before,
 .hub-card::before {
-  content: "";
+  content: "" !important;  /* Override any content:none from other rules */
   position: absolute;
   top: 0; 
   left: 0; 
@@ -375,7 +375,7 @@ body.welcome .navi-card::before {
 .product-card.discovery::before,
 .hub-card.tile-discovery::before,
 .hub-card.discovery::before {
-  background: var(--discovery-accent);
+  background: var(--discovery-accent) !important;
   opacity: 1;
 }
 
@@ -383,7 +383,7 @@ body.welcome .navi-card::before {
 .product-card.planning::before,
 .hub-card.tile-planning::before,
 .hub-card.planning::before {
-  background: var(--planning-accent);
+  background: var(--planning-accent) !important;
   opacity: 1;
 }
 
@@ -391,7 +391,7 @@ body.welcome .navi-card::before {
 .product-card.analysis::before,
 .hub-card.tile-post_planning::before,
 .hub-card.analysis::before {
-  background: var(--analysis-accent);
+  background: var(--analysis-accent) !important;
   opacity: 1;
 }
 
@@ -399,11 +399,6 @@ body.welcome .navi-card::before {
 .product-card.service::before,
 .hub-card.tile-service::before,
 .hub-card.service::before {
-  background: var(--service-accent);
+  background: var(--service-accent) !important;
   opacity: 1;
-}
-
-/* Prevent unwanted borders on non-card elements */
-.ai-card::before {
-  content: none !important;
 }
