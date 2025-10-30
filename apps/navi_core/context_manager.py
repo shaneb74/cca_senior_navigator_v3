@@ -94,3 +94,19 @@ def get_phase_tone() -> dict:
                 "I'm here to support you through this transition."
             ]
         }
+
+
+def apply_phase_context():
+    """
+    Apply phase-aware context to session state for NAVI.
+    
+    Phase 5A.1 enhancement: Injects journey_stage and navi_tone into session state
+    for use by NAVI chat and LLM prompts.
+    
+    Should be called before rendering NAVI chat to ensure tone is applied.
+    """
+    phase = get_current_journey()
+    tone_data = get_phase_tone()
+    st.session_state["journey_stage"] = phase
+    st.session_state["navi_tone"] = tone_data["tone"]
+    st.session_state["navi_emphasis"] = tone_data["emphasis"]

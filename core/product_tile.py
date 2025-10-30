@@ -214,6 +214,7 @@ class BaseTile:
         self.cta_tooltip: str | None = kwargs.get("cta_tooltip")
         self.is_next_step: bool = kwargs.get("is_next_step", False)  # NEW: for MCIP gradient
         self.desc_html: str | None = kwargs.get("desc_html")  # NEW: for raw HTML in desc
+        self.phase: str | None = kwargs.get("phase")  # Phase 5A: journey phase tag
         raw_badges = kwargs.get("badges") or []
         self.badges: list[Any] = raw_badges
 
@@ -435,6 +436,11 @@ class ProductTileHub(BaseTile):
                     f'<img src="{done_url}" alt="Complete" />'
                     "</div>"
                 )
+
+        # Phase 5A: Add phase pill if phase attribute exists
+        if self.phase:
+            phase_label = self.phase.replace("_", " ").title()
+            out.append(f'<span class="phase-pill {self.phase}">{html_escape(phase_label)}</span>')
 
         out.append('<div class="ptile__head">')
         logo_src, logo_path = _resolve_img(getattr(self, "image_square", None))

@@ -587,6 +587,18 @@ def render(ctx=None) -> None:
     # Secondary action - FAQ integrated into NAVI (Phase 4A)
     secondary_action = {"label": "Ask NAVI", "route": "faq"}
     
+    # Phase 5A.1: Apply phase-aware context before rendering NAVI
+    from apps.navi_core.context_manager import apply_phase_context
+    apply_phase_context()
+    
+    # Phase 5A.1: Journey progress bar (temporary UI for testing)
+    from core.journeys import get_phase_completion
+    journey_stage = st.session_state.get("journey_stage", "discovery")
+    completion = get_phase_completion(journey_stage)
+    st.caption(f"**{journey_stage.replace('_', ' ').title()} Phase Progress**")
+    st.progress(completion)
+    st.markdown("<br/>", unsafe_allow_html=True)
+    
     # Render personalized NAVI panel V2
     render_navi_panel_v2(
         title=title,
@@ -599,6 +611,13 @@ def render(ctx=None) -> None:
         alert_html="",
         variant="hub",
     )
+    
+    # Phase 5A.1: Optional debug caption for testing tone context
+    if os.getenv("SN_DEBUG_PHASE_TONE", "0") == "1":
+        st.caption(
+            f"🧪 Phase: {st.session_state.get('journey_stage', 'N/A')} | "
+            f"Tone: {st.session_state.get('navi_tone', 'N/A')}"
+        )
     
     # Add spacing after NAVI panel
     st.markdown("<br/>", unsafe_allow_html=True)
