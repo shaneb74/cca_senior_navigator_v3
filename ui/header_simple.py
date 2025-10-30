@@ -60,6 +60,7 @@ def render_header_simple(active_route: str | None = None) -> None:
     # Visibility controlled by config/ui_config.json
     all_nav_items = [
         {"label": "Welcome", "route": "welcome"},
+        {"label": "Lobby", "route": "hub_lobby"},
         {"label": "Concierge", "route": "hub_concierge"},
         {"label": "Waiting Room", "route": "hub_waiting"},
         {"label": "Learning", "route": "hub_learning"},
