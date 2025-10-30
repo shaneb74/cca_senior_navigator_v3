@@ -285,12 +285,13 @@ _sanitize_query_params_for_welcome(route)
 # Cost Planner v2: Allow direct access to cost_v2 product router
 # (removed redirect that was forcing to cost_intro)
 
+# Phase 3B: Added hub_lobby to LAYOUT_CHROME_ROUTES (new default hub)
 LAYOUT_CHROME_ROUTES = {
     "welcome",
     "self",
     "someone_else",
     "professionals",
-    "hub_concierge",
+    "hub_lobby",
     "hub_waiting",
     "hub_learning",
     "hub_trusted",

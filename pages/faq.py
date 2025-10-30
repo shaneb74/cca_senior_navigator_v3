@@ -1329,7 +1329,7 @@ def render():
             st.markdown('</section></div>', unsafe_allow_html=True)
             
             # ─── Composer (moved here, under recommended questions) ───
-            advisor_href = add_uid_to_href("?page=hub_concierge")
+            advisor_href = add_uid_to_href("?page=hub_lobby")
             st.markdown('<div class="ai-input-wrap">', unsafe_allow_html=True)
             st.markdown('<div class="chat-sentinel composer-sentinel"></div>', unsafe_allow_html=True)
             col1, col2 = st.columns([5, 1], gap="medium")
@@ -1956,7 +1956,7 @@ def render():
 
         with col_back:
             if st.button("← Back to Hub", key="back_to_hub_btn", use_container_width=True):
-                route_to("hub_concierge")
+                route_to("hub_lobby")
     
     render_footer_simple()
 

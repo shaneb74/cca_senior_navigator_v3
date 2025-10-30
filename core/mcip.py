@@ -681,7 +681,7 @@ class MCIP:
             return {
                 "action": "🎉 Journey Complete!",
                 "reason": "You've completed your care plan, cost analysis, and scheduled your advisor appointment.",
-                "route": "hub_concierge",
+                "route": "hub_lobby",
                 "status": "complete",
             }
 

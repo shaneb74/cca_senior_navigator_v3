@@ -273,7 +273,7 @@ def render():
             with col2:
                 st.markdown('<div data-role="secondary">', unsafe_allow_html=True)
                 if st.button(
-                    "🏠 Return to Concierge",
+                    "🏠 Return to Lobby",
                     use_container_width=True,
                     key="return_concierge_all_done",
                 ):
@@ -316,7 +316,7 @@ def render():
             with col2:
                 st.markdown('<div data-role="secondary">', unsafe_allow_html=True)
                 if st.button(
-                    "🏠 Return to Concierge",
+                    "🏠 Return to Lobby",
                     use_container_width=True,
                     key="return_concierge_req_done",
                 ):
@@ -351,7 +351,7 @@ def render():
             with col2:
                 st.markdown('<div data-role="secondary">', unsafe_allow_html=True)
                 if st.button(
-                    "🏠 Return to Concierge",
+                    "🏠 Return to Lobby",
                     use_container_width=True,
                     key="return_concierge_incomplete",
                 ):

@@ -791,7 +791,7 @@ def render_navi_panel(
                 "reason", "This will help us find the right support for your situation."
             )
             primary_label = next_action.get("action", "Continue")
-            primary_route = next_action.get("route", "hub_concierge")
+            primary_route = next_action.get("route", "hub_lobby")
             primary_action = {"label": primary_label, "route": primary_route}
 
         # Build secondary action (Ask Navi → FAQ)
