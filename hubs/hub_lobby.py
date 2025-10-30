@@ -213,7 +213,13 @@ def render(ctx=None) -> None:
     # Get product tiles with state applied
     cards = _build_product_tiles()
     
-    # Render dashboard body with dynamic tiles
+    # ========================================
+    # ADDITIONAL SERVICES SECTION (Phase 3A)
+    # ========================================
+    # Get additional services from Concierge hub configuration
+    additional_services = get_additional_services("concierge")
+    
+    # Render dashboard body with dynamic tiles and additional services
     body_html = render_dashboard_body(
         title=None,  # Already rendered above
         subtitle=None,
@@ -221,48 +227,10 @@ def render(ctx=None) -> None:
         hub_guide_block=None,
         hub_order=None,
         cards=cards,
-        additional_services=None,  # Will render separately below
+        additional_services=additional_services,  # Let render_dashboard_body handle rendering
     )
     
     st.markdown(body_html, unsafe_allow_html=True)
-    
-    # ========================================
-    # ADDITIONAL SERVICES SECTION (Phase 3A)
-    # ========================================
-    # Port from Concierge hub - render at bottom
-    additional_services = get_additional_services("lobby")
-    
-    if additional_services:
-        st.markdown("---")  # Visual separator
-        st.markdown("### Explore More Services")
-        st.markdown(
-            "Additional resources to support your care planning journey.",
-            help="These services can help with specific aspects of care coordination."
-        )
-        
-        # Render additional services in dashboard grid
-        st.markdown('<div class="dashboard-row">', unsafe_allow_html=True)
-        
-        for service in additional_services:
-            # Build service card HTML
-            title = service.get('title', 'Service')
-            desc = service.get('desc', '')
-            route = service.get('route', '#')
-            icon = service.get('icon', '🔧')
-            
-            card_html = f"""
-            <div class="dashboard-card">
-                <div style="font-size: 2rem; margin-bottom: 0.5rem;">{icon}</div>
-                <h3 style="margin-bottom: 0.5rem;">{title}</h3>
-                <p class="subtext" style="margin-bottom: 1rem;">{desc}</p>
-                <a href="?page={route}" class="btn-pill" style="text-decoration: none; display: inline-block;">
-                    Open
-                </a>
-            </div>
-            """
-            st.markdown(card_html, unsafe_allow_html=True)
-        
-        st.markdown('</div>', unsafe_allow_html=True)
     
     # ========================================
     # FOOTER
