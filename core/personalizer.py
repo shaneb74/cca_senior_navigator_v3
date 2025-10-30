@@ -66,5 +66,23 @@ def apply_to_header():
     st.caption(ctx.get("header_text", ""))
 
 def get_visible_modules():
+    """Return combined list of modules for the current user context.
+    
+    Phase 5E Correction: Merges both modules_enabled (from tier) and 
+    visible_modules (from phase) to ensure all planning tiles appear.
+    
+    Returns:
+        List of module keys that should be visible in the current context
+    """
     ctx = get_user_context()
-    return ctx.get("modules_enabled", ctx.get("visible_modules", []))
+    modules = set()
+
+    # Add tier-based modules
+    if "modules_enabled" in ctx:
+        modules.update(ctx["modules_enabled"])
+    
+    # Add phase-based modules (ensures planning journey shows all 4 modules)
+    if "visible_modules" in ctx:
+        modules.update(ctx["visible_modules"])
+
+    return list(modules)

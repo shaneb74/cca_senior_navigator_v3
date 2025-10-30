@@ -14,19 +14,19 @@
   "tiers": {
     "independent": {
       "tone": "encouraging",
-      "modules_enabled": ["gcp", "cost_v2", "pfma_v2", "trivia"],
+      "modules_enabled": ["gcp_v4", "learn_recommendation", "cost_v2", "pfma_v3", "trivia"],
       "highlighted_services": ["financial_review", "home_safety"],
       "header_text": "Explore options for continued independence."
     },
     "assisted": {
       "tone": "supportive",
-      "modules_enabled": ["gcp", "cost_v2", "pfma_v2", "concierge_review"],
+      "modules_enabled": ["gcp_v4", "learn_recommendation", "cost_v2", "pfma_v3", "concierge_review"],
       "highlighted_services": ["mobility_support", "daily_living_help"],
       "header_text": "Discover care that meets your daily needs."
     },
     "memory_care": {
       "tone": "reassuring",
-      "modules_enabled": ["gcp", "pfma_v2", "concierge_review"],
+      "modules_enabled": ["gcp_v4", "learn_recommendation", "pfma_v3", "concierge_review"],
       "highlighted_services": ["memory_support", "family_guidance"],
       "header_text": "Personalized memory care support and resources."
     }
@@ -61,12 +61,12 @@
 
   "phases": {
     "discovery": {
-      "visible_modules": ["gcp"],
+      "visible_modules": ["gcp_v4"],
       "header_text": "Begin your discovery journey."
     },
     "planning": {
-      "visible_modules": ["cost_v2", "pfma_v2"],
-      "header_text": "Plan your next steps with confidence."
+      "visible_modules": ["gcp_v4", "learn_recommendation", "cost_v2", "pfma_v3"],
+      "header_text": "Plan your next steps with confidence. Each module builds your complete care strategy."
     },
     "post_planning": {
       "visible_modules": ["trivia", "concierge_review"],
