@@ -333,7 +333,7 @@ def _render_assessment(assessment_key: str, product_key: str) -> None:
 
     if not assessment_config:
         st.error(f"⚠️ Assessment '{assessment_key}' not found.")
-        if st.button("← Back to Hub"):
+        if st.button("← Back to Lobby"):
             st.session_state[f"{product_key}_current_assessment"] = None
             st.rerun()
         return
@@ -1085,7 +1085,7 @@ def _render_page_navigation(
     # Compact navigation
     col1, col2 = st.columns(2)
 
-    # Back to Hub button
+    # Back to Assessments button
     with col1:
         if st.button("← Back to Assessments", use_container_width=True, type="secondary"):
             st.session_state.cost_v2_step = "assessments"

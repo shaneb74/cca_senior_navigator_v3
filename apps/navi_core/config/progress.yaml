@@ -12,7 +12,7 @@ pages:
   - Guided Care Plan (GCP)
   - Financial Assessment
   - Move Preferences
-  - Concierge Hub
+  - Lobby Hub
   - Follow-Up
 
 stages:
@@ -29,10 +29,10 @@ stages:
   
   Decision:
     - Move Preferences
-    - Concierge Hub
+    - Lobby Hub
   
   Placement:
-    - Concierge Hub
+    - Lobby Hub
     - Follow-Up
   
   FollowUp:
@@ -47,7 +47,7 @@ weights:
   Guided Care Plan (GCP): 20
   Financial Assessment: 10
   Move Preferences: 10
-  Concierge Hub: 10
+  Lobby Hub: 10
   Follow-Up: 5
 
 milestones:

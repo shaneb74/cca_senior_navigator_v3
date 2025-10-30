@@ -454,7 +454,7 @@ def render_welcome_card(
     placeholder: str,
     note: str,
     image_path: str,
-    submit_route: str | None = "hub_concierge",
+    submit_route: str | None = "hub_lobby",
 ) -> None:
     _inject_welcome_css()
 
@@ -731,7 +731,7 @@ def render(ctx: dict | None = None) -> None:
         # Use Navi's recommendation for next action
         next_action = MCIP.get_recommended_next_action()
         primary_label = "Continue where you left off"
-        primary_route = next_action.get("route", "hub_concierge")
+        primary_route = next_action.get("route", "hub_lobby")
         show_secondary = False
 
     # Render with simple header/footer (no layout.py wrapper)

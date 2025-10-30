@@ -1,0 +1,200 @@
+/* =======================================
+   Senior Navigator — Lobby Dashboard CSS
+   ======================================= */
+
+/* ---------- GLOBAL RESET ---------- */
+html, body, [data-testid="stAppViewContainer"] {
+  background-color: #ffffff !important;
+  font-family: "Inter", "Helvetica Neue", sans-serif;
+  color: #1e1e1e;
+}
+
+/* ---------- CARD GRID ---------- */
+.dashboard-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.75rem;
+  align-items: start;
+}
+
+.dashboard-card {
+  background: #ffffff;
+  border: 1px solid #E6E6E6;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  transition: all 0.2s ease-in-out;
+}
+.dashboard-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+
+/* ---------- BUTTONS ---------- */
+.btn-pill {
+  display: inline-block;
+  background-color: #1E5BD7;
+  color: #fff !important;
+  padding: 0.4rem 1.2rem;
+  border-radius: 9999px;
+  font-weight: 500;
+  border: none;
+  transition: all 0.2s ease;
+}
+.btn-pill:hover { background-color: #154ab0; }
+
+/* ---------- HEADERS ---------- */
+h2, h3 {
+  font-weight: 700;
+  color: #0A1E4A;
+  margin-bottom: 0.5rem;
+}
+.subtext {
+  color: #5F6368;
+  font-size: 0.9rem;
+}
+
+/* ---------- GRADIENT BOX (for FAQ section) ---------- */
+.gradient-box {
+  background: linear-gradient(135deg, #BFD8FF 0%, #F3D6FF 100%);
+  color: #1E1E1E;
+  border: none;
+}
+
+/* ---------- PHASE PILLS (Phase 5A) ---------- */
+.phase-pill {
+  position: absolute;
+  top: 0.8rem;
+  right: 0.8rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #fff;
+  padding: 0.25rem 0.7rem;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+.phase-pill.discovery {
+  background-color: #5BA3FF;
+}
+.phase-pill.planning {
+  background-color: #4BBE83;
+}
+.phase-pill.postplanning {
+  background-color: #B974E4;
+}
+
+/* ---------- LAYOUT CONTAINMENT ---------- */
+.lobby-wrapper {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+/* ---------- COMPLETED JOURNEY SECTION (Phase 5D) ---------- */
+.completed-journey-section {
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 2px solid #E6E6E6;
+}
+
+.completed-journey-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0A1E4A;
+}
+
+.completed-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #4BBE83;
+  background-color: #E8F5EE;
+  padding: 0.25rem 0.7rem;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.completed-card {
+  opacity: 0.7;
+  background: #F8F9FA;
+  border-color: #D1D5DB;
+  position: relative;
+}
+
+.completed-card:hover {
+  opacity: 0.85;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+}
+
+.completed-card .completed-overlay {
+  position: absolute;
+  top: 0.8rem;
+  left: 0.8rem;
+  font-size: 1.5rem;
+  color: #4BBE83;
+}
+
+/* ---------- PERSONALIZATION STYLES (Phase 5E) ---------- */
+.personalized-tone-encouraging {
+  border-left: 4px solid #5BA3FF;
+}
+
+.personalized-tone-supportive {
+  border-left: 4px solid #4BBE83;
+}
+
+.personalized-tone-reassuring {
+  border-left: 4px solid #B974E4;
+}
+
+.tier-independent .dashboard-card {
+  background: linear-gradient(to right, #ffffff 0%, #F0F7FF 100%);
+}
+
+.tier-assisted .dashboard-card {
+  background: linear-gradient(to right, #ffffff 0%, #F0FFF4 100%);
+}
+
+.tier-memory-care .dashboard-card {
+  background: linear-gradient(to right, #ffffff 0%, #FAF5FF 100%);
+}
+
+/* ---------- PHASE GRADIENTS (Phase 5F Visual Polish) ---------- */
+/* Subtle, accessible background gradients for journey phase tiles */
+
+.tile-gradient-discovery {
+  background: linear-gradient(180deg, #E8F1FF 0%, #FFFFFF 100%);
+}
+
+.tile-gradient-planning {
+  background: linear-gradient(180deg, #EAFBF0 0%, #FFFFFF 100%);
+}
+
+.tile-gradient-post_planning {
+  background: linear-gradient(180deg, #F3EEFF 0%, #FFFFFF 100%);
+}
+
+.tile-gradient-service {
+  background: linear-gradient(180deg, #F7F7F7 0%, #FFFFFF 100%);
+}
+
+/* Ensure gradients don't interfere with hover states */
+.dashboard-card.tile-gradient-discovery:hover,
+.dashboard-card.tile-gradient-planning:hover,
+.dashboard-card.tile-gradient-post_planning:hover,
+.dashboard-card.tile-gradient-service:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+
+

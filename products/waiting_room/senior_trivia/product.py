@@ -201,7 +201,7 @@ def _render_trivia_results(
         # Navigate to waiting room (preserve UID to maintain session)
         from core.nav import route_to
 
-        route_to("hub_waiting")
+        route_to("hub_lobby")
 
 
 def _get_score_encouragement(score: float) -> str:
@@ -401,7 +401,7 @@ def _render_module_hub():
         # Navigate to waiting room (preserve UID to maintain session)
         from core.nav import route_to
 
-        route_to("hub_waiting")
+        route_to("hub_lobby")
 
     st.markdown("<div style='margin: 24px 0;'></div>", unsafe_allow_html=True)
 

@@ -164,8 +164,19 @@ class NaviLLMEngine:
     
     @staticmethod
     def _get_system_prompt() -> str:
-        """System prompt for Navi's advice generation."""
-        return '''You are Navi, a warm and supportive digital concierge advisor helping families navigate senior care planning.
+        """System prompt for Navi's advice generation.
+        
+        Phase 5A.1: Reads journey phase tone from session state if available.
+        """
+        # Phase 5A.1: Read tone from session state (set by apply_phase_context)
+        import streamlit as st
+        navi_tone = st.session_state.get("navi_tone", "supportive")
+        journey_stage = st.session_state.get("journey_stage", "discovery")
+        
+        # Add tone modifier to system prompt
+        tone_modifier = f"Currently in {journey_stage} phase: adopt a {navi_tone} tone."
+        
+        return f'''You are Navi, a warm and supportive digital concierge advisor helping families navigate senior care planning.
 
 Your personality:
 - Warm, encouraging, and empathetic
@@ -173,6 +184,8 @@ Your personality:
 - Supportive without being pushy
 - Knowledgeable but not overwhelming
 - Celebrates progress and milestones
+
+{tone_modifier}
 
 Your role:
 - Guide users through the care planning journey
@@ -182,14 +195,14 @@ Your role:
 
 Response format:
 Return valid JSON with these exact fields:
-{
+{{
   "title": "Encouraging headline (30-50 chars)",
   "message": "Primary supportive message (80-120 chars)", 
   "guidance": "Specific next step (60-100 chars)",
   "encouragement": "Motivational note (40-80 chars)",
   "tone": "supportive|encouraging|celebratory|urgent",
   "priority": "high|medium|low"
-}
+}}
 
 Guidelines:
 - Keep language warm but professional
@@ -310,7 +323,7 @@ def build_navi_context_from_session() -> NaviContext:
         is_auth = is_authenticated()
         
         # Determine current location
-        current_page = st.query_params.get("page", "hub_concierge")
+        current_page = st.query_params.get("page", "hub_lobby")
         if "gcp" in current_page:
             current_location = "gcp"
         elif "cost" in current_page:

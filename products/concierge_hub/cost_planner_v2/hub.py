@@ -273,13 +273,13 @@ def render():
             with col2:
                 st.markdown('<div data-role="secondary">', unsafe_allow_html=True)
                 if st.button(
-                    "🏠 Return to Concierge",
+                    "🏠 Return to Lobby",
                     use_container_width=True,
                     key="return_concierge_all_done",
                 ):
                     from core.nav import route_to
 
-                    route_to("hub_concierge")
+                    route_to("hub_lobby")
                 st.markdown("</div>", unsafe_allow_html=True)
 
         elif required_completed == len(required_modules) and len(required_modules) > 0:
@@ -316,13 +316,13 @@ def render():
             with col2:
                 st.markdown('<div data-role="secondary">', unsafe_allow_html=True)
                 if st.button(
-                    "🏠 Return to Concierge",
+                    "🏠 Return to Lobby",
                     use_container_width=True,
                     key="return_concierge_req_done",
                 ):
                     from core.nav import route_to
 
-                    route_to("hub_concierge")
+                    route_to("hub_lobby")
                 st.markdown("</div>", unsafe_allow_html=True)
 
         else:
@@ -351,13 +351,13 @@ def render():
             with col2:
                 st.markdown('<div data-role="secondary">', unsafe_allow_html=True)
                 if st.button(
-                    "🏠 Return to Concierge",
+                    "🏠 Return to Lobby",
                     use_container_width=True,
                     key="return_concierge_incomplete",
                 ):
                     from core.nav import route_to
 
-                    route_to("hub_concierge")
+                    route_to("hub_lobby")
                 st.markdown("</div>", unsafe_allow_html=True)
 
         # 🚨 ALWAYS SHOW EXPERT REVIEW BUTTON AT BOTTOM (EMERGENCY ACCESS) 🚨
@@ -655,7 +655,7 @@ def _render_completion_screen():
         if st.button("🏠 Return to Hub", use_container_width=True, key="next_hub"):
             from core.nav import route_to
 
-            route_to("hub_concierge")
+            route_to("hub_lobby")
 
     # Debug mode
     if st.session_state.get("debug_mode"):

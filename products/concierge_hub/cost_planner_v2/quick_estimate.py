@@ -1073,11 +1073,11 @@ def _render_bottom_ctas():
                 st.rerun()
 
     with col2:
-        if st.button("← Back to Hub", use_container_width=True, key="qe_back_hub"):
+        if st.button("← Back to Lobby", use_container_width=True, key="qe_back_lobby"):
             st.session_state["_route_changed"] = True
             flush_costplan_if_due(force=True)
             _maybe_cleanup_files(force=True)
-            route_to("hub_concierge")
+            route_to("hub_lobby")
 
     # Display inline error if CTA validation failed
     err = st.session_state.get("cost", {}).pop("cta_error", None)

@@ -10,7 +10,7 @@ def render():
         title="Cost Planner",
         desc="Project monthly costs, compare funding options, and keep your runway crystal-clear. A refreshed experience is nearly ready.",
         ctas=[
-            ("Back to Concierge Hub", "hub_concierge"),
+            ("Back to Lobby", "hub_lobby"),
         ],
     )
 

@@ -1,5 +1,16 @@
 # hubs/concierge.py
 """
+DEPRECATED: Concierge Hub - Functionality migrated to hub_lobby.py (Phase 3B)
+
+This hub is deprecated as of Phase 3B (2025-10-29).
+All personalized NAVI functionality, product tiles, and additional services
+have been migrated to the Lobby Hub (hub_lobby.py).
+
+Legacy hub kept for backwards compatibility during transition period.
+All routes should redirect to hub_lobby going forward.
+
+Original Purpose:
+-----------------
 Concierge Hub - Navi-Powered Polymorphic Display
 
 This hub uses Navi as the single intelligence layer.

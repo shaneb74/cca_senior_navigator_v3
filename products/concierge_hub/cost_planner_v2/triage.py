@@ -122,8 +122,8 @@ def render():
 
     with col3:
         st.markdown('<div data-role="secondary">', unsafe_allow_html=True)
-        if st.button("← Back to Hub", key="qualifier_back_hub", use_container_width=True):
+        if st.button("← Back to Lobby", key="qualifier_back_lobby", use_container_width=True):
             user_id = st.session_state.get("user_id", "unknown")
-            print(f"[CTA_NAV] action=back_to_hub dest=hub_concierge uid={user_id}")
-            route_to("hub_concierge")
+            print(f"[CTA_NAV] action=back_to_lobby dest=hub_lobby uid={user_id}")
+            route_to("hub_lobby")
         st.markdown("</div>", unsafe_allow_html=True)

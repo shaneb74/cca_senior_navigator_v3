@@ -113,8 +113,8 @@ def _render_gate():
 
     st.markdown("---")
 
-    if st.button("← Return to Hub", type="secondary"):
-        route_to("hub_concierge")
+    if st.button("← Return to Lobby", type="secondary"):
+        route_to("hub_lobby")
 
     if st.button("Go to Cost Planner →", type="primary"):
         # Navigate to Cost Planner v2 auth step (will show fake auth page)
@@ -431,8 +431,11 @@ def _render_confirmation(appt: AdvisorAppointment):
     col_btn1, col_btn2, col_btn3 = st.columns(3)
 
     with col_btn1:
-        if st.button("← Return to Hub", type="secondary", use_container_width=True):
-            route_to("hub_concierge")
+        if st.button("← Return to Lobby", type="secondary", use_container_width=True):
+            route_to("hub_lobby")
+            # Mark Planning journey complete after appointment booking
+            from core.journeys import mark_journey_complete
+            mark_journey_complete("planning")
 
     with col_btn2:
         if st.button("🎯 Prepare for Appointment", type="primary", use_container_width=True):
@@ -440,6 +443,9 @@ def _render_confirmation(appt: AdvisorAppointment):
             route_to("advisor_prep")
 
     with col_btn3:
-        if st.button("Go to Waiting Room →", type="secondary", use_container_width=True):
-            log_event("waiting_room.first_visit", {"from_product": "pfma_v3"})
-            route_to("hub_waiting")
+        if st.button("Return to Lobby →", type="secondary", use_container_width=True):
+            log_event("lobby.return", {"from_product": "pfma_v3"})
+            route_to("hub_lobby")
+            # Mark Planning journey complete after appointment booking
+            from core.journeys import mark_journey_complete
+            mark_journey_complete("planning")

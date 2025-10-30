@@ -249,7 +249,7 @@ class TestNaviNextBestAction:
             )
 
             # Should suggest exploring services or returning to hub
-            assert next_action["route"] in ["hub_concierge", "faq"]
+            assert next_action["route"] in ["hub_lobby", "faq"]
 
 
 class TestNaviAdditionalServices:
@@ -315,17 +315,17 @@ class TestNaviNavigation:
     """E. Navigation & Routing Tests"""
 
     def test_back_to_hub_routes_to_concierge(self):
-        """Back to Hub link routes to Concierge, not Welcome."""
+        """Back to Hub link routes to Lobby, not Welcome."""
         # This is enforced in route definitions
-        # Verify in nav.json that hub_concierge is the default hub
+        # Verify in nav.json that hub_lobby is the default hub
         import json
 
         with open("config/nav.json") as f:
             nav_config = json.load(f)
 
-        # Find hub_concierge route
-        hub_routes = [item for item in nav_config.get("items", []) if "hub" in item.get("key", "")]
-        assert any(item["key"] == "hub_concierge" for item in hub_routes)
+        # Find hub_lobby route
+        hub_routes = [item for group in nav_config.get("groups", []) if group.get("id") == "hubs" for item in group.get("items", [])]
+        assert any(item["key"] == "hub_lobby" for item in hub_routes)
 
     def test_navi_uses_canonical_route_ids(self):
         """Navi CTAs use canonical route IDs, not hard-coded URLs."""
