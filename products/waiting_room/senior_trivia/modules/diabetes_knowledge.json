@@ -158,7 +158,7 @@
       },
       "actions": [
         { "label": "Play Another Game", "action": "route", "value": "senior_trivia" },
-        { "label": "Back to Waiting Room", "action": "route", "value": "hub_waiting" }
+        { "label": "Back to Waiting Room", "action": "route", "value": "hub_lobby" }
       ]
     }
   ]

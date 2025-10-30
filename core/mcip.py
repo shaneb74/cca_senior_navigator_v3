@@ -363,7 +363,7 @@ class MCIP:
             "appointment_date": appt.date,
             "appointment_time": appt.time,
             "confirmation_id": appt.confirmation_id,
-            "route": "advisor_prep" if appt.prep_progress < 100 else "hub_waiting_room",
+            "route": "advisor_prep" if appt.prep_progress < 100 else "hub_lobby",
             "next_action": "Complete Prep" if appt.prep_progress < 100 else "All Set",
             "prep_progress": appt.prep_progress,
         }

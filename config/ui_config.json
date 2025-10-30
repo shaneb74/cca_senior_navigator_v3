@@ -9,9 +9,6 @@
       "hub_concierge": {
         "visible": true
       },
-      "hub_waiting": {
-        "visible": true
-      },
       "hub_learning": {
         "visible": true
       },
