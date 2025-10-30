@@ -1,0 +1,87 @@
+{
+  "version": "1.0",
+  "updated": "2025-10-30",
+  "description": "Dynamic personalization rules for Senior Navigator journeys based on user tier, cognition, support, and phase.",
+
+  "defaults": {
+    "navigation_tone": "exploratory",
+    "show_completed_section": true,
+    "show_additional_services": true,
+    "navi_header_message": "Continue your personalized journey.",
+    "cta_style": "standard"
+  },
+
+  "tiers": {
+    "independent": {
+      "tone": "encouraging",
+      "modules_enabled": ["gcp", "cost_v2", "pfma_v2", "trivia"],
+      "highlighted_services": ["financial_review", "home_safety"],
+      "header_text": "Explore options for continued independence."
+    },
+    "assisted": {
+      "tone": "supportive",
+      "modules_enabled": ["gcp", "cost_v2", "pfma_v2", "concierge_review"],
+      "highlighted_services": ["mobility_support", "daily_living_help"],
+      "header_text": "Discover care that meets your daily needs."
+    },
+    "memory_care": {
+      "tone": "reassuring",
+      "modules_enabled": ["gcp", "pfma_v2", "concierge_review"],
+      "highlighted_services": ["memory_support", "family_guidance"],
+      "header_text": "Personalized memory care support and resources."
+    }
+  },
+
+  "cognition_bands": {
+    "a&o4": {
+      "navi_message": "You’re ready to explore independently.",
+      "restrict_interactive_modules": false
+    },
+    "mild_decline": {
+      "navi_message": "We’ll simplify your path to focus on essentials.",
+      "restrict_interactive_modules": false
+    },
+    "advanced_dementia": {
+      "navi_message": "We’ll guide your caregiver to the right support.",
+      "restrict_interactive_modules": true
+    }
+  },
+
+  "support_bands": {
+    "low": {
+      "recommendations": ["explore_additional_services"]
+    },
+    "medium": {
+      "recommendations": ["schedule_with_advisor"]
+    },
+    "high": {
+      "recommendations": ["contact_concierge_direct"]
+    }
+  },
+
+  "phases": {
+    "discovery": {
+      "visible_modules": ["gcp"],
+      "header_text": "Begin your discovery journey."
+    },
+    "planning": {
+      "visible_modules": ["cost_v2", "pfma_v2"],
+      "header_text": "Plan your next steps with confidence."
+    },
+    "post_planning": {
+      "visible_modules": ["trivia", "concierge_review"],
+      "header_text": "Review and celebrate your completed journey."
+    }
+  },
+
+  "flags": {
+    "is_repeat_user": {
+      "show_completed_section": true,
+      "navi_header_message": "Welcome back! Here’s where you left off."
+    },
+    "has_referral": {
+      "show_additional_services": true,
+      "highlighted_services": ["referral_partner_offer"]
+    }
+  }
+}
