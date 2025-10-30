@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        /* Import tokens */
+        :root {
+            --gradient-accent: linear-gradient(180deg, #a89cf8 0%, #7fd9b2 100%);
+            --discovery-accent: #4d7cff;
+            --planning-accent: #42ba96;
+            --analysis-accent: #f5a623;
+            --radius-md: 12px;
+        }
+        
+        /* Base card */
+        .product-card {
+            position: relative;
+            padding: 20px;
+            margin: 20px;
+            background: white;
+            border: 1px solid #eee;
+            border-radius: 12px;
+            min-height: 100px;
+        }
+        
+        /* Base pseudo-element for all cards */
+        .product-card::before {
+            content: "" !important;
+            position: absolute;
+            top: 0; 
+            left: 0; 
+            bottom: 0;
+            width: 4px;
+            border-radius: var(--radius-md) 0 0 var(--radius-md);
+            background: var(--gradient-accent);
+            opacity: 0.7;
+        }
+        
+        /* Category overrides */
+        .product-card.tile-planning::before {
+            background: var(--planning-accent) !important;
+            opacity: 1;
+        }
+        
+        .product-card.tile-discovery::before {
+            background: var(--discovery-accent) !important;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <h1>CSS Border Test</h1>
+    
+    <div class="product-card">
+        <h3>Default Card (should have gradient)</h3>
+        <p>This should have purple-teal gradient border</p>
+    </div>
+    
+    <div class="product-card tile-planning">
+        <h3>Planning Card (should have green)</h3>
+        <p>This should have green border (#42ba96)</p>
+    </div>
+    
+    <div class="product-card tile-discovery">
+        <h3>Discovery Card (should have blue)</h3>
+        <p>This should have blue border (#4d7cff)</p>
+    </div>
+</body>
+</html>

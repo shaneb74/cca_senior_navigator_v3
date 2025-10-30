@@ -1,10 +1,6 @@
 /* ==========================================
-   IMPORT DESIGN TOKENS
-   ========================================== */
-@import url('tokens.css');
-
-/* ==========================================
    PHASE 5H SAFE OVERRIDES — VISUAL POLISH
+   Note: tokens.css loaded via app.py inject_css() before this file
    ========================================== */
 
 /* ====== TYPOGRAPHY CLEANUP ====== */
