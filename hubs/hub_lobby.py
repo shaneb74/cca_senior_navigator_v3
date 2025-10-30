@@ -308,7 +308,7 @@ def _build_planning_tiles() -> list[ProductTileHub]:
         ),
         ProductTileHub(
             key="pfma_v3",
-            title="Plan With My Advisor",
+            title="My Advisor",
             desc="Schedule and prepare for your next advisor meeting.",
             blurb="Get matched with the right advisor to coordinate care, benefits, and trusted partners.",
             image_square="pfma.png",
@@ -335,62 +335,11 @@ def _build_planning_tiles() -> list[ProductTileHub]:
 # TILE BUILDERS - ENGAGEMENT PRODUCTS
 # ==============================================================================
 
-def _build_advisor_prep_tile() -> ProductTileHub | None:
-    """Build Advisor Prep tile if PFMA booking exists.
-    
-    Phase 4A Revision: Part of Engagement Products (not additional services).
-    Phase 5A: Added journey phase tag.
-    
-    Returns:
-        ProductTileHub or None if not available
-    """
-    prep_summary = MCIP.get_advisor_prep_summary()
-
-    if not prep_summary.get("available"):
-        return None  # Don't show tile until appointment booked
-
-    sections_complete = prep_summary.get("sections_complete", [])
-    progress = prep_summary.get("progress", 0)
-
-    # Build description
-    if progress == 100:
-        desc = "✓ All prep sections complete — you're ready!"
-        primary_label = "Review Prep"
-    elif progress > 0:
-        desc = f"{len(sections_complete)} of 4 sections complete"
-        primary_label = "Continue Prep"
-    else:
-        desc = "Help your advisor prepare for your consultation"
-        primary_label = "Start Prep"
-
-    # Build badges
-    badges = []
-    if progress == 100:
-        badges = [{"label": "Ready", "tone": "success"}]
-    elif progress > 0:
-        badges = [{"label": f"{len(sections_complete)}/4", "tone": "info"}]
-
-    appt_context = prep_summary.get("appointment_context", "")
-
-    return ProductTileHub(
-        key="advisor_prep",
-        title="Advisor Prep",
-        desc=desc,
-        blurb=appt_context or "Prepare for your upcoming consultation with your advisor",
-        badge_text="OPTIONAL",
-        image_square="advisor_prep.png",
-        meta_lines=["4 sections • 5-10 min total"],
-        badges=badges,
-        primary_label=primary_label,
-        primary_route="?page=advisor_prep",
-        primary_go="advisor_prep",
-        progress=progress,
-        status_text="✓ Complete" if progress == 100 else None,
-        variant="purple",
-        order=100,
-        locked=False,
-        phase="post_planning",  # Phase 5A: journey phase tag
-    )
+# Phase 5D: Advisor Prep retired entirely (no longer shown)
+# def _build_advisor_prep_tile() -> ProductTileHub | None:
+#     """Build Advisor Prep tile if PFMA booking exists."""
+#     # Function commented out - Advisor Prep is retired in Phase 5D
+#     pass
 
 
 def _build_trivia_tile() -> ProductTileHub:
@@ -457,16 +406,12 @@ def _build_engagement_tiles() -> list[ProductTileHub]:
     """Build Engagement Product tiles.
     
     Phase 4A Revision: Trivia and CCR are core products (not additional services).
+    Phase 5D: Removed Advisor Prep (retired entirely).
     
     Returns:
-        List of engagement tiles (Advisor Prep, Trivia, CCR)
+        List of engagement tiles (Trivia, CCR)
     """
     tiles = []
-    
-    # Advisor Prep (conditional - only if appointment booked)
-    advisor_prep_tile = _build_advisor_prep_tile()
-    if advisor_prep_tile:
-        tiles.append(advisor_prep_tile)
     
     # Trivia (always available)
     tiles.append(_build_trivia_tile())
@@ -485,6 +430,7 @@ def _build_completed_tiles() -> list[ProductTileHub]:
     """Build tiles for completed journeys.
     
     Phase 4A: New section for closed-out products.
+    Phase 5D: Updated to use "My Advisor" name.
     
     Returns:
         List of completed product tiles
@@ -495,7 +441,7 @@ def _build_completed_tiles() -> list[ProductTileHub]:
     all_products = [
         ("gcp_v4", "Guided Care Plan", "Your personalized care recommendation"),
         ("cost_v2", "Cost Planner", "Your financial plan and projections"),
-        ("pfma_v3", "Plan With Advisor", "Your advisor consultation"),
+        ("pfma_v3", "My Advisor", "Your advisor consultation"),
     ]
     
     for key, title, desc in all_products:
@@ -532,6 +478,13 @@ def render(ctx=None) -> None:
     - FAQ integrated into NAVI (no longer a tile)
     - Completed Journeys section (collapsible)
     - Additional Services for partner upsells only
+    
+    Phase 5D Features:
+    - Retired Advisor Prep entirely (no replacement)
+    - Renamed "Plan With My Advisor" → "My Advisor"
+    - 4-section structure: NAVI Header → Active Journey → Additional Services → My Completed Journey
+    - Completed Journey section appears BELOW Additional Services
+    - All navigation routes to hub_lobby (not hub_concierge)
     
     Architecture:
     - Hubs → Product Tiles → Modules → Assets
@@ -652,7 +605,7 @@ def render(ctx=None) -> None:
     # ========================================
     completed_tiles = _build_completed_tiles()
     
-    # Render main hub body with active tiles
+    # Render main hub body with active tiles and additional services
     body_html = render_dashboard_body(
         title="",  # NAVI provides context
         subtitle=None,
@@ -666,19 +619,35 @@ def render(ctx=None) -> None:
     st.markdown(body_html, unsafe_allow_html=True)
     
     # ========================================
-    # COMPLETED JOURNEYS (Collapsible)
+    # ⭐ MY COMPLETED JOURNEY (Phase 5D)
     # ========================================
+    # Appears BELOW Additional Services as separate section
     if completed_tiles:
-        st.markdown("---")
-        st.markdown("### My Completed Journeys")
-        with st.expander("View completed activities", expanded=False):
-            for tile in completed_tiles:
-                # Render each completed tile (simplified view)
-                label = tile.primary_label or "View Details"
-                st.markdown(f"**{tile.title}** - {tile.desc}")
-                if st.button(label, key=f"completed_{tile.key}"):
+        st.markdown('<div class="completed-journey-section">', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="completed-journey-header">⭐ My Completed Journey</div>',
+            unsafe_allow_html=True
+        )
+        
+        # Render completed tiles with dimmed styling
+        cols = st.columns(min(len(completed_tiles), 3))
+        for idx, tile in enumerate(completed_tiles):
+            col = cols[idx % len(cols)]
+            with col:
+                st.markdown('<div class="dashboard-card completed-card">', unsafe_allow_html=True)
+                st.markdown('<div class="completed-overlay">✓</div>', unsafe_allow_html=True)
+                st.markdown(f"### {tile.title}")
+                st.markdown(f"{tile.desc}")
+                st.markdown(
+                    '<span class="completed-badge">✓ Completed</span>',
+                    unsafe_allow_html=True
+                )
+                if st.button("Review Again", key=f"review_{tile.key}", use_container_width=True):
                     st.query_params["page"] = tile.key
                     st.rerun()
+                st.markdown('</div>', unsafe_allow_html=True)
+        
+        st.markdown('</div>', unsafe_allow_html=True)
     
     # ========================================
     # FOOTER
