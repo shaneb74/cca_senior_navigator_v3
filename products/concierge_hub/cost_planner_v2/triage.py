@@ -125,5 +125,5 @@ def render():
         if st.button("← Back to Hub", key="qualifier_back_hub", use_container_width=True):
             user_id = st.session_state.get("user_id", "unknown")
             print(f"[CTA_NAV] action=back_to_hub dest=hub_concierge uid={user_id}")
-            route_to("hub_concierge")
+            route_to("hub_lobby")
         st.markdown("</div>", unsafe_allow_html=True)

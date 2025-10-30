@@ -310,7 +310,7 @@ def _render_whats_next_section():
             from core.nav import route_to
 
             st.session_state.cost_planner_v2_complete = True
-            route_to("hub_concierge")
+            route_to("hub_lobby")
         st.markdown("</div>", unsafe_allow_html=True)
 
 

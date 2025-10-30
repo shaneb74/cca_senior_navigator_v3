@@ -143,6 +143,16 @@ def go_back() -> None:
         route_to(push=False, **back_fallback())
 
 
+def back_to_lobby() -> None:
+    """Navigate back to Lobby Hub.
+    
+    Phase 5D Enhancement:
+        Explicit helper for returning to Lobby from products.
+        All "Back to Hub" navigation should use this function.
+    """
+    route_to(push=False, page="hub_lobby")
+
+
 def add_uid_to_href(href: str) -> str:
     """Add current UID to href to preserve session across navigation.
 
