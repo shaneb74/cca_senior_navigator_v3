@@ -61,7 +61,6 @@ def render_header_simple(active_route: str | None = None) -> None:
     all_nav_items = [
         {"label": "Welcome", "route": "welcome"},
         {"label": "Lobby", "route": "hub_lobby"},
-        {"label": "Lobby", "route": "hub_lobby"},
         {"label": "Waiting Room", "route": "hub_waiting"},
         {"label": "Learning", "route": "hub_learning"},
         {"label": "Resources", "route": "hub_resources"},
