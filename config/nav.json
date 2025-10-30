@@ -75,11 +75,6 @@
           "module": "hubs.hub_lobby:render"
         },
         {
-          "key": "hub_waiting",
-          "label": "Waiting Room",
-          "module": "hubs.waiting_room:render"
-        },
-        {
           "key": "hub_learning",
           "label": "Learning",
           "module": "hubs.learning:render"
