@@ -103,31 +103,32 @@ def _is_module_route() -> bool:
 
 
 def inject_css() -> None:
-    """Load global CSS, module-specific CSS, and Phase 5H safe overrides."""
-    import time
+    """Load CSS in deterministic order via runtime injection.
     
-    try:
-        # Cache-busting timestamp for browser reload
-        cache_buster = f"/* Cache bust: {int(time.time())} */\n"
-        
-        # Load global CSS
-        with open("assets/css/global.css", encoding="utf-8") as f:
-            st.markdown(f"<style>{cache_buster}{f.read()}</style>", unsafe_allow_html=True)
-
-        # Load module CSS (must come after global to override)
-        with open("assets/css/modules.css", encoding="utf-8") as f:
-            st.markdown(f"<style>{cache_buster}{f.read()}</style>", unsafe_allow_html=True)
-        
-        # Phase 5K: Final override layer (z_ prefix ensures alphabetically-last loading)
-        # Protects Welcome.py and pills while allowing contextual/lobby refinement
-        override_path = "assets/css/z_overrides.css"
-        if os.path.exists(override_path):
-            with open(override_path, encoding="utf-8") as f:
-                st.markdown(f"<style>{cache_buster}{f.read()}</style>", unsafe_allow_html=True)
-
-    except FileNotFoundError:
-        # no-op on Cloud if path differs; don't crash
-        pass
+    Phase 5K Final: Enforce load order to guarantee z_overrides.css always wins.
+    Prevents Streamlit's alphabetical file loading from breaking cascade.
+    """
+    from pathlib import Path
+    
+    # Deterministic load order - tokens → global → modules → overrides (ALWAYS LAST)
+    css_order = [
+        "assets/css/tokens.css",
+        "assets/css/global.css",
+        "assets/css/modules.css",
+        "assets/css/z_overrides.css",
+    ]
+    
+    for css_file in css_order:
+        path = Path(css_file)
+        if path.exists():
+            try:
+                css_content = path.read_text(encoding="utf-8")
+                # Inject directly via st.markdown - guarantees order
+                st.markdown(f"<style>{css_content}</style>", unsafe_allow_html=True)
+            except Exception as e:
+                # Log but don't crash on CSS load errors
+                app_log.warning(f"Failed to load {css_file}: {e}")
+                pass
 
 
 def _cleanup_legacy_gcp_state() -> None:

@@ -445,79 +445,58 @@ body.welcome .navi-card::before {
 }
 
 /* =====================================================
-   RESTORE GRADIENT AND CATEGORY BORDERS — Phase 5K final
+   FINAL LEFT-BORDER ACCENT RULES — PHASE 5K LOCK-IN
    ===================================================== */
 
-.navi-card::before {
+/* Base pseudo-element for all cards - NAVI gradient */
+.navi-card::before,
+.product-card::before,
+.hub-card::before {
   content: "";
   position: absolute;
-  top: 0;
-  left: 0;
+  top: 0; 
+  left: 0; 
   bottom: 0;
   width: 4px;
   border-radius: var(--radius-md) 0 0 var(--radius-md);
   background: var(--gradient-accent);
-  opacity: 0.8;
+  opacity: 0.7;
 }
 
-/* Product and Hub category accents - match tile-{phase} class naming */
+/* Category-specific color overrides */
 .product-card.tile-discovery::before,
-.hub-card.tile-discovery::before,
 .product-card.discovery::before,
+.hub-card.tile-discovery::before,
 .hub-card.discovery::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  width: 4px;
-  border-radius: var(--radius-md) 0 0 var(--radius-md);
   background: var(--discovery-accent);
+  opacity: 1;
 }
 
 .product-card.tile-planning::before,
-.hub-card.tile-planning::before,
 .product-card.planning::before,
+.hub-card.tile-planning::before,
 .hub-card.planning::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  width: 4px;
-  border-radius: var(--radius-md) 0 0 var(--radius-md);
   background: var(--planning-accent);
+  opacity: 1;
 }
 
 .product-card.tile-post_planning::before,
-.hub-card.tile-post_planning::before,
 .product-card.analysis::before,
+.hub-card.tile-post_planning::before,
 .hub-card.analysis::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  width: 4px;
-  border-radius: var(--radius-md) 0 0 var(--radius-md);
   background: var(--analysis-accent);
+  opacity: 1;
 }
 
 .product-card.tile-service::before,
-.hub-card.tile-service::before,
 .product-card.service::before,
+.hub-card.tile-service::before,
 .hub-card.service::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  width: 4px;
-  border-radius: var(--radius-md) 0 0 var(--radius-md);
   background: var(--service-accent);
+  opacity: 1;
 }
 
-/* Prevent double borders from shared base selector */
+/* Prevent unwanted borders on non-card elements */
 .ai-card::before {
   content: none !important;
 }
