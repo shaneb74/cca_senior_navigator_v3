@@ -192,3 +192,68 @@ h2, h3 {
   background: linear-gradient(to right, #ffffff 0%, #FAF5FF 100%);
 }
 
+/* ---------- PRODUCT TILE EMOJI ICONS (Phase 5E PNG Replacement) ---------- */
+/* Tiles without image_square get emoji icons via CSS pseudo-elements */
+
+.ptile__head::before {
+  content: "📋";
+  font-size: 2.5rem;
+  display: block;
+  text-align: center;
+  margin-bottom: 0.5rem;
+  opacity: 0.8;
+}
+
+/* Discovery tiles */
+.dashboard-card:has([href*="discovery_learning"]) .ptile__head::before {
+  content: "🎓";
+}
+
+.dashboard-card:has([href*="gcp_v4"]) .ptile__head::before {
+  content: "🧭";
+}
+
+/* Planning tiles */
+.dashboard-card:has([href*="learn_recommendation"]) .ptile__head::before {
+  content: "💡";
+}
+
+.dashboard-card:has([href*="cost_v2"]) .ptile__head::before {
+  content: "💰";
+}
+
+.dashboard-card:has([href*="pfma_v3"]) .ptile__head::before {
+  content: "👥";
+}
+
+/* Engagement tiles */
+.dashboard-card:has([href*="trivia"]) .ptile__head::before {
+  content: "🎮";
+}
+
+.dashboard-card:has([href*="concierge_review"]) .ptile__head::before {
+  content: "⚕️";
+}
+
+/* Additional service tiles */
+.dashboard-card:has([href*="home_health"]) .ptile__head::before {
+  content: "🏥";
+}
+
+.dashboard-card:has([href*="fall_risk"]) .ptile__head::before {
+  content: "🛡️";
+}
+
+.dashboard-card:has([href*="disease_mgmt"]) .ptile__head::before {
+  content: "💊";
+}
+
+.dashboard-card:has([href*="dme"]) .ptile__head::before {
+  content: "🦽";
+}
+
+/* Hide emoji if tile has an image */
+.ptile__head:has(.tile-logo)::before {
+  display: none;
+}
+

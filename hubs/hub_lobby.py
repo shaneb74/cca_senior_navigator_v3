@@ -238,7 +238,7 @@ def _build_discovery_tiles() -> list[ProductTileHub]:
             title="Start Your Discovery Journey",
             desc="Welcome! Let NAVI introduce you to the care planning process.",
             blurb="First-time here? Learn what to expect and how we'll guide you step-by-step.",
-            image_square="gcp.png",  # TODO: Get dedicated image
+            image_square=None,  # Phase 5E: No PNG, CSS icon
             primary_route="?page=discovery_learning",
             primary_label="Start Here",
             variant="brand",
@@ -251,7 +251,7 @@ def _build_discovery_tiles() -> list[ProductTileHub]:
             title="Guided Care Plan",
             desc="Explore and compare care options.",
             blurb="Answer a few short questions about your daily needs, health, and safety.",
-            image_square="gcp.png",
+            image_square=None,  # Phase 5E: No PNG, CSS icon
             primary_route="?page=gcp_v4",
             primary_label="Start",
             variant="brand",
@@ -292,7 +292,7 @@ def _build_planning_tiles() -> list[ProductTileHub]:
             title="Learn About My Recommendation",
             desc="Understand your care option before planning costs.",
             blurb="Educational step to learn what your recommendation means and how to prepare.",
-            image_square="gcp.png",  # TODO: Get dedicated image
+            image_square=None,  # Phase 5E: No PNG, CSS icon
             primary_route="?page=learn_recommendation",
             primary_label="Learn More",
             variant="brand",
@@ -305,7 +305,7 @@ def _build_planning_tiles() -> list[ProductTileHub]:
             title="Cost Planner",
             desc="Estimate and plan financial coverage.",
             blurb="Project expenses, compare living options, and see how long current funds will last.",
-            image_square="cp.png",
+            image_square=None,  # Phase 5E: No PNG, CSS icon
             primary_route="?page=cost_intro",
             primary_label="Start",
             variant="brand",
@@ -318,7 +318,7 @@ def _build_planning_tiles() -> list[ProductTileHub]:
             title="My Advisor",
             desc="Schedule and prepare for your next advisor meeting.",
             blurb="Get matched with the right advisor to coordinate care, benefits, and trusted partners.",
-            image_square="pfma.png",
+            image_square=None,  # Phase 5E: No PNG, CSS icon
             primary_route="?page=pfma_v3",
             primary_label="Open",
             variant="brand",
