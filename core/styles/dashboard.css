@@ -91,3 +91,55 @@ h2, h3 {
   margin: 0 auto;
   padding: 2rem 1rem;
 }
+
+/* ---------- COMPLETED JOURNEY SECTION (Phase 5D) ---------- */
+.completed-journey-section {
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 2px solid #E6E6E6;
+}
+
+.completed-journey-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0A1E4A;
+}
+
+.completed-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #4BBE83;
+  background-color: #E8F5EE;
+  padding: 0.25rem 0.7rem;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.completed-card {
+  opacity: 0.7;
+  background: #F8F9FA;
+  border-color: #D1D5DB;
+  position: relative;
+}
+
+.completed-card:hover {
+  opacity: 0.85;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+}
+
+.completed-card .completed-overlay {
+  position: absolute;
+  top: 0.8rem;
+  left: 0.8rem;
+  font-size: 1.5rem;
+  color: #4BBE83;
+}

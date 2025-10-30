@@ -167,6 +167,92 @@ def get_current_journey() -> str:
     return st.session_state.get("journey_stage", "discovery")
 
 
+def mark_tile_complete(key: str, phase: str) -> None:
+    """Add a completed tile entry for the phase.
+    
+    Args:
+        key: Tile/product key (e.g., "discovery_learning", "learn_recommendation")
+        phase: Journey phase ("discovery", "planning", "post_planning")
+        
+    Phase 5B Enhancement:
+        Tracks completion of learning tiles and updates journey stage.
+        Used by learning_template.py for completion tracking.
+    
+    Examples:
+        >>> mark_tile_complete("discovery_learning", "discovery")
+        # Adds to completed_tiles and sets journey_stage
+    """
+    # Initialize completed_tiles list if not exists
+    if "completed_tiles" not in st.session_state:
+        st.session_state["completed_tiles"] = []
+    
+    # Add completion entry
+    completed = st.session_state["completed_tiles"]
+    
+    # Avoid duplicates
+    if not any(t.get("key") == key for t in completed):
+        completed.append({"key": key, "phase": phase})
+    
+    # Update journey stage to current phase
+    st.session_state["journey_stage"] = phase
+    
+    print(f"[JOURNEY] Tile '{key}' marked complete in phase '{phase}'")
+
+
+def mark_journey_complete(journey_phase: str) -> None:
+    """Mark an entire journey phase as complete.
+    
+    Args:
+        journey_phase: Journey phase to complete ("discovery", "planning", "post_planning")
+        
+    Phase 5D Enhancement:
+        Marks entire journey phase as complete and advances user to next phase.
+        Used after critical milestones (e.g., appointment booking completes Planning).
+        
+    Examples:
+        >>> mark_journey_complete("planning")
+        # Marks planning complete, advances to post_planning
+    """
+    # Initialize completed_journeys list if not exists
+    if "completed_journeys" not in st.session_state:
+        st.session_state["completed_journeys"] = []
+    
+    completed_journeys = st.session_state["completed_journeys"]
+    
+    # Add journey to completed list (avoid duplicates)
+    if journey_phase not in completed_journeys:
+        completed_journeys.append(journey_phase)
+        st.toast(f"✅ {journey_phase.replace('_', ' ').title()} Journey Complete!")
+        print(f"[JOURNEY] Journey '{journey_phase}' marked complete")
+    
+    # Advance to next phase
+    phase_progression = {
+        "discovery": "planning",
+        "planning": "post_planning",
+        "post_planning": "post_planning"  # Stay in final phase
+    }
+    
+    next_phase = phase_progression.get(journey_phase, journey_phase)
+    if next_phase != journey_phase:
+        advance_to(next_phase)
+
+
+def is_journey_complete(journey_phase: str) -> bool:
+    """Check if a journey phase has been completed.
+    
+    Args:
+        journey_phase: Journey phase to check ("discovery", "planning", "post_planning")
+        
+    Returns:
+        bool: True if journey phase is complete, False otherwise
+        
+    Phase 5D Enhancement:
+        Used by hub_lobby.py to display completed journeys in separate section.
+    """
+    completed_journeys = st.session_state.get("completed_journeys", [])
+    return journey_phase in completed_journeys
+
+
 __all__ = [
     "get_journey_phase",
     "is_tile_active",
@@ -174,4 +260,7 @@ __all__ = [
     "get_phase_completion",  # Phase 5A
     "advance_to",  # Phase 5A
     "get_current_journey",  # Phase 5A
+    "mark_tile_complete",  # Phase 5B
+    "mark_journey_complete",  # Phase 5D
+    "is_journey_complete",  # Phase 5D
 ]
