@@ -95,7 +95,7 @@ def _build_header(active_route: str | None = None) -> str:
     # Build navigation links
     nav_links = [
         _nav_link("Welcome", "welcome", current),
-        _nav_link("Dashboard", "hub_lobby", current),
+        _nav_link("Lobby", "hub_lobby", current),
         _nav_link("Waiting Room", "hub_waiting", current),
         _nav_link("Learning", "hub_learning", current),
         _nav_link("Trusted Partners", "hub_trusted", current),

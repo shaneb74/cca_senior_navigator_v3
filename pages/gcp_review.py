@@ -28,7 +28,7 @@ def render():
     if not recommendation or not recommendation.tier:
         # No completed assessment found
         st.warning("⚠️ No completed assessment found. You haven't completed the Guided Care Plan yet.")
-        if st.button("← Back to Dashboard", key="gcp_review_back_incomplete"):
+        if st.button("← Back to Lobby", key="gcp_review_back_incomplete"):
             st.query_params["page"] = "hub_lobby"
             st.rerun()
         return
@@ -140,7 +140,7 @@ def _render_review_content(recommendation, assessment_data):
     # Navigation buttons
     col1, col2, col3 = st.columns([1, 1, 1])
     with col1:
-        if st.button("← Back to Dashboard", use_container_width=True):
+        if st.button("← Back to Lobby", use_container_width=True):
             st.query_params["page"] = "hub_lobby"
             st.rerun()
 

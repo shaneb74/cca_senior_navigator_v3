@@ -960,5 +960,5 @@ Progress: {completed}/3 Products Completed
     # Back to hub
     from core.nav import route_to
 
-    if st.button("← Back to Dashboard", use_container_width=True):
+    if st.button("← Back to Lobby", use_container_width=True):
         route_to("hub_lobby")

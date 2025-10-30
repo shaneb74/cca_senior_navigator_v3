@@ -71,7 +71,7 @@
       "items": [
         {
           "key": "hub_lobby",
-          "label": "Dashboard",
+          "label": "Lobby",
           "module": "hubs.hub_lobby:render"
         },
         {
