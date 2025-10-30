@@ -253,16 +253,9 @@ def _mark_complete():
     # Set completion flag in session state
     st.session_state["learn_recommendation_complete"] = True
     
-    # Publish to MCIP
+    # Mark as complete in MCIP
     try:
-        MCIP.publish_product_completion(
-            product_key="learn_recommendation",
-            summary_data={
-                "completed": True,
-                "viewed_at": st.session_state.get("_timestamp", ""),
-                "tier_reviewed": st.session_state.get("gcp", {}).get("published_tier", ""),
-            }
-        )
+        MCIP.mark_product_complete("learn_recommendation")
         print("[LEARN_REC] Marked as complete in MCIP")
     except Exception as e:
         print(f"[LEARN_REC] Error marking complete: {e}")
