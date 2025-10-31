@@ -63,6 +63,37 @@ def render():
     # Inject radio pill CSS that survives Streamlit/Emotion re-injection
     from core.ui_css import inject_pill_css
     inject_pill_css()
+    
+    # 🔬 DIAGNOSTIC TEST: Prove widget caching is root cause
+    # This test radio uses dynamic keys to force remount on every rerun
+    from streamlit.components.v1 import html
+    
+    def pill_radio_test(label, options, key_prefix="test", index=0):
+        css = """
+        <style>
+        [data-testid="stRadio"] div[role="radiogroup"]{
+            display:flex; flex-wrap:wrap; gap:8px;
+        }
+        [data-testid="stRadio"] div[role="radio"]{
+            border:1px solid #ccc; background:#f9f9f9;
+            color:#111; border-radius:10px;
+            padding:8px 14px; cursor:pointer;
+        }
+        [data-testid="stRadio"] div[role="radio"][aria-checked="true"]{
+            background:#111; color:#fff; border-color:#111;
+        }
+        </style>
+        """
+        html(css, height=0)
+        # Dynamic key forces Streamlit to remount widget on each rerun
+        widget_key = f"{key_prefix}_{hash(tuple(options))}"
+        return st.radio(label, options, key=widget_key, index=index, horizontal=True)
+    
+    st.markdown("---")
+    st.markdown("### 🔬 Diagnostic Test")
+    choice = pill_radio_test("Visual test (dynamic key)", ["Option A","Option B","Option C"], key_prefix="demo")
+    st.write("Selected:", choice)
+    st.markdown("---")
 
     # Load module config
     config = _load_module_config()
