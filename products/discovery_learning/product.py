@@ -38,8 +38,9 @@ def render():
     # Inject custom CSS for this page
     _inject_discovery_styles()
     
-    # Hero Title
+    # Hero Title with Subtitle
     st.markdown('<h1 class="discovery-title">✨ Welcome to Your Discovery Journey</h1>', unsafe_allow_html=True)
+    st.markdown('<p class="discovery-subtitle">Your step-by-step guide to understanding care options and planning confidently.</p>', unsafe_allow_html=True)
     
     # Navi intro box
     st.markdown("""
@@ -126,7 +127,7 @@ def render():
         st.session_state["discovery_learning_viewed"] = True
     
     # Closing CTA Section
-    st.markdown('<p style="margin-top:1.5rem; font-size:1.05rem; text-align:center; font-weight:500;">Ready to begin your journey?</p>', unsafe_allow_html=True)
+    st.markdown('<p class="footer-cta-text">Ready to begin your journey?</p>', unsafe_allow_html=True)
     
     st.markdown('<div class="footer-buttons">', unsafe_allow_html=True)
     col1, col2 = st.columns([1, 1])
@@ -158,107 +159,130 @@ def _inject_discovery_styles():
     """Inject elegant styling for Discovery Journey page."""
     st.markdown("""
     <style>
+    /* === Global Styles === */
+    body, .main {
+        font-family: "Inter", "Segoe UI", Roboto, sans-serif;
+        color: #1A1C2B;
+    }
+
+    /* === Title Section === */
     .discovery-title {
-        font-size: 2.25rem;
+        font-size: 2.8rem;
         font-weight: 800;
         color: #0E1E54;
         text-align: center;
         margin: 0 auto 1.25rem;
-        line-height: 1.2;
+        line-height: 1.15;
     }
+    .discovery-subtitle {
+        font-size: 1.15rem;
+        font-weight: 500;
+        text-align: center;
+        color: #4b4f63;
+        margin-bottom: 2.25rem;
+    }
+
+    /* === Navi Box === */
     .navi-box {
-        background: #f7f8ff;
-        border-left: 5px solid #5b5fc7;
-        border-radius: 10px;
-        padding: 1.2rem 1.5rem;
-        margin: 0 auto 2rem;
-        max-width: 720px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        background: linear-gradient(180deg, #f8f9ff 0%, #f3f4fe 100%);
+        border-left: 6px solid #4b52c2;
+        border-radius: 12px;
+        padding: 1.5rem 1.75rem;
+        margin: 0 auto 2.5rem;
+        max-width: 760px;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.05);
     }
     .navi-box b {
-        color: #0E1E54;
-    }
-    .discovery-intro {
-        color: #222;
         font-size: 1.05rem;
+        color: #10174a;
+    }
+    .navi-box p {
+        font-size: 1rem;
         line-height: 1.55;
+        color: #32395e;
+        margin: 0.4rem 0;
+    }
+
+    /* === Intro Paragraph === */
+    .discovery-intro {
+        font-size: 1.05rem;
+        color: #2b2e42;
         text-align: center !important;
-        max-width: 700px;
+        line-height: 1.6;
+        max-width: 720px;
         margin: 0 auto 2rem !important;
         display: block;
     }
+
+    /* === Video === */
     .video-container {
-        display: flex;
-        justify-content: center;
-        margin-bottom: 2.25rem;
+        text-align: center;
+        margin-bottom: 2.75rem;
     }
     .video-frame {
-        width: 90%;
-        max-width: 720px;
+        width: 92%;
+        max-width: 780px;
         aspect-ratio: 16 / 9;
-        border-radius: 16px;
-        box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+        border-radius: 18px;
+        box-shadow: 0 10px 24px rgba(0,0,0,0.15);
     }
+
+    /* === Ask Navi Section === */
     .ask-navi-title {
-        font-size: 1.4rem;
+        font-size: 1.6rem;
         font-weight: 700;
         color: #0E1E54;
-        margin: 2rem 0 1rem;
         text-align: center;
+        margin-bottom: 1rem;
     }
+    
+    /* Style the text input */
+    div[data-testid="stTextInput"] input {
+        border-radius: 10px !important;
+        padding: 0.9rem !important;
+        font-size: 1rem !important;
+        max-width: 720px !important;
+        width: 90% !important;
+    }
+    
+    /* FAQ buttons */
     .ask-navi-buttons {
         display: flex;
-        flex-direction: column;
-        gap: 0.6rem;
-        margin-top: 0.9rem;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.8rem;
+        margin-top: 1rem;
+        max-width: 760px;
+        margin-left: auto;
+        margin-right: auto;
     }
-    .ask-navi-buttons button {
-        width: 100%;
-        max-width: 720px;
-        margin: 0 auto;
-        padding: 0.8rem 1rem;
-        border-radius: 8px;
-        background-color: #ffffff;
-        border: 1px solid #dce0e6;
-        color: #0E1E54;
-        font-weight: 600;
-        cursor: pointer;
-        transition: background 0.15s ease-in-out;
-    }
-    .ask-navi-buttons button:hover {
-        background-color: #f5f7ff;
-        border-color: #b5b9f5;
-    }
+
+    /* === Footer Buttons === */
     .footer-buttons {
         display: flex;
         justify-content: center;
         gap: 1.25rem;
-        margin-top: 2rem;
+        margin-top: 2.5rem;
     }
-    .footer-buttons button {
-        flex: 1;
-        max-width: 300px;
-        padding: 0.9rem 1.2rem;
+    
+    .footer-cta-text {
+        text-align: center;
+        margin-top: 2.5rem;
         font-weight: 600;
-        border-radius: 8px;
-        border: none;
-        cursor: pointer;
-        font-size: 0.95rem;
+        color: #1A1C2B;
     }
-    .btn-back {
-        background-color: #fff;
-        color: #0E1E54;
-        border: 1px solid #cfd2dc;
-    }
-    .btn-back:hover {
-        background-color: #f4f6fa;
-    }
-    .btn-continue {
-        background-color: #0E1E54;
-        color: white;
-    }
-    .btn-continue:hover {
-        background-color: #1c2f88;
+
+    @media (max-width: 768px) {
+        .discovery-title {
+            font-size: 2.1rem;
+        }
+        .video-frame {
+            height: auto;
+        }
+        .footer-buttons {
+            flex-direction: column;
+            align-items: center;
+        }
     }
     </style>
     """, unsafe_allow_html=True)
