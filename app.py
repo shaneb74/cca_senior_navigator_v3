@@ -138,6 +138,24 @@ def inject_css() -> None:
                 pass
 
 
+def reapply_overrides() -> None:
+    """Re-inject ONLY z_overrides.css to guarantee it is last after any later CSS.
+    
+    Called after hub CSS injection to ensure overrides always win the cascade.
+    This fixes radio pill styling reverting after hub shell renders.
+    """
+    from pathlib import Path
+    try:
+        path = Path("assets/css/z_overrides.css")
+        if path.exists():
+            css_content = path.read_text(encoding="utf-8")
+            # Append once again so it wins the cascade after any later injections
+            st.markdown(f"<style>{css_content}</style>", unsafe_allow_html=True)
+    except Exception:
+        # Be quiet on purpose; this is best-effort
+        pass
+
+
 def _cleanup_legacy_gcp_state() -> None:
     legacy_keys = [k for k in st.session_state.keys() if k.startswith("gcp_legacy")]
     legacy_keys.extend([k for k in ("gcp.step", "gcp_view") if k in st.session_state])
