@@ -164,6 +164,13 @@ def _inject_discovery_styles():
     .main {
         padding: 2rem 3rem;
         font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    
+    .main .block-container {
+        max-width: 1200px;
+        margin: 0 auto;
     }
 
     /* === Title === */
