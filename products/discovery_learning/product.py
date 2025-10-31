@@ -155,9 +155,9 @@ def render():
             _mark_complete()
             # Advance to planning phase
             advance_to("planning")
-            # Navigate to GCP
+            # Navigate back to Lobby
             st.query_params.clear()
-            st.query_params["page"] = "gcp_v4"
+            st.query_params["page"] = "hub_lobby"
             st.rerun()
     
     st.markdown('</div>', unsafe_allow_html=True)
