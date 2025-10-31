@@ -53,10 +53,10 @@ def render():
     # Intro paragraph
     st.markdown("""
     <div style="text-align: center;">
-        <p class="discovery-intro" style="text-align: center;">
+        <h3 class="discovery-intro" style="text-align: center;">
             Concierge Care Advisors Senior Navigator — a revolutionary way to navigate the complexities of Senior Care Options.<br>
             Learn about your Options & Cost.
-        </p>
+        </h3>
     </div>
     """, unsafe_allow_html=True)
     
