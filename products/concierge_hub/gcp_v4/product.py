@@ -59,6 +59,81 @@ def render():
     5. When complete, publish CareRecommendation to MCIP
     6. Show completion screen with recommendation
     """
+    
+    # CRITICAL: Inject radio pill CSS on EVERY rerun to override Streamlit's Emotion engine
+    # This must happen before any widgets render to win the cascade race
+    st.markdown("""
+    <style>
+    /* Radio pill containers - scoped to .mod-radio-pills only */
+    .mod-radio-pills [data-testid="stRadio"] > div[role="radiogroup"] > div {
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      padding: 0.55rem 1.1rem !important;
+      margin: 0.25rem !important;
+      border-radius: 9999px !important;
+      border: 1px solid #e3eaf5 !important;
+      background: #f3f5f9 !important;
+      color: #374151 !important;
+      font-weight: 500 !important;
+      font-size: 0.9rem !important;
+      cursor: pointer !important;
+      transition: all 0.2s ease-in-out !important;
+    }
+    
+    .mod-radio-pills [data-testid="stRadio"] > div[role="radiogroup"] > div:hover {
+      background: #e8ecf4 !important;
+      border-color: #d1d9e8 !important;
+    }
+    
+    /* Selected state */
+    .mod-radio-pills [data-testid="stRadio"] > div[role="radiogroup"] > div:has(input:checked) {
+      background: #111827 !important;
+      color: #ffffff !important;
+      border: 1px solid #111827 !important;
+      box-shadow: 0 4px 12px rgba(17, 24, 39, 0.25) !important;
+    }
+    
+    /* Labels inside containers */
+    .mod-radio-pills [data-testid="stRadio"] > div[role="radiogroup"] > div > label {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      width: 100% !important;
+      height: 100% !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      cursor: pointer !important;
+      color: inherit !important;
+    }
+    
+    /* Text color in selected pills */
+    .mod-radio-pills [data-testid="stRadio"] > div[role="radiogroup"] > div:has(input:checked) label,
+    .mod-radio-pills [data-testid="stRadio"] > div[role="radiogroup"] > div:has(input:checked) div {
+      color: #ffffff !important;
+    }
+    
+    /* Hide radio circles */
+    .mod-radio-pills [data-testid="stRadio"] input[type="radio"] {
+      display: none !important;
+      opacity: 0 !important;
+      position: absolute !important;
+      left: -9999px !important;
+    }
+    
+    /* Hide first child div containing radio circle */
+    .mod-radio-pills [data-testid="stRadio"] label > div:first-child {
+      display: none !important;
+    }
+    
+    /* Ensure text labels visible */
+    .mod-radio-pills [data-testid="stRadio"] label > div:last-child {
+      display: inline !important;
+      color: inherit !important;
+      background: transparent !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
     # Load module config
     config = _load_module_config()
