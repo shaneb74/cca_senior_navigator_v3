@@ -548,12 +548,15 @@ def render_additional_services(user_ctx: dict) -> None:
     Args:
         user_ctx: User context dict (not used - get_additional_services() reads from MCIP directly)
     """
+    # Phase Post-CSS: Add ID for tour targeting
+    st.markdown('<div id="additional-services">', unsafe_allow_html=True)
     st.markdown("### Additional Services")
     st.caption("Partner-powered programs and tools personalized by Navi.")
 
     services = get_additional_services("concierge")
     if not services:
         st.info("No additional services available right now.")
+        st.markdown('</div>', unsafe_allow_html=True)
         return
 
     # Build cards HTML
@@ -578,6 +581,7 @@ def render_additional_services(user_ctx: dict) -> None:
     # Render complete grid
     full_html = f'<div class="service-grid-container">{"".join(cards_html)}</div>'
     st.markdown(full_html, unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
 def _render_completed_journeys_section(completed_tiles: list[ProductTileHub]) -> None:
@@ -588,7 +592,8 @@ def _render_completed_journeys_section(completed_tiles: list[ProductTileHub]) ->
     Args:
         completed_tiles: List of completed ProductTileHub objects
     """
-    st.markdown('<div class="completed-journey-section">', unsafe_allow_html=True)
+    # Phase Post-CSS: Add ID for tour targeting
+    st.markdown('<div id="completed-journeys" class="completed-journey-section">', unsafe_allow_html=True)
     st.markdown(
         '<div class="completed-journey-header">My Completed Journeys</div>',
         unsafe_allow_html=True
@@ -614,6 +619,207 @@ def _render_completed_journeys_section(completed_tiles: list[ProductTileHub]) ->
         st.markdown('</div>', unsafe_allow_html=True)
     
     st.markdown('</div>', unsafe_allow_html=True)
+
+
+# ==============================================================================
+# LOBBY ONBOARDING TOUR (Phase Post-CSS)
+# ==============================================================================
+
+def _render_lobby_tour() -> None:
+    """Render contextual one-time lobby onboarding tour with replay option.
+    
+    Phase Post-CSS: Adds guided tour highlighting key lobby sections:
+    - Navi panel
+    - Product tiles
+    - Additional services
+    - Completed journeys
+    
+    Tour runs once per user session, with manual replay via help icon.
+    """
+    # Global enable/disable flag
+    ENABLE_LOBBY_TOUR = True
+    
+    if not ENABLE_LOBBY_TOUR:
+        return
+    
+    # Initialize tour state
+    if "lobby_tour_done" not in st.session_state:
+        st.session_state["lobby_tour_done"] = False
+    
+    if "lobby_tour_step" not in st.session_state:
+        st.session_state["lobby_tour_step"] = 0
+    
+    if "lobby_tour_active" not in st.session_state:
+        st.session_state["lobby_tour_active"] = False
+    
+    # Auto-start tour for first-time users
+    if not st.session_state["lobby_tour_done"] and not st.session_state["lobby_tour_active"]:
+        st.session_state["lobby_tour_active"] = True
+    
+    # Tour steps definition
+    tour_steps = [
+        {
+            "title": "👋 Meet Navi",
+            "message": "This is Navi — your AI guide. She'll help you through care planning, resources, and support.",
+            "target": "navi-panel"
+        },
+        {
+            "title": "🧭 Your Active Journeys",
+            "message": "These are your active journeys. Start your Discovery or continue your Guided Care Plan from here.",
+            "target": "product-tiles"
+        },
+        {
+            "title": "💡 Additional Services",
+            "message": "Additional Services show partner offerings or AI recommendations based on your care profile.",
+            "target": "additional-services"
+        },
+        {
+            "title": "✅ Completed Journeys",
+            "message": "When you finish a journey, it appears here. You can revisit any completed experience anytime.",
+            "target": "completed-journeys"
+        },
+        {
+            "title": "🎉 You're All Set!",
+            "message": "You're ready to explore. Navi will always be here if you need help.",
+            "target": None
+        }
+    ]
+    
+    # Render replay button (always visible after first tour)
+    if st.session_state["lobby_tour_done"]:
+        st.markdown(
+            """
+            <div class="tour-replay-button" id="tour-replay">
+                <button onclick="window.location.href='?page=hub_lobby&replay_tour=1'" 
+                        title="Replay tour"
+                        style="
+                            position: fixed;
+                            top: 24px;
+                            right: 24px;
+                            z-index: 9999;
+                            border: none;
+                            background: transparent;
+                            cursor: pointer;
+                            color: var(--text-secondary, #666);
+                            font-size: 24px;
+                            padding: 8px;
+                            border-radius: 50%;
+                            transition: all 0.2s ease;
+                        "
+                        onmouseover="this.style.background='var(--surface-hover, #f0f0f0)'"
+                        onmouseout="this.style.background='transparent'">
+                    ❓
+                </button>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+    
+    # Check for replay trigger
+    if st.query_params.get("replay_tour") == "1":
+        st.session_state["lobby_tour_active"] = True
+        st.session_state["lobby_tour_step"] = 0
+        # Clear query param to prevent re-trigger
+        st.query_params.clear()
+    
+    # Render active tour
+    if st.session_state["lobby_tour_active"]:
+        current_step = st.session_state["lobby_tour_step"]
+        
+        if current_step < len(tour_steps):
+            step = tour_steps[current_step]
+            
+            # Render tour overlay and tooltip
+            st.markdown(
+                f"""
+                <div class="tour-overlay" style="
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0, 0, 0, 0.45);
+                    z-index: 9998;
+                "></div>
+                
+                <div class="tour-tooltip" style="
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    z-index: 9999;
+                    background: var(--surface-neutral, #ffffff);
+                    color: var(--text-primary, #222);
+                    border-radius: 10px;
+                    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+                    padding: 24px;
+                    max-width: 420px;
+                    width: 90%;
+                ">
+                    <h3 style="
+                        margin: 0 0 12px 0;
+                        font-size: 20px;
+                        font-weight: 600;
+                        color: var(--text-primary, #222);
+                    ">{step['title']}</h3>
+                    
+                    <p style="
+                        margin: 0 0 20px 0;
+                        font-size: 15px;
+                        line-height: 1.6;
+                        color: var(--text-secondary, #555);
+                    ">{step['message']}</p>
+                    
+                    <div style="
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        gap: 12px;
+                    ">
+                        <span style="
+                            font-size: 13px;
+                            color: var(--text-tertiary, #888);
+                        ">Step {current_step + 1} of {len(tour_steps)}</span>
+                        
+                        <div style="display: flex; gap: 8px;">
+                """,
+                unsafe_allow_html=True
+            )
+            
+            # Previous button (if not first step)
+            col1, col2, col3 = st.columns([1, 1, 1])
+            
+            with col1:
+                if current_step > 0:
+                    if st.button("← Back", key=f"tour_back_{current_step}", use_container_width=True):
+                        st.session_state["lobby_tour_step"] -= 1
+                        st.rerun()
+            
+            with col2:
+                if st.button("Skip", key=f"tour_skip_{current_step}", use_container_width=True):
+                    st.session_state["lobby_tour_active"] = False
+                    st.session_state["lobby_tour_done"] = True
+                    st.session_state["lobby_tour_step"] = 0
+                    st.rerun()
+            
+            with col3:
+                if current_step < len(tour_steps) - 1:
+                    if st.button("Next →", key=f"tour_next_{current_step}", type="primary", use_container_width=True):
+                        st.session_state["lobby_tour_step"] += 1
+                        st.rerun()
+                else:
+                    if st.button("Got it!", key=f"tour_done_{current_step}", type="primary", use_container_width=True):
+                        st.session_state["lobby_tour_active"] = False
+                        st.session_state["lobby_tour_done"] = True
+                        st.session_state["lobby_tour_step"] = 0
+                        st.rerun()
+            
+            st.markdown("</div></div></div>", unsafe_allow_html=True)
+        else:
+            # Tour completed
+            st.session_state["lobby_tour_active"] = False
+            st.session_state["lobby_tour_done"] = True
+            st.session_state["lobby_tour_step"] = 0
 
 
 # ==============================================================================
@@ -715,6 +921,9 @@ def render(ctx=None) -> None:
     # st.progress(completion)
     # st.markdown("<br/>", unsafe_allow_html=True)
     
+    # Phase Post-CSS: Add ID for tour targeting
+    st.markdown('<div id="navi-panel">', unsafe_allow_html=True)
+    
     # Render personalized NAVI panel V2
     render_navi_panel_v2(
         title=title,
@@ -727,6 +936,8 @@ def render(ctx=None) -> None:
         alert_html="",
         variant="hub",
     )
+    
+    st.markdown('</div>', unsafe_allow_html=True)
     
     # Phase 5A.1: Optional debug caption for testing tone context
     if os.getenv("SN_DEBUG_PHASE_TONE", "0") == "1":
@@ -773,6 +984,9 @@ def render(ctx=None) -> None:
     # ========================================
     # RENDER ACTIVE JOURNEYS (Phase 5G)
     # ========================================
+    # Phase Post-CSS: Add ID for tour targeting
+    st.markdown('<div id="product-tiles">', unsafe_allow_html=True)
+    
     # Render main hub body with active tiles only (no additional services inline)
     body_html = render_dashboard_body(
         title="",  # NAVI provides context
@@ -785,6 +999,7 @@ def render(ctx=None) -> None:
     )
     
     st.markdown(body_html, unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
     
     # ========================================
     # INFORMATIONAL TEXT (Phase 5G)
@@ -813,3 +1028,8 @@ def render(ctx=None) -> None:
     # FOOTER
     # ========================================
     render_footer_simple()
+    
+    # ========================================
+    # LOBBY ONBOARDING TOUR (Phase Post-CSS)
+    # ========================================
+    _render_lobby_tour()
