@@ -36,19 +36,19 @@
         {
           "key": "login",
           "label": "Log in",
-          "module": "pages.login:render",
+          "module": "pages._stubs:render_login",
           "hidden": true
         },
         {
           "key": "auth_start",
           "label": "Authentication",
-          "module": "pages.login:render",
+          "module": "pages._stubs:render_login",
           "hidden": true
         },
         {
           "key": "signup",
           "label": "Sign up",
-          "module": "pages.signup:render",
+          "module": "pages._stubs:render_signup",
           "hidden": true
         },
         {
