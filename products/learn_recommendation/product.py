@@ -58,7 +58,6 @@ def render():
         # Create a mock care recommendation for preview
         from types import SimpleNamespace
         care_rec = SimpleNamespace(tier="assisted_living")
-        st.info("ℹ️ **Preview Mode:** Showing Assisted Living example. Complete your Guided Care Plan to see your personalized recommendation.")
     
     # Map tier to display name
     tier_display_map = {
