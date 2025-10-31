@@ -129,40 +129,28 @@ def render():
     # === Discovery Journey CTA Section ===
     st.markdown("""
     <div class="cta-wrapper">
-
-      <div class="cta-actions">
-        <button class="cta-btn cta-secondary" onclick="window.location.href='?page=lobby'">
-          ⬅ Return to Lobby
-        </button>
-        <button class="cta-btn cta-primary" onclick="window.location.href='?page=complete_discovery'">
-          ✅ Complete My Discovery Journey
-        </button>
-      </div>
-
       <div class="cta-note">
         <p>
           When you return to the Lobby, this journey will remain active until all its steps are completed.
           Once finished, it will move automatically to your <strong>My Completed Journeys</strong> section below.
         </p>
       </div>
-
     </div>
     """, unsafe_allow_html=True)
     
-    # Closing CTA Section
     st.markdown('<p class="footer-cta-text">Ready to begin your journey?</p>', unsafe_allow_html=True)
     
-    st.markdown('<div class="footer-buttons">', unsafe_allow_html=True)
+    st.markdown('<div class="cta-actions">', unsafe_allow_html=True)
     col1, col2 = st.columns([1, 1])
     
     with col1:
-        if st.button("← Return to Lobby", use_container_width=True, key="return_lobby"):
+        if st.button("⬅ Return to Lobby", use_container_width=True, key="return_lobby", type="secondary"):
             st.query_params.clear()
             st.query_params["page"] = "hub_lobby"
             st.rerun()
     
     with col2:
-        if st.button("✅ Continue to Care Plan", type="primary", use_container_width=True, key="continue_gcp"):
+        if st.button("✅ Complete My Discovery Journey", type="primary", use_container_width=True, key="complete_discovery"):
             # Mark as complete
             _mark_complete()
             # Advance to planning phase
