@@ -192,6 +192,13 @@ def ensure_summary_ready(answers: dict, flags: list[str], tier: str) -> None:
             pass
         print("[GCP_RENDER] Using cached LLM result")
         st.session_state["summary_ready"] = True
+        
+        # Phase Post-CSS: Mark GCP product as complete when summary is ready
+        from core.events import mark_product_complete
+        user_ctx = st.session_state.get("user_ctx", {})
+        user_ctx = mark_product_complete(user_ctx, "gcp_v4")
+        st.session_state["user_ctx"] = user_ctx
+        
         return
 
     # Set loading state at start of summary computation
@@ -257,6 +264,12 @@ def ensure_summary_ready(answers: dict, flags: list[str], tier: str) -> None:
             # Mark summary as ready and clear loading state
             st.session_state["summary_ready"] = True
             st.session_state["llm_loading"] = False
+            
+            # Phase Post-CSS: Mark GCP product as complete when summary is generated
+            from core.events import mark_product_complete
+            user_ctx = st.session_state.get("user_ctx", {})
+            user_ctx = mark_product_complete(user_ctx, "gcp_v4")
+            st.session_state["user_ctx"] = user_ctx
 
             # Concise LLM vs deterministic log + disagreement capture
             try:
