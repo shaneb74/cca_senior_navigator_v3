@@ -440,6 +440,11 @@ def _render_confirmation(appt: AdvisorAppointment):
     with col_btn2:
         if st.button("🎯 Prepare for Appointment", type="primary", use_container_width=True):
             log_event("waiting_room.unlocked", {"from_product": "pfma_v3"})
+            # Phase Post-CSS: Mark PFMA product as complete
+            from core.events import mark_product_complete
+            user_ctx = st.session_state.get("user_ctx", {})
+            user_ctx = mark_product_complete(user_ctx, "pfma_v3")
+            st.session_state["user_ctx"] = user_ctx
             route_to("advisor_prep")
 
     with col_btn3:

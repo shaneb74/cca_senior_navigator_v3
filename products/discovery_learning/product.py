@@ -1,128 +1,33 @@
-"""Discovery Learning Product - First-Touch Onboarding
+"""Discovery Learning Product - Human-Centered Welcome Screen
 
-Phase 5A: First-touch onboarding experience that introduces NAVI and the journey.
-Phase 5B: Refactored to use learning_template.py for consistent UX.
+Phase Post-CSS: Beautiful, emotionally intelligent onboarding page.
 
-Purpose:
-- Welcome new users to Senior Navigator
-- Introduce NAVI persona and capabilities
-- Explain the three-phase journey (Discovery → Planning → Post-Planning)
-- Provide scoped NAVI chat for questions about the platform
+This is the first page many users see — it must feel like home:
+warm, intelligent, effortless. Modern SaaS-quality onboarding with Navi guidance.
 
-Flow:
-1. Welcome and NAVI introduction
-2. Journey overview with phase visualization
-3. Scoped NAVI chat for platform questions
-4. Continue to GCP or return to Lobby
+Visual Direction:
+- Clean white space, soft navy text, subtle accents
+- Rounded corners, gentle shadows, no unnecessary borders
+- Balanced typography with generous spacing
+- Fully responsive (mobile-friendly)
+
+Structure:
+1. Hero with Navi introduction
+2. Three horizontal info tiles
+3. Inline Navi search (conversational, no expanders)
+4. Centered CTA section
 """
-
-from core.learning_template import render_learning
-
-
-def render():
-    """Render Discovery Learning using the learning template.
-    
-    Phase 5B: Uses standardized learning_template for consistent UX.
-    """
-    
-    # Introduction text
-    intro = """
-### 👋 Welcome to Senior Navigator!
-
-Hi, I'm **NAVI** — your personal guide through the senior care planning process. 
-I'm here to help you explore options, understand costs, and make informed decisions 
-with confidence and support every step of the way.
-
-💡 **What Makes This Different:**
-- **Personalized & Empathetic** - Your journey is unique, and I'll adapt to your needs
-- **Expert-Backed** - Our recommendations are based on industry standards and clinical expertise
-- **At Your Pace** - No pressure, no rush. Take the time you need to feel confident
-
-Let's take a moment to understand what we'll do together.
-"""
-    
-    # Content sections
-    sections = [
-        {
-            "title": "🎯 What We'll Do Together",
-            "content": """
-We'll guide you through three key phases:
-
-**1. Discovery Phase 🔵**
-- Complete the Guided Care Plan to understand your care needs
-- Get a personalized care recommendation
-- Learn what your recommendation means
-
-**2. Planning Phase 🟢**
-- Explore cost estimates and financial options
-- Connect with professional advisors
-- Build your personalized care plan
-
-**3. Post-Planning Phase 🟣**
-- Access additional resources and support services
-- Prepare for advisor consultations
-- Continue learning with educational content
-
-Each phase builds on the last, but you can always move at your own pace.
-"""
-        },
-        {
-            "title": "🧭 Your Journey Ahead",
-            "content": """
-```
-Discovery  →  Planning  →  Post-Planning
-   🔵           🟢             🟣
-```
-
-**Right now:** You're in the **Discovery Phase**  
-**Next step:** Complete your Guided Care Plan to get started
-
-Don't worry — I'll be with you every step of the way, providing guidance and answering 
-your questions as they come up.
-"""
-        },
-    ]
-    
-    # Resources
-    resources = [
-        {
-            "type": "link",
-            "url": "https://www.conciergecareadvisors.com/about",
-            "title": "About Concierge Care Advisors",
-            "description": "Learn more about our team and mission"
-        },
-        {
-            "type": "link",
-            "url": "https://www.medicare.gov/what-medicare-covers/what-part-a-covers/long-term-care",
-            "title": "Understanding Long-Term Care",
-            "description": "Medicare's guide to long-term care options"
-        },
-    ]
-    
-    # Render using learning template
-    render_learning(
-        title="🧭 Start Your Discovery Journey",
-        intro=intro,
-        topic="senior_navigator_overview",
-        resources=resources,
-        phase="discovery",
-        tile_key="discovery_learning",
-        sections=sections,
-        next_route="gcp_v4",  # Continue to GCP after completion
-    )
-
 
 import streamlit as st
 
-from core.journeys import advance_to, get_current_journey
+from core.journeys import advance_to
 from core.mcip import MCIP
-from core.nav import route_to
 from ui.header_simple import render_header_simple
 from ui.footer_simple import render_footer_simple
 
 
 def render():
-    """Render Discovery Learning product - first-touch onboarding."""
+    """Render Discovery Learning - elegant Navi-guided welcome."""
     
     # Render header
     render_header_simple(active_route="discovery_learning")
@@ -130,135 +35,257 @@ def render():
     # Initialize MCIP
     MCIP.initialize()
     
-    # Page title
-    st.title("🧭 Start Your Discovery Journey")
+    # Inject custom CSS for this page
+    _inject_discovery_styles()
     
-    # Welcome section
-    st.markdown("### Welcome to Senior Navigator!")
+    # Hero / Navi Introduction
+    st.markdown('<div class="discovery-hero">', unsafe_allow_html=True)
+    st.markdown("## ✨ Welcome to Your Discovery Journey")
     
-    # NAVI introduction
+    # Use clean navi-card styling instead of purple gradient
     st.markdown("""
-    > 👋 **Hi, I'm NAVI** — your personal guide through this care planning journey.
-    >
-    > I'm here to help you understand your options, explore what's available, and 
-    > make informed decisions about care for you or your loved one.
-    """)
+    <div class="navi-card" style="padding: 1.5rem; margin: 1.5rem 0;">
+        <div style="display: flex; align-items: flex-start; gap: 1rem;">
+            <span style="font-size: 2rem;">🧭</span>
+            <div>
+                <div style="font-size: 1.1rem; font-weight: 600; color: var(--text-primary, #0b132b); margin-bottom: 0.5rem;">
+                    Hi, I'm Navi. I'll help you discover everything Senior Navigator can do — and guide you step by step.
+                </div>
+                <div style="font-size: 0.95rem; color: var(--text-muted, #64748b);">
+                    We'll explore how this app helps you and your loved ones make confident care decisions.
+                </div>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
     
-    st.markdown("---")
+    st.markdown("<br/>", unsafe_allow_html=True)
     
-    # What to expect
-    st.markdown("### 🎯 What We'll Do Together")
-    
-    st.info("""
-    **Together, we'll explore:**
-    
-    - 🏥 **Your Care Needs** - Understand current health, daily living, and safety considerations
-    - 💰 **Cost Planning** - Get realistic estimates for different care options
-    - 👥 **Your Support Network** - Identify resources and assistance available to you
-    - 📋 **Next Steps** - Create a clear action plan moving forward
-    
-    This isn't just about numbers and assessments — it's about understanding your unique 
-    situation and finding the right path forward.
-    """)
-    
-    # Journey overview
-    st.markdown("---")
-    st.markdown("### 🗺️ Your Journey Ahead")
+    # Informational Overview - Three Horizontal Tiles
+    st.markdown('<div class="info-tiles-container">', unsafe_allow_html=True)
     
     col1, col2, col3 = st.columns(3)
     
     with col1:
         st.markdown("""
-        **Discovery Phase**  
-        🔵 Where you are now
-        
-        - Welcome & orientation
-        - Guided Care Plan
-        - Learn about options
-        """)
+        <div class="info-tile">
+            <div class="tile-icon">🧭</div>
+            <h3 class="tile-title">Guided Care Plan</h3>
+            <p class="tile-description">Answer a few questions and get a personalized care path.</p>
+        </div>
+        """, unsafe_allow_html=True)
     
     with col2:
         st.markdown("""
-        **Planning Phase**  
-        🟢 Coming next
-        
-        - Cost estimation
-        - Financial planning
-        - Advisor scheduling
-        """)
+        <div class="info-tile">
+            <div class="tile-icon">💰</div>
+            <h3 class="tile-title">Cost Planner</h3>
+            <p class="tile-description">Estimate expenses, compare care types, and understand funding options.</p>
+        </div>
+        """, unsafe_allow_html=True)
     
     with col3:
         st.markdown("""
-        **Post-Planning**  
-        🟣 After planning
+        <div class="info-tile">
+            <div class="tile-icon">🎨</div>
+            <h3 class="tile-title">Visual Insights</h3>
+            <p class="tile-description">DALL·E creates visuals that bring your care plan to life.</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    st.markdown("<br/><br/>", unsafe_allow_html=True)
+    
+    # Ask Navi - Inline conversational search
+    st.markdown('<div class="ask-navi-section">', unsafe_allow_html=True)
+    st.markdown("### 💬 Ask Navi")
+    
+    navi_query = st.text_input(
+        "Ask me anything about your journey...",
+        key="navi_discovery_query",
+        label_visibility="collapsed",
+        placeholder="What is the Discovery Journey? How long does the Care Plan take?"
+    )
+    
+    if navi_query:
+        # Simple contextual responses
+        responses = {
+            "discovery": "The Discovery Journey is your introduction to Senior Navigator. It takes about 10-15 minutes and helps you understand what we offer and how I can guide you through your care planning process.",
+            "care plan": "The Guided Care Plan takes about 5-10 minutes. You'll answer questions about daily living, health needs, and safety concerns. I'll be with you every step, explaining what each question means.",
+            "long": "Most families complete the Discovery Journey in 10-15 minutes. The full Guided Care Plan adds another 5-10 minutes. You can always save and come back later.",
+            "information": "Your information is private and secure. We use it only to personalize your care recommendations and cost estimates. You control what you share with advisors.",
+            "cost": "After your care recommendation, you'll access the Cost Planner. It provides detailed estimates for different care types, including in-home care, assisted living, and memory care options.",
+        }
         
-        - Clinical reviews
-        - Ongoing support
-        - Resource connections
-        """)
+        # Simple keyword matching
+        response = None
+        query_lower = navi_query.lower()
+        for key, answer in responses.items():
+            if key in query_lower:
+                response = answer
+                break
+        
+        if not response:
+            response = "That's a great question! I'm here to help you understand your care planning journey. Try asking about the Discovery Journey, Care Plan, costs, or how long things take."
+        
+        st.markdown(f"""
+        <div class="navi-response">
+            <strong>Navi:</strong> {response}
+        </div>
+        """, unsafe_allow_html=True)
     
-    # What makes this different
-    st.markdown("---")
-    st.markdown("### ✨ What Makes This Different")
+    st.markdown('</div>', unsafe_allow_html=True)
     
-    st.success("""
-    **Personalized & Empathetic**  
-    Every family's situation is unique. I'll adapt my guidance based on your specific needs, 
-    timeline, and preferences. No one-size-fits-all solutions here.
-    
-    **Expert-Backed**  
-    Our recommendations come from years of experience helping families navigate senior care. 
-    You'll get access to trusted advisors when you need them.
-    
-    **At Your Pace**  
-    Take your time. Save your progress. Come back when you're ready. There's no rush, 
-    and you can revisit any section at any time.
-    """)
-    
-    # Getting started
-    st.markdown("---")
-    st.markdown("### 🚀 Ready to Begin?")
-    
-    st.markdown("""
-    Your first step is the **Guided Care Plan** — a 5-minute assessment that helps us 
-    understand your situation and recommend the right level of care.
-    
-    Don't worry — I'll be with you every step of the way, explaining what each question 
-    means and why it matters.
-    """)
+    st.markdown("<br/><br/>", unsafe_allow_html=True)
     
     # Mark as viewed
     if "discovery_learning_viewed" not in st.session_state:
         st.session_state["discovery_learning_viewed"] = True
     
-    # Continue buttons
-    st.markdown("<br/>", unsafe_allow_html=True)
+    # Closing CTA Section
+    st.markdown('<div class="cta-section">', unsafe_allow_html=True)
+    st.markdown('<p class="cta-message">Ready to begin your journey?</p>', unsafe_allow_html=True)
     
     col1, col2 = st.columns([1, 1])
     
     with col1:
         if st.button("← Return to Lobby", use_container_width=True):
-            # Phase 5K: Direct navigation to lobby
             st.query_params.clear()
             st.query_params["page"] = "hub_lobby"
             st.rerun()
     
     with col2:
-        if st.button("Complete Discovery Journey", type="primary", use_container_width=True):
+        if st.button("✅ Continue to Care Plan", type="primary", use_container_width=True):
             # Mark as complete
             _mark_complete()
-            # Show success message
-            st.success("✅ Discovery Journey marked as complete! You can now find it in Completed Journeys.")
             # Advance to planning phase
             advance_to("planning")
-            # Phase 5K: Return to lobby instead of navigating to GCP
-            # User can start GCP from lobby when ready
+            # Navigate to GCP
             st.query_params.clear()
-            st.query_params["page"] = "hub_lobby"
+            st.query_params["page"] = "gcp_v4"
             st.rerun()
+    
+    st.markdown('</div>', unsafe_allow_html=True)
     
     # Render footer
     render_footer_simple()
+
+
+def _inject_discovery_styles():
+    """Inject elegant styling for Discovery Journey page."""
+    st.markdown("""
+    <style>
+    /* Discovery Journey - Clean, Human-Centered Design */
+    
+    .discovery-hero {
+        margin-top: 2rem;
+        margin-bottom: 3rem;
+        text-align: center;
+    }
+    
+    .discovery-hero h2 {
+        color: var(--text-primary, #0b132b);
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+    }
+    
+    /* Info Tiles - Horizontal Cards */
+    .info-tiles-container {
+        display: flex;
+        gap: 1.5rem;
+        margin: 2rem 0 3rem 0;
+    }
+    
+    .info-tile {
+        background: #f9fafb;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        text-align: center;
+    }
+    
+    .info-tile:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+    
+    .tile-icon {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .tile-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--text-primary, #0b132b);
+        margin-bottom: 0.75rem;
+    }
+    
+    .tile-description {
+        font-size: 0.9rem;
+        color: var(--text-muted, #64748b);
+        line-height: 1.5;
+        margin: 0;
+    }
+    
+    /* Ask Navi Section - Inline conversational */
+    .ask-navi-section {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin: 2rem 0;
+        max-width: 800px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    .ask-navi-section h3 {
+        color: var(--text-primary, #0b132b);
+        font-size: 1.2rem;
+        margin-bottom: 1rem;
+        font-weight: 600;
+    }
+    
+    .navi-response {
+        margin-top: 1rem;
+        padding: 1rem;
+        background: #f0f4ff;
+        border-left: 3px solid #4f46e5;
+        border-radius: 8px;
+        color: var(--text-primary, #0b132b);
+        line-height: 1.6;
+    }
+    
+    /* CTA Section - Centered, clean */
+    .cta-section {
+        text-align: center;
+        margin-top: 3rem;
+        margin-bottom: 2rem;
+    }
+    
+    .cta-message {
+        font-size: 1.1rem;
+        color: var(--text-primary, #0b132b);
+        margin-bottom: 1.5rem;
+        font-weight: 500;
+    }
+    
+    /* Responsive - Stack tiles on mobile */
+    @media (max-width: 768px) {
+        .info-tiles-container {
+            flex-direction: column;
+        }
+        
+        .info-tile {
+            margin-bottom: 1rem;
+        }
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
 
 def _mark_complete():

@@ -40,6 +40,12 @@ def render():
     c = st.session_state.setdefault("cost", {})
     c["completed"] = True
     print("[COST_V2_EXIT] Set cost.completed=True (canonical gate)")
+    
+    # Phase Post-CSS: Mark cost planner product as complete
+    from core.events import mark_product_complete
+    user_ctx = st.session_state.get("user_ctx", {})
+    user_ctx = mark_product_complete(user_ctx, "cost_planner_v2")
+    st.session_state["user_ctx"] = user_ctx
 
     # Render compact Navi panel at top
     from core.navi_module import render_module_navi_coach

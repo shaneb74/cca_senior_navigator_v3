@@ -131,6 +131,40 @@ def _get_trivia_badges():
     return badge_list[:3] if badge_list else ["new"]
 
 
+def _build_active_journeys(user_ctx: dict) -> list:
+    """Filter user journeys to only active (not completed) ones.
+    
+    Phase Post-CSS: Separates active and completed journeys for proper rendering.
+    
+    Args:
+        user_ctx: User context dictionary
+    
+    Returns:
+        List of active journey data dictionaries
+    """
+    return [
+        j for j in user_ctx.get("journeys", {}).values()
+        if not j.get("completed")
+    ]
+
+
+def _build_completed_journeys(user_ctx: dict) -> list:
+    """Filter user journeys to only completed ones.
+    
+    Phase Post-CSS: Separates active and completed journeys for proper rendering.
+    
+    Args:
+        user_ctx: User context dictionary
+    
+    Returns:
+        List of completed journey data dictionaries
+    """
+    return [
+        j for j in user_ctx.get("journeys", {}).values()
+        if j.get("completed")
+    ]
+
+
 def _get_trivia_progress():
     """Calculate trivia progress as percentage of quizzes completed.
 
