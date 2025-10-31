@@ -729,92 +729,43 @@ def _render_lobby_tour() -> None:
         if current_step < len(tour_steps):
             step = tour_steps[current_step]
             
-            # Render tour overlay and tooltip
-            st.markdown(
-                f"""
-                <div class="tour-overlay" style="
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    background: rgba(0, 0, 0, 0.45);
-                    z-index: 9998;
-                "></div>
+            # Use st.dialog for proper modal
+            @st.dialog(step['title'], width="large")
+            def show_tour_step():
+                st.markdown(f"**{step['message']}**")
+                st.caption(f"Step {current_step + 1} of {len(tour_steps)}")
                 
-                <div class="tour-tooltip" style="
-                    position: fixed;
-                    top: 50%;
-                    left: 50%;
-                    transform: translate(-50%, -50%);
-                    z-index: 9999;
-                    background: var(--surface-neutral, #ffffff);
-                    color: var(--text-primary, #222);
-                    border-radius: 10px;
-                    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
-                    padding: 24px;
-                    max-width: 420px;
-                    width: 90%;
-                ">
-                    <h3 style="
-                        margin: 0 0 12px 0;
-                        font-size: 20px;
-                        font-weight: 600;
-                        color: var(--text-primary, #222);
-                    ">{step['title']}</h3>
-                    
-                    <p style="
-                        margin: 0 0 20px 0;
-                        font-size: 15px;
-                        line-height: 1.6;
-                        color: var(--text-secondary, #555);
-                    ">{step['message']}</p>
-                    
-                    <div style="
-                        display: flex;
-                        justify-content: space-between;
-                        align-items: center;
-                        gap: 12px;
-                    ">
-                        <span style="
-                            font-size: 13px;
-                            color: var(--text-tertiary, #888);
-                        ">Step {current_step + 1} of {len(tour_steps)}</span>
-                        
-                        <div style="display: flex; gap: 8px;">
-                """,
-                unsafe_allow_html=True
-            )
-            
-            # Previous button (if not first step)
-            col1, col2, col3 = st.columns([1, 1, 1])
-            
-            with col1:
-                if current_step > 0:
-                    if st.button("← Back", key=f"tour_back_{current_step}", use_container_width=True):
-                        st.session_state["lobby_tour_step"] -= 1
-                        st.rerun()
-            
-            with col2:
-                if st.button("Skip", key=f"tour_skip_{current_step}", use_container_width=True):
-                    st.session_state["lobby_tour_active"] = False
-                    st.session_state["lobby_tour_done"] = True
-                    st.session_state["lobby_tour_step"] = 0
-                    st.rerun()
-            
-            with col3:
-                if current_step < len(tour_steps) - 1:
-                    if st.button("Next →", key=f"tour_next_{current_step}", type="primary", use_container_width=True):
-                        st.session_state["lobby_tour_step"] += 1
-                        st.rerun()
-                else:
-                    if st.button("Got it!", key=f"tour_done_{current_step}", type="primary", use_container_width=True):
+                st.markdown("<br/>", unsafe_allow_html=True)
+                
+                # Buttons
+                col1, col2, col3 = st.columns([1, 1, 1])
+                
+                with col1:
+                    if current_step > 0:
+                        if st.button("← Back", key=f"tour_back_{current_step}", use_container_width=True):
+                            st.session_state["lobby_tour_step"] -= 1
+                            st.rerun()
+                
+                with col2:
+                    if st.button("Skip", key=f"tour_skip_{current_step}", use_container_width=True):
                         st.session_state["lobby_tour_active"] = False
                         st.session_state["lobby_tour_done"] = True
                         st.session_state["lobby_tour_step"] = 0
                         st.rerun()
+                
+                with col3:
+                    if current_step < len(tour_steps) - 1:
+                        if st.button("Next →", key=f"tour_next_{current_step}", type="primary", use_container_width=True):
+                            st.session_state["lobby_tour_step"] += 1
+                            st.rerun()
+                    else:
+                        if st.button("Got it!", key=f"tour_done_{current_step}", type="primary", use_container_width=True):
+                            st.session_state["lobby_tour_active"] = False
+                            st.session_state["lobby_tour_done"] = True
+                            st.session_state["lobby_tour_step"] = 0
+                            st.rerun()
             
-            st.markdown("</div></div></div>", unsafe_allow_html=True)
+            show_tour_step()
         else:
             # Tour completed
             st.session_state["lobby_tour_active"] = False

@@ -609,9 +609,10 @@ body.welcome .navi-card::before {
   background: rgba(0, 0, 0, 0.45);
   z-index: 9998;
   animation: fadeIn 0.3s ease;
+  pointer-events: none;
 }
 
-.tour-tooltip {
+.tour-tooltip-wrapper {
   position: fixed;
   top: 50%;
   left: 50%;
@@ -621,20 +622,32 @@ body.welcome .navi-card::before {
   color: var(--text-primary, #222);
   border-radius: 10px;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
-  padding: 24px;
+  padding: 24px 24px 16px 24px;
   max-width: 420px;
   width: 90%;
   animation: slideUp 0.3s ease;
 }
 
-.tour-tooltip h3 {
+.tour-tooltip-wrapper + div[data-testid="column"] {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, calc(-50% + 180px));
+  z-index: 10000;
+  max-width: 420px;
+  width: 90%;
+  display: flex;
+  gap: 8px;
+}
+
+.tour-tooltip-wrapper h3 {
   margin: 0 0 12px 0;
   font-size: 20px;
   font-weight: 600;
   color: var(--text-primary, #222);
 }
 
-.tour-tooltip p {
+.tour-tooltip-wrapper p {
   margin: 0 0 20px 0;
   font-size: 15px;
   line-height: 1.6;
