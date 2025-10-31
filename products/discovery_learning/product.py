@@ -111,12 +111,12 @@ def render():
     col1, col2 = st.columns(2)
     with col1:
         if st.button("How long does the Guided Care Plan take?", use_container_width=True, key="faq_1"):
-            st.session_state["navi_discovery_query"] = "How long does the Guided Care Plan take?"
-            st.rerun()
+            # Display response directly without modifying widget state
+            st.info("**Navi:** The Guided Care Plan takes about 5-10 minutes. You'll answer questions about daily living, health needs, and safety concerns. I'll be with you every step, explaining what each question means.")
     with col2:
         if st.button("What does the Cost Planner do?", use_container_width=True, key="faq_2"):
-            st.session_state["navi_discovery_query"] = "What does the Cost Planner do?"
-            st.rerun()
+            # Display response directly without modifying widget state
+            st.info("**Navi:** After your care recommendation, you'll access the Cost Planner. It provides detailed estimates for different care types, including in-home care, assisted living, and memory care options.")
     st.markdown('</div>', unsafe_allow_html=True)
     
     st.markdown("<br/><br/>", unsafe_allow_html=True)
