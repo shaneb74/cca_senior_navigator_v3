@@ -53,9 +53,9 @@ def _page(title: str, desc: str, ctas: list[tuple[str, str]] | None = None):
 
 
 def render_welcome():
-    hero = safe_img_src("static/images/hero.png")
-    someone_img = safe_img_src("static/images/welcome_someone_else.png")
-    self_img = safe_img_src("static/images/welcome_self.png")
+    hero = safe_img_src("assets/images/hero.png")
+    someone_img = safe_img_src("assets/images/welcome_someone_else.png")
+    self_img = safe_img_src("assets/images/welcome_self.png")
     
     # Only render if all images are available
     if not (hero and someone_img and self_img):
@@ -123,9 +123,9 @@ def render_welcome_contextual():
     # Use single hero image instead of stacked photos (AI misunderstood the design)
     # Pre-load image to prevent flash
     image_path = (
-        "static/images/tell_us_about_you.png"
+        "assets/images/tell_us_about_you.png"
         if is_me
-        else "static/images/tell_us_about_them.png"
+        else "assets/images/tell_us_about_them.png"
     )
     hero_image = preload_hero_image(image_path)
     
@@ -302,7 +302,7 @@ def render_welcome_contextual():
 
 def render_for_someone():
     """Dedicated page for 'For Someone' flow."""
-    hero_image = preload_hero_image("static/images/contextual_someone_else.png")
+    hero_image = preload_hero_image("assets/images/contextual_someone_else.png")
     title_copy = "Supporting Others"
     body_copy = "Helping you make confident care decisions for someone you love."
     name_label = "What's their name?"
@@ -371,7 +371,7 @@ def render_for_someone():
 
 def render_for_me_contextual():
     """Dedicated page for 'For Me' flow."""
-    hero_image = preload_hero_image("static/images/contextual_self.png")
+    hero_image = preload_hero_image("assets/images/contextual_self.png")
     title_copy = "Getting Ready for Myself"
     body_copy = "Plan for your own future care with trusted guidance and peace of mind."
     name_label = "What's your name?"
@@ -649,7 +649,7 @@ def render_waiting_room():
         unsafe_allow_html=True,
     )
 
-    status_img = img_src("static/images/login.png")
+    status_img = img_src("assets/images/login.png")
     st.markdown(
         f"""
 <section class="container stack">

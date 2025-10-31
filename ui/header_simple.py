@@ -43,7 +43,7 @@ def render_header_simple(active_route: str | None = None) -> None:
     Args:
         active_route: Current page route (e.g., 'welcome', 'hub_concierge')
     """
-    logo_url = img_src("static/images/logos/cca_logo.png")
+    logo_url = img_src("assets/images/logos/cca_logo.png")
 
     # Load UI configuration for nav visibility
     ui_config_path = Path(__file__).parent.parent / "config" / "ui_config.json"
