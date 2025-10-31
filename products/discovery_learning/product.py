@@ -126,6 +126,29 @@ def render():
     if "discovery_learning_viewed" not in st.session_state:
         st.session_state["discovery_learning_viewed"] = True
     
+    # === Discovery Journey CTA Section ===
+    st.markdown("""
+    <div class="cta-wrapper">
+
+      <div class="cta-actions">
+        <button class="cta-btn cta-secondary" onclick="window.location.href='?page=lobby'">
+          ⬅ Return to Lobby
+        </button>
+        <button class="cta-btn cta-primary" onclick="window.location.href='?page=complete_discovery'">
+          ✅ Complete My Discovery Journey
+        </button>
+      </div>
+
+      <div class="cta-note">
+        <p>
+          When you return to the Lobby, this journey will remain active until all its steps are completed.
+          Once finished, it will move automatically to your <strong>My Completed Journeys</strong> section below.
+        </p>
+      </div>
+
+    </div>
+    """, unsafe_allow_html=True)
+    
     # Closing CTA Section
     st.markdown('<p class="footer-cta-text">Ready to begin your journey?</p>', unsafe_allow_html=True)
     

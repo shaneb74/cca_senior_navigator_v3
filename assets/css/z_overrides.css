@@ -722,3 +722,68 @@ body.welcome .navi-card::before {
   }
 }
 
+/* ================================
+   CTA Section — Discovery Journey
+   ================================ */
+.cta-wrapper {
+  margin-top: 2.5rem;
+  padding-top: 1.75rem;
+  border-top: 1px solid #e5e8ef;
+  text-align: center;
+}
+
+.cta-actions {
+  display: flex;
+  justify-content: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.cta-btn {
+  font-family: "Inter", sans-serif;
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s ease-in-out, transform 0.1s ease-in-out;
+}
+
+.cta-btn:hover {
+  transform: translateY(-1px);
+}
+
+.cta-primary {
+  background-color: #0E1E54;
+  color: #ffffff;
+}
+
+.cta-primary:hover {
+  background-color: #1b2f88;
+}
+
+.cta-secondary {
+  background-color: #f4f5f8;
+  color: #0E1E54;
+  border: 1px solid #d1d5de;
+}
+
+.cta-secondary:hover {
+  background-color: #e9ebef;
+}
+
+.cta-note {
+  color: #5a5e72;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  max-width: 540px;
+  margin: 0 auto;
+}
+
+.cta-note strong {
+  color: #0E1E54;
+  font-weight: 600;
+}
+
