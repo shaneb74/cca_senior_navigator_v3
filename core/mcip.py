@@ -6,7 +6,7 @@ The Conductor: Orchestrates the user journey across all hubs, products, and modu
 
 from dataclasses import asdict, dataclass, field, fields
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional
 
 import streamlit as st
 
@@ -29,7 +29,7 @@ class CareRecommendation:
     status: str  # new | in_progress | complete | needs_update
     last_updated: str  # ISO timestamp
     needs_refresh: bool  # True if inputs changed significantly
-    allowed_tiers: list[str] | None = field(default=None)  # Tiers allowed after gates
+    allowed_tiers: Optional[list[str]] = field(default=None)  # Tiers allowed after gates
     schema_version: int = 2  # Contract version for backward compatibility
 
 

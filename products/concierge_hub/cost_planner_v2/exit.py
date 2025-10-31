@@ -304,13 +304,13 @@ def _render_whats_next_section():
 
     with col3:
         st.markdown('<div class="next-step-card">', unsafe_allow_html=True)
-        st.markdown("### 🏠 Return to Hub")
+        st.markdown("### 🏠 Return to Lobby")
         st.markdown("Explore other tools and resources in your dashboard")
-        if st.button("Go to Hub", use_container_width=True, key="goto_hub_btn"):
-            from core.nav import route_to
+        if st.button("Go to Lobby", use_container_width=True, key="goto_lobby_btn"):
+            from core.url_helpers import back_to_lobby
 
             st.session_state.cost_planner_v2_complete = True
-            route_to("hub_lobby")
+            back_to_lobby()
         st.markdown("</div>", unsafe_allow_html=True)
 
 

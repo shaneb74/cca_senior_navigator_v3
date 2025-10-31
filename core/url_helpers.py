@@ -157,8 +157,14 @@ def back_to_lobby() -> None:
     Phase 5D Enhancement:
         Explicit helper for returning to Lobby from products.
         All "Back to Hub" navigation should use this function.
+    
+    Phase 5K Enhancement:
+        Clears all query parameters to prevent routing issues.
+        Uses direct rerun for immediate navigation.
     """
-    route_to(push=False, page="hub_lobby")
+    st.query_params.clear()
+    st.query_params["page"] = "hub_lobby"
+    st.rerun()
 
 
 def add_uid_to_href(href: str) -> str:
