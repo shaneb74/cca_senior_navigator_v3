@@ -172,4 +172,210 @@ h2, h3 {
   font-style: italic;
 }
 
+/* ---------- EMPTY STATE ---------- */
+.empty-state {
+  background: #f9fafb;
+  border: 2px dashed #d1d5db;
+  border-radius: 12px;
+  padding: 3rem 2rem;
+  text-align: center;
+  margin: 1rem 0;
+}
 
+.empty-state-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.6;
+}
+
+.empty-state-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.empty-state-message {
+  font-size: 0.95rem;
+  color: #6b7280;
+  line-height: 1.5;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+/* Dark mode empty state */
+@media (prefers-color-scheme: dark) {
+  .empty-state {
+    background: #1f2937;
+    border-color: #374151;
+  }
+  
+  .empty-state-title {
+    color: #e5e7eb;
+  }
+  
+  .empty-state-message {
+    color: #9ca3af;
+  }
+}
+
+/* ---------- COMPLETED JOURNEYS GRID (Phase 5K) ---------- */
+/* Grid container for completed journey tiles */
+.completed-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.75rem;
+  padding: 1.5rem 0;
+  margin-bottom: 2rem;
+}
+
+/* Completed tile styling - subtle differentiation */
+.tile-analysis {
+  border-left: 4px solid #F59E0B !important;  /* amber accent for completed items */
+  background: linear-gradient(to bottom right, #ffffff, #fafafa);
+  opacity: 0.95;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.tile-analysis:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  opacity: 1;
+}
+
+/* Dark mode completed tiles */
+@media (prefers-color-scheme: dark) {
+  .tile-analysis {
+    background: linear-gradient(to bottom right, #1f2937, #111827);
+    border-left-color: #FBBF24 !important;
+  }
+  
+  .tile-analysis:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+}
+
+/* =========================
+   ADDITIONAL SERVICES CARDS (Phase 5L)
+   ========================= */
+
+.service-grid-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.25rem;
+  width: 100%;
+}
+
+.service-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 1rem;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  position: relative;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.service-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.06);
+}
+
+.service-title {
+  margin-bottom: 0.5rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.service-desc {
+  font-size: 0.9rem;
+  color: #4b5563;
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+.service-cta {
+  display: inline-block;
+  background: #eef2ff;
+  color: #3849ff;
+  padding: 0.4rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.service-cta:hover {
+  background: #3849ff;
+  color: white;
+  text-decoration: none;
+}
+
+.service-badge {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  background: linear-gradient(90deg, #8b5cf6, #06b6d4);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+}
+
+/* =========================
+   RESPONSIVE BREAKPOINT
+   ========================= */
+@media (max-width: 768px) {
+  .service-grid-container {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .service-card {
+    padding: 1rem;
+  }
+
+  .service-title {
+    font-size: 1rem;
+  }
+
+  .service-desc {
+    font-size: 0.85rem;
+  }
+}
+
+/* Dark mode support for service cards */
+@media (prefers-color-scheme: dark) {
+  .service-card {
+    background: #111827;
+    border-color: #374151;
+  }
+  
+  .service-card:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+  }
+  
+  .service-title {
+    color: #f9fafb;
+  }
+  
+  .service-desc {
+    color: #9ca3af;
+  }
+  
+  .service-badge {
+    background: linear-gradient(90deg, #a78bfa, #22d3ee);
+  }
+  
+  .service-cta {
+    background-color: #2563eb;
+    color: #fff !important;
+  }
+  
+  .service-cta:hover {
+    background-color: #1d4ed8;
+  }
+}

@@ -37,6 +37,7 @@ from core.journeys import get_journey_phase
 from core.personalizer import get_user_context, get_visible_modules
 from ui.header_simple import render_header_simple
 from ui.footer_simple import render_footer_simple
+from components.empty_state import render_empty_state
 
 __all__ = ["render"]
 
@@ -190,6 +191,7 @@ def _apply_tile_state(tile: ProductTileHub, state: str) -> ProductTileHub:
     """Apply visual state to a product tile.
     
     Phase 3B: Also adds product outcomes to completed tiles.
+    Phase 5K: Adds "Completed" badge to completed tiles.
     
     Args:
         tile: Original ProductTileHub object
@@ -208,6 +210,12 @@ def _apply_tile_state(tile: ProductTileHub, state: str) -> ProductTileHub:
         # Phase 5G: Show completion indicator (text-only, no emoji)
         tile.primary_label = "Completed"
         tile.variant = "success"  # Use success variant if available
+        
+        # Phase 5K: Add "Completed" badge
+        if not tile.badges:
+            tile.badges = ["Completed"]
+        elif "Completed" not in tile.badges:
+            tile.badges.append("Completed")
         
         # Add outcome display for completed products (Phase 3B)
         outcome = get_product_outcome(tile.key)
@@ -229,10 +237,16 @@ def _build_discovery_tiles() -> list[ProductTileHub]:
     Phase 4A Revision: Discovery tiles focus on first-touch onboarding.
     Phase 5A: Added Discovery Learning first-touch onboarding tile.
     Phase 5F: Moved GCP to Planning phase for proper journey flow.
+    Phase 5K: Filter out completed journeys (they appear in Completed section).
     
     Returns:
         List of discovery tiles with MCIP state applied
     """
+    # Check if discovery_learning is completed
+    if MCIP.is_product_complete("discovery_learning"):
+        # Don't show in active tiles - it will appear in Completed Journeys section
+        return []
+    
     tiles = [
         ProductTileHub(
             key="discovery_learning",
@@ -246,13 +260,17 @@ def _build_discovery_tiles() -> list[ProductTileHub]:
             order=5,
             visible=True,
             phase="discovery",  # Phase 5A: journey phase tag
+            locked=False,  # Phase 5K: Always unlocked
         ),
     ]
     
-    # Apply MCIP state to each tile
+    # Apply MCIP state to each tile (but discovery should always be available)
     tiles_with_state = []
     for tile in tiles:
         state = _get_product_state(tile.key)
+        # Override locked state for discovery - always available
+        if state == "locked":
+            state = "available"
         tile_with_state = _apply_tile_state(tile, state)
         tiles_with_state.append(tile_with_state)
     
@@ -270,6 +288,7 @@ def _build_planning_tiles() -> list[ProductTileHub]:
     Phase 4B: Added Learn About My Recommendation between GCP and Cost Planner.
     Phase 5A: Added journey phase tags to all planning tiles.
     Phase 5F: Moved GCP here from Discovery - proper planning journey flow.
+    Phase 5K: Filter out completed tiles (they appear in Completed section).
     FAQ removed (integrated into NAVI).
     
     Returns:
@@ -328,20 +347,11 @@ def _build_planning_tiles() -> list[ProductTileHub]:
             visible=True,
             phase="planning",  # Phase 5A: journey phase tag
         ),
-        ProductTileHub(
-            key="additional_services",
-            title="Additional Services",
-            desc="Explore value-added services and programs available through Concierge Care Advisors.",
-            blurb="Access partner services, wellness programs, and specialized support tailored to your care plan.",
-            image_square=None,  # Phase 5E: No PNG, CSS icon
-            primary_route="?page=hub_services",
-            primary_label="View",
-            variant="brand",
-            order=40,
-            visible=True,
-            phase="planning",  # Phase 5K: planning category
-        ),
+        # Phase 5L: Removed additional_services tile - now rendered as dynamic service cards section
     ]
+    
+    # Phase 5K: Filter out completed tiles (they move to Completed Journeys section)
+    tiles = [t for t in tiles if not MCIP.is_product_complete(t.key)]
     
     # Apply MCIP state to each tile
     tiles_with_state = []
@@ -453,6 +463,7 @@ def _build_completed_tiles() -> list[ProductTileHub]:
     
     Phase 4A: New section for closed-out products.
     Phase 5D: Updated to use "My Advisor" name.
+    Phase 5K: Added discovery_learning to completed journeys.
     
     Returns:
         List of completed product tiles
@@ -461,6 +472,7 @@ def _build_completed_tiles() -> list[ProductTileHub]:
     
     # Check each major product for completion
     all_products = [
+        ("discovery_learning", "Discovery Journey", "Your introduction to care planning"),
         ("gcp_v4", "Guided Care Plan", "Your personalized care recommendation"),
         ("cost_v2", "Cost Planner", "Your financial plan and projections"),
         ("pfma_v3", "My Advisor", "Your advisor consultation"),
@@ -477,6 +489,8 @@ def _build_completed_tiles() -> list[ProductTileHub]:
                 variant="success",
                 order=900,  # Low priority (at bottom)
                 visible=True,
+                badges=["Completed"],  # Phase 5K: Add completion badge
+                phase="analysis",  # Phase 5K: Amber border for completed items
             )
             # Add outcome if available
             outcome = get_product_outcome(key)
@@ -485,6 +499,87 @@ def _build_completed_tiles() -> list[ProductTileHub]:
             completed.append(tile)
     
     return completed
+
+
+def render_additional_services(user_ctx: dict) -> None:
+    """
+    Dynamically display additional services using existing core/additional_services.py logic.
+    
+    Phase 5L: Restores flag-driven partner services from Concierge Hub.
+    Uses get_additional_services("concierge") which includes:
+    - Universal services: Learning Center, Care Coordination Network
+    - Flag-triggered partners: Omcare, SeniorLife.AI (show "Navi Recommended" badge)
+    - Conditional services based on GCP flags and MCIP data
+    
+    Args:
+        user_ctx: User context dict (not used - get_additional_services() reads from MCIP directly)
+    """
+    st.markdown("### Additional Services")
+    st.caption("Partner-powered programs and tools personalized by Navi.")
+
+    services = get_additional_services("concierge")
+    if not services:
+        st.info("No additional services available right now.")
+        return
+
+    # Build cards HTML
+    cards_html = []
+    for svc in services:
+        personalization = svc.get("personalization")
+        badge = (
+            '<span class="service-badge">Navi Recommended</span>'
+            if personalization == "personalized"
+            else ""
+        )
+        
+        cards_html.append(
+            f'<div class="service-card">'
+            f'{badge}'
+            f'<h4 class="service-title">{svc["title"]}</h4>'
+            f'<p class="service-desc">{svc["subtitle"]}</p>'
+            f'<a href="?page={svc["go"]}" class="service-cta">{svc["cta"]}</a>'
+            f'</div>'
+        )
+    
+    # Render complete grid
+    full_html = f'<div class="service-grid-container">{"".join(cards_html)}</div>'
+    st.markdown(full_html, unsafe_allow_html=True)
+
+
+def _render_completed_journeys_section(completed_tiles: list[ProductTileHub]) -> None:
+    """Render the completed journeys section with proper grid alignment.
+    
+    Phase 5K: Uses grid layout matching main product tiles for consistency.
+    
+    Args:
+        completed_tiles: List of completed ProductTileHub objects
+    """
+    st.markdown('<div class="completed-journey-section">', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="completed-journey-header">My Completed Journeys</div>',
+        unsafe_allow_html=True
+    )
+    
+    if not completed_tiles:
+        # Show empty state when no completed journeys
+        st.markdown(
+            render_empty_state(
+                title="No Completed Journeys Yet",
+                message="When you finish a journey, it will appear here for easy review.",
+                icon="✅"
+            ),
+            unsafe_allow_html=True
+        )
+    else:
+        # Render tiles in grid layout matching main dashboard
+        st.markdown('<div class="completed-grid">', unsafe_allow_html=True)
+        for tile in completed_tiles:
+            tile_html = tile.render_html()
+            if tile_html:
+                st.markdown(tile_html, unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
 # ==============================================================================
@@ -626,8 +721,12 @@ def render(ctx=None) -> None:
     active_tiles = discovery_tiles + planning_tiles + engagement_tiles
     
     # Phase 5E: Filter tiles by visible modules from personalization
+    # Phase 5L: Removed additional_services exception (now rendered as separate dynamic section)
     if visible_modules:
-        active_tiles = [t for t in active_tiles if t.key in visible_modules or t.key.startswith("discovery_")]
+        active_tiles = [
+            t for t in active_tiles 
+            if t.key in visible_modules or t.key.startswith("discovery_")
+        ]
     
     # Sort by order
     active_tiles.sort(key=lambda t: t.order)
@@ -636,12 +735,6 @@ def render(ctx=None) -> None:
     # COMPLETED JOURNEYS SECTION (Phase 5G)
     # ========================================
     completed_tiles = _build_completed_tiles()
-    
-    # ========================================
-    # ADDITIONAL SERVICES (Phase 4A Revision)
-    # ========================================
-    # Only partner upsells and NAVI-driven recommendations
-    additional_services = get_additional_services("lobby")
     
     # ========================================
     # RENDER ACTIVE JOURNEYS (Phase 5G)
@@ -654,7 +747,7 @@ def render(ctx=None) -> None:
         hub_guide_block=None,
         hub_order=None,
         cards=active_tiles,
-        additional_services=[],  # Phase 5G: additional services rendered separately
+        additional_services=[],  # Phase 5L: additional services rendered separately with new dynamic system
     )
     
     st.markdown(body_html, unsafe_allow_html=True)
@@ -670,53 +763,17 @@ def render(ctx=None) -> None:
         )
     
     # ========================================
-    # ADDITIONAL SERVICES SECTION (Phase 5G)
+    # ADDITIONAL SERVICES SECTION (Phase 5L - Dynamic Context-Driven Cards)
     # ========================================
-    # Render as separate section above completed journeys
-    if additional_services:
-        st.markdown('<div class="additional-services-section">', unsafe_allow_html=True)
-        additional_html = render_dashboard_body(
-            title="",
-            subtitle=None,
-            chips=None,
-            hub_guide_block=None,
-            hub_order=None,
-            cards=[],
-            additional_services=additional_services,
-        )
-        st.markdown(additional_html, unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+    # Phase 5L: Replace old product-tile implementation with dynamic service cards
+    # Driven by care flags, not product tiles
+    render_additional_services(user_ctx)
     
     # ========================================
-    # MY COMPLETED JOURNEYS (Phase 5G)
+    # MY COMPLETED JOURNEYS (Phase 5K - Always Visible with Empty State)
     # ========================================
-    # Appears at bottom after additional services
-    if completed_tiles:
-        st.markdown('<div class="completed-journey-section">', unsafe_allow_html=True)
-        st.markdown(
-            '<div class="completed-journey-header">My Completed Journeys</div>',
-            unsafe_allow_html=True
-        )
-        
-        # Render completed tiles with dimmed styling
-        cols = st.columns(min(len(completed_tiles), 3))
-        for idx, tile in enumerate(completed_tiles):
-            col = cols[idx % len(cols)]
-            with col:
-                st.markdown('<div class="dashboard-card completed-card">', unsafe_allow_html=True)
-                st.markdown(f"### {tile.title}")
-                st.markdown(f"{tile.desc}")
-                # Phase 5G: Text-only completed badge (no emoji)
-                st.markdown(
-                    '<span class="completed-badge">Completed</span>',
-                    unsafe_allow_html=True
-                )
-                if st.button("Review Again", key=f"review_{tile.key}", use_container_width=True):
-                    st.query_params["page"] = tile.key
-                    st.rerun()
-                st.markdown('</div>', unsafe_allow_html=True)
-        
-        st.markdown('</div>', unsafe_allow_html=True)
+    # Use helper function for proper grid rendering
+    _render_completed_journeys_section(completed_tiles)
     
     # ========================================
     # FOOTER
