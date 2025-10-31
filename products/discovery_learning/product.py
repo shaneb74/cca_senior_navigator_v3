@@ -182,9 +182,10 @@ def _inject_discovery_styles():
         color: #222;
         font-size: 1.05rem;
         line-height: 1.55;
-        text-align: center;
+        text-align: center !important;
         max-width: 700px;
-        margin: 0 auto 2rem;
+        margin: 0 auto 2rem !important;
+        display: block;
     }
     .video-container {
         display: flex;
