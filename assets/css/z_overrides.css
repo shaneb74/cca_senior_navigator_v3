@@ -427,6 +427,77 @@ body.welcome .navi-card::before {
 }
 
 /* =====================================================
+   PHASE POST-CSS — CONTEXTUAL WELCOME REDESIGN
+   ===================================================== */
+
+/* Context toggle container - pill-style buttons */
+.context-toggle-container {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin: 1rem 0 2rem;
+}
+
+/* Individual context toggle button */
+.context-toggle {
+  border: none;
+  border-radius: 999px;
+  padding: 0.6rem 1.5rem;
+  background: #f2f4f8;
+  color: #222;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  font-size: 0.95rem;
+  text-decoration: none;
+}
+
+/* Hover state */
+.context-toggle:hover {
+  background: #e4e8ff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+}
+
+/* Active state - highlight color */
+.context-toggle.active {
+  background: #4f46e5;
+  color: white;
+  box-shadow: 0 3px 8px rgba(79, 70, 229, 0.3);
+}
+
+/* Focus state for accessibility */
+.context-toggle:focus {
+  outline: 3px solid #93c5fd;
+  outline-offset: 2px;
+}
+
+/* Mobile responsive - stack vertically */
+@media (max-width: 768px) {
+  .context-toggle-container {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .context-toggle {
+    min-width: 200px;
+    justify-content: center;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .context-toggle {
+    transition: none;
+  }
+}
+
+/* =====================================================
    PHASE POST-CSS — JOURNEY COMPLETION BADGE
    ===================================================== */
 

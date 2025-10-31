@@ -477,17 +477,17 @@ def render_welcome_card(
     for key in pill_keys:
         cfg = _PILLS[key]
         route = _PILL_ROUTES.get(key) or cfg.get("fallback") or "welcome"
-        # REMOVED: SVG icons that were causing black blob flash during transitions
-        icon = ""  # No icons - they were causing the flash
-        classes = "context-pill-link"
+        # Phase Post-CSS: Modern pill-style toggles
+        emoji = {"someone": "👥", "self": "🙂", "pro": "💼"}.get(key, "")
+        classes = "context-toggle"
         if key == safe_active:
-            classes += " is-active"
+            classes += " active"
 
         # Build aria-current attribute separately to avoid quote nesting issues
         aria_attr = 'aria-current="page"' if key == safe_active else ""
         href_with_uid = add_uid_to_href(f"?page={route}")
         pill_links.append(
-            f"<a href='{href_with_uid}' class='{classes}' data-pill='{key}' {aria_attr}>{icon}<span>{html.escape(cfg['label'])}</span></a>"
+            f"<a href='{href_with_uid}' class='{classes}' data-pill='{key}' {aria_attr}><span>{emoji} {html.escape(cfg['label'])}</span></a>"
         )
 
     with left_col:
@@ -497,10 +497,10 @@ def render_welcome_card(
         st.markdown(
             _clean_html(
                 f"""
-                <div class="context-top">
-                  <div class="context-pill-group">{"".join(pill_links)}</div>
-                  <a class="context-close" href="{back_href}" aria-label="Back to welcome">×</a>
+                <div class="context-toggle-container">
+                  {"".join(pill_links)}
                 </div>
+                <a class="context-close" href="{back_href}" aria-label="Back to welcome" style="position: absolute; top: 1rem; right: 1rem;">×</a>
                 """
             ),
             unsafe_allow_html=True,
