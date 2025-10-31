@@ -808,3 +808,55 @@ body.welcome .navi-card::before {
   transition: all 0.15s ease-in-out;
 }
 
+/* ============================================================
+   GCP Radio Pills - FINAL OVERRIDE (Prevents Streamlit Re-render Override)
+   ============================================================ */
+
+/* Force gray/black pill style even after Streamlit dynamic updates */
+[data-testid="stRadio"] label:not([data-testid="stWidgetLabel"]):not([aria-hidden="true"]),
+div[data-testid="stRadio"] label:not([data-testid="stWidgetLabel"]):not([aria-hidden="true"]) {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 24px !important;
+  margin: 0 6px 6px 0 !important;
+  border-radius: 8px !important;
+  border: 1px solid #e3eaf5 !important;
+  background-color: #f3f5f9 !important;
+  background: #f3f5f9 !important;
+  color: #1f2937 !important;
+  font-weight: 600 !important;
+  font-size: 15px !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+
+/* Hover state */
+[data-testid="stRadio"] label:not([data-testid="stWidgetLabel"]):not([aria-hidden="true"]):hover,
+div[data-testid="stRadio"] label:not([data-testid="stWidgetLabel"]):not([aria-hidden="true"]):hover {
+  background: #e8ecf3 !important;
+  background-color: #e8ecf3 !important;
+  border-color: #d1d9e6 !important;
+}
+
+/* Selected state - Black pill */
+[data-testid="stRadio"] label:not([data-testid="stWidgetLabel"]):not([aria-hidden="true"]):has(input:checked),
+div[data-testid="stRadio"] label:not([data-testid="stWidgetLabel"]):not([aria-hidden="true"]):has(input:checked) {
+  background: #111827 !important;
+  background-color: #111827 !important;
+  color: #ffffff !important;
+  border: 1px solid #111827 !important;
+  border-color: #111827 !important;
+}
+
+/* Hide radio circles */
+[data-testid="stRadio"] input[type="radio"],
+div[data-testid="stRadio"] input[type="radio"] {
+  display: none !important;
+  opacity: 0 !important;
+  position: absolute !important;
+  left: -9999px !important;
+}
+
