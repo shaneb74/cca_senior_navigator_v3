@@ -71,16 +71,22 @@ def render():
     def pill_radio_test(label, options, key_prefix="test", index=0):
         css = """
         <style>
-        [data-testid="stRadio"] div[role="radiogroup"]{
-            display:flex; flex-wrap:wrap; gap:8px;
+        [data-testid="stRadio"] > div[role="radiogroup"]{
+            display:flex !important; flex-wrap:wrap !important; gap:8px !important;
         }
-        [data-testid="stRadio"] div[role="radio"]{
-            border:1px solid #ccc; background:#f9f9f9;
-            color:#111; border-radius:10px;
-            padding:8px 14px; cursor:pointer;
+        [data-testid="stRadio"] > div[role="radiogroup"] > div{
+            border:1px solid #ccc !important; background:#f9f9f9 !important;
+            color:#111 !important; border-radius:10px !important;
+            padding:8px 14px !important; cursor:pointer !important;
         }
-        [data-testid="stRadio"] div[role="radio"][aria-checked="true"]{
-            background:#111; color:#fff; border-color:#111;
+        [data-testid="stRadio"] > div[role="radiogroup"] > div:has(input:checked){
+            background:#111 !important; color:#fff !important; border-color:#111 !important;
+        }
+        [data-testid="stRadio"] input[type="radio"]{
+            display:none !important;
+        }
+        [data-testid="stRadio"] label > div:first-child{
+            display:none !important;
         }
         </style>
         """
@@ -90,8 +96,8 @@ def render():
         return st.radio(label, options, key=widget_key, index=index, horizontal=True)
     
     st.markdown("---")
-    st.markdown("### 🔬 Diagnostic Test")
-    choice = pill_radio_test("Visual test (dynamic key)", ["Option A","Option B","Option C"], key_prefix="demo")
+    st.markdown("### 🔬 Diagnostic Test (Fixed Selectors)")
+    choice = pill_radio_test("Visual test (container divs)", ["Option A","Option B","Option C"], key_prefix="demo")
     st.write("Selected:", choice)
     st.markdown("---")
 

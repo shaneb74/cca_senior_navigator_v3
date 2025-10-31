@@ -18,31 +18,39 @@ PILL_CSS = r"""
 }
 
 [data-testid="stRadio"] > div[role="radiogroup"]{
-  display:flex;
-  flex-wrap:wrap;
-  gap:10px;
+  display:flex !important;
+  flex-wrap:wrap !important;
+  gap:10px !important;
 }
 
-[data-testid="stRadio"] div[role="radio"]{
+[data-testid="stRadio"] > div[role="radiogroup"] > div{
   border:1px solid var(--pill-border) !important;
   background:var(--pill-bg) !important;
   color:var(--pill-fg) !important;
-  padding:8px 14px;
-  border-radius:10px;
-  box-shadow:var(--pill-shadow);
-  cursor:pointer;
-  user-select:none;
-  transition:background .12s ease, color .12s ease, border-color .12s ease;
+  padding:8px 14px !important;
+  border-radius:10px !important;
+  box-shadow:var(--pill-shadow) !important;
+  cursor:pointer !important;
+  user-select:none !important;
+  transition:background .12s ease, color .12s ease, border-color .12s ease !important;
 }
 
-[data-testid="stRadio"] div[role="radio"]:hover{
+[data-testid="stRadio"] > div[role="radiogroup"] > div:hover{
   border-color:#d1d5db !important;
 }
 
-[data-testid="stRadio"] div[role="radio"][aria-checked="true"]{
+[data-testid="stRadio"] > div[role="radiogroup"] > div:has(input:checked){
   background:var(--pill-bg-active) !important;
   color:var(--pill-fg-active) !important;
   border-color:var(--pill-bg-active) !important;
+}
+
+[data-testid="stRadio"] input[type="radio"]{
+  display:none !important;
+}
+
+[data-testid="stRadio"] label > div:first-child{
+  display:none !important;
 }
 """
 
