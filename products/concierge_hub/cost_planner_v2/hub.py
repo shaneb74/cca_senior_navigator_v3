@@ -652,10 +652,10 @@ def _render_completion_screen():
             route_to("pfma_v3")
 
     with col2:
-        if st.button("🏠 Return to Hub", use_container_width=True, key="next_hub"):
-            from core.nav import route_to
+        if st.button("🏠 Return to Lobby", use_container_width=True, key="next_lobby"):
+            from core.url_helpers import back_to_lobby
 
-            route_to("hub_lobby")
+            back_to_lobby()
 
     # Debug mode
     if st.session_state.get("debug_mode"):

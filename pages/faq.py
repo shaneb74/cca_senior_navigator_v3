@@ -30,7 +30,7 @@ from core.flags import get_all_flags
 from core.mcip import MCIP
 from core.nav import route_to
 from core.navi import NaviOrchestrator
-from core.url_helpers import add_uid_to_href
+from core.url_helpers import add_uid_to_href, back_to_lobby
 from ui.header_simple import render_header_simple
 from ui.footer_simple import render_footer_simple
 
@@ -1955,8 +1955,8 @@ def render():
                 st.rerun()
 
         with col_back:
-            if st.button("← Back to Hub", key="back_to_hub_btn", use_container_width=True):
-                route_to("hub_lobby")
+            if st.button("← Back to Lobby", key="back_to_lobby_btn", use_container_width=True):
+                back_to_lobby()
     
     render_footer_simple()
 

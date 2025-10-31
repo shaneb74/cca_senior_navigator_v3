@@ -238,16 +238,24 @@ def render():
     
     with col1:
         if st.button("← Return to Lobby", use_container_width=True):
-            route_to("hub_lobby")
+            # Phase 5K: Direct navigation to lobby
+            st.query_params.clear()
+            st.query_params["page"] = "hub_lobby"
+            st.rerun()
     
     with col2:
-        if st.button("Continue to Guided Care Plan →", type="primary", use_container_width=True):
+        if st.button("Complete Discovery Journey", type="primary", use_container_width=True):
             # Mark as complete
             _mark_complete()
+            # Show success message
+            st.success("✅ Discovery Journey marked as complete! You can now find it in Completed Journeys.")
             # Advance to planning phase
             advance_to("planning")
-            # Navigate to GCP
-            route_to("gcp_v4")
+            # Phase 5K: Return to lobby instead of navigating to GCP
+            # User can start GCP from lobby when ready
+            st.query_params.clear()
+            st.query_params["page"] = "hub_lobby"
+            st.rerun()
     
     # Render footer
     render_footer_simple()

@@ -92,12 +92,12 @@ def actions(
     # Progress is automatically saved to tile_state and persists across sessions
     save_exit_clicked = False
 
-    # Back to hub - small text link at bottom
+    # Back to lobby - small text link at bottom
     st.markdown('<div class="mod-back-hub-wrapper">', unsafe_allow_html=True)
     # Inject data-role into the button container div
     st.markdown('<div data-role="secondary">', unsafe_allow_html=True)
     back_to_hub_clicked = st.button(
-        "← Back to Hub",
+        "← Back to Lobby",
         key="_mod_back_hub_v2",
         type="secondary",
         use_container_width=False,
