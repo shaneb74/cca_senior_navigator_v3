@@ -418,9 +418,40 @@ body.welcome .navi-card::before {
   background: var(--surface-card);
 }
 
+
 /* Hover effects for product/hub cards */
 .product-card:hover,
 .hub-card:hover {
   box-shadow: var(--shadow-md);
   transition: box-shadow 0.2s ease;
 }
+
+/* =====================================================
+   PHASE POST-CSS — JOURNEY COMPLETION BADGE
+   ===================================================== */
+
+/* Journey Completion Badge with fade-in animation */
+.completed-badge {
+  display: inline-block;
+  background: var(--success-bg, #e6f9ee);
+  color: var(--success-text, #1b7f3c);
+  font-weight: 600;
+  border-radius: 20px;
+  padding: 4px 10px;
+  font-size: 0.85rem;
+  opacity: 0;
+  transform: translateY(-4px);
+  animation: fadeInBadge 0.6s ease-out forwards;
+}
+
+@keyframes fadeInBadge {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+

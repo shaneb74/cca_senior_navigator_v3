@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from typing import Any
+from datetime import datetime
 
 
 def _get_flag(name: str, default: str = "off") -> str:
@@ -67,3 +68,33 @@ def log_event(event: str, data: Mapping[str, Any] | None = None) -> None:
             print(f"[EVENT_WARN] {event}: {e}")
         except Exception:
             pass
+
+
+def mark_product_complete(user_ctx: dict, product_key: str) -> dict:
+    """Mark a product complete and auto-update its parent journey.
+    
+    Phase Post-CSS: Consolidates completion logic for products and journeys.
+    When all products in a journey are complete, the journey auto-completes.
+    
+    Args:
+        user_ctx: User context dictionary
+        product_key: Product identifier (e.g., "cost_planner", "guided_care_plan")
+    
+    Returns:
+        Updated user context
+    """
+    journeys = user_ctx.setdefault("journeys", {})
+
+    for journey_key, journey_data in journeys.items():
+        products = journey_data.get("products", {})
+        if product_key in products:
+            products[product_key]["completed"] = True
+            journey_data["updated_at"] = datetime.utcnow().isoformat()
+
+            # If all products are now complete, mark journey complete
+            if all(p.get("completed") for p in products.values()):
+                journey_data["completed"] = True
+                journey_data["status"] = "completed"
+            break
+
+    return user_ctx
