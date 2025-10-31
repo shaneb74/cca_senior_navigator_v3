@@ -45,7 +45,7 @@ def render():
     st.markdown("""
     <div class="navi-box">
         <p><b>Hi, I'm Navi.</b> I'll help you discover everything Senior Navigator can do — and guide you step by step.</p>
-        <p class="subtext">We'll explore how this app helps you and your loved ones make confident care decisions.</p>
+        <p>We'll explore how this app helps you and your loved ones make confident care decisions.</p>
     </div>
     """, unsafe_allow_html=True)
     
@@ -57,21 +57,17 @@ def render():
     </p>
     """, unsafe_allow_html=True)
     
-    # Embedded YouTube video (smaller, centered)
-    st.markdown('<div class="video-container">', unsafe_allow_html=True)
+    # Embedded YouTube video
     st.markdown("""
-    <iframe 
-        width="560" 
-        height="315" 
-        src="https://www.youtube.com/embed/eHFcJSS-2l4" 
-        title="Curious about Senior Living?" 
-        frameborder="0" 
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-        allowfullscreen
-        class="video-frame">
-    </iframe>
+    <div class="video-container">
+        <iframe class="video-frame"
+            src="https://www.youtube.com/embed/eHFcJSS-2l4"
+            title="Curious about Senior Living?"
+            frameborder="0"
+            allowfullscreen>
+        </iframe>
+    </div>
     """, unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
     
     st.markdown("<br/>", unsafe_allow_html=True)
     
@@ -160,20 +156,6 @@ def _inject_discovery_styles():
     """Inject elegant styling for Discovery Journey page."""
     st.markdown("""
     <style>
-    /* === Layout === */
-    .main {
-        padding: 2rem 3rem;
-        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
-        max-width: 1200px;
-        margin: 0 auto;
-    }
-    
-    .main .block-container {
-        max-width: 1200px;
-        margin: 0 auto;
-    }
-
-    /* === Title === */
     .discovery-title {
         font-size: 2.25rem;
         font-weight: 800;
@@ -182,8 +164,6 @@ def _inject_discovery_styles():
         margin: 0 auto 1.25rem;
         line-height: 1.2;
     }
-
-    /* === Navi box === */
     .navi-box {
         background: #f7f8ff;
         border-left: 5px solid #5b5fc7;
@@ -193,20 +173,9 @@ def _inject_discovery_styles():
         max-width: 720px;
         box-shadow: 0 2px 10px rgba(0,0,0,0.05);
     }
-    .navi-box p {
-        margin: 0.25rem 0;
-        line-height: 1.5;
-    }
     .navi-box b {
         color: #0E1E54;
-        font-weight: 700;
     }
-    .navi-box .subtext {
-        color: #596080;
-        font-size: 0.95rem;
-    }
-
-    /* === Intro text === */
     .discovery-intro {
         color: #222;
         font-size: 1.05rem;
@@ -215,8 +184,6 @@ def _inject_discovery_styles():
         max-width: 700px;
         margin: 0 auto 2rem;
     }
-
-    /* === Video === */
     .video-container {
         display: flex;
         justify-content: center;
@@ -225,76 +192,70 @@ def _inject_discovery_styles():
     .video-frame {
         width: 90%;
         max-width: 720px;
-        height: 405px;
+        aspect-ratio: 16 / 9;
         border-radius: 16px;
-        overflow: hidden;
         box-shadow: 0 6px 20px rgba(0,0,0,0.12);
     }
-
-    /* === Ask Navi === */
     .ask-navi-title {
         font-size: 1.4rem;
         font-weight: 700;
         color: #0E1E54;
-        margin-bottom: 0.75rem;
+        margin: 2rem 0 1rem;
         text-align: center;
     }
-    
-    /* Style the text input */
-    div[data-testid="stTextInput"] input {
-        border-radius: 10px !important;
-        padding: 0.75rem !important;
-        font-size: 0.95rem !important;
-        border: 1px solid #dce0e6 !important;
-    }
-    
-    /* FAQ buttons */
     .ask-navi-buttons {
-        margin-top: 0.75rem;
-        margin-bottom: 2rem;
-        max-width: 720px;
-        margin-left: auto;
-        margin-right: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+        margin-top: 0.9rem;
     }
-
-    /* === Footer buttons === */
+    .ask-navi-buttons button {
+        width: 100%;
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 0.8rem 1rem;
+        border-radius: 8px;
+        background-color: #ffffff;
+        border: 1px solid #dce0e6;
+        color: #0E1E54;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.15s ease-in-out;
+    }
+    .ask-navi-buttons button:hover {
+        background-color: #f5f7ff;
+        border-color: #b5b9f5;
+    }
     .footer-buttons {
         display: flex;
-        gap: 1rem;
-        margin: 2rem auto 2rem auto;
-        max-width: 600px;
+        justify-content: center;
+        gap: 1.25rem;
+        margin-top: 2rem;
     }
-
-    /* === Responsive === */
-    @media (max-width: 768px) {
-        .main {
-            padding: 1rem 1.5rem;
-        }
-        
-        .discovery-title {
-            font-size: 1.5rem;
-        }
-        
-        .navi-box {
-            padding: 1rem;
-            max-width: 100%;
-        }
-        
-        .discovery-intro {
-            font-size: 0.95rem;
-        }
-        
-        .video-frame {
-            height: 220px;
-        }
-        
-        .ask-navi-title {
-            font-size: 1.2rem;
-        }
-        
-        .footer-buttons {
-            flex-direction: column;
-        }
+    .footer-buttons button {
+        flex: 1;
+        max-width: 300px;
+        padding: 0.9rem 1.2rem;
+        font-weight: 600;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        font-size: 0.95rem;
+    }
+    .btn-back {
+        background-color: #fff;
+        color: #0E1E54;
+        border: 1px solid #cfd2dc;
+    }
+    .btn-back:hover {
+        background-color: #f4f6fa;
+    }
+    .btn-continue {
+        background-color: #0E1E54;
+        color: white;
+    }
+    .btn-continue:hover {
+        background-color: #1c2f88;
     }
     </style>
     """, unsafe_allow_html=True)
