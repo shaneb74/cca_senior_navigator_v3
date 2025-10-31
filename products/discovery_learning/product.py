@@ -160,78 +160,73 @@ def _inject_discovery_styles():
     """Inject elegant styling for Discovery Journey page."""
     st.markdown("""
     <style>
-    /* Discovery Journey - Story-Driven Design with Video */
-    
-    /* Global layout */
+    /* === Layout === */
     .main {
         padding: 2rem 3rem;
         font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
     }
-    
-    /* Title */
+
+    /* === Title === */
     .discovery-title {
-        font-size: 2rem;
+        font-size: 2.25rem;
         font-weight: 800;
         color: #0E1E54;
-        margin: 0 auto 1.5rem auto;
         text-align: center;
-        max-width: 700px;
-        padding: 0 1rem;
+        margin: 0 auto 1.25rem;
+        line-height: 1.2;
     }
-    
-    /* Navi intro box */
+
+    /* === Navi box === */
     .navi-box {
-        background: #f9f9ff;
-        border-left: 4px solid #5b5fc7;
+        background: #f7f8ff;
+        border-left: 5px solid #5b5fc7;
         border-radius: 10px;
-        padding: 1.25rem 1.5rem;
-        margin: 0 auto 1.5rem auto;
-        max-width: 700px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        padding: 1.2rem 1.5rem;
+        margin: 0 auto 2rem;
+        max-width: 720px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
     }
-    
+    .navi-box p {
+        margin: 0.25rem 0;
+        line-height: 1.5;
+    }
     .navi-box b {
-        color: #111;
+        color: #0E1E54;
         font-weight: 700;
     }
-    
     .navi-box .subtext {
-        color: #465275;
+        color: #596080;
         font-size: 0.95rem;
-        margin-top: 0.25rem;
     }
-    
-    /* Intro paragraph */
+
+    /* === Intro text === */
     .discovery-intro {
-        color: #1a1a1a;
-        font-size: 1rem;
-        line-height: 1.5;
-        margin: 0 auto 1.5rem auto;
+        color: #222;
+        font-size: 1.05rem;
+        line-height: 1.55;
         text-align: center;
         max-width: 700px;
-        padding: 0 1rem;
+        margin: 0 auto 2rem;
     }
-    
-    /* Video container */
+
+    /* === Video === */
     .video-container {
         display: flex;
         justify-content: center;
-        margin: 1.5rem auto 2rem auto;
-        max-width: 700px;
-        padding: 0 1rem;
+        margin-bottom: 2.25rem;
     }
-    
     .video-frame {
-        width: 100%;
-        max-width: 560px;
-        height: 315px;
-        border-radius: 12px;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+        width: 90%;
+        max-width: 720px;
+        height: 405px;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.12);
     }
-    
-    /* Ask Navi section */
+
+    /* === Ask Navi === */
     .ask-navi-title {
-        font-size: 1.25rem;
+        font-size: 1.4rem;
         font-weight: 700;
         color: #0E1E54;
         margin-bottom: 0.75rem;
@@ -240,7 +235,7 @@ def _inject_discovery_styles():
     
     /* Style the text input */
     div[data-testid="stTextInput"] input {
-        border-radius: 12px !important;
+        border-radius: 10px !important;
         padding: 0.75rem !important;
         font-size: 0.95rem !important;
         border: 1px solid #dce0e6 !important;
@@ -250,20 +245,20 @@ def _inject_discovery_styles():
     .ask-navi-buttons {
         margin-top: 0.75rem;
         margin-bottom: 2rem;
-        max-width: 700px;
+        max-width: 720px;
         margin-left: auto;
         margin-right: auto;
     }
-    
-    /* Footer buttons */
+
+    /* === Footer buttons === */
     .footer-buttons {
         display: flex;
         gap: 1rem;
         margin: 2rem auto 2rem auto;
         max-width: 600px;
     }
-    
-    /* Responsive */
+
+    /* === Responsive === */
     @media (max-width: 768px) {
         .main {
             padding: 1rem 1.5rem;
@@ -271,29 +266,23 @@ def _inject_discovery_styles():
         
         .discovery-title {
             font-size: 1.5rem;
-            padding: 0 0.5rem;
         }
         
         .navi-box {
             padding: 1rem;
-            margin: 0 0.5rem 1.5rem 0.5rem;
+            max-width: 100%;
         }
         
         .discovery-intro {
-            font-size: 0.9rem;
-            padding: 0 0.5rem;
-        }
-        
-        .video-container {
-            padding: 0 0.5rem;
+            font-size: 0.95rem;
         }
         
         .video-frame {
-            height: 200px;
+            height: 220px;
         }
         
         .ask-navi-title {
-            font-size: 1.1rem;
+            font-size: 1.2rem;
         }
         
         .footer-buttons {
