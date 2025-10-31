@@ -64,7 +64,7 @@ def render():
     st.markdown("""
     <div class="video-container">
         <iframe class="video-frame"
-            src="https://www.youtube.com/embed/eHFcJSS-2l4"
+            src="https://www.youtube.com/embed/BSJMIRI59b4"
             title="Curious about Senior Living?"
             frameborder="0"
             allowfullscreen>
