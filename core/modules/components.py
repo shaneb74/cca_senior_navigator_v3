@@ -123,6 +123,81 @@ def input_pill(field: FieldDef, current: Any = None) -> Any:
 
     # Render with wrapper for custom styling
     st.markdown('<div class="sn-app mod-field mod-radio-pills">', unsafe_allow_html=True)
+    
+    # Inject persistent CSS to survive Streamlit reruns and Emotion style injection
+    st.html("""
+    <style>
+    /* Radio pill containers - force after every rerun */
+    [data-testid="stRadio"] > div[role="radiogroup"] > div {
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      padding: 0.55rem 1.1rem !important;
+      margin: 0.25rem !important;
+      border-radius: 9999px !important;
+      border: 1px solid #e3eaf5 !important;
+      background: #f3f5f9 !important;
+      color: #374151 !important;
+      font-weight: 500 !important;
+      font-size: 0.9rem !important;
+      cursor: pointer !important;
+      transition: all 0.2s ease-in-out !important;
+    }
+    
+    [data-testid="stRadio"] > div[role="radiogroup"] > div:hover {
+      background: #e8ecf4 !important;
+      border-color: #d1d9e8 !important;
+    }
+    
+    /* Selected state */
+    [data-testid="stRadio"] > div[role="radiogroup"] > div:has(input:checked) {
+      background: #111827 !important;
+      color: #ffffff !important;
+      border: 1px solid #111827 !important;
+      box-shadow: 0 4px 12px rgba(17, 24, 39, 0.25) !important;
+    }
+    
+    /* Labels inside containers */
+    [data-testid="stRadio"] > div[role="radiogroup"] > div > label {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      width: 100% !important;
+      height: 100% !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      cursor: pointer !important;
+      color: inherit !important;
+    }
+    
+    /* Text color in selected pills */
+    [data-testid="stRadio"] > div[role="radiogroup"] > div:has(input:checked) label,
+    [data-testid="stRadio"] > div[role="radiogroup"] > div:has(input:checked) div {
+      color: #ffffff !important;
+    }
+    
+    /* Hide radio circles */
+    [data-testid="stRadio"] input[type="radio"] {
+      display: none !important;
+      opacity: 0 !important;
+      position: absolute !important;
+      left: -9999px !important;
+    }
+    
+    /* Hide first child div containing radio circle */
+    [data-testid="stRadio"] label > div:first-child {
+      display: none !important;
+    }
+    
+    /* Ensure text labels visible */
+    [data-testid="stRadio"] label > div:last-child {
+      display: inline !important;
+      color: inherit !important;
+      background: transparent !important;
+    }
+    </style>
+    """)
+    
     st.markdown(f"<div class='mod-label'><span>{H(label)}</span></div>", unsafe_allow_html=True)
     if field.help:
         st.markdown(f"<div class='mod-help'>{H(field.help)}</div>", unsafe_allow_html=True)
