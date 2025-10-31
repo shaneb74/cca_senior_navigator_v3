@@ -33,7 +33,7 @@ def _normalize_img(path: str | None) -> str:
         return s
     if s.startswith("images/"):
         return f"static/{s}"
-    return f"static/images/{s}"
+    return f"assets/images/{s}"
 
 
 def _resolve_img(img: str | None) -> tuple[str, str]:

@@ -20,7 +20,7 @@ _REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
 def img_src(rel_path: str) -> str:
     """
     Return a base64 data URI for an image at repo-relative rel_path.
-    Example: img_src("static/images/hero.png")
+    Example: img_src("assets/images/hero.png")
     WARNING: Returns empty string for missing files. Use safe_img_src() for None returns.
     """
     safe_rel = rel_path.lstrip("/").replace("\\", "/")
@@ -64,8 +64,8 @@ def legacy_safe_img_src(filename: str) -> str:
         candidates.append(f"logos/{clean}")
     if not clean.startswith("images/"):
         candidates.append(f"images/{clean}")
-    if not clean.startswith("static/images/"):
-        candidates.append(f"static/images/{clean}")
+    if not clean.startswith("assets/images/"):
+        candidates.append(f"assets/images/{clean}")
     for candidate in candidates:
         try:
             return static_url(candidate)

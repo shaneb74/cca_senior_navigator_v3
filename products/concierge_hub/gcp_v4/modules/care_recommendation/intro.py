@@ -19,7 +19,7 @@ from core.content_contract import build_token_context, resolve_content
 @st.cache_resource
 def _load_planning_bytes() -> bytes | None:
     try:
-        with open("static/images/planning.png", "rb") as f:
+        with open("assets/images/planning.png", "rb") as f:
             return f.read()
     except Exception:
         return None

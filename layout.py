@@ -26,14 +26,14 @@ def static_url(filename: str) -> str:
     Accepts any of:
       - "gcp.png"
       - "images/gcp.png"
-      - "static/images/gcp.png"
+      - "assets/images/gcp.png"
     and returns a repo-relative URL via img_src.
     """
     from core.ui import img_src  # lazy import to avoid circular deps
 
     safe = filename.lstrip("/").replace("\\", "/")
-    if safe.startswith("static/images/"):
-        safe = safe[len("static/images/") :]
+    if safe.startswith("assets/images/"):
+        safe = safe[len("assets/images/") :]
     elif safe.startswith("images/"):
         safe = safe[len("images/") :]
 

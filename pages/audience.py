@@ -211,11 +211,11 @@ def _page_content():
     if mode == "self":
         title = "We're here to help you find the support you're looking for."
         placeholder = "What's your name?"
-        image_path = "static/images/tell_us_about_you.png"
+        image_path = "assets/images/tell_us_about_you.png"
     else:  # someone
         title = "We're here to help you find the support your loved ones need."
         placeholder = "What's their name?"
-        image_path = "static/images/tell_us_about_them.png"
+        image_path = "assets/images/tell_us_about_them.png"
     
     # Load image
     photo_data = img_src(image_path)
