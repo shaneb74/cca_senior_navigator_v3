@@ -32,7 +32,7 @@ PILL_CSS = r"""
   box-shadow:var(--pill-shadow);
   cursor:pointer;
   user-select:none;
-  transition:background .12s ease, color .12s ease, border-color .12s ease, transform .04s ease;
+  transition:background .12s ease, color .12s ease, border-color .12s ease;
 }
 
 [data-testid="stRadio"] div[role="radio"]:hover{
@@ -44,55 +44,61 @@ PILL_CSS = r"""
   color:var(--pill-fg-active) !important;
   border-color:var(--pill-bg-active) !important;
 }
-
-[data-testid="stRadio"] div[role="radio"]:focus{
-  outline:2px solid #11182733;
-  outline-offset:2px;
-  border-color:#111827 !important;
-}
 """
 
 def inject_pill_css():
     """
-    Ensures the pill CSS always remains the last style in <head>,
-    surviving Streamlit/Emotion re-injections after widget interactions.
+    Ensures pill CSS always re-applies *after* Streamlit Emotion reinjects its styles.
+    Uses a targeted observer that tracks Emotion's mount events specifically.
     
     This works by:
-    1. Injecting a <style> tag with a unique ID
-    2. Using MutationObserver to watch for <head> changes
-    3. Re-appending our style to the end whenever Emotion injects new styles
+    1. Watching for Emotion's style[data-emotion] tag in <head>
+    2. Re-appending our style after any Emotion mutation
+    3. Running a heartbeat check every 1s to ensure recovery from full teardowns
     
     Call this once at the top of each page render that uses radio pills.
     It's idempotent and lightweight.
     """
-    html(
-        f"""
-        <script>
-        (function() {{
-          const STYLE_ID = "cca-pill-css";
-          const CSS_TEXT = `{PILL_CSS}`;
-          function ensureLast() {{
+    html(f"""
+    <script>
+    (function() {{
+        const STYLE_ID = "cca-pill-css";
+        const CSS_TEXT = `{PILL_CSS}`;
+        let emotionObserver = null;
+
+        function applyStyles() {{
             let el = document.getElementById(STYLE_ID);
             if (!el) {{
-              el = document.createElement("style");
-              el.id = STYLE_ID;
-              el.appendChild(document.createTextNode(CSS_TEXT));
-              document.head.appendChild(el);
-              return;
+                el = document.createElement("style");
+                el.id = STYLE_ID;
+                el.textContent = CSS_TEXT;
+                document.head.appendChild(el);
+            }} else {{
+                // re-append so it always stays last
+                el.remove();
+                document.head.appendChild(el);
             }}
-            // If our style isn't the last one, move it to the end
-            if (el.parentNode !== document.head || document.head.lastChild !== el) {{
-              el.remove();
-              document.head.appendChild(el);
-            }}
-          }}
-          // Ensure now…
-          ensureLast();
-          // …and keep ensuring any time Streamlit/Emotion mutates <head>
-          const mo = new MutationObserver(ensureLast);
-          mo.observe(document.head, {{ childList: true }});
-        }})();
-        </script>
-        """,
-        height=0,
-    )
+        }}
+
+        function watchEmotion() {{
+            // watch for Emotion cache re-injection
+            const emotionHead = document.querySelector('style[data-emotion]');
+            if (!emotionHead) return;
+            if (emotionObserver) emotionObserver.disconnect();
+
+            emotionObserver = new MutationObserver(() => {{
+                applyStyles();
+            }});
+            emotionObserver.observe(document.head, {{ childList: true }});
+        }}
+
+        // run now and reapply every second in case of delayed emotion injection
+        applyStyles();
+        watchEmotion();
+        setInterval(() => {{
+            if (!document.getElementById(STYLE_ID)) applyStyles();
+        }}, 1000);
+    }})();
+    </script>
+    """, height=0)
+
