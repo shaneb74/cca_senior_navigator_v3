@@ -821,7 +821,6 @@ body.welcome .navi-card::before {
 div[data-testid="stRadio"] label:not([data-testid="stWidgetLabel"]):not([aria-hidden="true"]),
 div[data-testid="stRadio"] > div > label:not([data-testid="stWidgetLabel"]):not([aria-hidden="true"]),
 div[data-testid="stRadio"] div[role="radiogroup"] > label:not([data-testid="stWidgetLabel"]):not([aria-hidden="true"]) {
-  all: unset !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -843,6 +842,10 @@ div[data-testid="stRadio"] div[role="radiogroup"] > label:not([data-testid="stWi
   transition: all 0.15s ease !important;
   box-sizing: border-box !important;
   white-space: nowrap !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  text-decoration: none !important;
+  outline: none !important;
+  user-select: none !important;
 }
 
 /* Hover state - ALL variations */
