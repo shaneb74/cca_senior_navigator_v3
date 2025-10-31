@@ -64,38 +64,63 @@ section, .container, .tile-grid {
    COMPLETED JOURNEY CARDS
    ===================================================== */
 .completed-card {
-    background: linear-gradient(180deg, #f8faff 0%, #ffffff 100%);
-    border-left: 5px solid #2ecc71;
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-sm);
-    padding: 1.25rem 1.5rem;
-    position: relative;
-    transition: var(--transition-default);
+    background: linear-gradient(180deg, #f9fafc 0%, #f5f6f8 100%);
+    border: 1px solid #e3e5eb;
+    border-radius: 12px;
+    padding: 1.75rem 1.75rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.04);
+    transition: transform 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
     max-width: 700px;
-    margin: 0 auto;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .completed-card:hover {
-    background: linear-gradient(180deg, #f2fcf7 0%, #ffffff 100%);
-    border-left: 5px solid #27ae60;
-    transform: translateY(-1px);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 14px rgba(0, 0, 0, 0.08);
 }
 
-.completed-card::after {
-    content: "✓";
-    font-weight: bold;
-    font-size: 1.2rem;
-    color: #27ae60;
-    position: absolute;
-    top: var(--space-md);
-    right: var(--space-md);
-    background: #e8f9f0;
-    border-radius: 50%;
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.completed-card h3 {
+    color: #0E1E54;
+    font-weight: 700;
+    margin-bottom: 0.4rem;
+    font-size: 1.25rem;
+}
+
+.completed-card p {
+    color: #4a4e63;
+    font-size: 0.95rem;
+    margin-bottom: 1.25rem;
+}
+
+/* === Completed Badge === */
+.completed-badge {
+    background: #edf0f5;
+    color: #3a3f52;
+    border-radius: 24px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.35rem 0.9rem;
+    display: inline-block;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+/* === "View Summary" Button === */
+.view-summary-btn {
+    background-color: #0E1E54;
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 0.9rem;
+    padding: 0.65rem 1.25rem;
+    border-radius: 8px;
+    border: none;
+    transition: background 0.15s ease-in-out;
+}
+
+.view-summary-btn:hover {
+    background-color: #1b2f88;
 }
 
 /* =====================================================
