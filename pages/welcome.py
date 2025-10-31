@@ -493,18 +493,48 @@ def render_welcome_card(
     with left_col:
         st.markdown('<span class="context-card-sentinel"></span>', unsafe_allow_html=True)
 
-        back_href = add_uid_to_href("?page=welcome")
-        st.markdown(
-            _clean_html(
-                f"""
-                <div class="context-toggle-container">
-                  {"".join(pill_links)}
-                </div>
-                <a class="context-close" href="{back_href}" aria-label="Back to welcome" style="position: absolute; top: 1rem; right: 1rem;">×</a>
-                """
-            ),
-            unsafe_allow_html=True,
-        )
+        # Phase Post-CSS: Streamlit-native button toggles (no JS)
+        ctx = st.session_state.get("context")  # "someone" | "me" | None
+
+        st.markdown('<div id="welcome-context">', unsafe_allow_html=True)
+        c1, c2, c3 = st.columns([1, 1, 0.2])
+
+        with c1:
+            st.markdown(
+                f'<div class="toggle {"active" if ctx=="someone" else ""}">', 
+                unsafe_allow_html=True
+            )
+            if st.button("👥  For someone", key="ctx_someone"):
+                st.session_state["context"] = "someone"
+                st.rerun()
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        with c2:
+            st.markdown(
+                f'<div class="toggle {"active" if ctx=="me" else ""}">', 
+                unsafe_allow_html=True
+            )
+            if st.button("🙂  For me", key="ctx_me"):
+                st.session_state["context"] = "me"
+                st.rerun()
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        with c3:
+            st.markdown('<div class="toggle small">', unsafe_allow_html=True)
+            if st.button("×", key="ctx_cancel"):
+                st.session_state.pop("context", None)
+                st.session_state.pop("relationship", None)
+                st.rerun()
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        st.markdown("</div>", unsafe_allow_html=True)
+
+        if st.session_state.get("context") == "someone":
+            st.selectbox(
+                "Your relationship",
+                ["Adult Child (Son or Daughter)", "Spouse/Partner", "Sibling", "Friend", "Other"],
+                key="relationship",
+            )
 
         st.markdown(
             f'<h1 class="context-title">{html.escape(title)}</h1>',
