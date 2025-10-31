@@ -57,9 +57,20 @@ def render():
     </p>
     """, unsafe_allow_html=True)
     
-    # Embedded YouTube video
+    # Embedded YouTube video (smaller, centered)
     st.markdown('<div class="video-container">', unsafe_allow_html=True)
-    st.video("https://www.youtube.com/watch?v=eHFcJSS-2l4")
+    st.markdown("""
+    <iframe 
+        width="560" 
+        height="315" 
+        src="https://www.youtube.com/embed/eHFcJSS-2l4" 
+        title="Curious about Senior Living?" 
+        frameborder="0" 
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+        allowfullscreen
+        class="video-frame">
+    </iframe>
+    """, unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
     
     st.markdown("<br/>", unsafe_allow_html=True)
@@ -202,13 +213,16 @@ def _inject_discovery_styles():
     .video-container {
         display: flex;
         justify-content: center;
-        margin: 2rem auto;
-        max-width: 700px;
+        margin: 1.5rem auto 2rem auto;
+        max-width: 560px;
     }
     
-    .video-container iframe {
-        border-radius: 14px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    .video-frame {
+        width: 100%;
+        max-width: 560px;
+        height: 315px;
+        border-radius: 12px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.1);
     }
     
     /* Ask Navi section */
@@ -257,6 +271,10 @@ def _inject_discovery_styles():
         
         .navi-box {
             padding: 1rem;
+        }
+        
+        .video-frame {
+            height: 200px;
         }
         
         .footer-buttons {
