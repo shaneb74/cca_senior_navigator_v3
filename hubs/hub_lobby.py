@@ -634,6 +634,7 @@ def _render_lobby_tour() -> None:
     - Additional services
     - Completed journeys
     
+    Uses intro.js for proper element highlighting and positioning.
     Tour runs once per user session, with manual replay via help icon.
     """
     # Global enable/disable flag
@@ -646,145 +647,209 @@ def _render_lobby_tour() -> None:
     if "lobby_tour_done" not in st.session_state:
         st.session_state["lobby_tour_done"] = False
     
-    if "lobby_tour_step" not in st.session_state:
-        st.session_state["lobby_tour_step"] = 0
-    
-    if "lobby_tour_active" not in st.session_state:
-        st.session_state["lobby_tour_active"] = False
-    
-    # Auto-start tour for first-time users
-    if not st.session_state["lobby_tour_done"] and not st.session_state["lobby_tour_active"]:
-        st.session_state["lobby_tour_active"] = True
-    
-    # Tour steps definition
-    tour_steps = [
-        {
-            "title": "🧭 Welcome to Your Lobby",
-            "message": "Let's take a quick tour to show you around. You'll learn where everything is and how to navigate your care journey.",
-            "target": None
-        },
-        {
-            "title": "👋 Meet Navi - Your AI Guide",
-            "message": "Look for this section at the top of your Lobby. Navi provides personalized guidance, tracks your progress, and suggests next steps based on where you are in your journey.",
-            "target": "navi-panel"
-        },
-        {
-            "title": "🧭 Your Active Journeys",
-            "message": "This is where you'll find all active products and tools. Start with the Discovery Journey if you're new, or continue your Guided Care Plan and Cost Planner when you're ready.",
-            "target": "product-tiles"
-        },
-        {
-            "title": "💡 Additional Services",
-            "message": "Below your active journeys, you'll see partner services and AI-recommended resources tailored to your specific care needs and situation.",
-            "target": "additional-services"
-        },
-        {
-            "title": "✅ Completed Journeys",
-            "message": "Once you complete a journey, it moves here. You can always come back to review your care recommendation, cost plan, or other completed assessments.",
-            "target": "completed-journeys"
-        },
-        {
-            "title": "🎉 You're All Set!",
-            "message": "That's everything! If you ever need this tour again, click the ❓ help icon in the top-right corner. Ready to begin?",
-            "target": None
-        }
-    ]
+    # Check for replay trigger from query params
+    if st.query_params.get("replay_tour") == "1":
+        st.session_state["lobby_tour_done"] = False
+        st.query_params.clear()
     
     # Render replay button (always visible after first tour)
     if st.session_state["lobby_tour_done"]:
         st.markdown(
             """
-            <div class="tour-replay-button" id="tour-replay">
-                <button onclick="window.location.href='?page=hub_lobby&replay_tour=1'" 
-                        title="Replay tour"
-                        style="
-                            position: fixed;
-                            top: 24px;
-                            right: 24px;
-                            z-index: 9999;
-                            border: none;
-                            background: transparent;
-                            cursor: pointer;
-                            color: var(--text-secondary, #666);
-                            font-size: 24px;
-                            padding: 8px;
-                            border-radius: 50%;
-                            transition: all 0.2s ease;
-                        "
-                        onmouseover="this.style.background='var(--surface-hover, #f0f0f0)'"
-                        onmouseout="this.style.background='transparent'">
-                    ❓
-                </button>
-            </div>
+            <a href="?page=hub_lobby&replay_tour=1" 
+               class="tour-replay-button" 
+               title="Replay lobby tour"
+               style="
+                   position: fixed;
+                   top: 24px;
+                   right: 24px;
+                   z-index: 9999;
+                   border: none;
+                   background: transparent;
+                   cursor: pointer;
+                   color: var(--text-secondary, #666);
+                   font-size: 24px;
+                   padding: 8px;
+                   border-radius: 50%;
+                   text-decoration: none;
+                   transition: all 0.2s ease;
+               "
+               onmouseover="this.style.background='var(--surface-hover, #f0f0f0)'"
+               onmouseout="this.style.background='transparent'">
+                ❓
+            </a>
             """,
             unsafe_allow_html=True
         )
+        return
     
-    # Check for replay trigger
-    if st.query_params.get("replay_tour") == "1":
-        st.session_state["lobby_tour_active"] = True
-        st.session_state["lobby_tour_step"] = 0
-        # Clear query param to prevent re-trigger
-        st.query_params.clear()
-    
-    # Render active tour
-    if st.session_state["lobby_tour_active"]:
-        current_step = st.session_state["lobby_tour_step"]
+    # Inject intro.js library and tour script
+    st.markdown(
+        """
+        <script src="https://unpkg.com/intro.js@7.2.0/minified/intro.min.js"></script>
+        <link rel="stylesheet" href="https://unpkg.com/intro.js@7.2.0/minified/introjs.min.css"/>
         
-        if current_step < len(tour_steps):
-            step = tour_steps[current_step]
-            
-            # Use st.dialog for proper modal
-            @st.dialog(step['title'], width="large")
-            def show_tour_step():
-                # Message content
-                st.markdown(step['message'])
-                
-                # Add helpful note for sections that require scrolling
-                if step['target'] in ['additional-services', 'completed-journeys']:
-                    st.info("💡 This section is below. After closing this tour, scroll down to see it.", icon="ℹ️")
-                
-                # Progress indicator
-                st.divider()
-                st.caption(f"Step {current_step + 1} of {len(tour_steps)}")
-                
-                # Buttons
-                col1, col2, col3 = st.columns([1, 1, 1])
-                
-                with col1:
-                    if current_step > 0:
-                        if st.button("← Back", key=f"tour_back_{current_step}", use_container_width=True):
-                            st.session_state["lobby_tour_step"] -= 1
-                            st.rerun()
-                    else:
-                        # Empty space for alignment
-                        st.markdown("")
-                
-                with col2:
-                    if st.button("Skip Tour", key=f"tour_skip_{current_step}", use_container_width=True):
-                        st.session_state["lobby_tour_active"] = False
-                        st.session_state["lobby_tour_done"] = True
-                        st.session_state["lobby_tour_step"] = 0
-                        st.rerun()
-                
-                with col3:
-                    if current_step < len(tour_steps) - 1:
-                        if st.button("Next →", key=f"tour_next_{current_step}", type="primary", use_container_width=True):
-                            st.session_state["lobby_tour_step"] += 1
-                            st.rerun()
-                    else:
-                        if st.button("Start Exploring!", key=f"tour_done_{current_step}", type="primary", use_container_width=True):
-                            st.session_state["lobby_tour_active"] = False
-                            st.session_state["lobby_tour_done"] = True
-                            st.session_state["lobby_tour_step"] = 0
-                            st.rerun()
-            
-            show_tour_step()
-        else:
-            # Tour completed
-            st.session_state["lobby_tour_active"] = False
-            st.session_state["lobby_tour_done"] = True
-            st.session_state["lobby_tour_step"] = 0
+        <script>
+        // Wait for page load and Streamlit rendering
+        setTimeout(function() {
+          const steps = [
+            {
+              intro: "👋 <strong>Welcome to Your Lobby</strong><br/>Let's take a quick tour to show you around. You'll learn where everything is and how to navigate your care journey.",
+              position: 'bottom'
+            },
+            {
+              element: document.querySelector('#navi-panel'),
+              intro: "🤖 <strong>Meet Navi - Your AI Guide</strong><br/>Look for this section at the top. Navi provides personalized guidance, tracks your progress, and suggests next steps.",
+              position: 'bottom'
+            },
+            {
+              element: document.querySelector('#product-tiles'),
+              intro: "🧭 <strong>Your Active Journeys</strong><br/>This is where you'll find all active products. Start with Discovery if you're new, or continue your Guided Care Plan and Cost Planner.",
+              position: 'bottom'
+            },
+            {
+              element: document.querySelector('#additional-services'),
+              intro: "💡 <strong>Additional Services</strong><br/>Below your active journeys, you'll see partner services and AI-recommended resources tailored to your needs.",
+              position: 'bottom'
+            },
+            {
+              element: document.querySelector('#completed-journeys'),
+              intro: "✅ <strong>Completed Journeys</strong><br/>Once you complete a journey, it moves here. You can always come back to review your care recommendation or cost plan.",
+              position: 'bottom'
+            },
+            {
+              intro: "🎉 <strong>You're All Set!</strong><br/>If you ever need this tour again, click the ❓ help icon in the top-right corner. Ready to begin?",
+              position: 'bottom'
+            }
+          ];
+
+          const intro = introJs();
+          intro.setOptions({
+            steps: steps,
+            showStepNumbers: true,
+            exitOnOverlayClick: true,
+            showBullets: false,
+            disableInteraction: false,
+            scrollToElement: true,
+            scrollPadding: 80,
+            overlayOpacity: 0.55,
+            nextLabel: "Next →",
+            prevLabel: "← Back",
+            skipLabel: "Skip Tour",
+            doneLabel: "Start Exploring!",
+            highlightClass: 'introjs-custom-highlight',
+            tooltipClass: 'introjs-custom-tooltip'
+          });
+
+          // Mark tour as completed when done
+          intro.oncomplete(function() {
+            // Signal to Streamlit that tour is complete
+            window.parent.postMessage({type: 'streamlit:setComponentValue', value: 'tour_complete'}, '*');
+          });
+
+          intro.onexit(function() {
+            // Also mark complete if user skips
+            window.parent.postMessage({type: 'streamlit:setComponentValue', value: 'tour_complete'}, '*');
+          });
+
+          // Auto-start tour
+          intro.start();
+        }, 1000); // Delay to ensure DOM is ready
+        </script>
+
+        <style>
+        /* Custom highlight for targeted elements */
+        .introjs-custom-highlight {
+          box-shadow: 0 0 0 4px rgba(91, 76, 240, 0.4), 0 0 0 12px rgba(91, 76, 240, 0.1);
+          border-radius: 12px;
+          transition: box-shadow 0.3s ease-in-out;
+        }
+
+        /* Enhanced overlay */
+        .introjs-overlay {
+          background-color: rgba(0, 0, 0, 0.55) !important;
+          backdrop-filter: blur(2px);
+        }
+
+        /* Custom tooltip styling - token-aligned */
+        .introjs-custom-tooltip {
+          background: var(--surface-neutral, #ffffff);
+          border-radius: 10px;
+          padding: 20px;
+          font-size: 15px;
+          line-height: 1.6;
+          box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+          max-width: 420px;
+        }
+
+        .introjs-tooltip-header {
+          display: none; /* Hide default header */
+        }
+
+        .introjs-tooltiptext {
+          padding: 0;
+          color: var(--text-primary, #222);
+        }
+
+        /* Button styling */
+        .introjs-button {
+          border-radius: 6px !important;
+          padding: 8px 16px !important;
+          font-size: 14px !important;
+          font-weight: 500 !important;
+          transition: all 0.2s ease !important;
+          border: 1px solid var(--border-default, #ddd) !important;
+          background: var(--surface-neutral, #fff) !important;
+          color: var(--text-primary, #222) !important;
+        }
+
+        .introjs-button:hover {
+          background: var(--surface-hover, #f5f5f5) !important;
+          transform: translateY(-1px);
+        }
+
+        .introjs-nextbutton {
+          background: var(--brand-primary, #5b4cf0) !important;
+          color: white !important;
+          border: none !important;
+        }
+
+        .introjs-nextbutton:hover {
+          background: var(--brand-primary-dark, #4a3ed6) !important;
+        }
+
+        /* Arrow styling */
+        .introjs-arrow {
+          border: none;
+        }
+
+        /* Step numbers */
+        .introjs-helperNumberLayer {
+          background: var(--brand-primary, #5b4cf0);
+          color: white;
+          font-weight: 600;
+          border-radius: 50%;
+          width: 28px;
+          height: 28px;
+          line-height: 28px;
+          font-size: 14px;
+        }
+
+        /* Progress dots */
+        .introjs-bullets ul li a {
+          background: var(--border-default, #ddd);
+        }
+
+        .introjs-bullets ul li a.active {
+          background: var(--brand-primary, #5b4cf0);
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+    
+    # Mark tour as done to prevent re-running on rerun
+    st.session_state["lobby_tour_done"] = True
 
 
 # ==============================================================================
