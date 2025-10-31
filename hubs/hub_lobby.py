@@ -659,28 +659,33 @@ def _render_lobby_tour() -> None:
     # Tour steps definition
     tour_steps = [
         {
-            "title": "👋 Meet Navi",
-            "message": "This is Navi — your AI guide. She'll help you through care planning, resources, and support.",
+            "title": "🧭 Welcome to Your Lobby",
+            "message": "Let's take a quick tour to show you around. You'll learn where everything is and how to navigate your care journey.",
+            "target": None
+        },
+        {
+            "title": "👋 Meet Navi - Your AI Guide",
+            "message": "Look for this section at the top of your Lobby. Navi provides personalized guidance, tracks your progress, and suggests next steps based on where you are in your journey.",
             "target": "navi-panel"
         },
         {
             "title": "🧭 Your Active Journeys",
-            "message": "These are your active journeys. Start your Discovery or continue your Guided Care Plan from here.",
+            "message": "This is where you'll find all active products and tools. Start with the Discovery Journey if you're new, or continue your Guided Care Plan and Cost Planner when you're ready.",
             "target": "product-tiles"
         },
         {
             "title": "💡 Additional Services",
-            "message": "Additional Services show partner offerings or AI recommendations based on your care profile.",
+            "message": "Below your active journeys, you'll see partner services and AI-recommended resources tailored to your specific care needs and situation.",
             "target": "additional-services"
         },
         {
             "title": "✅ Completed Journeys",
-            "message": "When you finish a journey, it appears here. You can revisit any completed experience anytime.",
+            "message": "Once you complete a journey, it moves here. You can always come back to review your care recommendation, cost plan, or other completed assessments.",
             "target": "completed-journeys"
         },
         {
             "title": "🎉 You're All Set!",
-            "message": "You're ready to explore. Navi will always be here if you need help.",
+            "message": "That's everything! If you ever need this tour again, click the ❓ help icon in the top-right corner. Ready to begin?",
             "target": None
         }
     ]
@@ -732,10 +737,16 @@ def _render_lobby_tour() -> None:
             # Use st.dialog for proper modal
             @st.dialog(step['title'], width="large")
             def show_tour_step():
-                st.markdown(f"**{step['message']}**")
-                st.caption(f"Step {current_step + 1} of {len(tour_steps)}")
+                # Message content
+                st.markdown(step['message'])
                 
-                st.markdown("<br/>", unsafe_allow_html=True)
+                # Add helpful note for sections that require scrolling
+                if step['target'] in ['additional-services', 'completed-journeys']:
+                    st.info("💡 This section is below. After closing this tour, scroll down to see it.", icon="ℹ️")
+                
+                # Progress indicator
+                st.divider()
+                st.caption(f"Step {current_step + 1} of {len(tour_steps)}")
                 
                 # Buttons
                 col1, col2, col3 = st.columns([1, 1, 1])
@@ -745,9 +756,12 @@ def _render_lobby_tour() -> None:
                         if st.button("← Back", key=f"tour_back_{current_step}", use_container_width=True):
                             st.session_state["lobby_tour_step"] -= 1
                             st.rerun()
+                    else:
+                        # Empty space for alignment
+                        st.markdown("")
                 
                 with col2:
-                    if st.button("Skip", key=f"tour_skip_{current_step}", use_container_width=True):
+                    if st.button("Skip Tour", key=f"tour_skip_{current_step}", use_container_width=True):
                         st.session_state["lobby_tour_active"] = False
                         st.session_state["lobby_tour_done"] = True
                         st.session_state["lobby_tour_step"] = 0
@@ -759,7 +773,7 @@ def _render_lobby_tour() -> None:
                             st.session_state["lobby_tour_step"] += 1
                             st.rerun()
                     else:
-                        if st.button("Got it!", key=f"tour_done_{current_step}", type="primary", use_container_width=True):
+                        if st.button("Start Exploring!", key=f"tour_done_{current_step}", type="primary", use_container_width=True):
                             st.session_state["lobby_tour_active"] = False
                             st.session_state["lobby_tour_done"] = True
                             st.session_state["lobby_tour_step"] = 0
