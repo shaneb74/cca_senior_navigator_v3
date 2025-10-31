@@ -125,10 +125,11 @@ def input_pill(field: FieldDef, current: Any = None) -> Any:
     st.markdown('<div class="sn-app mod-field mod-radio-pills">', unsafe_allow_html=True)
     
     # Inject persistent CSS to survive Streamlit reruns and Emotion style injection
+    # Scoped to only affect radios inside .mod-radio-pills wrapper
     st.html("""
     <style>
-    /* Radio pill containers - force after every rerun */
-    [data-testid="stRadio"] > div[role="radiogroup"] > div {
+    /* Radio pill containers - ONLY inside .mod-radio-pills wrapper */
+    .mod-radio-pills [data-testid="stRadio"] > div[role="radiogroup"] > div {
       display: inline-flex !important;
       align-items: center !important;
       justify-content: center !important;
@@ -144,13 +145,13 @@ def input_pill(field: FieldDef, current: Any = None) -> Any:
       transition: all 0.2s ease-in-out !important;
     }
     
-    [data-testid="stRadio"] > div[role="radiogroup"] > div:hover {
+    .mod-radio-pills [data-testid="stRadio"] > div[role="radiogroup"] > div:hover {
       background: #e8ecf4 !important;
       border-color: #d1d9e8 !important;
     }
     
     /* Selected state */
-    [data-testid="stRadio"] > div[role="radiogroup"] > div:has(input:checked) {
+    .mod-radio-pills [data-testid="stRadio"] > div[role="radiogroup"] > div:has(input:checked) {
       background: #111827 !important;
       color: #ffffff !important;
       border: 1px solid #111827 !important;
@@ -158,7 +159,7 @@ def input_pill(field: FieldDef, current: Any = None) -> Any:
     }
     
     /* Labels inside containers */
-    [data-testid="stRadio"] > div[role="radiogroup"] > div > label {
+    .mod-radio-pills [data-testid="stRadio"] > div[role="radiogroup"] > div > label {
       display: flex !important;
       align-items: center !important;
       justify-content: center !important;
@@ -171,13 +172,13 @@ def input_pill(field: FieldDef, current: Any = None) -> Any:
     }
     
     /* Text color in selected pills */
-    [data-testid="stRadio"] > div[role="radiogroup"] > div:has(input:checked) label,
-    [data-testid="stRadio"] > div[role="radiogroup"] > div:has(input:checked) div {
+    .mod-radio-pills [data-testid="stRadio"] > div[role="radiogroup"] > div:has(input:checked) label,
+    .mod-radio-pills [data-testid="stRadio"] > div[role="radiogroup"] > div:has(input:checked) div {
       color: #ffffff !important;
     }
     
     /* Hide radio circles */
-    [data-testid="stRadio"] input[type="radio"] {
+    .mod-radio-pills [data-testid="stRadio"] input[type="radio"] {
       display: none !important;
       opacity: 0 !important;
       position: absolute !important;
@@ -185,12 +186,12 @@ def input_pill(field: FieldDef, current: Any = None) -> Any:
     }
     
     /* Hide first child div containing radio circle */
-    [data-testid="stRadio"] label > div:first-child {
+    .mod-radio-pills [data-testid="stRadio"] label > div:first-child {
       display: none !important;
     }
     
     /* Ensure text labels visible */
-    [data-testid="stRadio"] label > div:last-child {
+    .mod-radio-pills [data-testid="stRadio"] label > div:last-child {
       display: inline !important;
       color: inherit !important;
       background: transparent !important;
