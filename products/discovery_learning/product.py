@@ -22,7 +22,6 @@ import streamlit as st
 
 from core.journeys import advance_to
 from core.mcip import MCIP
-from core.navi_dialogue import render_navi_message
 from ui.header_simple import render_header_simple
 from ui.footer_simple import render_footer_simple
 
@@ -43,14 +42,22 @@ def render():
     st.markdown('<div class="discovery-hero">', unsafe_allow_html=True)
     st.markdown("## ✨ Welcome to Your Discovery Journey")
     
-    render_navi_message(
-        {
-            "icon": "🧭",
-            "text": "Hi, I'm Navi. I'll help you discover everything Senior Navigator can do — and guide you step by step.",
-            "subtext": "We'll explore how this app helps you and your loved ones make confident care decisions."
-        },
-        show_cta=False
-    )
+    # Use clean navi-card styling instead of purple gradient
+    st.markdown("""
+    <div class="navi-card" style="padding: 1.5rem; margin: 1.5rem 0;">
+        <div style="display: flex; align-items: flex-start; gap: 1rem;">
+            <span style="font-size: 2rem;">🧭</span>
+            <div>
+                <div style="font-size: 1.1rem; font-weight: 600; color: var(--text-primary, #0b132b); margin-bottom: 0.5rem;">
+                    Hi, I'm Navi. I'll help you discover everything Senior Navigator can do — and guide you step by step.
+                </div>
+                <div style="font-size: 0.95rem; color: var(--text-muted, #64748b);">
+                    We'll explore how this app helps you and your loved ones make confident care decisions.
+                </div>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
     
     st.markdown("<br/>", unsafe_allow_html=True)
