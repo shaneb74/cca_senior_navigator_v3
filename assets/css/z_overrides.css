@@ -578,3 +578,19 @@ body.welcome .navi-card::before {
   }
 }
 
+/* =====================================================
+   DISCOVERY JOURNEY ENHANCEMENTS
+   ===================================================== */
+
+/* Enhanced expander styling for cleaner FAQ appearance */
+.stExpander {
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background-color: #fafbfc;
+  margin-bottom: 0.5rem;
+}
+
+.stExpander:hover {
+  border-color: #d1d5db;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
