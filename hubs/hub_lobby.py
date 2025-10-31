@@ -633,7 +633,7 @@ def _render_lobby_tour() -> None:
     Tour runs once per user session, with manual replay via help icon.
     """
     # Global enable/disable flag
-    ENABLE_LOBBY_TOUR = True
+    ENABLE_LOBBY_TOUR = False  # Disabled for now
     
     if not ENABLE_LOBBY_TOUR:
         return
