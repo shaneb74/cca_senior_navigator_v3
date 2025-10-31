@@ -231,8 +231,8 @@ h2, h3 {
 
 /* Completed tile styling - subtle differentiation */
 .tile-analysis {
-  border-left: 4px solid #F59E0B !important;  /* amber accent for completed items */
-  background: linear-gradient(to bottom right, #ffffff, #fafafa);
+  border-left: 4px solid #8b7cf9 !important;  /* purple AI hue for completed items */
+  background: #fafafa !important;
   opacity: 0.95;
   transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
 }
