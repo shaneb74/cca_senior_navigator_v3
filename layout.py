@@ -10,7 +10,7 @@ import streamlit as st
 from core.ui import safe_img_src
 
 BASE_DIR = Path(__file__).resolve().parent
-STATIC_DIR = BASE_DIR / "static" / "images"
+STATIC_DIR = BASE_DIR / "assets" / "images"
 
 SOCIAL = {
     "instagram": "https://www.instagram.com/conciergecareadvisors/",
