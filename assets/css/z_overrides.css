@@ -790,17 +790,22 @@ body.welcome .navi-card::before {
 /* ================================
    Completed Journeys Tile Override
    ================================ */
-.product-tile[data-key="completed_journeys"],
-.product-tile.completed-journey {
+.completed-grid .product-card,
+.completed-grid .tile-analysis,
+.completed-journey-section .product-card,
+.completed-journey-section .tile-analysis {
   border-left: 4px solid #8b7cf9 !important; /* Purple AI hue */
-  background: #ffffff !important;
+  background: linear-gradient(180deg, #f9fafc 0%, #f5f6f8 100%) !important;
 }
 
 /* Optional hover or focus (subtle lift) */
-.product-tile[data-key="completed_journeys"]:hover,
-.product-tile.completed-journey:hover {
+.completed-grid .product-card:hover,
+.completed-grid .tile-analysis:hover,
+.completed-journey-section .product-card:hover,
+.completed-journey-section .tile-analysis:hover {
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
   transform: translateY(-2px);
   transition: all 0.15s ease-in-out;
 }
+
 
