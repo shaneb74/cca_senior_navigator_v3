@@ -138,7 +138,11 @@ def _cleanup_legacy_gcp_state() -> None:
         st.session_state.pop(key, None)
 
 
-inject_css()
+# Ensure CSS loads once per session and persists across reruns
+if "_injected" not in st.session_state:
+    inject_css()
+    st.session_state._injected = True
+
 ensure_session()
 _cleanup_legacy_gcp_state()
 
