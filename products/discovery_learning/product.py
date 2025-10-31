@@ -27,7 +27,7 @@ from ui.footer_simple import render_footer_simple
 
 
 def render():
-    """Render Discovery Learning - elegant Navi-guided welcome."""
+    """Render Discovery Learning - elegant story-driven welcome with video."""
     
     # Render header
     render_header_simple(active_route="discovery_learning")
@@ -38,72 +38,47 @@ def render():
     # Inject custom CSS for this page
     _inject_discovery_styles()
     
-    # Hero / Navi Introduction
-    st.markdown('<div class="discovery-hero">', unsafe_allow_html=True)
-    st.markdown("## ✨ Welcome to Your Discovery Journey")
+    # Hero Title with Subtitle
+    st.markdown('<h1 class="discovery-title">✨ Welcome to Your Discovery Journey</h1>', unsafe_allow_html=True)
+    st.markdown('<p class="discovery-subtitle">Your step-by-step guide to understanding care options and planning confidently.</p>', unsafe_allow_html=True)
     
-    # Use clean navi-card styling instead of purple gradient
+    # Navi intro box
     st.markdown("""
-    <div class="navi-card" style="padding: 1.5rem; margin: 1.5rem 0;">
-        <div style="display: flex; align-items: flex-start; gap: 1rem;">
-            <span style="font-size: 2rem;">🧭</span>
-            <div>
-                <div style="font-size: 1.1rem; font-weight: 600; color: var(--text-primary, #0b132b); margin-bottom: 0.5rem;">
-                    Hi, I'm Navi. I'll help you discover everything Senior Navigator can do — and guide you step by step.
-                </div>
-                <div style="font-size: 0.95rem; color: var(--text-muted, #64748b);">
-                    We'll explore how this app helps you and your loved ones make confident care decisions.
-                </div>
-            </div>
-        </div>
+    <div class="navi-box">
+        <p><b>Hi, I'm Navi.</b> I'll help you discover everything Senior Navigator can do — and guide you step by step.</p>
+        <p>We'll explore how this app helps you and your loved ones make confident care decisions.</p>
     </div>
     """, unsafe_allow_html=True)
-    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Intro paragraph
+    st.markdown("""
+    <div style="text-align: center;">
+        <h3 class="discovery-intro" style="text-align: center;">
+            Concierge Care Advisors Senior Navigator — a revolutionary way to navigate the complexities of Senior Care Options.<br>
+            Learn about your Options & Cost.
+        </h3>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Embedded YouTube video
+    st.markdown("""
+    <div class="video-container">
+        <iframe class="video-frame"
+            src="https://www.youtube.com/embed/eHFcJSS-2l4"
+            title="Curious about Senior Living?"
+            frameborder="0"
+            allowfullscreen>
+        </iframe>
+    </div>
+    """, unsafe_allow_html=True)
     
     st.markdown("<br/>", unsafe_allow_html=True)
     
-    # Informational Overview - Three Horizontal Tiles
-    st.markdown('<div class="info-tiles-container">', unsafe_allow_html=True)
-    
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        st.markdown("""
-        <div class="info-tile">
-            <div class="tile-icon">🧭</div>
-            <h3 class="tile-title">Guided Care Plan</h3>
-            <p class="tile-description">Answer a few questions and get a personalized care path.</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col2:
-        st.markdown("""
-        <div class="info-tile">
-            <div class="tile-icon">💰</div>
-            <h3 class="tile-title">Cost Planner</h3>
-            <p class="tile-description">Estimate expenses, compare care types, and understand funding options.</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col3:
-        st.markdown("""
-        <div class="info-tile">
-            <div class="tile-icon">🎨</div>
-            <h3 class="tile-title">Visual Insights</h3>
-            <p class="tile-description">DALL·E creates visuals that bring your care plan to life.</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    st.markdown('</div>', unsafe_allow_html=True)
-    
-    st.markdown("<br/><br/>", unsafe_allow_html=True)
-    
-    # Ask Navi - Inline conversational search
-    st.markdown('<div class="ask-navi-section">', unsafe_allow_html=True)
-    st.markdown("### 💬 Ask Navi")
+    # Ask Navi section
+    st.markdown('<h3 class="ask-navi-title">💬 Ask Navi</h3>', unsafe_allow_html=True)
     
     navi_query = st.text_input(
-        "Ask me anything about your journey...",
+        "Ask me anything...",
         key="navi_discovery_query",
         label_visibility="collapsed",
         placeholder="What is the Discovery Journey? How long does the Care Plan take?"
@@ -130,12 +105,19 @@ def render():
         if not response:
             response = "That's a great question! I'm here to help you understand your care planning journey. Try asking about the Discovery Journey, Care Plan, costs, or how long things take."
         
-        st.markdown(f"""
-        <div class="navi-response">
-            <strong>Navi:</strong> {response}
-        </div>
-        """, unsafe_allow_html=True)
+        st.info(f"**Navi:** {response}")
     
+    # Quick question buttons
+    st.markdown('<div class="ask-navi-buttons">', unsafe_allow_html=True)
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("How long does the Guided Care Plan take?", use_container_width=True, key="faq_1"):
+            # Display response directly without modifying widget state
+            st.info("**Navi:** The Guided Care Plan takes about 5-10 minutes. You'll answer questions about daily living, health needs, and safety concerns. I'll be with you every step, explaining what each question means.")
+    with col2:
+        if st.button("What does the Cost Planner do?", use_container_width=True, key="faq_2"):
+            # Display response directly without modifying widget state
+            st.info("**Navi:** After your care recommendation, you'll access the Cost Planner. It provides detailed estimates for different care types, including in-home care, assisted living, and memory care options.")
     st.markdown('</div>', unsafe_allow_html=True)
     
     st.markdown("<br/><br/>", unsafe_allow_html=True)
@@ -145,19 +127,19 @@ def render():
         st.session_state["discovery_learning_viewed"] = True
     
     # Closing CTA Section
-    st.markdown('<div class="cta-section">', unsafe_allow_html=True)
-    st.markdown('<p class="cta-message">Ready to begin your journey?</p>', unsafe_allow_html=True)
+    st.markdown('<p class="footer-cta-text">Ready to begin your journey?</p>', unsafe_allow_html=True)
     
+    st.markdown('<div class="footer-buttons">', unsafe_allow_html=True)
     col1, col2 = st.columns([1, 1])
     
     with col1:
-        if st.button("← Return to Lobby", use_container_width=True):
+        if st.button("← Return to Lobby", use_container_width=True, key="return_lobby"):
             st.query_params.clear()
             st.query_params["page"] = "hub_lobby"
             st.rerun()
     
     with col2:
-        if st.button("✅ Continue to Care Plan", type="primary", use_container_width=True):
+        if st.button("✅ Continue to Care Plan", type="primary", use_container_width=True, key="continue_gcp"):
             # Mark as complete
             _mark_complete()
             # Advance to planning phase
@@ -177,111 +159,129 @@ def _inject_discovery_styles():
     """Inject elegant styling for Discovery Journey page."""
     st.markdown("""
     <style>
-    /* Discovery Journey - Clean, Human-Centered Design */
-    
-    .discovery-hero {
-        margin-top: 2rem;
-        margin-bottom: 3rem;
+    /* === Global Styles === */
+    body, .main {
+        font-family: "Inter", "Segoe UI", Roboto, sans-serif;
+        color: #1A1C2B;
+    }
+
+    /* === Title Section === */
+    .discovery-title {
+        font-size: 2.8rem;
+        font-weight: 800;
+        color: #0E1E54;
         text-align: center;
+        margin: 0 auto 1.25rem;
+        line-height: 1.15;
     }
-    
-    .discovery-hero h2 {
-        color: var(--text-primary, #0b132b);
-        font-weight: 600;
-        margin-bottom: 1.5rem;
+    .discovery-subtitle {
+        font-size: 1.15rem;
+        font-weight: 500;
+        text-align: center;
+        color: #4b4f63;
+        margin-bottom: 2.25rem;
     }
-    
-    /* Info Tiles - Horizontal Cards */
-    .info-tiles-container {
-        display: flex;
-        gap: 1.5rem;
-        margin: 2rem 0 3rem 0;
-    }
-    
-    .info-tile {
-        background: #f9fafb;
+
+    /* === Navi Box === */
+    .navi-box {
+        background: linear-gradient(180deg, #f8f9ff 0%, #f3f4fe 100%);
+        border-left: 6px solid #4b52c2;
         border-radius: 12px;
-        padding: 1.5rem;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        padding: 1.5rem 1.75rem;
+        margin: 0 auto 2.5rem;
+        max-width: 760px;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+    }
+    .navi-box b {
+        font-size: 1.05rem;
+        color: #10174a;
+    }
+    .navi-box p {
+        font-size: 1rem;
+        line-height: 1.55;
+        color: #32395e;
+        margin: 0.4rem 0;
+    }
+
+    /* === Intro Paragraph === */
+    .discovery-intro {
+        font-size: 1.05rem;
+        color: #2b2e42;
+        text-align: center !important;
+        line-height: 1.6;
+        max-width: 720px;
+        margin: 0 auto 2rem !important;
+        display: block;
+    }
+
+    /* === Video === */
+    .video-container {
         text-align: center;
+        margin-bottom: 2.75rem;
     }
-    
-    .info-tile:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    .video-frame {
+        width: 92%;
+        max-width: 780px;
+        aspect-ratio: 16 / 9;
+        border-radius: 18px;
+        box-shadow: 0 10px 24px rgba(0,0,0,0.15);
     }
-    
-    .tile-icon {
-        font-size: 2.5rem;
+
+    /* === Ask Navi Section === */
+    .ask-navi-title {
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: #0E1E54;
+        text-align: center;
         margin-bottom: 1rem;
     }
     
-    .tile-title {
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: var(--text-primary, #0b132b);
-        margin-bottom: 0.75rem;
+    /* Style the text input */
+    div[data-testid="stTextInput"] input {
+        border-radius: 10px !important;
+        padding: 0.9rem !important;
+        font-size: 1rem !important;
+        max-width: 720px !important;
+        width: 90% !important;
     }
     
-    .tile-description {
-        font-size: 0.9rem;
-        color: var(--text-muted, #64748b);
-        line-height: 1.5;
-        margin: 0;
-    }
-    
-    /* Ask Navi Section - Inline conversational */
-    .ask-navi-section {
-        background: #ffffff;
-        border: 1px solid #e5e7eb;
-        border-radius: 12px;
-        padding: 1.5rem;
-        margin: 2rem 0;
-        max-width: 800px;
+    /* FAQ buttons */
+    .ask-navi-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.8rem;
+        margin-top: 1rem;
+        max-width: 760px;
         margin-left: auto;
         margin-right: auto;
     }
-    
-    .ask-navi-section h3 {
-        color: var(--text-primary, #0b132b);
-        font-size: 1.2rem;
-        margin-bottom: 1rem;
-        font-weight: 600;
+
+    /* === Footer Buttons === */
+    .footer-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 1.25rem;
+        margin-top: 2.5rem;
     }
     
-    .navi-response {
-        margin-top: 1rem;
-        padding: 1rem;
-        background: #f0f4ff;
-        border-left: 3px solid #4f46e5;
-        border-radius: 8px;
-        color: var(--text-primary, #0b132b);
-        line-height: 1.6;
-    }
-    
-    /* CTA Section - Centered, clean */
-    .cta-section {
+    .footer-cta-text {
         text-align: center;
-        margin-top: 3rem;
-        margin-bottom: 2rem;
+        margin-top: 2.5rem;
+        font-weight: 600;
+        color: #1A1C2B;
     }
-    
-    .cta-message {
-        font-size: 1.1rem;
-        color: var(--text-primary, #0b132b);
-        margin-bottom: 1.5rem;
-        font-weight: 500;
-    }
-    
-    /* Responsive - Stack tiles on mobile */
+
     @media (max-width: 768px) {
-        .info-tiles-container {
-            flex-direction: column;
+        .discovery-title {
+            font-size: 2.1rem;
         }
-        
-        .info-tile {
-            margin-bottom: 1rem;
+        .video-frame {
+            height: auto;
+        }
+        .footer-buttons {
+            flex-direction: column;
+            align-items: center;
         }
     }
     </style>
