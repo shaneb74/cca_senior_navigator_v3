@@ -173,8 +173,10 @@ def _inject_discovery_styles():
         font-size: 2rem;
         font-weight: 800;
         color: #0E1E54;
-        margin-bottom: 1.5rem;
+        margin: 0 auto 1.5rem auto;
         text-align: center;
+        max-width: 700px;
+        padding: 0 1rem;
     }
     
     /* Navi intro box */
@@ -207,6 +209,7 @@ def _inject_discovery_styles():
         margin: 0 auto 1.5rem auto;
         text-align: center;
         max-width: 700px;
+        padding: 0 1rem;
     }
     
     /* Video container */
@@ -214,7 +217,8 @@ def _inject_discovery_styles():
         display: flex;
         justify-content: center;
         margin: 1.5rem auto 2rem auto;
-        max-width: 560px;
+        max-width: 700px;
+        padding: 0 1rem;
     }
     
     .video-frame {
@@ -267,14 +271,29 @@ def _inject_discovery_styles():
         
         .discovery-title {
             font-size: 1.5rem;
+            padding: 0 0.5rem;
         }
         
         .navi-box {
             padding: 1rem;
+            margin: 0 0.5rem 1.5rem 0.5rem;
+        }
+        
+        .discovery-intro {
+            font-size: 0.9rem;
+            padding: 0 0.5rem;
+        }
+        
+        .video-container {
+            padding: 0 0.5rem;
         }
         
         .video-frame {
             height: 200px;
+        }
+        
+        .ask-navi-title {
+            font-size: 1.1rem;
         }
         
         .footer-buttons {
