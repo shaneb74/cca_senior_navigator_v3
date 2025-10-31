@@ -5,18 +5,24 @@ Lobby Hub - Unified Dashboard Entry Point
 Phase 4A: Consolidated Waiting Room and Lobby into single adaptive hub.
 Manages the entire user journey lifecycle: Discovery → Planning → Post-Planning.
 
+Phase 5E: Dynamic Personalization integration.
+Personalized navigation, tone, and visible modules based on user tier, cognition, and phase.
+
 Architecture:
 --------------
 - Dynamic product tile rendering via ProductTileHub objects
 - MCIP-based journey phase detection and product gating
 - Organized tile categories: Discovery, Planning, Engagement, Additional Services, Completed
 - NAVI-integrated FAQ (no longer a tile)
+- Phase 5E: Schema-driven personalization via core.personalizer
 
 Phase History:
 --------------
 Phase 3A: NAVI integration, MCIP gating, Additional Services
 Phase 3B: Personalized NAVI, product outcomes, FAQ always unlocked
 Phase 4A: Waiting Room consolidation, completed journeys, FAQ→NAVI integration
+Phase 5D: Journey alignment, navigation fixes, 4-section structure
+Phase 5E: Dynamic personalization engine integration
 """
 
 import os
@@ -28,8 +34,10 @@ from core.mcip import MCIP
 from core.additional_services import get_additional_services
 from core.product_outcomes import get_product_outcome
 from core.journeys import get_journey_phase
+from core.personalizer import get_user_context, get_visible_modules
 from ui.header_simple import render_header_simple
 from ui.footer_simple import render_footer_simple
+from components.empty_state import render_empty_state
 
 __all__ = ["render"]
 
@@ -183,6 +191,7 @@ def _apply_tile_state(tile: ProductTileHub, state: str) -> ProductTileHub:
     """Apply visual state to a product tile.
     
     Phase 3B: Also adds product outcomes to completed tiles.
+    Phase 5K: Adds "Completed" badge to completed tiles.
     
     Args:
         tile: Original ProductTileHub object
@@ -198,9 +207,15 @@ def _apply_tile_state(tile: ProductTileHub, state: str) -> ProductTileHub:
         tile.desc = "Complete previous steps to unlock"
         
     elif state == "completed":
-        # Show completion indicator
-        tile.primary_label = "✓ Completed"
+        # Phase 5G: Show completion indicator (text-only, no emoji)
+        tile.primary_label = "Completed"
         tile.variant = "success"  # Use success variant if available
+        
+        # Phase 5K: Add "Completed" badge
+        if not tile.badges:
+            tile.badges = ["Completed"]
+        elif "Completed" not in tile.badges:
+            tile.badges.append("Completed")
         
         # Add outcome display for completed products (Phase 3B)
         outcome = get_product_outcome(tile.key)
@@ -219,30 +234,43 @@ def _apply_tile_state(tile: ProductTileHub, state: str) -> ProductTileHub:
 def _build_discovery_tiles() -> list[ProductTileHub]:
     """Build Discovery Journey tiles (first-time user experience).
     
-    Phase 4A Revision: Discovery tiles are GCP-focused.
+    Phase 4A Revision: Discovery tiles focus on first-touch onboarding.
+    Phase 5A: Added Discovery Learning first-touch onboarding tile.
+    Phase 5F: Moved GCP to Planning phase for proper journey flow.
+    Phase 5K: Filter out completed journeys (they appear in Completed section).
     
     Returns:
         List of discovery tiles with MCIP state applied
     """
+    # Check if discovery_learning is completed
+    if MCIP.is_product_complete("discovery_learning"):
+        # Don't show in active tiles - it will appear in Completed Journeys section
+        return []
+    
     tiles = [
         ProductTileHub(
-            key="gcp_v4",
-            title="Guided Care Plan",
-            desc="Explore and compare care options.",
-            blurb="Answer a few short questions about your daily needs, health, and safety.",
-            image_square="gcp.png",
-            primary_route="?page=gcp_v4",
-            primary_label="Start",
+            key="discovery_learning",
+            title="Start Your Discovery Journey",
+            desc="Welcome! Let NAVI introduce you to the care planning process.",
+            blurb="First-time here? Learn what to expect and how we'll guide you step-by-step.",
+            image_square=None,  # Phase 5E: No PNG, CSS icon
+            primary_route="?page=discovery_learning",
+            primary_label="Start Here",
             variant="brand",
-            order=10,
+            order=5,
             visible=True,
+            phase="discovery",  # Phase 5A: journey phase tag
+            locked=False,  # Phase 5K: Always unlocked
         ),
     ]
     
-    # Apply MCIP state to each tile
+    # Apply MCIP state to each tile (but discovery should always be available)
     tiles_with_state = []
     for tile in tiles:
         state = _get_product_state(tile.key)
+        # Override locked state for discovery - always available
+        if state == "locked":
+            state = "available"
         tile_with_state = _apply_tile_state(tile, state)
         tiles_with_state.append(tile_with_state)
     
@@ -258,6 +286,9 @@ def _build_planning_tiles() -> list[ProductTileHub]:
     
     Phase 4A Revision: Planning tiles include Cost Planner and Plan With Advisor.
     Phase 4B: Added Learn About My Recommendation between GCP and Cost Planner.
+    Phase 5A: Added journey phase tags to all planning tiles.
+    Phase 5F: Moved GCP here from Discovery - proper planning journey flow.
+    Phase 5K: Filter out completed tiles (they appear in Completed section).
     FAQ removed (integrated into NAVI).
     
     Returns:
@@ -265,42 +296,62 @@ def _build_planning_tiles() -> list[ProductTileHub]:
     """
     tiles = [
         ProductTileHub(
+            key="gcp_v4",
+            title="Guided Care Plan",
+            desc="Explore and compare care options.",
+            blurb="Answer a few short questions about your daily needs, health, and safety.",
+            image_square=None,  # Phase 5E: No PNG, CSS icon
+            primary_route="?page=gcp_v4",
+            primary_label="Start",
+            variant="brand",
+            order=10,
+            visible=True,
+            phase="planning",  # Phase 5F: Corrected to planning phase
+        ),
+        ProductTileHub(
             key="learn_recommendation",
             title="Learn About My Recommendation",
             desc="Understand your care option before planning costs.",
             blurb="Educational step to learn what your recommendation means and how to prepare.",
-            image_square="gcp.png",  # TODO: Get dedicated image
+            image_square=None,  # Phase 5E: No PNG, CSS icon
             primary_route="?page=learn_recommendation",
             primary_label="Learn More",
             variant="brand",
             order=15,  # Between GCP (10) and Cost Planner (20)
             visible=True,
+            phase="planning",  # Phase 5A: journey phase tag
         ),
         ProductTileHub(
             key="cost_v2",
             title="Cost Planner",
             desc="Estimate and plan financial coverage.",
             blurb="Project expenses, compare living options, and see how long current funds will last.",
-            image_square="cp.png",
+            image_square=None,  # Phase 5E: No PNG, CSS icon
             primary_route="?page=cost_intro",
             primary_label="Start",
             variant="brand",
             order=20,
             visible=True,
+            phase="planning",  # Phase 5A: journey phase tag
         ),
         ProductTileHub(
             key="pfma_v3",
-            title="Plan With My Advisor",
+            title="My Advisor",
             desc="Schedule and prepare for your next advisor meeting.",
             blurb="Get matched with the right advisor to coordinate care, benefits, and trusted partners.",
-            image_square="pfma.png",
+            image_square=None,  # Phase 5E: No PNG, CSS icon
             primary_route="?page=pfma_v3",
             primary_label="Open",
             variant="brand",
             order=30,
             visible=True,
+            phase="planning",  # Phase 5A: journey phase tag
         ),
+        # Phase 5L: Removed additional_services tile - now rendered as dynamic service cards section
     ]
+    
+    # Phase 5K: Filter out completed tiles (they move to Completed Journeys section)
+    tiles = [t for t in tiles if not MCIP.is_product_complete(t.key)]
     
     # Apply MCIP state to each tile
     tiles_with_state = []
@@ -316,66 +367,18 @@ def _build_planning_tiles() -> list[ProductTileHub]:
 # TILE BUILDERS - ENGAGEMENT PRODUCTS
 # ==============================================================================
 
-def _build_advisor_prep_tile() -> ProductTileHub | None:
-    """Build Advisor Prep tile if PFMA booking exists.
-    
-    Phase 4A Revision: Part of Engagement Products (not additional services).
-    
-    Returns:
-        ProductTileHub or None if not available
-    """
-    prep_summary = MCIP.get_advisor_prep_summary()
-
-    if not prep_summary.get("available"):
-        return None  # Don't show tile until appointment booked
-
-    sections_complete = prep_summary.get("sections_complete", [])
-    progress = prep_summary.get("progress", 0)
-
-    # Build description
-    if progress == 100:
-        desc = "✓ All prep sections complete — you're ready!"
-        primary_label = "Review Prep"
-    elif progress > 0:
-        desc = f"{len(sections_complete)} of 4 sections complete"
-        primary_label = "Continue Prep"
-    else:
-        desc = "Help your advisor prepare for your consultation"
-        primary_label = "Start Prep"
-
-    # Build badges
-    badges = []
-    if progress == 100:
-        badges = [{"label": "Ready", "tone": "success"}]
-    elif progress > 0:
-        badges = [{"label": f"{len(sections_complete)}/4", "tone": "info"}]
-
-    appt_context = prep_summary.get("appointment_context", "")
-
-    return ProductTileHub(
-        key="advisor_prep",
-        title="Advisor Prep",
-        desc=desc,
-        blurb=appt_context or "Prepare for your upcoming consultation with your advisor",
-        badge_text="OPTIONAL",
-        image_square="advisor_prep.png",
-        meta_lines=["4 sections • 5-10 min total"],
-        badges=badges,
-        primary_label=primary_label,
-        primary_route="?page=advisor_prep",
-        primary_go="advisor_prep",
-        progress=progress,
-        status_text="✓ Complete" if progress == 100 else None,
-        variant="purple",
-        order=100,
-        locked=False,
-    )
+# Phase 5D: Advisor Prep retired entirely (no longer shown)
+# def _build_advisor_prep_tile() -> ProductTileHub | None:
+#     """Build Advisor Prep tile if PFMA booking exists."""
+#     # Function commented out - Advisor Prep is retired in Phase 5D
+#     pass
 
 
 def _build_trivia_tile() -> ProductTileHub:
     """Build Senior Trivia tile.
     
     Phase 4A Revision: Core engagement product (not additional service).
+    Phase 5A: Added journey phase tag.
     
     Returns:
         ProductTileHub
@@ -394,6 +397,7 @@ def _build_trivia_tile() -> ProductTileHub:
         badges=trivia_badges,
         variant="teal",
         order=110,
+        phase="post_planning",  # Phase 5A: journey phase tag
     )
 
 
@@ -401,6 +405,7 @@ def _build_clinical_review_tile() -> ProductTileHub:
     """Build Concierge Clinical Review tile.
     
     Phase 4A Revision: Core engagement product (not additional service).
+    Phase 5A: Added journey phase tag.
     
     Returns:
         ProductTileHub (visible but locked until GCP & CP complete)
@@ -425,6 +430,7 @@ def _build_clinical_review_tile() -> ProductTileHub:
         order=120,
         locked=_ccr_locked,
         lock_msg="Unlocks after Guided Care Plan and Cost Planner. Providers use both your care and financial info to give precise guidance." if _ccr_locked else None,
+        phase="post_planning",  # Phase 5A: journey phase tag
     )
 
 
@@ -432,16 +438,12 @@ def _build_engagement_tiles() -> list[ProductTileHub]:
     """Build Engagement Product tiles.
     
     Phase 4A Revision: Trivia and CCR are core products (not additional services).
+    Phase 5D: Removed Advisor Prep (retired entirely).
     
     Returns:
-        List of engagement tiles (Advisor Prep, Trivia, CCR)
+        List of engagement tiles (Trivia, CCR)
     """
     tiles = []
-    
-    # Advisor Prep (conditional - only if appointment booked)
-    advisor_prep_tile = _build_advisor_prep_tile()
-    if advisor_prep_tile:
-        tiles.append(advisor_prep_tile)
     
     # Trivia (always available)
     tiles.append(_build_trivia_tile())
@@ -460,6 +462,8 @@ def _build_completed_tiles() -> list[ProductTileHub]:
     """Build tiles for completed journeys.
     
     Phase 4A: New section for closed-out products.
+    Phase 5D: Updated to use "My Advisor" name.
+    Phase 5K: Added discovery_learning to completed journeys.
     
     Returns:
         List of completed product tiles
@@ -468,9 +472,10 @@ def _build_completed_tiles() -> list[ProductTileHub]:
     
     # Check each major product for completion
     all_products = [
+        ("discovery_learning", "Discovery Journey", "Your introduction to care planning"),
         ("gcp_v4", "Guided Care Plan", "Your personalized care recommendation"),
         ("cost_v2", "Cost Planner", "Your financial plan and projections"),
-        ("pfma_v3", "Plan With Advisor", "Your advisor consultation"),
+        ("pfma_v3", "My Advisor", "Your advisor consultation"),
     ]
     
     for key, title, desc in all_products:
@@ -484,6 +489,8 @@ def _build_completed_tiles() -> list[ProductTileHub]:
                 variant="success",
                 order=900,  # Low priority (at bottom)
                 visible=True,
+                badges=["Completed"],  # Phase 5K: Add completion badge
+                phase="analysis",  # Phase 5K: Amber border for completed items
             )
             # Add outcome if available
             outcome = get_product_outcome(key)
@@ -492,6 +499,87 @@ def _build_completed_tiles() -> list[ProductTileHub]:
             completed.append(tile)
     
     return completed
+
+
+def render_additional_services(user_ctx: dict) -> None:
+    """
+    Dynamically display additional services using existing core/additional_services.py logic.
+    
+    Phase 5L: Restores flag-driven partner services from Concierge Hub.
+    Uses get_additional_services("concierge") which includes:
+    - Universal services: Learning Center, Care Coordination Network
+    - Flag-triggered partners: Omcare, SeniorLife.AI (show "Navi Recommended" badge)
+    - Conditional services based on GCP flags and MCIP data
+    
+    Args:
+        user_ctx: User context dict (not used - get_additional_services() reads from MCIP directly)
+    """
+    st.markdown("### Additional Services")
+    st.caption("Partner-powered programs and tools personalized by Navi.")
+
+    services = get_additional_services("concierge")
+    if not services:
+        st.info("No additional services available right now.")
+        return
+
+    # Build cards HTML
+    cards_html = []
+    for svc in services:
+        personalization = svc.get("personalization")
+        badge = (
+            '<span class="service-badge">Navi Recommended</span>'
+            if personalization == "personalized"
+            else ""
+        )
+        
+        cards_html.append(
+            f'<div class="service-card">'
+            f'{badge}'
+            f'<h4 class="service-title">{svc["title"]}</h4>'
+            f'<p class="service-desc">{svc["subtitle"]}</p>'
+            f'<a href="?page={svc["go"]}" class="service-cta">{svc["cta"]}</a>'
+            f'</div>'
+        )
+    
+    # Render complete grid
+    full_html = f'<div class="service-grid-container">{"".join(cards_html)}</div>'
+    st.markdown(full_html, unsafe_allow_html=True)
+
+
+def _render_completed_journeys_section(completed_tiles: list[ProductTileHub]) -> None:
+    """Render the completed journeys section with proper grid alignment.
+    
+    Phase 5K: Uses grid layout matching main product tiles for consistency.
+    
+    Args:
+        completed_tiles: List of completed ProductTileHub objects
+    """
+    st.markdown('<div class="completed-journey-section">', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="completed-journey-header">My Completed Journeys</div>',
+        unsafe_allow_html=True
+    )
+    
+    if not completed_tiles:
+        # Show empty state when no completed journeys
+        st.markdown(
+            render_empty_state(
+                title="No Completed Journeys Yet",
+                message="When you finish a journey, it will appear here for easy review.",
+                icon="✅"
+            ),
+            unsafe_allow_html=True
+        )
+    else:
+        # Render tiles in grid layout matching main dashboard
+        st.markdown('<div class="completed-grid">', unsafe_allow_html=True)
+        for tile in completed_tiles:
+            tile_html = tile.render_html()
+            if tile_html:
+                st.markdown(tile_html, unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
 # ==============================================================================
@@ -508,6 +596,13 @@ def render(ctx=None) -> None:
     - Completed Journeys section (collapsible)
     - Additional Services for partner upsells only
     
+    Phase 5D Features:
+    - Retired Advisor Prep entirely (no replacement)
+    - Renamed "Plan With My Advisor" → "My Advisor"
+    - 4-section structure: NAVI Header → Active Journey → Additional Services → My Completed Journey
+    - Completed Journey section appears BELOW Additional Services
+    - All navigation routes to hub_lobby (not hub_concierge)
+    
     Architecture:
     - Hubs → Product Tiles → Modules → Assets
     - NAVI provides journey context and FAQ access
@@ -516,6 +611,10 @@ def render(ctx=None) -> None:
     
     # Initialize MCIP to ensure journey state is ready
     MCIP.initialize()
+    
+    # Phase 5E: Get personalization context
+    user_ctx = get_user_context()
+    visible_modules = get_visible_modules()
     
     # Load dashboard CSS
     st.markdown(
@@ -527,20 +626,27 @@ def render(ctx=None) -> None:
     render_header_simple(active_route="hub_lobby")
     
     # ========================================
-    # NAVI GUIDANCE PANEL (Phase 3B - Personalized)
+    # NAVI GUIDANCE PANEL (Phase 3B - Personalized, Phase 5E - Dynamic)
     # ========================================
     # Build personalized NAVI data
     person_name = st.session_state.get("person_name", "").strip()
     
-    # Determine title and reason based on MCIP state
+    # Phase 5E: Use personalized header message
+    navi_header_message = user_ctx.get("navi_header_message", "Continue your personalized journey.")
+    
+    # Phase 5E: Use personalized header message
+    navi_header_message = user_ctx.get("navi_header_message", "Continue your personalized journey.")
+    header_text = user_ctx.get("header_text", "")
+    
+    # Determine title and reason based on MCIP state and personalization
     care_rec = MCIP.get_care_recommendation()
     if care_rec and care_rec.tier:
-        title = f"Hi, {person_name}!" if person_name else "Welcome back!"
+        title = f"Hi, {person_name}!" if person_name else navi_header_message
         tier_display = care_rec.tier.replace("_", " ").title()
-        reason = f"Your personalized care plan recommends: {tier_display}"
+        reason = header_text or f"Your personalized care plan recommends: {tier_display}"
     else:
         title = "Let's get started."
-        reason = "Answer a few questions to build your personalized care plan."
+        reason = header_text or "Answer a few questions to build your personalized care plan."
     
     encouragement = {
         "icon": "🧭",
@@ -562,6 +668,19 @@ def render(ctx=None) -> None:
     # Secondary action - FAQ integrated into NAVI (Phase 4A)
     secondary_action = {"label": "Ask NAVI", "route": "faq"}
     
+    # Phase 5A.1: Apply phase-aware context before rendering NAVI
+    from apps.navi_core.context_manager import apply_phase_context
+    apply_phase_context()
+    
+    # Phase 5M: Journey progress bar moved inside NAVI card (core/navi_hub.py)
+    # Removed temporary top header progress display
+    # from core.journeys import get_phase_completion
+    # journey_stage = st.session_state.get("journey_stage", "discovery")
+    # completion = get_phase_completion(journey_stage)
+    # st.caption(f"**{journey_stage.replace('_', ' ').title()} Phase Progress**")
+    # st.progress(completion)
+    # st.markdown("<br/>", unsafe_allow_html=True)
+    
     # Render personalized NAVI panel V2
     render_navi_panel_v2(
         title=title,
@@ -575,11 +694,18 @@ def render(ctx=None) -> None:
         variant="hub",
     )
     
+    # Phase 5A.1: Optional debug caption for testing tone context
+    if os.getenv("SN_DEBUG_PHASE_TONE", "0") == "1":
+        st.caption(
+            f"🧪 Phase: {st.session_state.get('journey_stage', 'N/A')} | "
+            f"Tone: {st.session_state.get('navi_tone', 'N/A')}"
+        )
+    
     # Add spacing after NAVI panel
     st.markdown("<br/>", unsafe_allow_html=True)
     
     # ========================================
-    # PRODUCT TILES - ORGANIZED BY CATEGORY (Phase 4A)
+    # PRODUCT TILES - ORGANIZED BY CATEGORY (Phase 4A, Phase 5E - Filtered)
     # ========================================
     
     # --- Discovery Journey ---
@@ -594,21 +720,26 @@ def render(ctx=None) -> None:
     # Combine active tiles
     active_tiles = discovery_tiles + planning_tiles + engagement_tiles
     
+    # Phase 5E: Filter tiles by visible modules from personalization
+    # Phase 5L: Removed additional_services exception (now rendered as separate dynamic section)
+    if visible_modules:
+        active_tiles = [
+            t for t in active_tiles 
+            if t.key in visible_modules or t.key.startswith("discovery_")
+        ]
+    
     # Sort by order
     active_tiles.sort(key=lambda t: t.order)
     
     # ========================================
-    # ADDITIONAL SERVICES (Phase 4A Revision)
-    # ========================================
-    # Only partner upsells and NAVI-driven recommendations
-    additional_services = get_additional_services("lobby")
-    
-    # ========================================
-    # COMPLETED JOURNEYS SECTION (Phase 4A)
+    # COMPLETED JOURNEYS SECTION (Phase 5G)
     # ========================================
     completed_tiles = _build_completed_tiles()
     
-    # Render main hub body with active tiles
+    # ========================================
+    # RENDER ACTIVE JOURNEYS (Phase 5G)
+    # ========================================
+    # Render main hub body with active tiles only (no additional services inline)
     body_html = render_dashboard_body(
         title="",  # NAVI provides context
         subtitle=None,
@@ -616,25 +747,33 @@ def render(ctx=None) -> None:
         hub_guide_block=None,
         hub_order=None,
         cards=active_tiles,
-        additional_services=additional_services,
+        additional_services=[],  # Phase 5L: additional services rendered separately with new dynamic system
     )
     
     st.markdown(body_html, unsafe_allow_html=True)
     
     # ========================================
-    # COMPLETED JOURNEYS (Collapsible)
+    # INFORMATIONAL TEXT (Phase 5G)
     # ========================================
+    # Show only when completed journeys exist
     if completed_tiles:
-        st.markdown("---")
-        st.markdown("### My Completed Journeys")
-        with st.expander("View completed activities", expanded=False):
-            for tile in completed_tiles:
-                # Render each completed tile (simplified view)
-                label = tile.primary_label or "View Details"
-                st.markdown(f"**{tile.title}** - {tile.desc}")
-                if st.button(label, key=f"completed_{tile.key}"):
-                    st.query_params["page"] = tile.key
-                    st.rerun()
+        st.markdown(
+            '<p class="section-note">Your completed journeys are shown below.</p>',
+            unsafe_allow_html=True
+        )
+    
+    # ========================================
+    # ADDITIONAL SERVICES SECTION (Phase 5L - Dynamic Context-Driven Cards)
+    # ========================================
+    # Phase 5L: Replace old product-tile implementation with dynamic service cards
+    # Driven by care flags, not product tiles
+    render_additional_services(user_ctx)
+    
+    # ========================================
+    # MY COMPLETED JOURNEYS (Phase 5K - Always Visible with Empty State)
+    # ========================================
+    # Use helper function for proper grid rendering
+    _render_completed_journeys_section(completed_tiles)
     
     # ========================================
     # FOOTER

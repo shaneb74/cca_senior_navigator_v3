@@ -61,9 +61,321 @@ h2, h3 {
   border: none;
 }
 
+/* ---------- PHASE PILLS (Phase 5A) ---------- */
+.phase-pill {
+  position: absolute;
+  top: 0.8rem;
+  right: 0.8rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #fff;
+  padding: 0.25rem 0.7rem;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+.phase-pill.discovery {
+  background-color: #5BA3FF;
+}
+.phase-pill.planning {
+  background-color: #4BBE83;
+}
+.phase-pill.postplanning {
+  background-color: #B974E4;
+}
+
 /* ---------- LAYOUT CONTAINMENT ---------- */
 .lobby-wrapper {
   max-width: 1100px;
   margin: 0 auto;
   padding: 2rem 1rem;
+}
+
+/* ---------- COMPLETED JOURNEY SECTION (Phase 5D) ---------- */
+.completed-journey-section {
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 2px solid #E6E6E6;
+}
+
+.completed-journey-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0A1E4A;
+}
+
+.completed-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #4BBE83;
+  background-color: #E8F5EE;
+  padding: 0.25rem 0.7rem;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.completed-card {
+  opacity: 0.7;
+  background: #F8F9FA;
+  border-color: #D1D5DB;
+  position: relative;
+}
+
+.completed-card:hover {
+  opacity: 0.85;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+}
+
+.completed-card .completed-overlay {
+  position: absolute;
+  top: 0.8rem;
+  left: 0.8rem;
+  font-size: 1.5rem;
+  color: #4BBE83;
+}
+
+/* ---------- JOURNEY PHASE VISUAL IDENTITY (Phase 5G) ---------- */
+/* Clean left-border accents match NAVI panel styling - 3px solid borders */
+
+.tile-discovery {
+  border-left: 3px solid #2563eb;  /* blue - matches NAVI */
+}
+
+.tile-planning {
+  border-left: 3px solid #10B981;  /* green */
+}
+
+.tile-post_planning {
+  border-left: 3px solid #8B5CF6;  /* violet */
+}
+
+.tile-service {
+  border-left: 3px solid #9CA3AF;  /* gray */
+}
+
+/* Section note styling */
+.section-note {
+  font-size: 0.85rem;
+  color: #666;
+  margin: 1rem 0 0.5rem 0;
+  text-align: center;
+  font-style: italic;
+}
+
+/* ---------- EMPTY STATE ---------- */
+.empty-state {
+  background: #f9fafb;
+  border: 2px dashed #d1d5db;
+  border-radius: 12px;
+  padding: 3rem 2rem;
+  text-align: center;
+  margin: 1rem 0;
+}
+
+.empty-state-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.6;
+}
+
+.empty-state-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.empty-state-message {
+  font-size: 0.95rem;
+  color: #6b7280;
+  line-height: 1.5;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+/* Dark mode empty state */
+@media (prefers-color-scheme: dark) {
+  .empty-state {
+    background: #1f2937;
+    border-color: #374151;
+  }
+  
+  .empty-state-title {
+    color: #e5e7eb;
+  }
+  
+  .empty-state-message {
+    color: #9ca3af;
+  }
+}
+
+/* ---------- COMPLETED JOURNEYS GRID (Phase 5K) ---------- */
+/* Grid container for completed journey tiles */
+.completed-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.75rem;
+  padding: 1.5rem 0;
+  margin-bottom: 2rem;
+}
+
+/* Completed tile styling - subtle differentiation */
+.tile-analysis {
+  border-left: 4px solid #F59E0B !important;  /* amber accent for completed items */
+  background: linear-gradient(to bottom right, #ffffff, #fafafa);
+  opacity: 0.95;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.tile-analysis:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  opacity: 1;
+}
+
+/* Dark mode completed tiles */
+@media (prefers-color-scheme: dark) {
+  .tile-analysis {
+    background: linear-gradient(to bottom right, #1f2937, #111827);
+    border-left-color: #FBBF24 !important;
+  }
+  
+  .tile-analysis:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+}
+
+/* =========================
+   ADDITIONAL SERVICES CARDS (Phase 5L)
+   ========================= */
+
+.service-grid-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.25rem;
+  width: 100%;
+}
+
+.service-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 1rem;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  position: relative;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.service-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.06);
+}
+
+.service-title {
+  margin-bottom: 0.5rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.service-desc {
+  font-size: 0.9rem;
+  color: #4b5563;
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+.service-cta {
+  display: inline-block;
+  background: #eef2ff;
+  color: #3849ff;
+  padding: 0.4rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.service-cta:hover {
+  background: #3849ff;
+  color: white;
+  text-decoration: none;
+}
+
+.service-badge {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  background: linear-gradient(90deg, #8b5cf6, #06b6d4);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+}
+
+/* =========================
+   RESPONSIVE BREAKPOINT
+   ========================= */
+@media (max-width: 768px) {
+  .service-grid-container {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .service-card {
+    padding: 1rem;
+  }
+
+  .service-title {
+    font-size: 1rem;
+  }
+
+  .service-desc {
+    font-size: 0.85rem;
+  }
+}
+
+/* Dark mode support for service cards */
+@media (prefers-color-scheme: dark) {
+  .service-card {
+    background: #111827;
+    border-color: #374151;
+  }
+  
+  .service-card:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+  }
+  
+  .service-title {
+    color: #f9fafb;
+  }
+  
+  .service-desc {
+    color: #9ca3af;
+  }
+  
+  .service-badge {
+    background: linear-gradient(90deg, #a78bfa, #22d3ee);
+  }
+  
+  .service-cta {
+    background-color: #2563eb;
+    color: #fff !important;
+  }
+  
+  .service-cta:hover {
+    background-color: #1d4ed8;
+  }
 }

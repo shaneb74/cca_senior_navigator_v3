@@ -394,18 +394,7 @@
   margin-left: auto;
 }
 
-/* === Lock overlay & message === */
-.ptile .icon-lock {
-  position: absolute;
-  top: .75rem;
-  right: .75rem;
-  width: 1rem;
-  height: 1rem;
-  mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24'><path fill='black' d='M17 8h-1V6a4 4 0 1 0-8 0v2H7a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2m-6 8.73V17a1 1 0 1 1 2 0v-.27a2 2 0 1 1-2 0M9 8V6a3 3 0 1 1 6 0v2z'/></svg>") center / contain no-repeat;
-  background: currentColor;
-  color: var(--ink-400);  /* Lighter for softer appearance */
-  opacity: 0.6;  /* Make lock icon more subtle */
-}
+/* === Lock styling (Phase 5F: Text-only, no icon) === */
 .ptile.tile--locked {
   opacity: .85;  /* Slightly less dimmed */
 }

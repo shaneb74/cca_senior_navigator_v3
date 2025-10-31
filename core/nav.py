@@ -126,3 +126,25 @@ def current_route(default: str, pages: dict[str, dict]) -> str:
 
     st.session_state["current_route"] = page
     return page
+
+
+def go_to_lobby():
+    """
+    Canonical redirect to Lobby grid, clearing stray params that cause Welcome detours.
+    
+    Phase 5L: Central navigation helper to ensure consistent routing to hub_lobby.
+    Clears all query params and session state redirects that might interfere.
+    """
+    st.query_params.clear()
+    st.query_params["page"] = "hub_lobby"
+    
+    # Clear any session state that might trigger auto-redirects
+    st.session_state.pop("redirect_to", None)
+    st.session_state.pop("next_page", None)
+    st.session_state.pop("route", None)
+    
+    try:
+        st.rerun()  # modern Streamlit
+    except AttributeError:
+        st.experimental_rerun()  # older versions
+

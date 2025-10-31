@@ -846,6 +846,7 @@ def render_navi_panel_v2(
 
     # Title block is optional; omit entirely if no title provided
     title_block = f'<div class="navi-panel-v2__title">{title}</div>' if (title is not None and str(title).strip() != "") else ""
-    panel_html = f'<div class="navi-panel-v2 {variant_class}"><div class="navi-panel-v2__header"><div class="navi-panel-v2__eyebrow">✨ Navi</div>{progress_badge}</div>{alert_section}{title_block}<div class="navi-panel-v2__reason">{reason}</div><div class="navi-panel-v2__encouragement navi-panel-v2__encouragement--{status}"><span style="font-size: 18px;">{encouragement.get("icon", "💪")}</span><span>{encouragement.get("text", "")}</span></div>{chips_html}{actions_html}</div>'
+    # Phase 5K: Add ai-card, navi-card, animate-border classes for gradient/shimmer effects
+    panel_html = f'<div class="navi-panel-v2 navi-card ai-card animate-border {variant_class}"><div class="navi-panel-v2__header"><div class="navi-panel-v2__eyebrow">✨ Navi</div>{progress_badge}</div>{alert_section}{title_block}<div class="navi-panel-v2__reason">{reason}</div><div class="navi-panel-v2__encouragement navi-panel-v2__encouragement--{status}"><span style="font-size: 18px;">{encouragement.get("icon", "💪")}</span><span>{encouragement.get("text", "")}</span></div>{chips_html}{actions_html}</div>'
 
     st.markdown(panel_html, unsafe_allow_html=True)

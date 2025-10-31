@@ -28,10 +28,10 @@ def render_module_navi_coach(title_text: str, body_text: str, tip_text: str | No
     # Build tip HTML if provided
     tip_html = f"<p style='font-size:0.9rem;color:#555;margin-top:.75rem;'>{tip_text}</p>" if tip_text else ""
     
-    # Render compact Navi card with inline styling
+    # Render compact Navi card with inline styling and Phase 5K AI shimmer pulse
     st.markdown(
         """
-        <div class="navi-panel-compact"
+        <div class="navi-panel-compact navi-card ai-card animate-border"
              style="
                 background:#fff;
                 border-left:4px solid rgb(59,130,246);

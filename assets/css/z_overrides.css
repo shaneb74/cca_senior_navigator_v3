@@ -1,0 +1,426 @@
+/* ==========================================
+   PHASE 5H SAFE OVERRIDES — VISUAL POLISH
+   Note: tokens.css loaded via app.py inject_css() before this file
+   ========================================== */
+
+/* ====== TYPOGRAPHY CLEANUP ====== */
+h1, h2, h3, h4 { 
+  font-weight: 600; 
+  letter-spacing: -0.02em; 
+}
+
+/* ====== LAYOUT SMOOTHING ====== */
+section, .container, .tile-grid { 
+  gap: var(--space-lg); 
+}
+
+/* ====== LOCKED ELEMENTS ====== */
+.pill-black, .pill-white, .welcome-container {
+  all: revert !important;
+  filter: none !important;
+  box-shadow: none !important;
+}
+
+/* =====================================================
+   PHASE 5K FINAL CARD FRAMEWORK — TOKENIZED
+   ===================================================== */
+
+/* Base shared layout */
+.ai-card,
+.navi-card,
+.product-card,
+.hub-card {
+  position: relative;
+  border: 1px solid var(--card-border);
+  border-left: 4px solid transparent;
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+  color: var(--card-text);
+  box-shadow: var(--shadow-sm);
+  overflow: visible;
+  transition: var(--transition-default);
+}
+
+/* =====================================================
+   NAVI CARD — AI ACCENT FINAL (STREAMLINED)
+   ===================================================== */
+
+.navi-card {
+  border-left: 4px solid var(--navi-accent) !important;
+  overflow: hidden;
+}
+
+.navi-card::before {
+  content: none !important;
+}
+
+.navi-card:hover {
+  box-shadow: var(--shadow-md);
+  border-left-color: color-mix(in srgb, var(--navi-accent) 80%, white 20%);
+  transition: border-left-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* =====================================================
+   COMPLETED JOURNEY CARDS
+   ===================================================== */
+.completed-card {
+    background: linear-gradient(180deg, #f8faff 0%, #ffffff 100%);
+    border-left: 5px solid #2ecc71;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    padding: 1.25rem 1.5rem;
+    position: relative;
+    transition: var(--transition-default);
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.completed-card:hover {
+    background: linear-gradient(180deg, #f2fcf7 0%, #ffffff 100%);
+    border-left: 5px solid #27ae60;
+    transform: translateY(-1px);
+}
+
+.completed-card::after {
+    content: "✓";
+    font-weight: bold;
+    font-size: 1.2rem;
+    color: #27ae60;
+    position: absolute;
+    top: var(--space-md);
+    right: var(--space-md);
+    background: #e8f9f0;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* =====================================================
+   PHASE 5M — PROGRESS BAR & CTA BUTTONS
+   ===================================================== */
+
+/* --- Discovery Progress Bar (in NAVI card) --- */
+.progress-wrapper {
+    margin: var(--space-md) 0;
+}
+
+.progress-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: var(--space-sm);
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 999px;
+    overflow: hidden;
+    position: relative;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+    border-radius: 999px;
+    transition: width 0.3s ease;
+}
+
+.progress-bar-fill.shimmer {
+    position: relative;
+    overflow: hidden;
+}
+
+.progress-bar-fill.shimmer::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255,255,255,0.4) 50%,
+        transparent 100%
+    );
+    animation: shimmerProgress 2s infinite;
+}
+
+@keyframes shimmerProgress {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+/* --- CTA Button Row --- */
+.cta-row {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: var(--space-md);
+}
+
+.cta-primary {
+    flex: 1;
+    padding: 0.625rem 1.25rem;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: var(--transition-default);
+}
+
+.cta-primary:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.25);
+}
+
+.cta-secondary {
+    flex: 1;
+    padding: 0.625rem 1.25rem;
+    background: white;
+    color: #3b82f6;
+    border: 1px solid #3b82f6;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: var(--transition-default);
+}
+
+.cta-secondary:hover {
+    background: #eff6ff;
+    border-color: #2563eb;
+    transform: translateY(-1px);
+}
+
+/* =====================================================
+   PRODUCT/MODULE LAYOUT CONSTRAINTS
+   ===================================================== */
+.product-container,
+.module-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 var(--space-lg);
+}
+
+/* =====================================================
+   PHASE 5M — SECTION VISIBILITY FIXES
+   ===================================================== */
+
+/* Prevent section collapse and ensure visibility */
+.section, .content-container, .dashboard-shell {
+    overflow: visible !important;
+    display: block !important;
+}
+
+/* Flex containers should wrap */
+.dashboard-row, .tile-grid, .card-container {
+    flex-wrap: wrap !important;
+    overflow: visible !important;
+}
+
+/* Additional Services section visibility */
+.additional-services-section {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* Completed Journey section visibility */
+.completed-journey-section {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    margin-top: var(--space-xl) !important;
+}
+
+/* =====================================================
+   WELCOME PAGE EXCLUSIONS
+   ===================================================== */
+
+/* Respect Welcome pixel precision — exclude that page */
+body.welcome .ai-card,
+body.welcome .navi-card {
+    border: none !important;
+}
+
+body.welcome .ai-card::before,
+body.welcome .navi-card::before {
+    content: none !important;
+}
+
+/* =====================================================
+   RESPONSIVE GRID AND LAYOUT — PHASE 5K MOBILE
+   ===================================================== */
+
+/* ----- Base grid (desktop) ----- */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: var(--space-lg);
+  align-items: stretch;
+  justify-items: stretch;
+  width: 100%;
+  margin: var(--space-lg) 0;
+}
+
+/* NAVI panel responsiveness */
+.navi-card {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 1.75rem;
+}
+
+/* ----- Tablet breakpoint (1024px) ----- */
+@media (max-width: 1024px) {
+  .card-grid {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-md);
+  }
+
+  .ai-card,
+  .navi-card,
+  .product-card,
+  .hub-card {
+    margin: 0 auto;
+    max-width: 600px;
+  }
+}
+
+/* ----- Mobile breakpoint (768px) ----- */
+@media (max-width: 768px) {
+  .card-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-md);
+    padding: 0 var(--space-md);
+  }
+
+  .ai-card,
+  .navi-card,
+  .product-card,
+  .hub-card {
+    border-radius: var(--radius-md);
+    font-size: 0.95rem;
+    padding: 1.25rem;
+    max-width: 100%;
+  }
+
+  .navi-card {
+    padding: 1.25rem;
+    max-width: 100%;
+  }
+
+  .ai-card h2,
+  .navi-card h2,
+  .product-card h2,
+  .hub-card h2 {
+    font-size: 1.1rem;
+  }
+
+  .ai-card p,
+  .navi-card p,
+  .product-card p,
+  .hub-card p {
+    font-size: 0.9rem;
+    line-height: 1.4;
+  }
+}
+
+/* ----- Ultra-small screens (480px) ----- */
+@media (max-width: 480px) {
+  .card-grid {
+    gap: 0.75rem;
+    padding: 0 0.75rem;
+  }
+
+  .ai-card,
+  .navi-card,
+  .product-card,
+  .hub-card {
+    padding: var(--space-md);
+  }
+
+  .ai-card h2,
+  .navi-card h2,
+  .product-card h2,
+  .hub-card h2 {
+    font-size: var(--space-md);
+  }
+}
+
+/* Streamlit container adjustments */
+[data-testid="stVerticalBlock"] > div {
+  width: 100%;
+}
+
+[data-testid="stHorizontalBlock"] {
+  flex-wrap: wrap;
+}
+
+/* =====================================================
+   PRODUCT & HUB CARD — CATEGORY ACCENTS (STREAMLINED)
+   ===================================================== */
+
+/* Disable pseudo-elements for product/hub cards */
+.product-card::before,
+.hub-card::before {
+  content: none !important;
+}
+
+/* Default product/hub card border - gradient accent */
+.product-card,
+.hub-card {
+  border-left: 4px solid transparent;
+  background: linear-gradient(white, white) padding-box,
+              var(--gradient-accent) border-box;
+  border-radius: var(--radius-md);
+}
+
+/* Category-specific direct borders */
+.product-card.tile-discovery,
+.hub-card.tile-discovery,
+.product-card.discovery,
+.hub-card.discovery {
+  border-left: 4px solid var(--discovery-accent) !important;
+  background: var(--surface-card);
+}
+
+.product-card.tile-planning,
+.hub-card.tile-planning,
+.product-card.planning,
+.hub-card.planning {
+  border-left: 4px solid var(--planning-accent) !important;
+  background: var(--surface-card);
+}
+
+.product-card.tile-post_planning,
+.hub-card.tile-post_planning,
+.product-card.analysis,
+.hub-card.analysis {
+  border-left: 4px solid var(--analysis-accent) !important;
+  background: var(--surface-card);
+}
+
+.product-card.tile-service,
+.hub-card.tile-service,
+.product-card.service,
+.hub-card.service {
+  border-left: 4px solid var(--service-accent) !important;
+  background: var(--surface-card);
+}
+
+/* Hover effects for product/hub cards */
+.product-card:hover,
+.hub-card:hover {
+  box-shadow: var(--shadow-md);
+  transition: box-shadow 0.2s ease;
+}

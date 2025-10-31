@@ -1087,10 +1087,9 @@ def _handle_save_exit(
     }
     _emit(event_name, payload)
 
-    # Navigate to concierge hub
-    st.query_params.clear()
-    st.query_params["page"] = hub_route
-    _rerun_app()
+    # Navigate to lobby using canonical helper
+    from core.nav import go_to_lobby
+    go_to_lobby()
 
 
 def _ensure_outcomes(config: ModuleConfig, answers: dict[str, Any]) -> None:
@@ -2186,18 +2185,16 @@ def _render_results_ctas_once(config: ModuleConfig) -> None:
             safe_rerun()
 
     with col2:
-        # Back to Hub button
+        # Back to Lobby button
         if st.button(
-            "← Back to Hub",
+            "← Back to Lobby",
             key="_results_back_hub",
             type="secondary",
             use_container_width=True,
-            help="Return to the main hub",
+            help="Return to the main lobby",
         ):
-            from core.nav import route_to
-
-            hub_route = _hub_route_for_product(config.product)
-            route_to(hub_route)
+            from core.nav import go_to_lobby
+            go_to_lobby()
 
     st.markdown("</div>", unsafe_allow_html=True)
 

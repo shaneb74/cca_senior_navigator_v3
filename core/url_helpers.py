@@ -3,6 +3,8 @@ URL Helpers for Navigation & Session Preservation
 
 Provides URL-driven routing with browser back/forward support and session preservation.
 All navigation should use route_to() to ensure URL updates and history works correctly.
+
+Phase 5E: Integrated with personalizer for uid persistence and context tracking.
 """
 
 from __future__ import annotations
@@ -82,6 +84,8 @@ def route_to(push: bool = True, **parts: str) -> None:
     Updates URL query parameters and triggers a rerun. Maintains a navigation
     stack for in-app Back button functionality.
     
+    Phase 5E: Preserves personalization uid across navigation.
+    
     Args:
         push: Whether to push current route to history stack (default: True)
         **parts: Route components (page, product, module, step, uid)
@@ -95,6 +99,10 @@ def route_to(push: bool = True, **parts: str) -> None:
     
     # Get previous route before updating
     prev = current_route()
+    
+    # Phase 5E: Preserve personalization uid if not explicitly provided
+    if "uid" not in parts and "_personalization_uid" in st.session_state:
+        parts["uid"] = st.session_state["_personalization_uid"]
     
     # Update query params with new route
     set_route_qp(**parts)
@@ -141,6 +149,22 @@ def go_back() -> None:
         st.rerun()
     else:
         route_to(push=False, **back_fallback())
+
+
+def back_to_lobby() -> None:
+    """Navigate back to Lobby Hub.
+    
+    Phase 5D Enhancement:
+        Explicit helper for returning to Lobby from products.
+        All "Back to Hub" navigation should use this function.
+    
+    Phase 5K Enhancement:
+        Clears all query parameters to prevent routing issues.
+        Uses direct rerun for immediate navigation.
+    """
+    st.query_params.clear()
+    st.query_params["page"] = "hub_lobby"
+    st.rerun()
 
 
 def add_uid_to_href(href: str) -> str:
