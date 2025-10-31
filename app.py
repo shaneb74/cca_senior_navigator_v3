@@ -107,7 +107,14 @@ def inject_css() -> None:
     
     Phase 5K Final: Enforce load order to guarantee z_overrides.css always wins.
     Prevents Streamlit's alphabetical file loading from breaking cascade.
+    
+    Cleanup: Added session guard to prevent redundant re-renders.
     """
+    # Session guard: inject once per session to avoid re-renders
+    if st.session_state.get("_injected_once"):
+        return
+    st.session_state["_injected_once"] = True
+    
     from pathlib import Path
     
     # Deterministic load order - tokens → global → modules → overrides (ALWAYS LAST)
@@ -138,10 +145,8 @@ def _cleanup_legacy_gcp_state() -> None:
         st.session_state.pop(key, None)
 
 
-# Ensure CSS loads once per session and persists across reruns
-if "_injected" not in st.session_state:
-    inject_css()
-    st.session_state._injected = True
+# Ensure CSS loads once per session (guard now inside inject_css)
+inject_css()
 
 ensure_session()
 _cleanup_legacy_gcp_state()
@@ -334,6 +339,10 @@ if not uses_layout_frame:
 
 # Always save state after render to ensure latest changes are persisted
 # This is critical for href-based navigation which restarts the app
+
+# Cleanup: Trim transient session keys after render
+for transient in ("gcp_legacy_step", "_rag_stats_logged", "_hydrated_from_qp"):
+    st.session_state.pop(transient, None)
 
 # Save session data (browser-specific, temporary)
 session_state_to_save = extract_session_state(st.session_state)
