@@ -280,13 +280,6 @@ def render_shell_start(
         except Exception:
             pass
     
-    # ✨ Ensure z_overrides.css wins after hub CSS
-    try:
-        from app import reapply_overrides  # type: ignore
-        reapply_overrides()
-    except Exception:
-        pass
-    
     _ensure_global_css()
     if not st.session_state.get(_RESPONSIVE_SENTINEL):
         st.markdown(RESPONSIVE_CSS, unsafe_allow_html=True)

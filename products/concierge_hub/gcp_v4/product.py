@@ -59,6 +59,10 @@ def render():
     5. When complete, publish CareRecommendation to MCIP
     6. Show completion screen with recommendation
     """
+    
+    # Inject radio pill CSS that survives Streamlit/Emotion re-injection
+    from core.ui_css import inject_pill_css
+    inject_pill_css()
 
     # Load module config
     config = _load_module_config()
