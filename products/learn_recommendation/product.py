@@ -53,13 +53,12 @@ def render():
     # Get care recommendation
     care_rec = MCIP.get_care_recommendation()
     
+    # TEMPORARY: Default to Assisted Living for preview if no recommendation
     if not care_rec or not care_rec.tier:
-        # No recommendation available - redirect to GCP
-        st.warning("⚠️ Please complete your Guided Care Plan first to see your recommendation.")
-        if st.button("Start Guided Care Plan"):
-            route_to("gcp_v4")
-        render_footer_simple()
-        return
+        # Create a mock care recommendation for preview
+        from types import SimpleNamespace
+        care_rec = SimpleNamespace(tier="assisted_living")
+        st.info("ℹ️ **Preview Mode:** Showing Assisted Living example. Complete your Guided Care Plan to see your personalized recommendation.")
     
     # Map tier to display name
     tier_display_map = {
