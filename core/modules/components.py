@@ -124,9 +124,38 @@ def input_pill(field: FieldDef, current: Any = None) -> Any:
     # Render with wrapper for custom styling
     st.markdown('<div class="sn-app mod-field mod-radio-pills">', unsafe_allow_html=True)
     
-    # Inject persistent CSS to survive Streamlit reruns and Emotion style injection
-    # Scoped to only affect radios inside .mod-radio-pills wrapper
-    st.html("""
+    st.markdown(f"<div class='mod-label'><span>{H(label)}</span></div>", unsafe_allow_html=True)
+    if field.help:
+        st.markdown(f"<div class='mod-help'>{H(field.help)}</div>", unsafe_allow_html=True)
+    if field.a11y_hint:
+        st.markdown(
+            f"<div class='visually-hidden'>{H(field.a11y_hint)}</div>", unsafe_allow_html=True
+        )
+
+    radio_key = f"{field.key}_pill"
+
+    # Calculate index - use current value if available, otherwise default to first option
+    # Note: st.radio requires a valid integer index, not None
+    if current_label in labels:
+        default_index = labels.index(current_label)
+    else:
+        # No current value - default to first option
+        # This ensures single-click selection works for all options
+        default_index = 0
+
+    # Use native st.radio with horizontal layout
+    choice_label = st.radio(
+        label=label,
+        options=labels,
+        index=default_index,  # Must be valid integer for single-click selection
+        horizontal=True,
+        label_visibility="collapsed",
+        key=radio_key,
+    )
+    
+    # Inject CSS AFTER radio renders to override Emotion styles
+    # This ensures our styles win the cascade even after Streamlit reruns
+    st.markdown("""
     <style>
     /* Radio pill containers - ONLY inside .mod-radio-pills wrapper */
     .mod-radio-pills [data-testid="stRadio"] > div[role="radiogroup"] > div {
@@ -197,36 +226,7 @@ def input_pill(field: FieldDef, current: Any = None) -> Any:
       background: transparent !important;
     }
     </style>
-    """)
-    
-    st.markdown(f"<div class='mod-label'><span>{H(label)}</span></div>", unsafe_allow_html=True)
-    if field.help:
-        st.markdown(f"<div class='mod-help'>{H(field.help)}</div>", unsafe_allow_html=True)
-    if field.a11y_hint:
-        st.markdown(
-            f"<div class='visually-hidden'>{H(field.a11y_hint)}</div>", unsafe_allow_html=True
-        )
-
-    radio_key = f"{field.key}_pill"
-
-    # Calculate index - use current value if available, otherwise default to first option
-    # Note: st.radio requires a valid integer index, not None
-    if current_label in labels:
-        default_index = labels.index(current_label)
-    else:
-        # No current value - default to first option
-        # This ensures single-click selection works for all options
-        default_index = 0
-
-    # Use native st.radio with horizontal layout
-    choice_label = st.radio(
-        label=label,
-        options=labels,
-        index=default_index,  # Must be valid integer for single-click selection
-        horizontal=True,
-        label_visibility="collapsed",
-        key=radio_key,
-    )
+    """, unsafe_allow_html=True)
 
     st.markdown("</div>", unsafe_allow_html=True)
 
