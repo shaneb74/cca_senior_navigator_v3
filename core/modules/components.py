@@ -143,13 +143,6 @@ def input_pill(field: FieldDef, current: Any = None) -> Any:
         # This ensures single-click selection works for all options
         default_index = 0
 
-    # CRITICAL: Add run count to key to force widget remount on every rerun
-    # This prevents Streamlit from caching the widget's DOM with default styles
-    import time
-    run_id = st.session_state.get("_pill_run_count", 0)
-    st.session_state["_pill_run_count"] = run_id + 1
-    radio_key = f"{field.key}_pill_{run_id}"
-
     # Use native st.radio with horizontal layout
     choice_label = st.radio(
         label=label,

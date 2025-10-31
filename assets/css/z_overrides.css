@@ -808,57 +808,60 @@ body.welcome .navi-card::before {
   transition: all 0.15s ease-in-out;
 }
 
-/* ============================================================
-   RADIO PILLS - File-based CSS (loads on refresh)
-   Note: JavaScript in core/ui_css.py re-injects after Emotion
-   Targets horizontal radio container divs (not role="radio")
-   ============================================================ */
+/* ===== Guided Care Plan — Pill radios on native st.radio (horizontal) ===== */
 
-:root{
-  --pill-bg:#f3f4f6;
-  --pill-fg:#111827;
-  --pill-bg-active:#111827;
-  --pill-fg-active:#ffffff;
-  --pill-border:#e5e7eb;
-  --pill-shadow:0 1px 2px rgba(0,0,0,.04);
+div[data-testid="stRadio"] > div[role="radiogroup"] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
 }
 
-[data-testid="stRadio"] > div[role="radiogroup"]{
-  display:flex !important;
-  flex-wrap:wrap !important;
-  gap:10px !important;
+/* Hide the native dots */
+div[data-testid="stRadio"] > div[role="radiogroup"] input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
 }
 
-/* Target container divs (children of radiogroup) */
-[data-testid="stRadio"] > div[role="radiogroup"] > div{
-  border:1px solid var(--pill-border) !important;
-  background:var(--pill-bg) !important;
-  color:var(--pill-fg) !important;
-  padding:8px 14px !important;
-  border-radius:10px !important;
-  box-shadow:var(--pill-shadow) !important;
-  cursor:pointer !important;
-  user-select:none !important;
-  transition:background .12s ease, color .12s ease, border-color .12s ease !important;
+/* Base pill face (the sibling <div> after the input) */
+div[data-testid="stRadio"] > div[role="radiogroup"] > label > div,
+div[data-testid="stRadio"] > div[role="radiogroup"] > div > div {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 9999px;
+  background: #f9fafb;
+  color: #333;
+  font-weight: 500;
+  font-size: 0.92rem;
+  cursor: pointer;
+  user-select: none;
+  transition: background .15s ease, color .15s ease, border-color .15s ease, transform .05s ease;
 }
 
-[data-testid="stRadio"] > div[role="radiogroup"] > div:hover{
-  border-color:#d1d5db !important;
+/* Hover */
+div[data-testid="stRadio"] > div[role="radiogroup"] > label:hover > div,
+div[data-testid="stRadio"] > div[role="radiogroup"] > div:hover > div {
+  background: #eef0f3;
+  border-color: #cbd5e1;
 }
 
-/* Selected state - container has input:checked child */
-[data-testid="stRadio"] > div[role="radiogroup"] > div:has(input:checked){
-  background:var(--pill-bg-active) !important;
-  color:var(--pill-fg-active) !important;
-  border-color:var(--pill-bg-active) !important;
+/* Selected state — use input:checked + div (no :has) */
+div[data-testid="stRadio"] > div[role="radiogroup"] > label > input[type="radio"]:checked + div,
+div[data-testid="stRadio"] > div[role="radiogroup"] > div > input[type="radio"]:checked + div {
+  background: #111;      /* black pill */
+  color: #fff;
+  border-color: #111;
 }
 
-/* Hide radio circles */
-[data-testid="stRadio"] input[type="radio"]{
-  display:none !important;
-}
-
-/* Hide radio circle container */
-[data-testid="stRadio"] label > div:first-child{
-  display:none !important;
+/* Focus ring (keyboard) */
+div[data-testid="stRadio"] > div[role="radiogroup"] > label:focus-within > div,
+div[data-testid="stRadio"] > div[role="radiogroup"] > div:focus-within > div {
+  outline: 2px solid #11182733;
+  outline-offset: 2px;
 }
