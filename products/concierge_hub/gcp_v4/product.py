@@ -64,7 +64,23 @@ def render():
     from core.ui_css import inject_pill_css
     inject_pill_css()
     
-    # 🔬 DIAGNOSTIC TEST: Prove widget caching is root cause
+    # � SURGICAL FIX: Remove inline style pollution from Emotion
+    # Neutralizes conflicting background/border/color on every DOM mutation
+    st.markdown("""
+    <script>
+    const fixPills = () => {
+      document.querySelectorAll('div[data-testid="stRadio"] label > div[style]').forEach(el => {
+        el.style.background = '';
+        el.style.border = '';
+        el.style.color = '';
+      });
+    };
+    new MutationObserver(fixPills).observe(document.body, { childList: true, subtree: true });
+    fixPills();
+    </script>
+    """, unsafe_allow_html=True)
+    
+    # �🔬 DIAGNOSTIC TEST: Prove widget caching is root cause
     # This test radio uses dynamic keys to force remount on every rerun
     from streamlit.components.v1 import html
     
