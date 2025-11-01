@@ -176,20 +176,45 @@ def render_welcome_contextual():
                 align-items: center;
             }
             
-            /* Brand gradient buttons - override Streamlit blue defaults */
+            /* Brand gradient buttons - AGGRESSIVE override of Streamlit blue defaults */
+            /* Target every possible Streamlit button selector */
             button[kind="primary"],
-            button[data-baseweb="button"][kind="primary"] {
+            button[data-baseweb="button"][kind="primary"],
+            button[data-testid="baseButton-primary"],
+            .stButton > button,
+            .stButton button,
+            div[data-testid="column"] button,
+            button[class*="css-"],
+            button {
                 background: linear-gradient(135deg, #4d7cff 0%, #7c5cff 100%) !important;
+                background-color: transparent !important;
                 border: none !important;
                 color: #ffffff !important;
                 box-shadow: 0 2px 8px rgba(77, 124, 255, 0.25) !important;
+                transition: all 0.2s ease !important;
             }
             
             button[kind="primary"]:hover,
-            button[data-baseweb="button"][kind="primary"]:hover {
+            button[data-baseweb="button"][kind="primary"]:hover,
+            button[data-testid="baseButton-primary"]:hover,
+            .stButton > button:hover,
+            .stButton button:hover,
+            div[data-testid="column"] button:hover,
+            button[class*="css-"]:hover,
+            button:hover {
                 background: linear-gradient(135deg, #3d6cef 0%, #6c4cef 100%) !important;
+                background-color: transparent !important;
                 box-shadow: 0 4px 12px rgba(77, 124, 255, 0.35) !important;
                 transform: translateY(-1px) !important;
+            }
+            
+            /* Exception: Keep toggle buttons gray (For someone / For me) */
+            .toggle button,
+            button.toggle {
+                background: #f1f5f9 !important;
+                background-color: #f1f5f9 !important;
+                border: 1px solid #e2e8f0 !important;
+                color: #475569 !important;
             }
             </style>""",
             unsafe_allow_html=True,
