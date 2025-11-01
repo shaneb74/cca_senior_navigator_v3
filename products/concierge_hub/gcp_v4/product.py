@@ -60,63 +60,6 @@ def render():
     6. Show completion screen with recommendation
     """
     
-    # Inject radio pill CSS that survives Streamlit/Emotion re-injection
-    from core.ui_css import inject_pill_css
-    inject_pill_css()
-    
-    # � SURGICAL FIX: Remove inline style pollution from Emotion
-    # Neutralizes conflicting background/border/color on every DOM mutation
-    st.markdown("""
-    <script>
-    const fixPills = () => {
-      document.querySelectorAll('div[data-testid="stRadio"] label > div[style]').forEach(el => {
-        el.style.background = '';
-        el.style.border = '';
-        el.style.color = '';
-      });
-    };
-    new MutationObserver(fixPills).observe(document.body, { childList: true, subtree: true });
-    fixPills();
-    </script>
-    """, unsafe_allow_html=True)
-    
-    # �🔬 DIAGNOSTIC TEST: Prove widget caching is root cause
-    # This test radio uses dynamic keys to force remount on every rerun
-    from streamlit.components.v1 import html
-    
-    def pill_radio_test(label, options, key_prefix="test", index=0):
-        css = """
-        <style>
-        [data-testid="stRadio"] > div[role="radiogroup"]{
-            display:flex !important; flex-wrap:wrap !important; gap:8px !important;
-        }
-        [data-testid="stRadio"] > div[role="radiogroup"] > div{
-            border:1px solid #ccc !important; background:#f9f9f9 !important;
-            color:#111 !important; border-radius:10px !important;
-            padding:8px 14px !important; cursor:pointer !important;
-        }
-        [data-testid="stRadio"] > div[role="radiogroup"] > div:has(input:checked){
-            background:#111 !important; color:#fff !important; border-color:#111 !important;
-        }
-        [data-testid="stRadio"] input[type="radio"]{
-            display:none !important;
-        }
-        [data-testid="stRadio"] label > div:first-child{
-            display:none !important;
-        }
-        </style>
-        """
-        html(css, height=0)
-        # Dynamic key forces Streamlit to remount widget on each rerun
-        widget_key = f"{key_prefix}_{hash(tuple(options))}"
-        return st.radio(label, options, key=widget_key, index=index, horizontal=True)
-    
-    st.markdown("---")
-    st.markdown("### 🔬 Diagnostic Test (Fixed Selectors)")
-    choice = pill_radio_test("Visual test (container divs)", ["Option A","Option B","Option C"], key_prefix="demo")
-    st.write("Selected:", choice)
-    st.markdown("---")
-
     # Load module config
     config = _load_module_config()
 
