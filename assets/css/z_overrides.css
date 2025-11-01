@@ -808,88 +808,143 @@ body.welcome .navi-card::before {
   transition: all 0.15s ease-in-out;
 }
 
-/* ===== Guided Care Plan — Pill radios on native st.radio (horizontal) ===== */
+/* ===== RADIO PILLS - RESTORED FROM WORKING VERSION =====
+   Strategy: Style the <label> elements directly (not child divs)
+   The label itself IS the pill button
+   ======================================================== */
 
-div[data-testid="stRadio"] > div[role="radiogroup"] {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 4px;
-}
-
-/* Hide the native dots */
-div[data-testid="stRadio"] > div[role="radiogroup"] input[type="radio"] {
-  position: absolute;
-  opacity: 0;
-  width: 0;
-  height: 0;
-  pointer-events: none;
-}
-
-/* Base pill face (the sibling <div> after the input) */
-div[data-testid="stRadio"] > div[role="radiogroup"] > label > div,
-div[data-testid="stRadio"] > div[role="radiogroup"] > div > div {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px 14px;
-  border: 1px solid #d1d5db;
-  border-radius: 9999px;
-  background: #f9fafb;
-  color: #333;
-  font-weight: 500;
-  font-size: 0.92rem;
-  cursor: pointer;
-  user-select: none;
-  transition: background .15s ease, color .15s ease, border-color .15s ease, transform .05s ease;
-}
-
-/* Hover */
-div[data-testid="stRadio"] > div[role="radiogroup"] > label:hover > div,
-div[data-testid="stRadio"] > div[role="radiogroup"] > div:hover > div {
-  background: #eef0f3;
-  border-color: #cbd5e1;
-}
-
-/* Selected state — use input:checked + div (no :has) */
-div[data-testid="stRadio"] > div[role="radiogroup"] > label > input[type="radio"]:checked + div,
-div[data-testid="stRadio"] > div[role="radiogroup"] > div > input[type="radio"]:checked + div {
-  background: #111;      /* black pill */
-  color: #fff;
-  border-color: #111;
-}
-
-/* Focus ring (keyboard) */
-div[data-testid="stRadio"] > div[role="radiogroup"] > label:focus-within > div,
-div[data-testid="stRadio"] > div[role="radiogroup"] > div:focus-within > div {
-  outline: 2px solid #11182733;
-  outline-offset: 2px;
-}
-
-/* --- FINAL FIX: persist pill buttons on Streamlit radios --- */
-[data-testid="stRadio"] label > div[style] {
-  background: #f9fafb !important;
-  border: 1px solid #d1d5db !important;
-  border-radius: 9999px !important;
-  color: #333 !important;
+/* BASE PILL STYLE - Gray unselected */
+/* Target labels in radio groups, exclude widget labels */
+[data-testid="stRadio"] label:not([data-testid="stWidgetLabel"]):not([aria-hidden="true"]),
+[data-testid="stRadio"] > div > label:not([data-testid="stWidgetLabel"]):not([aria-hidden="true"]),
+[data-testid="stRadio"] div[role="radiogroup"] > label:not([data-testid="stWidgetLabel"]):not([aria-hidden="true"]),
+div[data-testid="stRadio"] label:not([data-testid="stWidgetLabel"]):not([aria-hidden="true"]),
+div[data-testid="stRadio"] > div > label:not([data-testid="stWidgetLabel"]):not([aria-hidden="true"]),
+div[data-testid="stRadio"] div[role="radiogroup"] > label:not([data-testid="stWidgetLabel"]):not([aria-hidden="true"]) {
+  /* Reset everything first */
+  all: unset !important;
+  
+  /* Force pill appearance */
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  padding: 8px 14px !important;
+  flex-direction: row !important;
+  
+  /* Gray pill colors */
+  background-color: #f3f5f9 !important;
+  background: #f3f5f9 !important;
+  color: #1f2937 !important;
+  border: 1px solid #e3eaf5 !important;
+  border-radius: 8px !important;
+  
+  /* Size */
+  height: 42px !important;
+  min-height: 42px !important;
+  max-height: 42px !important;
+  padding: 0 24px !important;
+  margin: 0 6px 6px 0 !important;
+  min-width: 120px !important;
+  
+  /* Typography */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  font-weight: 600 !important;
+  font-size: 15px !important;
+  line-height: 42px !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+  
+  /* Interaction */
   cursor: pointer !important;
-  font-weight: 500 !important;
-  transition: all 0.15s ease-in-out !important;
+  transition: all 0.15s ease !important;
+  box-sizing: border-box !important;
+  user-select: none !important;
+  
+  /* Remove any default styling */
+  outline: none !important;
+  text-decoration: none !important;
+  list-style: none !important;
 }
 
-/* selected state */
-[data-testid="stRadio"] label > div[style]:has(input:checked),
-[data-testid="stRadio"] input[type="radio"]:checked + div[style] {
-  background: #111 !important;
-  color: #fff !important;
-  border-color: #111 !important;
+/* HOVER STATE - Lighter gray */
+[data-testid="stRadio"] label:not([data-testid="stWidgetLabel"]):not([aria-hidden="true"]):hover,
+div[data-testid="stRadio"] label:not([data-testid="stWidgetLabel"]):not([aria-hidden="true"]):hover {
+  background: #e8ecf5 !important;
+  border-color: #d1d9e6 !important;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08) !important;
+  transform: translateY(0) !important;
 }
 
-/* optional: hover feedback */
-[data-testid="stRadio"] label > div[style]:hover {
-  background: #e5e7eb !important;
+/* SELECTED STATE - Black pill with white text */
+[data-testid="stRadio"] label:not([data-testid="stWidgetLabel"]):not([aria-hidden="true"]):has(input[type="radio"]:checked),
+[data-testid="stRadio"] label:not([data-testid="stWidgetLabel"]):not([aria-hidden="true"]):has(input:checked),
+div[data-testid="stRadio"] label:not([data-testid="stWidgetLabel"]):not([aria-hidden="true"]):has(input[type="radio"]:checked),
+div[data-testid="stRadio"] label:not([data-testid="stWidgetLabel"]):not([aria-hidden="true"]):has(input:checked) {
+  background: #111827 !important;
+  background-color: #111827 !important;
+  color: #ffffff !important;
+  border: 1px solid #111827 !important;
+  border-color: #111827 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(17, 24, 39, 0.25) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* SELECTED HOVER - Slightly lighter black */
+[data-testid="stRadio"] label:not([data-testid="stWidgetLabel"]):not([aria-hidden="true"]):has(input:checked):hover,
+div[data-testid="stRadio"] label:not([data-testid="stWidgetLabel"]):not([aria-hidden="true"]):has(input:checked):hover {
+  background: #1f2937 !important;
+  background-color: #1f2937 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 6px 16px rgba(17, 24, 39, 0.3) !important;
+}
+
+/* Force text color inside selected pills */
+[data-testid="stRadio"] label:has(input:checked) div,
+[data-testid="stRadio"] label:has(input:checked) > div,
+[data-testid="stRadio"] label:has(input:checked) span,
+[data-testid="stRadio"] label:has(input:checked) p,
+div[data-testid="stRadio"] label:has(input:checked) div,
+div[data-testid="stRadio"] label:has(input:checked) > div,
+div[data-testid="stRadio"] label:has(input:checked) span,
+div[data-testid="stRadio"] label:has(input:checked) p {
+  color: #ffffff !important;
+  background: transparent !important;
+}
+
+/* Hide the radio input circles */
+[data-testid="stRadio"] input[type="radio"],
+div[data-testid="stRadio"] input[type="radio"] {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  opacity: 0 !important;
+  position: absolute !important;
+  left: -9999px !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+}
+
+/* Hide the radio circle container div */
+[data-testid="stRadio"] label > div:first-child,
+div[data-testid="stRadio"] label > div:first-child {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  opacity: 0 !important;
+}
+
+/* Radiogroup container - flex layout */
+[data-testid="stRadio"] > div,
+[data-testid="stRadio"] div[role="radiogroup"],
+div[data-testid="stRadio"] > div,
+div[data-testid="stRadio"] div[role="radiogroup"] {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  align-items: center !important;
 }
