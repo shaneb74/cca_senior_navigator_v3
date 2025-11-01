@@ -216,7 +216,51 @@ def render_welcome_contextual():
                 border: 1px solid #e2e8f0 !important;
                 color: #475569 !important;
             }
-            </style>""",
+            </style>
+            <script>
+            // Force gradient buttons via JavaScript (CSS can't override Streamlit inline styles)
+            function applyGradientButtons() {
+                // Find all primary buttons (Continue button)
+                const buttons = document.querySelectorAll('button[kind="primary"], button[data-testid="baseButton-primary"], .stButton > button');
+                
+                buttons.forEach(button => {
+                    // Skip toggle buttons
+                    if (button.closest('.toggle')) return;
+                    
+                    // Force gradient styling
+                    button.style.background = 'linear-gradient(135deg, #4d7cff 0%, #7c5cff 100%)';
+                    button.style.backgroundColor = 'transparent';
+                    button.style.border = 'none';
+                    button.style.color = '#ffffff';
+                    button.style.boxShadow = '0 2px 8px rgba(77, 124, 255, 0.25)';
+                    button.style.transition = 'all 0.2s ease';
+                    
+                    // Hover effect
+                    button.addEventListener('mouseenter', () => {
+                        button.style.background = 'linear-gradient(135deg, #3d6cef 0%, #6c4cef 100%)';
+                        button.style.boxShadow = '0 4px 12px rgba(77, 124, 255, 0.35)';
+                        button.style.transform = 'translateY(-1px)';
+                    });
+                    
+                    button.addEventListener('mouseleave', () => {
+                        button.style.background = 'linear-gradient(135deg, #4d7cff 0%, #7c5cff 100%)';
+                        button.style.boxShadow = '0 2px 8px rgba(77, 124, 255, 0.25)';
+                        button.style.transform = 'translateY(0)';
+                    });
+                });
+            }
+            
+            // Run immediately and watch for Streamlit re-renders
+            applyGradientButtons();
+            setTimeout(applyGradientButtons, 100);
+            setTimeout(applyGradientButtons, 500);
+            setTimeout(applyGradientButtons, 1000);
+            
+            // Watch for DOM changes (Streamlit re-renders)
+            const observer = new MutationObserver(applyGradientButtons);
+            observer.observe(document.body, { childList: true, subtree: true });
+            </script>
+            """,
             unsafe_allow_html=True,
         )
 
@@ -293,33 +337,30 @@ def render_welcome_contextual():
             if person_name != current_name:
                 st.session_state["person_name"] = person_name
 
-            # Use Streamlit button for Continue with nav pending flag
-            col_continue, col_close = st.columns([1, 1])
-            
-            with col_continue:
-                if st.button("Continue", type="primary", use_container_width=True):
-                    # Store name using centralized function
-                    from core.state_name import set_person_name
-                    set_person_name(person_name)
-                    
-                    # [BANNER_FLASH_FIX] Clear the page instantly before navigation
-                    root.empty()
-                    
-                    # Set nav pending flag to prevent image flash
-                    st.session_state["_nav_pending"] = True
-                    
-                    # Debug logging for transition
-                    print(f"[BANNER_FLASH] Page cleared, navigating to concierge, has_name: {bool(person_name)}")
-                    
-                    # Navigate to concierge hub
-                    from core.nav import route_to
-                    route_to("hub_lobby")
-                    return
-            
-            with col_close:
-                if st.button("Close", use_container_width=True):
-                    from core.nav import route_to
-                    route_to("welcome")
+            # Store name before navigation (ensure it's persisted)
+            if person_name:
+                from core.state_name import set_person_name
+                set_person_name(person_name)
+
+            # Use HTML links with dashboard-cta classes (same as lobby tiles)
+            # This gives us clean gradient buttons that work with CSS
+            st.markdown(
+                """
+                <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
+                    <a class="dashboard-cta dashboard-cta--primary" 
+                       href="?page=hub_lobby" 
+                       style="flex: 1; text-align: center; text-decoration: none;">
+                        Continue
+                    </a>
+                    <a class="dashboard-cta dashboard-cta--ghost" 
+                       href="?page=welcome" 
+                       style="flex: 1; text-align: center; text-decoration: none;">
+                        Close
+                    </a>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
             st.markdown(
                 """
