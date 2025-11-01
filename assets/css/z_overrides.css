@@ -865,3 +865,31 @@ div[data-testid="stRadio"] > div[role="radiogroup"] > div:focus-within > div {
   outline: 2px solid #11182733;
   outline-offset: 2px;
 }
+
+/* --- FINAL FIX: persist pill buttons on Streamlit radios --- */
+[data-testid="stRadio"] label > div[style] {
+  background: #f9fafb !important;
+  border: 1px solid #d1d5db !important;
+  border-radius: 9999px !important;
+  color: #333 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 8px 14px !important;
+  cursor: pointer !important;
+  font-weight: 500 !important;
+  transition: all 0.15s ease-in-out !important;
+}
+
+/* selected state */
+[data-testid="stRadio"] label > div[style]:has(input:checked),
+[data-testid="stRadio"] input[type="radio"]:checked + div[style] {
+  background: #111 !important;
+  color: #fff !important;
+  border-color: #111 !important;
+}
+
+/* optional: hover feedback */
+[data-testid="stRadio"] label > div[style]:hover {
+  background: #e5e7eb !important;
+}
