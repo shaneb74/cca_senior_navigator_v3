@@ -532,3 +532,86 @@ div[data-role="secondary"] .stButton > button[kind="secondary"][data-testid="stB
   color: #0f172a;
   font-size: 1.05rem;
 }
+
+/* =====================================================
+   LOBBY PRODUCT TILES — COLORED LEFT BORDERS
+   Restored from z_overrides.css (Phase 5K)
+   ===================================================== */
+
+/* Category color tokens */
+:root {
+  --discovery-accent: #4d7cff;
+  --planning-accent: #42ba96;
+  --analysis-accent: #f5a623;
+  --service-accent: #cccccc;
+  --navi-accent: #7c5cff;
+}
+
+/* Base card styling */
+.ai-card,
+.navi-card,
+.product-card,
+.hub-card {
+  position: relative;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-left: 4px solid transparent;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #1f1f1f;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  overflow: visible;
+  transition: all 0.25s ease;
+}
+
+/* NAVI card with AI accent */
+.navi-card {
+  border-left: 4px solid var(--navi-accent) !important;
+  overflow: hidden;
+}
+
+.navi-card:hover {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  border-left-color: color-mix(in srgb, var(--navi-accent) 80%, white 20%);
+}
+
+/* Disable pseudo-elements for product/hub cards */
+.product-card::before,
+.hub-card::before {
+  content: none !important;
+}
+
+/* Category-specific colored borders */
+.product-card.tile-discovery,
+.hub-card.tile-discovery,
+.product-card.discovery,
+.hub-card.discovery {
+  border-left: 4px solid var(--discovery-accent) !important;
+}
+
+.product-card.tile-planning,
+.hub-card.tile-planning,
+.product-card.planning,
+.hub-card.planning {
+  border-left: 4px solid var(--planning-accent) !important;
+}
+
+.product-card.tile-post_planning,
+.hub-card.tile-post_planning,
+.product-card.analysis,
+.hub-card.analysis {
+  border-left: 4px solid var(--analysis-accent) !important;
+}
+
+.product-card.tile-service,
+.hub-card.tile-service,
+.product-card.service,
+.hub-card.service {
+  border-left: 4px solid var(--service-accent) !important;
+}
+
+/* Hover effects */
+.product-card:hover,
+.hub-card:hover {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  transition: box-shadow 0.2s ease;
+}
