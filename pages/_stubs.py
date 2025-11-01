@@ -175,6 +175,22 @@ def render_welcome_contextual():
                 justify-content: center;
                 align-items: center;
             }
+            
+            /* Brand gradient buttons - override Streamlit blue defaults */
+            button[kind="primary"],
+            button[data-baseweb="button"][kind="primary"] {
+                background: linear-gradient(135deg, #4d7cff 0%, #7c5cff 100%) !important;
+                border: none !important;
+                color: #ffffff !important;
+                box-shadow: 0 2px 8px rgba(77, 124, 255, 0.25) !important;
+            }
+            
+            button[kind="primary"]:hover,
+            button[data-baseweb="button"][kind="primary"]:hover {
+                background: linear-gradient(135deg, #3d6cef 0%, #6c4cef 100%) !important;
+                box-shadow: 0 4px 12px rgba(77, 124, 255, 0.35) !important;
+                transform: translateY(-1px) !important;
+            }
             </style>""",
             unsafe_allow_html=True,
         )

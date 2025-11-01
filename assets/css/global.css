@@ -211,8 +211,13 @@ header.sn-global-header {
 }
 
 /* Contextual Welcome - Brand Gradient Buttons (Override Streamlit Defaults) */
+/* Target ALL primary buttons in modal-card context with multiple selectors */
+.modal-card button[kind="primary"],
 .modal-card button[data-testid="baseButton-primary"],
-.modal-card .stButton > button[kind="primary"] {
+.modal-card .stButton > button[kind="primary"],
+.modal-card div[data-testid="column"] button[kind="primary"],
+.modal-card button[type="submit"].stButton,
+.modal-card button.stButton {
   background: linear-gradient(135deg, #4d7cff 0%, #7c5cff 100%) !important;
   border: none !important;
   color: #ffffff !important;
@@ -220,8 +225,12 @@ header.sn-global-header {
   transition: all 0.2s ease !important;
 }
 
+.modal-card button[kind="primary"]:hover,
 .modal-card button[data-testid="baseButton-primary"]:hover,
-.modal-card .stButton > button[kind="primary"]:hover {
+.modal-card .stButton > button[kind="primary"]:hover,
+.modal-card div[data-testid="column"] button[kind="primary"]:hover,
+.modal-card button[type="submit"].stButton:hover,
+.modal-card button.stButton:hover {
   background: linear-gradient(135deg, #3d6cef 0%, #6c4cef 100%) !important;
   box-shadow: 0 4px 12px rgba(77, 124, 255, 0.35) !important;
   transform: translateY(-1px) !important;
