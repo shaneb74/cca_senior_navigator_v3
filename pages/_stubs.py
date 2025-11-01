@@ -109,192 +109,66 @@ def render_welcome():
 
 
 def render_welcome_contextual():
-    # Wrap entire page in root container for instant clearing
-    root = st.empty()
+    """Simple contextual welcome - clean rewrite using HTML buttons."""
+    hero_image = preload_hero_image("assets/images/contextual_someone_else.png")
+    title_copy = "Supporting Others"
+    body_copy = "Helping you make confident care decisions for someone you love."
+    name_label = "What's their name?"
     
-    # Add temporary render counter to catch double paints and banner transitions
-    counter = st.session_state.get("_welcome_renders", 0) + 1
-    st.session_state["_welcome_renders"] = counter
-    nav_pending = st.session_state.get("_nav_pending", False)
-    print(f"[BANNER_FLASH] Contextual Welcome render #{counter}, nav_pending={nav_pending}")
-    
-    mode = st.query_params.get("who", "someone")
-    is_me = mode == "me"
-    # Use single hero image instead of stacked photos (AI misunderstood the design)
-    # Pre-load image to prevent flash
-    image_path = (
-        "assets/images/tell_us_about_you.png"
-        if is_me
-        else "assets/images/tell_us_about_them.png"
+    # Apply the canvas background
+    st.markdown(
+        """<style>
+        .main .block-container {
+            background: #E6EEFF;
+            min-height: 72vh;
+        }
+        </style>""",
+        unsafe_allow_html=True,
     )
-    hero_image = preload_hero_image(image_path)
     
-    # Temporary assertions to catch regressions
-    st.markdown("<!-- IMG_EMPTY_GUARD -->", unsafe_allow_html=True)
+    # Create the layout using Streamlit columns
+    col1, col2 = st.columns([0.9, 1.1])
     
-    # Assert we never create empty image sources
-    if hero_image is not None:
-        assert hero_image.startswith("data:image"), f"Invalid image source: {hero_image[:50]}..."
-    
-    title_copy = "Getting Ready for Myself" if is_me else "Supporting Others"
-    body_copy = (
-        "Plan for your own future care with trusted guidance and peace of mind."
-        if is_me
-        else "Helping you make confident care decisions for someone you love."
-    )
-    name_label = "What's your name?" if is_me else "What's their name?"
-
-    # Don't initialize person_name - let it remain unset if not provided
-
-    with root.container():
-        # ALL of the welcome page UI goes inside this container
-        # Apply the canvas background
+    with col1:
         st.markdown(
-            """<style>
-            .main .block-container {
-                background: #E6EEFF;
-                min-height: 72vh;
-            }
-            
-            /* CSS safeguards for images */
-            .hero-image {
-                max-width: 100%;
-                height: auto;
-                display: block;
-            }
-            
-            /* Hide broken images */
-            .hero-image[src=""], .hero-image:not([src]) {
-                display: none;
-            }
-            
-            /* Ensure photo stack maintains layout */
-            .photo-stack {
-                position: relative;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-            }
-            </style>""",
+            f"""<div class="modal-card stack-sm">
+      <h3 class="mt-space-4">{title_copy}</h3>
+      <p>{body_copy}</p>""",
             unsafe_allow_html=True,
         )
-
-        # Create the layout using Streamlit columns
-        col1, col2 = st.columns([0.9, 1.1])
-
-        with col1:
+        
+        # Use Streamlit text input to capture the name
+        current_name = st.session_state.get("person_name", "")
+        person_name = st.text_input(
+            name_label,
+            value=current_name,
+            placeholder="Type a name",
+            key="person_name_input",
+        )
+        
+        # Update session state when name changes
+        if person_name != current_name:
+            st.session_state["person_name"] = person_name
+        
+        st.markdown(
+            """
+      <div class="card-actions mt-space-4">
+        <a class="btn btn--primary" href="?page=hub_lobby">Continue</a>
+        <a class="btn btn--ghost" href="?page=welcome">Close</a>
+      </div>
+      <p class="helper-note mt-space-4">If you want to assess several people, you can move on to the next step later.</p>
+    </div>""",
+            unsafe_allow_html=True,
+        )
+    
+    with col2:
+        if hero_image:
             st.markdown(
-                f"""<div class="modal-card stack-sm">""",
+                f"""<div class="photo-stack" aria-hidden="true">
+    <img class="hero-image" src="{hero_image}" alt=""/>
+  </div>""",
                 unsafe_allow_html=True,
             )
-            
-            # Context state - wrap in persistent container to prevent DOM destruction
-            with st.container():
-                ctx = st.session_state.get("context")
-                st.markdown('<div id="welcome-context">', unsafe_allow_html=True)
-
-                c1, c2, c3 = st.columns([1, 1, 0.2])
-
-                with c1:
-                    st.markdown(
-                        f'<div class="toggle {"active" if ctx=="someone" else ""}">', 
-                        unsafe_allow_html=True
-                    )
-                    if st.button("👥  For someone", key="ctx_someone"):
-                        st.session_state["context"] = "someone"
-                        st.rerun()
-                    st.markdown("</div>", unsafe_allow_html=True)
-
-                with c2:
-                    st.markdown(
-                        f'<div class="toggle {"active" if ctx=="me" else ""}">', 
-                        unsafe_allow_html=True
-                    )
-                    if st.button("🙂  For me", key="ctx_me"):
-                        st.session_state["context"] = "me"
-                        st.rerun()
-                    st.markdown("</div>", unsafe_allow_html=True)
-
-                with c3:
-                    st.markdown('<div class="toggle small">', unsafe_allow_html=True)
-                    if st.button("×", key="ctx_cancel"):
-                        st.session_state.pop("context", None)
-                        st.session_state.pop("relationship", None)
-                        st.rerun()
-                    st.markdown("</div>", unsafe_allow_html=True)
-
-                st.markdown("</div>", unsafe_allow_html=True)
-
-            # Relationship dropdown (unchanged)
-            if st.session_state.get("context") == "someone":
-                st.selectbox(
-                    "Your relationship to this person:",
-                    ["Adult Child (Son or Daughter)", "Spouse/Partner", "Sibling", "Friend", "Other"],
-                    key="relationship",
-                )
-            
-            st.markdown(
-                f"""<h3 class="mt-space-4">{title_copy}</h3>
-          <p>{body_copy}</p>""",
-                unsafe_allow_html=True,
-            )
-
-            # Use Streamlit text input to capture the name
-            current_name = st.session_state.get("person_name", "")
-            person_name = st.text_input(
-                name_label,
-                value=current_name,
-                placeholder="Type a name",
-                key="person_name_input",
-            )
-
-            # Update session state when name changes
-            if person_name != current_name:
-                st.session_state["person_name"] = person_name
-
-            # Store name before navigation (ensure it's persisted)
-            if person_name:
-                from core.state_name import set_person_name
-                set_person_name(person_name)
-
-            # Use HTML links with dashboard-cta classes (same as lobby tiles)
-            # This gives us clean gradient buttons that work with CSS
-            st.markdown(
-                """
-                <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
-                    <a class="dashboard-cta dashboard-cta--primary" 
-                       href="?page=hub_lobby" 
-                       style="flex: 1; text-align: center; text-decoration: none;">
-                        Continue
-                    </a>
-                    <a class="dashboard-cta dashboard-cta--ghost" 
-                       href="?page=welcome" 
-                       style="flex: 1; text-align: center; text-decoration: none;">
-                        Close
-                    </a>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-
-            st.markdown(
-                """
-          <p class="helper-note mt-space-4">If you want to assess several people, you can move on to the next step later.</p>
-        </div>""",
-                unsafe_allow_html=True,
-            )
-
-        with col2:
-            # STRICT: Only render if we have a real image source AND nav is not pending
-            # Hard rule: Never mount an <img> or container until we have non-empty source
-            if hero_image and not st.session_state.get("_nav_pending"):
-                st.markdown(
-                    f"""<div class="photo-stack" aria-hidden="true">
-        <img class="hero-image" src="{hero_image}" alt=""/>
-      </div>""",
-                    unsafe_allow_html=True,
-                )
-            # else: render nothing - no container, no space reservation
 
 
 def render_for_someone():
