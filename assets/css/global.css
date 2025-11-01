@@ -563,6 +563,25 @@ div[data-role="secondary"] .stButton > button[kind="secondary"][data-testid="stB
   transition: all 0.25s ease;
 }
 
+/* Dashboard grid - Mobile-first tile spacing */
+.dashboard-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 20px; /* Mobile: comfortable tap target spacing */
+}
+
+@media (min-width: 768px) {
+  .dashboard-grid {
+    gap: 24px; /* Tablet+: more breathing room */
+  }
+}
+
+@media (min-width: 1024px) {
+  .dashboard-grid {
+    gap: 28px; /* Desktop: maximum clarity */
+  }
+}
+
 /* NAVI card with AI accent */
 .navi-card {
   border-left: 4px solid var(--navi-accent) !important;
