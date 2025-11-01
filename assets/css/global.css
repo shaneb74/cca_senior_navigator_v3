@@ -615,3 +615,49 @@ div[data-role="secondary"] .stButton > button[kind="secondary"][data-testid="stB
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
   transition: box-shadow 0.2s ease;
 }
+
+/* ===================================================================
+   JOURNEY SECTION HEADERS - Mobile-First Design
+   =================================================================== */
+.journey-section-header {
+  margin: 32px 0 16px;
+  padding: 12px 0 8px;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.journey-section-header::before {
+  content: '';
+  width: 3px;
+  height: 20px;
+  background: linear-gradient(180deg, #4d7cff 0%, #7c5cff 100%);
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.journey-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Remove top border from first section */
+.journey-section-header:first-of-type {
+  border-top: none;
+  margin-top: 16px;
+}
+
+/* Tablet and up: slightly larger spacing */
+@media (min-width: 768px) {
+  .journey-section-header {
+    margin: 40px 0 20px;
+  }
+  
+  .journey-section-title {
+    font-size: 14px;
+  }
+}
