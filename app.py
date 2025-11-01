@@ -103,57 +103,26 @@ def _is_module_route() -> bool:
 
 
 def inject_css() -> None:
-    """Load CSS in deterministic order via runtime injection.
+    """Load CSS in simple order: global → modules.
     
-    Phase 5K Final: Enforce load order to guarantee z_overrides.css always wins.
-    Prevents Streamlit's alphabetical file loading from breaking cascade.
-    
-    Cleanup: Added session guard to prevent redundant re-renders.
+    RESTORED from Oct 30 morning (commit 75f8aed) when pills were working.
+    No tokens, no overrides - just the essentials.
     """
-    # Session guard: inject once per session to avoid re-renders
-    if st.session_state.get("_injected_once"):
-        return
-    st.session_state["_injected_once"] = True
-    
-    from pathlib import Path
-    
-    # Deterministic load order - tokens → global → modules → overrides (ALWAYS LAST)
-    css_order = [
-        "assets/css/tokens.css",
-        "assets/css/global.css",
-        "assets/css/modules.css",
-        "assets/css/z_overrides.css",
-    ]
-    
-    for css_file in css_order:
-        path = Path(css_file)
-        if path.exists():
-            try:
-                css_content = path.read_text(encoding="utf-8")
-                # Inject directly via st.markdown - guarantees order
-                st.markdown(f"<style>{css_content}</style>", unsafe_allow_html=True)
-            except Exception as e:
-                # Log but don't crash on CSS load errors
-                app_log.warning(f"Failed to load {css_file}: {e}")
-                pass
+    try:
+        # Load global CSS
+        with open("assets/css/global.css", encoding="utf-8") as f:
+            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+
+        # Load module CSS (must come after global to override)
+        with open("assets/css/modules.css", encoding="utf-8") as f:
+            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    except Exception as e:
+        app_log.warning(f"Failed to load CSS: {e}")
 
 
 def reapply_overrides() -> None:
-    """Re-inject ONLY z_overrides.css to guarantee it is last after any later CSS.
-    
-    Called after hub CSS injection to ensure overrides always win the cascade.
-    This fixes radio pill styling reverting after hub shell renders.
-    """
-    from pathlib import Path
-    try:
-        path = Path("assets/css/z_overrides.css")
-        if path.exists():
-            css_content = path.read_text(encoding="utf-8")
-            # Append once again so it wins the cascade after any later injections
-            st.markdown(f"<style>{css_content}</style>", unsafe_allow_html=True)
-    except Exception:
-        # Be quiet on purpose; this is best-effort
-        pass
+    """Deprecated - no longer needed with simplified CSS loading."""
+    pass
 
 
 def _cleanup_legacy_gcp_state() -> None:
