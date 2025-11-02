@@ -18,4 +18,18 @@ if ((${#REQUIRED_FILES[@]:-0} > 0)); then
 fi
 
 echo "[pre-commit] Hook executed successfully (no required files enforced)"
+
+# Block any new radio/pill rules from entering CSS files (except modules.css baseline and archives)
+CHANGED_CSS=$(git diff --cached --name-only | grep -E '\.css$' | grep -v "modules.css" | grep -v "^archive/" || true)
+if [[ -n "$CHANGED_CSS" ]]; then
+  if git diff --cached | grep -E '(data-testid="stRadio"|role="radiogroup"|input\[type="radio"\])' >/dev/null; then
+    echo
+    echo "❌ Blocked: radio/pill styles belong ONLY in core/ui_css.py (inject_pill_css)."
+    echo "   Please move any stRadio/radiogroup/radio selectors into ui_css.py."
+    echo "   (modules.css and archive/ are exempt)"
+    echo
+    exit 1
+  fi
+fi
+
 exit 0

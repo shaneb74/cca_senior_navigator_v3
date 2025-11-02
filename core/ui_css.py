@@ -3,6 +3,8 @@
 This module provides deterministic CSS injection that ensures our styles
 always remain last in the cascade, even after Streamlit's Emotion engine
 re-injects styles on widget interactions.
+
+VERIFIED WORKING: GCP radio pills render correctly as of 2025-11-01.
 """
 
 from streamlit.components.v1 import html

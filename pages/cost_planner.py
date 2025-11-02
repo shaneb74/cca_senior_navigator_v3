@@ -1,7 +1,7 @@
 import streamlit as st
 
 from core.nav import route_to
-from pages._stubs import _page
+from pages.stubs import _page
 
 
 def render():
