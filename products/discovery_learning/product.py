@@ -195,17 +195,21 @@ def _inject_discovery_styles():
 
     /* === Navi Box === */
     .navi-box {
-        background: linear-gradient(180deg, #f8f9ff 0%, #f3f4fe 100%);
-        border-left: 6px solid #4b52c2;
+        background: #f8f9fe;
+        border: 1px solid rgba(0, 0, 0, 0.06);
         border-radius: 12px;
         padding: 1.5rem 1.75rem;
         margin: 0 auto 2.5rem;
         max-width: 760px;
-        box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+        box-shadow: 0 4px 12px rgba(124, 92, 255, 0.08);
+        transition: box-shadow 0.2s ease;
+    }
+    .navi-box:hover {
+        box-shadow: 0 6px 16px rgba(124, 92, 255, 0.12);
     }
     .navi-box b {
         font-size: 1.05rem;
-        color: #10174a;
+        color: #7c5cff;
     }
     .navi-box p {
         font-size: 1rem;
