@@ -87,3 +87,6 @@ senior_navigator_golden_manifest.json
 repo_diff_*.csv
 repo_diff_summary.md
 check_repo_diff.py
+
+# Generated search index (rebuilt from corp_knowledge.jsonl on app start)
+config/corp_index.pkl
