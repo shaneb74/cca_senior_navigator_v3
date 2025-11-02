@@ -641,18 +641,22 @@ def render_navi_panel_v2(
     .navi-panel-v2 {
         max-width: 1120px;
         margin: 0 auto;
-        background: #ffffff;
+        background: #f8f9fe;
         border: 1px solid #e6edf5;
         border-radius: 20px;
-        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+        box-shadow: 0 4px 12px rgba(124, 92, 255, 0.08);
         padding: 32px;
-        transition: box-shadow 0.16s ease;
+        transition: all 0.2s ease;
+    }
+    .navi-panel-v2:hover {
+        box-shadow: 0 6px 16px rgba(124, 92, 255, 0.12);
     }
     /* Module variant: more prominent and compact */
     .navi-panel-v2--module {
-        border-left: 3px solid #2563eb;
         padding: 24px 28px;
         margin-bottom: 20px;
+        background: #f8faff;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.08);
     }
     .navi-panel-v2__header {
         display: flex;
