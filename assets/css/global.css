@@ -710,6 +710,14 @@ div[data-role="secondary"] .stButton > button[kind="secondary"][data-testid="stB
   box-shadow: 0 6px 16px rgba(124, 92, 255, 0.12) !important;
 }
 
+/* Compact Navi panel for modules, assessments, and product pages */
+.navi-panel-compact {
+  max-width: 1120px;
+  margin: 0 auto 1.5rem auto;
+  padding: 1rem 1.25rem;
+  border-radius: 8px;
+}
+
 /* Disable pseudo-elements for product/hub cards */
 .product-card::before,
 .hub-card::before {

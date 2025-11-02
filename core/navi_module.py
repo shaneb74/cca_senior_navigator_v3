@@ -16,11 +16,10 @@ def render_module_navi_coach(title_text: str, body_text: str, tip_text: str | No
     - One-sentence body text (≤120 chars)
     - Optional small tip
     
-    Uses standard navi-panel-compact styling:
-    - 4px blue left border (#3B82F6)
-    - White background
+    Uses standard navi-panel-compact styling from global.css:
+    - Borderless design with subtle background tint
+    - Deep purple-tinted shadow for elevation
     - 8px rounded corners
-    - Subtle shadow
     - Max-width 1120px centered
     
     This function renders and returns immediately, allowing the page to continue.
@@ -28,20 +27,11 @@ def render_module_navi_coach(title_text: str, body_text: str, tip_text: str | No
     # Build tip HTML if provided
     tip_html = f"<p style='font-size:0.9rem;color:#555;margin-top:.75rem;'>{tip_text}</p>" if tip_text else ""
     
-    # Render compact Navi card with inline styling and Phase 5K AI shimmer pulse
+    # Render compact Navi card - styling driven by CSS classes
     st.markdown(
         """
-        <div class="navi-panel-compact navi-card ai-card animate-border"
-             style="
-                background:#fff;
-                border-left:4px solid rgb(59,130,246);
-                border-radius:8px;
-                padding:1.25rem;
-                margin:0 auto 1.5rem;
-                max-width:1120px;
-                box-shadow:0 0 4px 1px rgba(0,0,0,0.05);
-             ">
-          <p style="color:rgb(59,130,246);font-weight:600;margin:0 0 .5rem;">✨ NAVI</p>
+        <div class="navi-panel-compact navi-card ai-card animate-border">
+          <p style="color:#7c5cff;font-weight:600;margin:0 0 .5rem;">✨ NAVI</p>
           <p style="font-weight:600;font-size:1rem;margin:0;">{title_text}</p>
           <p style="margin:0.25rem 0 0;">{body_text}</p>
           {tip_html}
