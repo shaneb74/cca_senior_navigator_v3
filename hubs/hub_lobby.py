@@ -504,12 +504,13 @@ def _build_completed_tiles() -> list[ProductTileHub]:
     """
     completed = []
     
-    # Check each major product for completion
+    # Check each major product for completion (using canonical keys)
     all_products = [
         ("discovery_learning", "Discovery Journey", "Your introduction to care planning"),
-        ("gcp_v4", "Guided Care Plan", "Your personalized care recommendation"),
-        ("cost_v2", "Cost Planner", "Your financial plan and projections"),
-        ("pfma_v3", "My Advisor", "Your advisor consultation"),
+        ("gcp", "Guided Care Plan", "Your personalized care recommendation"),
+        ("learn_recommendation", "Learn About My Recommendation", "Understanding your care option"),
+        ("cost_planner", "Cost Planner", "Your financial plan and projections"),
+        ("pfma", "My Advisor", "Your advisor consultation"),
     ]
     
     for key, title, desc in all_products:
