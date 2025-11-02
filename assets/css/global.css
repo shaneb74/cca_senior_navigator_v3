@@ -700,7 +700,7 @@ div[data-role="secondary"] .stButton > button[kind="secondary"][data-testid="stB
 
 /* NAVI card with AI accent - Enhanced visual prominence */
 .navi-card {
-  border-left: 6px solid var(--navi-accent) !important;
+  border-left: none !important;
   overflow: hidden;
   background: #f8f9fe !important;
   box-shadow: 0 4px 12px rgba(124, 92, 255, 0.08) !important;
@@ -708,7 +708,6 @@ div[data-role="secondary"] .stButton > button[kind="secondary"][data-testid="stB
 
 .navi-card:hover {
   box-shadow: 0 6px 16px rgba(124, 92, 255, 0.12) !important;
-  border-left-color: color-mix(in srgb, var(--navi-accent) 90%, white 10%);
 }
 
 /* Disable pseudo-elements for product/hub cards */

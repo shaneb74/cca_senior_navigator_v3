@@ -643,7 +643,6 @@ def render_navi_panel_v2(
         margin: 0 auto;
         background: #f8f9fe;
         border: 1px solid #e6edf5;
-        border-left: 6px solid #7c5cff;
         border-radius: 20px;
         box-shadow: 0 4px 12px rgba(124, 92, 255, 0.08);
         padding: 32px;
@@ -654,7 +653,6 @@ def render_navi_panel_v2(
     }
     /* Module variant: more prominent and compact */
     .navi-panel-v2--module {
-        border-left: 6px solid #2563eb;
         padding: 24px 28px;
         margin-bottom: 20px;
         background: #f8faff;
