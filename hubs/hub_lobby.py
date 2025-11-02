@@ -189,6 +189,7 @@ def _get_product_state(product_key: str) -> str:
     """Determine product state based on MCIP status.
     
     Phase 4A: FAQ removed from tiles (integrated into NAVI).
+    Phase Journey Fix: Delegate normalization to MCIP for single source of truth.
     
     Args:
         product_key: Product identifier (e.g., 'gcp_v4', 'cost_v2')
@@ -196,18 +197,9 @@ def _get_product_state(product_key: str) -> str:
     Returns:
         State string: 'locked', 'available', or 'completed'
     """
-    # Normalize product keys (handle aliases)
-    key_map = {
-        'gcp_v4': 'gcp',
-        'gcp': 'gcp',
-        'cost_v2': 'cost_planner',
-        'cost_planner': 'cost_planner',
-        'cost_intro': 'cost_planner',
-        'pfma_v3': 'pfma',
-        'pfma': 'pfma',
-    }
-    
-    normalized_key = key_map.get(product_key, product_key)
+    # Delegate normalization to MCIP (single source of truth)
+    # MCIP handles all key aliases: gcp_v4→gcp, cost_v2→cost_planner, etc.
+    normalized_key = MCIP._normalize_product_key(product_key)
     
     # Check if product is completed
     if MCIP.is_product_complete(normalized_key):
