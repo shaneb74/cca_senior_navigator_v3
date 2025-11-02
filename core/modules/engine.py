@@ -495,8 +495,8 @@ def run_gcp_decision_pipeline(state) -> tuple[str, dict[str, Any]]:
         module_state = state.get("gcp_care_recommendation", {})
         
         # 2) Compute deterministic tier using existing derive_outcome
-        from products.concierge_hub.gcp_v4.modules.care_recommendation.logic import derive_outcome
-        from products.concierge_hub.gcp_v4.modules.care_recommendation.flags import build_flags
+        from products.gcp_v4.modules.care_recommendation.logic import derive_outcome
+        from products.gcp_v4.modules.care_recommendation.flags import build_flags
         
         outcome = derive_outcome(module_state)
         det_tier = outcome.get("tier") if isinstance(outcome, dict) else getattr(outcome, "tier", "in_home")

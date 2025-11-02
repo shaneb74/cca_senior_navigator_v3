@@ -279,7 +279,7 @@ def reconcile_with_deterministic(
             import json
             import time
 
-            from products.concierge_hub.gcp_v4.modules.care_recommendation.logic import (
+            from products.gcp_v4.modules.care_recommendation.logic import (
                 cognition_band,
                 cognitive_gate_behaviors_only,
                 support_band,
