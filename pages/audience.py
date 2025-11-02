@@ -236,32 +236,64 @@ def _page_content():
             unsafe_allow_html=True,
         )
         
-        # Designer-style pills
-        st.markdown('<div class="pill-container">', unsafe_allow_html=True)
+        # Modern toggle pills - use URL navigation to trigger mode changes
+        someone_bg = '#2563eb' if mode == "someone" else '#f1f5ff'
+        someone_color = '#ffffff' if mode == "someone" else '#0f172a'
+        someone_shadow = '0 2px 8px rgba(37, 99, 235, 0.25)' if mode == "someone" else 'none'
         
-        pill_col1, pill_col2 = st.columns([1, 1])
+        self_bg = '#2563eb' if mode == "self" else '#f1f5ff'
+        self_color = '#ffffff' if mode == "self" else '#0f172a'
+        self_shadow = '0 2px 8px rgba(37, 99, 235, 0.25)' if mode == "self" else 'none'
         
-        with pill_col1:
-            pill_class = "active" if mode == "someone" else ""
-            st.markdown(f'<div class="pill-wrapper {pill_class}">', unsafe_allow_html=True)
-            if st.button("👥 For someone", key="pill-someone", use_container_width=True):
-                st.session_state["audience_mode"] = "someone"
-                st.rerun()
-            st.markdown('</div>', unsafe_allow_html=True)
+        # Get URLs for navigation
+        someone_href = add_uid_to_href("?page=audience&mode=someone")
+        self_href = add_uid_to_href("?page=audience&mode=self")
         
-        with pill_col2:
-            pill_class = "active" if mode == "self" else ""
-            st.markdown(f'<div class="pill-wrapper {pill_class}">', unsafe_allow_html=True)
-            if st.button("🙋 For me", key="pill-self", use_container_width=True):
-                st.session_state["audience_mode"] = "self"
-                st.rerun()
-            st.markdown('</div>', unsafe_allow_html=True)
+        # Use anchor links (most reliable in Streamlit)
+        st.markdown(f"""
+        <div style="display: flex; gap: 8px; margin-bottom: 24px;">
+            <a href="{someone_href}" target="_self"
+                style="
+                    flex: 1;
+                    padding: 12px 24px;
+                    border-radius: 999px;
+                    font-weight: 600;
+                    font-size: 15px;
+                    border: none;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                    background: {someone_bg};
+                    color: {someone_color};
+                    box-shadow: {someone_shadow};
+                    text-decoration: none;
+                    text-align: center;
+                    display: block;
+                "
+            >For someone</a>
+            <a href="{self_href}" target="_self"
+                style="
+                    flex: 1;
+                    padding: 12px 24px;
+                    border-radius: 999px;
+                    font-weight: 600;
+                    font-size: 15px;
+                    border: none;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                    background: {self_bg};
+                    color: {self_color};
+                    box-shadow: {self_shadow};
+                    text-decoration: none;
+                    text-align: center;
+                    display: block;
+                "
+            >For me</a>
+        </div>
+        """, unsafe_allow_html=True)
         
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-        # Title
+        # Title - modern typography
         st.markdown(
-            f'<h1 class="audience-title">{html.escape(title)}</h1>',
+            f'<h1 style="font-size: 32px; font-weight: 800; color: #0f172a; line-height: 1.3; margin-bottom: 24px;">{html.escape(title)}</h1>',
             unsafe_allow_html=True,
         )
         
@@ -290,8 +322,35 @@ def _page_content():
         # Save to session state
         st.session_state["audience_name_input"] = name_value
         
-        # Continue button
+        # Continue button - always use Streamlit button with brand gradient styling
         button_disabled = not (name_value and name_value.strip())
+        
+        # Inject button styles once
+        st.markdown("""
+        <style>
+        button[kind="primary"] {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+            border: none !important;
+            color: white !important;
+            font-weight: 600 !important;
+            padding: 14px 24px !important;
+            border-radius: 8px !important;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3) !important;
+            transition: all 0.2s ease !important;
+        }
+        button[kind="primary"]:hover:not(:disabled) {
+            box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4) !important;
+            transform: translateY(-1px) !important;
+        }
+        button[kind="primary"]:disabled {
+            background: #e2e8f0 !important;
+            color: #94a3b8 !important;
+            box-shadow: none !important;
+            cursor: not-allowed !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+        
         submitted = st.button(
             "Continue",
             disabled=button_disabled,
