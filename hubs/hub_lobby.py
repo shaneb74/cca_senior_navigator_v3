@@ -944,11 +944,30 @@ def render(ctx=None) -> None:
         title = "Let's get started."
         reason = header_text or "Answer a few questions to build your personalized care plan."
     
-    encouragement = {
-        "icon": "🧭",
-        "text": "I'll guide you through each step with context and next actions.",
-        "status": "getting_started",
-    }
+    # PHASE 1: Navi Intelligence Enhancement
+    # Use NaviCommunicator for flag-aware encouragement
+    from core.flags import get_flag_value
+    navi_intelligence_mode = get_flag_value("FEATURE_NAVI_INTELLIGENCE", "off")
+    
+    if navi_intelligence_mode == "on":
+        # Get MCIP context for intelligent messaging
+        from core.navi import NaviOrchestrator
+        from core.navi_intelligence import NaviCommunicator
+        
+        ctx = NaviOrchestrator.get_context(location="hub")
+        encouragement = NaviCommunicator.get_hub_encouragement(ctx)
+        
+        # Also use dynamic reason text if available
+        dynamic_reason = NaviCommunicator.get_dynamic_reason_text(ctx)
+        if dynamic_reason and len(dynamic_reason) > 10:  # Not empty/generic
+            reason = dynamic_reason
+    else:
+        # Original static encouragement
+        encouragement = {
+            "icon": "🧭",
+            "text": "I'll guide you through each step with context and next actions.",
+            "status": "getting_started",
+        }
     
     # Context chips (empty for now, can be populated with progress)
     context_chips = []
