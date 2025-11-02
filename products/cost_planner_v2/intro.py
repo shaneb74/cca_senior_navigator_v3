@@ -15,9 +15,9 @@ import streamlit as st
 
 from core.navi import render_navi_panel
 from core.name_utils import personalize
-from products.concierge_hub.cost_planner_v2.ui_helpers import go_to_quick_estimate
-from products.concierge_hub.cost_planner_v2.utils.home_costs import lookup_zip
-from products.concierge_hub.cost_planner_v2.utils.regional_data import RegionalDataProvider
+from products.cost_planner_v2.ui_helpers import go_to_quick_estimate
+from products.cost_planner_v2.utils.home_costs import lookup_zip
+from products.cost_planner_v2.utils.regional_data import RegionalDataProvider
 
 
 def render():

@@ -33,7 +33,7 @@ def compute_totals_cached(
     Returns:
         Dict with {"total": float, "segments": dict}
     """
-    from products.concierge_hub.cost_planner_v2.comparison_calcs import (
+    from products.cost_planner_v2.comparison_calcs import (
         calculate_facility_scenario,
         calculate_inhome_scenario,
     )
