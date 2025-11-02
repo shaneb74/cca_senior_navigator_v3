@@ -1390,8 +1390,10 @@ def _publish_to_mcip():
         "generated_at": datetime.utcnow().isoformat(),
     }
 
-    # Mark product complete
-    MCIP.mark_product_complete("cost_v2")
+    # Mark product complete (using canonical key)
+    MCIP.mark_product_complete("cost_planner")
+    print("[COST_HUB] Marked Cost Planner complete")
 
     # Mark as published
     st.session_state["cost_planner_v2_published"] = True
+
