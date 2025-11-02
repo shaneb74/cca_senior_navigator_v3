@@ -960,6 +960,7 @@ def render(ctx=None) -> None:
     
     # Phase 5E: Filter tiles by visible modules from personalization
     # Phase 5L: Removed additional_services exception (now rendered as separate dynamic section)
+    # Phase Journey: Engagement tiles always visible when Planning complete (not filtered)
     if visible_modules:
         discovery_tiles = [
             t for t in discovery_tiles 
@@ -969,10 +970,9 @@ def render(ctx=None) -> None:
             t for t in planning_tiles 
             if t.key in visible_modules or t.key.startswith("discovery_")
         ]
-        engagement_tiles = [
-            t for t in engagement_tiles 
-            if t.key in visible_modules or t.key.startswith("discovery_")
-        ]
+        # Don't filter engagement tiles - they should show when Planning completes
+        # engagement_tiles are not subject to visible_modules filtering
+
     
     # Sort each section by order
     discovery_tiles.sort(key=lambda t: t.order)
