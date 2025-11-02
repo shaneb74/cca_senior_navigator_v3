@@ -33,6 +33,16 @@ FEATURE_FLAGS = {
             "adjust": "LLM fully replaces static messages with dynamic contextual advice"
         }
     },
+    "FEATURE_NAVI_INTELLIGENCE": {
+        "default": "off",
+        "values": ["off", "shadow", "on"],
+        "description": "Controls MCIP-driven contextual Navi intelligence",
+        "details": {
+            "off": "Static encouragement and generic messages",
+            "shadow": "Enhanced messages logged but not displayed (testing)",
+            "on": "Full MCIP-aware flag-driven contextual guidance"
+        }
+    },
     "FEATURE_ADVISOR_SUMMARY_LLM": {
         "default": "off",
         "values": ["off", "shadow", "assist", "adjust"],
