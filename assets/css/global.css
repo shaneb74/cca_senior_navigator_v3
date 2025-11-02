@@ -210,6 +210,60 @@ header.sn-global-header {
   margin:0 0 .5rem;
 }
 
+/* Contextual Welcome - Brand Gradient Buttons (Override Streamlit Defaults) */
+/* Target ALL primary buttons in modal-card context with multiple selectors */
+.modal-card button[kind="primary"],
+.modal-card button[data-testid="baseButton-primary"],
+.modal-card .stButton > button[kind="primary"],
+.modal-card div[data-testid="column"] button[kind="primary"],
+.modal-card button[type="submit"].stButton,
+.modal-card button.stButton {
+  background: linear-gradient(135deg, #4d7cff 0%, #7c5cff 100%) !important;
+  border: none !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(77, 124, 255, 0.25) !important;
+  transition: all 0.2s ease !important;
+}
+
+.modal-card button[kind="primary"]:hover,
+.modal-card button[data-testid="baseButton-primary"]:hover,
+.modal-card .stButton > button[kind="primary"]:hover,
+.modal-card div[data-testid="column"] button[kind="primary"]:hover,
+.modal-card button[type="submit"].stButton:hover,
+.modal-card button.stButton:hover {
+  background: linear-gradient(135deg, #3d6cef 0%, #6c4cef 100%) !important;
+  box-shadow: 0 4px 12px rgba(77, 124, 255, 0.35) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Toggle buttons in contextual welcome - keep subtle gray style */
+.modal-card .toggle button {
+  background: #f1f5f9 !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #475569 !important;
+}
+
+.modal-card .toggle button:hover {
+  background: #e2e8f0 !important;
+  border-color: #cbd5e1 !important;
+}
+
+/* Brand gradient for HTML .btn--primary buttons in modal-card (contextual welcome) */
+.modal-card .btn--primary,
+.modal-card a.btn--primary {
+  background: linear-gradient(135deg, #4d7cff 0%, #7c5cff 100%) !important;
+  border: none !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(77, 124, 255, 0.25) !important;
+}
+
+.modal-card .btn--primary:hover,
+.modal-card a.btn--primary:hover {
+  background: linear-gradient(135deg, #3d6cef 0%, #6c4cef 100%) !important;
+  box-shadow: 0 4px 12px rgba(77, 124, 255, 0.35) !important;
+  transform: translateY(-1px) !important;
+}
+
 /* Buttons (GLOBAL ONLY — hub CTAs live in products.css) */
 .btn,
 .btn--primary{
@@ -223,8 +277,70 @@ header.sn-global-header {
 .btn--primary{background:var(--brand-600);color:#fff !important;border-color:var(--brand-700)}
 .btn--primary:hover{background:var(--brand-700);color:#fff !important;box-shadow:var(--focus-ring)}
 
-.dashboard-cta--primary{background:var(--brand-600);color:#fff !important;border-color:var(--brand-700)}
-.dashboard-cta--primary:hover{background:var(--brand-700);color:#fff !important;box-shadow:var(--focus-ring)}
+/* Tile Action Buttons - Base & Brand Gradient Styling */
+.tile-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.75rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.dashboard-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  height: 44px;
+  padding: 0 20px;
+  border-radius: 12px;
+  font-weight: var(--font-bold);
+  font-size: 1rem;
+  line-height: var(--leading-normal);
+  border: 1px solid transparent;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+/* Primary CTA - Brand Gradient (matches journey section accent) */
+.dashboard-cta--primary {
+  background: linear-gradient(135deg, #4d7cff 0%, #7c5cff 100%);
+  color: #ffffff !important;
+  border: none;
+  box-shadow: 0 2px 8px rgba(77, 124, 255, 0.25);
+}
+
+.dashboard-cta--primary:hover {
+  background: linear-gradient(135deg, #3d6cef 0%, #6c4cef 100%);
+  box-shadow: 0 4px 12px rgba(77, 124, 255, 0.35);
+  color: #ffffff !important;
+  transform: translateY(-1px);
+}
+
+/* Ghost/Secondary CTAs - Subtle white background */
+.dashboard-cta--ghost,
+.dashboard-cta--secondary {
+  background: #ffffff;
+  color: var(--ink-700);
+  border: 1px solid rgba(71, 85, 105, 0.22);
+}
+
+.dashboard-cta--ghost:hover,
+.dashboard-cta--ghost:focus-visible,
+.dashboard-cta--secondary:hover,
+.dashboard-cta--secondary:focus-visible {
+  border-color: rgba(71, 85, 105, 0.38);
+  color: var(--ink);
+  background: #ffffff;
+}
+
+.dashboard-cta.is-disabled {
+  opacity: 0.6;
+  pointer-events: none;
+  cursor: not-allowed;
+}
 
 .btn--secondary{
   display:inline-flex;align-items:center;justify-content:center;gap:.5rem;
@@ -563,6 +679,25 @@ div[data-role="secondary"] .stButton > button[kind="secondary"][data-testid="stB
   transition: all 0.25s ease;
 }
 
+/* Dashboard grid - Mobile-first tile spacing */
+.dashboard-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 20px; /* Mobile: comfortable tap target spacing */
+}
+
+@media (min-width: 768px) {
+  .dashboard-grid {
+    gap: 24px; /* Tablet+: more breathing room */
+  }
+}
+
+@media (min-width: 1024px) {
+  .dashboard-grid {
+    gap: 28px; /* Desktop: maximum clarity */
+  }
+}
+
 /* NAVI card with AI accent */
 .navi-card {
   border-left: 4px solid var(--navi-accent) !important;
@@ -614,4 +749,50 @@ div[data-role="secondary"] .stButton > button[kind="secondary"][data-testid="stB
 .hub-card:hover {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
   transition: box-shadow 0.2s ease;
+}
+
+/* ===================================================================
+   JOURNEY SECTION HEADERS - Mobile-First Design
+   =================================================================== */
+.journey-section-header {
+  margin: 32px 0 16px;
+  padding: 12px 0 8px;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.journey-section-header::before {
+  content: '';
+  width: 3px;
+  height: 20px;
+  background: linear-gradient(180deg, #4d7cff 0%, #7c5cff 100%);
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.journey-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Remove top border from first section */
+.journey-section-header:first-of-type {
+  border-top: none;
+  margin-top: 16px;
+}
+
+/* Tablet and up: slightly larger spacing */
+@media (min-width: 768px) {
+  .journey-section-header {
+    margin: 40px 0 20px;
+  }
+  
+  .journey-section-title {
+    font-size: 14px;
+  }
 }

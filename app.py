@@ -49,7 +49,7 @@ st.set_page_config(
 
 
 def _sanitize_query_params_for_welcome(current_route: str) -> None:
-    if current_route not in ("welcome", "welcome_contextual"):
+    if current_route not in ("welcome", "audience"):
         return
 
     qp = dict(st.query_params)

@@ -495,8 +495,8 @@ def run_gcp_decision_pipeline(state) -> tuple[str, dict[str, Any]]:
         module_state = state.get("gcp_care_recommendation", {})
         
         # 2) Compute deterministic tier using existing derive_outcome
-        from products.concierge_hub.gcp_v4.modules.care_recommendation.logic import derive_outcome
-        from products.concierge_hub.gcp_v4.modules.care_recommendation.flags import build_flags
+        from products.gcp_v4.modules.care_recommendation.logic import derive_outcome
+        from products.gcp_v4.modules.care_recommendation.flags import build_flags
         
         outcome = derive_outcome(module_state)
         det_tier = outcome.get("tier") if isinstance(outcome, dict) else getattr(outcome, "tier", "in_home")
@@ -543,7 +543,7 @@ def run_gcp_decision_pipeline(state) -> tuple[str, dict[str, Any]]:
         print(f"[GCP_PIPELINE] Published to gcp.published_tier and back-filled legacy _outcomes")
         
         # 9) Trigger LLM summary generation (ensure_summary_ready)
-        from products.concierge_hub.gcp_v4.modules.care_recommendation.logic import ensure_summary_ready
+        from products.gcp_v4.modules.care_recommendation.logic import ensure_summary_ready
         ensure_summary_ready(module_state, flags, final_tier)
         
         return final_tier, meta
@@ -653,7 +653,7 @@ def run_module(config: ModuleConfig) -> dict[str, Any]:
     custom_rendered = False
     if step.content and config.product == "gcp_v4" and step.id == "intro":
         try:
-            from products.concierge_hub.gcp_v4.modules.care_recommendation.intro import render_custom_intro_if_needed
+            from products.gcp_v4.modules.care_recommendation.intro import render_custom_intro_if_needed
             custom_rendered = render_custom_intro_if_needed()
         except Exception:
             # Fall back to default rendering if custom intro fails
@@ -1875,7 +1875,7 @@ def _render_results_view(mod: dict[str, Any], config: ModuleConfig) -> None:
 
     # --- Conditional interim AL callout (in white space) ---
     if show_interim_al:
-        from products.concierge_hub.gcp_v4.ui_helpers import render_interim_al_callout, vrhythm
+        from products.gcp_v4.ui_helpers import render_interim_al_callout, vrhythm
         vrhythm("after-navi")
         render_interim_al_callout()
         vrhythm("before-meaning")
@@ -1897,7 +1897,7 @@ def _render_results_view(mod: dict[str, Any], config: ModuleConfig) -> None:
     
     # Clean paragraphs under header
     try:
-        from products.concierge_hub.gcp_v4.ui_helpers import render_clean_summary
+        from products.gcp_v4.ui_helpers import render_clean_summary
         render_clean_summary()
     except Exception as e:
         print(f"[ENGINE] render_clean_summary() FAILED: {e}")

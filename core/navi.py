@@ -583,7 +583,7 @@ def render_navi_panel(
 
                 # Get duck progress (local import to avoid circular dependency)
                 try:
-                    from products.waiting_room.advisor_prep.utils import get_duck_progress, is_all_ducks_earned
+                    from products.advisor_prep.utils import get_duck_progress, is_all_ducks_earned
 
                     duck_progress = get_duck_progress()
                     duck_count = duck_progress["earned_count"]

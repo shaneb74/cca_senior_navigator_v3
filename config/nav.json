@@ -23,44 +23,38 @@
           "hidden": true
         },
         {
-          "key": "welcome_contextual",
-          "label": "Contextual Welcome",
-          "module": "pages._stubs:render_welcome_contextual",
-          "hidden": true
-        },
-        {
           "key": "about",
           "label": "About Us",
-          "module": "pages._stubs:render_about"
+          "module": "pages.stubs:render_about"
         },
         {
           "key": "login",
           "label": "Log in",
-          "module": "pages._stubs:render_login",
+          "module": "pages.stubs:render_login",
           "hidden": true
         },
         {
           "key": "auth_start",
           "label": "Authentication",
-          "module": "pages._stubs:render_login",
+          "module": "pages.stubs:render_login",
           "hidden": true
         },
         {
           "key": "signup",
           "label": "Sign up",
-          "module": "pages._stubs:render_signup",
+          "module": "pages.stubs:render_signup",
           "hidden": true
         },
         {
           "key": "logout",
           "label": "Log out",
-          "module": "pages._stubs:render_logout",
+          "module": "pages.stubs:render_logout",
           "hidden": true
         },
         {
           "key": "export_results",
           "label": "Export Results",
-          "module": "pages._stubs:render_export_results",
+          "module": "pages.stubs:render_export_results",
           "hidden": true
         }
       ]
@@ -103,7 +97,7 @@
         {
           "key": "gcp",
           "label": "Guided Care Plan (legacy)",
-          "module": "products.concierge_hub.gcp_v4.product:render",
+          "module": "products.gcp_v4.product:render",
           "hidden": true
         },
         {
@@ -115,7 +109,7 @@
         {
           "key": "gcp_v4",
           "label": "Guided Care Plan",
-          "module": "products.concierge_hub.gcp_v4.product:render",
+          "module": "products.gcp_v4.product:render",
           "hidden": true
         },
         {
@@ -133,19 +127,19 @@
         {
           "key": "cost_v2",
           "label": "Cost Planner v2",
-          "module": "products.concierge_hub.cost_planner_v2.product:render",
+          "module": "products.cost_planner_v2.product:render",
           "hidden": true
         },
         {
           "key": "cost_intro",
           "label": "Cost Planner Intro",
-          "module": "products.concierge_hub.cost_planner_v2.intro:render",
+          "module": "products.cost_planner_v2.intro:render",
           "hidden": true
         },
         {
           "key": "cost_quick_estimate",
           "label": "Quick Estimate",
-          "module": "products.concierge_hub.cost_planner_v2.quick_estimate:render",
+          "module": "products.cost_planner_v2.quick_estimate:render",
           "hidden": true
         },
         {
@@ -157,19 +151,19 @@
         {
           "key": "pfma_v3",
           "label": "Plan with My Advisor",
-          "module": "products.concierge_hub.pfma_v3.product:render",
+          "module": "products.pfma_v3.product:render",
           "hidden": true
         },
         {
           "key": "fa_intro",
           "label": "Financial Assessment",
-          "module": "products.concierge_hub.pfma_v3.product:render",
+          "module": "products.pfma_v3.product:render",
           "hidden": true
         },
         {
           "key": "advisor_prep",
           "label": "Advisor Prep",
-          "module": "products.waiting_room.advisor_prep.product:render",
+          "module": "products.advisor_prep.product:render",
           "hidden": true
         },
         {
@@ -193,7 +187,7 @@
         {
           "key": "home_safety",
           "label": "Home Safety Check",
-          "module": "products.waiting_room.home_safety.product:render",
+          "module": "products.home_safety.product:render",
           "hidden": true
         },
         {
@@ -217,31 +211,31 @@
         {
           "key": "predictive_health",
           "label": "Predictive Health",
-          "module": "products.waiting_room.predictive_health.product:render",
+          "module": "products.predictive_health.product:render",
           "hidden": true
         },
         {
           "key": "senior_trivia",
           "label": "Senior Trivia & Brain Games",
-          "module": "products.waiting_room.senior_trivia.product:render",
+          "module": "products.senior_trivia.product:render",
           "hidden": true
         },
         {
           "key": "ccr_overview",
           "label": "Concierge Clinical Review",
-          "module": "products.waiting_room.concierge_clinical_review.product:render",
+          "module": "products.concierge_clinical_review.product:render",
           "hidden": true
         },
         {
           "key": "ccr_checklist",
           "label": "Provider Checklist",
-          "module": "products.waiting_room.concierge_clinical_review.product:render",
+          "module": "products.concierge_clinical_review.product:render",
           "hidden": true
         },
         {
           "key": "ccr_schedule",
           "label": "Schedule Specialist",
-          "module": "products.waiting_room.concierge_clinical_review.product:render",
+          "module": "products.concierge_clinical_review.product:render",
           "hidden": true
         }
       ]

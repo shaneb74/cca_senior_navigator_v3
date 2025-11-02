@@ -918,19 +918,26 @@ def render(ctx=None) -> None:
     # --- Engagement Products ---
     engagement_tiles = _build_engagement_tiles()
     
-    # Combine active tiles
-    active_tiles = discovery_tiles + planning_tiles + engagement_tiles
-    
     # Phase 5E: Filter tiles by visible modules from personalization
     # Phase 5L: Removed additional_services exception (now rendered as separate dynamic section)
     if visible_modules:
-        active_tiles = [
-            t for t in active_tiles 
+        discovery_tiles = [
+            t for t in discovery_tiles 
+            if t.key in visible_modules or t.key.startswith("discovery_")
+        ]
+        planning_tiles = [
+            t for t in planning_tiles 
+            if t.key in visible_modules or t.key.startswith("discovery_")
+        ]
+        engagement_tiles = [
+            t for t in engagement_tiles 
             if t.key in visible_modules or t.key.startswith("discovery_")
         ]
     
-    # Sort by order
-    active_tiles.sort(key=lambda t: t.order)
+    # Sort each section by order
+    discovery_tiles.sort(key=lambda t: t.order)
+    planning_tiles.sort(key=lambda t: t.order)
+    engagement_tiles.sort(key=lambda t: t.order)
     
     # ========================================
     # COMPLETED JOURNEYS SECTION (Phase 5G)
@@ -938,23 +945,62 @@ def render(ctx=None) -> None:
     completed_tiles = _build_completed_tiles()
     
     # ========================================
-    # RENDER ACTIVE JOURNEYS (Phase 5G)
+    # RENDER ACTIVE JOURNEYS WITH SECTION HEADERS
     # ========================================
     # Phase Post-CSS: Add ID for tour targeting
     st.markdown('<div id="product-tiles">', unsafe_allow_html=True)
     
-    # Render main hub body with active tiles only (no additional services inline)
-    body_html = render_dashboard_body(
-        title="",  # NAVI provides context
-        subtitle=None,
-        chips=None,
-        hub_guide_block=None,
-        hub_order=None,
-        cards=active_tiles,
-        additional_services=[],  # Phase 5L: additional services rendered separately with new dynamic system
-    )
+    # Discovery Journey Section
+    if discovery_tiles:
+        st.markdown(
+            '<div class="journey-section-header"><span class="journey-section-title">Discovery</span></div>',
+            unsafe_allow_html=True
+        )
+        discovery_html = render_dashboard_body(
+            title="",
+            subtitle=None,
+            chips=None,
+            hub_guide_block=None,
+            hub_order=None,
+            cards=discovery_tiles,
+            additional_services=[],
+        )
+        st.markdown(discovery_html, unsafe_allow_html=True)
     
-    st.markdown(body_html, unsafe_allow_html=True)
+    # Planning Tools Section
+    if planning_tiles:
+        st.markdown(
+            '<div class="journey-section-header"><span class="journey-section-title">Planning Tools</span></div>',
+            unsafe_allow_html=True
+        )
+        planning_html = render_dashboard_body(
+            title="",
+            subtitle=None,
+            chips=None,
+            hub_guide_block=None,
+            hub_order=None,
+            cards=planning_tiles,
+            additional_services=[],
+        )
+        st.markdown(planning_html, unsafe_allow_html=True)
+    
+    # Engagement Section
+    if engagement_tiles:
+        st.markdown(
+            '<div class="journey-section-header"><span class="journey-section-title">Engagement</span></div>',
+            unsafe_allow_html=True
+        )
+        engagement_html = render_dashboard_body(
+            title="",
+            subtitle=None,
+            chips=None,
+            hub_guide_block=None,
+            hub_order=None,
+            cards=engagement_tiles,
+            additional_services=[],
+        )
+        st.markdown(engagement_html, unsafe_allow_html=True)
+    
     st.markdown('</div>', unsafe_allow_html=True)
     
     # ========================================
