@@ -68,7 +68,7 @@ def test_hub_imports():
 
 def test_page_imports():
     """Test page imports."""
-    from pages import _stubs, login, welcome
+    from pages import stubs, login, welcome
 
     assert hasattr(welcome, 'render')
     assert hasattr(login, 'render')
