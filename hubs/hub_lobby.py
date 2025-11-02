@@ -1024,8 +1024,11 @@ def render(ctx=None) -> None:
         )
         st.markdown(planning_html, unsafe_allow_html=True)
     
-    # Engagement Section
-    if engagement_tiles:
+    # Engagement Section (Post-Planning Journey)
+    # Only show after Planning Journey is complete
+    planning_complete = _is_planning_journey_complete()
+    
+    if planning_complete and engagement_tiles:
         st.markdown(
             '<div class="journey-section-header"><span class="journey-section-title">Engagement</span></div>',
             unsafe_allow_html=True
