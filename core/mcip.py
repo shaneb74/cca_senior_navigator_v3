@@ -996,8 +996,8 @@ class MCIP:
         if "gcp" not in journey["completed_products"]:
             journey["completed_products"].append("gcp")
 
-        # Unlock next products
-        journey["unlocked_products"] = ["gcp", "cost_planner", "pfma"]
+        # Unlock next products (including learn_recommendation after GCP)
+        journey["unlocked_products"] = ["gcp", "learn_recommendation", "cost_planner", "pfma"]
 
         # Set recommended next from recommendation
         journey["recommended_next"] = recommendation.next_step.get("product", "cost_planner")
