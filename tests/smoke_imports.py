@@ -22,7 +22,7 @@ def test_core_imports():
 def test_gcp_imports():
     """Test GCP v4 product imports."""
     from products.gcp_v4 import product
-    from products.concierge_hub.gcp_v4.modules.care_recommendation import config, logic
+    from products.gcp_v4.modules.care_recommendation import config, logic
 
     assert hasattr(product, 'render')
     assert hasattr(logic, 'compute_recommendation_category')
@@ -33,7 +33,7 @@ def test_gcp_imports():
 def test_cost_planner_imports():
     """Test Cost Planner v2 product imports."""
     from products.cost_planner_v2 import intro, prepare_quick_estimate, product
-    from products.concierge_hub.cost_planner_v2.utils import cost_calculator
+    from products.cost_planner_v2.utils import cost_calculator
 
     assert hasattr(product, 'render')
     assert hasattr(intro, 'render')  # Fixed: render_intro → render
@@ -44,10 +44,10 @@ def test_cost_planner_imports():
 
 def test_other_product_imports():
     """Test other product imports."""
-    from products.waiting_room import advisor_prep
-    from products.concierge_hub import pfma_v3
+    from products import advisor_prep
+    from products import pfma_v3
     from products.resources.resources_common.coming_soon import render_coming_soon
-    from products.waiting_room.senior_trivia import product as senior_trivia_product
+    from products.senior_trivia import product as senior_trivia_product
 
     assert hasattr(advisor_prep.product, 'render')
     assert hasattr(pfma_v3.product, 'render')

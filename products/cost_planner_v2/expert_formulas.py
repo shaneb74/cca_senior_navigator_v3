@@ -16,7 +16,7 @@ Calculates:
 from dataclasses import dataclass, field
 
 from core.mcip import CareRecommendation
-from products.concierge_hub.cost_planner_v2.financial_profile import FinancialProfile
+from products.cost_planner_v2.financial_profile import FinancialProfile
 
 
 @dataclass

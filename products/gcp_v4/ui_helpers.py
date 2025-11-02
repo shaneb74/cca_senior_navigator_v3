@@ -139,7 +139,7 @@ def render_hours_suggestion():
     """
     # Check if feature is enabled
     try:
-        from products.concierge_hub.gcp_v4.modules.care_recommendation.logic import gcp_hours_mode
+        from products.gcp_v4.modules.care_recommendation.logic import gcp_hours_mode
         mode = gcp_hours_mode()
     except Exception:
         return  # Can't check mode, skip
@@ -440,7 +440,7 @@ def render_navi_header_message():
     # Use personalized intro copy for intro step
     if step_id == "intro":
         try:
-            from products.concierge_hub.gcp_v4.modules.care_recommendation.intro import load_intro_overrides
+            from products.gcp_v4.modules.care_recommendation.intro import load_intro_overrides
             from core.text import personalize_text
             overrides = load_intro_overrides()
             copy = overrides.get("copy", {})

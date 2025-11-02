@@ -13,7 +13,7 @@ Design Philosophy:
 import streamlit as st
 
 from core.ui import render_navi_panel_v2
-from products.concierge_hub.cost_planner_v2.utils.financial_helpers import (
+from products.cost_planner_v2.utils.financial_helpers import (
     calculate_total_asset_debt,
     calculate_total_asset_value,
     calculate_total_monthly_income,

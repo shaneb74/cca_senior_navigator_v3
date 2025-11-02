@@ -479,7 +479,7 @@ def test_tier_map_loads_and_returns_allowed_tier():
 
     # Import the loader
     from ai.gcp_schemas import CANONICAL_TIERS
-    from products.concierge_hub.gcp_v4.modules.care_recommendation.logic import _load_tier_map
+    from products.gcp_v4.modules.care_recommendation.logic import _load_tier_map
 
     print("\nLoading tier_map.json...")
     tier_map = _load_tier_map()
@@ -524,7 +524,7 @@ def test_mc_behavior_gate():
     print("="*60)
 
     from ai.gcp_schemas import CANONICAL_TIERS
-    from products.concierge_hub.gcp_v4.modules.care_recommendation.logic import (
+    from products.gcp_v4.modules.care_recommendation.logic import (
         cognition_band,
         cognitive_gate_behaviors_only,
         support_band,
