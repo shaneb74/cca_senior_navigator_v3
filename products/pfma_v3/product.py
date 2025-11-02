@@ -319,8 +319,9 @@ def _handle_booking_submit(form_data: dict):
     # Save to MCIP
     MCIP.set_advisor_appointment(appointment)
 
-    # Mark PFMA v3 complete
-    MCIP.mark_product_complete("pfma_v3")
+    # Mark PFMA complete (using canonical key)
+    MCIP.mark_product_complete("pfma")
+    print("[PFMA] Marked PFMA/My Advisor complete")
 
     # Log events
     log_event(

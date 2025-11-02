@@ -73,9 +73,60 @@ class MCIP:
     - Publishes recommendations to st.session_state["mcip"]
     - Fires events when state changes
     - Maintains clean boundaries between layers
+    
+    Product Completion Coordination:
+        All products mark completion through MCIP.mark_product_complete(key).
+        Keys are automatically normalized to canonical forms:
+        - "gcp_v4", "guided_care_plan" → "gcp"
+        - "cost_v2", "cost_planner_v2", "cost_intro" → "cost_planner"
+        - "pfma_v3", "my_advisor" → "pfma"
+        
+        Example:
+            MCIP.mark_product_complete("gcp_v4")  # Stored as "gcp"
     """
 
     STATE_KEY = "mcip"
+    
+    # Product key normalization map - canonical keys for completion tracking
+    PRODUCT_KEY_MAP = {
+        # GCP aliases
+        "gcp_v4": "gcp",
+        "gcp": "gcp",
+        "guided_care_plan": "gcp",
+        
+        # Cost Planner aliases
+        "cost_v2": "cost_planner",
+        "cost_planner_v2": "cost_planner",
+        "cost_intro": "cost_planner",
+        "cost_planner": "cost_planner",
+        
+        # PFMA aliases
+        "pfma_v3": "pfma",
+        "pfma": "pfma",
+        "my_advisor": "pfma",
+        
+        # Learning products (already canonical)
+        "discovery_learning": "discovery_learning",
+        "learn_recommendation": "learn_recommendation",
+    }
+
+    @classmethod
+    def _normalize_product_key(cls, product_key: str) -> str:
+        """Normalize product key to canonical form.
+        
+        Args:
+            product_key: Raw product key from caller
+            
+        Returns:
+            Normalized canonical key
+            
+        Examples:
+            >>> MCIP._normalize_product_key("gcp_v4")
+            "gcp"
+            >>> MCIP._normalize_product_key("cost_v2")
+            "cost_planner"
+        """
+        return cls.PRODUCT_KEY_MAP.get(product_key, product_key)
 
     @classmethod
     def initialize(cls) -> None:
@@ -549,44 +600,63 @@ class MCIP:
         """Check if a product is unlocked.
 
         Args:
-            product_key: Product identifier (e.g., "cost_planner")
+            product_key: Product identifier (will be normalized)
 
         Returns:
             True if unlocked, False otherwise
         """
-        return product_key in cls.get_unlocked_products()
+        normalized_key = cls._normalize_product_key(product_key)
+        return normalized_key in cls.get_unlocked_products()
 
     @classmethod
     def mark_product_complete(cls, product_key: str) -> None:
         """Mark a product as completed.
 
         Args:
-            product_key: Product identifier
+            product_key: Product identifier (will be normalized to canonical form)
+            
+        Note:
+            Keys are automatically normalized:
+            - "gcp_v4" → "gcp"
+            - "cost_v2", "cost_planner_v2" → "cost_planner"
+            - "pfma_v3" → "pfma"
         """
         cls.initialize()
+        
+        # Normalize key to canonical form
+        normalized_key = cls._normalize_product_key(product_key)
+        
         journey = st.session_state[cls.STATE_KEY]["journey"]
 
-        if product_key not in journey["completed_products"]:
-            journey["completed_products"].append(product_key)
+        if normalized_key not in journey["completed_products"]:
+            journey["completed_products"].append(normalized_key)
+            print(f"[MCIP] Product '{product_key}' → '{normalized_key}' marked complete")
 
         # Save journey state for persistence
         cls._save_contracts_for_persistence()
 
-        cls._fire_event("mcip.product.completed", {"product": product_key})
+        cls._fire_event("mcip.product.completed", {
+            "product": normalized_key,
+            "original_key": product_key
+        })
 
     @classmethod
     def is_product_complete(cls, product_key: str) -> bool:
         """Check if a product is completed.
 
         Args:
-            product_key: Product identifier
+            product_key: Product identifier (will be normalized)
 
         Returns:
             True if complete, False otherwise
         """
         cls.initialize()
+        
+        # Normalize key to canonical form
+        normalized_key = cls._normalize_product_key(product_key)
+        
         journey = st.session_state[cls.STATE_KEY]["journey"]
-        return product_key in journey["completed_products"]
+        return normalized_key in journey["completed_products"]
 
     @classmethod
     def get_recommended_next_product(cls) -> str | None:
@@ -926,8 +996,8 @@ class MCIP:
         if "gcp" not in journey["completed_products"]:
             journey["completed_products"].append("gcp")
 
-        # Unlock next products
-        journey["unlocked_products"] = ["gcp", "cost_planner", "pfma"]
+        # Unlock next products (including learn_recommendation after GCP)
+        journey["unlocked_products"] = ["gcp", "learn_recommendation", "cost_planner", "pfma"]
 
         # Set recommended next from recommendation
         journey["recommended_next"] = recommendation.next_step.get("product", "cost_planner")

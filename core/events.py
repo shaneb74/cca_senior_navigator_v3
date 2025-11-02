@@ -71,18 +71,42 @@ def log_event(event: str, data: Mapping[str, Any] | None = None) -> None:
 
 
 def mark_product_complete(user_ctx: dict, product_key: str) -> dict:
-    """Mark a product complete and auto-update its parent journey.
+    """DEPRECATED: Use MCIP.mark_product_complete() instead.
     
-    Phase Post-CSS: Consolidates completion logic for products and journeys.
-    When all products in a journey are complete, the journey auto-completes.
+    This function is maintained for backward compatibility only.
+    All new code should use core.mcip.MCIP.mark_product_complete().
+    
+    Legacy function that marks a product complete in user_ctx structure.
     
     Args:
-        user_ctx: User context dictionary
-        product_key: Product identifier (e.g., "cost_planner", "guided_care_plan")
+        user_ctx: User context dictionary (legacy)
+        product_key: Product identifier
     
     Returns:
         Updated user context
+        
+    Migration:
+        # Old way (deprecated)
+        from core.events import mark_product_complete
+        user_ctx = mark_product_complete(user_ctx, "gcp_v4")
+        st.session_state["user_ctx"] = user_ctx
+        
+        # New way (correct)
+        from core.mcip import MCIP
+        MCIP.mark_product_complete("gcp")
+    
+    Note:
+        Phase Post-CSS: This was the original completion consolidation logic.
+        Now superseded by MCIP coordination system.
     """
+    import warnings
+    warnings.warn(
+        "mark_product_complete() is deprecated. Use MCIP.mark_product_complete() instead.",
+        DeprecationWarning,
+        stacklevel=2
+    )
+    
+    # Keep original implementation for backward compatibility
     journeys = user_ctx.setdefault("journeys", {})
 
     for journey_key, journey_data in journeys.items():
@@ -98,3 +122,4 @@ def mark_product_complete(user_ctx: dict, product_key: str) -> dict:
             break
 
     return user_ctx
+
