@@ -193,11 +193,10 @@ def ensure_summary_ready(answers: dict, flags: list[str], tier: str) -> None:
         print("[GCP_RENDER] Using cached LLM result")
         st.session_state["summary_ready"] = True
         
-        # Phase Post-CSS: Mark GCP product as complete when summary is ready
-        from core.events import mark_product_complete
-        user_ctx = st.session_state.get("user_ctx", {})
-        user_ctx = mark_product_complete(user_ctx, "gcp_v4")
-        st.session_state["user_ctx"] = user_ctx
+        # Mark GCP as complete in MCIP
+        from core.mcip import MCIP
+        MCIP.mark_product_complete("gcp_v4")  # Will normalize to "gcp"
+        print("[GCP_SUMMARY] Marked GCP complete via MCIP")
         
         return
 
@@ -265,11 +264,10 @@ def ensure_summary_ready(answers: dict, flags: list[str], tier: str) -> None:
             st.session_state["summary_ready"] = True
             st.session_state["llm_loading"] = False
             
-            # Phase Post-CSS: Mark GCP product as complete when summary is generated
-            from core.events import mark_product_complete
-            user_ctx = st.session_state.get("user_ctx", {})
-            user_ctx = mark_product_complete(user_ctx, "gcp_v4")
-            st.session_state["user_ctx"] = user_ctx
+            # Mark GCP as complete in MCIP
+            from core.mcip import MCIP
+            MCIP.mark_product_complete("gcp_v4")  # Will normalize to "gcp"
+            print("[GCP_SUMMARY] Marked GCP complete via MCIP")
 
             # Concise LLM vs deterministic log + disagreement capture
             try:
