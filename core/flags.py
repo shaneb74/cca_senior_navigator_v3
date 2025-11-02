@@ -34,7 +34,7 @@ FEATURE_FLAGS = {
         }
     },
     "FEATURE_NAVI_INTELLIGENCE": {
-        "default": "off",
+        "default": "on",
         "values": ["off", "shadow", "on"],
         "description": "Controls MCIP-driven contextual Navi intelligence",
         "details": {
