@@ -698,15 +698,24 @@ div[data-role="secondary"] .stButton > button[kind="secondary"][data-testid="stB
   }
 }
 
-/* NAVI card with AI accent */
+/* NAVI card with AI accent - Enhanced visual prominence */
 .navi-card {
-  border-left: 4px solid var(--navi-accent) !important;
+  border-left: none !important;
   overflow: hidden;
+  background: #f8f9fe !important;
+  box-shadow: 0 4px 12px rgba(124, 92, 255, 0.08) !important;
 }
 
 .navi-card:hover {
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-  border-left-color: color-mix(in srgb, var(--navi-accent) 80%, white 20%);
+  box-shadow: 0 6px 16px rgba(124, 92, 255, 0.12) !important;
+}
+
+/* Compact Navi panel for modules, assessments, and product pages */
+.navi-panel-compact {
+  max-width: 1120px;
+  margin: 0 auto 1.5rem auto;
+  padding: 1rem 1.25rem;
+  border-radius: 8px;
 }
 
 /* Disable pseudo-elements for product/hub cards */
@@ -749,6 +758,94 @@ div[data-role="secondary"] .stButton > button[kind="secondary"][data-testid="stB
 .hub-card:hover {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
   transition: box-shadow 0.2s ease;
+}
+
+/* ===================================================================
+   COMPACT COMPLETED TILES - Streamlined Summary Cards
+   =================================================================== */
+.ptile--compact {
+  padding: 14px 18px !important;
+}
+
+.ptile--compact .ptile__head {
+  margin-bottom: 8px;
+}
+
+.ptile--compact .tile-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ptile--compact .tile-title::before {
+  content: '✓';
+  color: #10b981;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.ptile--compact .tile-subtitle {
+  font-size: 0.9rem;
+  color: #475569;
+  margin: 0;
+  font-weight: 500;
+}
+
+/* Hide unnecessary elements in compact mode */
+.ptile--compact .phase-pill,
+.ptile--compact .dashboard-badges,
+.ptile--compact .dashboard-description,
+.ptile--compact .dashboard-status,
+.ptile--compact .tile-status-note,
+.ptile--compact .tile-meta {
+  display: none !important;
+}
+
+.ptile--compact .tile-actions {
+  margin-top: 10px;
+}
+
+.ptile--compact .dashboard-cta {
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+/* Completed grid with tighter spacing */
+.completed-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.completed-journey-section {
+  margin-top: 40px;
+}
+
+.completed-journey-header {
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 12px 0 8px;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.completed-journey-header::before {
+  content: '';
+  width: 3px;
+  height: 20px;
+  background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+  border-radius: 2px;
+  flex-shrink: 0;
 }
 
 /* ===================================================================

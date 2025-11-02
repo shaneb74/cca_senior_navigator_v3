@@ -1358,11 +1358,7 @@ div[data-testid="stVerticalBlock"]:has(.chip-wrap.is-active) .stButton > button{
 }
 
 /* Navi panel compact styling when used in assessments */
-.sn-app .navi-panel-compact {
-  margin: 0.75rem 0 !important;
-  padding: 0.75rem 1rem !important;
-}
-
+/* Compact Navi styling now centralized in global.css */
 .sn-app .navi-panel-compact .navi-content {
   font-size: 0.9rem !important;
   line-height: 1.5 !important;

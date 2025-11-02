@@ -55,21 +55,15 @@ def render_module_navi_coach(primary_msg: str = "Answer these questions to match
     Phase 1: Structure only - just the coach line in a compact panel.
     No Why? block, no plan summary yet.
     
+    Styling driven by .navi-panel-compact and .navi-card CSS classes.
+    
     Args:
         primary_msg: Primary coaching message (default provided)
     """
-    # Phase 1: Simple compact panel with coach line only
+    # Phase 1: Simple compact panel with coach line only - styling from CSS
     st.markdown(f"""
-    <div class="navi-panel-compact" style="
-        max-width: 1120px;
-        margin: 0 auto 1.5rem auto;
-        background: white;
-        border-left: 4px solid #3b82f6;
-        border-radius: 8px;
-        padding: 1.25rem;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    ">
-        <div style="color: #3b82f6; font-weight: 600; margin-bottom: 0.5rem;">
+    <div class="navi-panel-compact navi-card ai-card animate-border">
+        <div style="color: #7c5cff; font-weight: 600; margin-bottom: 0.5rem;">
             ✨ NAVI
         </div>
         <div style='color: #111827;'>{primary_msg}</div>
