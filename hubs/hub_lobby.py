@@ -189,6 +189,7 @@ def _get_product_state(product_key: str) -> str:
     """Determine product state based on MCIP status.
     
     Phase 4A: FAQ removed from tiles (integrated into NAVI).
+    Phase Journey Fix: Delegate normalization to MCIP for single source of truth.
     
     Args:
         product_key: Product identifier (e.g., 'gcp_v4', 'cost_v2')
@@ -196,18 +197,9 @@ def _get_product_state(product_key: str) -> str:
     Returns:
         State string: 'locked', 'available', or 'completed'
     """
-    # Normalize product keys (handle aliases)
-    key_map = {
-        'gcp_v4': 'gcp',
-        'gcp': 'gcp',
-        'cost_v2': 'cost_planner',
-        'cost_planner': 'cost_planner',
-        'cost_intro': 'cost_planner',
-        'pfma_v3': 'pfma',
-        'pfma': 'pfma',
-    }
-    
-    normalized_key = key_map.get(product_key, product_key)
+    # Delegate normalization to MCIP (single source of truth)
+    # MCIP handles all key aliases: gcp_v4→gcp, cost_v2→cost_planner, etc.
+    normalized_key = MCIP._normalize_product_key(product_key)
     
     # Check if product is completed
     if MCIP.is_product_complete(normalized_key):
@@ -384,17 +376,23 @@ def _build_planning_tiles() -> list[ProductTileHub]:
         # Phase 5L: Removed additional_services tile - now rendered as dynamic service cards section
     ]
     
-    # Phase 5K: Filter out completed tiles (they move to Completed Journeys section)
-    tiles = [t for t in tiles if not MCIP.is_product_complete(t.key)]
+    # Phase Journey Fix: Don't filter out completed planning tiles individually
+    # They stay visible until ALL planning journey is complete (GCP + Cost Planner + PFMA)
+    planning_complete = _is_planning_journey_complete()
     
-    # Apply MCIP state to each tile
-    tiles_with_state = []
-    for tile in tiles:
-        state = _get_product_state(tile.key)
-        tile_with_state = _apply_tile_state(tile, state)
-        tiles_with_state.append(tile_with_state)
+    if planning_complete:
+        # All planning done - filter them all out (they appear in Completed section)
+        tiles = []
+    else:
+        # Planning still in progress - keep all tiles (even if individually complete)
+        tiles_with_state = []
+        for tile in tiles:
+            state = _get_product_state(tile.key)
+            tile_with_state = _apply_tile_state(tile, state)
+            tiles_with_state.append(tile_with_state)
+        return tiles_with_state
     
-    return tiles_with_state
+    return tiles
 
 
 # ==============================================================================
@@ -492,28 +490,70 @@ def _build_engagement_tiles() -> list[ProductTileHub]:
 # TILE BUILDERS - COMPLETED JOURNEYS
 # ==============================================================================
 
+def _is_planning_journey_complete() -> bool:
+    """Check if Planning Journey is complete.
+    
+    Planning Journey requires:
+    - GCP (Guided Care Plan) - required
+    - Cost Planner - required
+    - PFMA (My Advisor) - required
+    - Learn Recommendation - optional (included if done)
+    
+    Returns:
+        True if all required products are complete, False otherwise
+    """
+    required_products = ["gcp", "cost_planner", "pfma"]
+    return all(MCIP.is_product_complete(key) for key in required_products)
+
+
 def _build_completed_tiles() -> list[ProductTileHub]:
     """Build tiles for completed journeys.
     
     Phase 4A: New section for closed-out products.
     Phase 5D: Updated to use "My Advisor" name.
     Phase 5K: Added discovery_learning to completed journeys.
+    Phase Journey Fix: Planning products move together when all core products done.
     
     Returns:
         List of completed product tiles
     """
     completed = []
     
-    # Check each major product for completion
-    all_products = [
-        ("discovery_learning", "Discovery Journey", "Your introduction to care planning"),
-        ("gcp_v4", "Guided Care Plan", "Your personalized care recommendation"),
-        ("cost_v2", "Cost Planner", "Your financial plan and projections"),
-        ("pfma_v3", "My Advisor", "Your advisor consultation"),
-    ]
+    # Discovery Learning moves individually when complete
+    if MCIP.is_product_complete("discovery_learning"):
+        completed.append(ProductTileHub(
+            key="discovery_learning",
+            title="Discovery Journey",
+            desc="Your introduction to care planning",
+            primary_label="View Summary",
+            primary_route="?page=discovery_learning",
+            variant="success",
+            order=900,
+            visible=True,
+            badges=["Completed"],
+            phase="analysis",
+        ))
     
-    for key, title, desc in all_products:
-        if _get_product_state(key) == "completed":
+    # Planning Journey products move together when all required are done
+    planning_complete = _is_planning_journey_complete()
+    
+    if planning_complete:
+        # Core planning products (always show when planning complete)
+        planning_products = [
+            ("gcp", "Guided Care Plan", "Your personalized care recommendation"),
+            ("cost_planner", "Cost Planner", "Your financial plan and projections"),
+            ("pfma", "My Advisor", "Your advisor consultation"),
+        ]
+        
+        # Add Learn Recommendation if user completed it (optional)
+        if MCIP.is_product_complete("learn_recommendation"):
+            planning_products.insert(1, (
+                "learn_recommendation",
+                "Learn About My Recommendation",
+                "Understanding your care option"
+            ))
+        
+        for key, title, desc in planning_products:
             tile = ProductTileHub(
                 key=key,
                 title=title,
@@ -521,10 +561,10 @@ def _build_completed_tiles() -> list[ProductTileHub]:
                 primary_label="View Summary",
                 primary_route=f"?page={key}",
                 variant="success",
-                order=900,  # Low priority (at bottom)
+                order=900,
                 visible=True,
-                badges=["Completed"],  # Phase 5K: Add completion badge
-                phase="analysis",  # Phase 5K: Amber border for completed items
+                badges=["Completed"],
+                phase="analysis",
             )
             # Add outcome if available
             outcome = get_product_outcome(key)
@@ -920,6 +960,7 @@ def render(ctx=None) -> None:
     
     # Phase 5E: Filter tiles by visible modules from personalization
     # Phase 5L: Removed additional_services exception (now rendered as separate dynamic section)
+    # Phase Journey: Engagement tiles always visible when Planning complete (not filtered)
     if visible_modules:
         discovery_tiles = [
             t for t in discovery_tiles 
@@ -929,10 +970,9 @@ def render(ctx=None) -> None:
             t for t in planning_tiles 
             if t.key in visible_modules or t.key.startswith("discovery_")
         ]
-        engagement_tiles = [
-            t for t in engagement_tiles 
-            if t.key in visible_modules or t.key.startswith("discovery_")
-        ]
+        # Don't filter engagement tiles - they should show when Planning completes
+        # engagement_tiles are not subject to visible_modules filtering
+
     
     # Sort each section by order
     discovery_tiles.sort(key=lambda t: t.order)
@@ -984,8 +1024,11 @@ def render(ctx=None) -> None:
         )
         st.markdown(planning_html, unsafe_allow_html=True)
     
-    # Engagement Section
-    if engagement_tiles:
+    # Engagement Section (Post-Planning Journey)
+    # Only show after Planning Journey is complete
+    planning_complete = _is_planning_journey_complete()
+    
+    if planning_complete and engagement_tiles:
         st.markdown(
             '<div class="journey-section-header"><span class="journey-section-title">Engagement</span></div>',
             unsafe_allow_html=True

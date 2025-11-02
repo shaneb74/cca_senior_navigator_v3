@@ -19,6 +19,13 @@
 - **Cost Planner v2:** `products/cost_planner_v2/`
 - **Path helpers:** `core/paths.py` (use `get_gcp_module_path()` / `get_static()`)
 
+## Product Completion (Source of Truth)
+- **Completion coordinator:** `core/mcip.py::MCIP.mark_product_complete()`
+- **Canonical keys:** `gcp`, `cost_planner`, `pfma`, `discovery_learning`, `learn_recommendation`
+- **Key normalization:** Handled automatically by MCIP (gcp_v4→gcp, cost_v2→cost_planner, pfma_v3→pfma)
+- **NEVER use:** Legacy `core/events.py::mark_product_complete()` (deprecated)
+- **Detection:** Hub lobby checks MCIP for completion state
+
 ## Acceptance style
 - Make small, surgical commits; list files changed + diffstat.
 - Use dev-only diagnostics with clear tags (e.g., `[GCP_WARN]`, `[LLM_SHADOW]`) and remove after verification.
@@ -27,6 +34,8 @@
 - Don't modify calculators or change costs unless told to.
 - Don't introduce flags that aren't in `core/flags.py`.
 - Don't read or rely on archived/backup content, venvs, or large static blobs.
+- Don't call `core.events.mark_product_complete()` - use `MCIP.mark_product_complete()` instead
+- Don't use versioned product keys (gcp_v4, cost_v2) - MCIP normalizes automatically
 
 ## Read-only Modules
 - Treat `core/session_store.py` as read-only unless the task explicitly requests a persistence migration.

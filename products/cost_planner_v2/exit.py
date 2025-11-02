@@ -41,11 +41,10 @@ def render():
     c["completed"] = True
     print("[COST_V2_EXIT] Set cost.completed=True (canonical gate)")
     
-    # Phase Post-CSS: Mark cost planner product as complete
-    from core.events import mark_product_complete
-    user_ctx = st.session_state.get("user_ctx", {})
-    user_ctx = mark_product_complete(user_ctx, "cost_planner_v2")
-    st.session_state["user_ctx"] = user_ctx
+    # Mark Cost Planner as complete in MCIP
+    from core.mcip import MCIP
+    MCIP.mark_product_complete("cost_planner_v2")  # Will normalize to "cost_planner"
+    print("[COST_EXIT] Marked Cost Planner complete via MCIP")
 
     # Render compact Navi panel at top
     from core.navi_module import render_module_navi_coach
