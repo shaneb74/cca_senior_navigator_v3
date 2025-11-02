@@ -25,36 +25,36 @@
         {
           "key": "about",
           "label": "About Us",
-          "module": "pages._stubs:render_about"
+          "module": "pages.stubs:render_about"
         },
         {
           "key": "login",
           "label": "Log in",
-          "module": "pages._stubs:render_login",
+          "module": "pages.stubs:render_login",
           "hidden": true
         },
         {
           "key": "auth_start",
           "label": "Authentication",
-          "module": "pages._stubs:render_login",
+          "module": "pages.stubs:render_login",
           "hidden": true
         },
         {
           "key": "signup",
           "label": "Sign up",
-          "module": "pages._stubs:render_signup",
+          "module": "pages.stubs:render_signup",
           "hidden": true
         },
         {
           "key": "logout",
           "label": "Log out",
-          "module": "pages._stubs:render_logout",
+          "module": "pages.stubs:render_logout",
           "hidden": true
         },
         {
           "key": "export_results",
           "label": "Export Results",
-          "module": "pages._stubs:render_export_results",
+          "module": "pages.stubs:render_export_results",
           "hidden": true
         }
       ]
