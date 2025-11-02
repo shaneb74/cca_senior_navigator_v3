@@ -513,9 +513,10 @@ def _build_completed_tiles() -> list[ProductTileHub]:
     Phase 5D: Updated to use "My Advisor" name.
     Phase 5K: Added discovery_learning to completed journeys.
     Phase Journey Fix: Planning products move together when all core products done.
+    Phase Compact: Compact mode with real outcome data from MCIP.
     
     Returns:
-        List of completed product tiles
+        List of completed product tiles in compact format
     """
     completed = []
     
@@ -524,53 +525,112 @@ def _build_completed_tiles() -> list[ProductTileHub]:
         completed.append(ProductTileHub(
             key="discovery_learning",
             title="Discovery Journey",
-            desc="Your introduction to care planning",
-            primary_label="View Summary",
+            desc="Completed your introduction to care planning",
+            primary_label="View Details",
             primary_route="?page=discovery_learning",
             variant="success",
             order=900,
             visible=True,
-            badges=["Completed"],
-            phase="analysis",
+            compact=True,
         ))
     
     # Planning Journey products move together when all required are done
     planning_complete = _is_planning_journey_complete()
     
     if planning_complete:
-        # Core planning products (always show when planning complete)
-        planning_products = [
-            ("gcp", "Guided Care Plan", "Your personalized care recommendation"),
-            ("cost_planner", "Cost Planner", "Your financial plan and projections"),
-            ("pfma", "My Advisor", "Your advisor consultation"),
-        ]
+        # GCP - Get care recommendation
+        care_rec = MCIP.get_care_recommendation()
+        gcp_outcome = "Your personalized care recommendation"
+        if care_rec and care_rec.tier:
+            tier_display_map = {
+                "in_home": "In-Home Care",
+                "in_home_care": "In-Home Care",
+                "assisted_living": "Assisted Living",
+                "memory_care": "Memory Care",
+                "memory_care_high_acuity": "Memory Care (Enhanced Support)",
+                "independent": "Independent Living",
+            }
+            tier_display = tier_display_map.get(care_rec.tier, care_rec.tier.replace("_", " ").title())
+            gcp_outcome = f"Your recommendation: {tier_display}"
         
-        # Add Learn Recommendation if user completed it (optional)
+        completed.append(ProductTileHub(
+            key="gcp",
+            title="Guided Care Plan",
+            desc=gcp_outcome,
+            primary_label="View Details",
+            primary_route="?page=gcp_v4",
+            variant="success",
+            order=900,
+            visible=True,
+            compact=True,
+        ))
+        
+        # Learn Recommendation (optional - only if completed)
         if MCIP.is_product_complete("learn_recommendation"):
-            planning_products.insert(1, (
-                "learn_recommendation",
-                "Learn About My Recommendation",
-                "Understanding your care option"
-            ))
-        
-        for key, title, desc in planning_products:
-            tile = ProductTileHub(
-                key=key,
-                title=title,
-                desc=desc,
-                primary_label="View Summary",
-                primary_route=f"?page={key}",
+            learn_outcome = "Reviewed your care option details"
+            if care_rec and care_rec.tier:
+                tier_display = tier_display_map.get(care_rec.tier, care_rec.tier.replace("_", " ").title())
+                learn_outcome = f"Reviewed: {tier_display} care option"
+            
+            completed.append(ProductTileHub(
+                key="learn_recommendation",
+                title="Learn About My Recommendation",
+                desc=learn_outcome,
+                primary_label="View Details",
+                primary_route="?page=learn_recommendation",
                 variant="success",
                 order=900,
                 visible=True,
-                badges=["Completed"],
-                phase="analysis",
-            )
-            # Add outcome if available
-            outcome = get_product_outcome(key)
-            if outcome:
-                tile.desc = outcome
-            completed.append(tile)
+                compact=True,
+            ))
+        
+        # Cost Planner - Get cost estimate
+        cost_outcome = "Your financial plan and projections"
+        cost_data = st.session_state.get("cost_planner_v2", {})
+        if cost_data:
+            # Try to get monthly cost range
+            monthly_low = cost_data.get("monthly_cost_low")
+            monthly_high = cost_data.get("monthly_cost_high")
+            if monthly_low and monthly_high:
+                cost_outcome = f"Monthly estimate: ${monthly_low:,.0f} - ${monthly_high:,.0f}"
+            elif monthly_low:
+                cost_outcome = f"Monthly estimate: ${monthly_low:,.0f}+"
+        
+        completed.append(ProductTileHub(
+            key="cost_planner",
+            title="Cost Planner",
+            desc=cost_outcome,
+            primary_label="View Details",
+            primary_route="?page=cost_planner_v2",
+            variant="success",
+            order=900,
+            visible=True,
+            compact=True,
+        ))
+        
+        # PFMA - Get advisor appointment
+        appt = MCIP.get_advisor_appointment()
+        pfma_outcome = "Ready to schedule your consultation"
+        if appt and appt.scheduled:
+            # Format date and time nicely
+            appt_date = appt.date if appt.date else "TBD"
+            appt_time = appt.time if appt.time else ""
+            if appt_date != "TBD" and appt_time:
+                pfma_outcome = f"Meeting scheduled: {appt_date} at {appt_time}"
+            elif appt_date != "TBD":
+                pfma_outcome = f"Meeting scheduled: {appt_date}"
+        
+        completed.append(ProductTileHub(
+            key="pfma",
+            title="My Advisor",
+            desc=pfma_outcome,
+            primary_label="View Details",
+            primary_route="?page=pfma_v3",
+            variant="success",
+            order=900,
+            visible=True,
+            compact=True,
+        ))
     
     return completed
 

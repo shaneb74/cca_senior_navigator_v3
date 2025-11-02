@@ -215,6 +215,7 @@ class BaseTile:
         self.is_next_step: bool = kwargs.get("is_next_step", False)  # NEW: for MCIP gradient
         self.desc_html: str | None = kwargs.get("desc_html")  # NEW: for raw HTML in desc
         self.phase: str | None = kwargs.get("phase")  # Phase 5A: journey phase tag
+        self.compact: bool = kwargs.get("compact", False)  # Compact mode for completed tiles
         raw_badges = kwargs.get("badges") or []
         self.badges: list[Any] = raw_badges
 
@@ -404,6 +405,10 @@ class ProductTileHub(BaseTile):
         classes = ["ptile", "dashboard-card", f"tile--{self._state_class()}"]
         if self.variant:
             classes.append(f"tile--{self.variant}")
+
+        # Add compact class for completed tiles
+        if self.compact:
+            classes.append("ptile--compact")
 
         # Phase 5G: Add left-border class based on journey phase (no gradients)
         if self.phase:

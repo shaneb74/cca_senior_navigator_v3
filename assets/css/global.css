@@ -761,6 +761,94 @@ div[data-role="secondary"] .stButton > button[kind="secondary"][data-testid="stB
 }
 
 /* ===================================================================
+   COMPACT COMPLETED TILES - Streamlined Summary Cards
+   =================================================================== */
+.ptile--compact {
+  padding: 14px 18px !important;
+}
+
+.ptile--compact .ptile__head {
+  margin-bottom: 8px;
+}
+
+.ptile--compact .tile-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ptile--compact .tile-title::before {
+  content: '✓';
+  color: #10b981;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.ptile--compact .tile-subtitle {
+  font-size: 0.9rem;
+  color: #475569;
+  margin: 0;
+  font-weight: 500;
+}
+
+/* Hide unnecessary elements in compact mode */
+.ptile--compact .phase-pill,
+.ptile--compact .dashboard-badges,
+.ptile--compact .dashboard-description,
+.ptile--compact .dashboard-status,
+.ptile--compact .tile-status-note,
+.ptile--compact .tile-meta {
+  display: none !important;
+}
+
+.ptile--compact .tile-actions {
+  margin-top: 10px;
+}
+
+.ptile--compact .dashboard-cta {
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+/* Completed grid with tighter spacing */
+.completed-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.completed-journey-section {
+  margin-top: 40px;
+}
+
+.completed-journey-header {
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 12px 0 8px;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.completed-journey-header::before {
+  content: '';
+  width: 3px;
+  height: 20px;
+  background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* ===================================================================
    JOURNEY SECTION HEADERS - Mobile-First Design
    =================================================================== */
 .journey-section-header {
