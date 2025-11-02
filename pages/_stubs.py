@@ -70,7 +70,7 @@ def render_welcome():
     <h1 class="hero-title">Senior Navigator</h1>
     <p class="hero-sub">Expert advisors - no cost. Helping families navigate the most important senior living decisions with clarity and compassion.</p>
     <div class="cta-row">
-      <a class="btn btn--primary" href="?page=welcome_contextual">Start Now</a>
+      <a class="btn btn--primary" href="?page=audience">Start Now</a>
       <a class="btn btn--secondary" href="?page=login" style="margin-left: var(--space-3);">Demo/Test Login 🧪</a>
     </div>
   </div>
@@ -89,7 +89,7 @@ def render_welcome():
     <div class="card-meta">For a loved one</div>
     <p>Helping you make confident care decisions for someone you love.</p>
     <div class="card-actions">
-      <a class="btn btn--primary" href="?page=for_someone">For someone</a>
+      <a class="btn btn--primary" href="?page=audience&mode=someone">For someone</a>
     </div>
   </article>
 
@@ -99,214 +99,13 @@ def render_welcome():
     <div class="card-meta">For myself</div>
     <p>Plan for your own future care with trusted guidance and peace of mind.</p>
     <div class="card-actions">
-      <a class="btn btn--primary" href="?page=for_me_contextual">For me</a>
+      <a class="btn btn--primary" href="?page=audience&mode=self">For me</a>
     </div>
   </article>
 </div>
 </section>""",
         unsafe_allow_html=True,
     )
-
-
-def render_welcome_contextual():
-    """Simple contextual welcome - clean rewrite using HTML buttons."""
-    hero_image = preload_hero_image("assets/images/contextual_someone_else.png")
-    title_copy = "Supporting Others"
-    body_copy = "Helping you make confident care decisions for someone you love."
-    name_label = "What's their name?"
-    
-    # Apply the canvas background
-    st.markdown(
-        """<style>
-        .main .block-container {
-            background: #E6EEFF;
-            min-height: 72vh;
-        }
-        </style>""",
-        unsafe_allow_html=True,
-    )
-    
-    # Create the layout using Streamlit columns
-    col1, col2 = st.columns([0.9, 1.1])
-    
-    with col1:
-        st.markdown(
-            f"""<div class="modal-card stack-sm">
-      <h3 class="mt-space-4">{title_copy}</h3>
-      <p>{body_copy}</p>""",
-            unsafe_allow_html=True,
-        )
-        
-        # Use Streamlit text input to capture the name
-        current_name = st.session_state.get("person_name", "")
-        person_name = st.text_input(
-            name_label,
-            value=current_name,
-            placeholder="Type a name",
-            key="person_name_input",
-        )
-        
-        # Update session state when name changes
-        if person_name != current_name:
-            st.session_state["person_name"] = person_name
-        
-        st.markdown(
-            """
-      <div class="card-actions mt-space-4">
-        <a class="btn btn--primary" href="?page=hub_lobby">Continue</a>
-        <a class="btn btn--ghost" href="?page=welcome">Close</a>
-      </div>
-      <p class="helper-note mt-space-4">If you want to assess several people, you can move on to the next step later.</p>
-    </div>""",
-            unsafe_allow_html=True,
-        )
-    
-    with col2:
-        if hero_image:
-            st.markdown(
-                f"""<div class="photo-stack" aria-hidden="true">
-    <img class="hero-image" src="{hero_image}" alt=""/>
-  </div>""",
-                unsafe_allow_html=True,
-            )
-
-
-def render_for_someone():
-    """Dedicated page for 'For Someone' flow."""
-    hero_image = preload_hero_image("assets/images/contextual_someone_else.png")
-    title_copy = "Supporting Others"
-    body_copy = "Helping you make confident care decisions for someone you love."
-    name_label = "What's their name?"
-
-    # Apply the canvas background
-    st.markdown(
-        """<style>
-        .main .block-container {
-            background: #E6EEFF;
-            min-height: 72vh;
-        }
-        </style>""",
-        unsafe_allow_html=True,
-    )
-
-    # Create the layout using Streamlit columns
-    col1, col2 = st.columns([0.9, 1.1])
-
-    with col1:
-        st.markdown(
-            f"""<div class="modal-card stack-sm">
-      <div class="toggle">
-        <a class="pill is-selected" href="?page=for_someone">For someone</a>
-        <a class="pill" href="?page=for_me_contextual">For me</a>
-      </div>
-      <h3 class="mt-space-4">{title_copy}</h3>
-      <p>{body_copy}</p>""",
-            unsafe_allow_html=True,
-        )
-
-        # Use Streamlit text input to capture the name
-        current_name = st.session_state.get("person_name", "")
-        person_name = st.text_input(
-            name_label,
-            value=current_name,
-            placeholder="Type a name",
-            key="person_name_input",
-        )
-
-        # Update session state when name changes
-        if person_name != current_name:
-            st.session_state["person_name"] = person_name
-
-        st.markdown(
-            """
-      <div class="card-actions mt-space-4">
-        <a class="btn btn--primary" href="?page=hub_lobby">Continue</a>
-        <a class="btn btn--ghost" href="?page=welcome">Close</a>
-      </div>
-      <p class="helper-note mt-space-4">If you want to assess several people, you can move on to the next step later.</p>
-    </div>""",
-            unsafe_allow_html=True,
-        )
-
-    with col2:
-        # STRICT: Only render if we have a real image source AND nav is not pending
-        if hero_image and not st.session_state.get("_nav_pending"):
-            st.markdown(
-                f"""<div class="photo-stack" aria-hidden="true">
-    <img class="hero-image" src="{hero_image}" alt=""/>
-  </div>""",
-                unsafe_allow_html=True,
-            )
-        # else: render nothing - no container, no space reservation
-
-
-def render_for_me_contextual():
-    """Dedicated page for 'For Me' flow."""
-    hero_image = preload_hero_image("assets/images/contextual_self.png")
-    title_copy = "Getting Ready for Myself"
-    body_copy = "Plan for your own future care with trusted guidance and peace of mind."
-    name_label = "What's your name?"
-
-    # Apply the canvas background
-    st.markdown(
-        """<style>
-        .main .block-container {
-            background: #E6EEFF;
-            min-height: 72vh;
-        }
-        </style>""",
-        unsafe_allow_html=True,
-    )
-
-    # Create the layout using Streamlit columns
-    col1, col2 = st.columns([0.9, 1.1])
-
-    with col1:
-        st.markdown(
-            f"""<div class="modal-card stack-sm">
-      <div class="toggle">
-        <a class="pill" href="?page=for_someone">For someone</a>
-        <a class="pill is-selected" href="?page=for_me_contextual">For me</a>
-      </div>
-      <h3 class="mt-space-4">{title_copy}</h3>
-      <p>{body_copy}</p>""",
-            unsafe_allow_html=True,
-        )
-
-        # Use Streamlit text input to capture the name
-        current_name = st.session_state.get("person_name", "")
-        person_name = st.text_input(
-            name_label,
-            value=current_name,
-            placeholder="Type a name",
-            key="person_name_input",
-        )
-
-        # Update session state when name changes
-        if person_name != current_name:
-            st.session_state["person_name"] = person_name
-
-        st.markdown(
-            """
-      <div class="card-actions mt-space-4">
-        <a class="btn btn--primary" href="?page=hub_lobby">Continue</a>
-        <a class="btn btn--ghost" href="?page=welcome">Close</a>
-      </div>
-      <p class="helper-note mt-space-4">If you want to assess several people, you can move on to the next step later.</p>
-    </div>""",
-            unsafe_allow_html=True,
-        )
-
-    with col2:
-        # STRICT: Only render if we have a real image source AND nav is not pending
-        if hero_image and not st.session_state.get("_nav_pending"):
-            st.markdown(
-                f"""<div class="photo-stack" aria-hidden="true">
-    <img class="hero-image" src="{hero_image}" alt=""/>
-  </div>""",
-                unsafe_allow_html=True,
-            )
-        # else: render nothing - no container, no space reservation
 
 
 def render_pro_welcome():

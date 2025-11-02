@@ -23,12 +23,6 @@
           "hidden": true
         },
         {
-          "key": "welcome_contextual",
-          "label": "Contextual Welcome",
-          "module": "pages._stubs:render_welcome_contextual",
-          "hidden": true
-        },
-        {
           "key": "about",
           "label": "About Us",
           "module": "pages._stubs:render_about"
