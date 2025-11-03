@@ -4,7 +4,7 @@ import streamlit as st
 
 from core.additional_services import get_additional_services
 from core.base_hub import BaseHub, status_label
-from core.navi import render_navi_panel
+from core.ui import render_navi_panel_v2
 
 
 class TrustedPartnersHub(BaseHub):
@@ -153,14 +153,48 @@ class TrustedPartnersHub(BaseHub):
 
 
 def render() -> None:
+    # Load dashboard CSS for consistency
+    st.markdown(
+        f"<style>{open('core/styles/dashboard.css').read()}</style>",
+        unsafe_allow_html=True
+    )
+    
+    from ui.header_simple import render_header_simple
+    from ui.footer_simple import render_footer_simple
+    
+    # Render header
+    render_header_simple(active_route="trusted_partners")
+    
     # Build dashboard data
     hub = TrustedPartnersHub()
     dashboard_data = hub.build_dashboard()
+    
+    person_name = st.session_state.get("person_name", "").strip()
+    verified_partners = st.session_state.get("verified_partners", 23)
 
     # Use callback pattern to render Navi AFTER header
     def render_content():
-        # Render Navi panel (after header, before hub content)
-        render_navi_panel(location="hub", hub_key="trusted_partners")
+        # Render Navi panel V2 (matching Lobby style)
+        st.markdown('<div id="navi-panel">', unsafe_allow_html=True)
+        
+        render_navi_panel_v2(
+            title="Trusted Partners Network",
+            reason="Connect with verified providers curated for your family's needs.",
+            encouragement={
+                "icon": "🤝",
+                "text": f"{verified_partners} verified partners ready to support you.",
+                "status": "exploring",
+            },
+            context_chips=[],
+            primary_action={"label": "Browse Partners", "route": "trusted_partners"},
+            secondary_action={"label": "Ask NAVI", "route": "faq"},
+            progress=None,
+            alert_html="",
+            variant="hub",
+        )
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown("<br/>", unsafe_allow_html=True)
 
         # Render hub body HTML WITHOUT title/subtitle/chips (Navi replaces them)
         from core.base_hub import render_dashboard_body
@@ -170,15 +204,14 @@ def render() -> None:
             subtitle=None,
             chips=None,
             hub_guide_block=None,  # Navi replaces hub guide/callout
+            hub_order=None,
             cards=dashboard_data.get("cards", []),
-            additional_services=dashboard_data.get("additional_services"),  # Include in HTML
+            additional_services=dashboard_data.get("additional_services", []),  # Include in HTML
         )
         st.markdown(body_html, unsafe_allow_html=True)
 
-    from ui.footer_simple import render_footer_simple
-    from ui.header_simple import render_header_simple
-
-    # Render with simple header/footer
-    render_header_simple(active_route="hub_trusted")
+    # Render content with Navi
     render_content()
+    
+    # Render footer
     render_footer_simple()

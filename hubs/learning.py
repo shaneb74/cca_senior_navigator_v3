@@ -4,8 +4,8 @@ import streamlit as st
 
 from core.additional_services import get_additional_services
 from core.base_hub import render_dashboard_body
-from core.navi import render_navi_panel
-from core.product_tile import ProductTileHub
+from core.ui import render_navi_panel_v2
+from core.product_tile import ProductTileHub, tile_requirements_satisfied
 from ui.footer_simple import render_footer_simple
 from ui.header_simple import render_header_simple
 
@@ -46,6 +46,15 @@ def _card_to_tile(card: dict[str, any], order: int) -> ProductTileHub:
 
 
 def render(ctx=None) -> None:
+    # Load dashboard CSS for consistency
+    st.markdown(
+        f"<style>{open('core/styles/dashboard.css').read()}</style>",
+        unsafe_allow_html=True
+    )
+    
+    # Render header
+    render_header_simple(active_route="learning")
+    
     person_name = st.session_state.get("person_name", "").strip()
     learning_progress = st.session_state.get("learning_progress", 0)
 
@@ -119,10 +128,32 @@ def render(ctx=None) -> None:
 
     additional = get_additional_services("learning")
 
+    # Build Navi data (matching Lobby pattern)
+    person_name = st.session_state.get("person_name", "").strip()
+    
     # Use callback pattern to render Navi AFTER header
     def render_content():
-        # Render Navi panel (after header, before hub content)
-        render_navi_panel(location="hub", hub_key="learning")
+        # Render Navi panel V2 (matching Lobby style)
+        st.markdown('<div id="navi-panel">', unsafe_allow_html=True)
+        
+        render_navi_panel_v2(
+            title=f"Hi, {person_name}!" if person_name else "Learning Center",
+            reason="Explore guides, videos, and resources to support your care journey.",
+            encouragement={
+                "icon": "📚",
+                "text": "Browse curated content or search our knowledge base.",
+                "status": "exploring",
+            },
+            context_chips=[],
+            primary_action={"label": "Browse Guides", "route": "hub_learning"},
+            secondary_action={"label": "Ask NAVI", "route": "faq"},
+            progress=learning_progress if learning_progress > 0 else None,
+            alert_html="",
+            variant="hub",
+        )
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown("<br/>", unsafe_allow_html=True)
 
         # Render hub body HTML WITHOUT title/subtitle/chips (Navi replaces them)
         body_html = render_dashboard_body(
@@ -130,12 +161,14 @@ def render(ctx=None) -> None:
             subtitle=None,
             chips=None,
             hub_guide_block=None,  # Navi replaces hub guide
+            hub_order=None,
             cards=cards,
             additional_services=additional,  # Include in HTML for proper layout
         )
         st.markdown(body_html, unsafe_allow_html=True)
 
-    # Render with simple header/footer
-    render_header_simple(active_route="hub_learning")
+    # Render content with Navi
     render_content()
+    
+    # Render footer
     render_footer_simple()
