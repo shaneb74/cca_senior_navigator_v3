@@ -737,12 +737,16 @@ def _render_home_card(zip_code: str):
 
     # Controls: Hours slider
     st.markdown('<div class="cost-section__label">Daily Support Hours</div>', unsafe_allow_html=True)
-    current_hours = st.session_state.comparison_inhome_hours
+    
+    # Initialize slider widget key from comparison state (only if not already set)
+    if "qe_home_hours" not in st.session_state:
+        st.session_state["qe_home_hours"] = st.session_state.comparison_inhome_hours
+    
+    # Slider now reads initial value from session state key (no value parameter)
     hours = st.slider(
         "Hours per day",
         min_value=1.0,
         max_value=24.0,
-        value=current_hours,
         step=1.0,
         key="qe_home_hours",
         help="Adjust based on care needs",
