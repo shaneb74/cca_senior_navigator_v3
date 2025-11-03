@@ -22,15 +22,11 @@ import streamlit as st
 
 from core.journeys import advance_to
 from core.mcip import MCIP
-from ui.header_simple import render_header_simple
 from ui.footer_simple import render_footer_simple
 
 
 def render():
     """Render Discovery Learning - clean, card-based layout matching app aesthetic."""
-    
-    # Render header
-    render_header_simple(active_route="discovery_learning")
     
     # Initialize MCIP
     MCIP.initialize()

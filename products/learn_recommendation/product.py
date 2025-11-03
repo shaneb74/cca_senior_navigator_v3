@@ -34,15 +34,11 @@ import streamlit as st
 from core.mcip import MCIP
 from core.nav import route_to
 from core.journeys import advance_to
-from ui.header_simple import render_header_simple
 from ui.footer_simple import render_footer_simple
 
 
 def render():
     """Render Learn About My Recommendation product - Discovery Journey style."""
-    
-    # Render header
-    render_header_simple(active_route="learn_recommendation")
     
     # Initialize MCIP
     MCIP.initialize()
