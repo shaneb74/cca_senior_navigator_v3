@@ -184,13 +184,14 @@ def calculate_baseline_hours_weighted(context: HoursContext) -> HoursBand:
     print(f"[HOURS_WEIGHTED] Total weighted hours: {total_hours:.1f}h")
     
     # Convert to band (CRITICAL: Must match production thresholds)
+    # Thresholds designed to avoid edge cases pushing into higher bands
     if total_hours < 1.0:
         band = "<1h"
     elif total_hours < 4.0:
         band = "1-3h"
-    elif total_hours < 8.0:
+    elif total_hours < 10.0:  # 4-8h band extends to 10h to avoid edge case escalation
         band = "4-8h"
-    elif total_hours < 20.0:  # NEW: Around-the-clock with breaks (12-20h range)
+    elif total_hours < 20.0:  # 12-16h band for true around-the-clock cases (10-20h)
         band = "12-16h"
     else:
         band = "24h"
