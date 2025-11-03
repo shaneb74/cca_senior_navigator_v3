@@ -314,7 +314,7 @@ def _render_login_form():
             ):
                 # Load Mary demo user by switching UID
                 from core.session_store import switch_user
-                switch_user("demo_mary_memory_care")
+                switch_user(st.session_state, "demo_mary_memory_care")
                 st.success("✅ Loaded Mary Memory Care demo!")
                 st.rerun()
         
