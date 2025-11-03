@@ -364,11 +364,13 @@ def _inject_learn_recommendation_styles():
     """Inject Discovery Journey-style CSS for Learn About My Recommendation page."""
     st.markdown("""
     <style>
-    /* === Narrow Layout === */
-    .main .block-container {
-        max-width: 900px;
-        padding-left: 2rem;
-        padding-right: 2rem;
+    /* === Force Narrow Layout (Product Tile Width) === */
+    .main > .block-container {
+        max-width: 750px !important;
+        padding-left: 2rem !important;
+        padding-right: 2rem !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
     }
     
     /* === Global Styles === */
