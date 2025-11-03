@@ -476,6 +476,16 @@ def _calculate_and_store() -> None:
         # Capture LLM advice if available (set by derive_outcome when mode is shadow/assist/replace)
         llm_advice = st.session_state.get("_gcp_llm_advice", None)
         
+        # Debug: Check if LLM was called
+        if llm_advice:
+            print(f"[GCP_TEST] LLM advice captured: tier={llm_advice.get('tier')} conf={llm_advice.get('confidence')}")
+        else:
+            print(f"[GCP_TEST] No LLM advice in session state (mode may be off or LLM call failed)")
+            # Check if there were any LLM errors
+            llm_error = st.session_state.get("_gcp_llm_error", None)
+            if llm_error:
+                print(f"[GCP_TEST] LLM error: {llm_error}")
+        
         # Store results
         st.session_state.gcp_test_results = {
             "tier": outcome["tier"],
@@ -524,10 +534,10 @@ def _render_results() -> None:
     
     st.markdown("### 📊 GCP Recommendation Results")
     
-    # Show LLM mode indicator
+    # Show LLM mode indicator (using correct flag: FEATURE_LLM_GCP)
     try:
-        from products.gcp_v4.modules.care_recommendation.logic import get_llm_tier_mode
-        llm_mode = get_llm_tier_mode()
+        from ai.llm_client import get_feature_gcp_mode
+        llm_mode = get_feature_gcp_mode()
         mode_colors = {
             "off": "🔴",
             "shadow": "🟡", 
@@ -541,8 +551,8 @@ def _render_results() -> None:
             "replace": "LLM recommendation used if valid"
         }
         st.info(f"{mode_colors.get(llm_mode, '⚪')} **LLM Mode:** `{llm_mode}` - {mode_desc.get(llm_mode, 'Unknown mode')}")
-    except Exception:
-        pass
+    except Exception as e:
+        st.warning(f"Could not read LLM mode: {e}")
     
     # Check for interim advice flag
     show_interim = results.get("show_interim_advice", False)

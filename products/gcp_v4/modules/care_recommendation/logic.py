@@ -1458,6 +1458,8 @@ def derive_outcome(
                             self.empathy_score = decision.empathy_score
                             self.navi_messages = [decision.rationale] if decision.rationale else []
                             self.reasons = decision.advisory_notes or []
+                            self.risks = []  # Not provided by policy decision
+                            self.questions_next = []  # Not provided by policy decision
 
                     advice = PolicyAdvice(policy_decision)
                     ok = True
@@ -1532,14 +1534,16 @@ def derive_outcome(
         try:
             import streamlit as st
             st.session_state["_gcp_llm_advice"] = {
-                "tier": llm_advice.tier,
-                "reasons": llm_advice.reasons,
-                "risks": llm_advice.risks,
-                "navi_messages": llm_advice.navi_messages,
-                "questions_next": llm_advice.questions_next,
-                "confidence": llm_advice.confidence,
+                "tier": getattr(llm_advice, "tier", None),
+                "reasons": getattr(llm_advice, "reasons", []),
+                "risks": getattr(llm_advice, "risks", []),
+                "navi_messages": getattr(llm_advice, "navi_messages", []),
+                "questions_next": getattr(llm_advice, "questions_next", []),
+                "confidence": getattr(llm_advice, "confidence", 0.0),
             }
-        except Exception:
+            print(f"[GCP_LLM_STORE] Stored LLM advice: tier={st.session_state['_gcp_llm_advice']['tier']}")
+        except Exception as e:
+            print(f"[GCP_LLM_STORE_ERROR] {e}")
             pass  # Silent failure if streamlit not available
 
     # ====================================================================
