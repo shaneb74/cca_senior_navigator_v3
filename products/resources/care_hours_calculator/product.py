@@ -335,7 +335,7 @@ def _calculate_and_store() -> None:
     # Get mobility (GCP structure matches hours engine)
     mobility = st.session_state.get("calc_mobility_aid", "independent")
     
-    # Build context (using schema field names)
+    # Build context (same structure as GCP for consistency)
     context = HoursContext(
         badls_count=len(badls),
         iadls_count=len(iadls),
@@ -349,7 +349,34 @@ def _calculate_and_store() -> None:
         falls=falls,
         mobility=mobility,
         overnight_needed=False,  # Not in GCP, set to false
+        meds_complexity="none",
+        primary_support="none",
+        risky_behaviors=False,
+        current_hours=None,
     )
+    
+    # Use the SAME calculation function as GCP for consistency
+    from ai.hours_engine import calculate_baseline_hours_with_value
+    
+    baseline_band, baseline_hours = calculate_baseline_hours_with_value(context)
+    
+    # Also get individual components for breakdown display
+    badl_hours = sum(get_badl_hours(badl) for badl in badls)
+    iadl_hours = sum(get_iadl_hours(iadl) for iadl in iadls)
+    cognitive_multiplier = get_cognitive_multiplier(
+        cognitive_level,
+        has_wandering=wandering,
+        has_aggression=aggression,
+        has_sundowning=sundowning,
+        has_repetitive_questions=repetitive_questions,
+        has_elopement=st.session_state.get("calc_elopement", False),
+        has_confusion=st.session_state.get("calc_confusion", False),
+        has_judgment=st.session_state.get("calc_judgment", False),
+        has_hoarding=st.session_state.get("calc_hoarding", False),
+        has_sleep=st.session_state.get("calc_sleep", False),
+    )
+    fall_multiplier = get_fall_risk_multiplier(falls)
+    mobility_hours = get_mobility_hours(mobility)
     
     # Calculate baseline hours (loop through lists + ALL 9 behaviors)
     badl_hours = sum(get_badl_hours(badl) for badl in badls)
