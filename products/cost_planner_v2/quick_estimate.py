@@ -755,11 +755,16 @@ def _render_home_card(zip_code: str):
     calculated_hours = gcp.get("hours_calculated")
     user_band = gcp.get("hours_user_band", "")
     
+    # Debug logging
+    print(f"[NAVI_CALLOUT_DEBUG] calculated_hours={calculated_hours}, user_band={user_band}")
+    
     # Check if user has already dismissed this recommendation
     cost = st.session_state.setdefault("cost", {})
     meta = cost.setdefault("meta", {})
     decision_key = f"hours_navi_decision_{calculated_hours}"
     has_decided = meta.get(decision_key, False)
+    
+    print(f"[NAVI_CALLOUT_DEBUG] decision_key={decision_key}, has_decided={has_decided}")
     
     # Initialize slider widget key from comparison state (only if not already set)
     if "qe_home_hours" not in st.session_state:
@@ -767,12 +772,16 @@ def _render_home_card(zip_code: str):
     
     current_hours = st.session_state.get("qe_home_hours", 3.0)
     
+    print(f"[NAVI_CALLOUT_DEBUG] current_hours={current_hours}")
+    
     # Show Navi callout only if:
     # 1. We have calculated hours
     # 2. There's a significant difference (>1 hour)
     # 3. User hasn't dismissed it yet
     if calculated_hours and user_band and not has_decided:
         rounded_calc = round(calculated_hours * 2) / 2
+        
+        print(f"[NAVI_CALLOUT_DEBUG] rounded_calc={rounded_calc}, diff={abs(current_hours - rounded_calc)}")
         
         # Only show if there's a meaningful difference
         if abs(current_hours - rounded_calc) > 1.0:
