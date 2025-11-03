@@ -750,6 +750,9 @@ def _render_home_card(zip_code: str):
     # Controls: Hours slider
     st.markdown('<div class="cost-section__label">Daily Support Hours</div>', unsafe_allow_html=True)
     
+    # DEBUG: Add visible marker
+    st.markdown("🔍 **DEBUG: Hours section loaded**")
+    
     # Show Navi-branded interactive callout if recommendation differs from user selection
     gcp = st.session_state.get("gcp", {})
     calculated_hours = gcp.get("hours_calculated")
