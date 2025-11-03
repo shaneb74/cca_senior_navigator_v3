@@ -761,10 +761,18 @@ def _render_results() -> None:
     col1, col2 = st.columns(2)
     with col1:
         if st.button("📋 Copy Results", use_container_width=True):
-            _show_copy_dialog()
+            st.session_state.show_copy_dialog = True
+            st.rerun()
     with col2:
         if st.button("💾 Save Test Case", use_container_width=True):
             st.session_state.show_save_dialog = True
+            st.rerun()
+    
+    # Show copy dialog if triggered
+    if st.session_state.get("show_copy_dialog", False):
+        _show_copy_dialog()
+        if st.button("✖️ Close", key="close_copy_dialog"):
+            st.session_state.show_copy_dialog = False
             st.rerun()
 
 
@@ -772,19 +780,27 @@ def _show_copy_dialog() -> None:
     """Show results in copyable text format."""
     results = st.session_state.gcp_test_results
     
+    tier_display = {
+        "no_care_needed": "No Care Needed",
+        "in_home": "In-Home Care",
+        "assisted_living": "Assisted Living",
+        "memory_care": "Memory Care",
+        "memory_care_high_acuity": "Memory Care (High Acuity)"
+    }
+    
     # Format as text
     text = f"""GCP Test Tool Results
 Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 
 RECOMMENDATION:
 --------------
-Tier: {results['tier']}
+Tier: {tier_display.get(results['tier'], results['tier'])}
 Score: {results['tier_score']} pts
 Confidence: {results['confidence']:.0%}
 
 TIER RANKINGS:
 -------------
-{chr(10).join(f"  {tier}: {score} pts" for tier, score in results['tier_rankings'])}
+{chr(10).join(f"  {tier_display.get(tier, tier)}: {score} pts" for tier, score in results['tier_rankings'])}
 
 GATE ANALYSIS:
 -------------
@@ -802,10 +818,25 @@ RATIONALE:
 
 FLAGS:
 -----
-{chr(10).join(f"  - {flag['id']}" for flag in results['flags']) if results['flags'] else '  None'}
+{chr(10).join(f"  - {flag.get('label', flag['id'])}: {flag.get('description', 'No description')}" for flag in results['flags']) if results['flags'] else '  None'}
+
+LLM RECOMMENDATION:
+------------------
 """
     
-    st.text_area("Copy this text:", text, height=400)
+    llm_advice = results.get('llm_advice')
+    if llm_advice:
+        text += f"""Tier: {tier_display.get(llm_advice.get('tier', 'N/A'), llm_advice.get('tier', 'N/A'))}
+Confidence: {llm_advice.get('confidence', 0):.0%}
+Reasons:
+{chr(10).join(f"  - {reason}" for reason in llm_advice.get('reasons', []))}
+"""
+    else:
+        text += "No LLM recommendation available\n"
+    
+    # Show in expandable text area with copy button
+    st.text_area("📋 Copy Results", text, height=400, key="copy_results_text")
+    st.caption("💡 Click inside the text area and press Ctrl+A (Cmd+A on Mac) to select all, then Ctrl+C (Cmd+C) to copy")
 
 
 def render(ctx=None) -> None:
