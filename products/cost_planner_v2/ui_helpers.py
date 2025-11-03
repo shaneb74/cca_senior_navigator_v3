@@ -408,9 +408,12 @@ def render_confirm_hours_if_needed(current_hours_key: str = "qe_home_hours"):
         elif has_behaviors:
             context_phrase = ", along with some behavioral support needs"
 
-        # Construct the empathetic paragraph
-        advice = f"""You mentioned needing help with {needs_phrase}{context_phrase}. That level of daily support often means several hours of hands-on care each day. <strong>In-home care can be one of the most significant expenses for families</strong>, and if those hours aren't planned for, the costs can rise quickly. Many families in similar situations find that planning for around {fmt_hours(llm_high)} of support a day gives a more realistic picture of what safe, consistent care at home will cost."""
-        print(f"[HOURS_ADVISORY] FALLBACK text built with needs={needs_phrase[:40]}...")
+        # Construct the empathetic paragraph with personalized hours
+        # Round suggested hours for cleaner messaging
+        rounded_hours = round(llm_high * 2) / 2  # Round to nearest 0.5
+        
+        advice = f"""You mentioned needing help with {needs_phrase}{context_phrase}. That level of daily support often means several hours of hands-on care each day. <strong>In-home care can be one of the most significant expenses for families</strong>, and if those hours aren't planned for, the costs can rise quickly. Based on your specific care needs, we recommend planning for around {fmt_hours(rounded_hours)} of support a day to give a more realistic picture of what safe, consistent care at home will cost."""
+        print(f"[HOURS_ADVISORY] FALLBACK text built with needs={needs_phrase[:40]}... hours={rounded_hours}")
     else:
         print(f"[HOURS_ADVISORY] ✅ Using LLM-generated advice: {advice[:80]}...")
 

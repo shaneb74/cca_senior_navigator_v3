@@ -10,8 +10,9 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
-# Canonical 4 bands (no other values allowed)
-HoursBand = Literal["<1h", "1-3h", "4-8h", "24h"]
+# Canonical 5 bands (no other values allowed)
+# Reflects realistic care patterns from minimal to round-the-clock
+HoursBand = Literal["<1h", "1-3h", "4-8h", "12-16h", "24h"]
 
 
 class HoursContext(BaseModel):
@@ -40,6 +41,13 @@ class HoursContext(BaseModel):
     aggression: bool = False  # Aggressive behaviors
     sundowning: bool = False  # Evening confusion/agitation
     repetitive_questions: bool = False  # Memory/cognitive symptom
+    
+    # Additional behaviors (9 total)
+    elopement: bool = False  # Exit-seeking, high risk
+    confusion: bool = False  # Disorientation, supervision needs
+    judgment: bool = False  # Poor judgment, monitoring required
+    hoarding: bool = False  # Safety/hygiene concerns
+    sleep: bool = False  # Sleep disturbances, overnight needs
 
 
 class HoursAdvice(BaseModel):
@@ -67,8 +75,8 @@ class HoursAdvice(BaseModel):
     @field_validator("band")
     @classmethod
     def validate_band(cls, v: str) -> str:
-        """Ensure band is exactly one of the 4 allowed values."""
-        allowed = ["<1h", "1-3h", "4-8h", "24h"]
+        """Ensure band is exactly one of the 5 allowed values."""
+        allowed = ["<1h", "1-3h", "4-8h", "12-16h", "24h"]
         if v not in allowed:
             raise ValueError(f"Invalid band '{v}'; must be one of {allowed}")
         return v
