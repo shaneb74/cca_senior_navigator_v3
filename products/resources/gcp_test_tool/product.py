@@ -602,9 +602,22 @@ def _render_results() -> None:
     
     # Flags
     if results["flags"]:
-        st.markdown("#### 🚩 Flags")
+        st.markdown("#### 🚩 Flags (Risk Factors & Care Needs)")
+        st.caption("Flags identify specific care needs, risks, and support requirements")
         for flag in results["flags"]:
-            st.markdown(f"- `{flag['id']}`: {flag.get('message', 'No message')}")
+            label = flag.get('label', flag['id'].replace('_', ' ').title())
+            description = flag.get('description', 'No description')
+            tone = flag.get('tone', 'info')
+            
+            # Format with tone-based emoji
+            tone_emoji = {
+                'info': 'ℹ️',
+                'warning': '⚠️',
+                'critical': '🚨'
+            }.get(tone, 'ℹ️')
+            
+            st.markdown(f"{tone_emoji} **{label}** (`{flag['id']}`)")
+            st.caption(f"   {description}")
     
     st.markdown("---")
     
