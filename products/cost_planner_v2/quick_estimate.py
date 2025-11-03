@@ -793,20 +793,19 @@ def _render_home_card(zip_code: str):
             }
             user_desc = band_descriptions.get(user_band, user_band)
             
-            # Navi-branded callout with purple/lavender theme
+            # Navi-branded callout with clean, subtle styling
             st.markdown(
                 f'''
-                <div style="background: linear-gradient(135deg, #f3e7ff 0%, #e9d5ff 100%); 
-                            padding: 20px; 
-                            border-radius: 12px; 
+                <div style="background: #faf5ff; 
+                            padding: 18px 20px; 
+                            border-radius: 8px; 
                             margin-bottom: 16px; 
-                            border: 2px solid #d8b4fe;
-                            box-shadow: 0 2px 8px rgba(139, 92, 246, 0.15);">
-                    <div style="display: flex; align-items: center; margin-bottom: 12px;">
-                        <span style="font-size: 20px; margin-right: 8px;">✨</span>
-                        <span style="font-weight: 600; color: #7c3aed; font-size: 16px;">NAVI</span>
+                            border-left: 4px solid #a78bfa;">
+                    <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                        <span style="font-size: 18px; margin-right: 8px;">✨</span>
+                        <span style="font-weight: 600; color: #7c3aed; font-size: 14px; letter-spacing: 0.5px;">NAVI</span>
                     </div>
-                    <p style="color: #4c1d95; font-size: 15px; line-height: 1.5; margin: 0 0 16px 0;">
+                    <p style="color: #374151; font-size: 14px; line-height: 1.6; margin: 0;">
                         You selected <strong>{user_desc}</strong>, but based on your personalized care needs, 
                         I recommend <strong>{rounded_calc:.1f} hours/day</strong> for a more realistic estimate.
                     </p>
