@@ -318,16 +318,30 @@ def _render_login_form():
                 # Switch to Mary's profile (loads data into session_state)
                 switch_user(st.session_state, "demo_mary_memory_care")
                 
+                # DEBUG: Check what was loaded
+                print(f"[LOGIN] After switch_user:")
+                print(f"  auth exists: {'auth' in st.session_state}")
+                if 'auth' in st.session_state:
+                    print(f"    is_authenticated: {st.session_state['auth'].get('is_authenticated')}")
+                    print(f"    name: {st.session_state['auth'].get('name')}")
+                print(f"  mcip_contracts exists: {'mcip_contracts' in st.session_state}")
+                if 'mcip_contracts' in st.session_state and 'journey' in st.session_state['mcip_contracts']:
+                    journey = st.session_state['mcip_contracts']['journey']
+                    print(f"    completed: {journey.get('completed_products', [])}")
+                
                 # Ensure Mary is authenticated (in case auth wasn't in her profile)
                 if "auth" not in st.session_state or not st.session_state["auth"].get("is_authenticated"):
                     authenticate_user(name="Mary Memory Care", email="mary.memorycare@demo.test")
+                    print(f"[LOGIN] Explicitly authenticated Mary")
                 
                 # Save the loaded state before navigating
                 user_data = extract_user_state(st.session_state)
                 save_user("demo_mary_memory_care", user_data)
+                print(f"[LOGIN] Saved user data to disk")
                 
                 # Update URL with Mary's UID and navigate to hub
                 st.query_params["uid"] = "demo_mary_memory_care"
+                print(f"[LOGIN] Set UID in URL, routing to hub_lobby")
                 route_to("hub_lobby")
         
         # Back link
