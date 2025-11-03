@@ -238,59 +238,61 @@ def _snapshot_costplan(event: str):
 # ==============================================================================
 
 def _get_gcp_hours_per_day() -> float:
-    """Get hours per day from GCP recommendation, with categorical mapping.
+    """Get hours per day from GCP recommendation, using UPPER BOUND of band.
     
-    GCP provides categorical answers which map to numeric hours:
-    - "Less than 1 hour" → 1.0
-    - "1–3 hours" → 2.0
-    - "4–8 hours" → 8.0 (or 6.0 if user explicitly chose mid-range)
-    - "24-hour support" → 24.0
+    GCP provides categorical bands which map to numeric hours using upper bound:
+    - "<1h" → 1.0 (upper bound of minimal support)
+    - "1-3h" → 3.0 (upper bound for moderate support)
+    - "4-8h" → 8.0 (upper bound for substantial support)
+    - "24h" → 24.0 (round-the-clock care)
+    
+    Upper bounds are used for conservative cost estimation and safety planning.
     
     Returns:
-        Float hours per day (default: 2.0 if not found - safer than 1.0)
+        Float hours per day (default: 3.0 if not found)
     """
     # First try new GCP state structure (preferred)
     gcp = st.session_state.get("gcp", {})
     user_band = gcp.get("hours_user_band")
 
     if user_band:
-        # Map band to numeric value (use mid-range for ranges)
+        # Map band to UPPER BOUND (conservative for cost planning)
         band_map = {
             "<1h": 1.0,
-            "1-3h": 2.0,
-            "4-8h": 6.0,  # mid-range unless user explicitly chose 8
+            "1-3h": 3.0,
+            "4-8h": 8.0,
             "24h": 24.0,
         }
         mapped = band_map.get(user_band)
         if mapped:
-            print(f"[QE_INIT] Using hours from gcp.hours_user_band: {user_band} → {mapped}")
+            print(f"[QE_INIT] Using hours from gcp.hours_user_band: {user_band} → {mapped} (upper bound)")
             return mapped
 
     # Fall back to legacy gcp_care_recommendation structure
     gcp_data = st.session_state.get("gcp_care_recommendation", {})
     hours_category = gcp_data.get("hours_per_day", "")
 
-    # Mapping dictionary (handles various formats)
+    # Mapping dictionary with UPPER BOUNDS (handles various formats)
     hours_map = {
         # Standard formats
         "less than 1 hour": 1.0,
         "<1h": 1.0,
-        "1-3h": 2.0,
-        "1–3 hours": 2.0,
-        "4-8h": 6.0,  # use mid-range
-        "4–8 hours": 6.0,
+        "1-3h": 3.0,
+        "1–3 hours": 3.0,
+        "4-8h": 8.0,
+        "4–8 hours": 8.0,
         "24h": 24.0,
         "24-hour support": 24.0,
         # Additional variations
         "less_than_1": 1.0,
-        "1_to_3": 2.0,
-        "4_to_8": 6.0,
+        "1_to_3": 3.0,
+        "4_to_8": 8.0,
         "24_hour": 24.0,
     }
 
     # Normalize and lookup
     hours_normalized = str(hours_category).lower().strip()
-    mapped_hours = hours_map.get(hours_normalized, 2.0)  # default to 2.0, not 1.0 or 8.0
+    mapped_hours = hours_map.get(hours_normalized, 3.0)  # default to 3.0 (conservative)
 
     return mapped_hours
 
