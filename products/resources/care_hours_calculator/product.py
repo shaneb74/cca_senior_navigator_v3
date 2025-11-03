@@ -371,13 +371,16 @@ def _calculate_and_store() -> None:
     
     baseline_hours = (badl_hours + iadl_hours) * cognitive_multiplier * fall_multiplier + mobility_hours
     
-    # Determine baseline band (CRITICAL: Must match production thresholds)
-    if baseline_hours < 1:
+    # Determine baseline band using EXACT calculated hours (5-band system)
+    # Simple, transparent logic: calculated hours → nearest band
+    if baseline_hours < 1.0:
         baseline_band = "<1h"
-    elif baseline_hours < 4:
+    elif baseline_hours < 4.0:
         baseline_band = "1-3h"
-    elif baseline_hours < 8:
+    elif baseline_hours < 10.0:  # 4-8h band includes up to 10h
         baseline_band = "4-8h"
+    elif baseline_hours < 20.0:  # 12-16h band for around-the-clock with breaks
+        baseline_band = "12-16h"
     else:
         baseline_band = "24h"
     
