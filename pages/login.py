@@ -313,11 +313,14 @@ def _render_login_form():
                 help="Load Mary Memory Care demo profile"
             ):
                 # Load Mary demo user by switching UID
-                from core.session_store import switch_user, save_user
+                from core.session_store import switch_user, save_user, extract_user_state
+                
+                # Switch to Mary's profile (loads data into session_state)
                 switch_user(st.session_state, "demo_mary_memory_care")
                 
                 # Save the loaded state before navigating
-                save_user(st.session_state)
+                user_data = extract_user_state(st.session_state)
+                save_user("demo_mary_memory_care", user_data)
                 
                 # Update URL with Mary's UID and navigate to hub
                 st.query_params["uid"] = "demo_mary_memory_care"
