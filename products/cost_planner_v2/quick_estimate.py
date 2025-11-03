@@ -238,37 +238,45 @@ def _snapshot_costplan(event: str):
 # ==============================================================================
 
 def _get_gcp_hours_per_day() -> float:
-    """Get hours per day from GCP recommendation, using UPPER BOUND of band.
+    """Get hours per day from GCP, preferring EXACT calculated hours over band.
     
-    GCP provides categorical bands which map to numeric hours using upper bound:
-    - "<1h" → 1.0 (upper bound of minimal support)
-    - "1-3h" → 3.0 (upper bound for moderate support)
-    - "4-8h" → 8.0 (upper bound for substantial support)
-    - "24h" → 24.0 (round-the-clock care)
+    NEW BEHAVIOR: Uses the exact calculated hours (e.g., 12.58h) from the weighted
+    calculation, which is more accurate than band upper bounds.
     
-    Upper bounds are used for conservative cost estimation and safety planning.
+    Fallback hierarchy:
+    1. gcp.hours_calculated - Exact weighted calculation (PREFERRED)
+    2. gcp.hours_user_band - User's selected band → upper bound
+    3. gcp_care_recommendation.hours_per_day - Legacy structure
+    4. Default: 3.0h (conservative fallback)
     
     Returns:
-        Float hours per day (default: 3.0 if not found)
+        Float hours per day
     """
-    # First try new GCP state structure (preferred)
     gcp = st.session_state.get("gcp", {})
+    
+    # PREFERRED: Use exact calculated hours if available
+    calculated_hours = gcp.get("hours_calculated")
+    if calculated_hours:
+        print(f"[QE_INIT] Using EXACT calculated hours: {calculated_hours}h (from weighted calculation)")
+        return float(calculated_hours)
+    
+    # FALLBACK 1: User band → upper bound
     user_band = gcp.get("hours_user_band")
-
     if user_band:
         # Map band to UPPER BOUND (conservative for cost planning)
         band_map = {
             "<1h": 1.0,
             "1-3h": 3.0,
             "4-8h": 8.0,
+            "12-16h": 16.0,
             "24h": 24.0,
         }
         mapped = band_map.get(user_band)
         if mapped:
-            print(f"[QE_INIT] Using hours from gcp.hours_user_band: {user_band} → {mapped} (upper bound)")
+            print(f"[QE_INIT] Using band upper bound: {user_band} → {mapped}h")
             return mapped
 
-    # Fall back to legacy gcp_care_recommendation structure
+    # FALLBACK 2: Legacy gcp_care_recommendation structure
     gcp_data = st.session_state.get("gcp_care_recommendation", {})
     hours_category = gcp_data.get("hours_per_day", "")
 
@@ -281,19 +289,23 @@ def _get_gcp_hours_per_day() -> float:
         "1–3 hours": 3.0,
         "4-8h": 8.0,
         "4–8 hours": 8.0,
+        "12-16h": 16.0,
+        "12–16 hours": 16.0,
         "24h": 24.0,
         "24-hour support": 24.0,
         # Additional variations
         "less_than_1": 1.0,
         "1_to_3": 3.0,
         "4_to_8": 8.0,
+        "12_to_16": 16.0,
         "24_hour": 24.0,
     }
 
     # Normalize and lookup
     hours_normalized = str(hours_category).lower().strip()
     mapped_hours = hours_map.get(hours_normalized, 3.0)  # default to 3.0 (conservative)
-
+    
+    print(f"[QE_INIT] Using legacy fallback: {hours_category} → {mapped_hours}h")
     return mapped_hours
 
 
@@ -737,6 +749,25 @@ def _render_home_card(zip_code: str):
 
     # Controls: Hours slider
     st.markdown('<div class="cost-section__label">Daily Support Hours</div>', unsafe_allow_html=True)
+    
+    # Show personalized recommendation if calculated hours available
+    gcp = st.session_state.get("gcp", {})
+    calculated_hours = gcp.get("hours_calculated")
+    if calculated_hours:
+        col1, col2 = st.columns([3, 1])
+        with col1:
+            st.info(
+                f"💡 **Personalized Recommendation:** We calculated **{calculated_hours:.1f} hours/day** "
+                f"based on your care needs."
+            )
+        with col2:
+            # Add "Accept" button to set slider to calculated value
+            if st.session_state.get("qe_home_hours") != calculated_hours:
+                if st.button("✓ Accept", key="accept_calculated_hours", help="Use the calculated hours"):
+                    st.session_state["qe_home_hours"] = calculated_hours
+                    st.session_state.comparison_inhome_hours = calculated_hours
+                    st.session_state.comparison_hours_per_day = calculated_hours
+                    st.rerun()
     
     # Initialize slider widget key from comparison state (only if not already set)
     if "qe_home_hours" not in st.session_state:

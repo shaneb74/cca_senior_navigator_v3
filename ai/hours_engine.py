@@ -197,6 +197,75 @@ def calculate_baseline_hours_weighted(context: HoursContext) -> HoursBand:
     return band
 
 
+def calculate_baseline_hours_with_value(context: HoursContext) -> tuple[HoursBand, float]:
+    """
+    Calculate realistic hours/day and return BOTH band and exact hours.
+    
+    Same logic as calculate_baseline_hours_weighted() but returns (band, hours) tuple.
+    Useful for UIs that want to show the exact calculated value.
+    
+    Returns:
+        Tuple of (HoursBand, float hours)
+    """
+    # Start with base hours from weighted ADL/IADL tasks
+    total_hours = 0.0
+    
+    # Sum BADL hours
+    badl_hours = sum(get_badl_hours(badl) for badl in context.badls_list)
+    
+    # Sum IADL hours
+    iadl_hours = sum(get_iadl_hours(iadl) for iadl in context.iadls_list)
+    
+    total_hours = badl_hours + iadl_hours
+    
+    # Apply cognitive multiplier
+    cognitive_mult = get_cognitive_multiplier(
+        context.cognitive_level,
+        has_wandering=context.wandering,
+        has_aggression=context.aggression,
+        has_sundowning=context.sundowning,
+        has_repetitive_questions=context.repetitive_questions,
+        has_elopement=getattr(context, 'elopement', False),
+        has_confusion=getattr(context, 'confusion', False),
+        has_judgment=getattr(context, 'judgment', False),
+        has_hoarding=getattr(context, 'hoarding', False),
+        has_sleep=getattr(context, 'sleep', False),
+    )
+    if cognitive_mult > 1.0:
+        total_hours *= cognitive_mult
+    
+    # Apply fall risk multiplier
+    fall_mult = get_fall_risk_multiplier(context.falls)
+    if fall_mult > 1.0:
+        total_hours *= fall_mult
+    
+    # Add mobility aid hours
+    mobility_hours = get_mobility_hours(context.mobility)
+    if mobility_hours > 0:
+        total_hours += mobility_hours
+    
+    # Apply overnight floor if needed
+    if context.overnight_needed and total_hours < 16.0:
+        total_hours = 16.0
+    
+    # Convert to band
+    if total_hours < 1.0:
+        band = "<1h"
+    elif total_hours < 4.0:
+        band = "1-3h"
+    elif total_hours < 10.0:
+        band = "4-8h"
+    elif total_hours < 20.0:
+        band = "12-16h"
+    else:
+        band = "24h"
+    
+    # Apply clinical escalation rules
+    band = _apply_clinical_rules(context, band, total_hours)
+    
+    return band, total_hours
+
+
 def baseline_hours(context: HoursContext) -> HoursBand:
     """
     Transparent baseline rules for hours/day suggestion.

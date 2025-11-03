@@ -1225,6 +1225,7 @@ def derive_outcome(
                 from ai.hours_engine import (
                     baseline_hours,
                     calculate_baseline_hours_weighted,
+                    calculate_baseline_hours_with_value,
                     generate_hours_advice,
                     generate_hours_nudge_text,
                     under_selected,
@@ -1233,9 +1234,9 @@ def derive_outcome(
                 # Build context
                 hours_ctx = _build_hours_context(answers, flags)
 
-                # Get baseline using NEW weighted scoring system
-                baseline = calculate_baseline_hours_weighted(hours_ctx)
-                print(f"[GCP_HOURS] Using weighted baseline: {baseline}")
+                # Get baseline using NEW weighted scoring system (with exact hours)
+                baseline, calculated_hours = calculate_baseline_hours_with_value(hours_ctx)
+                print(f"[GCP_HOURS] Using weighted baseline: {baseline} ({calculated_hours:.2f}h)")
 
                 # Get LLM refinement
                 ok, advice = generate_hours_advice(hours_ctx, hours_mode)
@@ -1256,14 +1257,15 @@ def derive_outcome(
                             advice.nudge_text = nudge_text
                             advice.severity = severity
 
-                # Persist hours bands to GCP state for Cost Planner
+                # Persist hours bands AND calculated hours to GCP state for Cost Planner
                 try:
                     import streamlit as st
                     gcp_state = st.session_state.setdefault("gcp", {})
                     gcp_state["hours_user_band"] = user_band or "1-3h"
                     gcp_state["hours_llm"] = suggested or baseline
                     gcp_state["hours_band"] = suggested or baseline  # legacy key
-                    print(f"[GCP_HOURS_PERSIST] user={gcp_state['hours_user_band']} llm={gcp_state['hours_llm']}")
+                    gcp_state["hours_calculated"] = round(calculated_hours, 2)  # Store exact calculated hours
+                    print(f"[GCP_HOURS_PERSIST] user={gcp_state['hours_user_band']} llm={gcp_state['hours_llm']} calculated={calculated_hours:.2f}h")
                 except Exception as persist_err:
                     print(f"[GCP_HOURS_PERSIST_ERROR] {persist_err}")
 
