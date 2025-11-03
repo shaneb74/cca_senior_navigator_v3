@@ -45,6 +45,18 @@ def _inject_login_css():
     st.markdown(
         """
         <style>
+        /* Reset Streamlit container */
+        .main .block-container {
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+            max-width: 100%;
+        }
+        
+        /* Login page background */
+        .main {
+            background: var(--bg, #f8fafc);
+        }
+        
         /* Login container */
         .login-section {
             min-height: 70vh;
@@ -188,12 +200,13 @@ def _inject_login_css():
 def _render_login_form():
     """Render login form with OAuth buttons and email fallback."""
     
+    # Add some vertical spacing
+    st.markdown("<br>", unsafe_allow_html=True)
+    
     # Use columns to center the form
     col1, col2, col3 = st.columns([1, 2, 1])
     
     with col2:
-        st.markdown('<div class="login-card">', unsafe_allow_html=True)
-        
         # Title
         st.markdown(
             '<h1 class="login-title">Sign In</h1>',
@@ -204,9 +217,9 @@ def _render_login_form():
             unsafe_allow_html=True,
         )
         
-        # OAuth Buttons (Mock UI - no real OAuth for demo)
-        st.markdown('<div class="oauth-buttons">', unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
         
+        # OAuth Buttons (Mock UI - no real OAuth for demo)
         # Apple Sign In
         if st.button(
             "🍎 Continue with Apple",
@@ -239,8 +252,6 @@ def _render_login_form():
             authenticate_user(name="Demo User", email="demo@facebook.com")
             st.success("✅ Signed in with Facebook!")
             st.rerun()
-        
-        st.markdown('</div>', unsafe_allow_html=True)
         
         # Divider
         st.markdown(
@@ -293,9 +304,5 @@ def _render_login_form():
         
         # Back link
         st.markdown("---")
-        st.markdown('<div class="back-link">', unsafe_allow_html=True)
-        if st.button("← Back to Welcome", key="login_back", use_container_width=False):
+        if st.button("← Back to Welcome", key="login_back", use_container_width=True):
             route_to(push=False, page="welcome")
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-        st.markdown('</div>', unsafe_allow_html=True)
