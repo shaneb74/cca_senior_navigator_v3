@@ -432,12 +432,13 @@ def render_confirm_hours_if_needed(current_hours_key: str = "qe_home_hours"):
     col1, col2 = st.columns([1, 1], gap="small")
     with col1:
         if st.button(f"Update Hours to {fmt_hours(llm_high)}", key=f"btn_accept_{llm_high}", use_container_width=True):
-            # Update the comparison values (not the widget key directly)
+            # Update all hours-related session state keys
             st.session_state["comparison_inhome_hours"] = float(llm_high)
             st.session_state["comparison_hours_per_day"] = float(llm_high)
+            st.session_state["qe_home_hours"] = float(llm_high)  # ← Update slider widget key
             cost["home_hours_scalar"] = float(llm_high)
             meta[decision_key] = "accepted"
-            print(f"[HOURS_CONFIRM] accept={llm_high}")
+            print(f"[HOURS_CONFIRM] accept={llm_high} (updated slider key)")
 
             # Persist hours decision
             try:
