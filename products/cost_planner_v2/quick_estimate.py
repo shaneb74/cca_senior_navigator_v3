@@ -838,8 +838,13 @@ def _render_home_card(zip_code: str):
                     key="navi_dismiss_hours",
                     use_container_width=True
                 ):
+                    # Set slider to upper bound of user's selected band
+                    st.session_state["qe_home_hours"] = user_band_hours
+                    st.session_state.comparison_inhome_hours = user_band_hours
+                    st.session_state.comparison_hours_per_day = user_band_hours
+                    cost["home_hours_scalar"] = float(user_band_hours)
                     meta[decision_key] = "dismissed"
-                    print(f"[NAVI_HOURS] User dismissed recommendation, keeping: {current_hours}h")
+                    print(f"[NAVI_HOURS] User dismissed recommendation, using band upper bound: {user_band_hours}h (from {user_band})")
                     st.rerun()
             
             st.markdown("")  # Spacing after buttons
