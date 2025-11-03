@@ -54,28 +54,17 @@ def calculate_baseline_hours_weighted(context: HoursContext) -> HoursBand:
     
     total_hours = badl_hours + iadl_hours
     
-    # Apply cognitive multiplier (supervision overhead)
-    cognitive_mult = get_cognitive_multiplier(context.cognitive_level)
+    # Apply cognitive multiplier (supervision overhead including behaviors)
+    cognitive_mult = get_cognitive_multiplier(
+        context.cognitive_level,
+        has_wandering=context.wandering,
+        has_aggression=context.aggression,
+        has_sundowning=context.sundowning,
+        has_repetitive_questions=context.repetitive_questions
+    )
     if cognitive_mult > 1.0:
-        print(f"[HOURS_WEIGHTED] Cognitive multiplier: {cognitive_mult}x for {context.cognitive_level}")
+        print(f"[HOURS_WEIGHTED] Cognitive multiplier: {cognitive_mult}x for {context.cognitive_level} + behaviors")
         total_hours *= cognitive_mult
-    
-    # Add behavior-specific hours (cumulative)
-    behavior_hours = 0.0
-    if context.wandering:
-        behavior_hours += 0.3
-        print("[HOURS_WEIGHTED] +0.3h for wandering risk")
-    if context.aggression:
-        behavior_hours += 0.2
-        print("[HOURS_WEIGHTED] +0.2h for aggression management")
-    if context.sundowning:
-        behavior_hours += 0.3
-        print("[HOURS_WEIGHTED] +0.3h for sundowning support")
-    if context.repetitive_questions:
-        behavior_hours += 0.1
-        print("[HOURS_WEIGHTED] +0.1h for cognitive symptom management")
-    
-    total_hours += behavior_hours
     
     # Apply fall risk multiplier
     fall_mult = get_fall_risk_multiplier(context.falls)
