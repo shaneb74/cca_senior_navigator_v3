@@ -30,13 +30,13 @@
         {
           "key": "login",
           "label": "Log in",
-          "module": "pages.stubs:render_login",
+          "module": "pages.login:render",
           "hidden": true
         },
         {
           "key": "auth_start",
           "label": "Authentication",
-          "module": "pages.stubs:render_login",
+          "module": "pages.login:render",
           "hidden": true
         },
         {
