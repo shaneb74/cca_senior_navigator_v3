@@ -744,30 +744,41 @@ def _render_home_card(zip_code: str):
     # Care chunk comparison (when both cached)
     render_care_chunk_compare_blurb("home")
 
-    # Hours confirmation advisory (shows if LLM hours != current)
-    render_confirm_hours_if_needed(current_hours_key="qe_home_hours")
+    # Hours confirmation advisory - DISABLED in favor of contextual slider message below
+    # render_confirm_hours_if_needed(current_hours_key="qe_home_hours")
 
     # Controls: Hours slider
     st.markdown('<div class="cost-section__label">Daily Support Hours</div>', unsafe_allow_html=True)
     
-    # Show personalized recommendation if calculated hours available
+    # Show personalized recommendation comparing user selection vs calculated hours
     gcp = st.session_state.get("gcp", {})
     calculated_hours = gcp.get("hours_calculated")
-    if calculated_hours:
-        col1, col2 = st.columns([3, 1])
-        with col1:
-            st.info(
-                f"💡 **Personalized Recommendation:** We calculated **{calculated_hours:.1f} hours/day** "
-                f"based on your care needs."
-            )
-        with col2:
-            # Add "Accept" button to set slider to calculated value
-            if st.session_state.get("qe_home_hours") != calculated_hours:
-                if st.button("✓ Accept", key="accept_calculated_hours", help="Use the calculated hours"):
-                    st.session_state["qe_home_hours"] = calculated_hours
-                    st.session_state.comparison_inhome_hours = calculated_hours
-                    st.session_state.comparison_hours_per_day = calculated_hours
-                    st.rerun()
+    user_band = gcp.get("hours_user_band", "")
+    
+    if calculated_hours and user_band:
+        # Round to nearest 0.5 for cleaner display
+        rounded_calc = round(calculated_hours * 2) / 2
+        
+        # Build contextual message based on user selection vs recommendation
+        band_descriptions = {
+            "<1h": "less than 1 hour",
+            "1-3h": "1-3 hours", 
+            "4-8h": "4-8 hours",
+            "12-16h": "12-16 hours",
+            "24h": "24-hour care"
+        }
+        user_desc = band_descriptions.get(user_band, user_band)
+        
+        st.markdown(
+            f'<div style="background: #f8f9fa; padding: 12px 16px; border-radius: 8px; margin-bottom: 12px; '
+            f'border-left: 3px solid #6c757d;">'
+            f'<span style="color: #495057; font-size: 14px;">'
+            f'You selected <strong>{user_desc}</strong>, but based on your personalized care needs, '
+            f'we recommend <strong>{rounded_calc:.1f} hours/day</strong> for a more realistic estimate.'
+            f'</span>'
+            f'</div>',
+            unsafe_allow_html=True
+        )
     
     # Initialize slider widget key from comparison state (only if not already set)
     if "qe_home_hours" not in st.session_state:
