@@ -135,6 +135,20 @@ def _cleanup_legacy_gcp_state() -> None:
 # Ensure CSS loads once per session (guard now inside inject_css)
 inject_css()
 
+# Force scroll to top on page load (fixes mobile scroll position issue)
+st.markdown(
+    """
+    <script>
+        window.addEventListener('load', function() {
+            window.scrollTo(0, 0);
+        });
+        // Also force immediately in case load event already fired
+        window.scrollTo(0, 0);
+    </script>
+    """,
+    unsafe_allow_html=True
+)
+
 ensure_session()
 _cleanup_legacy_gcp_state()
 
