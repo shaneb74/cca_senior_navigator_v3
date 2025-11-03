@@ -38,10 +38,15 @@ def render():
     if "discovery_learning_viewed" not in st.session_state:
         st.session_state["discovery_learning_viewed"] = True
     
-    # ========================================
-    # HERO SECTION - Clean title with subtitle
-    # ========================================
-    st.markdown('<h1 class="page-title">Welcome to Your Discovery Journey</h1>', unsafe_allow_html=True)
+    # Force narrow layout using columns (like product tile width)
+    # Left spacer | Content (60%) | Right spacer
+    _, col_center, _ = st.columns([1, 3, 1])
+    
+    with col_center:
+        # ========================================
+        # HERO SECTION - Clean title with subtitle
+        # ========================================
+        st.markdown('<h1 class="page-title">Welcome to Your Discovery Journey</h1>', unsafe_allow_html=True)
     st.markdown("""
     <p class="hero-subtitle">Learn how Senior Navigator helps families explore care options and plan confidently for the future.</p>
     """, unsafe_allow_html=True)
@@ -198,7 +203,7 @@ def render():
             st.query_params["page"] = "hub_lobby"
             st.rerun()
     
-    # Render footer
+    # Render footer (outside column for full width)
     render_footer_simple()
 
 
@@ -206,15 +211,6 @@ def _inject_discovery_styles():
     """Inject clean card-based styling matching app aesthetic."""
     st.markdown("""
     <style>
-    /* === Force Narrow Layout (Product Tile Width) === */
-    .main > .block-container {
-        max-width: 750px !important;
-        padding-left: 2rem !important;
-        padding-right: 2rem !important;
-        margin-left: auto !important;
-        margin-right: auto !important;
-    }
-    
     /* === Page Title === */
     .page-title {
         font-size: 2.5rem;

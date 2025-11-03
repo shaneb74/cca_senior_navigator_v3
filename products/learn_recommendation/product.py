@@ -70,8 +70,13 @@ def render():
     # Get user name for personalization
     person_name = st.session_state.get("person_name", "")
     
-    # Hero Title with Subtitle
-    st.markdown('<h1 class="page-title">Understanding Your Care Recommendation</h1>', unsafe_allow_html=True)
+    # Force narrow layout using columns (like product tile width)
+    # Left spacer | Content (60%) | Right spacer
+    _, col_center, _ = st.columns([1, 3, 1])
+    
+    with col_center:
+        # Hero Title with Subtitle
+        st.markdown('<h1 class="page-title">Understanding Your Care Recommendation</h1>', unsafe_allow_html=True)
     st.markdown(f'<p class="hero-subtitle">Let\'s explore what <strong>{tier_display}</strong> means for you.</p>', unsafe_allow_html=True)
     
     # Navi intro box - useful guidance
@@ -193,7 +198,7 @@ def render():
     if "learn_recommendation_viewed" not in st.session_state:
         st.session_state["learn_recommendation_viewed"] = True
     
-    # Render footer
+    # Render footer (outside column for full width)
     render_footer_simple()
 
 
@@ -364,15 +369,6 @@ def _inject_learn_recommendation_styles():
     """Inject Discovery Journey-style CSS for Learn About My Recommendation page."""
     st.markdown("""
     <style>
-    /* === Force Narrow Layout (Product Tile Width) === */
-    .main > .block-container {
-        max-width: 750px !important;
-        padding-left: 2rem !important;
-        padding-right: 2rem !important;
-        margin-left: auto !important;
-        margin-right: auto !important;
-    }
-    
     /* === Global Styles === */
     body, .main {
         font-family: "Inter", "Segoe UI", Roboto, sans-serif;
