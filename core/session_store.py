@@ -421,10 +421,23 @@ def load_user(uid: str) -> dict[str, Any]:
         import streamlit as st
         force_fresh = st.query_params.get("fresh", "").lower() == "true"
 
+        # Check if demo source is newer than working copy (auto-update)
+        demo_is_newer = False
+        if demo_path.exists() and path.exists():
+            try:
+                demo_mtime = demo_path.stat().st_mtime
+                working_mtime = path.stat().st_mtime
+                demo_is_newer = demo_mtime > working_mtime
+                if demo_is_newer:
+                    print(f"[INFO] Demo source is newer than working copy for {uid}, auto-updating")
+            except Exception:
+                pass
+
         # Copy demo profile if:
         # 1. Working copy doesn't exist yet (first load), OR
-        # 2. Fresh load is explicitly requested (?fresh=true)
-        should_copy = demo_path.exists() and (not path.exists() or force_fresh)
+        # 2. Fresh load is explicitly requested (?fresh=true), OR
+        # 3. Demo source file is newer than working copy (auto-update)
+        should_copy = demo_path.exists() and (not path.exists() or force_fresh or demo_is_newer)
 
         if should_copy:
             try:
@@ -433,6 +446,8 @@ def load_user(uid: str) -> dict[str, Any]:
                 shutil.copy2(demo_path, path)
                 if force_fresh:
                     print(f"[INFO] Fresh demo reload for {uid} (fresh=true)")
+                elif demo_is_newer:
+                    print(f"[INFO] Auto-updated working copy from newer demo source for {uid}")
                 else:
                     print(f"[INFO] Created working copy for demo user {uid}")
             except Exception as e:
