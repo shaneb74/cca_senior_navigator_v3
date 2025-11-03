@@ -129,6 +129,15 @@ def _partner_to_tile(
 
 
 def page_partners() -> None:
+    # Load dashboard CSS for consistency
+    st.markdown(
+        f"<style>{open('core/styles/dashboard.css').read()}</style>",
+        unsafe_allow_html=True
+    )
+    
+    # Render header
+    render_header_simple(active_route="partners")
+    
     partners: list[dict[str, Any]] = _load_json(PARTNERS_FILE)
     categories_data: list[dict[str, Any]] = _load_json(CATEGORIES_FILE)
     categories = {entry["id"]: entry for entry in categories_data}
@@ -165,16 +174,20 @@ def page_partners() -> None:
         # Render hub body HTML WITHOUT title/chips (Navi replaces them)
         body_html = render_dashboard_body(
             title=None,
+            subtitle=None,
             chips=None,
             hub_guide_block=None,  # Navi replaces hub guide
+            hub_order=None,
             cards=tiles if tiles else None,
             cards_html=cards_html,
+            additional_services=[],
         )
         st.markdown(body_html, unsafe_allow_html=True)
 
-    # Render with simple header/footer
-    render_header_simple(active_route="hub_trusted")
+    # Render content with Navi
     render_content()
+    
+    # Render footer
     render_footer_simple()
 
 

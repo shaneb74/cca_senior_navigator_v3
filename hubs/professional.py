@@ -73,6 +73,15 @@ def _build_mcip_panel(
 
 
 def render(ctx=None) -> None:
+    # Load dashboard CSS for consistency
+    st.markdown(
+        f"<style>{open('core/styles/dashboard.css').read()}</style>",
+        unsafe_allow_html=True
+    )
+    
+    # Render header
+    render_header_simple(active_route="professional")
+    
     # ============================================================
     # AUTHENTICATION DISABLED FOR DEVELOPMENT TESTING
     # ============================================================
@@ -195,12 +204,16 @@ def render(ctx=None) -> None:
         body_html = render_dashboard_body(
             title=None,
             subtitle=None,
+            chips=None,
             hub_guide_block=None,  # Navi replaces MCIP panel
+            hub_order=None,
             cards=cards,
+            additional_services=[],
         )
         st.markdown(body_html, unsafe_allow_html=True)
 
-    # Render with simple header/footer
-    render_header_simple(active_route="hub_professional")
+    # Render content with Navi
     render_content()
+    
+    # Render footer
     render_footer_simple()

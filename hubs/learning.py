@@ -46,6 +46,15 @@ def _card_to_tile(card: dict[str, any], order: int) -> ProductTileHub:
 
 
 def render(ctx=None) -> None:
+    # Load dashboard CSS for consistency
+    st.markdown(
+        f"<style>{open('core/styles/dashboard.css').read()}</style>",
+        unsafe_allow_html=True
+    )
+    
+    # Render header
+    render_header_simple(active_route="learning")
+    
     person_name = st.session_state.get("person_name", "").strip()
     learning_progress = st.session_state.get("learning_progress", 0)
 
@@ -130,12 +139,14 @@ def render(ctx=None) -> None:
             subtitle=None,
             chips=None,
             hub_guide_block=None,  # Navi replaces hub guide
+            hub_order=None,
             cards=cards,
             additional_services=additional,  # Include in HTML for proper layout
         )
         st.markdown(body_html, unsafe_allow_html=True)
 
-    # Render with simple header/footer
-    render_header_simple(active_route="hub_learning")
+    # Render content with Navi
     render_content()
+    
+    # Render footer
     render_footer_simple()

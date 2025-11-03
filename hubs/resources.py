@@ -23,6 +23,15 @@ __all__ = ["render"]
 
 def render(ctx=None) -> None:
     """Render the Resources Hub with Navi orchestration."""
+    
+    # Load dashboard CSS for consistency
+    st.markdown(
+        f"<style>{open('core/styles/dashboard.css').read()}</style>",
+        unsafe_allow_html=True
+    )
+    
+    # Render header
+    render_header_simple(active_route="resources")
 
     # Initialize MCIP
     MCIP.initialize()
@@ -109,9 +118,10 @@ def render(ctx=None) -> None:
         full_html = (alert_html or "") + body_html
         st.markdown(full_html, unsafe_allow_html=True)
 
-    # Render with simple header/footer
-    render_header_simple(active_route="hub_resources")
+    # Render content with Navi
     render_content()
+    
+    # Render footer
     render_footer_simple()
 
 

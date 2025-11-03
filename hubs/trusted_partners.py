@@ -153,6 +153,18 @@ class TrustedPartnersHub(BaseHub):
 
 
 def render() -> None:
+    # Load dashboard CSS for consistency
+    st.markdown(
+        f"<style>{open('core/styles/dashboard.css').read()}</style>",
+        unsafe_allow_html=True
+    )
+    
+    from ui.header_simple import render_header_simple
+    from ui.footer_simple import render_footer_simple
+    
+    # Render header
+    render_header_simple(active_route="trusted_partners")
+    
     # Build dashboard data
     hub = TrustedPartnersHub()
     dashboard_data = hub.build_dashboard()
@@ -170,15 +182,14 @@ def render() -> None:
             subtitle=None,
             chips=None,
             hub_guide_block=None,  # Navi replaces hub guide/callout
+            hub_order=None,
             cards=dashboard_data.get("cards", []),
-            additional_services=dashboard_data.get("additional_services"),  # Include in HTML
+            additional_services=dashboard_data.get("additional_services", []),  # Include in HTML
         )
         st.markdown(body_html, unsafe_allow_html=True)
 
-    from ui.footer_simple import render_footer_simple
-    from ui.header_simple import render_header_simple
-
-    # Render with simple header/footer
-    render_header_simple(active_route="hub_trusted")
+    # Render content with Navi
     render_content()
+    
+    # Render footer
     render_footer_simple()
