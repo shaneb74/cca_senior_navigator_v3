@@ -2,7 +2,8 @@
 Hours/day suggestion engine (baseline + LLM refinement).
 
 Provides:
-- baseline_hours(): Transparent rule-based suggestion
+- baseline_hours(): Transparent rule-based suggestion (legacy simple thresholds)
+- calculate_baseline_hours_weighted(): Realistic weighted scoring based on actual care tasks
 - generate_hours_advice(): Schema-validated LLM refinement
 """
 import json
@@ -11,6 +12,13 @@ import os
 import streamlit as st
 
 from ai.hours_schemas import HoursAdvice, HoursBand, HoursContext
+from ai.hours_weights import (
+    get_badl_hours,
+    get_iadl_hours,
+    get_cognitive_multiplier,
+    get_fall_risk_multiplier,
+    get_mobility_hours,
+)
 
 try:
     from openai import OpenAI
@@ -18,9 +26,93 @@ except ImportError:
     OpenAI = None
 
 
+def calculate_baseline_hours_weighted(context: HoursContext) -> HoursBand:
+    """
+    Calculate realistic hours/day using weighted scoring system.
+    
+    Uses actual care task times rather than simple thresholds:
+    - BADLs weighted by task/availability time (toileting→2.0h, bathing→0.5h)
+    - IADLs weighted by frequency (medication→0.5h, housekeeping→1.5h)
+    - Cognitive multiplier applied (mild→1.2x, moderate→1.6x, severe→2.2x)
+    - Behavior adjustments added (wandering+0.3h, aggression+0.2h, etc.)
+    - Fall risk multiplier (once→1.1x, multiple→1.3x, frequent→1.5x)
+    - Mobility aid hours added (cane→0.2h, walker→0.5h, wheelchair→1.0h)
+    
+    Returns:
+        HoursBand: "<1h", "1-3h", "4-8h", or "24h"
+    """
+    # Start with base hours from weighted ADL/IADL tasks
+    total_hours = 0.0
+    
+    # Sum BADL hours
+    badl_hours = sum(get_badl_hours(badl) for badl in context.badls_list)
+    print(f"[HOURS_WEIGHTED] BADL hours: {badl_hours:.1f}h from {context.badls_list}")
+    
+    # Sum IADL hours
+    iadl_hours = sum(get_iadl_hours(iadl) for iadl in context.iadls_list)
+    print(f"[HOURS_WEIGHTED] IADL hours: {iadl_hours:.1f}h from {context.iadls_list}")
+    
+    total_hours = badl_hours + iadl_hours
+    
+    # Apply cognitive multiplier (supervision overhead)
+    cognitive_mult = get_cognitive_multiplier(context.cognitive_level)
+    if cognitive_mult > 1.0:
+        print(f"[HOURS_WEIGHTED] Cognitive multiplier: {cognitive_mult}x for {context.cognitive_level}")
+        total_hours *= cognitive_mult
+    
+    # Add behavior-specific hours (cumulative)
+    behavior_hours = 0.0
+    if context.wandering:
+        behavior_hours += 0.3
+        print("[HOURS_WEIGHTED] +0.3h for wandering risk")
+    if context.aggression:
+        behavior_hours += 0.2
+        print("[HOURS_WEIGHTED] +0.2h for aggression management")
+    if context.sundowning:
+        behavior_hours += 0.3
+        print("[HOURS_WEIGHTED] +0.3h for sundowning support")
+    if context.repetitive_questions:
+        behavior_hours += 0.1
+        print("[HOURS_WEIGHTED] +0.1h for cognitive symptom management")
+    
+    total_hours += behavior_hours
+    
+    # Apply fall risk multiplier
+    fall_mult = get_fall_risk_multiplier(context.falls)
+    if fall_mult > 1.0:
+        print(f"[HOURS_WEIGHTED] Fall risk multiplier: {fall_mult}x for {context.falls}")
+        total_hours *= fall_mult
+    
+    # Add mobility aid hours
+    mobility_hours = get_mobility_hours(context.mobility)
+    if mobility_hours > 0:
+        print(f"[HOURS_WEIGHTED] +{mobility_hours}h for {context.mobility} mobility aid")
+        total_hours += mobility_hours
+    
+    # Apply overnight floor if needed
+    if context.overnight_needed and total_hours < 16.0:
+        print(f"[HOURS_WEIGHTED] Overnight floor: {total_hours:.1f}h → 16.0h")
+        total_hours = 16.0
+    
+    print(f"[HOURS_WEIGHTED] Total weighted hours: {total_hours:.1f}h")
+    
+    # Convert to band
+    if total_hours < 2.0:
+        return "<1h"
+    elif total_hours < 4.0:
+        return "1-3h"
+    elif total_hours < 12.0:
+        return "4-8h"
+    else:
+        return "24h"
+
+
 def baseline_hours(context: HoursContext) -> HoursBand:
     """
     Transparent baseline rules for hours/day suggestion.
+    
+    DEPRECATED: Use calculate_baseline_hours_weighted() for more realistic estimates.
+    This function remains as fallback only.
     
     Rules (in priority order):
     1. If overnight_needed OR risky_behaviors: floor at "4-8h" (LLM may escalate to "24h")
@@ -82,23 +174,59 @@ def generate_hours_advice(
         print("[GCP_HOURS_WARN] No OpenAI API key; falling back to baseline only")
         return (False, None)
 
-    # Build prompt
-    baseline = baseline_hours(context)
+    # Build prompt with clinical context
+    baseline = calculate_baseline_hours_weighted(context)
+    
+    # Format ADL/IADL lists for prompt
+    badls_str = ", ".join(context.badls_list) if context.badls_list else "none"
+    iadls_str = ", ".join(context.iadls_list) if context.iadls_list else "none"
+    
+    # Format behavior flags
+    behaviors = []
+    if context.wandering:
+        behaviors.append("wandering/elopement risk")
+    if context.aggression:
+        behaviors.append("aggressive behaviors")
+    if context.sundowning:
+        behaviors.append("sundowning/evening confusion")
+    if context.repetitive_questions:
+        behaviors.append("repetitive questions/behaviors")
+    behaviors_str = ", ".join(behaviors) if behaviors else "none reported"
 
     prompt = f"""You are a care planning assistant helping estimate hours/day of care support needed.
 
 CONTEXT:
-- Basic ADLs needing help: {context.badls_count}/6 (bathing, dressing, toileting, etc.)
-- Instrumental ADLs needing help: {context.iadls_count}/8 (meds, meals, housekeeping, etc.)
+- Basic ADLs needing help: {badls_str}
+  Total count: {context.badls_count}/6
+- Instrumental ADLs needing help: {iadls_str}
+  Total count: {context.iadls_count}/8
+- Cognitive level: {context.cognitive_level or "none"}
+- Specific behaviors: {behaviors_str}
 - Falls history: {context.falls or "unknown"}
 - Mobility: {context.mobility or "unknown"}
-- Risky behaviors (wandering, aggression, etc.): {context.risky_behaviors}
 - Medication complexity: {context.meds_complexity or "unknown"}
 - Primary support: {context.primary_support or "unknown"}
 - Overnight needs: {context.overnight_needed}
 - Current arrangement: {context.current_hours or "none"}
 
-BASELINE SUGGESTION (rule-based): {baseline}
+WEIGHTED BASELINE SUGGESTION: {baseline}
+
+CLINICAL DECISION RULES:
+1. Toileting needs = 24/7 availability (2.0h base, not just task time)
+2. Cognitive supervision overhead:
+   - Mild: 20% more time (prompting, redirection)
+   - Moderate: 60% more time (constant supervision)
+   - Severe: 120% more time (hands-on guidance)
+3. Fall risk = slower pace for all tasks (1.1x-1.5x multiplier)
+4. Wandering = monitoring + redirection (+0.3h)
+5. Aggression = de-escalation + safety (+0.2h)
+6. Overnight needs = minimum 16h (not just task time)
+
+REAL-WORLD EXAMPLES:
+- 2 BADLs (bathing, dressing), no cognitive issues → 1-3h
+- 3 BADLs (bathing, dressing, toileting), mild cognitive → 4-8h  
+- Toileting + moderate dementia + wandering → 4-8h or 24h
+- Multiple BADLs + severe cognitive + overnight → 24h
 
 YOUR TASK:
 Choose ONE band from this EXACT list ONLY:
