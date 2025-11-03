@@ -66,6 +66,7 @@ def render_header_simple(active_route: str | None = None) -> None:
         {"label": "Resources", "route": "hub_resources"},
         {"label": "Trusted Partners", "route": "hub_trusted"},
         {"label": "Professional", "route": "hub_professional"},
+        {"label": "Tools", "route": "testing_tools"},  # Internal testing tools
         {"label": "About Us", "route": "about"},
     ]
 
@@ -80,10 +81,13 @@ def render_header_simple(active_route: str | None = None) -> None:
         is_active = active_route == item["route"]
         active_class = " active" if is_active else ""
         aria_current = ' aria-current="page"' if is_active else ""
+        
+        # Add special class for Tools link
+        special_class = " nav-link--tools" if item["route"] == "testing_tools" else ""
 
         href_with_uid = add_uid_to_href(f"?page={item['route']}")
         nav_links_html.append(
-            f'<a href="{href_with_uid}" class="nav-link{active_class}"{aria_current} target="_self">{item["label"]}</a>'
+            f'<a href="{href_with_uid}" class="nav-link{active_class}{special_class}"{aria_current} target="_self">{item["label"]}</a>'
         )
 
     # Auth section - show login or user menu based on auth state
@@ -195,6 +199,24 @@ def render_header_simple(active_route: str | None = None) -> None:
         .nav-link--login:hover {
           background: linear-gradient(90deg, #1d4ed8, #2563eb) !important;
           color: #ffffff !important;
+        }
+        
+        /* Tools link (testing/internal) */
+        .nav-link--tools {
+          background: rgba(147, 51, 234, 0.08);
+          color: #7c3aed;
+          font-weight: 600;
+        }
+        
+        .nav-link--tools:hover {
+          background: rgba(147, 51, 234, 0.12);
+          color: #6d28d9;
+        }
+        
+        .nav-link--tools.active {
+          background: rgba(147, 51, 234, 0.16);
+          color: #6d28d9;
+          font-weight: 700;
         }
         
         /* Authenticated user display */
