@@ -206,6 +206,13 @@ def _inject_discovery_styles():
     """Inject clean card-based styling matching app aesthetic."""
     st.markdown("""
     <style>
+    /* === Narrow Layout === */
+    .main .block-container {
+        max-width: 900px;
+        padding-left: 2rem;
+        padding-right: 2rem;
+    }
+    
     /* === Page Title === */
     .page-title {
         font-size: 2.5rem;
