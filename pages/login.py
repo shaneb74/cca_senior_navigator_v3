@@ -318,6 +318,10 @@ def _render_login_form():
                 # Switch to Mary's profile (loads data into session_state)
                 switch_user(st.session_state, "demo_mary_memory_care")
                 
+                # Ensure Mary is authenticated (in case auth wasn't in her profile)
+                if "auth" not in st.session_state or not st.session_state["auth"].get("is_authenticated"):
+                    authenticate_user(name="Mary Memory Care", email="mary.memorycare@demo.test")
+                
                 # Save the loaded state before navigating
                 user_data = extract_user_state(st.session_state)
                 save_user("demo_mary_memory_care", user_data)
