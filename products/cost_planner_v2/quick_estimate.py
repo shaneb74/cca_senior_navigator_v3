@@ -767,27 +767,23 @@ def _render_home_card(zip_code: str):
     
     current_hours = st.session_state.get("qe_home_hours", 3.0)
     
-    # DEBUG: Show all values and conditions
-    rounded_calc = round(calculated_hours * 2) / 2 if calculated_hours else 0
-    diff = abs(current_hours - rounded_calc) if calculated_hours else 0
-    
-    st.markdown(f"🔍 **DEBUG**: calculated={calculated_hours}, band={user_band}, current={current_hours}, rounded={rounded_calc}, diff={diff:.2f}, has_decided={has_decided}")
-    st.markdown(f"🔍 **Condition check**: has_calc={bool(calculated_hours)}, has_band={bool(user_band)}, not_decided={not has_decided}, diff>1={diff > 1.0}")
-    
-    print(f"[NAVI_CALLOUT_DEBUG] calculated_hours={calculated_hours}, user_band={user_band}")
-    print(f"[NAVI_CALLOUT_DEBUG] decision_key={decision_key}, has_decided={has_decided}")
-    print(f"[NAVI_CALLOUT_DEBUG] current_hours={current_hours}")
-    
-    # Show Navi callout only if:
-    # 1. We have calculated hours
-    # 2. There's a significant difference (>1 hour)
-    # 3. User hasn't dismissed it yet
+    # Show Navi callout only if user's GCP BAND selection differs significantly from calculated hours
     if calculated_hours and user_band and not has_decided:
+        rounded_calc = round(calculated_hours * 2) / 2
         
-        print(f"[NAVI_CALLOUT_DEBUG] rounded_calc={rounded_calc}, diff={abs(current_hours - rounded_calc)}")
+        # Map user's selected band to its UPPER bound for comparison
+        band_upper_bounds = {
+            "<1h": 1.0,
+            "1-3h": 3.0,
+            "4-8h": 8.0,
+            "12-16h": 16.0,
+            "24h": 24.0
+        }
+        user_band_hours = band_upper_bounds.get(user_band, 3.0)
         
-        # Only show if there's a meaningful difference
-        if abs(current_hours - rounded_calc) > 1.0:
+        # Compare user's BAND selection vs calculated recommendation
+        # Show if there's a significant difference (>2 hours)
+        if abs(user_band_hours - rounded_calc) > 2.0:
             band_descriptions = {
                 "<1h": "less than 1 hour",
                 "1-3h": "1-3 hours", 
