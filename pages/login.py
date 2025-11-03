@@ -24,7 +24,7 @@ def render(ctx=None):
     
     # If already authenticated, redirect to hub
     if is_authenticated():
-        route_to(push=False, page="hub_lobby")
+        route_to("hub_lobby")
         return
     
     # Render header (with "Log In" link active)
@@ -303,7 +303,7 @@ def _render_login_form():
                 use_container_width=True,
                 key="login_guest",
             ):
-                route_to(push=False, page="hub_lobby")
+                route_to("hub_lobby")
         
         with col_demo:
             if st.button(
@@ -321,4 +321,4 @@ def _render_login_form():
         # Back link
         st.markdown("---")
         if st.button("← Back to Welcome", key="login_back", use_container_width=True):
-            route_to(push=False, page="welcome")
+            route_to("welcome")
