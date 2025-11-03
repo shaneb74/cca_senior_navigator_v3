@@ -470,6 +470,12 @@ def _calculate_and_store() -> None:
         gate_enabled = mc_behavior_gate_enabled()
         has_risky_behaviors = cognitive_gate_behaviors_only(answers, flags)
         
+        # Check if interim advice flag was set (MC would be recommended but blocked by no diagnosis)
+        show_interim = st.session_state.get("_show_mc_interim_advice", False)
+        
+        # Capture LLM advice if available (set by derive_outcome when mode is shadow/assist/replace)
+        llm_advice = st.session_state.get("_gcp_llm_advice", None)
+        
         # Store results
         st.session_state.gcp_test_results = {
             "tier": outcome["tier"],
@@ -484,10 +490,15 @@ def _calculate_and_store() -> None:
             "support_band": sup_band,
             "behavior_gate_enabled": gate_enabled,
             "has_risky_behaviors": has_risky_behaviors,
+            "show_interim_advice": show_interim,
+            "llm_advice": llm_advice,  # Include LLM recommendation if available
             "answers": answers,
             "success": True,
             "error": None,
         }
+        
+        # Clear interim flag for next calculation
+        st.session_state.pop("_show_mc_interim_advice", None)
         
     except Exception as e:
         st.session_state.gcp_test_results = {
@@ -513,23 +524,97 @@ def _render_results() -> None:
     
     st.markdown("### 📊 GCP Recommendation Results")
     
-    # Primary Recommendation
-    st.markdown("#### 🎯 Primary Recommendation")
-    
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        tier_display = {
-            "no_care_needed": "No Care Needed",
-            "in_home": "In-Home Care",
-            "assisted_living": "Assisted Living",
-            "memory_care": "Memory Care",
-            "memory_care_high_acuity": "Memory Care (High Acuity)"
+    # Show LLM mode indicator
+    try:
+        from products.gcp_v4.modules.care_recommendation.logic import get_llm_tier_mode
+        llm_mode = get_llm_tier_mode()
+        mode_colors = {
+            "off": "🔴",
+            "shadow": "🟡", 
+            "assist": "🟢",
+            "replace": "🔵"
         }
-        st.metric("Recommended Tier", tier_display.get(results["tier"], results["tier"]))
+        mode_desc = {
+            "off": "LLM disabled - deterministic only",
+            "shadow": "LLM runs but doesn't affect result (logging only)",
+            "assist": "LLM provides advice, deterministic decides",
+            "replace": "LLM recommendation used if valid"
+        }
+        st.info(f"{mode_colors.get(llm_mode, '⚪')} **LLM Mode:** `{llm_mode}` - {mode_desc.get(llm_mode, 'Unknown mode')}")
+    except Exception:
+        pass
+    
+    # Check for interim advice flag
+    show_interim = results.get("show_interim_advice", False)
+    
+    # Interim Advice Banner (when MC would be recommended but no diagnosis)
+    if show_interim:
+        st.markdown(
+            """
+            <div style="background: #fff9e6; border-left: 4px solid #f59e0b; padding: 16px; margin: 16px 0; border-radius: 4px;">
+                <div style="color: #92400e; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">
+                    ⚠️ Interim Recommendation
+                </div>
+                <div style="color: #1f2937; font-weight: 600; margin-bottom: 8px;">
+                    Assisted Living recommended while seeking formal diagnosis
+                </div>
+                <div style="color: #4b5563; font-size: 0.875rem; line-height: 1.5;">
+                    Memory Care communities typically require a confirmed dementia/Alzheimer's diagnosis. 
+                    While arranging an evaluation, <strong>Assisted Living with memory support</strong> can provide 
+                    safety, structure, and continuity.
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+    
+    # Primary Recommendation - Show both Deterministic and LLM
+    st.markdown("#### 🎯 Recommendation Comparison")
+    
+    tier_display = {
+        "no_care_needed": "No Care Needed",
+        "in_home": "In-Home Care",
+        "assisted_living": "Assisted Living",
+        "memory_care": "Memory Care",
+        "memory_care_high_acuity": "Memory Care (High Acuity)"
+    }
+    
+    # Get LLM advice if available
+    llm_advice = results.get("llm_advice")
+    
+    # Show side-by-side comparison
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("**🔢 Deterministic Engine**")
+        st.markdown(f"**Tier:** {tier_display.get(results['tier'], results['tier'])}")
+        st.markdown(f"**Score:** {results['tier_score']} pts")
+        st.markdown(f"**Confidence:** {results['confidence']:.0%}")
+        st.caption("Based on point scoring + gates + tier mapping")
     
     with col2:
-        st.metric("Tier Score", f"{results['tier_score']} pts")
+        st.markdown("**🤖 LLM Recommendation**")
+        if llm_advice:
+            llm_tier = llm_advice.get("tier", "N/A")
+            llm_conf = llm_advice.get("confidence", 0)
+            st.markdown(f"**Tier:** {tier_display.get(llm_tier, llm_tier)}")
+            st.markdown(f"**Confidence:** {llm_conf:.0%}")
+            
+            # Show agreement indicator
+            if llm_tier == results["tier"]:
+                st.success("✅ Agrees with deterministic")
+            else:
+                st.warning(f"⚠️ Disagrees (det: {tier_display.get(results['tier'], results['tier'])})")
+        else:
+            st.info("No LLM recommendation available\n\n(Mode may be 'off' or LLM call failed)")
     
+    # Show detailed metrics below
+    st.markdown("##### Detailed Metrics")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Final Tier", tier_display.get(results["tier"], results["tier"]))
+    with col2:
+        st.metric("Tier Score", f"{results['tier_score']} pts")
     with col3:
         st.metric("Confidence", f"{results['confidence']:.0%}")
     
@@ -594,11 +679,52 @@ def _render_results() -> None:
     st.markdown("---")
     
     # Rationale
-    st.markdown("#### 💡 Rationale")
+    st.markdown("#### 💡 Deterministic Rationale")
     for item in results["rationale"]:
         st.markdown(f"- {item}")
     
     st.markdown("---")
+    
+    # LLM Reasoning (if available)
+    llm_advice = results.get("llm_advice")
+    if llm_advice:
+        st.markdown("#### 🤖 LLM Analysis")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("**📝 Reasons**")
+            reasons = llm_advice.get("reasons", [])
+            if reasons:
+                for reason in reasons:
+                    st.markdown(f"- {reason}")
+            else:
+                st.caption("No reasons provided")
+        
+        with col2:
+            st.markdown("**⚠️ Identified Risks**")
+            risks = llm_advice.get("risks", [])
+            if risks:
+                for risk in risks:
+                    st.markdown(f"- {risk}")
+            else:
+                st.caption("No specific risks identified")
+        
+        # Navi messages (conversational advice)
+        navi_messages = llm_advice.get("navi_messages", [])
+        if navi_messages:
+            st.markdown("**💬 Conversational Advice**")
+            for msg in navi_messages:
+                st.info(msg)
+        
+        # Suggested questions
+        questions = llm_advice.get("questions_next", [])
+        if questions:
+            st.markdown("**❓ Suggested Follow-up Questions**")
+            for q in questions:
+                st.markdown(f"- {q}")
+        
+        st.markdown("---")
     
     # Flags
     if results["flags"]:
