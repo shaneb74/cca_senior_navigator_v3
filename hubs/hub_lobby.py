@@ -972,13 +972,22 @@ def render(ctx=None) -> None:
     # Context chips (empty for now, can be populated with progress)
     context_chips = []
     
-    # Primary action - determine based on what's not completed
-    if not MCIP.is_product_complete("gcp"):
-        primary_action = {"label": "Start Care Plan", "route": "gcp_v4"}
+    # Primary action - determine dynamically based on MCIP journey progression
+    # Journey sequence: Discovery → GCP → Learn Recommendation → Cost Planner → PFMA
+    
+    if not MCIP.is_product_complete("discovery_learning"):
+        primary_action = {"label": "Start Your Discovery Journey", "route": "discovery_learning"}
+    elif not MCIP.is_product_complete("gcp"):
+        primary_action = {"label": "Begin Your Care Plan", "route": "gcp_v4"}
+    elif not MCIP.is_product_complete("learn_recommendation"):
+        primary_action = {"label": "Understand Your Recommendation", "route": "learn_recommendation"}
     elif not MCIP.is_product_complete("cost_planner"):
-        primary_action = {"label": "Calculate Care Costs", "route": "cost_intro"}
+        primary_action = {"label": "Explore Care Costs", "route": "cost_intro"}
+    elif not MCIP.is_product_complete("pfma"):
+        primary_action = {"label": "Connect with an Advisor", "route": "pfma_v3"}
     else:
-        primary_action = {"label": "Explore Resources", "route": "hub_lobby"}
+        # All core journey steps complete
+        primary_action = {"label": "Explore Additional Resources", "route": "hub_lobby"}
     
     # Secondary action - FAQ integrated into NAVI (Phase 4A)
     secondary_action = {"label": "Ask NAVI", "route": "faq"}
