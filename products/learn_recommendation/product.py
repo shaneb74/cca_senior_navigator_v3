@@ -77,122 +77,122 @@ def render():
     with col_center:
         # Hero Title with Subtitle
         st.markdown('<h1 class="page-title">Understanding Your Care Recommendation</h1>', unsafe_allow_html=True)
-    st.markdown(f'<p class="hero-subtitle">Let\'s explore what <strong>{tier_display}</strong> means for you.</p>', unsafe_allow_html=True)
-    
-    # Navi intro box - useful guidance
-    st.markdown(f"""
-    <div class="navi-card">
-        <div class="navi-header">
-            <span class="navi-icon">✨</span>
-            <span class="navi-greeting">Your Personalized Care Recommendation</span>
-        </div>
-        <p class="navi-intro">Based on your Guided Care Plan, we've identified <strong>{tier_display}</strong> as your recommended care level. This video explains what this care level includes, typical costs, and how it supports your specific needs. Watch the video below, then ask me any questions about your recommendation.</p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Get tier-specific video
-    video_id = _get_video_for_tier(care_rec.tier)
-    
-    # Embedded video in card
-    st.markdown(f"""
-    <div class="content-card">
-        <div class="card-header">
-            <span class="card-icon">🎥</span>
-            <h3 class="card-title">Understanding {tier_display}</h3>
-        </div>
-        <div class="card-body">
-            <div class="video-wrapper">
-                <iframe class="video-iframe"
-                    src="https://www.youtube.com/embed/{video_id}"
-                    title="Understanding {tier_display}"
-                    frameborder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowfullscreen>
-                </iframe>
+        st.markdown(f'<p class="hero-subtitle">Let\'s explore what <strong>{tier_display}</strong> means for you.</p>', unsafe_allow_html=True)
+        
+        # Navi intro box - useful guidance
+        st.markdown(f"""
+        <div class="navi-card">
+            <div class="navi-header">
+                <span class="navi-icon">✨</span>
+                <span class="navi-greeting">Your Personalized Care Recommendation</span>
             </div>
-            <p class="video-caption">Learn what {tier_display} includes, typical costs, and how it supports your specific needs.</p>
+            <p class="navi-intro">Based on your Guided Care Plan, we've identified <strong>{tier_display}</strong> as your recommended care level. This video explains what this care level includes, typical costs, and how it supports your specific needs. Watch the video below, then ask me any questions about your recommendation.</p>
         </div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Ask Navi section - FAQ style
-    st.markdown('<h3 class="section-header">Questions About Your Recommendation?</h3>', unsafe_allow_html=True)
-    
-    # Initialize session state for current answer
-    if "learn_rec_current_answer" not in st.session_state:
-        st.session_state.learn_rec_current_answer = None
-    
-    # Quick Questions FIRST - load into text box
-    st.markdown('<p class="quick-label">Common Questions:</p>', unsafe_allow_html=True)
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        if st.button(f"What does {tier_display} include?", use_container_width=True, key="faq_1"):
-            st.session_state.learn_rec_navi_input = f"What does {tier_display} include?"
+        """, unsafe_allow_html=True)
+        
+        # Get tier-specific video
+        video_id = _get_video_for_tier(care_rec.tier)
+        
+        # Embedded video in card
+        st.markdown(f"""
+        <div class="content-card">
+            <div class="card-header">
+                <span class="card-icon">🎥</span>
+                <h3 class="card-title">Understanding {tier_display}</h3>
+            </div>
+            <div class="card-body">
+                <div class="video-wrapper">
+                    <iframe class="video-iframe"
+                        src="https://www.youtube.com/embed/{video_id}"
+                        title="Understanding {tier_display}"
+                        frameborder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowfullscreen>
+                    </iframe>
+                </div>
+                <p class="video-caption">Learn what {tier_display} includes, typical costs, and how it supports your specific needs.</p>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Ask Navi section - FAQ style
+        st.markdown('<h3 class="section-header">Questions About Your Recommendation?</h3>', unsafe_allow_html=True)
+        
+        # Initialize session state for current answer
+        if "learn_rec_current_answer" not in st.session_state:
             st.session_state.learn_rec_current_answer = None
-            st.rerun()
-    
-    with col2:
-        if st.button("How much does this typically cost?", use_container_width=True, key="faq_2"):
-            st.session_state.learn_rec_navi_input = "How much does this typically cost?"
-            st.session_state.learn_rec_current_answer = None
-            st.rerun()
-    
-    st.markdown("<br/>", unsafe_allow_html=True)
-    
-    # Simple text input + Send button
-    col1, col2 = st.columns([5, 1])
-    
-    with col1:
-        navi_query = st.text_input(
-            "Question",
-            placeholder="Type your question here...",
-            key="learn_rec_navi_input",
-            label_visibility="collapsed"
-        )
-    
-    with col2:
-        send_clicked = st.button("Send", type="primary", use_container_width=True, key="learn_rec_send")
-    
-    # Process question
-    if send_clicked and navi_query:
-        # Get contextual response
-        response = _get_navi_response(navi_query, care_rec.tier, tier_display)
-        st.session_state.learn_rec_current_answer = response
-    
-    # Display answer if exists
-    if st.session_state.learn_rec_current_answer:
-        with st.container():
-            st.markdown(f'<div class="navi-answer">{st.session_state.learn_rec_current_answer}</div>', unsafe_allow_html=True)
-    
-    
-    # Closing CTA Section
-    st.markdown("""
-    <div class="content-card completion-card">
-        <div class="card-header">
-            <span class="card-icon">🚀</span>
-            <h3 class="card-title">Ready to Explore Costs?</h3>
+        
+        # Quick Questions FIRST - load into text box
+        st.markdown('<p class="quick-label">Common Questions:</p>', unsafe_allow_html=True)
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            if st.button(f"What does {tier_display} include?", use_container_width=True, key="faq_1"):
+                st.session_state.learn_rec_navi_input = f"What does {tier_display} include?"
+                st.session_state.learn_rec_current_answer = None
+                st.rerun()
+        
+        with col2:
+            if st.button("How much does this typically cost?", use_container_width=True, key="faq_2"):
+                st.session_state.learn_rec_navi_input = "How much does this typically cost?"
+                st.session_state.learn_rec_current_answer = None
+                st.rerun()
+        
+        st.markdown("<br/>", unsafe_allow_html=True)
+        
+        # Simple text input + Send button
+        col1, col2 = st.columns([5, 1])
+        
+        with col1:
+            navi_query = st.text_input(
+                "Question",
+                placeholder="Type your question here...",
+                key="learn_rec_navi_input",
+                label_visibility="collapsed"
+            )
+        
+        with col2:
+            send_clicked = st.button("Send", type="primary", use_container_width=True, key="learn_rec_send")
+        
+        # Process question
+        if send_clicked and navi_query:
+            # Get contextual response
+            response = _get_navi_response(navi_query, care_rec.tier, tier_display)
+            st.session_state.learn_rec_current_answer = response
+        
+        # Display answer if exists
+        if st.session_state.learn_rec_current_answer:
+            with st.container():
+                st.markdown(f'<div class="navi-answer">{st.session_state.learn_rec_current_answer}</div>', unsafe_allow_html=True)
+        
+        
+        # Closing CTA Section
+        st.markdown("""
+        <div class="content-card completion-card">
+            <div class="card-header">
+                <span class="card-icon">🚀</span>
+                <h3 class="card-title">Ready to Explore Costs?</h3>
+            </div>
+            <div class="card-body">
+                <p class="completion-text">Once you've watched the video and understand your care recommendation, you're ready to see detailed cost estimates and explore funding options.</p>
+            </div>
         </div>
-        <div class="card-body">
-            <p class="completion-text">Once you've watched the video and understand your care recommendation, you're ready to see detailed cost estimates and explore funding options.</p>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    col1, col2 = st.columns([1, 1])
-    
-    with col1:
-        if st.button("← Back to Lobby", use_container_width=True, key="return_lobby", type="secondary"):
-            route_to("hub_lobby")
-    
-    with col2:
-        if st.button("Continue to Cost Planner", type="primary", use_container_width=True, key="continue_cost"):
-            # Mark as complete
-            _mark_complete()
-            # Advance to planning phase
-            advance_to("planning")
-            # Navigate to Cost Planner
-            route_to("cost_intro")
+        """, unsafe_allow_html=True)
+        
+        col1, col2 = st.columns([1, 1])
+        
+        with col1:
+            if st.button("← Back to Lobby", use_container_width=True, key="return_lobby", type="secondary"):
+                route_to("hub_lobby")
+        
+        with col2:
+            if st.button("Continue to Cost Planner", type="primary", use_container_width=True, key="continue_cost"):
+                # Mark as complete
+                _mark_complete()
+                # Advance to planning phase
+                advance_to("planning")
+                # Navigate to Cost Planner
+                route_to("cost_intro")
     
     # Mark as viewed
     if "learn_recommendation_viewed" not in st.session_state:

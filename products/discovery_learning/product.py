@@ -47,161 +47,161 @@ def render():
         # HERO SECTION - Clean title with subtitle
         # ========================================
         st.markdown('<h1 class="page-title">Welcome to Your Discovery Journey</h1>', unsafe_allow_html=True)
-    st.markdown("""
-    <p class="hero-subtitle">Learn how Senior Navigator helps families explore care options and plan confidently for the future.</p>
-    """, unsafe_allow_html=True)
-    
-    # ========================================
-    # NAVI PANEL - At the top for guidance
-    # ========================================
-    st.markdown("""
-    <div class="navi-card">
-        <div class="navi-header">
-            <span class="navi-icon">✨</span>
-            <span class="navi-greeting">Here's What You'll Discover</span>
-        </div>
-        <p class="navi-intro">This page introduces you to Senior Navigator's three key tools: the <strong>Guided Care Plan</strong> (assess needs in 5-10 minutes), the <strong>Cost Planner</strong> (estimate expenses and find funding), and <strong>Concierge Services</strong> (connect with verified advisors). Watch the video below, then ask me any questions about getting started.</p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # ========================================
-    # VIDEO CARD - Embedded with description
-    # ========================================
-    st.markdown("""
-    <div class="content-card">
-        <div class="card-header">
-            <span class="card-icon">🎥</span>
-            <h3 class="card-title">How Senior Navigator Works</h3>
-        </div>
-        <div class="card-body">
-            <div class="video-wrapper">
-                <iframe class="video-iframe"
-                    src="https://www.youtube.com/embed/BSJMIRI59b4"
-                    title="Learn About Senior Navigator"
-                    frameborder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowfullscreen>
-                </iframe>
+        st.markdown("""
+        <p class="hero-subtitle">Learn how Senior Navigator helps families explore care options and plan confidently for the future.</p>
+        """, unsafe_allow_html=True)
+        
+        # ========================================
+        # NAVI PANEL - At the top for guidance
+        # ========================================
+        st.markdown("""
+        <div class="navi-card">
+            <div class="navi-header">
+                <span class="navi-icon">✨</span>
+                <span class="navi-greeting">Here's What You'll Discover</span>
             </div>
-            <p class="video-caption">See how the Guided Care Plan and Cost Planner work together to help families make informed decisions.</p>
+            <p class="navi-intro">This page introduces you to Senior Navigator's three key tools: the <strong>Guided Care Plan</strong> (assess needs in 5-10 minutes), the <strong>Cost Planner</strong> (estimate expenses and find funding), and <strong>Concierge Services</strong> (connect with verified advisors). Watch the video below, then ask me any questions about getting started.</p>
         </div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    
-    # ========================================
-    # ASK NAVI - FAQ Style (Compact)
-    # ========================================
-    st.markdown('<h3 class="section-header">Ask Navi a Question</h3>', unsafe_allow_html=True)
-    
-    # Initialize session state for current answer
-    if "discovery_current_answer" not in st.session_state:
-        st.session_state.discovery_current_answer = None
-    
-    # Quick Questions FIRST - load into text box
-    st.markdown('<p class="quick-label">Common Questions:</p>', unsafe_allow_html=True)
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        if st.button("What is the Discovery Journey?", use_container_width=True, key="faq_discovery"):
-            st.session_state.discovery_navi_input = "What is the Discovery Journey?"
-            st.session_state.discovery_current_answer = None
-            st.rerun()
-    
-    with col2:
-        if st.button("How long does it take?", use_container_width=True, key="faq_duration"):
-            st.session_state.discovery_navi_input = "How long does it take?"
-            st.session_state.discovery_current_answer = None
-            st.rerun()
-    
-    with col3:
-        if st.button("What's the Cost Planner?", use_container_width=True, key="faq_cost"):
-            st.session_state.discovery_navi_input = "What's the Cost Planner?"
-            st.session_state.discovery_current_answer = None
-            st.rerun()
-    
-    st.markdown("<br/>", unsafe_allow_html=True)
-    
-    # Simple text input + Send button
-    col1, col2 = st.columns([5, 1])
-    
-    with col1:
-        navi_query = st.text_input(
-            "Question",
-            placeholder="Type your question here...",
-            key="discovery_navi_input",
-            label_visibility="collapsed"
-        )
-    
-    with col2:
-        send_clicked = st.button("Send", type="primary", use_container_width=True, key="discovery_send")
-    
-    # Process question
-    if send_clicked and navi_query:
-        # Simple contextual responses
-        responses = {
-            "discovery": "The Discovery Journey is your introduction to Senior Navigator. It takes about 10-15 minutes and helps you understand what we offer and how I can guide you through your care planning process.",
-            "care plan": "The Guided Care Plan takes about 5-10 minutes. You'll answer questions about daily living, health needs, and safety concerns. I'll be with you every step, explaining what each question means.",
-            "long": "Most families complete the Discovery Journey in 10-15 minutes. The full Guided Care Plan adds another 5-10 minutes. You can always save and come back later.",
-            "cost": "After your care recommendation, you'll access the Cost Planner. It provides detailed estimates for different care types, including in-home care, assisted living, and memory care options.",
-            "path": "The Discovery Journey is your introduction to Senior Navigator. It takes about 10-15 minutes and helps you understand what we offer.",
-        }
+        """, unsafe_allow_html=True)
         
-        # Simple keyword matching
-        response = None
-        query_lower = navi_query.lower()
-        for key, answer in responses.items():
-            if key in query_lower:
-                response = answer
-                break
-        
-        if not response:
-            response = "That's a great question! I'm here to help you understand your care planning journey. Try asking about the Discovery Journey, Care Plan, costs, or how long things take."
-        
-        # Store answer
-        st.session_state.discovery_current_answer = response
-    
-    # Display answer if exists
-    if st.session_state.discovery_current_answer:
-        with st.container():
-            st.markdown(f'<div class="navi-answer">{st.session_state.discovery_current_answer}</div>', unsafe_allow_html=True)
-    
-    st.markdown("<br/>", unsafe_allow_html=True)
-    
-    # ========================================
-    # COMPLETION CARD
-    # ========================================
-    st.markdown("""
-    <div class="content-card completion-card">
-        <div class="card-header">
-            <span class="card-icon">🚀</span>
-            <h3 class="card-title">Ready to Begin?</h3>
+        # ========================================
+        # VIDEO CARD - Embedded with description
+        # ========================================
+        st.markdown("""
+        <div class="content-card">
+            <div class="card-header">
+                <span class="card-icon">🎥</span>
+                <h3 class="card-title">How Senior Navigator Works</h3>
+            </div>
+            <div class="card-body">
+                <div class="video-wrapper">
+                    <iframe class="video-iframe"
+                        src="https://www.youtube.com/embed/BSJMIRI59b4"
+                        title="Learn About Senior Navigator"
+                        frameborder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowfullscreen>
+                    </iframe>
+                </div>
+                <p class="video-caption">See how the Guided Care Plan and Cost Planner work together to help families make informed decisions.</p>
+            </div>
         </div>
-        <div class="card-body">
-            <p class="completion-text">Once you've watched the video and explored your questions, you're ready to start your personalized care planning journey.</p>
+        """, unsafe_allow_html=True)
+        
+        
+        # ========================================
+        # ASK NAVI - FAQ Style (Compact)
+        # ========================================
+        st.markdown('<h3 class="section-header">Ask Navi a Question</h3>', unsafe_allow_html=True)
+        
+        # Initialize session state for current answer
+        if "discovery_current_answer" not in st.session_state:
+            st.session_state.discovery_current_answer = None
+        
+        # Quick Questions FIRST - load into text box
+        st.markdown('<p class="quick-label">Common Questions:</p>', unsafe_allow_html=True)
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            if st.button("What is the Discovery Journey?", use_container_width=True, key="faq_discovery"):
+                st.session_state.discovery_navi_input = "What is the Discovery Journey?"
+                st.session_state.discovery_current_answer = None
+                st.rerun()
+        
+        with col2:
+            if st.button("How long does it take?", use_container_width=True, key="faq_duration"):
+                st.session_state.discovery_navi_input = "How long does it take?"
+                st.session_state.discovery_current_answer = None
+                st.rerun()
+        
+        with col3:
+            if st.button("What's the Cost Planner?", use_container_width=True, key="faq_cost"):
+                st.session_state.discovery_navi_input = "What's the Cost Planner?"
+                st.session_state.discovery_current_answer = None
+                st.rerun()
+        
+        st.markdown("<br/>", unsafe_allow_html=True)
+        
+        # Simple text input + Send button
+        col1, col2 = st.columns([5, 1])
+        
+        with col1:
+            navi_query = st.text_input(
+                "Question",
+                placeholder="Type your question here...",
+                key="discovery_navi_input",
+                label_visibility="collapsed"
+            )
+        
+        with col2:
+            send_clicked = st.button("Send", type="primary", use_container_width=True, key="discovery_send")
+        
+        # Process question
+        if send_clicked and navi_query:
+            # Simple contextual responses
+            responses = {
+                "discovery": "The Discovery Journey is your introduction to Senior Navigator. It takes about 10-15 minutes and helps you understand what we offer and how I can guide you through your care planning process.",
+                "care plan": "The Guided Care Plan takes about 5-10 minutes. You'll answer questions about daily living, health needs, and safety concerns. I'll be with you every step, explaining what each question means.",
+                "long": "Most families complete the Discovery Journey in 10-15 minutes. The full Guided Care Plan adds another 5-10 minutes. You can always save and come back later.",
+                "cost": "After your care recommendation, you'll access the Cost Planner. It provides detailed estimates for different care types, including in-home care, assisted living, and memory care options.",
+                "path": "The Discovery Journey is your introduction to Senior Navigator. It takes about 10-15 minutes and helps you understand what we offer.",
+            }
+            
+            # Simple keyword matching
+            response = None
+            query_lower = navi_query.lower()
+            for key, answer in responses.items():
+                if key in query_lower:
+                    response = answer
+                    break
+            
+            if not response:
+                response = "That's a great question! I'm here to help you understand your care planning journey. Try asking about the Discovery Journey, Care Plan, costs, or how long things take."
+            
+            # Store answer
+            st.session_state.discovery_current_answer = response
+        
+        # Display answer if exists
+        if st.session_state.discovery_current_answer:
+            with st.container():
+                st.markdown(f'<div class="navi-answer">{st.session_state.discovery_current_answer}</div>', unsafe_allow_html=True)
+        
+        st.markdown("<br/>", unsafe_allow_html=True)
+        
+        # ========================================
+        # COMPLETION CARD
+        # ========================================
+        st.markdown("""
+        <div class="content-card completion-card">
+            <div class="card-header">
+                <span class="card-icon">🚀</span>
+                <h3 class="card-title">Ready to Begin?</h3>
+            </div>
+            <div class="card-body">
+                <p class="completion-text">Once you've watched the video and explored your questions, you're ready to start your personalized care planning journey.</p>
+            </div>
         </div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Action Buttons
-    col1, col2 = st.columns([1, 1])
-    
-    with col1:
-        if st.button("← Back to Lobby", use_container_width=True, key="return_lobby", type="secondary"):
-            st.query_params.clear()
-            st.query_params["page"] = "hub_lobby"
-            st.rerun()
-    
-    with col2:
-        if st.button("Complete Discovery Journey", type="primary", use_container_width=True, key="complete_discovery"):
-            # Mark as complete
-            _mark_complete()
-            # Advance to planning phase
-            advance_to("planning")
-            # Navigate back to Lobby
-            st.query_params.clear()
-            st.query_params["page"] = "hub_lobby"
-            st.rerun()
+        """, unsafe_allow_html=True)
+        
+        # Action Buttons
+        col1, col2 = st.columns([1, 1])
+        
+        with col1:
+            if st.button("← Back to Lobby", use_container_width=True, key="return_lobby", type="secondary"):
+                st.query_params.clear()
+                st.query_params["page"] = "hub_lobby"
+                st.rerun()
+        
+        with col2:
+            if st.button("Complete Discovery Journey", type="primary", use_container_width=True, key="complete_discovery"):
+                # Mark as complete
+                _mark_complete()
+                # Advance to planning phase
+                advance_to("planning")
+                # Navigate back to Lobby
+                st.query_params.clear()
+                st.query_params["page"] = "hub_lobby"
+                st.rerun()
     
     # Render footer (outside column for full width)
     render_footer_simple()
