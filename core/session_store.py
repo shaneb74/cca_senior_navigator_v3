@@ -412,8 +412,20 @@ def load_user(uid: str) -> dict[str, Any]:
     """
     path = get_user_path(uid)
 
-    # Check if this is a demo user
-    if is_demo_user(uid):
+    # HARDCODED: Demo Mary always loads from source (data/users/demo/)
+    # This ensures the demo always shows the pristine state for demos
+    # Other demo users follow normal working copy behavior
+    if uid == "demo_mary_memory_care":
+        demo_path = get_demo_path(uid)
+        if demo_path.exists():
+            print(f"[DEMO] Loading Mary demo directly from source: {demo_path}")
+            with _file_lock(demo_path):
+                data = _safe_read(demo_path)
+        else:
+            print(f"[ERROR] Demo Mary source file not found: {demo_path}")
+            data = None
+    # Check if this is a demo user (other demos use working copy)
+    elif is_demo_user(uid):
         demo_path = get_demo_path(uid)
 
         # Check if fresh load is requested via query param
@@ -453,8 +465,12 @@ def load_user(uid: str) -> dict[str, Any]:
             except Exception as e:
                 print(f"[ERROR] Failed to copy demo profile: {e}")
 
-    with _file_lock(path):
-        data = _safe_read(path)
+        with _file_lock(path):
+            data = _safe_read(path)
+    else:
+        # Regular user - load from working directory
+        with _file_lock(path):
+            data = _safe_read(path)
 
     if data is None:
         # Return default empty user
@@ -469,7 +485,6 @@ def load_user(uid: str) -> dict[str, Any]:
             "tiles": {},
         }
 
-    return data
     data["uid"] = uid
     data["last_updated"] = time.time()
     return data
