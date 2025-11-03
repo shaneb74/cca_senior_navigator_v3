@@ -45,7 +45,7 @@ def render():
     # ========================================
     # HERO SECTION - Clean title with subtitle
     # ========================================
-    st.title("Welcome to Your Discovery Journey")
+    st.markdown('<h1 class="page-title">Welcome to Your Discovery Journey</h1>', unsafe_allow_html=True)
     st.markdown("""
     <p class="hero-subtitle">Learn how Senior Navigator helps families explore care options and plan confidently for the future.</p>
     """, unsafe_allow_html=True)
@@ -93,12 +93,17 @@ def render():
     # ========================================
     st.markdown('<h3 class="section-header">Ask Navi a Question</h3>', unsafe_allow_html=True)
     
+    # Initialize session state for current answer
+    if "discovery_current_answer" not in st.session_state:
+        st.session_state.discovery_current_answer = None
+    
     # Simple text input + Send button
     col1, col2 = st.columns([5, 1])
     
     with col1:
         navi_query = st.text_input(
             "Question",
+            value=st.session_state.get("discovery_pending_question", ""),
             placeholder="Type your question here...",
             key="discovery_navi_input",
             label_visibility="collapsed"
@@ -129,28 +134,36 @@ def render():
         if not response:
             response = "That's a great question! I'm here to help you understand your care planning journey. Try asking about the Discovery Journey, Care Plan, costs, or how long things take."
         
-        # Display answer in simple container
-        with st.container():
-            st.markdown(f'<div class="navi-answer">{response}</div>', unsafe_allow_html=True)
+        # Store answer and clear pending question
+        st.session_state.discovery_current_answer = response
+        st.session_state.discovery_pending_question = ""
     
-    # Quick Questions
+    # Display answer if exists
+    if st.session_state.discovery_current_answer:
+        with st.container():
+            st.markdown(f'<div class="navi-answer">{st.session_state.discovery_current_answer}</div>', unsafe_allow_html=True)
+    
+    # Quick Questions - load into text box
     st.markdown('<p class="quick-label">Common Questions:</p>', unsafe_allow_html=True)
     col1, col2, col3 = st.columns(3)
     
     with col1:
         if st.button("What is the Discovery Journey?", use_container_width=True, key="faq_discovery"):
-            with st.container():
-                st.markdown('<div class="navi-answer">The Discovery Journey is your introduction to Senior Navigator. It takes about 10-15 minutes and helps you understand what we offer and how I can guide you through your care planning process.</div>', unsafe_allow_html=True)
+            st.session_state.discovery_pending_question = "What is the Discovery Journey?"
+            st.session_state.discovery_current_answer = None
+            st.rerun()
     
     with col2:
         if st.button("How long does it take?", use_container_width=True, key="faq_duration"):
-            with st.container():
-                st.markdown('<div class="navi-answer">The Guided Care Plan takes about 5-10 minutes. You\'ll answer questions about daily living, health needs, and safety concerns. I\'ll be with you every step, explaining what each question means.</div>', unsafe_allow_html=True)
+            st.session_state.discovery_pending_question = "How long does it take?"
+            st.session_state.discovery_current_answer = None
+            st.rerun()
     
     with col3:
         if st.button("What's the Cost Planner?", use_container_width=True, key="faq_cost"):
-            with st.container():
-                st.markdown('<div class="navi-answer">After your care recommendation, you\'ll access the Cost Planner. It provides detailed estimates for different care types, including in-home care, assisted living, and memory care options.</div>', unsafe_allow_html=True)
+            st.session_state.discovery_pending_question = "What's the Cost Planner?"
+            st.session_state.discovery_current_answer = None
+            st.rerun()
     
     st.markdown("<br/>", unsafe_allow_html=True)
     
@@ -197,6 +210,16 @@ def _inject_discovery_styles():
     """Inject clean card-based styling matching app aesthetic."""
     st.markdown("""
     <style>
+    /* === Page Title === */
+    .page-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #0E1E54;
+        text-align: center;
+        margin: 2rem 0 1rem;
+        line-height: 1.2;
+    }
+    
     /* === Hero Subtitle === */
     .hero-subtitle {
         font-size: 1.1rem;
