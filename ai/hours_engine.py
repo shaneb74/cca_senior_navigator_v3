@@ -33,9 +33,12 @@ def _apply_clinical_rules(context: HoursContext, band: HoursBand, total_hours: f
     These deterministic rules capture clinical judgment patterns:
     1. Toileting assistance requires 24/7 availability (not just task time)
     2. Moderate+ cognitive + multiple risks → escalate for safety
-    3. Overnight needs + other risk factors → strong 24h indicator
+    3. Overnight needs + other risk factors → ensure minimum band
     4. Multiple falls + mobility challenges → escalate for supervision
     5. Complex medication + cognitive impairment → escalate for safety
+    
+    IMPORTANT: Rules only escalate LOW bands. If calculation already places
+    you in 12-16h or 24h, TRUST IT. Don't second-guess the weighted calculation.
     
     Args:
         context: HoursContext with all care signals
@@ -56,11 +59,18 @@ def _apply_clinical_rules(context: HoursContext, band: HoursBand, total_hours: f
     
     original_band = band
     
+    # CRITICAL: If calculation already put us in 12-16h or 24h, TRUST IT
+    # These bands mean the weighted calculation found significant needs
+    if band in ["12-16h", "24h"]:
+        print(f"[HOURS_CLINICAL] Band {band} from calculation - trusting weighted result")
+        return band
+    
     # Rule 1: Toileting requires 24/7 availability (minimum 4-8h)
     if "toileting" in context.badls_list and band in ["<1h", "1-3h"]:
         band = escalate(band, "4-8h", "Toileting assistance requires availability")
     
     # Rule 2: Moderate+ cognitive + safety risks → escalate significantly
+    # Only applies to LOW bands (<1h, 1-3h, 4-8h)
     if context.cognitive_level in ["moderate", "severe", "advanced"]:
         risk_count = sum([
             context.wandering,
@@ -76,26 +86,11 @@ def _apply_clinical_rules(context: HoursContext, band: HoursBand, total_hours: f
             band = escalate(band, "4-8h", f"Moderate+ cognitive with {risk_count} safety risks")
         elif risk_count >= 3 and band == "4-8h":
             band = escalate(band, "12-16h", f"Moderate+ cognitive with {risk_count} major safety risks")
-        elif risk_count >= 4 and band == "12-16h":
-            band = escalate(band, "24h", f"Moderate+ cognitive with {risk_count} critical safety risks")
     
-    # Rule 3: Overnight needs + other indicators → escalate to 12-16h
-    # Only escalate to 24h if VERY high risk (3+ risks AND severe cognitive)
-    if context.overnight_needed:
-        overnight_risks = sum([
-            context.falls in ["multiple", "frequent"],
-            context.wandering or getattr(context, 'elopement', False),
-            context.meds_complexity in ["moderate", "complex"],
-            "toileting" in context.badls_list,
-        ])
-        
-        if overnight_risks >= 1 and band in ["<1h", "1-3h", "4-8h"]:
-            band = escalate(band, "12-16h", f"Overnight needs with {overnight_risks} risk factors")
-        
-        # Only escalate to 24h if severe cognitive + 3+ risks
-        if overnight_risks >= 3 and band == "12-16h":
-            if context.cognitive_level in ["severe", "advanced"]:
-                band = escalate(band, "24h", f"Overnight + severe cognitive + {overnight_risks} critical risks")
+    # Rule 3: Overnight needs → ensure minimum 12-16h
+    # Only escalates if you're BELOW 12-16h
+    if context.overnight_needed and band in ["<1h", "1-3h", "4-8h"]:
+        band = escalate(band, "12-16h", "Overnight care needed")
     
     # Rule 4: Multiple falls + mobility challenges + ADLs → safety escalation
     if context.falls in ["multiple", "frequent"] and context.mobility in ["walker", "wheelchair", "bedbound"]:
