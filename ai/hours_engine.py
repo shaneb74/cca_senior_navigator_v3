@@ -45,7 +45,7 @@ def _apply_clinical_rules(context: HoursContext, band: HoursBand, total_hours: f
     Returns:
         Escalated band if clinical rules apply, otherwise original band
     """
-    _BAND_ORDER = ["<1h", "1-3h", "4-8h", "24h"]
+    _BAND_ORDER = ["<1h", "1-3h", "4-8h", "12-16h", "24h"]
     
     def escalate(current: HoursBand, target: HoursBand, reason: str) -> HoursBand:
         """Helper to escalate band with logging."""
@@ -72,10 +72,12 @@ def _apply_clinical_rules(context: HoursContext, band: HoursBand, total_hours: f
             context.mobility in ["wheelchair", "bedbound"],
         ])
         
-        if risk_count >= 2 and band == "1-3h":
+        if risk_count >= 2 and band in ["<1h", "1-3h"]:
             band = escalate(band, "4-8h", f"Moderate+ cognitive with {risk_count} safety risks")
         elif risk_count >= 3 and band == "4-8h":
-            band = escalate(band, "24h", f"Moderate+ cognitive with {risk_count} major safety risks")
+            band = escalate(band, "12-16h", f"Moderate+ cognitive with {risk_count} major safety risks")
+        elif risk_count >= 4 and band == "12-16h":
+            band = escalate(band, "24h", f"Moderate+ cognitive with {risk_count} critical safety risks")
     
     # Rule 3: Overnight needs + other indicators → strong 24h signal
     if context.overnight_needed:
@@ -86,7 +88,9 @@ def _apply_clinical_rules(context: HoursContext, band: HoursBand, total_hours: f
             "toileting" in context.badls_list,
         ])
         
-        if overnight_risks >= 2 and band in ["<1h", "1-3h", "4-8h"]:
+        if overnight_risks >= 1 and band in ["<1h", "1-3h", "4-8h"]:
+            band = escalate(band, "12-16h", f"Overnight needs with {overnight_risks} risk factors")
+        if overnight_risks >= 2 and band == "12-16h":
             band = escalate(band, "24h", f"Overnight needs with {overnight_risks} additional risks")
     
     # Rule 4: Multiple falls + mobility challenges + ADLs → safety escalation
@@ -180,8 +184,10 @@ def calculate_baseline_hours_weighted(context: HoursContext) -> HoursBand:
         band = "<1h"
     elif total_hours < 4.0:
         band = "1-3h"
-    elif total_hours < 8.0:  # Fixed: was 12.0
+    elif total_hours < 8.0:
         band = "4-8h"
+    elif total_hours < 20.0:  # NEW: Around-the-clock with breaks (12-20h range)
+        band = "12-16h"
     else:
         band = "24h"
     
@@ -338,18 +344,20 @@ REAL-WORLD EXAMPLES:
 
 YOUR TASK:
 Choose ONE band from this EXACT list ONLY:
-- "<1h"   (minimal support, mostly independent, light assistance)
-- "1-3h"  (moderate support, morning/evening routines, some ADL help)
-- "4-8h"  (substantial support, multiple ADLs or significant supervision needs)
-- "24h"   (round-the-clock care, complex medical/cognitive/safety needs)
+- "<1h"    (minimal support, mostly independent, light assistance)
+- "1-3h"   (moderate support, morning/evening routines, some ADL help)
+- "4-8h"   (substantial support, multiple ADLs or significant supervision needs)
+- "12-16h" (around-the-clock with breaks, waking hours + overnight checks)
+- "24h"    (true round-the-clock care, constant supervision required)
 
 DECISION RULES:
 1. Start with the weighted baseline - it already accounts for task times, cognitive multipliers, fall risk
 2. Adjust by ONE step maximum unless clear evidence for larger change
 3. Toileting needs almost always require 4-8h minimum (availability requirement)
-4. Moderate+ cognitive impairment with wandering/aggression → consider 4-8h or 24h
-5. Overnight needs + other risk factors → strong indicator for 24h
+4. Moderate+ cognitive impairment with wandering/aggression → consider 4-8h, 12-16h or 24h
+5. Overnight needs + other risk factors → strong indicator for 12-16h or 24h
 6. Multiple falls + mobility aid + ADLs → likely 4-8h minimum for safety
+7. Use 12-16h for cases needing around-the-clock availability but not constant supervision
 
 RESPONSE FORMAT:
 Provide 2-3 SPECIFIC reasons (be clinical: "toileting requires availability" not "high needs")
@@ -357,7 +365,7 @@ Include confidence 0.0-1.0 based on data completeness and clarity
 
 OUTPUT (JSON only, no other text):
 {{
-  "band": "<1h|1-3h|4-8h|24h>",
+  "band": "<1h|1-3h|4-8h|12-16h|24h>",
   "reasons": ["specific reason 1 with clinical detail", "specific reason 2"],
   "confidence": 0.85
 }}
@@ -394,7 +402,7 @@ CRITICAL: Output ONLY valid JSON. Do not invent band values. Be specific in reas
 
 
 # Band ordering for under-selection detection
-_BAND_ORDER = ["<1h", "1-3h", "4-8h", "24h"]
+_BAND_ORDER = ["<1h", "1-3h", "4-8h", "12-16h", "24h"]
 
 
 def under_selected(user_band: HoursBand | None, suggested: HoursBand) -> bool:
@@ -461,7 +469,7 @@ def generate_hours_nudge_text(
         # Build minimal, guardrailed system prompt (CONCISE VERSION)
         system_prompt = """You are 'Navi', a clinical care planning assistant. Your job is to suggest daily in-home care hours.
 
-Allowed bands ONLY: "<1h", "1-3h", "4-8h", "24h" (exactly 4 options).
+Allowed bands ONLY: "<1h", "1-3h", "4-8h", "12-16h", "24h" (exactly 5 options).
 
 The user has selected a LOWER band than recommended. Write ONE sentence (max ~24 words). No more than one clause. Zero numbers except the target band label. No lists. No second sentence.
 
@@ -473,7 +481,7 @@ RULES:
 - ONE sentence only
 - Max 24 words
 - No prices or financial calculations
-- No new band values (only use the 4 allowed bands)
+- No new band values (only use the 5 allowed bands)
 - No clinical guarantees or medical advice
 - Be firm but supportive and respectful"""
 

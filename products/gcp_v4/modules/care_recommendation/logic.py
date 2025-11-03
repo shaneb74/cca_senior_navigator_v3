@@ -1050,7 +1050,7 @@ def _build_hours_context(answers: dict[str, Any], flags: list[str]) -> Any:
     # Get user's current hours selection (validate it's a valid band)
     import streamlit as st
     current = raw_hours or st.session_state.get("gcp_hours_user_choice")
-    valid_bands = {"<1h", "1-3h", "4-8h", "24h"}
+    valid_bands = {"<1h", "1-3h", "4-8h", "12-16h", "24h"}
     current_hours = current if current in valid_bands else None
     
     # NEW: Get cognitive level from answers (stored as memory_changes in GCP module)
@@ -1282,7 +1282,7 @@ def derive_outcome(
                         "severity": severity,
                     }
                     # Compute under-selected and nudge key strictly by band order
-                    ORDER = ["<1h", "1-3h", "4-8h", "24h"]
+                    ORDER = ["<1h", "1-3h", "4-8h", "12-16h", "24h"]
                     def _band_index(b):
                         try:
                             return ORDER.index(b)
@@ -1347,7 +1347,7 @@ def derive_outcome(
 
                     # Try to get user's current selection
                     raw_hours = answers.get("hours_per_day")
-                    valid_bands = {"<1h", "1-3h", "4-8h", "24h"}
+                    valid_bands = {"<1h", "1-3h", "4-8h", "12-16h", "24h"}
                     user_band = raw_hours if raw_hours in valid_bands else "1-3h"
 
                     # Determine if high cognition + high support (conservative default)

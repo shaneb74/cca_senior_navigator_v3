@@ -74,7 +74,7 @@ def main():
     
     # Test 2: Moderate cognitive + multiple risks
     test_case(
-        "Rule 2: Moderate cognitive + 3 safety risks → 24h",
+        "Rule 2: Moderate cognitive + 3 safety risks → 12-16h",
         HoursContext(
             badls_count=3,
             badls_list=["bathing", "dressing", "toileting"],
@@ -86,12 +86,12 @@ def main():
             falls="multiple",
             mobility="walker",
         ),
-        expected_band="24h"  # Should escalate to 24h due to cognitive + multiple risks
+        expected_band="12-16h"  # Should escalate to 12-16h due to cognitive + multiple risks
     )
     
     # Test 3: Overnight needs + multiple risk factors
     test_case(
-        "Rule 3: Overnight needs + multiple risks → 24h",
+        "Rule 3: Overnight needs + multiple risks → 12-16h",
         HoursContext(
             badls_count=2,
             badls_list=["bathing", "toileting"],
@@ -103,7 +103,7 @@ def main():
             meds_complexity="complex",
             wandering=True,
         ),
-        expected_band="24h"  # Overnight + 3 risks (falls, meds, wandering)
+        expected_band="12-16h"  # Overnight + 3 risks (falls, meds, wandering)
     )
     
     # Test 4: Multiple falls + mobility + ADLs
