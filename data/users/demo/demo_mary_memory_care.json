@@ -1,0 +1,1328 @@
+{
+  "cost_planner_v2_va_benefits": {
+    "va_disability_rating": 60,
+    "va_dependents": "spouse",
+    "va_disability_monthly": 1523.93,
+    "has_va_disability": "yes",
+    "aid_attendance_monthly": 0,
+    "aanda_household_status": "veteran_only",
+    "has_aid_attendance": "no",
+    "va_disability_notes": "",
+    "status": "done",
+    "completed_at": "2025-11-02 19:28:49"
+  },
+  "cost_planner_v2_assets": {
+    "asset_has_partner": "no_partner",
+    "checking_balance": 34000.0,
+    "savings_cds_balance": 50000.0,
+    "cash_on_hand": 0.0,
+    "brokerage_stocks_bonds": 3400.0,
+    "brokerage_mf_etf": 0.0,
+    "brokerage_other": 2800.0,
+    "retirement_traditional": 135000.0,
+    "retirement_roth": 47800.0,
+    "retirement_pension_value": 0.0,
+    "real_estate_total_entered": 0.0,
+    "home_equity_estimate": 235000.0,
+    "real_estate_other": 0.0,
+    "total_debts_entered": 0.0,
+    "primary_residence_mortgage": 45000.0,
+    "other_real_estate_debt": 0.0,
+    "secured_loans": 7500.0,
+    "unsecured_debt": 23000.0,
+    "status": "done",
+    "completed_at": "2025-11-02 19:28:37"
+  },
+  "cost.dual_mode": false,
+  "progress": {},
+  "cost_v2_step": "exit",
+  "flags": {
+    "is_veteran": true,
+    "medicaid_planning_interest": false
+  },
+  "mcip_contracts": {
+    "care_recommendation": {
+      "tier": "assisted_living",
+      "tier_score": 0.0,
+      "tier_rankings": [],
+      "confidence": 0.0,
+      "flags": [
+        {
+          "id": "progress",
+          "label": "Progress",
+          "description": "Care need: progress",
+          "tone": "info",
+          "priority": 99,
+          "cta": null
+        },
+        {
+          "id": "status",
+          "label": "Status",
+          "description": "Care need: status",
+          "tone": "info",
+          "priority": 99,
+          "cta": null
+        },
+        {
+          "id": "age_range",
+          "label": "Age Range",
+          "description": "Care need: age_range",
+          "tone": "info",
+          "priority": 99,
+          "cta": null
+        },
+        {
+          "id": "living_situation",
+          "label": "Living Situation",
+          "description": "Care need: living_situation",
+          "tone": "info",
+          "priority": 99,
+          "cta": null
+        },
+        {
+          "id": "isolation",
+          "label": "Isolation",
+          "description": "Care need: isolation",
+          "tone": "info",
+          "priority": 99,
+          "cta": null
+        },
+        {
+          "id": "flags",
+          "label": "Flags",
+          "description": "Care need: flags",
+          "tone": "info",
+          "priority": 99,
+          "cta": null
+        },
+        {
+          "id": "meds_complexity",
+          "label": "Meds Complexity",
+          "description": "Care need: meds_complexity",
+          "tone": "info",
+          "priority": 99,
+          "cta": null
+        },
+        {
+          "id": "mobility",
+          "label": "Mobility",
+          "description": "Care need: mobility",
+          "tone": "info",
+          "priority": 99,
+          "cta": null
+        },
+        {
+          "id": "falls",
+          "label": "Falls",
+          "description": "Care need: falls",
+          "tone": "info",
+          "priority": 99,
+          "cta": null
+        },
+        {
+          "id": "chronic_conditions",
+          "label": "Chronic Conditions",
+          "description": "Care need: chronic_conditions",
+          "tone": "info",
+          "priority": 99,
+          "cta": null
+        },
+        {
+          "id": "additional_conditions",
+          "label": "Additional Conditions",
+          "description": "Care need: additional_conditions",
+          "tone": "info",
+          "priority": 99,
+          "cta": null
+        },
+        {
+          "id": "memory_changes",
+          "label": "Memory Changes",
+          "description": "Care need: memory_changes",
+          "tone": "info",
+          "priority": 99,
+          "cta": null
+        },
+        {
+          "id": "mood",
+          "label": "Mood",
+          "description": "Care need: mood",
+          "tone": "info",
+          "priority": 99,
+          "cta": null
+        },
+        {
+          "id": "behaviors",
+          "label": "Behaviors",
+          "description": "Care need: behaviors",
+          "tone": "info",
+          "priority": 99,
+          "cta": null
+        },
+        {
+          "id": "help_overall",
+          "label": "Help Overall",
+          "description": "Care need: help_overall",
+          "tone": "info",
+          "priority": 99,
+          "cta": null
+        },
+        {
+          "id": "badls",
+          "label": "Badls",
+          "description": "Care need: badls",
+          "tone": "info",
+          "priority": 99,
+          "cta": null
+        },
+        {
+          "id": "iadls",
+          "label": "Iadls",
+          "description": "Care need: iadls",
+          "tone": "info",
+          "priority": 99,
+          "cta": null
+        },
+        {
+          "id": "hours_per_day",
+          "label": "Hours Per Day",
+          "description": "Care need: hours_per_day",
+          "tone": "info",
+          "priority": 99,
+          "cta": null
+        },
+        {
+          "id": "primary_support",
+          "label": "Primary Support",
+          "description": "Care need: primary_support",
+          "tone": "info",
+          "priority": 99,
+          "cta": null
+        },
+        {
+          "id": "_outcomes",
+          "label": " Outcomes",
+          "description": "Care need: _outcomes",
+          "tone": "info",
+          "priority": 99,
+          "cta": null
+        },
+        {
+          "id": "move_preference",
+          "label": "Move Preference",
+          "description": "Care need: move_preference",
+          "tone": "info",
+          "priority": 99,
+          "cta": null
+        },
+        {
+          "id": "cognitive_dx_confirm",
+          "label": "Cognitive Dx Confirm",
+          "description": "Care need: cognitive_dx_confirm",
+          "tone": "info",
+          "priority": 99,
+          "cta": null
+        }
+      ],
+      "rationale": [],
+      "generated_at": "2025-11-03T01:29:42.038453Z",
+      "version": "4.0.0",
+      "input_snapshot_id": "gcp_v4_anon_20251103_012942",
+      "rule_set": "standard_2025_q4",
+      "next_step": {
+        "product": "cost_planner",
+        "route": "gcp_v4",
+        "label": "Complete Assessment",
+        "reason": "Calculate financial impact of Assisted Living care"
+      },
+      "status": "complete",
+      "last_updated": "2025-11-03T01:29:42.038522Z",
+      "needs_refresh": false,
+      "allowed_tiers": [
+        "assisted_living",
+        "in_home",
+        "none"
+      ],
+      "schema_version": 2
+    },
+    "financial_profile": {
+      "estimated_monthly_cost": 14095.5,
+      "coverage_percentage": 29.257067858536413,
+      "gap_amount": 9971.57,
+      "runway_months": 9,
+      "confidence": 1.0,
+      "generated_at": "2025-11-02T19:31:33.906179",
+      "status": "complete"
+    },
+    "advisor_appointment": null,
+    "journey": {
+      "current_hub": "concierge",
+      "completed_products": [
+        "discovery_learning",
+        "gcp",
+        "cost_planner"
+      ],
+      "unlocked_products": [
+        "gcp",
+        "learn_recommendation",
+        "cost_planner",
+        "pfma"
+      ],
+      "recommended_next": "cost_planner"
+    },
+    "waiting_room": {
+      "advisor_prep_status": "not_started",
+      "trivia_status": "not_started",
+      "current_focus": "advisor_prep"
+    }
+  },
+  "profile": {
+    "person_name": "Mary",
+    "qualifiers": {
+      "is_on_medicaid": false,
+      "is_veteran": true,
+      "is_homeowner": false
+    }
+  },
+  "cost_v2_modules": {
+    "income": {
+      "status": "completed",
+      "progress": 100,
+      "data": {
+        "partner_income_monthly": 0.0,
+        "has_partner": "no_partner",
+        "ss_monthly": 2600.0,
+        "pension_monthly": 0.0,
+        "employment_status": "not_employed",
+        "employment_income": 0.0,
+        "other_income": 0.0,
+        "additional_income_total_entered": 0.0,
+        "annuity_monthly": 0.0,
+        "retirement_distributions_monthly": 0.0,
+        "dividends_interest_monthly": 0.0,
+        "rental_income_monthly": 0.0,
+        "alimony_support_monthly": 0.0,
+        "ltc_insurance_monthly": 0.0,
+        "family_support_monthly": 0.0,
+        "status": "done",
+        "completed_at": "2025-11-02 19:31:06",
+        "shared_finance_notes": "",
+        "total_monthly_income": 2600.0
+      }
+    },
+    "assets": {
+      "status": "completed",
+      "progress": 100,
+      "data": {
+        "asset_has_partner": "no_partner",
+        "checking_balance": 34000.0,
+        "savings_cds_balance": 50000.0,
+        "cash_on_hand": 0.0,
+        "brokerage_stocks_bonds": 3400.0,
+        "brokerage_mf_etf": 0.0,
+        "brokerage_other": 2800.0,
+        "retirement_traditional": 135000.0,
+        "retirement_roth": 47800.0,
+        "retirement_pension_value": 0.0,
+        "real_estate_total_entered": 0.0,
+        "home_equity_estimate": 235000.0,
+        "real_estate_other": 0.0,
+        "total_debts_entered": 0.0,
+        "primary_residence_mortgage": 45000.0,
+        "other_real_estate_debt": 0.0,
+        "secured_loans": 7500.0,
+        "unsecured_debt": 23000.0,
+        "status": "done",
+        "completed_at": "2025-11-02 19:28:37",
+        "cash_liquid_total": 0.0,
+        "brokerage_total": 0.0,
+        "retirement_total": 0.0,
+        "life_insurance_cash_value": 0.0,
+        "liquid_assets_has_loan": false,
+        "primary_residence_has_debt": false,
+        "home_sale_interest": false,
+        "other_real_estate_has_debt": false,
+        "asset_legal_restrictions": "",
+        "asset_debt_notes": "",
+        "asset_liquidity_concerns": "no_concerns",
+        "asset_liquidity_notes": "",
+        "primary_residence_liquidity_window": "under_6_months",
+        "checking_savings": 84000.0,
+        "investment_accounts": 6200.0,
+        "primary_residence_value": 235000.0,
+        "other_real_estate": 0.0,
+        "retirement_accounts_total": 182800.0,
+        "total_asset_value": 508000.0,
+        "total_asset_debt": 75500.0,
+        "net_asset_value": 432500.0
+      }
+    },
+    "va_benefits": {
+      "status": "completed",
+      "progress": 100,
+      "data": {
+        "va_disability_rating": 60,
+        "va_dependents": "spouse",
+        "va_disability_monthly": 1523.93,
+        "has_va_disability": "yes",
+        "aid_attendance_monthly": 0,
+        "aanda_household_status": "veteran_only",
+        "has_aid_attendance": "no",
+        "va_disability_notes": "",
+        "status": "done",
+        "completed_at": "2025-11-02 19:28:49"
+      }
+    }
+  },
+  "cost_planner_v2_income": {
+    "partner_income_monthly": 0,
+    "has_partner": "no_partner",
+    "ss_monthly": 2600.0,
+    "pension_monthly": 0.0,
+    "employment_status": "not_employed",
+    "employment_income": 0.0,
+    "other_income": 0.0,
+    "additional_income_total_entered": 0.0,
+    "annuity_monthly": 0.0,
+    "retirement_distributions_monthly": 0.0,
+    "dividends_interest_monthly": 0.0,
+    "rental_income_monthly": 0.0,
+    "alimony_support_monthly": 0.0,
+    "ltc_insurance_monthly": 0.0,
+    "family_support_monthly": 0.0,
+    "status": "done",
+    "completed_at": "2025-11-02 19:31:06"
+  },
+  "gcp_v4_published": true,
+  "cost_planner_v2_complete": true,
+  "cost_v2_quick_estimate": {
+    "estimate": {
+      "monthly_adjusted": 14095.5,
+      "monthly_total": 16998.0,
+      "care_type": "in_home_care",
+      "selected_plan": "home"
+    }
+  },
+  "cost": {
+    "inputs": {
+      "maintain_home": true,
+      "home_carry": 2700.0,
+      "zip": "98101"
+    },
+    "meta": {
+      "zip_last_update": 1762133450.444732,
+      "hours_advice_cache": {
+        "home_hours_4.0": "It's clear that your loved one has multiple care needs that require attention, and I understand how important it is to ensure they receive the right support. <strong>In-home care can be one of the most significant expenses for families</strong>, so planning for adequate hours can help prevent any unexpected costs down the line; many families in similar situations find that around 4.0 hours a day provides the safe and consistent care their loved ones deserve."
+      },
+      "home_hours_decided_4.0": "accepted"
+    },
+    "assessments_available": {
+      "home": true,
+      "al": true,
+      "mc": false
+    },
+    "selected_assessment": "home",
+    "totals_cache": {
+      "home": 16998.0,
+      "al": 5692.0
+    },
+    "segments_cache": {
+      "al": {
+        "Housing/Room": 5175.0,
+        "Care Services": 517.5
+      },
+      "home": {
+        "Care Services": 15737.471999999996,
+        "Home Carry": 2902.5
+      }
+    },
+    "home_hours_scalar": 12.0,
+    "path_choice": "in_home_care",
+    "monthly_total": 14095.5,
+    "home_carry_monthly": 2902.5,
+    "combined_monthly": 16998.0,
+    "last_totals": {
+      "home": {
+        "care": 14095.5,
+        "carry": 2902.5,
+        "combined": 16998.0
+      },
+      "al": {
+        "care": 5692.0,
+        "carry": 0.0,
+        "combined": 5692.0
+      }
+    },
+    "completed": true
+  },
+  "gcp_care_recommendation": {
+    "progress": 100.0,
+    "status": "done",
+    "age_range": "75_84",
+    "living_situation": "with_spouse_or_partner",
+    "isolation": "somewhat",
+    "flags": {
+      "has_partner": true,
+      "low_access": true,
+      "moderate_dependence": true,
+      "moderate_mobility": true,
+      "moderate_safety_concern": true,
+      "chronic_present": true,
+      "moderate_cognitive_decline": true,
+      "moderate_risk": true,
+      "veteran_aanda_risk": true,
+      "limited_support": true,
+      "high_mobility_dependence": true,
+      "severe_cognitive_risk": true,
+      "cognitive_severe_any": true,
+      "likely_mc_no_dx": true
+    },
+    "meds_complexity": "complex",
+    "mobility": "wheelchair",
+    "falls": "one",
+    "chronic_conditions": [
+      "diabetes",
+      "copd",
+      "arthritis"
+    ],
+    "additional_conditions": [],
+    "memory_changes": "severe",
+    "mood": "okay",
+    "behaviors": [
+      "confusion",
+      "sundowning",
+      "repetitive",
+      "hoarding"
+    ],
+    "help_overall": "some_help",
+    "badls": [
+      "hygiene",
+      "mobility"
+    ],
+    "iadls": [
+      "meal_prep",
+      "housekeeping",
+      "finances",
+      "med_management"
+    ],
+    "hours_per_day": "1-3h",
+    "primary_support": "paid",
+    "_outcomes": {
+      "tier": "assisted_living",
+      "tier_rankings": [
+        [
+          "memory_care_high_acuity",
+          70.0
+        ],
+        [
+          "memory_care",
+          32.0
+        ],
+        [
+          "assisted_living",
+          28.0
+        ],
+        [
+          "in_home",
+          12.5
+        ],
+        [
+          "no_care_needed",
+          4.0
+        ]
+      ],
+      "confidence": 1.0,
+      "flags": [
+        {
+          "id": "progress",
+          "label": "Progress",
+          "description": "Care need: progress",
+          "tone": "info",
+          "priority": 99,
+          "cta": null
+        },
+        {
+          "id": "status",
+          "label": "Status",
+          "description": "Care need: status",
+          "tone": "info",
+          "priority": 99,
+          "cta": null
+        },
+        {
+          "id": "age_range",
+          "label": "Age Range",
+          "description": "Care need: age_range",
+          "tone": "info",
+          "priority": 99,
+          "cta": null
+        },
+        {
+          "id": "living_situation",
+          "label": "Living Situation",
+          "description": "Care need: living_situation",
+          "tone": "info",
+          "priority": 99,
+          "cta": null
+        },
+        {
+          "id": "isolation",
+          "label": "Isolation",
+          "description": "Care need: isolation",
+          "tone": "info",
+          "priority": 99,
+          "cta": null
+        },
+        {
+          "id": "flags",
+          "label": "Flags",
+          "description": "Care need: flags",
+          "tone": "info",
+          "priority": 99,
+          "cta": null
+        },
+        {
+          "id": "meds_complexity",
+          "label": "Meds Complexity",
+          "description": "Care need: meds_complexity",
+          "tone": "info",
+          "priority": 99,
+          "cta": null
+        },
+        {
+          "id": "mobility",
+          "label": "Mobility",
+          "description": "Care need: mobility",
+          "tone": "info",
+          "priority": 99,
+          "cta": null
+        },
+        {
+          "id": "falls",
+          "label": "Falls",
+          "description": "Care need: falls",
+          "tone": "info",
+          "priority": 99,
+          "cta": null
+        },
+        {
+          "id": "chronic_conditions",
+          "label": "Chronic Conditions",
+          "description": "Care need: chronic_conditions",
+          "tone": "info",
+          "priority": 99,
+          "cta": null
+        },
+        {
+          "id": "additional_conditions",
+          "label": "Additional Conditions",
+          "description": "Care need: additional_conditions",
+          "tone": "info",
+          "priority": 99,
+          "cta": null
+        },
+        {
+          "id": "memory_changes",
+          "label": "Memory Changes",
+          "description": "Care need: memory_changes",
+          "tone": "info",
+          "priority": 99,
+          "cta": null
+        },
+        {
+          "id": "mood",
+          "label": "Mood",
+          "description": "Care need: mood",
+          "tone": "info",
+          "priority": 99,
+          "cta": null
+        },
+        {
+          "id": "behaviors",
+          "label": "Behaviors",
+          "description": "Care need: behaviors",
+          "tone": "info",
+          "priority": 99,
+          "cta": null
+        },
+        {
+          "id": "help_overall",
+          "label": "Help Overall",
+          "description": "Care need: help_overall",
+          "tone": "info",
+          "priority": 99,
+          "cta": null
+        },
+        {
+          "id": "badls",
+          "label": "Badls",
+          "description": "Care need: badls",
+          "tone": "info",
+          "priority": 99,
+          "cta": null
+        },
+        {
+          "id": "iadls",
+          "label": "Iadls",
+          "description": "Care need: iadls",
+          "tone": "info",
+          "priority": 99,
+          "cta": null
+        },
+        {
+          "id": "hours_per_day",
+          "label": "Hours Per Day",
+          "description": "Care need: hours_per_day",
+          "tone": "info",
+          "priority": 99,
+          "cta": null
+        },
+        {
+          "id": "primary_support",
+          "label": "Primary Support",
+          "description": "Care need: primary_support",
+          "tone": "info",
+          "priority": 99,
+          "cta": null
+        },
+        {
+          "id": "_outcomes",
+          "label": " Outcomes",
+          "description": "Care need: _outcomes",
+          "tone": "info",
+          "priority": 99,
+          "cta": null
+        },
+        {
+          "id": "move_preference",
+          "label": "Move Preference",
+          "description": "Care need: move_preference",
+          "tone": "info",
+          "priority": 99,
+          "cta": null
+        },
+        {
+          "id": "cognitive_dx_confirm",
+          "label": "Cognitive Dx Confirm",
+          "description": "Care need: cognitive_dx_confirm",
+          "tone": "info",
+          "priority": 99,
+          "cta": null
+        }
+      ],
+      "allowed_tiers": [
+        "assisted_living",
+        "in_home",
+        "none"
+      ],
+      "rationale": [
+        "Based on 28 points, we recommend: Assisted Living",
+        "Daily Living: 10 points",
+        "  â€¢ Paid caregiver",
+        "Medication Mobility: 9 points",
+        "  â€¢ Complex â€“ many meds or caregiver-managed",
+        "Cognition Mental Health: 8 points"
+      ]
+    },
+    "move_preference": "2",
+    "cognitive_dx_confirm": "dx_no"
+  },
+  "gcp": {
+    "published_tier": "assisted_living",
+    "allowed_tiers": [
+      "assisted_living",
+      "in_home",
+      "none"
+    ],
+    "flags": [
+      {
+        "id": "progress",
+        "label": "Progress",
+        "description": "Care need: progress",
+        "tone": "info",
+        "priority": 99,
+        "cta": null
+      },
+      {
+        "id": "status",
+        "label": "Status",
+        "description": "Care need: status",
+        "tone": "info",
+        "priority": 99,
+        "cta": null
+      },
+      {
+        "id": "age_range",
+        "label": "Age Range",
+        "description": "Care need: age_range",
+        "tone": "info",
+        "priority": 99,
+        "cta": null
+      },
+      {
+        "id": "living_situation",
+        "label": "Living Situation",
+        "description": "Care need: living_situation",
+        "tone": "info",
+        "priority": 99,
+        "cta": null
+      },
+      {
+        "id": "isolation",
+        "label": "Isolation",
+        "description": "Care need: isolation",
+        "tone": "info",
+        "priority": 99,
+        "cta": null
+      },
+      {
+        "id": "flags",
+        "label": "Flags",
+        "description": "Care need: flags",
+        "tone": "info",
+        "priority": 99,
+        "cta": null
+      },
+      {
+        "id": "meds_complexity",
+        "label": "Meds Complexity",
+        "description": "Care need: meds_complexity",
+        "tone": "info",
+        "priority": 99,
+        "cta": null
+      },
+      {
+        "id": "mobility",
+        "label": "Mobility",
+        "description": "Care need: mobility",
+        "tone": "info",
+        "priority": 99,
+        "cta": null
+      },
+      {
+        "id": "falls",
+        "label": "Falls",
+        "description": "Care need: falls",
+        "tone": "info",
+        "priority": 99,
+        "cta": null
+      },
+      {
+        "id": "chronic_conditions",
+        "label": "Chronic Conditions",
+        "description": "Care need: chronic_conditions",
+        "tone": "info",
+        "priority": 99,
+        "cta": null
+      },
+      {
+        "id": "additional_conditions",
+        "label": "Additional Conditions",
+        "description": "Care need: additional_conditions",
+        "tone": "info",
+        "priority": 99,
+        "cta": null
+      },
+      {
+        "id": "memory_changes",
+        "label": "Memory Changes",
+        "description": "Care need: memory_changes",
+        "tone": "info",
+        "priority": 99,
+        "cta": null
+      },
+      {
+        "id": "mood",
+        "label": "Mood",
+        "description": "Care need: mood",
+        "tone": "info",
+        "priority": 99,
+        "cta": null
+      },
+      {
+        "id": "behaviors",
+        "label": "Behaviors",
+        "description": "Care need: behaviors",
+        "tone": "info",
+        "priority": 99,
+        "cta": null
+      },
+      {
+        "id": "help_overall",
+        "label": "Help Overall",
+        "description": "Care need: help_overall",
+        "tone": "info",
+        "priority": 99,
+        "cta": null
+      },
+      {
+        "id": "badls",
+        "label": "Badls",
+        "description": "Care need: badls",
+        "tone": "info",
+        "priority": 99,
+        "cta": null
+      },
+      {
+        "id": "iadls",
+        "label": "Iadls",
+        "description": "Care need: iadls",
+        "tone": "info",
+        "priority": 99,
+        "cta": null
+      },
+      {
+        "id": "hours_per_day",
+        "label": "Hours Per Day",
+        "description": "Care need: hours_per_day",
+        "tone": "info",
+        "priority": 99,
+        "cta": null
+      },
+      {
+        "id": "primary_support",
+        "label": "Primary Support",
+        "description": "Care need: primary_support",
+        "tone": "info",
+        "priority": 99,
+        "cta": null
+      },
+      {
+        "id": "_outcomes",
+        "label": " Outcomes",
+        "description": "Care need: _outcomes",
+        "tone": "info",
+        "priority": 99,
+        "cta": null
+      },
+      {
+        "id": "move_preference",
+        "label": "Move Preference",
+        "description": "Care need: move_preference",
+        "tone": "info",
+        "priority": 99,
+        "cta": null
+      },
+      {
+        "id": "cognitive_dx_confirm",
+        "label": "Cognitive Dx Confirm",
+        "description": "Care need: cognitive_dx_confirm",
+        "tone": "info",
+        "priority": 99,
+        "cta": null
+      }
+    ],
+    "rankings": [
+      [
+        "memory_care_high_acuity",
+        70.0
+      ],
+      [
+        "memory_care",
+        32.0
+      ],
+      [
+        "assisted_living",
+        28.0
+      ],
+      [
+        "in_home",
+        12.5
+      ],
+      [
+        "no_care_needed",
+        4.0
+      ]
+    ],
+    "rationale": [
+      "Based on 28 points, we recommend: Assisted Living",
+      "Daily Living: 10 points",
+      "  â€¢ Paid caregiver",
+      "Medication Mobility: 9 points",
+      "  â€¢ Complex â€“ many meds or caregiver-managed",
+      "Cognition Mental Health: 8 points"
+    ],
+    "confidence": 1.0,
+    "advisory_meta": {},
+    "summary_ready": true,
+    "final_tier": "assisted_living",
+    "recommended_tier": "assisted_living",
+    "deterministic_tier": "assisted_living",
+    "move_required": true
+  },
+  "cost_v2_qualifiers": {
+    "is_on_medicaid": false,
+    "is_veteran": true,
+    "is_homeowner": false
+  },
+  "preferences": {},
+  "auth": {
+    "user_id": "demo_mary_memory_care",
+    "is_authenticated": true,
+    "role": "user",
+    "name": "Mary Memory Care",
+    "email": "mary.memorycare@demo.test"
+  },
+  "tiles": {
+    "gcp_v4": {
+      "progress": 100.0,
+      "status": "done",
+      "last_step": 6,
+      "saved_state": {
+        "progress": 83.3,
+        "status": "doing",
+        "age_range": "75_84",
+        "living_situation": "with_spouse_or_partner",
+        "isolation": "somewhat",
+        "flags": {
+          "has_partner": true,
+          "low_access": true,
+          "moderate_dependence": true,
+          "moderate_mobility": true,
+          "moderate_safety_concern": true,
+          "chronic_present": true,
+          "moderate_cognitive_decline": true,
+          "moderate_risk": true,
+          "veteran_aanda_risk": true,
+          "limited_support": true,
+          "high_mobility_dependence": true,
+          "severe_cognitive_risk": true,
+          "cognitive_severe_any": true,
+          "likely_mc_no_dx": true
+        },
+        "meds_complexity": "complex",
+        "mobility": "wheelchair",
+        "falls": "one",
+        "chronic_conditions": [
+          "diabetes",
+          "copd",
+          "arthritis"
+        ],
+        "additional_conditions": [],
+        "memory_changes": "severe",
+        "mood": "okay",
+        "behaviors": [
+          "confusion",
+          "sundowning",
+          "repetitive",
+          "hoarding"
+        ],
+        "help_overall": "some_help",
+        "badls": [
+          "hygiene",
+          "mobility"
+        ],
+        "iadls": [
+          "meal_prep",
+          "housekeeping",
+          "finances",
+          "med_management"
+        ],
+        "hours_per_day": "1-3h",
+        "primary_support": "paid",
+        "_outcomes": {
+          "tier": "assisted_living",
+          "tier_rankings": [
+            [
+              "memory_care_high_acuity",
+              70.0
+            ],
+            [
+              "memory_care",
+              32.0
+            ],
+            [
+              "assisted_living",
+              28.0
+            ],
+            [
+              "in_home",
+              12.5
+            ],
+            [
+              "no_care_needed",
+              4.0
+            ]
+          ],
+          "confidence": 1.0,
+          "flags": [
+            {
+              "id": "progress",
+              "label": "Progress",
+              "description": "Care need: progress",
+              "tone": "info",
+              "priority": 99,
+              "cta": null
+            },
+            {
+              "id": "status",
+              "label": "Status",
+              "description": "Care need: status",
+              "tone": "info",
+              "priority": 99,
+              "cta": null
+            },
+            {
+              "id": "age_range",
+              "label": "Age Range",
+              "description": "Care need: age_range",
+              "tone": "info",
+              "priority": 99,
+              "cta": null
+            },
+            {
+              "id": "living_situation",
+              "label": "Living Situation",
+              "description": "Care need: living_situation",
+              "tone": "info",
+              "priority": 99,
+              "cta": null
+            },
+            {
+              "id": "isolation",
+              "label": "Isolation",
+              "description": "Care need: isolation",
+              "tone": "info",
+              "priority": 99,
+              "cta": null
+            },
+            {
+              "id": "flags",
+              "label": "Flags",
+              "description": "Care need: flags",
+              "tone": "info",
+              "priority": 99,
+              "cta": null
+            },
+            {
+              "id": "meds_complexity",
+              "label": "Meds Complexity",
+              "description": "Care need: meds_complexity",
+              "tone": "info",
+              "priority": 99,
+              "cta": null
+            },
+            {
+              "id": "mobility",
+              "label": "Mobility",
+              "description": "Care need: mobility",
+              "tone": "info",
+              "priority": 99,
+              "cta": null
+            },
+            {
+              "id": "falls",
+              "label": "Falls",
+              "description": "Care need: falls",
+              "tone": "info",
+              "priority": 99,
+              "cta": null
+            },
+            {
+              "id": "chronic_conditions",
+              "label": "Chronic Conditions",
+              "description": "Care need: chronic_conditions",
+              "tone": "info",
+              "priority": 99,
+              "cta": null
+            },
+            {
+              "id": "additional_conditions",
+              "label": "Additional Conditions",
+              "description": "Care need: additional_conditions",
+              "tone": "info",
+              "priority": 99,
+              "cta": null
+            },
+            {
+              "id": "memory_changes",
+              "label": "Memory Changes",
+              "description": "Care need: memory_changes",
+              "tone": "info",
+              "priority": 99,
+              "cta": null
+            },
+            {
+              "id": "mood",
+              "label": "Mood",
+              "description": "Care need: mood",
+              "tone": "info",
+              "priority": 99,
+              "cta": null
+            },
+            {
+              "id": "behaviors",
+              "label": "Behaviors",
+              "description": "Care need: behaviors",
+              "tone": "info",
+              "priority": 99,
+              "cta": null
+            },
+            {
+              "id": "help_overall",
+              "label": "Help Overall",
+              "description": "Care need: help_overall",
+              "tone": "info",
+              "priority": 99,
+              "cta": null
+            },
+            {
+              "id": "badls",
+              "label": "Badls",
+              "description": "Care need: badls",
+              "tone": "info",
+              "priority": 99,
+              "cta": null
+            },
+            {
+              "id": "iadls",
+              "label": "Iadls",
+              "description": "Care need: iadls",
+              "tone": "info",
+              "priority": 99,
+              "cta": null
+            },
+            {
+              "id": "hours_per_day",
+              "label": "Hours Per Day",
+              "description": "Care need: hours_per_day",
+              "tone": "info",
+              "priority": 99,
+              "cta": null
+            },
+            {
+              "id": "primary_support",
+              "label": "Primary Support",
+              "description": "Care need: primary_support",
+              "tone": "info",
+              "priority": 99,
+              "cta": null
+            },
+            {
+              "id": "_outcomes",
+              "label": " Outcomes",
+              "description": "Care need: _outcomes",
+              "tone": "info",
+              "priority": 99,
+              "cta": null
+            },
+            {
+              "id": "move_preference",
+              "label": "Move Preference",
+              "description": "Care need: move_preference",
+              "tone": "info",
+              "priority": 99,
+              "cta": null
+            },
+            {
+              "id": "cognitive_dx_confirm",
+              "label": "Cognitive Dx Confirm",
+              "description": "Care need: cognitive_dx_confirm",
+              "tone": "info",
+              "priority": 99,
+              "cta": null
+            }
+          ],
+          "allowed_tiers": [
+            "assisted_living",
+            "in_home",
+            "none"
+          ],
+          "rationale": [
+            "Based on 28 points, we recommend: Assisted Living",
+            "Daily Living: 10 points",
+            "  â€¢ Paid caregiver",
+            "Medication Mobility: 9 points",
+            "  â€¢ Complex â€“ many meds or caregiver-managed",
+            "Cognition Mental Health: 8 points"
+          ]
+        },
+        "move_preference": "2",
+        "cognitive_dx_confirm": "dx_no"
+      }
+    },
+    "cost_planner_v2": {
+      "assessments": {
+        "income": {
+          "partner_income_monthly": 0.0,
+          "has_partner": "no_partner",
+          "ss_monthly": 2600.0,
+          "pension_monthly": 0.0,
+          "employment_status": "not_employed",
+          "employment_income": 0.0,
+          "other_income": 0.0,
+          "additional_income_total_entered": 0.0,
+          "annuity_monthly": 0.0,
+          "retirement_distributions_monthly": 0.0,
+          "dividends_interest_monthly": 0.0,
+          "rental_income_monthly": 0.0,
+          "alimony_support_monthly": 0.0,
+          "ltc_insurance_monthly": 0.0,
+          "family_support_monthly": 0.0,
+          "status": "done",
+          "completed_at": "2025-11-02 19:31:06",
+          "shared_finance_notes": "",
+          "total_monthly_income": 2600.0
+        },
+        "assets": {
+          "asset_has_partner": "no_partner",
+          "checking_balance": 34000.0,
+          "savings_cds_balance": 50000.0,
+          "cash_on_hand": 0.0,
+          "brokerage_stocks_bonds": 3400.0,
+          "brokerage_mf_etf": 0.0,
+          "brokerage_other": 2800.0,
+          "retirement_traditional": 135000.0,
+          "retirement_roth": 47800.0,
+          "retirement_pension_value": 0.0,
+          "real_estate_total_entered": 0.0,
+          "home_equity_estimate": 235000.0,
+          "real_estate_other": 0.0,
+          "total_debts_entered": 0.0,
+          "primary_residence_mortgage": 45000.0,
+          "other_real_estate_debt": 0.0,
+          "secured_loans": 7500.0,
+          "unsecured_debt": 23000.0,
+          "status": "done",
+          "completed_at": "2025-11-02 19:28:37",
+          "cash_liquid_total": 0.0,
+          "brokerage_total": 0.0,
+          "retirement_total": 0.0,
+          "life_insurance_cash_value": 0.0,
+          "liquid_assets_has_loan": false,
+          "primary_residence_has_debt": false,
+          "home_sale_interest": false,
+          "other_real_estate_has_debt": false,
+          "asset_legal_restrictions": "",
+          "asset_debt_notes": "",
+          "asset_liquidity_concerns": "no_concerns",
+          "asset_liquidity_notes": "",
+          "primary_residence_liquidity_window": "under_6_months",
+          "checking_savings": 84000.0,
+          "investment_accounts": 6200.0,
+          "primary_residence_value": 235000.0,
+          "other_real_estate": 0.0,
+          "retirement_accounts_total": 182800.0,
+          "total_asset_value": 508000.0,
+          "total_asset_debt": 75500.0,
+          "net_asset_value": 432500.0
+        },
+        "va_benefits": {
+          "va_disability_rating": 60,
+          "va_dependents": "spouse",
+          "va_disability_monthly": 1523.93,
+          "has_va_disability": "yes",
+          "aid_attendance_monthly": 0,
+          "aanda_household_status": "veteran_only",
+          "has_aid_attendance": "no",
+          "va_disability_notes": "",
+          "status": "done",
+          "completed_at": "2025-11-02 19:28:49"
+        }
+      }
+    }
+  },
+  "uid": "demo_mary_memory_care",
+  "last_updated": 1762133658.381866,
+  "created_at": 1762133658.381867
+}
