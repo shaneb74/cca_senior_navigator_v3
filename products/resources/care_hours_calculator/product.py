@@ -130,10 +130,18 @@ def _render_input_form() -> None:
     with col2:
         st.caption("GCP field: `behaviors` (multi-select)")
         st.markdown("**Challenging Behaviors**")
-        st.session_state.calc_wandering = st.checkbox("🚶 Wandering", value=st.session_state.get("calc_wandering", False), key="calc_behav_wander")
-        st.session_state.calc_aggression = st.checkbox("😤 Aggression", value=st.session_state.get("calc_aggression", False), key="calc_behav_aggr")
-        st.session_state.calc_sundowning = st.checkbox("🌙 Sundowning", value=st.session_state.get("calc_sundowning", False), key="calc_behav_sun")
-        st.session_state.calc_repetitive = st.checkbox("🔁 Repetitive questioning", value=st.session_state.get("calc_repetitive", False), key="calc_behav_rep")
+        col2a, col2b = st.columns(2)
+        with col2a:
+            st.session_state.calc_wandering = st.checkbox("🚶 Wandering", value=st.session_state.get("calc_wandering", False), key="calc_behav_wander")
+            st.session_state.calc_aggression = st.checkbox("😤 Aggression", value=st.session_state.get("calc_aggression", False), key="calc_behav_aggr")
+            st.session_state.calc_elopement = st.checkbox("🚪 Elopement", value=st.session_state.get("calc_elopement", False), key="calc_behav_elope")
+            st.session_state.calc_confusion = st.checkbox("❓ Confusion", value=st.session_state.get("calc_confusion", False), key="calc_behav_conf")
+            st.session_state.calc_sundowning = st.checkbox("🌙 Sundowning", value=st.session_state.get("calc_sundowning", False), key="calc_behav_sun")
+        with col2b:
+            st.session_state.calc_repetitive = st.checkbox("🔁 Repetitive questioning", value=st.session_state.get("calc_repetitive", False), key="calc_behav_rep")
+            st.session_state.calc_judgment = st.checkbox("⚖️ Poor judgment", value=st.session_state.get("calc_judgment", False), key="calc_behav_judg")
+            st.session_state.calc_hoarding = st.checkbox("📦 Hoarding", value=st.session_state.get("calc_hoarding", False), key="calc_behav_hoard")
+            st.session_state.calc_sleep = st.checkbox("😴 Sleep disturbances", value=st.session_state.get("calc_sleep", False), key="calc_behav_sleep")
     
     st.markdown("---")
     
@@ -178,6 +186,34 @@ def _render_input_form() -> None:
     
     st.markdown("---")
     
+    # Advisor Estimate (for model training comparison)
+    st.markdown("**💡 Advisor Estimate** *(Optional - for model training)*")
+    st.caption("Your professional judgment helps us improve the model")
+    col1, col2 = st.columns([1, 2])
+    
+    with col1:
+        st.session_state.calc_advisor_hours = st.number_input(
+            "Hours per day you recommend",
+            min_value=0.0,
+            max_value=24.0,
+            value=st.session_state.get("calc_advisor_hours", 0.0),
+            step=0.5,
+            help="Enter your professional estimate (leave 0 if not providing)",
+            key="calc_adv_hours"
+        )
+    
+    with col2:
+        st.session_state.calc_advisor_rationale = st.text_area(
+            "Why this estimate? (reasoning)",
+            value=st.session_state.get("calc_advisor_rationale", ""),
+            placeholder="e.g., 'Based on similar cases, family support available, wandering requires constant supervision...'",
+            height=100,
+            help="Explain your reasoning - this helps train the model",
+            key="calc_adv_reason"
+        )
+    
+    st.markdown("---")
+    
     # Action buttons
     col1, col2 = st.columns(2)
     with col1:
@@ -212,12 +248,21 @@ def _clear_form() -> None:
     st.session_state.calc_memory_changes = "no_concerns"
     st.session_state.calc_wandering = False
     st.session_state.calc_aggression = False
+    st.session_state.calc_elopement = False
+    st.session_state.calc_confusion = False
     st.session_state.calc_sundowning = False
     st.session_state.calc_repetitive = False
+    st.session_state.calc_judgment = False
+    st.session_state.calc_hoarding = False
+    st.session_state.calc_sleep = False
     
     # Safety & Mobility (GCP structure)
     st.session_state.calc_falls = "none"
     st.session_state.calc_mobility_aid = "independent"
+    
+    # Advisor Estimate
+    st.session_state.calc_advisor_hours = 0.0
+    st.session_state.calc_advisor_rationale = ""
     
     # Clear results
     if "calc_results" in st.session_state:
@@ -364,6 +409,8 @@ def _calculate_and_store() -> None:
         "llm_error": llm_error,
         "agreement": baseline_band == llm_band if llm_band else None,
         "context": context,
+        "advisor_hours": st.session_state.get("calc_advisor_hours", 0.0),
+        "advisor_rationale": st.session_state.get("calc_advisor_rationale", ""),
     }
     
     st.rerun()
@@ -425,6 +472,29 @@ def _render_results() -> None:
     
     st.markdown("---")
     
+    # Advisor Estimate (if provided)
+    if results.get("advisor_hours", 0.0) > 0:
+        st.markdown("#### 💡 Advisor Estimate")
+        
+        col1, col2 = st.columns([1, 2])
+        with col1:
+            st.metric("Advisor Hours", f"{results['advisor_hours']}h")
+            
+            # Comparison with baseline
+            diff = results['advisor_hours'] - results['baseline_hours']
+            if abs(diff) < 1:
+                st.success("✅ Close to baseline")
+            elif diff > 0:
+                st.warning(f"⬆️ +{diff:.1f}h above baseline")
+            else:
+                st.warning(f"⬇️ {diff:.1f}h below baseline")
+        
+        with col2:
+            st.markdown("**Advisor Rationale:**")
+            st.info(results['advisor_rationale'] if results['advisor_rationale'] else "_No rationale provided_")
+    
+    st.markdown("---")
+    
     # Action buttons
     col1, col2 = st.columns(2)
     with col1:
@@ -474,6 +544,12 @@ Confidence: {f"{results['llm_confidence']:.0%}" if results['llm_confidence'] els
 Agreement: {'Yes' if results['agreement'] else 'No' if results['agreement'] is not None else 'N/A'}
 Reasoning:
 {chr(10).join(f'  {i}. {r}' for i, r in enumerate(results['llm_reasons'], 1)) if results['llm_reasons'] else '  N/A'}
+
+ADVISOR ESTIMATE:
+----------------
+Hours: {results.get('advisor_hours', 0.0)}h
+Rationale: {results.get('advisor_rationale', 'Not provided')}
+Difference from Baseline: {results.get('advisor_hours', 0) - results['baseline_hours']:.1f}h
 """
     
     # Show in text area for copying
@@ -567,22 +643,40 @@ def _save_test_case_with_notes(notes: str) -> None:
         "inputs": {
             "badls": context.badls_list,
             "iadls": context.iadls_list,
-            "cognitive_level": context.cognitive_level,
-            "wandering": context.wandering,
-            "aggression": context.aggression,
-            "sundowning": context.sundowning,
-            "repetitive_questions": context.repetitive_questions,
-            "falls": context.falls,
+            "memory_changes": st.session_state.get("calc_memory_changes", "no_concerns"),  # Store GCP value
+            "cognitive_level": context.cognitive_level,  # Mapped value for engine
+            "behaviors": {
+                "wandering": context.wandering,
+                "aggression": context.aggression,
+                "elopement": st.session_state.get("calc_elopement", False),
+                "confusion": st.session_state.get("calc_confusion", False),
+                "sundowning": context.sundowning,
+                "repetitive": context.repetitive_questions,
+                "judgment": st.session_state.get("calc_judgment", False),
+                "hoarding": st.session_state.get("calc_hoarding", False),
+                "sleep": st.session_state.get("calc_sleep", False),
+            },
+            "falls": st.session_state.get("calc_falls", "none"),  # Store GCP value (one/multiple)
             "mobility": context.mobility,
             "overnight_needed": context.overnight_needed,
         },
         "results": {
             "baseline_band": results["baseline_band"],
             "baseline_hours": results["baseline_hours"],
+            "baseline_breakdown": {
+                "badl_hours": results["badl_hours"],
+                "iadl_hours": results["iadl_hours"],
+                "cognitive_multiplier": results["cognitive_multiplier"],
+                "fall_multiplier": results["fall_multiplier"],
+                "mobility_hours": results["mobility_hours"],
+            },
             "llm_band": results["llm_band"],
             "llm_confidence": results["llm_confidence"],
             "llm_reasons": results["llm_reasons"],
             "agreement": results["agreement"],
+            "advisor_hours": results.get("advisor_hours", 0.0),
+            "advisor_rationale": results.get("advisor_rationale", ""),
+            "advisor_vs_baseline_diff": results.get("advisor_hours", 0.0) - results["baseline_hours"],
         },
         "notes": notes.strip() if notes else "",
     }
