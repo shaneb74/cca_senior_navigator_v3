@@ -57,9 +57,9 @@ def render():
     <div class="navi-card">
         <div class="navi-header">
             <span class="navi-icon">💬</span>
-            <span class="navi-greeting">Hi! I'm Navi, your digital guide.</span>
+            <span class="navi-greeting">Here's What You'll Discover</span>
         </div>
-        <p class="navi-intro">I'm here to help you understand Senior Navigator and answer any questions as you explore your options. Feel free to ask me anything!</p>
+        <p class="navi-intro">This page introduces you to Senior Navigator's three key tools: the <strong>Guided Care Plan</strong> (assess needs in 5-10 minutes), the <strong>Cost Planner</strong> (estimate expenses and find funding), and <strong>Concierge Services</strong> (connect with verified advisors). Watch the video below, then ask me any questions about getting started.</p>
     </div>
     """, unsafe_allow_html=True)
     
