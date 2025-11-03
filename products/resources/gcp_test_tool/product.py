@@ -74,7 +74,7 @@ def _render_about_you_section() -> None:
         col1, col2 = st.columns(2)
         
         with col1:
-            st.session_state.gcp_age_range = st.selectbox(
+            st.session_state.gcp_age_range = st.radio(
                 "Age Range",
                 options=["under_65", "65_74", "75_84", "85_plus"],
                 format_func=lambda x: {
@@ -89,7 +89,7 @@ def _render_about_you_section() -> None:
                 key="gcp_test_age"
             )
             
-            st.session_state.gcp_living_situation = st.selectbox(
+            st.session_state.gcp_living_situation = st.radio(
                 "Living Situation",
                 options=["alone", "with_spouse_or_partner", "with_family", "assisted_living"],
                 format_func=lambda x: {
@@ -105,7 +105,7 @@ def _render_about_you_section() -> None:
             )
         
         with col2:
-            st.session_state.gcp_isolation = st.selectbox(
+            st.session_state.gcp_isolation = st.radio(
                 "Geographic Isolation",
                 options=["accessible", "somewhat", "very"],
                 format_func=lambda x: {
@@ -128,7 +128,7 @@ def _render_medication_mobility_section() -> None:
         col1, col2 = st.columns(2)
         
         with col1:
-            st.session_state.gcp_meds_complexity = st.selectbox(
+            st.session_state.gcp_meds_complexity = st.radio(
                 "Medication Complexity",
                 options=["none", "simple", "moderate", "complex"],
                 format_func=lambda x: {
@@ -143,7 +143,7 @@ def _render_medication_mobility_section() -> None:
                 key="gcp_test_meds"
             )
             
-            st.session_state.gcp_mobility = st.selectbox(
+            st.session_state.gcp_mobility = st.radio(
                 "Mobility Level",
                 options=["independent", "walker", "wheelchair", "bedbound"],
                 format_func=lambda x: {
@@ -159,7 +159,7 @@ def _render_medication_mobility_section() -> None:
             )
         
         with col2:
-            st.session_state.gcp_falls = st.selectbox(
+            st.session_state.gcp_falls = st.radio(
                 "Fall History",
                 options=["none", "one", "multiple"],
                 format_func=lambda x: {
@@ -191,7 +191,7 @@ def _render_cognition_section() -> None:
         col1, col2 = st.columns(2)
         
         with col1:
-            st.session_state.gcp_memory_changes = st.selectbox(
+            st.session_state.gcp_memory_changes = st.radio(
                 "Memory Changes",
                 options=["no_concerns", "occasional", "moderate", "severe"],
                 format_func=lambda x: {
@@ -206,7 +206,7 @@ def _render_cognition_section() -> None:
                 key="gcp_test_memory"
             )
             
-            st.session_state.gcp_mood = st.selectbox(
+            st.session_state.gcp_mood = st.radio(
                 "Mood",
                 options=["great", "mostly_good", "okay", "low"],
                 format_func=lambda x: {
@@ -235,22 +235,30 @@ def _render_cognition_section() -> None:
                 key="gcp_test_behaviors"
             )
         
-        # Cognitive diagnosis confirmation (only if severe)
-        if st.session_state.get("gcp_memory_changes") == "severe":
+        # Cognitive diagnosis confirmation (show for moderate OR severe)
+        memory_changes = st.session_state.get("gcp_memory_changes", "no_concerns")
+        if memory_changes in ["moderate", "severe"]:
             st.markdown("---")
-            st.session_state.gcp_cognitive_dx = st.selectbox(
-                "Formal Diagnosis? (dementia/Alzheimer's)",
+            st.markdown("**🏥 Formal Diagnosis** (CRITICAL for Memory Care gate)")
+            st.caption("Memory Care requires formal dementia/Alzheimer's diagnosis")
+            st.session_state.gcp_cognitive_dx = st.radio(
+                "Has a doctor formally diagnosed dementia or Alzheimer's?",
                 options=["dx_yes", "dx_no", "dx_unsure"],
                 format_func=lambda x: {
-                    "dx_yes": "Yes, diagnosed",
-                    "dx_no": "No",
-                    "dx_unsure": "Not sure"
+                    "dx_yes": "✅ Yes, diagnosed",
+                    "dx_no": "❌ No",
+                    "dx_unsure": "❓ Not sure"
                 }[x],
                 index=["dx_yes", "dx_no", "dx_unsure"].index(
                     st.session_state.get("gcp_cognitive_dx", "dx_yes")
                 ),
-                key="gcp_test_dx"
+                key="gcp_test_dx",
+                horizontal=True
             )
+            
+            # Show warning if no diagnosis
+            if st.session_state.get("gcp_cognitive_dx") != "dx_yes":
+                st.warning("⚠️ **Cognitive Gate:** Memory Care will be BLOCKED without formal diagnosis")
 
 
 def _render_daily_living_section() -> None:
@@ -261,7 +269,7 @@ def _render_daily_living_section() -> None:
         col1, col2 = st.columns(2)
         
         with col1:
-            st.session_state.gcp_help_overall = st.selectbox(
+            st.session_state.gcp_help_overall = st.radio(
                 "Overall Help Needed",
                 options=["independent", "some_help", "daily_help", "full_support"],
                 format_func=lambda x: {
@@ -290,7 +298,7 @@ def _render_daily_living_section() -> None:
             )
         
         with col2:
-            st.session_state.gcp_primary_support = st.selectbox(
+            st.session_state.gcp_primary_support = st.radio(
                 "Primary Support Provider",
                 options=["family", "paid", "community", "none"],
                 format_func=lambda x: {
@@ -320,13 +328,14 @@ def _render_daily_living_section() -> None:
         
         # Hours per day
         st.markdown("---")
-        st.session_state.gcp_hours_per_day = st.selectbox(
+        st.session_state.gcp_hours_per_day = st.radio(
             "Hours per Day of Assistance",
             options=["<1h", "1-3h", "4-8h", "12-16h", "24h"],
             index=["<1h", "1-3h", "4-8h", "12-16h", "24h"].index(
                 st.session_state.get("gcp_hours_per_day", "1-3h")
             ),
-            key="gcp_test_hours"
+            key="gcp_test_hours",
+            horizontal=True
         )
 
 
@@ -335,7 +344,7 @@ def _render_move_preferences_section() -> None:
     with st.expander("🏡 **Move Preferences** (Optional)", expanded=False):
         st.caption("GCP Section: `move_preferences` (only shown for facility recommendations)")
         
-        st.session_state.gcp_move_preference = st.selectbox(
+        st.session_state.gcp_move_preference = st.radio(
             "Willingness to Move",
             options=["1", "2", "3", "4"],
             format_func=lambda x: {
@@ -347,7 +356,8 @@ def _render_move_preferences_section() -> None:
             index=["1", "2", "3", "4"].index(
                 st.session_state.get("gcp_move_preference", "2")
             ),
-            key="gcp_test_move"
+            key="gcp_test_move",
+            horizontal=True
         )
 
 
@@ -544,22 +554,41 @@ def _render_results() -> None:
     col1, col2 = st.columns(2)
     
     with col1:
-        st.markdown("**Cognitive Gate**")
+        st.markdown("**Cognitive Gate** (Memory Care Access)")
         if results["cognitive_gate_pass"]:
             st.success("✅ PASSED - Memory care allowed")
         else:
-            st.warning("❌ FAILED - Memory care blocked")
+            st.error("❌ FAILED - Memory care blocked")
         
+        # Show diagnosis status
+        dx_status = results["answers"].get("cognitive_dx_confirm", "not_provided")
+        dx_display = {
+            "dx_yes": "✅ Yes (formal diagnosis)",
+            "dx_no": "❌ No diagnosis",
+            "dx_unsure": "❓ Unsure",
+            "not_provided": "➖ Not answered"
+        }
+        st.caption(f"Diagnosis: {dx_display.get(dx_status, dx_status)}")
         st.caption(f"Cognition Band: `{results['cognition_band']}`")
         st.caption(f"Support Band: `{results['support_band']}`")
+        
+        # Explain gate logic
+        if not results["cognitive_gate_pass"]:
+            st.info("💡 **Why blocked:** Memory Care requires BOTH:\n- Moderate/severe memory OR risky behaviors\n- Formal dementia/Alzheimer's diagnosis")
     
     with col2:
-        st.markdown("**Behavior Gate**")
+        st.markdown("**Behavior Gate** (Moderate×High Filter)")
         if results["behavior_gate_enabled"]:
-            st.info(f"🔒 Enabled (risky behaviors: {results['has_risky_behaviors']})")
+            st.info(f"🔒 Enabled")
+            if results['cognition_band'] == "moderate" and results['support_band'] == "high":
+                if results['has_risky_behaviors']:
+                    st.success(f"✅ Risky behaviors present → MC allowed")
+                else:
+                    st.warning(f"⚠️ No risky behaviors → MC blocked")
         else:
-            st.info("🔓 Disabled")
+            st.info("🔓 Disabled (feature flag off)")
         
+        st.caption(f"Risky behaviors: {results['has_risky_behaviors']}")
         st.caption(f"Allowed Tiers: {', '.join(results['allowed_tiers'])}")
     
     st.markdown("---")
