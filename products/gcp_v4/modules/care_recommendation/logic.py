@@ -1053,10 +1053,10 @@ def _build_hours_context(answers: dict[str, Any], flags: list[str]) -> Any:
     valid_bands = {"<1h", "1-3h", "4-8h", "24h"}
     current_hours = current if current in valid_bands else None
     
-    # NEW: Get cognitive level from answers
-    cognitive_level = answers.get("cognition", {}).get("level", "none")
-    if cognitive_level == "advanced":
-        cognitive_level = "severe"  # Map to schema values
+    # NEW: Get cognitive level from answers (stored as memory_changes in GCP module)
+    memory_changes = answers.get("memory_changes", "none")
+    cognitive_level = memory_changes if memory_changes in ["none", "mild", "moderate", "severe"] else "none"
+    print(f"[HOURS_CONTEXT] cognitive_level={cognitive_level} from memory_changes={memory_changes}")
 
     return HoursContext(
         badls_count=badls_count,
@@ -1209,21 +1209,15 @@ def derive_outcome(
     tier = det_tier
 
     # ====================================================================
-    # HOURS/DAY SUGGESTION (GATED): Baseline + LLM refinement + Nudge
+    # HOURS/DAY SUGGESTION: Baseline + LLM refinement + Nudge
     # ====================================================================
-    # Gate hours LLM calls based on tier - only needed for in-home paths or when comparing
-    import streamlit as st
-    compare_inhome = st.session_state.get("cost.compare_inhome", False)
-    need_hours = (tier in ("in_home", "in_home_plus")) or bool(compare_inhome)
-
-    # Debug log for gating decision (dev visibility)
-    from core.debug import debug_enabled
-    if debug_enabled():
-        print(f"[HOURS_LLM_GATED] need_hours={need_hours} tier={tier} compare={compare_inhome}")
-
-    # Compute hours/day suggestion if enabled (shadow/assist mode) AND needed
+    # Always calculate hours when assist mode is enabled, regardless of tier.
+    # Reason: Even facility recommendations allow in-home comparison, and hours are needed for that.
+    # The hours will be cleared later (line 480) ONLY if facility tier AND not comparing.
+    
+    # Compute hours/day suggestion if enabled (shadow/assist mode)
     hours_mode = gcp_hours_mode()
-    if hours_mode in {"shadow", "assist"} and need_hours:
+    if hours_mode in {"shadow", "assist"}:
         from core.perf import perf
         
         with perf("llm.hours"):
@@ -1378,9 +1372,6 @@ def derive_outcome(
                     print(f"[GCP_HOURS_PERSIST] user={user_band} llm={llm_band} (fallback)")
                 except Exception as fallback_err:
                     print(f"[GCP_HOURS_PERSIST_ERROR] fallback failed: {fallback_err}")
-    elif not need_hours and hours_mode in {"shadow", "assist"}:
-        # Hours not needed - log skip for visibility
-        print(f"[HOURS_LLM_SKIP] tier={tier} compare={compare_inhome} → skipping hours LLM calls (expected: 500-1500ms saved)")
 
     # NOTE: Hours clearing moved to ensure_summary_ready AFTER adjudication
     # This ensures we use the published tier (not deterministic) and check compare mode
