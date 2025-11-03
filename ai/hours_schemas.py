@@ -40,6 +40,13 @@ class HoursContext(BaseModel):
     aggression: bool = False  # Aggressive behaviors
     sundowning: bool = False  # Evening confusion/agitation
     repetitive_questions: bool = False  # Memory/cognitive symptom
+    
+    # Additional behaviors (9 total)
+    elopement: bool = False  # Exit-seeking, high risk
+    confusion: bool = False  # Disorientation, supervision needs
+    judgment: bool = False  # Poor judgment, monitoring required
+    hoarding: bool = False  # Safety/hygiene concerns
+    sleep: bool = False  # Sleep disturbances, overnight needs
 
 
 class HoursAdvice(BaseModel):

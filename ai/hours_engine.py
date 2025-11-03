@@ -26,6 +26,91 @@ except ImportError:
     OpenAI = None
 
 
+def _apply_clinical_rules(context: HoursContext, band: HoursBand, total_hours: float) -> HoursBand:
+    """
+    Apply clinical escalation rules that match LLM reasoning.
+    
+    These deterministic rules capture clinical judgment patterns:
+    1. Toileting assistance requires 24/7 availability (not just task time)
+    2. Moderate+ cognitive + multiple risks → escalate for safety
+    3. Overnight needs + other risk factors → strong 24h indicator
+    4. Multiple falls + mobility challenges → escalate for supervision
+    5. Complex medication + cognitive impairment → escalate for safety
+    
+    Args:
+        context: HoursContext with all care signals
+        band: Initial band from weighted calculation
+        total_hours: Calculated hours for reference
+    
+    Returns:
+        Escalated band if clinical rules apply, otherwise original band
+    """
+    _BAND_ORDER = ["<1h", "1-3h", "4-8h", "24h"]
+    
+    def escalate(current: HoursBand, target: HoursBand, reason: str) -> HoursBand:
+        """Helper to escalate band with logging."""
+        if _BAND_ORDER.index(target) > _BAND_ORDER.index(current):
+            print(f"[HOURS_CLINICAL] Escalate {current} → {target}: {reason}")
+            return target
+        return current
+    
+    original_band = band
+    
+    # Rule 1: Toileting requires 24/7 availability (minimum 4-8h)
+    if "toileting" in context.badls_list and band in ["<1h", "1-3h"]:
+        band = escalate(band, "4-8h", "Toileting assistance requires availability")
+    
+    # Rule 2: Moderate+ cognitive + safety risks → escalate significantly
+    if context.cognitive_level in ["moderate", "severe", "advanced"]:
+        risk_count = sum([
+            context.wandering,
+            context.aggression,
+            context.sundowning,
+            getattr(context, 'elopement', False),
+            getattr(context, 'confusion', False),
+            context.falls in ["multiple", "frequent"],
+            context.mobility in ["wheelchair", "bedbound"],
+        ])
+        
+        if risk_count >= 2 and band == "1-3h":
+            band = escalate(band, "4-8h", f"Moderate+ cognitive with {risk_count} safety risks")
+        elif risk_count >= 3 and band == "4-8h":
+            band = escalate(band, "24h", f"Moderate+ cognitive with {risk_count} major safety risks")
+    
+    # Rule 3: Overnight needs + other indicators → strong 24h signal
+    if context.overnight_needed:
+        overnight_risks = sum([
+            context.falls in ["multiple", "frequent"],
+            context.wandering or getattr(context, 'elopement', False),
+            context.meds_complexity in ["moderate", "complex"],
+            "toileting" in context.badls_list,
+        ])
+        
+        if overnight_risks >= 2 and band in ["<1h", "1-3h", "4-8h"]:
+            band = escalate(band, "24h", f"Overnight needs with {overnight_risks} additional risks")
+    
+    # Rule 4: Multiple falls + mobility challenges + ADLs → safety escalation
+    if context.falls in ["multiple", "frequent"] and context.mobility in ["walker", "wheelchair", "bedbound"]:
+        if context.badls_count >= 2 and band in ["<1h", "1-3h"]:
+            band = escalate(band, "4-8h", "Multiple falls + mobility aid + ADL needs")
+    
+    # Rule 5: Complex medications + cognitive impairment → supervision needs
+    if context.meds_complexity in ["moderate", "complex"]:
+        if context.cognitive_level in ["moderate", "severe", "advanced"] and band == "1-3h":
+            band = escalate(band, "4-8h", "Complex meds + cognitive impairment requires supervision")
+    
+    # Rule 6: Primary support context - no support + moderate needs → escalate
+    if context.primary_support in ["none", None]:
+        if context.badls_count >= 2 or context.iadls_count >= 3:
+            if band == "1-3h":
+                band = escalate(band, "4-8h", "No regular support with moderate needs")
+    
+    if band != original_band:
+        print(f"[HOURS_CLINICAL] Final: {original_band} → {band} (clinical rules applied)")
+    
+    return band
+
+
 def calculate_baseline_hours_weighted(context: HoursContext) -> HoursBand:
     """
     Calculate realistic hours/day using weighted scoring system.
@@ -92,13 +177,18 @@ def calculate_baseline_hours_weighted(context: HoursContext) -> HoursBand:
     
     # Convert to band (CRITICAL: Must match production thresholds)
     if total_hours < 1.0:
-        return "<1h"
+        band = "<1h"
     elif total_hours < 4.0:
-        return "1-3h"
+        band = "1-3h"
     elif total_hours < 8.0:  # Fixed: was 12.0
-        return "4-8h"
+        band = "4-8h"
     else:
-        return "24h"
+        band = "24h"
+    
+    # Apply clinical escalation rules (matches LLM logic)
+    band = _apply_clinical_rules(context, band, total_hours)
+    
+    return band
 
 
 def baseline_hours(context: HoursContext) -> HoursBand:
@@ -284,7 +374,7 @@ CRITICAL: Output ONLY valid JSON. Do not invent band values. Be specific in reas
             max_tokens=300,
         )
 
-        raw = response.choices[0].message.content.strip()
+        raw = (response.choices[0].message.content or "").strip()
 
         # Parse JSON
         if raw.startswith("```json"):
