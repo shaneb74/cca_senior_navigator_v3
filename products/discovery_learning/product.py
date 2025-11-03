@@ -97,13 +97,36 @@ def render():
     if "discovery_current_answer" not in st.session_state:
         st.session_state.discovery_current_answer = None
     
+    # Quick Questions FIRST - load into text box
+    st.markdown('<p class="quick-label">Common Questions:</p>', unsafe_allow_html=True)
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        if st.button("What is the Discovery Journey?", use_container_width=True, key="faq_discovery"):
+            st.session_state.discovery_navi_input = "What is the Discovery Journey?"
+            st.session_state.discovery_current_answer = None
+            st.rerun()
+    
+    with col2:
+        if st.button("How long does it take?", use_container_width=True, key="faq_duration"):
+            st.session_state.discovery_navi_input = "How long does it take?"
+            st.session_state.discovery_current_answer = None
+            st.rerun()
+    
+    with col3:
+        if st.button("What's the Cost Planner?", use_container_width=True, key="faq_cost"):
+            st.session_state.discovery_navi_input = "What's the Cost Planner?"
+            st.session_state.discovery_current_answer = None
+            st.rerun()
+    
+    st.markdown("<br/>", unsafe_allow_html=True)
+    
     # Simple text input + Send button
     col1, col2 = st.columns([5, 1])
     
     with col1:
         navi_query = st.text_input(
             "Question",
-            value=st.session_state.get("discovery_pending_question", ""),
             placeholder="Type your question here...",
             key="discovery_navi_input",
             label_visibility="collapsed"
@@ -134,36 +157,13 @@ def render():
         if not response:
             response = "That's a great question! I'm here to help you understand your care planning journey. Try asking about the Discovery Journey, Care Plan, costs, or how long things take."
         
-        # Store answer and clear pending question
+        # Store answer
         st.session_state.discovery_current_answer = response
-        st.session_state.discovery_pending_question = ""
     
     # Display answer if exists
     if st.session_state.discovery_current_answer:
         with st.container():
             st.markdown(f'<div class="navi-answer">{st.session_state.discovery_current_answer}</div>', unsafe_allow_html=True)
-    
-    # Quick Questions - load into text box
-    st.markdown('<p class="quick-label">Common Questions:</p>', unsafe_allow_html=True)
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        if st.button("What is the Discovery Journey?", use_container_width=True, key="faq_discovery"):
-            st.session_state.discovery_pending_question = "What is the Discovery Journey?"
-            st.session_state.discovery_current_answer = None
-            st.rerun()
-    
-    with col2:
-        if st.button("How long does it take?", use_container_width=True, key="faq_duration"):
-            st.session_state.discovery_pending_question = "How long does it take?"
-            st.session_state.discovery_current_answer = None
-            st.rerun()
-    
-    with col3:
-        if st.button("What's the Cost Planner?", use_container_width=True, key="faq_cost"):
-            st.session_state.discovery_pending_question = "What's the Cost Planner?"
-            st.session_state.discovery_current_answer = None
-            st.rerun()
     
     st.markdown("<br/>", unsafe_allow_html=True)
     
