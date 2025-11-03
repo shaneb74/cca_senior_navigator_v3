@@ -75,88 +75,117 @@ def render():
     person_name = st.session_state.get("person_name", "")
     
     # Hero Title with Subtitle
-    st.markdown(f'<h1 class="learn-title">🧭 Understanding Your Care Recommendation</h1>', unsafe_allow_html=True)
-    st.markdown(f'<p class="learn-subtitle">Let\'s explore what <strong>{tier_display}</strong> means for you.</p>', unsafe_allow_html=True)
+    st.markdown('<h1 class="page-title">Understanding Your Care Recommendation</h1>', unsafe_allow_html=True)
+    st.markdown(f'<p class="hero-subtitle">Let\'s explore what <strong>{tier_display}</strong> means for you.</p>', unsafe_allow_html=True)
     
-    # Navi intro box
+    # Navi intro box - useful guidance
     st.markdown(f"""
-    <div class="navi-box">
-        <p><b>Hi{f", {person_name}" if person_name else ""}! I'm Navi.</b> Based on your Guided Care Plan assessment, we've identified <strong>{tier_display}</strong> as your recommended care level.</p>
-        <p>Before we explore costs, let's understand what this means and how it can support your needs.</p>
+    <div class="navi-card">
+        <div class="navi-header">
+            <span class="navi-icon">✨</span>
+            <span class="navi-greeting">Your Personalized Care Recommendation</span>
+        </div>
+        <p class="navi-intro">Based on your Guided Care Plan, we've identified <strong>{tier_display}</strong> as your recommended care level. This video explains what this care level includes, typical costs, and how it supports your specific needs. Watch the video below, then ask me any questions about your recommendation.</p>
     </div>
     """, unsafe_allow_html=True)
     
-    # Intro paragraph
-    st.markdown("""
-    <div style="text-align: center;">
-        <h3 class="learn-intro" style="text-align: center;">
-            This video explains everything you need to know about your recommended care option.<br>
-            Take your time and ask questions as you learn.
-        </h3>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Embedded YouTube video - Currently using Assisted Living example
-    # TODO: Add tier-specific video mapping when more videos are available
+    # Get tier-specific video
     video_id = _get_video_for_tier(care_rec.tier)
     
+    # Embedded video in card
     st.markdown(f"""
-    <div class="video-container">
-        <iframe class="video-frame"
-            src="https://www.youtube.com/embed/{video_id}"
-            title="Understanding {tier_display}"
-            frameborder="0"
-            allowfullscreen>
-        </iframe>
+    <div class="content-card">
+        <div class="card-header">
+            <span class="card-icon">🎥</span>
+            <h3 class="card-title">Understanding {tier_display}</h3>
+        </div>
+        <div class="card-body">
+            <div class="video-wrapper">
+                <iframe class="video-iframe"
+                    src="https://www.youtube.com/embed/{video_id}"
+                    title="Understanding {tier_display}"
+                    frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen>
+                </iframe>
+            </div>
+            <p class="video-caption">Learn what {tier_display} includes, typical costs, and how it supports your specific needs.</p>
+        </div>
     </div>
     """, unsafe_allow_html=True)
+    
+    # Ask Navi section - FAQ style
+    st.markdown('<h3 class="section-header">Questions About Your Recommendation?</h3>', unsafe_allow_html=True)
+    
+    # Initialize session state for current answer
+    if "learn_rec_current_answer" not in st.session_state:
+        st.session_state.learn_rec_current_answer = None
+    
+    # Quick Questions FIRST - load into text box
+    st.markdown('<p class="quick-label">Common Questions:</p>', unsafe_allow_html=True)
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        if st.button(f"What does {tier_display} include?", use_container_width=True, key="faq_1"):
+            st.session_state.learn_rec_navi_input = f"What does {tier_display} include?"
+            st.session_state.learn_rec_current_answer = None
+            st.rerun()
+    
+    with col2:
+        if st.button("How much does this typically cost?", use_container_width=True, key="faq_2"):
+            st.session_state.learn_rec_navi_input = "How much does this typically cost?"
+            st.session_state.learn_rec_current_answer = None
+            st.rerun()
     
     st.markdown("<br/>", unsafe_allow_html=True)
     
-    # Ask Navi section
-    st.markdown('<h3 class="ask-navi-title">💬 Questions About Your Recommendation?</h3>', unsafe_allow_html=True)
+    # Simple text input + Send button
+    col1, col2 = st.columns([5, 1])
     
-    navi_query = st.text_input(
-        "Ask me anything...",
-        key="navi_learn_query",
-        label_visibility="collapsed",
-        placeholder="What does this care level include? How much does it cost?"
-    )
-    
-    if navi_query:
-        # Simple contextual responses based on care tier
-        response = _get_navi_response(navi_query, care_rec.tier, tier_display)
-        st.info(f"**Navi:** {response}")
-    
-    # Quick question buttons
-    st.markdown('<div class="ask-navi-buttons">', unsafe_allow_html=True)
-    col1, col2 = st.columns(2)
     with col1:
-        if st.button(f"What does {tier_display} include?", use_container_width=True, key="faq_1"):
-            st.info(f"**Navi:** {_get_tier_description(care_rec.tier, tier_display)}")
+        navi_query = st.text_input(
+            "Question",
+            placeholder="Type your question here...",
+            key="learn_rec_navi_input",
+            label_visibility="collapsed"
+        )
+    
     with col2:
-        if st.button("How much does this typically cost?", use_container_width=True, key="faq_2"):
-            st.info("**Navi:** Great question! That's exactly what we'll explore in the Cost Planner next. You'll see detailed estimates including monthly costs, payment options, and potential financial assistance.")
-    st.markdown('</div>', unsafe_allow_html=True)
+        send_clicked = st.button("Send", type="primary", use_container_width=True, key="learn_rec_send")
     
-    st.markdown("<br/><br/>", unsafe_allow_html=True)
+    # Process question
+    if send_clicked and navi_query:
+        # Get contextual response
+        response = _get_navi_response(navi_query, care_rec.tier, tier_display)
+        st.session_state.learn_rec_current_answer = response
     
-    # Mark as viewed
-    if "learn_recommendation_viewed" not in st.session_state:
-        st.session_state["learn_recommendation_viewed"] = True
+    # Display answer if exists
+    if st.session_state.learn_rec_current_answer:
+        with st.container():
+            st.markdown(f'<div class="navi-answer">{st.session_state.learn_rec_current_answer}</div>', unsafe_allow_html=True)
+    
     
     # Closing CTA Section
-    st.markdown('<p class="footer-cta-text">Ready to explore costs and next steps?</p>', unsafe_allow_html=True)
+    st.markdown("""
+    <div class="content-card completion-card">
+        <div class="card-header">
+            <span class="card-icon">🚀</span>
+            <h3 class="card-title">Ready to Explore Costs?</h3>
+        </div>
+        <div class="card-body">
+            <p class="completion-text">Once you've watched the video and understand your care recommendation, you're ready to see detailed cost estimates and explore funding options.</p>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
     
-    st.markdown('<div class="footer-buttons">', unsafe_allow_html=True)
     col1, col2 = st.columns([1, 1])
     
     with col1:
-        if st.button("← Return to Lobby", use_container_width=True, key="return_lobby"):
+        if st.button("← Back to Lobby", use_container_width=True, key="return_lobby", type="secondary"):
             route_to("hub_lobby")
     
     with col2:
-        if st.button("✅ Continue to Cost Planner", type="primary", use_container_width=True, key="continue_cost"):
+        if st.button("Continue to Cost Planner", type="primary", use_container_width=True, key="continue_cost"):
             # Mark as complete
             _mark_complete()
             # Advance to planning phase
@@ -164,7 +193,9 @@ def render():
             # Navigate to Cost Planner
             route_to("cost_intro")
     
-    st.markdown('</div>', unsafe_allow_html=True)
+    # Mark as viewed
+    if "learn_recommendation_viewed" not in st.session_state:
+        st.session_state["learn_recommendation_viewed"] = True
     
     # Render footer
     render_footer_simple()
@@ -360,6 +391,182 @@ def _inject_learn_recommendation_styles():
         margin-bottom: 2.25rem;
     }
 
+    /* === Navi Card at Top === */
+    .navi-card {
+        background: linear-gradient(135deg, #f0f4ff 0%, #f8f9fe 100%);
+        border: 2px solid #e0e7ff;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin: 0 0 2rem;
+        box-shadow: 0 2px 8px rgba(124, 92, 255, 0.1);
+    }
+    .navi-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+    .navi-icon {
+        font-size: 1.5rem;
+    }
+    .navi-greeting {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #0E1E54;
+    }
+    .navi-intro {
+        font-size: 1rem;
+        color: #4b4f63;
+        line-height: 1.6;
+        margin: 0;
+    }
+
+    /* === Content Cards === */
+    .content-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        padding: 1.5rem;
+        margin: 1.5rem 0;
+        transition: box-shadow 0.2s ease;
+    }
+    .content-card:hover {
+        box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    }
+    
+    .card-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+    .card-icon {
+        font-size: 1.75rem;
+    }
+    .card-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #0E1E54;
+        margin: 0;
+    }
+    
+    .card-body {
+        color: #4b4f63;
+        line-height: 1.6;
+    }
+
+    /* === Video Wrapper === */
+    .video-wrapper {
+        position: relative;
+        width: 100%;
+        padding-bottom: 56.25%; /* 16:9 aspect ratio */
+        margin-bottom: 1rem;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    .video-iframe {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border: 0;
+    }
+    .video-caption {
+        font-size: 0.95rem;
+        color: #6b7280;
+        font-style: italic;
+        margin: 0;
+    }
+
+    /* === FAQ Style Q&A === */
+    .section-header {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #0E1E54;
+        margin: 2rem 0 1rem;
+        text-align: center;
+    }
+    
+    .navi-answer {
+        background: #f8f9fe;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 1.25rem;
+        margin: 1rem 0;
+        line-height: 1.6;
+        color: #1e293b;
+        font-size: 1rem;
+    }
+    
+    .quick-label {
+        text-align: center;
+        font-weight: 600;
+        font-size: 0.95rem;
+        color: #6b7280;
+        margin: 1.5rem 0 1rem;
+    }
+
+    /* === Completion Card === */
+    .completion-card {
+        background: linear-gradient(135deg, #f8f9fe 0%, #f0f4ff 100%);
+        border: 1px solid #e0e7ff;
+    }
+    .completion-text {
+        font-size: 1rem;
+        color: #4b4f63;
+        margin: 0;
+        text-align: center;
+    }
+
+    /* === Button Enhancements === */
+    .stButton > button {
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+    .stButton > button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    /* === Page Title === */
+    .page-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #0E1E54;
+        text-align: center;
+        margin: 2rem 0 1rem;
+        line-height: 1.2;
+    }
+    
+    /* === Hero Subtitle === */
+    .hero-subtitle {
+        font-size: 1.1rem;
+        color: #4b4f63;
+        text-align: center;
+        max-width: 700px;
+        margin: 0 auto 2rem;
+        line-height: 1.6;
+    }
+
+    /* === Mobile Responsive === */
+    @media (max-width: 768px) {
+        .page-title {
+            font-size: 2rem;
+        }
+        .hero-subtitle {
+            font-size: 1rem;
+        }
+        .card-title {
+            font-size: 1.25rem;
+        }
+        .content-card {
+            padding: 1.25rem;
+        }
+    }
+
+    /* === OLD STYLES (keep for backwards compat) === */
     /* === Navi Box === */
     .navi-box {
         background: #f8f9fe;
@@ -383,17 +590,6 @@ def _inject_learn_recommendation_styles():
         line-height: 1.55;
         color: #32395e;
         margin: 0.4rem 0;
-    }
-
-    /* === Intro Paragraph === */
-    .learn-intro {
-        font-size: 1.05rem;
-        color: #2b2e42;
-        text-align: center !important;
-        line-height: 1.6;
-        max-width: 720px;
-        margin: 0 auto 2rem !important;
-        display: block;
     }
 
     /* === Video === */
