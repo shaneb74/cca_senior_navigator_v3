@@ -21,6 +21,11 @@ class HoursContext(BaseModel):
     """
     badls_count: int = Field(ge=0, le=12)  # Basic ADLs (relaxed from 6 to 12)
     iadls_count: int = Field(ge=0, le=20)  # Instrumental ADLs (relaxed from 8 to 20)
+    
+    # NEW: Actual ADL/IADL lists for weighted scoring
+    badls_list: list[str] = Field(default_factory=list)  # e.g., ["bathing", "dressing", "toileting"]
+    iadls_list: list[str] = Field(default_factory=list)  # e.g., ["medication_management", "meal_preparation"]
+    
     falls: str | None = None  # "none", "once", "multiple"
     mobility: str | None = None  # "independent", "cane", "walker", "wheelchair"
     risky_behaviors: bool = False  # wandering, elopement, aggression, etc.
@@ -28,6 +33,13 @@ class HoursContext(BaseModel):
     primary_support: str | None = None  # "spouse", "adult_child", "paid", "none"
     overnight_needed: bool = False  # True if safety/medical needs require overnight
     current_hours: HoursBand | None = None  # User's current arrangement (if any)
+    
+    # NEW: Detailed cognitive and behavior flags for multipliers
+    cognitive_level: str | None = None  # "none", "mild", "moderate", "severe", "advanced"
+    wandering: bool = False  # Elopement risk
+    aggression: bool = False  # Aggressive behaviors
+    sundowning: bool = False  # Evening confusion/agitation
+    repetitive_questions: bool = False  # Memory/cognitive symptom
 
 
 class HoursAdvice(BaseModel):
