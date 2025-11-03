@@ -1007,6 +1007,9 @@ def _build_hours_context(answers: dict[str, Any], flags: list[str]) -> Any:
 
     print(f"[GUARD_INPUT] badls_raw={badls} badls_unique={badls_unique} badls_count={badls_count}")
 
+    # NEW: Store actual list for weighted scoring
+    badls_list = [x for x in badls_unique if x is not None]
+
     # Count IADLs
     iadls = answers.get("iadls", [])
     if not isinstance(iadls, list):
@@ -1014,6 +1017,9 @@ def _build_hours_context(answers: dict[str, Any], flags: list[str]) -> Any:
     iadls_count = len(iadls)
 
     print(f"[GUARD_INPUT] iadls_count={iadls_count}")
+    
+    # NEW: Store actual IADL list for weighted scoring
+    iadls_list = [x.lower().replace(" ", "_") for x in iadls]
 
     # Falls
     falls = answers.get("falls", "none")
@@ -1023,6 +1029,12 @@ def _build_hours_context(answers: dict[str, Any], flags: list[str]) -> Any:
 
     # Risky behaviors (check flags)
     risky_behaviors = bool(set(flags) & COGNITIVE_HIGH_RISK)
+    
+    # NEW: Individual behavior flags for multipliers
+    wandering = "wandering" in flags or "elopement" in flags
+    aggression = "aggression" in flags or "violent" in flags
+    sundowning = "sundowning" in flags
+    repetitive_questions = "repetitive_questions" in flags or "repetitive_behaviors" in flags
 
     # Meds complexity
     meds_complexity = answers.get("meds_complexity", "none")
@@ -1040,17 +1052,29 @@ def _build_hours_context(answers: dict[str, Any], flags: list[str]) -> Any:
     current = raw_hours or st.session_state.get("gcp_hours_user_choice")
     valid_bands = {"<1h", "1-3h", "4-8h", "24h"}
     current_hours = current if current in valid_bands else None
+    
+    # NEW: Get cognitive level from answers
+    cognitive_level = answers.get("cognition", {}).get("level", "none")
+    if cognitive_level == "advanced":
+        cognitive_level = "severe"  # Map to schema values
 
     return HoursContext(
         badls_count=badls_count,
+        badls_list=badls_list,
         iadls_count=iadls_count,
+        iadls_list=iadls_list,
         falls=falls,
         mobility=mobility,
         risky_behaviors=risky_behaviors,
+        wandering=wandering,
+        aggression=aggression,
+        sundowning=sundowning,
+        repetitive_questions=repetitive_questions,
         meds_complexity=meds_complexity,
         primary_support=primary_support,
         overnight_needed=overnight_needed,
         current_hours=current_hours,
+        cognitive_level=cognitive_level,
     )
 
 
