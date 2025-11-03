@@ -313,10 +313,15 @@ def _render_login_form():
                 help="Load Mary Memory Care demo profile"
             ):
                 # Load Mary demo user by switching UID
-                from core.session_store import switch_user
+                from core.session_store import switch_user, save_user
                 switch_user(st.session_state, "demo_mary_memory_care")
-                st.success("✅ Loaded Mary Memory Care demo!")
-                st.rerun()
+                
+                # Save the loaded state before navigating
+                save_user(st.session_state)
+                
+                # Update URL with Mary's UID and navigate to hub
+                st.query_params["uid"] = "demo_mary_memory_care"
+                route_to("hub_lobby")
         
         # Back link
         st.markdown("---")
