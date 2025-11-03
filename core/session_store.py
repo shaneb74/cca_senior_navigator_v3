@@ -715,6 +715,8 @@ def switch_user(state: dict[str, Any], new_uid: str) -> None:
         if "auth" in state:
             state["auth"]["is_authenticated"] = False
     else:
+        # Switching to named user - clear anonymous UID to prevent confusion
+        state.pop("anonymous_uid", None)
         state["auth"] = state.get("auth", {})
         state["auth"]["user_id"] = new_uid
         state["auth"]["is_authenticated"] = True
