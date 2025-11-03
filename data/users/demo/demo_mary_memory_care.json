@@ -122,25 +122,58 @@
   "mcip_contracts": {
     "care_recommendation": {
       "tier": "assisted_living",
-      "status": "complete"
+      "tier_score": 28.0,
+      "tier_rankings": [
+        ["memory_care_high_acuity", 70.0],
+        ["memory_care", 32.0],
+        ["assisted_living", 28.0],
+        ["in_home", 12.5],
+        ["no_care_needed", 4.0]
+      ],
+      "confidence": 1.0,
+      "flags": [],
+      "rationale": [
+        "Based on 28 points, we recommend: Assisted Living",
+        "Daily Living: 10 points",
+        "Medication Mobility: 9 points",
+        "Cognition Mental Health: 8 points"
+      ],
+      "generated_at": "2025-11-02T00:00:00.000000Z",
+      "version": "4.0.0",
+      "input_snapshot_id": "demo_mary_snapshot",
+      "rule_set": "standard_2025_q4",
+      "next_step": {
+        "product": "cost_planner",
+        "route": "cost_planner_v2",
+        "label": "Calculate Costs",
+        "reason": "Estimate financial impact"
+      },
+      "status": "complete",
+      "last_updated": "2025-11-02T00:00:00.000000Z",
+      "needs_refresh": false,
+      "allowed_tiers": ["assisted_living", "in_home", "none"],
+      "schema_version": 2
     },
     "financial_profile": {
       "estimated_monthly_cost": 14095.5,
+      "coverage_percentage": 29.26,
       "gap_amount": 9971.57,
+      "runway_months": 43,
+      "confidence": 1.0,
+      "generated_at": "2025-11-02T00:00:00.000000Z",
       "status": "complete"
     },
+    "advisor_appointment": null,
     "journey": {
-      "completed_products": [
-        "discovery_learning",
-        "gcp",
-        "cost_planner"
-      ],
-      "unlocked_products": [
-        "gcp",
-        "learn_recommendation",
-        "cost_planner",
-        "pfma"
-      ]
+      "current_hub": "concierge",
+      "completed_products": ["discovery_learning", "gcp", "cost_planner"],
+      "unlocked_products": ["gcp", "learn_recommendation", "cost_planner", "pfma"],
+      "recommended_next": "pfma"
+    },
+    "waiting_room": {
+      "advisor_prep_status": "not_started",
+      "trivia_status": "not_started",
+      "current_focus": "advisor_prep"
     }
   }
 }
