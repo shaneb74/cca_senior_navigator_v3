@@ -13,7 +13,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from ai.hours_engine import HoursRecommendationEngine
+from ai.hours_engine import calculate_baseline_hours_weighted, generate_hours_advice
 from ai.hours_schemas import HoursContext
 from ai.hours_weights import (
     get_badl_hours,
@@ -299,11 +299,14 @@ def _calculate_and_store() -> None:
     llm_error = None
     
     try:
-        engine = HoursRecommendationEngine()
-        llm_result = engine.recommend(context)
-        llm_band = llm_result.recommended_band
-        llm_confidence = llm_result.confidence
-        llm_reasons = llm_result.reasoning
+        # Always try to get LLM advice (mode="assist" - will check for API key internally)
+        ok, llm_result = generate_hours_advice(context, mode="assist")
+        if ok and llm_result:
+            llm_band = llm_result.band
+            llm_confidence = llm_result.confidence
+            llm_reasons = llm_result.reasons
+        else:
+            llm_error = "LLM not available (check API key or FEATURE_LLM_NAVI flag)"
     except Exception as e:
         llm_error = str(e)
     
