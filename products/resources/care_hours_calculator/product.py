@@ -282,12 +282,12 @@ def _calculate_and_store() -> None:
     
     baseline_hours = (badl_hours + iadl_hours) * cognitive_multiplier * fall_multiplier + mobility_hours
     
-    # Determine baseline band
+    # Determine baseline band (CRITICAL: Must match production thresholds)
     if baseline_hours < 1:
         baseline_band = "<1h"
     elif baseline_hours < 4:
         baseline_band = "1-3h"
-    elif baseline_hours < 24:
+    elif baseline_hours < 8:
         baseline_band = "4-8h"
     else:
         baseline_band = "24h"
