@@ -10,7 +10,6 @@ TODO: Remove this hub by 2025-12-15 after validation phase complete.
 import streamlit as st
 
 from core.product_tile import ProductTileHub
-from core.base_hub import render_dashboard_body
 from core.ui import render_navi_panel_v2
 from ui.header_simple import render_header_simple
 from ui.footer_simple import render_footer_simple
@@ -92,24 +91,15 @@ def render(ctx=None) -> None:
         # Build tiles
         tiles = _build_testing_tiles()
         
-        # Dashboard structure
-        dashboard_data = {
-            "chips": [
-                {"label": "Testing & Validation"},
-                {"label": "Internal Use Only", "variant": "muted"},
-            ],
-            "callout": {
-                "title": "Validate algorithms and refine calculations",
-                "body": "These tools help advisors and developers test care hours calculations, "
-                        "compare baseline vs LLM recommendations, and save test cases for future training.",
-                "actions": []
-            },
-            "cards": []  # Not using card format, just tiles
-        }
-        
-        # Render tiles
+        # Render tiles manually using ProductTileHub.render()
         st.markdown("## 🧪 Available Testing Tools")
-        render_dashboard_body(dashboard_data, tiles, additional_services=[])
+        st.markdown("")
+        
+        # Render each tile
+        cols = st.columns(min(len(tiles), 3))
+        for idx, tile in enumerate(tiles):
+            with cols[idx % 3]:
+                tile.render()
     
     # Render content with Navi
     render_content()
