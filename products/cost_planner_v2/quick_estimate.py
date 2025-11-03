@@ -755,19 +755,11 @@ def _render_home_card(zip_code: str):
     calculated_hours = gcp.get("hours_calculated")
     user_band = gcp.get("hours_user_band", "")
     
-    # DEBUG: Show values
-    st.markdown(f"🔍 **DEBUG**: calculated_hours={calculated_hours}, user_band={user_band}")
-    
-    # Debug logging
-    print(f"[NAVI_CALLOUT_DEBUG] calculated_hours={calculated_hours}, user_band={user_band}")
-    
     # Check if user has already dismissed this recommendation
     cost = st.session_state.setdefault("cost", {})
     meta = cost.setdefault("meta", {})
     decision_key = f"hours_navi_decision_{calculated_hours}"
     has_decided = meta.get(decision_key, False)
-    
-    print(f"[NAVI_CALLOUT_DEBUG] decision_key={decision_key}, has_decided={has_decided}")
     
     # Initialize slider widget key from comparison state (only if not already set)
     if "qe_home_hours" not in st.session_state:
@@ -775,6 +767,15 @@ def _render_home_card(zip_code: str):
     
     current_hours = st.session_state.get("qe_home_hours", 3.0)
     
+    # DEBUG: Show all values and conditions
+    rounded_calc = round(calculated_hours * 2) / 2 if calculated_hours else 0
+    diff = abs(current_hours - rounded_calc) if calculated_hours else 0
+    
+    st.markdown(f"🔍 **DEBUG**: calculated={calculated_hours}, band={user_band}, current={current_hours}, rounded={rounded_calc}, diff={diff:.2f}, has_decided={has_decided}")
+    st.markdown(f"🔍 **Condition check**: has_calc={bool(calculated_hours)}, has_band={bool(user_band)}, not_decided={not has_decided}, diff>1={diff > 1.0}")
+    
+    print(f"[NAVI_CALLOUT_DEBUG] calculated_hours={calculated_hours}, user_band={user_band}")
+    print(f"[NAVI_CALLOUT_DEBUG] decision_key={decision_key}, has_decided={has_decided}")
     print(f"[NAVI_CALLOUT_DEBUG] current_hours={current_hours}")
     
     # Show Navi callout only if:
@@ -782,7 +783,6 @@ def _render_home_card(zip_code: str):
     # 2. There's a significant difference (>1 hour)
     # 3. User hasn't dismissed it yet
     if calculated_hours and user_band and not has_decided:
-        rounded_calc = round(calculated_hours * 2) / 2
         
         print(f"[NAVI_CALLOUT_DEBUG] rounded_calc={rounded_calc}, diff={abs(current_hours - rounded_calc)}")
         
