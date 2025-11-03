@@ -1,0 +1,179 @@
+{
+  "uid": "demo_mary_memory_care",
+  "auth": {
+    "user_id": "demo_mary_memory_care",
+    "is_authenticated": true,
+    "role": "user",
+    "name": "Mary Memory Care",
+    "email": "mary.memorycare@demo.test"
+  },
+  "tiles": {
+    "gcp_v4": {
+      "progress": 100.0,
+      "status": "done",
+      "last_step": 6,
+      "saved_state": {
+        "progress": 83.3,
+        "status": "doing",
+        "age_range": "75_84",
+        "living_situation": "with_spouse_or_partner",
+        "isolation": "somewhat",
+        "flags": {
+          "has_partner": true,
+          "low_access": true,
+          "moderate_dependence": true,
+          "moderate_mobility": true,
+          "moderate_safety_concern": true,
+          "chronic_present": true,
+          "moderate_cognitive_decline": true,
+          "moderate_risk": true,
+          "veteran_aanda_risk": true,
+          "limited_support": true,
+          "high_mobility_dependence": true,
+          "severe_cognitive_risk": true,
+          "cognitive_severe_any": true,
+          "likely_mc_no_dx": true
+        },
+        "meds_complexity": "complex",
+        "mobility": "wheelchair",
+        "falls": "one",
+        "chronic_conditions": [
+          "diabetes",
+          "copd",
+          "arthritis"
+        ],
+        "additional_conditions": [],
+        "memory_changes": "severe",
+        "mood": "okay",
+        "behaviors": [
+          "confusion",
+          "sundowning",
+          "repetitive",
+          "hoarding"
+        ],
+        "help_overall": "some_help",
+        "badls": [
+          "hygiene",
+          "mobility"
+        ],
+        "iadls": [
+          "meal_prep",
+          "housekeeping",
+          "finances",
+          "med_management"
+        ],
+        "hours_per_day": "1-3h",
+        "primary_support": "paid",
+        "move_preference": "2",
+        "cognitive_dx_confirm": "dx_no"
+      }
+    },
+    "cost_planner_v2": {
+      "progress": 100.0,
+      "status": "done",
+      "assessments": {
+        "income": {
+          "partner_income_monthly": 0.0,
+          "has_partner": "no_partner",
+          "ss_monthly": 2600.0,
+          "status": "done",
+          "total_monthly_income": 2600.0
+        },
+        "assets": {
+          "asset_has_partner": "no_partner",
+          "checking_balance": 34000.0,
+          "savings_cds_balance": 50000.0,
+          "retirement_traditional": 135000.0,
+          "retirement_roth": 47800.0,
+          "home_equity_estimate": 235000.0,
+          "primary_residence_mortgage": 45000.0,
+          "secured_loans": 7500.0,
+          "unsecured_debt": 23000.0,
+          "status": "done",
+          "net_asset_value": 432500.0,
+          "checking_savings": 84000.0,
+          "investment_accounts": 6200.0,
+          "retirement_accounts_total": 182800.0,
+          "total_asset_value": 508000.0,
+          "total_asset_debt": 75500.0
+        },
+        "va_benefits": {
+          "va_disability_rating": 60,
+          "va_dependents": "spouse",
+          "va_disability_monthly": 1523.93,
+          "has_va_disability": "yes",
+          "status": "done"
+        }
+      }
+    }
+  },
+  "profile": {
+    "person_name": "Mary",
+    "qualifiers": {
+      "is_on_medicaid": false,
+      "is_veteran": true,
+      "is_homeowner": false
+    }
+  },
+  "flags": {
+    "is_veteran": true,
+    "medicaid_planning_interest": false
+  },
+  "mcip_contracts": {
+    "care_recommendation": {
+      "tier": "assisted_living",
+      "tier_score": 28.0,
+      "tier_rankings": [
+        ["memory_care_high_acuity", 70.0],
+        ["memory_care", 32.0],
+        ["assisted_living", 28.0],
+        ["in_home", 12.5],
+        ["no_care_needed", 4.0]
+      ],
+      "confidence": 1.0,
+      "flags": [],
+      "rationale": [
+        "Based on 28 points, we recommend: Assisted Living",
+        "Daily Living: 10 points",
+        "Medication Mobility: 9 points",
+        "Cognition Mental Health: 8 points"
+      ],
+      "generated_at": "2025-11-02T00:00:00.000000Z",
+      "version": "4.0.0",
+      "input_snapshot_id": "demo_mary_snapshot",
+      "rule_set": "standard_2025_q4",
+      "next_step": {
+        "product": "cost_planner",
+        "route": "cost_planner_v2",
+        "label": "Calculate Costs",
+        "reason": "Estimate financial impact"
+      },
+      "status": "complete",
+      "last_updated": "2025-11-02T00:00:00.000000Z",
+      "needs_refresh": false,
+      "allowed_tiers": ["assisted_living", "in_home", "none"],
+      "schema_version": 2
+    },
+    "financial_profile": {
+      "estimated_monthly_cost": 14095.5,
+      "coverage_percentage": 29.26,
+      "gap_amount": 9971.57,
+      "runway_months": 43,
+      "confidence": 1.0,
+      "generated_at": "2025-11-02T00:00:00.000000Z",
+      "status": "complete"
+    },
+    "advisor_appointment": null,
+    "journey": {
+      "current_hub": "concierge",
+      "completed_products": ["discovery_learning", "gcp", "cost_planner"],
+      "unlocked_products": ["gcp", "learn_recommendation", "cost_planner", "pfma"],
+      "recommended_next": "pfma"
+    },
+    "waiting_room": {
+      "advisor_prep_status": "not_started",
+      "trivia_status": "not_started",
+      "current_focus": "advisor_prep"
+    }
+  }
+}

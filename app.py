@@ -229,6 +229,12 @@ session_id = st.session_state["session_id"]
 # Get or create user ID (persistent across sessions if authenticated)
 # CRITICAL FIX: Check query params for uid first (preserves across href navigation)
 uid_from_url = st.query_params.get("uid")
+
+# DEBUG: Track UID changes
+app_log.debug(f"[APP] UID from URL: {uid_from_url}")
+app_log.debug(f"[APP] Session auth: {st.session_state.get('auth', {})}")
+app_log.debug(f"[APP] Session anon_uid: {st.session_state.get('anonymous_uid')}")
+
 if uid_from_url:
     # Restore UID from query params (href navigation)
     if uid_from_url.startswith("anon_"):
@@ -239,19 +245,35 @@ if uid_from_url:
         st.session_state["auth"]["user_id"] = uid_from_url
         st.session_state["auth"]["is_authenticated"] = True
     uid = uid_from_url
+    app_log.debug(f"[APP] Using UID from URL: {uid}")
 else:
     uid = get_or_create_user_id(st.session_state)
     # Add UID to query params for href persistence
     st.query_params["uid"] = uid
+    app_log.debug(f"[APP] Created/retrieved UID: {uid}, adding to URL")
 
 # Load persisted data on first run OR when UID changes
 last_loaded_uid = st.session_state.get("_last_loaded_uid")
 needs_reload = "persistence_loaded" not in st.session_state or last_loaded_uid != uid
 
+app_log.debug(f"[APP] Last loaded UID: {last_loaded_uid}, Current UID: {uid}")
+app_log.debug(f"[APP] Needs reload: {needs_reload}")
+
 if needs_reload:
-    # Load session data (browser-specific, temporary)
-    session_data = load_session(session_id)
-    merge_into_state(st.session_state, session_data)
+    app_log.info(f"[APP] Loading user data for UID: {uid}")
+    
+    # If UID changed, clear old session data to prevent bleed
+    if last_loaded_uid and last_loaded_uid != uid:
+        app_log.info(f"[APP] UID changed from {last_loaded_uid} to {uid}, clearing session cache")
+        # Clear session-specific keys to prevent data bleed across users
+        from core.session_store import SESSION_PERSIST_KEYS
+        for key in list(st.session_state.keys()):
+            if key in SESSION_PERSIST_KEYS:
+                del st.session_state[key]
+    else:
+        # Same UID or first load - restore session data
+        session_data = load_session(session_id)
+        merge_into_state(st.session_state, session_data)
 
     # Load user data (persistent, cross-device)
     user_data = load_user(uid)
@@ -264,6 +286,7 @@ if needs_reload:
     st.session_state["persistence_loaded"] = True
     st.session_state["_last_loaded_uid"] = uid
     log_event("session.loaded", {"session_id": session_id, "uid": uid})
+    app_log.info(f"[APP] User data loaded successfully for {uid}")
 
 # Cleanup old session files periodically (1% chance per page load)
 import random

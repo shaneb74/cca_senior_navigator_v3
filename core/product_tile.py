@@ -341,11 +341,12 @@ class BaseTile:
             return href
 
         # Get current UID from session_state
+        # PRIORITY: Authenticated user_id takes precedence over anonymous_uid
         uid = None
-        if "anonymous_uid" in st.session_state:
-            uid = st.session_state["anonymous_uid"]
-        elif "auth" in st.session_state and st.session_state["auth"].get("user_id"):
+        if "auth" in st.session_state and st.session_state["auth"].get("user_id"):
             uid = st.session_state["auth"]["user_id"]
+        elif "anonymous_uid" in st.session_state:
+            uid = st.session_state["anonymous_uid"]
 
         if not uid:
             return href

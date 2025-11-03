@@ -8,6 +8,7 @@ from textwrap import dedent
 
 import streamlit as st
 
+from core.state import is_authenticated, get_user_name, logout_user
 from core.ui import img_src
 from core.url_helpers import add_uid_to_href, can_go_back, go_back, back_fallback, route_to
 
@@ -85,9 +86,16 @@ def render_header_simple(active_route: str | None = None) -> None:
             f'<a href="{href_with_uid}" class="nav-link{active_class}"{aria_current} target="_self">{item["label"]}</a>'
         )
 
-    # Login link (always shown for now)
-    login_href = add_uid_to_href("?page=login")
-    nav_links_html.append(f'<a href="{login_href}" class="nav-link nav-link--login" target="_self">Log In</a>')
+    # Auth section - show login or user menu based on auth state
+    if is_authenticated():
+        user_name = get_user_name()
+        # Use a unique key for the logout button
+        nav_links_html.append(
+            f'<span class="nav-user">👤 {user_name}</span>'
+        )
+    else:
+        login_href = add_uid_to_href("?page=login")
+        nav_links_html.append(f'<a href="{login_href}" class="nav-link nav-link--login" target="_self">Log In</a>')
 
     nav_html = "\n          ".join(nav_links_html)
 
@@ -189,6 +197,20 @@ def render_header_simple(active_route: str | None = None) -> None:
           color: #ffffff !important;
         }
         
+        /* Authenticated user display */
+        .nav-user {
+          display: inline-flex;
+          align-items: center;
+          padding: 8px 16px;
+          border-radius: 8px;
+          font-size: 0.9375rem;
+          font-weight: 600;
+          color: var(--ink, #0f172a);
+          background: rgba(37, 99, 235, 0.08);
+          white-space: nowrap;
+          margin-left: 8px;
+        }
+        
         /* Mobile responsive */
         @media (max-width: 1024px) {
           .sn-header__inner {
@@ -241,6 +263,14 @@ def render_header_simple(active_route: str | None = None) -> None:
     # Add target="_self" to all links to force same-tab navigation
     st.markdown(css, unsafe_allow_html=True)
     st.markdown(html, unsafe_allow_html=True)
+    
+    # Add logout button for authenticated users (placed in a small container)
+    if is_authenticated():
+        col1, col2, col3 = st.columns([10, 2, 1])
+        with col2:
+            if st.button("🚪 Logout", key="header_logout_btn", use_container_width=True):
+                logout_user()
+                st.rerun()
 
 
 __all__ = ["render_header_simple", "render_back_button"]

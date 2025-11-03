@@ -412,8 +412,20 @@ def load_user(uid: str) -> dict[str, Any]:
     """
     path = get_user_path(uid)
 
-    # Check if this is a demo user
-    if is_demo_user(uid):
+    # HARDCODED: Demo Mary always loads from source (data/users/demo/)
+    # This ensures the demo always shows the pristine state for demos
+    # Other demo users follow normal working copy behavior
+    if uid == "demo_mary_memory_care":
+        demo_path = get_demo_path(uid)
+        if demo_path.exists():
+            print(f"[DEMO] Loading Mary demo directly from source: {demo_path}")
+            with _file_lock(demo_path):
+                data = _safe_read(demo_path)
+        else:
+            print(f"[ERROR] Demo Mary source file not found: {demo_path}")
+            data = None
+    # Check if this is a demo user (other demos use working copy)
+    elif is_demo_user(uid):
         demo_path = get_demo_path(uid)
 
         # Check if fresh load is requested via query param
@@ -421,10 +433,23 @@ def load_user(uid: str) -> dict[str, Any]:
         import streamlit as st
         force_fresh = st.query_params.get("fresh", "").lower() == "true"
 
+        # Check if demo source is newer than working copy (auto-update)
+        demo_is_newer = False
+        if demo_path.exists() and path.exists():
+            try:
+                demo_mtime = demo_path.stat().st_mtime
+                working_mtime = path.stat().st_mtime
+                demo_is_newer = demo_mtime > working_mtime
+                if demo_is_newer:
+                    print(f"[INFO] Demo source is newer than working copy for {uid}, auto-updating")
+            except Exception:
+                pass
+
         # Copy demo profile if:
         # 1. Working copy doesn't exist yet (first load), OR
-        # 2. Fresh load is explicitly requested (?fresh=true)
-        should_copy = demo_path.exists() and (not path.exists() or force_fresh)
+        # 2. Fresh load is explicitly requested (?fresh=true), OR
+        # 3. Demo source file is newer than working copy (auto-update)
+        should_copy = demo_path.exists() and (not path.exists() or force_fresh or demo_is_newer)
 
         if should_copy:
             try:
@@ -433,13 +458,19 @@ def load_user(uid: str) -> dict[str, Any]:
                 shutil.copy2(demo_path, path)
                 if force_fresh:
                     print(f"[INFO] Fresh demo reload for {uid} (fresh=true)")
+                elif demo_is_newer:
+                    print(f"[INFO] Auto-updated working copy from newer demo source for {uid}")
                 else:
                     print(f"[INFO] Created working copy for demo user {uid}")
             except Exception as e:
                 print(f"[ERROR] Failed to copy demo profile: {e}")
 
-    with _file_lock(path):
-        data = _safe_read(path)
+        with _file_lock(path):
+            data = _safe_read(path)
+    else:
+        # Regular user - load from working directory
+        with _file_lock(path):
+            data = _safe_read(path)
 
     if data is None:
         # Return default empty user
@@ -454,7 +485,6 @@ def load_user(uid: str) -> dict[str, Any]:
             "tiles": {},
         }
 
-    return data
     data["uid"] = uid
     data["last_updated"] = time.time()
     return data
@@ -715,6 +745,8 @@ def switch_user(state: dict[str, Any], new_uid: str) -> None:
         if "auth" in state:
             state["auth"]["is_authenticated"] = False
     else:
+        # Switching to named user - clear anonymous UID to prevent confusion
+        state.pop("anonymous_uid", None)
         state["auth"] = state.get("auth", {})
         state["auth"]["user_id"] = new_uid
         state["auth"]["is_authenticated"] = True
