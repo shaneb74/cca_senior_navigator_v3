@@ -351,15 +351,20 @@ def _calculate_and_store() -> None:
         overnight_needed=False,  # Not in GCP, set to false
     )
     
-    # Calculate baseline hours (loop through lists)
+    # Calculate baseline hours (loop through lists + ALL 9 behaviors)
     badl_hours = sum(get_badl_hours(badl) for badl in badls)
     iadl_hours = sum(get_iadl_hours(iadl) for iadl in iadls)
     cognitive_multiplier = get_cognitive_multiplier(
         cognitive_level,
-        wandering,
-        aggression,
-        sundowning,
-        repetitive_questions,
+        has_wandering=wandering,
+        has_aggression=aggression,
+        has_sundowning=sundowning,
+        has_repetitive_questions=repetitive_questions,
+        has_elopement=st.session_state.get("calc_elopement", False),
+        has_confusion=st.session_state.get("calc_confusion", False),
+        has_judgment=st.session_state.get("calc_judgment", False),
+        has_hoarding=st.session_state.get("calc_hoarding", False),
+        has_sleep=st.session_state.get("calc_sleep", False),
     )
     fall_multiplier = get_fall_risk_multiplier(falls)
     mobility_hours = get_mobility_hours(mobility)

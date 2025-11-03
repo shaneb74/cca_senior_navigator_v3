@@ -54,13 +54,18 @@ def calculate_baseline_hours_weighted(context: HoursContext) -> HoursBand:
     
     total_hours = badl_hours + iadl_hours
     
-    # Apply cognitive multiplier (supervision overhead including behaviors)
+    # Apply cognitive multiplier (supervision overhead including ALL behaviors)
     cognitive_mult = get_cognitive_multiplier(
         context.cognitive_level,
         has_wandering=context.wandering,
         has_aggression=context.aggression,
         has_sundowning=context.sundowning,
-        has_repetitive_questions=context.repetitive_questions
+        has_repetitive_questions=context.repetitive_questions,
+        has_elopement=getattr(context, 'elopement', False),
+        has_confusion=getattr(context, 'confusion', False),
+        has_judgment=getattr(context, 'judgment', False),
+        has_hoarding=getattr(context, 'hoarding', False),
+        has_sleep=getattr(context, 'sleep', False),
     )
     if cognitive_mult > 1.0:
         print(f"[HOURS_WEIGHTED] Cognitive multiplier: {cognitive_mult}x for {context.cognitive_level} + behaviors")
@@ -85,12 +90,12 @@ def calculate_baseline_hours_weighted(context: HoursContext) -> HoursBand:
     
     print(f"[HOURS_WEIGHTED] Total weighted hours: {total_hours:.1f}h")
     
-    # Convert to band
-    if total_hours < 2.0:
+    # Convert to band (CRITICAL: Must match production thresholds)
+    if total_hours < 1.0:
         return "<1h"
     elif total_hours < 4.0:
         return "1-3h"
-    elif total_hours < 12.0:
+    elif total_hours < 8.0:  # Fixed: was 12.0
         return "4-8h"
     else:
         return "24h"
