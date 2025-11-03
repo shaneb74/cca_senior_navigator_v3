@@ -1230,6 +1230,7 @@ def derive_outcome(
             try:
                 from ai.hours_engine import (
                     baseline_hours,
+                    calculate_baseline_hours_weighted,
                     generate_hours_advice,
                     generate_hours_nudge_text,
                     under_selected,
@@ -1238,8 +1239,9 @@ def derive_outcome(
                 # Build context
                 hours_ctx = _build_hours_context(answers, flags)
 
-                # Get baseline
-                baseline = baseline_hours(hours_ctx)
+                # Get baseline using NEW weighted scoring system
+                baseline = calculate_baseline_hours_weighted(hours_ctx)
+                print(f"[GCP_HOURS] Using weighted baseline: {baseline}")
 
                 # Get LLM refinement
                 ok, advice = generate_hours_advice(hours_ctx, hours_mode)
