@@ -215,11 +215,6 @@ def render_professionals():
     )
 
 
-def render_login():
-    # intentionally disabled (will be rebuilt as its own page)
-    return
-
-
 def render_ai_advisor():
     # Apply consistent styling like other pages
     st.markdown(

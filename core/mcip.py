@@ -247,6 +247,14 @@ class MCIP:
             # This handles demo profiles with extra fields (assessment_data, scores, etc.)
             valid_fields = {f.name for f in fields(CareRecommendation)}
             filtered_data = {k: v for k, v in rec_data.items() if k in valid_fields}
+            
+            # DEBUG: Check for missing required fields
+            missing_fields = valid_fields - set(filtered_data.keys())
+            if missing_fields:
+                print(f"[MCIP WARNING] Missing CareRecommendation fields: {missing_fields}")
+                print(f"[MCIP] Available fields: {list(filtered_data.keys())}")
+                print(f"[MCIP] rec_data keys: {list(rec_data.keys())}")
+            
             return CareRecommendation(**filtered_data)
         return None
 

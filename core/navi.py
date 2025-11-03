@@ -722,18 +722,47 @@ def render_navi_panel(
             """
 
         # Build encouragement banner
-        encouragement_icons = {
-            "getting_started": "🚀",
-            "in_progress": "💪",
-            "nearly_there": "🎯",
-            "complete": "🎉",
-            "concierge_complete": "🎉",
-        }
-        encouragement = {
-            "icon": encouragement_icons.get(phase, "💪"),
-            "text": journey_msg.get("text", ""),
-            "status": phase,
-        }
+        # Check if enhanced Navi Intelligence is enabled
+        navi_intelligence_mode = get_flag_value("FEATURE_NAVI_INTELLIGENCE", "off")
+        
+        if navi_intelligence_mode in ["on", "shadow"]:
+            # Use NaviCommunicator for flag-aware encouragement
+            from core.navi_intelligence import NaviCommunicator
+            enhanced_encouragement = NaviCommunicator.get_hub_encouragement(ctx)
+            
+            if navi_intelligence_mode == "shadow":
+                # Shadow mode: Log but don't display
+                print(f"[NAVI_SHADOW] Enhanced: {enhanced_encouragement}")
+                # Fall back to static
+                encouragement_icons = {
+                    "getting_started": "🚀",
+                    "in_progress": "💪",
+                    "nearly_there": "🎯",
+                    "complete": "🎉",
+                    "concierge_complete": "🎉",
+                }
+                encouragement = {
+                    "icon": encouragement_icons.get(phase, "💪"),
+                    "text": journey_msg.get("text", ""),
+                    "status": phase,
+                }
+            else:
+                # On mode: Use enhanced
+                encouragement = enhanced_encouragement
+        else:
+            # Off mode: Original static behavior
+            encouragement_icons = {
+                "getting_started": "🚀",
+                "in_progress": "💪",
+                "nearly_there": "🎯",
+                "complete": "🎉",
+                "concierge_complete": "🎉",
+            }
+            encouragement = {
+                "icon": encouragement_icons.get(phase, "💪"),
+                "text": journey_msg.get("text", ""),
+                "status": phase,
+            }
 
         # Build context chips (achievement cards)
         context_chips = []
@@ -787,9 +816,15 @@ def render_navi_panel(
             else:
                 title = "Let's keep going." if completed_count > 0 else "Let's get started."
 
-            reason = next_action.get(
-                "reason", "This will help us find the right support for your situation."
-            )
+            # Use dynamic reason text if enhanced intelligence is on
+            if navi_intelligence_mode == "on":
+                from core.navi_intelligence import NaviCommunicator
+                reason = NaviCommunicator.get_dynamic_reason_text(ctx)
+            else:
+                reason = next_action.get(
+                    "reason", "This will help us find the right support for your situation."
+                )
+            
             primary_label = next_action.get("action", "Continue")
             primary_route = next_action.get("route", "hub_lobby")
             primary_action = {"label": primary_label, "route": primary_route}
