@@ -262,14 +262,14 @@ def _render_login_form():
         # Email/Name form (fallback)
         name = st.text_input(
             "Name",
-            value="Sarah",
+            value="",
             placeholder="Enter your name",
             key="login_name",
         )
         
         email = st.text_input(
             "Email",
-            value="sarah@example.com",
+            value="",
             placeholder="you@example.com",
             key="login_email",
         )
@@ -294,13 +294,29 @@ def _render_login_form():
             unsafe_allow_html=True,
         )
         
-        if st.button(
-            "Continue as Guest",
-            type="secondary",
-            use_container_width=True,
-            key="login_guest",
-        ):
-            route_to(push=False, page="hub_lobby")
+        col_guest, col_demo = st.columns(2)
+        
+        with col_guest:
+            if st.button(
+                "Continue as Guest",
+                type="secondary",
+                use_container_width=True,
+                key="login_guest",
+            ):
+                route_to(push=False, page="hub_lobby")
+        
+        with col_demo:
+            if st.button(
+                "🎭 Demo: Mary",
+                use_container_width=True,
+                key="login_demo_mary",
+                help="Load Mary Memory Care demo profile"
+            ):
+                # Load Mary demo user by switching UID
+                from core.session_store import switch_user
+                switch_user("demo_mary_memory_care")
+                st.success("✅ Loaded Mary Memory Care demo!")
+                st.rerun()
         
         # Back link
         st.markdown("---")
