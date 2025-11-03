@@ -47,7 +47,7 @@ def render():
         # HERO SECTION - Clean title with subtitle
         # ========================================
         st.markdown('<h1 class="page-title">Welcome to Your Discovery Journey</h1>', unsafe_allow_html=True)
-        st.markdown('<div style="text-align: center;"><p class="hero-subtitle">Learn how Senior Navigator helps families explore care options and plan confidently for the future.</p></div>', unsafe_allow_html=True)
+        st.markdown('<p class="hero-subtitle" style="text-align: center !important; margin: 0 auto !important;">Learn how Senior Navigator helps families explore care options and plan confidently for the future.</p>', unsafe_allow_html=True)
         
         # ========================================
         # NAVI PANEL - At the top for guidance
