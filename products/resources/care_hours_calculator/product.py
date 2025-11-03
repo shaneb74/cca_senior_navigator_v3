@@ -66,92 +66,114 @@ def _save_validation_case(case: dict[str, Any]) -> None:
 
 
 def _render_input_form() -> None:
-    """Render input form for care needs."""
+    """Render input form for care needs (matches GCP v4 structure)."""
     st.markdown("### 📋 Care Needs Input")
+    st.caption("Fields match GCP v4 module structure for accurate testing")
     
-    # BADLs
+    # BADLs (matches gcp_v4 badls question)
     st.markdown("**Basic Activities of Daily Living (BADLs)**")
+    st.caption("GCP field: `badls` (multi-select)")
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.session_state.calc_bathing = st.checkbox("🚿 Bathing", value=st.session_state.get("calc_bathing", False))
-        st.session_state.calc_toileting = st.checkbox("🚽 Toileting", value=st.session_state.get("calc_toileting", False))
+        st.session_state.calc_bathing = st.checkbox("🚿 Bathing/Showering", value=st.session_state.get("calc_bathing", False), key="calc_badl_bathing")
+        st.session_state.calc_dressing = st.checkbox("� Dressing", value=st.session_state.get("calc_dressing", False), key="calc_badl_dressing")
+        st.session_state.calc_eating = st.checkbox("🍽️ Eating", value=st.session_state.get("calc_eating", False), key="calc_badl_eating")
     with col2:
-        st.session_state.calc_dressing = st.checkbox("👔 Dressing", value=st.session_state.get("calc_dressing", False))
-        st.session_state.calc_transferring = st.checkbox("🪑 Transferring", value=st.session_state.get("calc_transferring", False))
+        st.session_state.calc_toileting = st.checkbox("� Toileting", value=st.session_state.get("calc_toileting", False), key="calc_badl_toileting")
+        st.session_state.calc_transferring = st.checkbox("🪑 Transferring", value=st.session_state.get("calc_transferring", False), key="calc_badl_transferring")
+        st.session_state.calc_hygiene = st.checkbox("🧼 Personal Hygiene", value=st.session_state.get("calc_hygiene", False), key="calc_badl_hygiene")
     with col3:
-        st.session_state.calc_feeding = st.checkbox("🍽️ Feeding", value=st.session_state.get("calc_feeding", False))
-        st.session_state.calc_hygiene = st.checkbox("🧼 Hygiene", value=st.session_state.get("calc_hygiene", False))
+        st.session_state.calc_mobility = st.checkbox("🚶 Mobility", value=st.session_state.get("calc_mobility", False), key="calc_badl_mobility")
     
     st.markdown("---")
     
-    # IADLs
+    # IADLs (matches gcp_v4 iadls question)
     st.markdown("**Instrumental Activities of Daily Living (IADLs)**")
+    st.caption("GCP field: `iadls` (multi-select)")
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        st.session_state.calc_medications = st.checkbox("💊 Medications", value=st.session_state.get("calc_medications", False))
-        st.session_state.calc_meal_prep = st.checkbox("🍳 Meal Prep", value=st.session_state.get("calc_meal_prep", False))
+        st.session_state.calc_meal_prep = st.checkbox("🍳 Meal preparation", value=st.session_state.get("calc_meal_prep", False), key="calc_iadl_meal")
+        st.session_state.calc_housekeeping = st.checkbox("🧹 Housekeeping", value=st.session_state.get("calc_housekeeping", False), key="calc_iadl_house")
     with col2:
-        st.session_state.calc_housekeeping = st.checkbox("🧹 Housekeeping", value=st.session_state.get("calc_housekeeping", False))
-        st.session_state.calc_laundry = st.checkbox("👕 Laundry", value=st.session_state.get("calc_laundry", False))
+        st.session_state.calc_finances = st.checkbox("💰 Managing finances", value=st.session_state.get("calc_finances", False), key="calc_iadl_finances")
+        st.session_state.calc_med_management = st.checkbox("� Medication management", value=st.session_state.get("calc_med_management", False), key="calc_iadl_meds")
     with col3:
-        st.session_state.calc_transportation = st.checkbox("🚗 Transportation", value=st.session_state.get("calc_transportation", False))
-        st.session_state.calc_finances = st.checkbox("💰 Finances", value=st.session_state.get("calc_finances", False))
+        st.session_state.calc_transportation = st.checkbox("🚗 Transportation", value=st.session_state.get("calc_transportation", False), key="calc_iadl_transport")
+        st.session_state.calc_shopping = st.checkbox("🛒 Shopping", value=st.session_state.get("calc_shopping", False), key="calc_iadl_shopping")
     with col4:
-        st.session_state.calc_shopping = st.checkbox("🛒 Shopping", value=st.session_state.get("calc_shopping", False))
-        st.session_state.calc_phone = st.checkbox("📞 Phone", value=st.session_state.get("calc_phone", False))
+        st.session_state.calc_communication = st.checkbox("📞 Communication", value=st.session_state.get("calc_communication", False), key="calc_iadl_comm")
     
     st.markdown("---")
     
-    # Cognitive & Behaviors
+    # Cognitive & Behaviors (matches gcp_v4 memory_changes + behaviors)
     st.markdown("**Cognitive Status & Behaviors**")
     col1, col2 = st.columns(2)
     
     with col1:
-        st.session_state.calc_cognitive_level = st.radio(
-            "Cognitive Level",
-            options=["none", "mild", "moderate", "severe", "advanced"],
-            index=["none", "mild", "moderate", "severe", "advanced"].index(
-                st.session_state.get("calc_cognitive_level", "none")
+        st.caption("GCP field: `memory_changes` (single-select)")
+        st.session_state.calc_memory_changes = st.radio(
+            "Cognitive health or memory changes",
+            options=["no_concerns", "occasional", "moderate", "severe"],
+            format_func=lambda x: {
+                "no_concerns": "No concerns",
+                "occasional": "Occasional forgetfulness",
+                "moderate": "Moderate memory/thinking issues",
+                "severe": "Severe (dementia/Alzheimer's)"
+            }[x],
+            index=["no_concerns", "occasional", "moderate", "severe"].index(
+                st.session_state.get("calc_memory_changes", "no_concerns")
             ),
-            horizontal=False
+            horizontal=False,
+            key="calc_memory"
         )
     
     with col2:
+        st.caption("GCP field: `behaviors` (multi-select)")
         st.markdown("**Challenging Behaviors**")
-        st.session_state.calc_wandering = st.checkbox("🚶 Wandering/Elopement", value=st.session_state.get("calc_wandering", False))
-        st.session_state.calc_aggression = st.checkbox("😤 Aggression/Agitation", value=st.session_state.get("calc_aggression", False))
-        st.session_state.calc_sundowning = st.checkbox("🌙 Sundowning", value=st.session_state.get("calc_sundowning", False))
-        st.session_state.calc_repetitive_questions = st.checkbox("🔁 Repetitive Questions", value=st.session_state.get("calc_repetitive_questions", False))
+        st.session_state.calc_wandering = st.checkbox("🚶 Wandering", value=st.session_state.get("calc_wandering", False), key="calc_behav_wander")
+        st.session_state.calc_aggression = st.checkbox("😤 Aggression", value=st.session_state.get("calc_aggression", False), key="calc_behav_aggr")
+        st.session_state.calc_sundowning = st.checkbox("🌙 Sundowning", value=st.session_state.get("calc_sundowning", False), key="calc_behav_sun")
+        st.session_state.calc_repetitive = st.checkbox("🔁 Repetitive questioning", value=st.session_state.get("calc_repetitive", False), key="calc_behav_rep")
     
     st.markdown("---")
     
-    # Safety & Mobility
+    # Safety & Mobility (matches gcp_v4 falls + mobility)
     st.markdown("**Safety & Mobility**")
-    col1, col2, col3 = st.columns(3)
+    col1, col2 = st.columns(2)
     
     with col1:
+        st.caption("GCP field: `falls` (single-select)")
         st.session_state.calc_falls = st.radio(
-            "Fall History",
-            options=["none", "once", "multiple", "frequent"],
-            index=["none", "once", "multiple", "frequent"].index(
+            "Fall history",
+            options=["none", "one", "multiple"],
+            format_func=lambda x: {
+                "none": "No falls in past 6 months",
+                "one": "One fall",
+                "multiple": "Multiple falls"
+            }[x],
+            index=["none", "one", "multiple"].index(
                 st.session_state.get("calc_falls", "none")
             ),
-            horizontal=False
+            horizontal=False,
+            key="calc_fall_hist"
         )
     
     with col2:
-        st.session_state.calc_mobility = st.selectbox(
-            "Mobility Aid",
-            options=["independent", "cane", "walker", "wheelchair", "bedbound"],
-            index=["independent", "cane", "walker", "wheelchair", "bedbound"].index(
-                st.session_state.get("calc_mobility", "independent")
-            )
-        )
-    
-    with col3:
-        st.session_state.calc_overnight_needed = st.checkbox(
-            "🌙 Overnight Care Needed",
-            value=st.session_state.get("calc_overnight_needed", False)
+        st.caption("GCP field: `mobility` (single-select)")
+        st.session_state.calc_mobility_aid = st.radio(
+            "Mobility level",
+            options=["independent", "walker", "wheelchair", "bedbound"],
+            format_func=lambda x: {
+                "independent": "Walks independently",
+                "walker": "Uses cane or walker",
+                "wheelchair": "Uses wheelchair/scooter",
+                "bedbound": "Bed-bound/limited"
+            }[x],
+            index=["independent", "walker", "wheelchair", "bedbound"].index(
+                st.session_state.get("calc_mobility_aid", "independent")
+            ),
+            horizontal=False,
+            key="calc_mob_aid"
         )
     
     st.markdown("---")
@@ -168,35 +190,34 @@ def _render_input_form() -> None:
 
 def _clear_form() -> None:
     """Clear all form inputs."""
-    # BADLs
+    # BADLs (GCP structure)
     st.session_state.calc_bathing = False
-    st.session_state.calc_toileting = False
     st.session_state.calc_dressing = False
+    st.session_state.calc_eating = False
+    st.session_state.calc_toileting = False
     st.session_state.calc_transferring = False
-    st.session_state.calc_feeding = False
     st.session_state.calc_hygiene = False
+    st.session_state.calc_mobility = False
     
-    # IADLs
-    st.session_state.calc_medications = False
+    # IADLs (GCP structure)
     st.session_state.calc_meal_prep = False
     st.session_state.calc_housekeeping = False
-    st.session_state.calc_laundry = False
-    st.session_state.calc_transportation = False
     st.session_state.calc_finances = False
+    st.session_state.calc_med_management = False
+    st.session_state.calc_transportation = False
     st.session_state.calc_shopping = False
-    st.session_state.calc_phone = False
+    st.session_state.calc_communication = False
     
-    # Cognitive & Behaviors
-    st.session_state.calc_cognitive_level = "none"
+    # Cognitive & Behaviors (GCP structure)
+    st.session_state.calc_memory_changes = "no_concerns"
     st.session_state.calc_wandering = False
     st.session_state.calc_aggression = False
     st.session_state.calc_sundowning = False
-    st.session_state.calc_repetitive_questions = False
+    st.session_state.calc_repetitive = False
     
-    # Safety & Mobility
+    # Safety & Mobility (GCP structure)
     st.session_state.calc_falls = "none"
-    st.session_state.calc_mobility = "independent"
-    st.session_state.calc_overnight_needed = False
+    st.session_state.calc_mobility_aid = "independent"
     
     # Clear results
     if "calc_results" in st.session_state:
@@ -207,49 +228,67 @@ def _clear_form() -> None:
 
 def _calculate_and_store() -> None:
     """Calculate hours using weighted baseline and LLM, store results."""
-    # Build BADLs list
+    # Build BADLs list (GCP values → hours engine values)
     badls = []
     if st.session_state.get("calc_bathing", False):
         badls.append("bathing")
-    if st.session_state.get("calc_toileting", False):
-        badls.append("toileting")
     if st.session_state.get("calc_dressing", False):
         badls.append("dressing")
+    if st.session_state.get("calc_eating", False):
+        badls.append("eating")
+    if st.session_state.get("calc_toileting", False):
+        badls.append("toileting")
     if st.session_state.get("calc_transferring", False):
         badls.append("transferring")
-    if st.session_state.get("calc_feeding", False):
-        badls.append("feeding")
     if st.session_state.get("calc_hygiene", False):
         badls.append("hygiene")
+    if st.session_state.get("calc_mobility", False):
+        badls.append("mobility")
     
-    # Build IADLs list
+    # Build IADLs list (GCP values → hours engine values)
     iadls = []
-    if st.session_state.get("calc_medications", False):
-        iadls.append("medication_management")
     if st.session_state.get("calc_meal_prep", False):
         iadls.append("meal_preparation")
     if st.session_state.get("calc_housekeeping", False):
         iadls.append("housekeeping")
-    if st.session_state.get("calc_laundry", False):
-        iadls.append("laundry")
-    if st.session_state.get("calc_transportation", False):
-        iadls.append("transportation")
     if st.session_state.get("calc_finances", False):
         iadls.append("financial_management")
+    if st.session_state.get("calc_med_management", False):
+        iadls.append("medication_management")
+    if st.session_state.get("calc_transportation", False):
+        iadls.append("transportation")
     if st.session_state.get("calc_shopping", False):
         iadls.append("shopping")
-    if st.session_state.get("calc_phone", False):
-        iadls.append("phone_use")
+    if st.session_state.get("calc_communication", False):
+        iadls.append("phone_use")  # Map communication → phone_use for weights
     
-    # Get values
-    cognitive_level = st.session_state.get("calc_cognitive_level", "none")
+    # Map GCP memory_changes to cognitive_level for hours engine
+    memory_changes = st.session_state.get("calc_memory_changes", "no_concerns")
+    cognitive_level_map = {
+        "no_concerns": "none",
+        "occasional": "mild",
+        "moderate": "moderate",
+        "severe": "severe"
+    }
+    cognitive_level = cognitive_level_map.get(memory_changes, "none")
+    
+    # Get behavior flags (GCP structure)
     wandering = st.session_state.get("calc_wandering", False)
     aggression = st.session_state.get("calc_aggression", False)
     sundowning = st.session_state.get("calc_sundowning", False)
-    repetitive_questions = st.session_state.get("calc_repetitive_questions", False)
-    falls = st.session_state.get("calc_falls", "none")
-    mobility = st.session_state.get("calc_mobility", "independent")
-    overnight = st.session_state.get("calc_overnight_needed", False)
+    repetitive_questions = st.session_state.get("calc_repetitive", False)
+    
+    # Get falls (GCP uses "one" not "once")
+    falls_gcp = st.session_state.get("calc_falls", "none")
+    falls_map = {
+        "none": "none",
+        "one": "once",  # Map GCP "one" → hours engine "once"
+        "multiple": "multiple"
+    }
+    falls = falls_map.get(falls_gcp, "none")
+    
+    # Get mobility (GCP structure matches hours engine)
+    mobility = st.session_state.get("calc_mobility_aid", "independent")
     
     # Build context (using schema field names)
     context = HoursContext(
@@ -264,7 +303,7 @@ def _calculate_and_store() -> None:
         repetitive_questions=repetitive_questions,
         falls=falls,
         mobility=mobility,
-        overnight_needed=overnight,
+        overnight_needed=False,  # Not in GCP, set to false
     )
     
     # Calculate baseline hours (loop through lists)
