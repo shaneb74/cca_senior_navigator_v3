@@ -5,7 +5,7 @@ from html import escape as html_escape
 import streamlit as st
 
 from core.base_hub import render_dashboard_body
-from core.navi import render_navi_panel
+from core.ui import render_navi_panel_v2
 from core.product_tile import ProductTileHub
 from ui.footer_simple import render_footer_simple
 from ui.header_simple import render_header_simple
@@ -73,6 +73,15 @@ def _build_mcip_panel(
 
 
 def render(ctx=None) -> None:
+    # Load dashboard CSS for consistency
+    st.markdown(
+        f"<style>{open('core/styles/dashboard.css').read()}</style>",
+        unsafe_allow_html=True
+    )
+    
+    # Render header
+    render_header_simple(active_route="professional")
+    
     # ============================================================
     # AUTHENTICATION DISABLED FOR DEVELOPMENT TESTING
     # ============================================================
@@ -188,19 +197,46 @@ def render(ctx=None) -> None:
 
     # Use callback pattern to render Navi AFTER header
     def render_content():
-        # Render Navi panel (after header, before hub content)
-        render_navi_panel(location="hub", hub_key="professional")
+        # Render Navi panel V2 (matching Lobby style)
+        st.markdown('<div id="navi-panel">', unsafe_allow_html=True)
+        
+        render_navi_panel_v2(
+            title="Professional Dashboard",
+            reason="Manage referrals, coordinate care, and track client outcomes.",
+            encouragement={
+                "icon": "💼",
+                "text": f"{pending_actions} pending actions • {new_referrals} new referrals",
+                "status": "working",
+            },
+            context_chips=[
+                {"label": f"{pending_actions} Pending"},
+                {"label": f"{new_referrals} New"},
+                {"label": f"{cases_needing_updates} Updates"}
+            ],
+            primary_action={"label": "View Dashboard", "route": "hub_professional"},
+            secondary_action={"label": "Case Notes", "route": "hub_professional"},
+            progress=None,
+            alert_html="",
+            variant="hub",
+        )
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown("<br/>", unsafe_allow_html=True)
 
         # Render hub body HTML WITHOUT title/subtitle (Navi replaces them)
         body_html = render_dashboard_body(
             title=None,
             subtitle=None,
+            chips=None,
             hub_guide_block=None,  # Navi replaces MCIP panel
+            hub_order=None,
             cards=cards,
+            additional_services=[],
         )
         st.markdown(body_html, unsafe_allow_html=True)
 
-    # Render with simple header/footer
-    render_header_simple(active_route="hub_professional")
+    # Render content with Navi
     render_content()
+    
+    # Render footer
     render_footer_simple()
