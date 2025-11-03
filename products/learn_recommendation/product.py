@@ -77,7 +77,7 @@ def render():
     with col_center:
         # Hero Title with Subtitle
         st.markdown('<h1 class="page-title">Understanding Your Care Recommendation</h1>', unsafe_allow_html=True)
-        st.markdown(f'<p class="hero-subtitle">Let\'s explore what <strong>{tier_display}</strong> means for you.</p>', unsafe_allow_html=True)
+        st.markdown(f'<div style="text-align: center;"><p class="hero-subtitle">Let\'s explore what <strong>{tier_display}</strong> means for you.</p></div>', unsafe_allow_html=True)
         
         # Navi intro box - useful guidance
         st.markdown(f"""
