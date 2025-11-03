@@ -38,60 +38,67 @@ def render():
     # Inject custom CSS for this page
     _inject_discovery_styles()
     
-    # Hero Title with Subtitle
-    st.markdown('<h1 class="discovery-title">✨ Welcome to Your Discovery Journey</h1>', unsafe_allow_html=True)
-    st.markdown('<p class="discovery-subtitle">Your step-by-step guide to understanding care options and planning confidently.</p>', unsafe_allow_html=True)
-    
-    # Navi intro box
+    # ========================================
+    # SECTION: HERO
+    # ========================================
+    st.markdown('<h1 class="discovery-title">✨ Welcome to Your Discovery Path</h1>', unsafe_allow_html=True)
     st.markdown("""
-    <div class="navi-box">
-        <p><b>Hi, I'm Navi.</b> I'll help you discover everything Senior Navigator can do — and guide you step by step.</p>
-        <p>We'll explore how this app helps you and your loved ones make confident care decisions.</p>
-    </div>
+    <p class="discovery-subtitle">
+        A simple step-by-step walkthrough to explore care options and plan confidently with Senior Navigator.
+    </p>
     """, unsafe_allow_html=True)
     
-    # Intro paragraph
-    st.markdown("""
-    <div style="text-align: center;">
-        <h3 class="discovery-intro" style="text-align: center;">
-            Concierge Care Advisors Senior Navigator — a revolutionary way to navigate the complexities of Senior Care Options.<br>
-            Learn about your Options & Cost.
-        </h3>
-    </div>
-    """, unsafe_allow_html=True)
+    # Hero CTA button
+    if st.button("Begin My Discovery →", type="primary", use_container_width=False, key="hero_begin"):
+        # Scroll to video section (visual feedback)
+        st.toast("Let's start with a quick video overview!")
+    
+    st.markdown("<br/>", unsafe_allow_html=True)
+    
+    # ========================================
+    # SECTION: VIDEO OVERVIEW
+    # ========================================
+    st.markdown('<h3 class="section-title">🎥 Learn About the Navigator</h3>', unsafe_allow_html=True)
     
     # Embedded YouTube video
     st.markdown("""
     <div class="video-container">
         <iframe class="video-frame"
             src="https://www.youtube.com/embed/BSJMIRI59b4"
-            title="Curious about Senior Living?"
+            title="Learn About Senior Navigator"
             frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowfullscreen>
         </iframe>
     </div>
     """, unsafe_allow_html=True)
     
-    st.markdown("<br/>", unsafe_allow_html=True)
+    st.caption("See how the Guided Care Plan and Cost Planner work together to help families make informed decisions.")
     
-    # Ask Navi section
-    st.markdown('<h3 class="ask-navi-title">💬 Ask Navi</h3>', unsafe_allow_html=True)
+    st.markdown("<br/><br/>", unsafe_allow_html=True)
     
-    navi_query = st.text_input(
-        "Ask me anything...",
-        key="navi_discovery_query",
-        label_visibility="collapsed",
-        placeholder="What is the Discovery Journey? How long does the Care Plan take?"
-    )
+    # ========================================
+    # SECTION: ASK NAVI — LLM
+    # ========================================
+    st.markdown('<h3 class="section-title">🤖 Meet Navi — Your Digital Advisor</h3>', unsafe_allow_html=True)
+    
+    st.markdown("""
+    <div class="navi-intro">
+        <p>"Hi, I'm Navi! Ask me anything about Senior Navigator—how to get started, how the Care Plan works, or what the Cost Planner does."</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Chat input
+    navi_query = st.chat_input("Type your question to Navi...")
     
     if navi_query:
         # Simple contextual responses
         responses = {
-            "discovery": "The Discovery Journey is your introduction to Senior Navigator. It takes about 10-15 minutes and helps you understand what we offer and how I can guide you through your care planning process.",
+            "discovery": "The Discovery Path is your introduction to Senior Navigator. It takes about 10-15 minutes and helps you understand what we offer and how I can guide you through your care planning process.",
             "care plan": "The Guided Care Plan takes about 5-10 minutes. You'll answer questions about daily living, health needs, and safety concerns. I'll be with you every step, explaining what each question means.",
-            "long": "Most families complete the Discovery Journey in 10-15 minutes. The full Guided Care Plan adds another 5-10 minutes. You can always save and come back later.",
-            "information": "Your information is private and secure. We use it only to personalize your care recommendations and cost estimates. You control what you share with advisors.",
+            "long": "Most families complete the Discovery Path in 10-15 minutes. The full Guided Care Plan adds another 5-10 minutes. You can always save and come back later.",
             "cost": "After your care recommendation, you'll access the Cost Planner. It provides detailed estimates for different care types, including in-home care, assisted living, and memory care options.",
+            "path": "The Discovery Path is your introduction to Senior Navigator. It takes about 10-15 minutes and helps you understand what we offer.",
         }
         
         # Simple keyword matching
@@ -103,22 +110,29 @@ def render():
                 break
         
         if not response:
-            response = "That's a great question! I'm here to help you understand your care planning journey. Try asking about the Discovery Journey, Care Plan, costs, or how long things take."
+            response = "That's a great question! I'm here to help you understand your care planning journey. Try asking about the Discovery Path, Care Plan, costs, or how long things take."
         
-        st.info(f"**Navi:** {response}")
+        with st.chat_message("assistant", avatar="🤖"):
+            st.markdown(f"**Navi:** {response}")
     
-    # Quick question buttons
-    st.markdown('<div class="ask-navi-buttons">', unsafe_allow_html=True)
-    col1, col2 = st.columns(2)
+    # Quick Questions buttons
+    st.markdown('<p class="quick-questions-label">Quick Questions:</p>', unsafe_allow_html=True)
+    col1, col2, col3 = st.columns(3)
+    
     with col1:
-        if st.button("How long does the Guided Care Plan take?", use_container_width=True, key="faq_1"):
-            # Display response directly without modifying widget state
-            st.info("**Navi:** The Guided Care Plan takes about 5-10 minutes. You'll answer questions about daily living, health needs, and safety concerns. I'll be with you every step, explaining what each question means.")
+        if st.button("What is the Discovery Path?", use_container_width=True, key="faq_discovery"):
+            with st.chat_message("assistant", avatar="🤖"):
+                st.markdown("**Navi:** The Discovery Path is your introduction to Senior Navigator. It takes about 10-15 minutes and helps you understand what we offer and how I can guide you through your care planning process.")
+    
     with col2:
-        if st.button("What does the Cost Planner do?", use_container_width=True, key="faq_2"):
-            # Display response directly without modifying widget state
-            st.info("**Navi:** After your care recommendation, you'll access the Cost Planner. It provides detailed estimates for different care types, including in-home care, assisted living, and memory care options.")
-    st.markdown('</div>', unsafe_allow_html=True)
+        if st.button("How long does the Care Plan take?", use_container_width=True, key="faq_duration"):
+            with st.chat_message("assistant", avatar="🤖"):
+                st.markdown("**Navi:** The Guided Care Plan takes about 5-10 minutes. You'll answer questions about daily living, health needs, and safety concerns. I'll be with you every step, explaining what each question means.")
+    
+    with col3:
+        if st.button("What does the Cost Planner do?", use_container_width=True, key="faq_cost"):
+            with st.chat_message("assistant", avatar="🤖"):
+                st.markdown("**Navi:** After your care recommendation, you'll access the Cost Planner. It provides detailed estimates for different care types, including in-home care, assisted living, and memory care options.")
     
     st.markdown("<br/><br/>", unsafe_allow_html=True)
     
@@ -126,31 +140,33 @@ def render():
     if "discovery_learning_viewed" not in st.session_state:
         st.session_state["discovery_learning_viewed"] = True
     
-    # === Discovery Journey CTA Section ===
+    # ========================================
+    # SECTION: READINESS / CTA
+    # ========================================
+    st.markdown('<h3 class="section-title">🚀 Ready to Get Started?</h3>', unsafe_allow_html=True)
+    
     st.markdown("""
-    <div class="cta-wrapper">
-      <div class="cta-note">
-        <p>
-          When you return to the Lobby, this journey will remain active until all its steps are completed.
-          Once finished, it will move automatically to your <strong>My Completed Journeys</strong> section below.
-        </p>
-      </div>
+    <div class="steps-list">
+        <p><strong>Steps to begin:</strong></p>
+        <ul>
+            <li>① Watch the video   ✅</li>
+            <li>② Ask Navi          💬</li>
+            <li>③ Begin your Path   🚀</li>
+        </ul>
     </div>
     """, unsafe_allow_html=True)
     
-    st.markdown('<p class="footer-cta-text">Ready to begin your journey?</p>', unsafe_allow_html=True)
-    
-    st.markdown('<div class="cta-actions">', unsafe_allow_html=True)
+    # CTA Buttons
     col1, col2 = st.columns([1, 1])
     
     with col1:
-        if st.button("⬅ Return to Lobby", use_container_width=True, key="return_lobby", type="secondary"):
+        if st.button("← Return to Lobby", use_container_width=True, key="return_lobby", type="secondary"):
             st.query_params.clear()
             st.query_params["page"] = "hub_lobby"
             st.rerun()
     
     with col2:
-        if st.button("✅ Complete My Discovery Journey", type="primary", use_container_width=True, key="complete_discovery"):
+        if st.button("✅ Complete My Discovery Path", type="primary", use_container_width=True, key="complete_discovery"):
             # Mark as complete
             _mark_complete()
             # Advance to planning phase
@@ -160,7 +176,7 @@ def render():
             st.query_params["page"] = "hub_lobby"
             st.rerun()
     
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown("<br/>", unsafe_allow_html=True)
     
     # Render footer
     render_footer_simple()
@@ -176,13 +192,13 @@ def _inject_discovery_styles():
         color: #1A1C2B;
     }
 
-    /* === Title Section === */
+    /* === Hero Section === */
     .discovery-title {
         font-size: 2.8rem;
         font-weight: 800;
         color: #0E1E54;
         text-align: center;
-        margin: 0 auto 1.25rem;
+        margin: 2rem auto 1.25rem;
         line-height: 1.15;
     }
     .discovery-subtitle {
@@ -190,49 +206,24 @@ def _inject_discovery_styles():
         font-weight: 500;
         text-align: center;
         color: #4b4f63;
-        margin-bottom: 2.25rem;
+        margin: 0 auto 2rem;
+        max-width: 700px;
+        line-height: 1.5;
     }
 
-    /* === Navi Box === */
-    .navi-box {
-        background: #f8f9fe;
-        border: 1px solid rgba(0, 0, 0, 0.06);
-        border-radius: 12px;
-        padding: 1.5rem 1.75rem;
-        margin: 0 auto 2.5rem;
-        max-width: 760px;
-        box-shadow: 0 4px 12px rgba(124, 92, 255, 0.08);
-        transition: box-shadow 0.2s ease;
-    }
-    .navi-box:hover {
-        box-shadow: 0 6px 16px rgba(124, 92, 255, 0.12);
-    }
-    .navi-box b {
-        font-size: 1.05rem;
-        color: #7c5cff;
-    }
-    .navi-box p {
-        font-size: 1rem;
-        line-height: 1.55;
-        color: #32395e;
-        margin: 0.4rem 0;
+    /* === Section Titles === */
+    .section-title {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #0E1E54;
+        text-align: center;
+        margin: 3rem auto 1.5rem;
     }
 
-    /* === Intro Paragraph === */
-    .discovery-intro {
-        font-size: 1.05rem;
-        color: #2b2e42;
-        text-align: center !important;
-        line-height: 1.6;
-        max-width: 720px;
-        margin: 0 auto 2rem !important;
-        display: block;
-    }
-
-    /* === Video === */
+    /* === Video Section === */
     .video-container {
         text-align: center;
-        margin-bottom: 2.75rem;
+        margin: 2rem auto 1rem;
     }
     .video-frame {
         width: 92%;
@@ -243,60 +234,93 @@ def _inject_discovery_styles():
     }
 
     /* === Ask Navi Section === */
-    .ask-navi-title {
-        font-size: 1.6rem;
-        font-weight: 700;
-        color: #0E1E54;
+    .navi-intro {
+        background: #f8f9fe;
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        border-radius: 12px;
+        padding: 1.5rem 1.75rem;
+        margin: 0 auto 1.5rem;
+        max-width: 760px;
+        box-shadow: 0 4px 12px rgba(124, 92, 255, 0.08);
+        transition: box-shadow 0.2s ease;
+    }
+    .navi-intro:hover {
+        box-shadow: 0 6px 16px rgba(124, 92, 255, 0.12);
+    }
+    .navi-intro p {
+        font-size: 1.05rem;
+        line-height: 1.6;
+        color: #32395e;
+        margin: 0;
         text-align: center;
+    }
+    
+    .quick-questions-label {
+        text-align: center;
+        font-weight: 600;
+        font-size: 1rem;
+        color: #4b4f63;
+        margin: 1.5rem 0 0.8rem;
+    }
+
+    /* === Readiness / CTA Section === */
+    .steps-list {
+        background: #f8f9fe;
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        border-radius: 12px;
+        padding: 1.5rem 2rem;
+        margin: 0 auto 2rem;
+        max-width: 600px;
+    }
+    .steps-list p {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #0E1E54;
         margin-bottom: 1rem;
     }
-    
-    /* Style the text input */
-    div[data-testid="stTextInput"] input {
-        border-radius: 10px !important;
-        padding: 0.9rem !important;
-        font-size: 1rem !important;
-        max-width: 720px !important;
-        width: 90% !important;
+    .steps-list ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
     }
-    
-    /* FAQ buttons */
-    .ask-navi-buttons {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 0.8rem;
-        margin-top: 1rem;
-        max-width: 760px;
-        margin-left: auto;
-        margin-right: auto;
+    .steps-list li {
+        font-size: 1.05rem;
+        color: #32395e;
+        padding: 0.5rem 0;
+        line-height: 1.6;
     }
 
-    /* === Footer Buttons === */
-    .footer-buttons {
-        display: flex;
-        justify-content: center;
-        gap: 1.25rem;
-        margin-top: 2.5rem;
-    }
-    
-    .footer-cta-text {
-        text-align: center;
-        margin-top: 2.5rem;
+    /* === Button Styling === */
+    div.stButton > button {
+        border-radius: 8px;
         font-weight: 600;
-        color: #1A1C2B;
+        transition: all 0.2s ease;
+    }
+    
+    div.stButton > button[kind="primary"] {
+        background-color: #5b4cf0;
+        border: none;
+    }
+    
+    div.stButton > button[kind="primary"]:hover {
+        background-color: #4a3dd6;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(91, 76, 240, 0.3);
     }
 
+    /* === Mobile Responsive === */
     @media (max-width: 768px) {
         .discovery-title {
             font-size: 2.1rem;
         }
-        .video-frame {
-            height: auto;
+        .section-title {
+            font-size: 1.5rem;
         }
-        .footer-buttons {
-            flex-direction: column;
-            align-items: center;
+        .video-frame {
+            width: 98%;
+        }
+        .steps-list {
+            padding: 1.25rem 1.5rem;
         }
     }
     </style>
