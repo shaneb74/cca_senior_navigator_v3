@@ -53,6 +53,19 @@ def render():
     """, unsafe_allow_html=True)
     
     # ========================================
+    # NAVI PANEL - At the top for guidance
+    # ========================================
+    st.markdown("""
+    <div class="navi-card">
+        <div class="navi-header">
+            <span class="navi-icon">💬</span>
+            <span class="navi-greeting">Hi! I'm Navi, your digital guide.</span>
+        </div>
+        <p class="navi-intro">I'm here to help you understand Senior Navigator and answer any questions as you explore your options. Feel free to ask me anything!</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # ========================================
     # VIDEO CARD - Embedded with description
     # ========================================
     st.markdown("""
@@ -78,31 +91,35 @@ def render():
     
     
     # ========================================
-    # NAVI INTERACTION CARD
+    # ASK NAVI - AI Chat Interface
     # ========================================
-    st.markdown("""
-    <div class="content-card">
-        <div class="card-header">
-            <span class="card-icon">💬</span>
-            <h3 class="card-title">Ask Navi</h3>
-        </div>
-        <div class="card-body">
-            <p class="navi-description">Have questions? Navi is here to help you understand every step of your journey.</p>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown('<h3 class="section-header">Ask Navi a Question</h3>', unsafe_allow_html=True)
+    
+    # Initialize chat history in session state
+    if "discovery_chat_history" not in st.session_state:
+        st.session_state.discovery_chat_history = []
+    
+    # Display chat history
+    for message in st.session_state.discovery_chat_history:
+        if message["role"] == "user":
+            st.markdown(f'<div class="chat-message user-message">{message["content"]}</div>', unsafe_allow_html=True)
+        else:
+            st.markdown(f'<div class="chat-message navi-message">{message["content"]}</div>', unsafe_allow_html=True)
     
     # Chat input
     navi_query = st.chat_input("Type your question to Navi...")
     
     if navi_query:
+        # Add user message to history
+        st.session_state.discovery_chat_history.append({"role": "user", "content": navi_query})
+        
         # Simple contextual responses
         responses = {
-            "discovery": "The Discovery Path is your introduction to Senior Navigator. It takes about 10-15 minutes and helps you understand what we offer and how I can guide you through your care planning process.",
+            "discovery": "The Discovery Journey is your introduction to Senior Navigator. It takes about 10-15 minutes and helps you understand what we offer and how I can guide you through your care planning process.",
             "care plan": "The Guided Care Plan takes about 5-10 minutes. You'll answer questions about daily living, health needs, and safety concerns. I'll be with you every step, explaining what each question means.",
-            "long": "Most families complete the Discovery Path in 10-15 minutes. The full Guided Care Plan adds another 5-10 minutes. You can always save and come back later.",
+            "long": "Most families complete the Discovery Journey in 10-15 minutes. The full Guided Care Plan adds another 5-10 minutes. You can always save and come back later.",
             "cost": "After your care recommendation, you'll access the Cost Planner. It provides detailed estimates for different care types, including in-home care, assisted living, and memory care options.",
-            "path": "The Discovery Path is your introduction to Senior Navigator. It takes about 10-15 minutes and helps you understand what we offer.",
+            "path": "The Discovery Journey is your introduction to Senior Navigator. It takes about 10-15 minutes and helps you understand what we offer.",
         }
         
         # Simple keyword matching
@@ -116,27 +133,31 @@ def render():
         if not response:
             response = "That's a great question! I'm here to help you understand your care planning journey. Try asking about the Discovery Journey, Care Plan, costs, or how long things take."
         
-        with st.chat_message("assistant", avatar="🤖"):
-            st.markdown(response)
+        # Add Navi response to history
+        st.session_state.discovery_chat_history.append({"role": "assistant", "content": response})
+        st.rerun()
     
     # Quick Questions
-    st.markdown('<p class="quick-label">Quick Questions:</p>', unsafe_allow_html=True)
+    st.markdown('<p class="quick-label">Common Questions:</p>', unsafe_allow_html=True)
     col1, col2, col3 = st.columns(3)
     
     with col1:
         if st.button("What is the Discovery Journey?", use_container_width=True, key="faq_discovery"):
-            with st.chat_message("assistant", avatar="🤖"):
-                st.markdown("The Discovery Journey is your introduction to Senior Navigator. It takes about 10-15 minutes and helps you understand what we offer and how I can guide you through your care planning process.")
+            st.session_state.discovery_chat_history.append({"role": "user", "content": "What is the Discovery Journey?"})
+            st.session_state.discovery_chat_history.append({"role": "assistant", "content": "The Discovery Journey is your introduction to Senior Navigator. It takes about 10-15 minutes and helps you understand what we offer and how I can guide you through your care planning process."})
+            st.rerun()
     
     with col2:
         if st.button("How long does it take?", use_container_width=True, key="faq_duration"):
-            with st.chat_message("assistant", avatar="🤖"):
-                st.markdown("The Guided Care Plan takes about 5-10 minutes. You'll answer questions about daily living, health needs, and safety concerns. I'll be with you every step, explaining what each question means.")
+            st.session_state.discovery_chat_history.append({"role": "user", "content": "How long does it take?"})
+            st.session_state.discovery_chat_history.append({"role": "assistant", "content": "The Guided Care Plan takes about 5-10 minutes. You'll answer questions about daily living, health needs, and safety concerns. I'll be with you every step, explaining what each question means."})
+            st.rerun()
     
     with col3:
         if st.button("What's the Cost Planner?", use_container_width=True, key="faq_cost"):
-            with st.chat_message("assistant", avatar="🤖"):
-                st.markdown("After your care recommendation, you'll access the Cost Planner. It provides detailed estimates for different care types, including in-home care, assisted living, and memory care options.")
+            st.session_state.discovery_chat_history.append({"role": "user", "content": "What's the Cost Planner?"})
+            st.session_state.discovery_chat_history.append({"role": "assistant", "content": "After your care recommendation, you'll access the Cost Planner. It provides detailed estimates for different care types, including in-home care, assisted living, and memory care options."})
+            st.rerun()
     
     st.markdown("<br/>", unsafe_allow_html=True)
     
@@ -187,7 +208,7 @@ def _inject_discovery_styles():
     .hero-section {
         text-align: center;
         padding: 2rem 1rem;
-        margin-bottom: 2rem;
+        margin-bottom: 1.5rem;
     }
     .hero-title {
         font-size: 2.5rem;
@@ -202,6 +223,36 @@ def _inject_discovery_styles():
         max-width: 700px;
         margin: 0 auto;
         line-height: 1.6;
+    }
+
+    /* === Navi Card at Top === */
+    .navi-card {
+        background: linear-gradient(135deg, #f0f4ff 0%, #f8f9fe 100%);
+        border: 2px solid #e0e7ff;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin: 0 0 2rem;
+        box-shadow: 0 2px 8px rgba(124, 92, 255, 0.1);
+    }
+    .navi-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+    .navi-icon {
+        font-size: 1.5rem;
+    }
+    .navi-greeting {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #0E1E54;
+    }
+    .navi-intro {
+        font-size: 1rem;
+        color: #4b4f63;
+        line-height: 1.6;
+        margin: 0;
     }
 
     /* === Content Cards === */
@@ -262,11 +313,37 @@ def _inject_discovery_styles():
         margin: 0;
     }
 
-    /* === Navi Card === */
-    .navi-description {
-        font-size: 1rem;
-        color: #4b4f63;
-        margin: 0;
+    /* === AI Chat Interface === */
+    .section-header {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #0E1E54;
+        margin: 2rem 0 1rem;
+        text-align: center;
+    }
+    
+    .chat-message {
+        padding: 1rem 1.25rem;
+        border-radius: 12px;
+        margin: 0.75rem 0;
+        line-height: 1.6;
+        max-width: 85%;
+    }
+    
+    .user-message {
+        background: #e0e7ff;
+        color: #1e293b;
+        margin-left: auto;
+        margin-right: 0;
+        text-align: right;
+    }
+    
+    .navi-message {
+        background: #f8f9fe;
+        color: #1e293b;
+        border: 1px solid #e2e8f0;
+        margin-right: auto;
+        margin-left: 0;
     }
     
     .quick-label {
