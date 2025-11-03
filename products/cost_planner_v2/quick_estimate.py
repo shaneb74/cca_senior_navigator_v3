@@ -750,39 +750,92 @@ def _render_home_card(zip_code: str):
     # Controls: Hours slider
     st.markdown('<div class="cost-section__label">Daily Support Hours</div>', unsafe_allow_html=True)
     
-    # Show personalized recommendation comparing user selection vs calculated hours
+    # Show Navi-branded interactive callout if recommendation differs from user selection
     gcp = st.session_state.get("gcp", {})
     calculated_hours = gcp.get("hours_calculated")
     user_band = gcp.get("hours_user_band", "")
     
-    if calculated_hours and user_band:
-        # Round to nearest 0.5 for cleaner display
-        rounded_calc = round(calculated_hours * 2) / 2
-        
-        # Build contextual message based on user selection vs recommendation
-        band_descriptions = {
-            "<1h": "less than 1 hour",
-            "1-3h": "1-3 hours", 
-            "4-8h": "4-8 hours",
-            "12-16h": "12-16 hours",
-            "24h": "24-hour care"
-        }
-        user_desc = band_descriptions.get(user_band, user_band)
-        
-        st.markdown(
-            f'<div style="background: #f8f9fa; padding: 12px 16px; border-radius: 8px; margin-bottom: 12px; '
-            f'border-left: 3px solid #6c757d;">'
-            f'<span style="color: #495057; font-size: 14px;">'
-            f'You selected <strong>{user_desc}</strong>, but based on your personalized care needs, '
-            f'we recommend <strong>{rounded_calc:.1f} hours/day</strong> for a more realistic estimate.'
-            f'</span>'
-            f'</div>',
-            unsafe_allow_html=True
-        )
+    # Check if user has already dismissed this recommendation
+    cost = st.session_state.setdefault("cost", {})
+    meta = cost.setdefault("meta", {})
+    decision_key = f"hours_navi_decision_{calculated_hours}"
+    has_decided = meta.get(decision_key, False)
     
     # Initialize slider widget key from comparison state (only if not already set)
     if "qe_home_hours" not in st.session_state:
         st.session_state["qe_home_hours"] = st.session_state.comparison_inhome_hours
+    
+    current_hours = st.session_state.get("qe_home_hours", 3.0)
+    
+    # Show Navi callout only if:
+    # 1. We have calculated hours
+    # 2. There's a significant difference (>1 hour)
+    # 3. User hasn't dismissed it yet
+    if calculated_hours and user_band and not has_decided:
+        rounded_calc = round(calculated_hours * 2) / 2
+        
+        # Only show if there's a meaningful difference
+        if abs(current_hours - rounded_calc) > 1.0:
+            band_descriptions = {
+                "<1h": "less than 1 hour",
+                "1-3h": "1-3 hours", 
+                "4-8h": "4-8 hours",
+                "12-16h": "12-16 hours",
+                "24h": "24-hour care"
+            }
+            user_desc = band_descriptions.get(user_band, user_band)
+            
+            # Navi-branded callout with purple/lavender theme
+            st.markdown(
+                f'''
+                <div style="background: linear-gradient(135deg, #f3e7ff 0%, #e9d5ff 100%); 
+                            padding: 20px; 
+                            border-radius: 12px; 
+                            margin-bottom: 16px; 
+                            border: 2px solid #d8b4fe;
+                            box-shadow: 0 2px 8px rgba(139, 92, 246, 0.15);">
+                    <div style="display: flex; align-items: center; margin-bottom: 12px;">
+                        <span style="font-size: 20px; margin-right: 8px;">✨</span>
+                        <span style="font-weight: 600; color: #7c3aed; font-size: 16px;">NAVI</span>
+                    </div>
+                    <p style="color: #4c1d95; font-size: 15px; line-height: 1.5; margin: 0 0 16px 0;">
+                        You selected <strong>{user_desc}</strong>, but based on your personalized care needs, 
+                        I recommend <strong>{rounded_calc:.1f} hours/day</strong> for a more realistic estimate.
+                    </p>
+                </div>
+                ''',
+                unsafe_allow_html=True
+            )
+            
+            # Two action buttons
+            col1, col2 = st.columns([1, 1], gap="small")
+            with col1:
+                if st.button(
+                    f"✓ Use My Recommendation ({rounded_calc:.1f}h)",
+                    key="navi_accept_hours",
+                    use_container_width=True,
+                    type="primary"
+                ):
+                    # Update all hours-related session state
+                    st.session_state["qe_home_hours"] = rounded_calc
+                    st.session_state.comparison_inhome_hours = rounded_calc
+                    st.session_state.comparison_hours_per_day = rounded_calc
+                    cost["home_hours_scalar"] = float(rounded_calc)
+                    meta[decision_key] = "accepted"
+                    print(f"[NAVI_HOURS] User accepted recommendation: {rounded_calc}h")
+                    st.rerun()
+            
+            with col2:
+                if st.button(
+                    "I'll Adjust It Myself",
+                    key="navi_dismiss_hours",
+                    use_container_width=True
+                ):
+                    meta[decision_key] = "dismissed"
+                    print(f"[NAVI_HOURS] User dismissed recommendation, keeping: {current_hours}h")
+                    st.rerun()
+            
+            st.markdown("")  # Spacing after buttons
     
     # Slider now reads initial value from session state key (no value parameter)
     hours = st.slider(
