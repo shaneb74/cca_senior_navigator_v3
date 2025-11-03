@@ -193,63 +193,92 @@ def generate_hours_advice(
         behaviors.append("repetitive questions/behaviors")
     behaviors_str = ", ".join(behaviors) if behaviors else "none reported"
 
-    prompt = f"""You are a care planning assistant helping estimate hours/day of care support needed.
+    prompt = f"""You are a geriatric care planning specialist helping estimate daily care hours needed.
 
-CONTEXT:
-- Basic ADLs needing help: {badls_str}
-  Total count: {context.badls_count}/6
-- Instrumental ADLs needing help: {iadls_str}
-  Total count: {context.iadls_count}/8
-- Cognitive level: {context.cognitive_level or "none"}
+CLINICAL CONTEXT:
+
+Physical Needs:
+- BADLs requiring help: {context.badls_count}/6 ({badls_str})
+- IADLs requiring help: {context.iadls_count}/8 ({iadls_str})
+- Falls history: {context.falls or "unknown"} (risk factor for 24/7 supervision)
+- Mobility: {context.mobility or "unknown"} (affects transfer time and safety)
+
+Cognitive Status:
+- Level: {context.cognitive_level or "unknown"}
 - Specific behaviors: {behaviors_str}
-- Falls history: {context.falls or "unknown"}
-- Mobility: {context.mobility or "unknown"}
+- Supervision needs: {'Yes - constant monitoring' if context.risky_behaviors else 'Standard'}
+
+Medical Complexity:
 - Medication complexity: {context.meds_complexity or "unknown"}
+- Overnight care needed: {context.overnight_needed}
+
+Support System:
 - Primary support: {context.primary_support or "unknown"}
-- Overnight needs: {context.overnight_needed}
-- Current arrangement: {context.current_hours or "none"}
+- Current arrangement: {context.current_hours or "none established"}
 
-WEIGHTED BASELINE SUGGESTION: {baseline}
+WEIGHTED BASELINE SUGGESTION (rule-based): {baseline}
+This baseline uses task-specific time weights, cognitive multipliers, and fall risk adjustments.
 
-CLINICAL DECISION RULES:
-1. Toileting needs = 24/7 availability (2.0h base, not just task time)
-2. Cognitive supervision overhead:
-   - Mild: 20% more time (prompting, redirection)
-   - Moderate: 60% more time (constant supervision)
-   - Severe: 120% more time (hands-on guidance)
-3. Fall risk = slower pace for all tasks (1.1x-1.5x multiplier)
-4. Wandering = monitoring + redirection (+0.3h)
-5. Aggression = de-escalation + safety (+0.2h)
-6. Overnight needs = minimum 16h (not just task time)
+CLINICAL DECISION FRAMEWORK:
+
+Task Time Considerations:
+1. Toileting assistance → Requires availability 24/7, not just task time (2.0h base weight)
+2. Bathing/dressing → Discrete time blocks (0.5-0.6h each)
+3. Meal preparation → Includes shopping, cooking, cleanup (1.0h daily average)
+4. Medication management → Setup, prompting, monitoring (0.5h+ for complex regimens)
+
+Cognitive Supervision Overhead:
+- None: 1.0x (no supervision needed)
+- Mild: 1.2x (occasional prompting, forgetfulness)
+- Moderate: 1.6x (frequent supervision, decision-making help)
+- Severe: 2.2x (constant supervision, safety critical)
+- Behavioral symptoms add: wandering (+0.3h), aggression (+0.2h), sundowning (+0.3h)
+
+Fall Risk Impact:
+- Once: 1.1x (some caution)
+- Multiple: 1.3x (extra caution, slower pace)
+- Frequent: 1.5x (very high risk, constant vigilance)
+
+Mobility Aid Requirements:
+- Cane: +0.2h (minimal assistance)
+- Walker: +0.5h (more assistance, slower pace)
+- Wheelchair: +1.0h (transfers, positioning)
+- Bedbound: +2.0h (all transfers, repositioning)
 
 REAL-WORLD EXAMPLES:
-- 2 BADLs (bathing, dressing), no cognitive issues → 1-3h
-- 3 BADLs (bathing, dressing, toileting), mild cognitive → 4-8h  
-- Toileting + moderate dementia + wandering → 4-8h or 24h
-- Multiple BADLs + severe cognitive + overnight → 24h
+- "2 BADLs (bathing, dressing) + no cognition issues" → 1-3h (morning routine help)
+- "3 BADLs + moderate dementia + wandering" → 4-8h (supervision overhead dominates)
+- "Toileting help + falls + insulin management" → 24h (availability + medical + safety)
+- "Walker + mild cognitive + 2 IADLs" → 1-3h (support for specific tasks)
+- "Multiple ADLs + severe cognitive + overnight needs" → 24h (round-the-clock required)
 
 YOUR TASK:
 Choose ONE band from this EXACT list ONLY:
-- "<1h"   (minimal support, mostly independent)
-- "1-3h"  (moderate support, some ADL help)
-- "4-8h"  (substantial support, multiple ADLs or safety needs)
-- "24h"   (round-the-clock care, significant medical/safety needs)
+- "<1h"   (minimal support, mostly independent, light assistance)
+- "1-3h"  (moderate support, morning/evening routines, some ADL help)
+- "4-8h"  (substantial support, multiple ADLs or significant supervision needs)
+- "24h"   (round-the-clock care, complex medical/cognitive/safety needs)
 
-DEVELOPER RULES (STRICT):
-1. Prefer the baseline suggestion unless clear evidence to adjust by ONE step
-2. NEVER jump >1 step from baseline UNLESS overnight_needed=True or risky_behaviors=True
-3. If overnight_needed=True or risky_behaviors=True, baseline is "4-8h" (floor); you may choose "24h" if justified
-4. Provide 1-3 SHORT reasons (one sentence each) for your choice
-5. Include confidence (0.0-1.0): how certain are you this matches the person's needs?
+DECISION RULES:
+1. Start with the weighted baseline - it already accounts for task times, cognitive multipliers, fall risk
+2. Adjust by ONE step maximum unless clear evidence for larger change
+3. Toileting needs almost always require 4-8h minimum (availability requirement)
+4. Moderate+ cognitive impairment with wandering/aggression → consider 4-8h or 24h
+5. Overnight needs + other risk factors → strong indicator for 24h
+6. Multiple falls + mobility aid + ADLs → likely 4-8h minimum for safety
 
-OUTPUT FORMAT (strict JSON):
+RESPONSE FORMAT:
+Provide 2-3 SPECIFIC reasons (be clinical: "toileting requires availability" not "high needs")
+Include confidence 0.0-1.0 based on data completeness and clarity
+
+OUTPUT (JSON only, no other text):
 {{
-  "band": "<one of 4 allowed bands>",
-  "reasons": ["reason 1", "reason 2", "reason 3"],
+  "band": "<1h|1-3h|4-8h|24h>",
+  "reasons": ["specific reason 1 with clinical detail", "specific reason 2"],
   "confidence": 0.85
 }}
 
-IMPORTANT: Output ONLY valid JSON. Do not invent band values outside the 4 allowed options.
+CRITICAL: Output ONLY valid JSON. Do not invent band values. Be specific in reasons.
 """
 
     try:
