@@ -262,9 +262,18 @@ app_log.debug(f"[APP] Needs reload: {needs_reload}")
 if needs_reload:
     app_log.info(f"[APP] Loading user data for UID: {uid}")
     
-    # Load session data (browser-specific, temporary)
-    session_data = load_session(session_id)
-    merge_into_state(st.session_state, session_data)
+    # If UID changed, clear old session data to prevent bleed
+    if last_loaded_uid and last_loaded_uid != uid:
+        app_log.info(f"[APP] UID changed from {last_loaded_uid} to {uid}, clearing session cache")
+        # Clear session-specific keys to prevent data bleed across users
+        from core.session_store import SESSION_PERSIST_KEYS
+        for key in list(st.session_state.keys()):
+            if key in SESSION_PERSIST_KEYS:
+                del st.session_state[key]
+    else:
+        # Same UID or first load - restore session data
+        session_data = load_session(session_id)
+        merge_into_state(st.session_state, session_data)
 
     # Load user data (persistent, cross-device)
     user_data = load_user(uid)
