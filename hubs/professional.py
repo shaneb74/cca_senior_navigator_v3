@@ -209,9 +209,9 @@ def render(ctx=None) -> None:
                 "status": "working",
             },
             context_chips=[
-                f"{pending_actions} Pending",
-                f"{new_referrals} New",
-                f"{cases_needing_updates} Updates"
+                {"label": f"{pending_actions} Pending"},
+                {"label": f"{new_referrals} New"},
+                {"label": f"{cases_needing_updates} Updates"}
             ],
             primary_action={"label": "View Dashboard", "route": "hub_professional"},
             secondary_action={"label": "Case Notes", "route": "hub_professional"},
