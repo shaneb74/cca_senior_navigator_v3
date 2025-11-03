@@ -13,7 +13,7 @@ import streamlit as st
 from core.additional_services import get_additional_services
 from core.base_hub import render_dashboard_body
 from core.mcip import MCIP
-from core.navi import render_navi_panel
+from core.ui import render_navi_panel_v2
 from core.product_tile import ProductTileHub
 from ui.footer_simple import render_footer_simple
 from ui.header_simple import render_header_simple
@@ -101,8 +101,27 @@ def render(ctx=None) -> None:
 
     # Use callback pattern to render Navi AFTER header but BEFORE body
     def render_content():
-        # Render Navi panel (after header, before hub content)
-        render_navi_panel(location="hub", hub_key="resources")
+        # Render Navi panel V2 (matching Lobby style)
+        st.markdown('<div id="navi-panel">', unsafe_allow_html=True)
+        
+        render_navi_panel_v2(
+            title=f"Hi, {person_name}!" if person_name else "Resources Hub",
+            reason="Access health tools and self-service resources tailored to your needs.",
+            encouragement={
+                "icon": "🛠️",
+                "text": "Quick assessments to support safety, health, and daily living.",
+                "status": "exploring",
+            },
+            context_chips=[],
+            primary_action={"label": "Start Assessment", "route": hub_order.get("next_step", "resources")},
+            secondary_action={"label": "Ask NAVI", "route": "faq"},
+            progress=None,
+            alert_html="",
+            variant="hub",
+        )
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown("<br/>", unsafe_allow_html=True)
 
         # Render hub body HTML WITHOUT title/subtitle/chips (Navi replaces them)
         body_html = render_dashboard_body(

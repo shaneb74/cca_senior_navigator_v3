@@ -9,7 +9,7 @@ import streamlit as st
 
 from core.base_hub import render_dashboard_body
 from core.hub_guide import compute_hub_guide, partners_intel_from_state
-from core.navi import render_navi_panel
+from core.ui import render_navi_panel_v2
 from core.product_tile import ProductTileHub, tile_requirements_satisfied
 from ui.footer_simple import render_footer_simple
 from ui.header_simple import render_header_simple
@@ -168,8 +168,28 @@ def page_partners() -> None:
 
     # Use callback pattern to render Navi AFTER header
     def render_content():
-        # Render Navi panel (after header, before hub content)
-        render_navi_panel(location="hub", hub_key="partners")
+        # Render Navi panel V2 (matching Lobby style)
+        st.markdown('<div id="navi-panel">', unsafe_allow_html=True)
+        
+        partner_count = len(filtered_partners)
+        render_navi_panel_v2(
+            title="Trusted Partners",
+            reason="Connect with verified care providers, communities, and specialist services.",
+            encouragement={
+                "icon": "🤝",
+                "text": f"Browse {partner_count} trusted partners in your area.",
+                "status": "exploring",
+            },
+            context_chips=[],
+            primary_action={"label": "View All Partners", "route": "partners"},
+            secondary_action={"label": "Ask NAVI", "route": "faq"},
+            progress=None,
+            alert_html="",
+            variant="hub",
+        )
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown("<br/>", unsafe_allow_html=True)
 
         # Render hub body HTML WITHOUT title/chips (Navi replaces them)
         body_html = render_dashboard_body(
