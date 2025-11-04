@@ -20,7 +20,18 @@ def _all_products_done(required: list[str]) -> bool:
 def partners_intel_from_state(state: dict[str, Any]) -> str:
     gcp = state.get("gcp", {}) or {}
     care = str(gcp.get("care_tier") or "").lower()
-    flags = gcp.get("flags") or {}
+    flags_data = gcp.get("flags") or []
+    
+    # Convert flags list to set of flag IDs for easy lookup
+    # flags can be either list[dict] (MCIP format) or dict (legacy format)
+    flag_ids = set()
+    if isinstance(flags_data, list):
+        # MCIP format: list of dicts with 'id' key
+        flag_ids = {f.get("id") for f in flags_data if isinstance(f, dict) and f.get("id")}
+    elif isinstance(flags_data, dict):
+        # Legacy format: dict with flag_id as keys
+        flag_ids = {k for k, v in flags_data.items() if v}
+    
     lines: list[str] = []
 
     if care in {"in_home", "independent", "stay_home"}:
@@ -29,11 +40,11 @@ def partners_intel_from_state(state: dict[str, Any]) -> str:
         )
     if care in {"assisted_living", "memory_care", "memory_care_high_acuity"}:
         lines.append("Planning a move? Explore Legal & Financial and Medical Equipment partners.")
-    if flags.get("meds_management_needed"):
+    if "meds_management_needed" in flag_ids:
         lines.append(
             "Medication management flagged. Consider Omcare for remote dispensing and adherence."
         )
-    if flags.get("fall_risk"):
+    if "fall_risk" in flag_ids or "falls_risk" in flag_ids:
         lines.append("Fall risk identified. Safety and mobility partners may help reduce risk.")
 
     if not lines:
