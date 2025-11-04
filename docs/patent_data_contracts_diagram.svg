@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" width="1200" height="900">
+  <defs>
+    <style>
+      .contract-box { fill: white; stroke: black; stroke-width: 2; }
+      .contract-title { font-family: Arial, sans-serif; font-size: 16px; font-weight: bold; }
+      .contract-field { font-family: 'Courier New', monospace; font-size: 11px; }
+      .consumer-box { fill: #f5f5f5; stroke: black; stroke-width: 1; }
+      .consumer-text { font-family: Arial, sans-serif; font-size: 11px; }
+      .principle-box { fill: #fffacd; stroke: black; stroke-width: 2; }
+      .principle-text { font-family: Arial, sans-serif; font-size: 12px; font-weight: bold; }
+      .principle-detail { font-family: Arial, sans-serif; font-size: 11px; }
+      .section-label { font-family: Arial, sans-serif; font-size: 14px; font-weight: bold; }
+      .ref-num { font-family: Arial, sans-serif; font-size: 10px; fill: #666; }
+    </style>
+  </defs>
+
+  <!-- Title -->
+  <text x="600" y="30" text-anchor="middle" class="section-label">FIGURE 6</text>
+  <text x="600" y="50" text-anchor="middle" style="font-family: Arial, sans-serif; font-size: 13px;">Standardized Data Contract Structures</text>
+
+  <!-- CareRecommendation Contract -->
+  <rect x="50" y="80" width="280" height="310" class="contract-box" />
+  <text x="190" y="105" text-anchor="middle" class="contract-title">CareRecommendation</text>
+  <text x="60" y="130" class="contract-field">• tier: "assisted_living"</text>
+  <text x="60" y="148" class="contract-field">• tier_score: 32.5</text>
+  <text x="60" y="166" class="contract-field">• tier_rankings: [...]</text>
+  <text x="60" y="184" class="contract-field">• confidence: 0.92</text>
+  <text x="60" y="202" class="contract-field">• flags: [{type, label, help}]</text>
+  <text x="60" y="220" class="contract-field">• rationale: ["Needs ADL help"]</text>
+  <text x="60" y="238" class="contract-field">• generated_at: "2025-11-03..."</text>
+  <text x="60" y="256" class="contract-field">• version: "4.2"</text>
+  <text x="60" y="274" class="contract-field">• input_snapshot_id: "5M1_258"</text>
+  <text x="60" y="292" class="contract-field">• rule_set: "standard_2025"</text>
+  <text x="60" y="310" class="contract-field">• next_step: {product, phase}</text>
+  <text x="60" y="328" class="contract-field">• status: "complete"</text>
+  <text x="60" y="346" class="contract-field">• needs_refresh: false</text>
+  <text x="60" y="364" class="contract-field">• schema_version: 2</text>
+  <text x="310" y="390" class="ref-num">(1210)</text>
+
+  <!-- FinancialProfile Contract -->
+  <rect x="370" y="80" width="280" height="310" class="contract-box" />
+  <text x="510" y="105" text-anchor="middle" class="contract-title">FinancialProfile</text>
+  <text x="380" y="130" class="contract-field">• estimated_monthly_cost: 6298</text>
+  <text x="380" y="155" class="contract-field">• coverage_percentage: 78.3</text>
+  <text x="380" y="180" class="contract-field">• gap_amount: 1368</text>
+  <text x="380" y="205" class="contract-field">• runway_months: 38</text>
+  <text x="380" y="230" class="contract-field">• confidence: 0.85</text>
+  <text x="380" y="255" class="contract-field">• generated_at: "2025-11-03..."</text>
+  <text x="380" y="280" class="contract-field">• status: "complete"</text>
+  <text x="630" y="390" class="ref-num">(1220)</text>
+
+  <!-- AdvisorAppointment Contract -->
+  <rect x="690" y="80" width="280" height="310" class="contract-box" />
+  <text x="830" y="105" text-anchor="middle" class="contract-title">AdvisorAppointment</text>
+  <text x="700" y="130" class="contract-field">• scheduled: true</text>
+  <text x="700" y="148" class="contract-field">• date: "2025-11-15"</text>
+  <text x="700" y="166" class="contract-field">• time: "14:00"</text>
+  <text x="700" y="184" class="contract-field">• type: "video"</text>
+  <text x="700" y="202" class="contract-field">• confirmation_id: "ADV-001234"</text>
+  <text x="700" y="220" class="contract-field">• contact_email: "user@..."</text>
+  <text x="700" y="238" class="contract-field">• timezone: "America/LA"</text>
+  <text x="700" y="256" class="contract-field">• generated_at: "2025-11-03..."</text>
+  <text x="700" y="274" class="contract-field">• status: "confirmed"</text>
+  <text x="700" y="292" class="contract-field">• prep_sections_complete: [...]</text>
+  <text x="700" y="310" class="contract-field">• prep_progress: 87</text>
+  <text x="950" y="390" class="ref-num">(1230)</text>
+
+  <!-- Contract Consumers Section -->
+  <rect x="50" y="420" width="920" height="180" class="consumer-box" />
+  <text x="510" y="445" text-anchor="middle" style="font-family: Arial, sans-serif; font-size: 14px; font-weight: bold;">CONTRACT CONSUMERS</text>
+
+  <!-- CareRecommendation Consumers -->
+  <text x="70" y="475" class="consumer-text" style="font-weight: bold;">CareRecommendation:</text>
+  <text x="70" y="495" class="consumer-text">• Navi (all variants)</text>
+  <text x="70" y="512" class="consumer-text">• Cost Planner</text>
+  <text x="70" y="529" class="consumer-text">• Financial Assessment</text>
+  <text x="70" y="546" class="consumer-text">• AdvisorPrep</text>
+  <text x="70" y="563" class="consumer-text">• UI displays</text>
+  <text x="70" y="580" class="consumer-text">• Clinical Review</text>
+  <text x="260" y="600" class="ref-num">(1212)</text>
+
+  <!-- FinancialProfile Consumers -->
+  <text x="370" y="475" class="consumer-text" style="font-weight: bold;">FinancialProfile:</text>
+  <text x="370" y="495" class="consumer-text">• Navi (all variants)</text>
+  <text x="370" y="512" class="consumer-text">• Cost Planner display</text>
+  <text x="370" y="529" class="consumer-text">• Coherence validation</text>
+  <text x="370" y="546" class="consumer-text">• Advisor briefing</text>
+  <text x="370" y="563" class="consumer-text">• Clinical Review</text>
+  <text x="580" y="600" class="ref-num">(1222)</text>
+
+  <!-- AdvisorAppointment Consumers -->
+  <text x="690" y="475" class="consumer-text" style="font-weight: bold;">AdvisorAppointment:</text>
+  <text x="690" y="495" class="consumer-text">• Navi</text>
+  <text x="690" y="512" class="consumer-text">• AdvisorPrep module</text>
+  <text x="690" y="529" class="consumer-text">• Lobby diagnostics</text>
+  <text x="690" y="546" class="consumer-text">• Scheduler</text>
+  <text x="690" y="563" class="consumer-text">• Briefing generator</text>
+  <text x="900" y="600" class="ref-num">(1232)</text>
+
+  <!-- Architectural Principle Box -->
+  <rect x="200" y="650" width="800" height="180" class="principle-box" />
+  <text x="600" y="685" text-anchor="middle" class="principle-text">ARCHITECTURAL PRINCIPLE</text>
+  <text x="600" y="715" text-anchor="middle" class="principle-text" style="font-size: 14px;">Single Source of Truth</text>
+  <text x="600" y="745" text-anchor="middle" class="principle-detail">MCIP publishes these contracts</text>
+  <text x="600" y="768" text-anchor="middle" class="principle-detail">ALL other components consume them read-only</text>
+  <text x="600" y="791" text-anchor="middle" class="principle-detail" style="font-style: italic;">No component modifies contracts directly</text>
+  <text x="980" y="830" class="ref-num">(1200)</text>
+
+  <!-- Publisher Labels -->
+  <text x="190" y="395" text-anchor="middle" style="font-family: Arial, sans-serif; font-size: 9px; fill: #0066cc;">Published by: GCP v4</text>
+  <text x="510" y="395" text-anchor="middle" style="font-family: Arial, sans-serif; font-size: 9px; fill: #0066cc;">Published by: Cost Planner v2</text>
+  <text x="830" y="395" text-anchor="middle" style="font-family: Arial, sans-serif; font-size: 9px; fill: #0066cc;">Published by: PFMA v3</text>
+
+  <!-- Connection Lines (subtle) -->
+  <line x1="190" y1="390" x2="190" y2="420" stroke="#999" stroke-width="1" stroke-dasharray="3,3"/>
+  <line x1="510" y1="390" x2="510" y2="420" stroke="#999" stroke-width="1" stroke-dasharray="3,3"/>
+  <line x1="830" y1="390" x2="830" y2="420" stroke="#999" stroke-width="1" stroke-dasharray="3,3"/>
+
+</svg>
