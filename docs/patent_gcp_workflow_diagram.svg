@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800" height="1100" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .box { fill: white; stroke: black; stroke-width: 2; }
+      .header-box { fill: #f5f5f5; stroke: black; stroke-width: 2; }
+      .engine-box { fill: #fffacd; stroke: black; stroke-width: 2; }
+      .title { font-family: Arial, sans-serif; font-size: 14px; fill: black; font-weight: bold; text-anchor: middle; }
+      .section-title { font-family: Arial, sans-serif; font-size: 16px; fill: black; font-weight: bold; text-anchor: middle; }
+      .small-text { font-family: Arial, sans-serif; font-size: 11px; fill: black; text-anchor: middle; }
+      .ref-text { font-family: Arial, sans-serif; font-size: 10px; fill: black; font-style: italic; }
+      .arrow { stroke: black; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+      .side-label { font-family: Arial, sans-serif; font-size: 12px; fill: black; font-weight: bold; }
+      .figure-title { font-family: Arial, sans-serif; font-size: 16px; fill: black; font-weight: bold; text-anchor: middle; }
+      .figure-subtitle { font-family: Arial, sans-serif; font-size: 13px; fill: black; text-anchor: middle; }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="black" />
+    </marker>
+  </defs>
+
+  <!-- Figure Title -->
+  <text class="figure-title" x="400" y="30">FIGURE 4</text>
+  <text class="figure-subtitle" x="400" y="50">Deterministic Assessment Engine Workflow</text>
+
+  <!-- User Interface Header -->
+  <rect class="header-box" x="50" y="80" width="700" height="60" />
+  <text class="section-title" x="400" y="105">USER INTERFACE</text>
+  <text class="small-text" x="400" y="125">Assessment Form</text>
+  <text class="ref-text" x="400" y="138">(1110)</text>
+
+  <!-- Section 1: Physical Health & Mobility -->
+  <rect class="box" x="50" y="170" width="700" height="70" />
+  <text class="title" x="400" y="195">Section 1:</text>
+  <text class="title" x="400" y="215">Physical Health & Mobility</text>
+  <text class="small-text" x="400" y="230">Eating, mobility, vision</text>
+
+  <!-- Section 2: Safety & Independence -->
+  <rect class="box" x="50" y="260" width="700" height="70" />
+  <text class="title" x="400" y="285">Section 2:</text>
+  <text class="title" x="400" y="305">Safety & Independence</text>
+  <text class="small-text" x="400" y="320">Living situation, falls, medication</text>
+
+  <!-- Section 3: Memory & Cognition -->
+  <rect class="box" x="50" y="350" width="700" height="70" />
+  <text class="title" x="400" y="375">Section 3:</text>
+  <text class="title" x="400" y="395">Memory & Cognition</text>
+  <text class="small-text" x="400" y="410">Memory issues, behaviors, diagnosis</text>
+
+  <!-- Section 4: Social & Emotional -->
+  <rect class="box" x="50" y="440" width="700" height="70" />
+  <text class="title" x="400" y="465">Section 4:</text>
+  <text class="title" x="400" y="485">Social & Emotional</text>
+  <text class="small-text" x="400" y="500">Family support, mood, social activities</text>
+
+  <!-- Section 5: Financial Resources -->
+  <rect class="box" x="50" y="530" width="700" height="70" />
+  <text class="title" x="400" y="555">Section 5:</text>
+  <text class="title" x="400" y="575">Financial Resources</text>
+  <text class="small-text" x="400" y="590">Income sources, assets, insurance</text>
+
+  <!-- JSON-Driven Rule Engine -->
+  <rect class="engine-box" x="50" y="630" width="700" height="140" />
+  <text class="section-title" x="400" y="660">JSON-DRIVEN RULE ENGINE</text>
+  <text class="ref-text" x="400" y="675">(1212)</text>
+  
+  <text class="small-text" x="200" y="700">• Question attribution</text>
+  <text class="small-text" x="200" y="720">• Flag mapping</text>
+  
+  <text class="small-text" x="600" y="700">• Tier logic (1214)</text>
+  <text class="small-text" x="600" y="720">• Rules & Weights (1216)</text>
+  
+  <text class="small-text" x="400" y="745">Gate Evaluation: Cognitive (1216-A) + Behavioral (1216-B)</text>
+  <text class="small-text" x="400" y="760">Tier Recommendation (1218)</text>
+
+  <!-- MCIP Processing -->
+  <rect class="box" x="50" y="800" width="700" height="110" />
+  <text class="section-title" x="400" y="830">MCIP PROCESSING</text>
+  <text class="ref-text" x="400" y="845">(1320)</text>
+  
+  <text class="small-text" x="400" y="870">Applies rules → Calculates flags → Determines tiers</text>
+  <text class="small-text" x="400" y="890">Aggregates Outcome: Care tier + Completion status</text>
+
+  <!-- Side Label: Assessment Sections -->
+  <text class="side-label" x="760" y="210">A</text>
+  <text class="side-label" x="760" y="300">S</text>
+  <text class="side-label" x="760" y="390">S</text>
+  <text class="side-label" x="760" y="480">E</text>
+  <text class="side-label" x="760" y="570">S</text>
+  <text class="side-label" x="760" y="660">S</text>
+  <text class="side-label" x="760" y="720">M</text>
+  <text class="side-label" x="760" y="780">E</text>
+  <text class="side-label" x="760" y="840">N</text>
+  <text class="side-label" x="760" y="900">T</text>
+
+  <!-- Arrows connecting sections to engine -->
+  <line class="arrow" x1="400" y1="140" x2="400" y2="170" />
+  <line class="arrow" x1="400" y1="240" x2="400" y2="260" />
+  <line class="arrow" x1="400" y1="330" x2="400" y2="350" />
+  <line class="arrow" x1="400" y1="420" x2="400" y2="440" />
+  <line class="arrow" x1="400" y1="510" x2="400" y2="530" />
+  <line class="arrow" x1="400" y1="600" x2="400" y2="630" />
+  
+  <!-- Arrow from engine to MCIP -->
+  <line class="arrow" x1="400" y1="770" x2="400" y2="800" />
+  
+  <!-- Output Arrow -->
+  <line class="arrow" x1="400" y1="910" x2="400" y2="950" />
+  
+  <!-- Output Box -->
+  <rect class="box" x="250" y="950" width="300" height="80" />
+  <text class="title" x="400" y="975">OUTCOME</text>
+  <text class="ref-text" x="400" y="990">(1218)</text>
+  <text class="small-text" x="400" y="1010">Care Tier + Flags + Hours Estimate</text>
+
+  <!-- Reference numerals summary -->
+  <text class="ref-text" x="50" y="1070">Reference Numerals: 1110 (UI), 1212 (Module Engine), 1214 (Scoring),</text>
+  <text class="ref-text" x="50" y="1085">1216 (Gate Logic), 1218 (Tier Output), 1320 (MCIP Coordinator)</text>
+
+</svg>

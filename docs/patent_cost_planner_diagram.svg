@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="1600" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .box { fill: white; stroke: black; stroke-width: 2; }
+      .dashed-box { fill: white; stroke: black; stroke-width: 2; stroke-dasharray: 5,5; }
+      .label { font-family: Arial, sans-serif; font-size: 14px; fill: black; }
+      .title { font-family: Arial, sans-serif; font-size: 16px; fill: black; font-weight: bold; }
+      .ref-num { font-family: Arial, sans-serif; font-size: 12px; fill: black; font-style: italic; }
+      .arrow { stroke: black; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+      .small-text { font-family: Arial, sans-serif; font-size: 11px; fill: black; }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="black" />
+    </marker>
+  </defs>
+
+  <!-- Main Container -->
+  <rect class="box" x="50" y="20" width="1100" height="1550" />
+  <text class="title" x="400" y="50">COST PLANNER INTERFACE SYSTEM (100)</text>
+
+  <!-- Tab Bar Section -->
+  <rect class="box" x="80" y="80" width="1040" height="120" />
+  <text class="label" x="520" y="105">TAB BAR (105)</text>
+
+  <!-- Home Care Tab -->
+  <rect class="box" x="100" y="120" width="280" height="60" />
+  <text class="label" x="180" y="145">HOME CARE (110)</text>
+  <text class="label" x="190" y="170">$3,125/month</text>
+
+  <!-- Assisted Living Tab -->
+  <rect class="box" x="410" y="120" width="280" height="60" />
+  <text class="label" x="470" y="145">ASSISTED LIVING (120)</text>
+  <text class="label" x="500" y="170">$5,850/month</text>
+
+  <!-- Memory Care Tab -->
+  <rect class="box" x="720" y="120" width="280" height="60" />
+  <text class="label" x="790" y="145">MEMORY CARE (130)</text>
+  <text class="label" x="800" y="170">$7,200/month</text>
+
+  <!-- Active Card Display -->
+  <rect class="dashed-box" x="80" y="220" width="1040" height="520" />
+  <text class="title" x="420" y="250">ACTIVE CARD DISPLAY (140)</text>
+
+  <!-- Card Header -->
+  <text class="label" x="100" y="280">Care Type Label (142): "Assisted Living"</text>
+  <text class="small-text" x="100" y="300">"Estimated monthly total"</text>
+
+  <!-- Donut Chart -->
+  <circle cx="350" cy="420" r="100" fill="none" stroke="black" stroke-width="2" />
+  <circle cx="350" cy="420" r="60" fill="white" stroke="black" stroke-width="2" />
+  <text class="title" x="305" y="430">$5,850/mo</text>
+  <text class="ref-num" x="320" y="315">DONUT CHART (150)</text>
+  
+  <!-- Donut segments labels -->
+  <path d="M 350,320 L 350,360" stroke="black" stroke-width="1" />
+  <text class="small-text" x="360" y="330">Total Center (152)</text>
+  
+  <path d="M 280,380 L 250,380" stroke="black" stroke-width="1" />
+  <text class="small-text" x="130" y="385">Housing Segment (154)</text>
+  
+  <path d="M 420,380 L 460,380" stroke="black" stroke-width="1" />
+  <text class="small-text" x="470" y="385">Care Services (156)</text>
+  
+  <path d="M 350,520 L 350,550" stroke="black" stroke-width="1" />
+  <text class="small-text" x="360" y="545">Home Carry (158)</text>
+
+  <!-- AI Recommendation Box -->
+  <rect class="box" x="520" y="320" width="580" height="180" />
+  <text class="title" x="700" y="345">AI RECOMMENDATION ENGINE (160)</text>
+  
+  <rect class="dashed-box" x="540" y="360" width="540" height="120" />
+  <text class="label" x="720" y="385">✨ NAVI ADVISORY (162)</text>
+  <text class="small-text" x="560" y="410">"You selected 3 hours, but based on care needs,</text>
+  <text class="small-text" x="560" y="430">I recommend 6.5 hours/day for realistic estimate"</text>
+  
+  <rect class="box" x="560" y="445" width="220" height="25" />
+  <text class="small-text" x="610" y="462">Accept Button (164)</text>
+  
+  <rect class="box" x="800" y="445" width="220" height="25" />
+  <text class="small-text" x="840" y="462">Dismiss Button (166)</text>
+
+  <!-- User Input Controls -->
+  <rect class="dashed-box" x="100" y="560" width="980" height="160" />
+  <text class="title" x="460" y="585">USER INPUT CONTROLS (170)</text>
+
+  <!-- Hours Slider -->
+  <line x1="120" y1="620" x2="450" y2="620" stroke="black" stroke-width="3" />
+  <circle cx="285" cy="620" r="8" fill="black" />
+  <text class="small-text" x="320" y="625">6.5 h/day</text>
+  <text class="ref-num" x="120" y="610">Hours Slider (172)</text>
+
+  <!-- Home Expense Input -->
+  <rect class="box" x="120" y="650" width="150" height="30" />
+  <text class="small-text" x="150" y="670">$ 2,000</text>
+  <text class="ref-num" x="120" y="695">Home Expense (174)</text>
+
+  <!-- Keep Home Toggle -->
+  <rect class="box" x="500" y="620" width="20" height="20" />
+  <text class="small-text" x="530" y="635">✓ Keep existing home</text>
+  <text class="ref-num" x="500" y="655">Keep Home Toggle (176)</text>
+
+  <!-- Calculation Engine -->
+  <rect class="dashed-box" x="80" y="770" width="1040" height="380" />
+  <text class="title" x="450" y="800">CALCULATION ENGINE (200)</text>
+
+  <!-- Regional Data Module -->
+  <rect class="box" x="100" y="830" width="300" height="100" />
+  <text class="label" x="180" y="860">Regional Data (210)</text>
+  <text class="small-text" x="120" y="885">ZIP Code Input (212)</text>
+  <text class="small-text" x="120" y="905">Geographic Multiplier</text>
+
+  <!-- Base Rates Module -->
+  <rect class="box" x="440" y="830" width="300" height="100" />
+  <text class="label" x="520" y="860">Base Rates (220)</text>
+  <text class="small-text" x="460" y="885">Tier-Specific (222)</text>
+  <text class="small-text" x="460" y="905">AL: $4,500 MC: $6,500</text>
+
+  <!-- Modifiers Module -->
+  <rect class="box" x="780" y="830" width="300" height="100" />
+  <text class="label" x="860" y="860">Modifiers (230)</text>
+  <text class="small-text" x="800" y="885">Flag-Based % (232)</text>
+  <text class="small-text" x="800" y="905">Cumulative Application</text>
+
+  <!-- Arrows between modules -->
+  <line class="arrow" x1="250" y1="930" x2="250" y2="980" />
+  <line class="arrow" x1="590" y1="930" x2="590" y2="980" />
+  <line class="arrow" x1="930" y1="930" x2="930" y2="980" />
+
+  <!-- Breakdown Generator -->
+  <rect class="box" x="100" y="980" width="450" height="100" />
+  <text class="label" x="240" y="1010">BREAKDOWN GENERATOR (240)</text>
+  <text class="small-text" x="120" y="1035">Line Items (242)</text>
+  <text class="small-text" x="280" y="1035">Applied/Unapplied (244)</text>
+  <text class="small-text" x="120" y="1060">Running Total (246)</text>
+
+  <!-- Segment Compositor -->
+  <rect class="box" x="600" y="980" width="480" height="100" />
+  <text class="label" x="740" y="1010">SEGMENT COMPOSITOR (250)</text>
+  <text class="small-text" x="620" y="1035">Housing (252)</text>
+  <text class="small-text" x="780" y="1035">Care Services (254)</text>
+  <text class="small-text" x="940" y="1035">Home Carry (256)</text>
+
+  <!-- Arrow from Breakdown to Compositor -->
+  <line class="arrow" x1="550" y1="1030" x2="600" y2="1030" />
+
+  <!-- Data Flow Section -->
+  <rect class="dashed-box" x="80" y="1180" width="1040" height="360" />
+  <text class="title" x="480" y="1210">DATA FLOW ARCHITECTURE (300)</text>
+
+  <!-- User Input Box -->
+  <rect class="box" x="100" y="1240" width="200" height="80" />
+  <text class="label" x="140" y="1270">USER INPUT (310)</text>
+  <text class="small-text" x="120" y="1295">ZIP, Hours, Toggles</text>
+
+  <!-- Cached Assessment Box -->
+  <rect class="box" x="100" y="1360" width="200" height="80" />
+  <text class="label" x="120" y="1390">CACHED</text>
+  <text class="label" x="120" y="1410">ASSESSMENT (320)</text>
+
+  <!-- AI Recommendations Box -->
+  <rect class="box" x="100" y="1460" width="200" height="60" />
+  <text class="label" x="140" y="1485">AI RECS (330)</text>
+
+  <!-- Calculation Engine Box (reference) -->
+  <rect class="box" x="380" y="1320" width="200" height="120" />
+  <text class="label" x="420" y="1370">CALCULATION</text>
+  <text class="label" x="430" y="1395">ENGINE (200)</text>
+
+  <!-- Real-Time Update Box -->
+  <rect class="box" x="660" y="1320" width="200" height="120" />
+  <text class="label" x="700" y="1370">REAL-TIME</text>
+  <text class="label" x="700" y="1395">UPDATE (340)</text>
+
+  <!-- Visual Display Box -->
+  <rect class="box" x="940" y="1320" width="160" height="100" />
+  <text class="label" x="970" y="1360">VISUAL</text>
+  <text class="label" x="960" y="1385">DISPLAY (140)</text>
+
+  <!-- User Decision Box -->
+  <rect class="box" x="940" y="1450" width="160" height="70" />
+  <text class="label" x="970" y="1485">USER</text>
+  <text class="label" x="950" y="1505">DECISION (350)</text>
+
+  <!-- Flow Arrows -->
+  <line class="arrow" x1="300" y1="1280" x2="380" y2="1340" />
+  <line class="arrow" x1="300" y1="1400" x2="380" y2="1380" />
+  <line class="arrow" x1="300" y1="1490" x2="380" y2="1420" />
+  
+  <line class="arrow" x1="580" y1="1380" x2="660" y2="1380" />
+  <line class="arrow" x1="860" y1="1380" x2="940" y2="1370" />
+  <line class="arrow" x1="1020" y1="1420" x2="1020" y2="1450" />
+
+  <!-- Labels for arrows -->
+  <text class="small-text" x="320" y="1260">Direct Input</text>
+  <text class="small-text" x="320" y="1390">GCP Data</text>
+  <text class="small-text" x="320" y="1475">AI Guidance</text>
+  <text class="small-text" x="600" y="1370">Process</text>
+  <text class="small-text" x="880" y="1370">Render</text>
+  <text class="small-text" x="945" y="1440">Next Action</text>
+
+</svg>

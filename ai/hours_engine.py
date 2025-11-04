@@ -26,6 +26,94 @@ except ImportError:
     OpenAI = None
 
 
+def _apply_clinical_rules(context: HoursContext, band: HoursBand, total_hours: float) -> HoursBand:
+    """
+    Apply clinical escalation rules that match LLM reasoning.
+    
+    These deterministic rules capture clinical judgment patterns:
+    1. Toileting assistance requires 24/7 availability (not just task time)
+    2. Moderate+ cognitive + multiple risks → escalate for safety
+    3. Overnight needs + other risk factors → ensure minimum band
+    4. Multiple falls + mobility challenges → escalate for supervision
+    5. Complex medication + cognitive impairment → escalate for safety
+    
+    IMPORTANT: Rules only escalate LOW bands. If calculation already places
+    you in 12-16h or 24h, TRUST IT. Don't second-guess the weighted calculation.
+    
+    Args:
+        context: HoursContext with all care signals
+        band: Initial band from weighted calculation
+        total_hours: Calculated hours for reference
+    
+    Returns:
+        Escalated band if clinical rules apply, otherwise original band
+    """
+    _BAND_ORDER = ["<1h", "1-3h", "4-8h", "12-16h", "24h"]
+    
+    def escalate(current: HoursBand, target: HoursBand, reason: str) -> HoursBand:
+        """Helper to escalate band with logging."""
+        if _BAND_ORDER.index(target) > _BAND_ORDER.index(current):
+            print(f"[HOURS_CLINICAL] Escalate {current} → {target}: {reason}")
+            return target
+        return current
+    
+    original_band = band
+    
+    # CRITICAL: If calculation already put us in 12-16h or 24h, TRUST IT
+    # These bands mean the weighted calculation found significant needs
+    if band in ["12-16h", "24h"]:
+        print(f"[HOURS_CLINICAL] Band {band} from calculation - trusting weighted result")
+        return band
+    
+    # Rule 1: Toileting requires 24/7 availability (minimum 4-8h)
+    if "toileting" in context.badls_list and band in ["<1h", "1-3h"]:
+        band = escalate(band, "4-8h", "Toileting assistance requires availability")
+    
+    # Rule 2: Moderate+ cognitive + safety risks → escalate significantly
+    # Only applies to LOW bands (<1h, 1-3h, 4-8h)
+    if context.cognitive_level in ["moderate", "severe", "advanced"]:
+        risk_count = sum([
+            context.wandering,
+            context.aggression,
+            context.sundowning,
+            getattr(context, 'elopement', False),
+            getattr(context, 'confusion', False),
+            context.falls in ["multiple", "frequent"],
+            context.mobility in ["wheelchair", "bedbound"],
+        ])
+        
+        if risk_count >= 2 and band in ["<1h", "1-3h"]:
+            band = escalate(band, "4-8h", f"Moderate+ cognitive with {risk_count} safety risks")
+        elif risk_count >= 3 and band == "4-8h":
+            band = escalate(band, "12-16h", f"Moderate+ cognitive with {risk_count} major safety risks")
+    
+    # Rule 3: Overnight needs → ensure minimum 12-16h
+    # Only escalates if you're BELOW 12-16h
+    if context.overnight_needed and band in ["<1h", "1-3h", "4-8h"]:
+        band = escalate(band, "12-16h", "Overnight care needed")
+    
+    # Rule 4: Multiple falls + mobility challenges + ADLs → safety escalation
+    if context.falls in ["multiple", "frequent"] and context.mobility in ["walker", "wheelchair", "bedbound"]:
+        if context.badls_count >= 2 and band in ["<1h", "1-3h"]:
+            band = escalate(band, "4-8h", "Multiple falls + mobility aid + ADL needs")
+    
+    # Rule 5: Complex medications + cognitive impairment → supervision needs
+    if context.meds_complexity in ["moderate", "complex"]:
+        if context.cognitive_level in ["moderate", "severe", "advanced"] and band == "1-3h":
+            band = escalate(band, "4-8h", "Complex meds + cognitive impairment requires supervision")
+    
+    # Rule 6: Primary support context - no support + moderate needs → escalate
+    if context.primary_support in ["none", None]:
+        if context.badls_count >= 2 or context.iadls_count >= 3:
+            if band == "1-3h":
+                band = escalate(band, "4-8h", "No regular support with moderate needs")
+    
+    if band != original_band:
+        print(f"[HOURS_CLINICAL] Final: {original_band} → {band} (clinical rules applied)")
+    
+    return band
+
+
 def calculate_baseline_hours_weighted(context: HoursContext) -> HoursBand:
     """
     Calculate realistic hours/day using weighted scoring system.
@@ -54,28 +142,22 @@ def calculate_baseline_hours_weighted(context: HoursContext) -> HoursBand:
     
     total_hours = badl_hours + iadl_hours
     
-    # Apply cognitive multiplier (supervision overhead)
-    cognitive_mult = get_cognitive_multiplier(context.cognitive_level)
+    # Apply cognitive multiplier (supervision overhead including ALL behaviors)
+    cognitive_mult = get_cognitive_multiplier(
+        context.cognitive_level,
+        has_wandering=context.wandering,
+        has_aggression=context.aggression,
+        has_sundowning=context.sundowning,
+        has_repetitive_questions=context.repetitive_questions,
+        has_elopement=getattr(context, 'elopement', False),
+        has_confusion=getattr(context, 'confusion', False),
+        has_judgment=getattr(context, 'judgment', False),
+        has_hoarding=getattr(context, 'hoarding', False),
+        has_sleep=getattr(context, 'sleep', False),
+    )
     if cognitive_mult > 1.0:
-        print(f"[HOURS_WEIGHTED] Cognitive multiplier: {cognitive_mult}x for {context.cognitive_level}")
+        print(f"[HOURS_WEIGHTED] Cognitive multiplier: {cognitive_mult}x for {context.cognitive_level} + behaviors")
         total_hours *= cognitive_mult
-    
-    # Add behavior-specific hours (cumulative)
-    behavior_hours = 0.0
-    if context.wandering:
-        behavior_hours += 0.3
-        print("[HOURS_WEIGHTED] +0.3h for wandering risk")
-    if context.aggression:
-        behavior_hours += 0.2
-        print("[HOURS_WEIGHTED] +0.2h for aggression management")
-    if context.sundowning:
-        behavior_hours += 0.3
-        print("[HOURS_WEIGHTED] +0.3h for sundowning support")
-    if context.repetitive_questions:
-        behavior_hours += 0.1
-        print("[HOURS_WEIGHTED] +0.1h for cognitive symptom management")
-    
-    total_hours += behavior_hours
     
     # Apply fall risk multiplier
     fall_mult = get_fall_risk_multiplier(context.falls)
@@ -96,15 +178,92 @@ def calculate_baseline_hours_weighted(context: HoursContext) -> HoursBand:
     
     print(f"[HOURS_WEIGHTED] Total weighted hours: {total_hours:.1f}h")
     
-    # Convert to band
-    if total_hours < 2.0:
-        return "<1h"
+    # Convert to band (CRITICAL: Must match production thresholds)
+    # Thresholds designed to avoid edge cases pushing into higher bands
+    if total_hours < 1.0:
+        band = "<1h"
     elif total_hours < 4.0:
-        return "1-3h"
-    elif total_hours < 12.0:
-        return "4-8h"
+        band = "1-3h"
+    elif total_hours < 10.0:  # 4-8h band extends to 10h to avoid edge case escalation
+        band = "4-8h"
+    elif total_hours < 20.0:  # 12-16h band for true around-the-clock cases (10-20h)
+        band = "12-16h"
     else:
-        return "24h"
+        band = "24h"
+    
+    # Apply clinical escalation rules (matches LLM logic)
+    band = _apply_clinical_rules(context, band, total_hours)
+    
+    return band
+
+
+def calculate_baseline_hours_with_value(context: HoursContext) -> tuple[HoursBand, float]:
+    """
+    Calculate realistic hours/day and return BOTH band and exact hours.
+    
+    Same logic as calculate_baseline_hours_weighted() but returns (band, hours) tuple.
+    Useful for UIs that want to show the exact calculated value.
+    
+    Returns:
+        Tuple of (HoursBand, float hours)
+    """
+    # Start with base hours from weighted ADL/IADL tasks
+    total_hours = 0.0
+    
+    # Sum BADL hours
+    badl_hours = sum(get_badl_hours(badl) for badl in context.badls_list)
+    
+    # Sum IADL hours
+    iadl_hours = sum(get_iadl_hours(iadl) for iadl in context.iadls_list)
+    
+    total_hours = badl_hours + iadl_hours
+    
+    # Apply cognitive multiplier
+    cognitive_mult = get_cognitive_multiplier(
+        context.cognitive_level,
+        has_wandering=context.wandering,
+        has_aggression=context.aggression,
+        has_sundowning=context.sundowning,
+        has_repetitive_questions=context.repetitive_questions,
+        has_elopement=getattr(context, 'elopement', False),
+        has_confusion=getattr(context, 'confusion', False),
+        has_judgment=getattr(context, 'judgment', False),
+        has_hoarding=getattr(context, 'hoarding', False),
+        has_sleep=getattr(context, 'sleep', False),
+    )
+    if cognitive_mult > 1.0:
+        total_hours *= cognitive_mult
+    
+    # Apply fall risk multiplier
+    fall_mult = get_fall_risk_multiplier(context.falls)
+    if fall_mult > 1.0:
+        total_hours *= fall_mult
+    
+    # Add mobility aid hours
+    mobility_hours = get_mobility_hours(context.mobility)
+    if mobility_hours > 0:
+        total_hours += mobility_hours
+    
+    # Apply overnight floor if needed
+    if context.overnight_needed and total_hours < 16.0:
+        total_hours = 16.0
+    
+    # Convert to band
+    if total_hours < 1.0:
+        band = "<1h"
+    elif total_hours < 4.0:
+        band = "1-3h"
+    elif total_hours < 10.0:
+        band = "4-8h"
+    elif total_hours < 20.0:
+        band = "12-16h"
+    else:
+        band = "24h"
+    
+    # Apply clinical escalation rules
+    band = _apply_clinical_rules(context, band, total_hours)
+    
+    return band, total_hours
 
 
 def baseline_hours(context: HoursContext) -> HoursBand:
@@ -193,63 +352,94 @@ def generate_hours_advice(
         behaviors.append("repetitive questions/behaviors")
     behaviors_str = ", ".join(behaviors) if behaviors else "none reported"
 
-    prompt = f"""You are a care planning assistant helping estimate hours/day of care support needed.
+    prompt = f"""You are a geriatric care planning specialist helping estimate daily care hours needed.
 
-CONTEXT:
-- Basic ADLs needing help: {badls_str}
-  Total count: {context.badls_count}/6
-- Instrumental ADLs needing help: {iadls_str}
-  Total count: {context.iadls_count}/8
-- Cognitive level: {context.cognitive_level or "none"}
+CLINICAL CONTEXT:
+
+Physical Needs:
+- BADLs requiring help: {context.badls_count}/6 ({badls_str})
+- IADLs requiring help: {context.iadls_count}/8 ({iadls_str})
+- Falls history: {context.falls or "unknown"} (risk factor for 24/7 supervision)
+- Mobility: {context.mobility or "unknown"} (affects transfer time and safety)
+
+Cognitive Status:
+- Level: {context.cognitive_level or "unknown"}
 - Specific behaviors: {behaviors_str}
-- Falls history: {context.falls or "unknown"}
-- Mobility: {context.mobility or "unknown"}
+- Supervision needs: {'Yes - constant monitoring' if context.risky_behaviors else 'Standard'}
+
+Medical Complexity:
 - Medication complexity: {context.meds_complexity or "unknown"}
+- Overnight care needed: {context.overnight_needed}
+
+Support System:
 - Primary support: {context.primary_support or "unknown"}
-- Overnight needs: {context.overnight_needed}
-- Current arrangement: {context.current_hours or "none"}
+- Current arrangement: {context.current_hours or "none established"}
 
-WEIGHTED BASELINE SUGGESTION: {baseline}
+WEIGHTED BASELINE SUGGESTION (rule-based): {baseline}
+This baseline uses task-specific time weights, cognitive multipliers, and fall risk adjustments.
 
-CLINICAL DECISION RULES:
-1. Toileting needs = 24/7 availability (2.0h base, not just task time)
-2. Cognitive supervision overhead:
-   - Mild: 20% more time (prompting, redirection)
-   - Moderate: 60% more time (constant supervision)
-   - Severe: 120% more time (hands-on guidance)
-3. Fall risk = slower pace for all tasks (1.1x-1.5x multiplier)
-4. Wandering = monitoring + redirection (+0.3h)
-5. Aggression = de-escalation + safety (+0.2h)
-6. Overnight needs = minimum 16h (not just task time)
+CLINICAL DECISION FRAMEWORK:
+
+Task Time Considerations:
+1. Toileting assistance → Requires availability 24/7, not just task time (2.0h base weight)
+2. Bathing/dressing → Discrete time blocks (0.5-0.6h each)
+3. Meal preparation → Includes shopping, cooking, cleanup (1.0h daily average)
+4. Medication management → Setup, prompting, monitoring (0.5h+ for complex regimens)
+
+Cognitive Supervision Overhead:
+- None: 1.0x (no supervision needed)
+- Mild: 1.2x (occasional prompting, forgetfulness)
+- Moderate: 1.6x (frequent supervision, decision-making help)
+- Severe: 2.2x (constant supervision, safety critical)
+- Behavioral symptoms add: wandering (+0.3h), aggression (+0.2h), sundowning (+0.3h)
+
+Fall Risk Impact:
+- Once: 1.1x (some caution)
+- Multiple: 1.3x (extra caution, slower pace)
+- Frequent: 1.5x (very high risk, constant vigilance)
+
+Mobility Aid Requirements:
+- Cane: +0.2h (minimal assistance)
+- Walker: +0.5h (more assistance, slower pace)
+- Wheelchair: +1.0h (transfers, positioning)
+- Bedbound: +2.0h (all transfers, repositioning)
 
 REAL-WORLD EXAMPLES:
-- 2 BADLs (bathing, dressing), no cognitive issues → 1-3h
-- 3 BADLs (bathing, dressing, toileting), mild cognitive → 4-8h  
-- Toileting + moderate dementia + wandering → 4-8h or 24h
-- Multiple BADLs + severe cognitive + overnight → 24h
+- "2 BADLs (bathing, dressing) + no cognition issues" → 1-3h (morning routine help)
+- "3 BADLs + moderate dementia + wandering" → 4-8h (supervision overhead dominates)
+- "Toileting help + falls + insulin management" → 24h (availability + medical + safety)
+- "Walker + mild cognitive + 2 IADLs" → 1-3h (support for specific tasks)
+- "Multiple ADLs + severe cognitive + overnight needs" → 24h (round-the-clock required)
 
 YOUR TASK:
 Choose ONE band from this EXACT list ONLY:
-- "<1h"   (minimal support, mostly independent)
-- "1-3h"  (moderate support, some ADL help)
-- "4-8h"  (substantial support, multiple ADLs or safety needs)
-- "24h"   (round-the-clock care, significant medical/safety needs)
+- "<1h"    (minimal support, mostly independent, light assistance)
+- "1-3h"   (moderate support, morning/evening routines, some ADL help)
+- "4-8h"   (substantial support, multiple ADLs or significant supervision needs)
+- "12-16h" (around-the-clock with breaks, waking hours + overnight checks)
+- "24h"    (true round-the-clock care, constant supervision required)
 
-DEVELOPER RULES (STRICT):
-1. Prefer the baseline suggestion unless clear evidence to adjust by ONE step
-2. NEVER jump >1 step from baseline UNLESS overnight_needed=True or risky_behaviors=True
-3. If overnight_needed=True or risky_behaviors=True, baseline is "4-8h" (floor); you may choose "24h" if justified
-4. Provide 1-3 SHORT reasons (one sentence each) for your choice
-5. Include confidence (0.0-1.0): how certain are you this matches the person's needs?
+DECISION RULES:
+1. Start with the weighted baseline - it already accounts for task times, cognitive multipliers, fall risk
+2. Adjust by ONE step maximum unless clear evidence for larger change
+3. Toileting needs almost always require 4-8h minimum (availability requirement)
+4. Moderate+ cognitive impairment with wandering/aggression → consider 4-8h, 12-16h or 24h
+5. Overnight needs + other risk factors → strong indicator for 12-16h or 24h
+6. Multiple falls + mobility aid + ADLs → likely 4-8h minimum for safety
+7. Use 12-16h for cases needing around-the-clock availability but not constant supervision
 
-OUTPUT FORMAT (strict JSON):
+RESPONSE FORMAT:
+Provide 2-3 SPECIFIC reasons (be clinical: "toileting requires availability" not "high needs")
+Include confidence 0.0-1.0 based on data completeness and clarity
+
+OUTPUT (JSON only, no other text):
 {{
-  "band": "<one of 4 allowed bands>",
-  "reasons": ["reason 1", "reason 2", "reason 3"],
+  "band": "<1h|1-3h|4-8h|12-16h|24h>",
+  "reasons": ["specific reason 1 with clinical detail", "specific reason 2"],
   "confidence": 0.85
 }}
 
-IMPORTANT: Output ONLY valid JSON. Do not invent band values outside the 4 allowed options.
+CRITICAL: Output ONLY valid JSON. Do not invent band values. Be specific in reasons.
 """
 
     try:
@@ -261,7 +451,7 @@ IMPORTANT: Output ONLY valid JSON. Do not invent band values outside the 4 allow
             max_tokens=300,
         )
 
-        raw = response.choices[0].message.content.strip()
+        raw = (response.choices[0].message.content or "").strip()
 
         # Parse JSON
         if raw.startswith("```json"):
@@ -281,7 +471,7 @@ IMPORTANT: Output ONLY valid JSON. Do not invent band values outside the 4 allow
 
 
 # Band ordering for under-selection detection
-_BAND_ORDER = ["<1h", "1-3h", "4-8h", "24h"]
+_BAND_ORDER = ["<1h", "1-3h", "4-8h", "12-16h", "24h"]
 
 
 def under_selected(user_band: HoursBand | None, suggested: HoursBand) -> bool:
@@ -348,7 +538,7 @@ def generate_hours_nudge_text(
         # Build minimal, guardrailed system prompt (CONCISE VERSION)
         system_prompt = """You are 'Navi', a clinical care planning assistant. Your job is to suggest daily in-home care hours.
 
-Allowed bands ONLY: "<1h", "1-3h", "4-8h", "24h" (exactly 4 options).
+Allowed bands ONLY: "<1h", "1-3h", "4-8h", "12-16h", "24h" (exactly 5 options).
 
 The user has selected a LOWER band than recommended. Write ONE sentence (max ~24 words). No more than one clause. Zero numbers except the target band label. No lists. No second sentence.
 
@@ -360,7 +550,7 @@ RULES:
 - ONE sentence only
 - Max 24 words
 - No prices or financial calculations
-- No new band values (only use the 4 allowed bands)
+- No new band values (only use the 5 allowed bands)
 - No clinical guarantees or medical advice
 - Be firm but supportive and respectful"""
 

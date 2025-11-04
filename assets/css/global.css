@@ -853,7 +853,7 @@ div[data-role="secondary"] .stButton > button[kind="secondary"][data-testid="stB
    =================================================================== */
 .journey-section-header {
   margin: 32px 0 16px;
-  padding: 12px 0 8px;
+  padding: 12px var(--space-6) 8px;
   border-top: 1px solid #e5e7eb;
   display: flex;
   align-items: center;
