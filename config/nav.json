@@ -87,6 +87,12 @@
           "key": "hub_resources",
           "label": "Resources",
           "module": "hubs.resources:render"
+        },
+        {
+          "key": "testing_tools",
+          "label": "Testing Tools",
+          "module": "hubs.testing_tools:render",
+          "hidden": true
         }
       ]
     },
@@ -236,6 +242,18 @@
           "key": "ccr_schedule",
           "label": "Schedule Specialist",
           "module": "products.concierge_clinical_review.product:render",
+          "hidden": true
+        },
+        {
+          "key": "gcp_test_tool",
+          "label": "GCP Test Tool",
+          "module": "products.resources.gcp_test_tool.product:render",
+          "hidden": true
+        },
+        {
+          "key": "care_hours_calculator",
+          "label": "Care Hours Calculator",
+          "module": "products.resources.care_hours_calculator.product:render",
           "hidden": true
         }
       ]

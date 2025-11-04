@@ -1050,7 +1050,7 @@ def _build_hours_context(answers: dict[str, Any], flags: list[str]) -> Any:
     # Get user's current hours selection (validate it's a valid band)
     import streamlit as st
     current = raw_hours or st.session_state.get("gcp_hours_user_choice")
-    valid_bands = {"<1h", "1-3h", "4-8h", "24h"}
+    valid_bands = {"<1h", "1-3h", "4-8h", "12-16h", "24h"}
     current_hours = current if current in valid_bands else None
     
     # NEW: Get cognitive level from answers (stored as memory_changes in GCP module)
@@ -1225,6 +1225,7 @@ def derive_outcome(
                 from ai.hours_engine import (
                     baseline_hours,
                     calculate_baseline_hours_weighted,
+                    calculate_baseline_hours_with_value,
                     generate_hours_advice,
                     generate_hours_nudge_text,
                     under_selected,
@@ -1233,9 +1234,9 @@ def derive_outcome(
                 # Build context
                 hours_ctx = _build_hours_context(answers, flags)
 
-                # Get baseline using NEW weighted scoring system
-                baseline = calculate_baseline_hours_weighted(hours_ctx)
-                print(f"[GCP_HOURS] Using weighted baseline: {baseline}")
+                # Get baseline using NEW weighted scoring system (with exact hours)
+                baseline, calculated_hours = calculate_baseline_hours_with_value(hours_ctx)
+                print(f"[GCP_HOURS] Using weighted baseline: {baseline} ({calculated_hours:.2f}h)")
 
                 # Get LLM refinement
                 ok, advice = generate_hours_advice(hours_ctx, hours_mode)
@@ -1256,14 +1257,15 @@ def derive_outcome(
                             advice.nudge_text = nudge_text
                             advice.severity = severity
 
-                # Persist hours bands to GCP state for Cost Planner
+                # Persist hours bands AND calculated hours to GCP state for Cost Planner
                 try:
                     import streamlit as st
                     gcp_state = st.session_state.setdefault("gcp", {})
                     gcp_state["hours_user_band"] = user_band or "1-3h"
                     gcp_state["hours_llm"] = suggested or baseline
                     gcp_state["hours_band"] = suggested or baseline  # legacy key
-                    print(f"[GCP_HOURS_PERSIST] user={gcp_state['hours_user_band']} llm={gcp_state['hours_llm']}")
+                    gcp_state["hours_calculated"] = round(calculated_hours, 2)  # Store exact calculated hours
+                    print(f"[GCP_HOURS_PERSIST] user={gcp_state['hours_user_band']} llm={gcp_state['hours_llm']} calculated={calculated_hours:.2f}h")
                 except Exception as persist_err:
                     print(f"[GCP_HOURS_PERSIST_ERROR] {persist_err}")
 
@@ -1282,7 +1284,7 @@ def derive_outcome(
                         "severity": severity,
                     }
                     # Compute under-selected and nudge key strictly by band order
-                    ORDER = ["<1h", "1-3h", "4-8h", "24h"]
+                    ORDER = ["<1h", "1-3h", "4-8h", "12-16h", "24h"]
                     def _band_index(b):
                         try:
                             return ORDER.index(b)
@@ -1347,7 +1349,7 @@ def derive_outcome(
 
                     # Try to get user's current selection
                     raw_hours = answers.get("hours_per_day")
-                    valid_bands = {"<1h", "1-3h", "4-8h", "24h"}
+                    valid_bands = {"<1h", "1-3h", "4-8h", "12-16h", "24h"}
                     user_band = raw_hours if raw_hours in valid_bands else "1-3h"
 
                     # Determine if high cognition + high support (conservative default)
@@ -1456,6 +1458,8 @@ def derive_outcome(
                             self.empathy_score = decision.empathy_score
                             self.navi_messages = [decision.rationale] if decision.rationale else []
                             self.reasons = decision.advisory_notes or []
+                            self.risks = []  # Not provided by policy decision
+                            self.questions_next = []  # Not provided by policy decision
 
                     advice = PolicyAdvice(policy_decision)
                     ok = True
@@ -1530,14 +1534,16 @@ def derive_outcome(
         try:
             import streamlit as st
             st.session_state["_gcp_llm_advice"] = {
-                "tier": llm_advice.tier,
-                "reasons": llm_advice.reasons,
-                "risks": llm_advice.risks,
-                "navi_messages": llm_advice.navi_messages,
-                "questions_next": llm_advice.questions_next,
-                "confidence": llm_advice.confidence,
+                "tier": getattr(llm_advice, "tier", None),
+                "reasons": getattr(llm_advice, "reasons", []),
+                "risks": getattr(llm_advice, "risks", []),
+                "navi_messages": getattr(llm_advice, "navi_messages", []),
+                "questions_next": getattr(llm_advice, "questions_next", []),
+                "confidence": getattr(llm_advice, "confidence", 0.0),
             }
-        except Exception:
+            print(f"[GCP_LLM_STORE] Stored LLM advice: tier={st.session_state['_gcp_llm_advice']['tier']}")
+        except Exception as e:
+            print(f"[GCP_LLM_STORE_ERROR] {e}")
             pass  # Silent failure if streamlit not available
 
     # ====================================================================

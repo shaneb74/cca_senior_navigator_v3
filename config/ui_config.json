@@ -9,6 +9,10 @@
       "hub_concierge": {
         "visible": true
       },
+      "hub_lobby": {
+        "visible": true,
+        "note": "Main lobby hub (replaces concierge)"
+      },
       "hub_learning": {
         "visible": true
       },
@@ -21,6 +25,10 @@
       },
       "hub_professional": {
         "visible": true
+      },
+      "testing_tools": {
+        "visible": true,
+        "note": "Internal testing tools hub - visible for Phase 1 validation, remove by 2025-12-15"
       },
       "about": {
         "visible": false,

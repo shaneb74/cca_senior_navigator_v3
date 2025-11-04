@@ -178,16 +178,26 @@ def get_cognitive_multiplier(
     has_wandering: bool = False,
     has_aggression: bool = False,
     has_sundowning: bool = False,
-    has_repetitive_questions: bool = False
+    has_repetitive_questions: bool = False,
+    has_elopement: bool = False,
+    has_confusion: bool = False,
+    has_judgment: bool = False,
+    has_hoarding: bool = False,
+    has_sleep: bool = False,
 ) -> float:
     """Calculate total cognitive supervision multiplier.
     
     Args:
         cognitive_level: "none", "mild", "moderate", "severe", "advanced"
-        has_wandering: Elopement risk
+        has_wandering: Wandering risk
         has_aggression: Aggressive behaviors
         has_sundowning: Evening confusion
-        has_repetitive_questions: Memory issues
+        has_repetitive_questions: Repetitive questioning
+        has_elopement: Exit-seeking behavior
+        has_confusion: Disorientation
+        has_judgment: Poor judgment
+        has_hoarding: Hoarding behavior
+        has_sleep: Sleep disturbances
         
     Returns:
         Multiplier (1.0 = no overhead, 2.5 = max overhead before 24h needed)
@@ -195,7 +205,7 @@ def get_cognitive_multiplier(
     # Base multiplier from level
     base = COGNITIVE_SUPERVISION_MULTIPLIERS.get(cognitive_level or "none", 1.0)
     
-    # Add behavior-specific adjustments
+    # Add behavior-specific adjustments (all 9 behaviors)
     adjustments = 0.0
     if has_wandering:
         adjustments += BEHAVIOR_MULTIPLIERS["wandering"]
@@ -205,6 +215,19 @@ def get_cognitive_multiplier(
         adjustments += BEHAVIOR_MULTIPLIERS["sundowning"]
     if has_repetitive_questions:
         adjustments += BEHAVIOR_MULTIPLIERS["repetitive_questions"]
+    if has_elopement:
+        adjustments += BEHAVIOR_MULTIPLIERS["elopement"]
+    if has_confusion:
+        # Confusion not in dict - treat similar to wandering (disorientation risk)
+        adjustments += 0.2
+    if has_judgment:
+        # Poor judgment adds safety supervision needs
+        adjustments += 0.2
+    if has_hoarding:
+        adjustments += BEHAVIOR_MULTIPLIERS["hoarding"]
+    if has_sleep:
+        # Sleep disturbances increase overnight supervision needs
+        adjustments += 0.2
     
     # Total multiplier (cap at 2.5 to prevent unrealistic escalation)
     total = base + adjustments

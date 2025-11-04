@@ -238,37 +238,45 @@ def _snapshot_costplan(event: str):
 # ==============================================================================
 
 def _get_gcp_hours_per_day() -> float:
-    """Get hours per day from GCP recommendation, using UPPER BOUND of band.
+    """Get hours per day from GCP, preferring EXACT calculated hours over band.
     
-    GCP provides categorical bands which map to numeric hours using upper bound:
-    - "<1h" → 1.0 (upper bound of minimal support)
-    - "1-3h" → 3.0 (upper bound for moderate support)
-    - "4-8h" → 8.0 (upper bound for substantial support)
-    - "24h" → 24.0 (round-the-clock care)
+    NEW BEHAVIOR: Uses the exact calculated hours (e.g., 12.58h) from the weighted
+    calculation, which is more accurate than band upper bounds.
     
-    Upper bounds are used for conservative cost estimation and safety planning.
+    Fallback hierarchy:
+    1. gcp.hours_calculated - Exact weighted calculation (PREFERRED)
+    2. gcp.hours_user_band - User's selected band → upper bound
+    3. gcp_care_recommendation.hours_per_day - Legacy structure
+    4. Default: 3.0h (conservative fallback)
     
     Returns:
-        Float hours per day (default: 3.0 if not found)
+        Float hours per day
     """
-    # First try new GCP state structure (preferred)
     gcp = st.session_state.get("gcp", {})
+    
+    # PREFERRED: Use exact calculated hours if available
+    calculated_hours = gcp.get("hours_calculated")
+    if calculated_hours:
+        print(f"[QE_INIT] Using EXACT calculated hours: {calculated_hours}h (from weighted calculation)")
+        return float(calculated_hours)
+    
+    # FALLBACK 1: User band → upper bound
     user_band = gcp.get("hours_user_band")
-
     if user_band:
         # Map band to UPPER BOUND (conservative for cost planning)
         band_map = {
             "<1h": 1.0,
             "1-3h": 3.0,
             "4-8h": 8.0,
+            "12-16h": 16.0,
             "24h": 24.0,
         }
         mapped = band_map.get(user_band)
         if mapped:
-            print(f"[QE_INIT] Using hours from gcp.hours_user_band: {user_band} → {mapped} (upper bound)")
+            print(f"[QE_INIT] Using band upper bound: {user_band} → {mapped}h")
             return mapped
 
-    # Fall back to legacy gcp_care_recommendation structure
+    # FALLBACK 2: Legacy gcp_care_recommendation structure
     gcp_data = st.session_state.get("gcp_care_recommendation", {})
     hours_category = gcp_data.get("hours_per_day", "")
 
@@ -281,19 +289,23 @@ def _get_gcp_hours_per_day() -> float:
         "1–3 hours": 3.0,
         "4-8h": 8.0,
         "4–8 hours": 8.0,
+        "12-16h": 16.0,
+        "12–16 hours": 16.0,
         "24h": 24.0,
         "24-hour support": 24.0,
         # Additional variations
         "less_than_1": 1.0,
         "1_to_3": 3.0,
         "4_to_8": 8.0,
+        "12_to_16": 16.0,
         "24_hour": 24.0,
     }
 
     # Normalize and lookup
     hours_normalized = str(hours_category).lower().strip()
     mapped_hours = hours_map.get(hours_normalized, 3.0)  # default to 3.0 (conservative)
-
+    
+    print(f"[QE_INIT] Using legacy fallback: {hours_category} → {mapped_hours}h")
     return mapped_hours
 
 
@@ -732,15 +744,110 @@ def _render_home_card(zip_code: str):
     # Care chunk comparison (when both cached)
     render_care_chunk_compare_blurb("home")
 
-    # Hours confirmation advisory (shows if LLM hours != current)
-    render_confirm_hours_if_needed(current_hours_key="qe_home_hours")
+    # Hours confirmation advisory - DISABLED in favor of contextual slider message below
+    # render_confirm_hours_if_needed(current_hours_key="qe_home_hours")
 
     # Controls: Hours slider
     st.markdown('<div class="cost-section__label">Daily Support Hours</div>', unsafe_allow_html=True)
     
+    # Show Navi-branded interactive callout if recommendation differs from user selection
+    gcp = st.session_state.get("gcp", {})
+    calculated_hours = gcp.get("hours_calculated")
+    user_band = gcp.get("hours_user_band", "")
+    
+    # Check if user has already dismissed this recommendation
+    cost = st.session_state.setdefault("cost", {})
+    meta = cost.setdefault("meta", {})
+    decision_key = f"hours_navi_decision_{calculated_hours}"
+    has_decided = meta.get(decision_key, False)
+    
     # Initialize slider widget key from comparison state (only if not already set)
     if "qe_home_hours" not in st.session_state:
         st.session_state["qe_home_hours"] = st.session_state.comparison_inhome_hours
+    
+    current_hours = st.session_state.get("qe_home_hours", 3.0)
+    
+    # Show Navi callout only if user's GCP BAND selection differs significantly from calculated hours
+    if calculated_hours and user_band and not has_decided:
+        rounded_calc = round(calculated_hours * 2) / 2
+        
+        # Map user's selected band to its UPPER bound for comparison
+        band_upper_bounds = {
+            "<1h": 1.0,
+            "1-3h": 3.0,
+            "4-8h": 8.0,
+            "12-16h": 16.0,
+            "24h": 24.0
+        }
+        user_band_hours = band_upper_bounds.get(user_band, 3.0)
+        
+        # Compare user's BAND selection vs calculated recommendation
+        # Show if there's a significant difference (>2 hours)
+        if abs(user_band_hours - rounded_calc) > 2.0:
+            band_descriptions = {
+                "<1h": "less than 1 hour",
+                "1-3h": "1-3 hours", 
+                "4-8h": "4-8 hours",
+                "12-16h": "12-16 hours",
+                "24h": "24-hour care"
+            }
+            user_desc = band_descriptions.get(user_band, user_band)
+            
+            # Navi-branded callout with clean, subtle styling
+            st.markdown(
+                f'''
+                <div style="background: #faf5ff; 
+                            padding: 18px 20px; 
+                            border-radius: 8px; 
+                            margin-bottom: 16px; 
+                            border-left: 4px solid #a78bfa;">
+                    <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                        <span style="font-size: 18px; margin-right: 8px;">✨</span>
+                        <span style="font-weight: 600; color: #7c3aed; font-size: 14px; letter-spacing: 0.5px;">NAVI</span>
+                    </div>
+                    <p style="color: #374151; font-size: 14px; line-height: 1.6; margin: 0;">
+                        You selected <strong>{user_desc}</strong>, but based on your personalized care needs, 
+                        I recommend <strong>{rounded_calc:.1f} hours/day</strong> for a more realistic estimate.
+                    </p>
+                </div>
+                ''',
+                unsafe_allow_html=True
+            )
+            
+            # Two action buttons
+            col1, col2 = st.columns([1, 1], gap="small")
+            with col1:
+                if st.button(
+                    f"✓ Use My Recommendation ({rounded_calc:.1f}h)",
+                    key="navi_accept_hours",
+                    use_container_width=True,
+                    type="primary"
+                ):
+                    # Update all hours-related session state
+                    st.session_state["qe_home_hours"] = rounded_calc
+                    st.session_state.comparison_inhome_hours = rounded_calc
+                    st.session_state.comparison_hours_per_day = rounded_calc
+                    cost["home_hours_scalar"] = float(rounded_calc)
+                    meta[decision_key] = "accepted"
+                    print(f"[NAVI_HOURS] User accepted recommendation: {rounded_calc}h")
+                    st.rerun()
+            
+            with col2:
+                if st.button(
+                    "I'll Adjust It Myself",
+                    key="navi_dismiss_hours",
+                    use_container_width=True
+                ):
+                    # Set slider to upper bound of user's selected band
+                    st.session_state["qe_home_hours"] = user_band_hours
+                    st.session_state.comparison_inhome_hours = user_band_hours
+                    st.session_state.comparison_hours_per_day = user_band_hours
+                    cost["home_hours_scalar"] = float(user_band_hours)
+                    meta[decision_key] = "dismissed"
+                    print(f"[NAVI_HOURS] User dismissed recommendation, using band upper bound: {user_band_hours}h (from {user_band})")
+                    st.rerun()
+            
+            st.markdown("")  # Spacing after buttons
     
     # Slider now reads initial value from session state key (no value parameter)
     hours = st.slider(
