@@ -23,6 +23,28 @@ def _build_testing_tiles() -> list[ProductTileHub]:
     """
     tiles = []
     
+    # GCP Test Tool
+    tiles.append(
+        ProductTileHub(
+            key="gcp_test_tool",
+            title="GCP Test Tool",
+            desc="Test complete Guided Care Plan logic",
+            blurb="Internal tool to validate GCP tier recommendations, cognitive gates, "
+                  "behavior gates, and scoring. Uses exact GCP v4 logic for accurate testing. "
+                  "Compare deterministic vs LLM recommendations.",
+            image_square=None,
+            meta_lines=["🎯 Tier validation", "🚪 Gate testing", "📊 Full GCP logic"],
+            primary_label="Open GCP Tester",
+            primary_route="?page=gcp_test_tool",
+            progress=0,
+            variant="purple",
+            badges=["Testing", "Internal"],
+            order=5,
+            visible=True,
+            locked=False,
+        )
+    )
+    
     # Care Hours Calculator
     tiles.append(
         ProductTileHub(

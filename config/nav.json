@@ -245,6 +245,12 @@
           "hidden": true
         },
         {
+          "key": "gcp_test_tool",
+          "label": "GCP Test Tool",
+          "module": "products.resources.gcp_test_tool.product:render",
+          "hidden": true
+        },
+        {
           "key": "care_hours_calculator",
           "label": "Care Hours Calculator",
           "module": "products.resources.care_hours_calculator.product:render",
