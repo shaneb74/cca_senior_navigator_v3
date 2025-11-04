@@ -182,6 +182,8 @@ def render():
         
         with col1:
             if st.button("← Back to Lobby", use_container_width=True, key="return_lobby", type="secondary"):
+                # Mark as complete before returning to lobby
+                _mark_complete()
                 route_to("hub_lobby")
         
         with col2:
