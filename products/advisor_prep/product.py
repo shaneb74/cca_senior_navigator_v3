@@ -28,6 +28,62 @@ from core.navi import render_navi_panel
 
 def render():
     """Main entry point for Advisor Prep product."""
+    
+    # =============================================================================
+    # DEPRECATION NOTICE
+    # =============================================================================
+    st.markdown("""
+    <div style="
+        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+        border: 4px solid #c92a2a;
+        border-radius: 16px;
+        padding: 48px;
+        margin: 48px auto;
+        max-width: 900px;
+        text-align: center;
+        box-shadow: 0 10px 40px rgba(201, 42, 42, 0.3);
+    ">
+        <div style="font-size: 72px; margin-bottom: 24px;">⚠️</div>
+        <h1 style="
+            color: white;
+            font-size: 56px;
+            font-weight: 900;
+            margin: 0 0 16px 0;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        ">DEPRECATED</h1>
+        <p style="
+            color: white;
+            font-size: 24px;
+            margin: 16px 0 0 0;
+            font-weight: 500;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        ">This page is no longer in active use and will be redesigned.</p>
+        <p style="
+            color: rgba(255,255,255,0.9);
+            font-size: 18px;
+            margin: 24px 0 0 0;
+            font-style: italic;
+        ">Please use the main product flow instead.</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Optional: Add a button to go back to lobby
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        if st.button("← Return to Lobby", type="primary", use_container_width=True, key="deprecated_back"):
+            route_to("hub_lobby")
+    
+    st.markdown("<div style='margin: 48px 0;'></div>", unsafe_allow_html=True)
+    
+    # Show original content below (collapsed/hidden by default)
+    with st.expander("⚙️ View Original Content (For Development Reference Only)", expanded=False):
+        _render_original_content()
+
+
+def _render_original_content():
+    """Render the original advisor prep content (for reference)."""
 
     # Step 1: Check prerequisites (requires PFMA booking)
     if not _check_prerequisites():
