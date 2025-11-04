@@ -194,11 +194,11 @@ def _render_trivia_results(
             st.session_state["senior_trivia_current_module"] = None
             st.rerun()
 
-    # Tertiary action - back to waiting room
+    # Tertiary action - back to lobby
     st.markdown("<div style='margin: 16px 0;'></div>", unsafe_allow_html=True)
-    if st.button("← Back to Waiting Room", key="back_to_waiting", use_container_width=False):
+    if st.button("← Return to Lobby", key="back_to_lobby", use_container_width=False):
         st.session_state["senior_trivia_current_module"] = None
-        # Navigate to waiting room (preserve UID to maintain session)
+        # Navigate to lobby (preserve UID to maintain session)
         from core.nav import route_to
 
         route_to("hub_lobby")
@@ -394,11 +394,11 @@ def _render_module_hub():
         "Choose a trivia game to play. Each game takes 3-5 minutes and earns you points and badges!"
     )
 
-    # Back to Waiting Room button
-    if st.button("← Back to Waiting Room", key="back_to_waiting_room", use_container_width=False):
+    # Return to Lobby button
+    if st.button("← Return to Lobby", key="return_to_lobby", use_container_width=False):
         # Clear current module selection
         st.session_state.pop("senior_trivia_current_module", None)
-        # Navigate to waiting room (preserve UID to maintain session)
+        # Navigate to lobby (preserve UID to maintain session)
         from core.nav import route_to
 
         route_to("hub_lobby")
