@@ -23,14 +23,7 @@ from products.cost_planner_v2.utils.financial_helpers import (
 
 
 def render():
-    """Render exit step with clean card-based completion layout.
-
-    Layout:
-    1. Compact Navi Panel at top
-    2. Accomplishments Card (checklist of completed items)
-    3. Plan Highlights Card (key metrics summary)
-    4. What's Next Grid (3 actionable paths)
-    """
+    """Render exit step with clean, modern completion layout."""
 
     # Clear restart flag so user can restart again after completing
     if "_cost_v2_restart_handled" in st.session_state:
@@ -46,7 +39,88 @@ def render():
     MCIP.mark_product_complete("cost_planner_v2")  # Will normalize to "cost_planner"
     print("[COST_EXIT] Marked Cost Planner complete via MCIP")
 
-    # Render compact Navi panel at top
+    # Apply clean modern CSS
+    st.markdown(
+        """
+        <style>
+        /* Clean modern card styling */
+        .exit-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 24px;
+        }
+        
+        .exit-card h3 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #111827;
+            margin: 0 0 20px 0;
+        }
+        
+        .accomplishment-item {
+            font-size: 15px;
+            color: #374151;
+            line-height: 1.8;
+            margin-bottom: 8px;
+        }
+        
+        .highlight-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .highlight-row:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        
+        .highlight-label {
+            font-size: 14px;
+            color: #6b7280;
+        }
+        
+        .highlight-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: #111827;
+        }
+        
+        .next-step-card {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 28px;
+            height: 100%;
+            min-height: 220px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .next-step-card h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #111827;
+            margin: 0 0 12px 0;
+        }
+        
+        .next-step-card p {
+            font-size: 14px;
+            color: #6b7280;
+            line-height: 1.6;
+            margin: 0 0 20px 0;
+            flex-grow: 1;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    # Compact Navi panel at top
     from core.navi_module import render_module_navi_coach
     render_module_navi_coach(
         title_text="Your Financial Plan is Complete!",
@@ -54,16 +128,11 @@ def render():
         tip_text=None,
     )
 
-    st.markdown('<div style="height: 24px;"></div>', unsafe_allow_html=True)
-
-    # Heading removed - now shown in compact Navi panel above
+    st.markdown('<div style="height: 32px;"></div>', unsafe_allow_html=True)
 
     _render_accomplishments_card()
-    st.markdown('<div style="height: 32px;"></div>', unsafe_allow_html=True)
-
     _render_plan_highlights_card()
-    st.markdown('<div style="height: 32px;"></div>', unsafe_allow_html=True)
-
+    st.markdown('<div style="height: 40px;"></div>', unsafe_allow_html=True)
     _render_whats_next_section()
 
 
@@ -77,10 +146,10 @@ def _render_navi_completion():
 
 
 def _render_accomplishments_card():
-    """Render accomplishments checklist card."""
+    """Render accomplishments checklist card with clean styling."""
 
-    st.markdown('<div class="completion-card">', unsafe_allow_html=True)
-    st.markdown("### ✔️ Summary of What You've Accomplished")
+    st.markdown('<div class="exit-card">', unsafe_allow_html=True)
+    st.markdown("<h3>✓ Summary of What You've Accomplished</h3>", unsafe_allow_html=True)
 
     accomplishments = [
         "Authenticated and secured your account",
@@ -98,10 +167,10 @@ def _render_accomplishments_card():
 
 
 def _render_plan_highlights_card():
-    """Render plan highlights summary card."""
+    """Render plan highlights with clean two-column layout."""
 
-    st.markdown('<div class="completion-card">', unsafe_allow_html=True)
-    st.markdown("### 💡 Plan Highlights")
+    st.markdown('<div class="exit-card">', unsafe_allow_html=True)
+    st.markdown("<h3>💡 Plan Highlights</h3>", unsafe_allow_html=True)
 
     # Get care recommendation
     from core.mcip import MCIP
@@ -115,13 +184,10 @@ def _render_plan_highlights_card():
     ss = st.session_state
     cost = ss.get("cost", {}) or {}
     
-    # Log which plan we're picking to verify correct selection logic
-    print(f"[FIN_PICK] persisted_selection={ss.get('cp.persisted_selection')} current_tab={ss.get('cp_selected_assessment')}")
-    
-    # 1) Use the user's choice from Quick Estimate
+    # Use the user's choice from Quick Estimate
     active = ss.get("cp.persisted_selection") or ss.get("cp_selected_assessment")
     
-    # 2) Fallback: map GCP tier -> cp key only if needed
+    # Fallback: map GCP tier -> cp key only if needed
     if not active:
         gcp_tier = (ss.get("gcp") or {}).get("published_tier")
         if gcp_tier in ("memory_care", "memory_care_high_acuity"):
@@ -140,7 +206,6 @@ def _render_plan_highlights_card():
         if isinstance(lt, dict):
             base_care = lt.get("care")
     if base_care is None and isinstance(ss.get("_qe_totals"), dict):
-        # final fallback to legacy numeric cache if present
         base_care = ss["_qe_totals"].get(active)
     
     try:
@@ -156,40 +221,69 @@ def _render_plan_highlights_card():
         home_carry = 0.0
     
     combined = (base_care or 0.0) + home_carry
-    
-    print(f"[FIN_BASE] sel={active} care={base_care} carry={home_carry} combined={combined}")
-    
-    # Temporary guard: catch segment misuse
-    lt = (cost.get("last_totals") or {}).get(active) or {}
-    if isinstance(lt, dict) and base_care is not None and lt.get("care"):
-        if base_care < float(lt["care"]) - 1e-6:
-            print(f"[WARN] base_care({base_care}) < last_totals.care({lt['care']}) -> possible segment misuse")
 
-    # Display highlights
-    col1, col2 = st.columns(2, gap="large")
-
-    with col1:
-        if recommendation:
-            tier_label = recommendation.tier.replace("_", " ").title()
-            confidence_pct = int(recommendation.confidence * 100)
-            st.markdown(f"**Recommended Care Plan:** {tier_label}")
-            st.markdown(f"**Confidence Level:** {confidence_pct}%")
-        else:
-            st.markdown("**Recommended Care Plan:** Not set")
-            st.markdown("**Confidence Level:** —")
-
-    with col2:
-        # Build combined display line (hide when home_carry is 0)
-        parts = [f"**Care:** ${base_care:,.0f}/mo"]
-        if home_carry and home_carry > 0:
-            parts.append(f"**Home carry:** ${home_carry:,.0f}/mo")
-            parts.append(f"**Combined:** ${combined:,.0f}/mo")
-        st.markdown("  •  ".join(parts))
+    # Display highlights in clean rows
+    if recommendation:
+        tier_label = recommendation.tier.replace("_", " ").title()
+        confidence_pct = int(recommendation.confidence * 100)
         
-        if metrics["monthly_gap"] >= 0:
-            st.markdown(f"**Monthly Surplus:** +${metrics['monthly_gap']:,.0f}")
-        else:
-            st.markdown(f"**Monthly Gap:** ${abs(metrics['monthly_gap']):,.0f}")
+        st.markdown(
+            f"""
+            <div class="highlight-row">
+                <div class="highlight-label">Recommended Care Plan</div>
+                <div class="highlight-value">{tier_label}</div>
+            </div>
+            <div class="highlight-row">
+                <div class="highlight-label">Confidence Level</div>
+                <div class="highlight-value">{confidence_pct}%</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    # Monthly costs
+    st.markdown(
+        f"""
+        <div class="highlight-row">
+            <div class="highlight-label">Monthly Care Cost</div>
+            <div class="highlight-value">${base_care:,.0f}/mo</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    
+    if home_carry and home_carry > 0:
+        st.markdown(
+            f"""
+            <div class="highlight-row">
+                <div class="highlight-label">Home Carrying Cost</div>
+                <div class="highlight-value">+${home_carry:,.0f}/mo</div>
+            </div>
+            <div class="highlight-row">
+                <div class="highlight-label">Combined Monthly Cost</div>
+                <div class="highlight-value">${combined:,.0f}/mo</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    
+    # Monthly gap/surplus
+    if metrics["monthly_gap"] >= 0:
+        gap_label = "Monthly Surplus"
+        gap_value = f"+${metrics['monthly_gap']:,.0f}"
+    else:
+        gap_label = "Monthly Gap"
+        gap_value = f"${abs(metrics['monthly_gap']):,.0f}"
+    
+    st.markdown(
+        f"""
+        <div class="highlight-row">
+            <div class="highlight-label">{gap_label}</div>
+            <div class="highlight-value">{gap_value}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -278,18 +372,26 @@ def _calculate_completion_metrics() -> dict:
 
 
 def _render_whats_next_section():
-    """Render What's Next section with 3-column grid."""
+    """Render What's Next section with clean 3-column card grid."""
 
-    st.markdown("## 🚀 What's Next")
-    st.markdown('<div style="height: 16px;"></div>', unsafe_allow_html=True)
+    st.markdown(
+        """
+        <div style="text-align: center; margin-bottom: 32px;">
+            <h2 style="font-size: 28px; font-weight: 700; color: #111827; margin: 0;">
+                🚀 What's Next
+            </h2>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     # 3-column grid
-    col1, col2, col3 = st.columns(3, gap="large")
+    col1, col2, col3 = st.columns(3, gap="medium")
 
     with col1:
         st.markdown('<div class="next-step-card">', unsafe_allow_html=True)
-        st.markdown("### 📅 Meet with an Advisor")
-        st.markdown("Review your plan with a certified senior care advisor")
+        st.markdown("<h3>📅 Meet with an Advisor</h3>", unsafe_allow_html=True)
+        st.markdown("<p>Review your plan with a certified senior care advisor</p>", unsafe_allow_html=True)
         if st.button(
             "Schedule Meeting", use_container_width=True, type="primary", key="schedule_advisor_btn"
         ):
@@ -301,16 +403,16 @@ def _render_whats_next_section():
 
     with col2:
         st.markdown('<div class="next-step-card">', unsafe_allow_html=True)
-        st.markdown("### 📄 Download Your Plan")
-        st.markdown("Get a PDF copy of your comprehensive financial plan")
+        st.markdown("<h3>📄 Download Your Plan</h3>", unsafe_allow_html=True)
+        st.markdown("<p>Get a PDF copy of your comprehensive financial plan</p>", unsafe_allow_html=True)
         if st.button("Download PDF", use_container_width=True, key="download_pdf_btn"):
             st.info("📄 PDF generation coming soon!")
         st.markdown("</div>", unsafe_allow_html=True)
 
     with col3:
         st.markdown('<div class="next-step-card">', unsafe_allow_html=True)
-        st.markdown("### 🏠 Return to Lobby")
-        st.markdown("Explore other tools and resources in your dashboard")
+        st.markdown("<h3>🏠 Return to Lobby</h3>", unsafe_allow_html=True)
+        st.markdown("<p>Explore other tools and resources in your dashboard</p>", unsafe_allow_html=True)
         if st.button("Go to Lobby", use_container_width=True, key="goto_lobby_btn"):
             from core.url_helpers import back_to_lobby
 
