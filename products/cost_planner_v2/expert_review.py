@@ -167,10 +167,6 @@ def render():
     if analysis.asset_categories:
         _render_available_resources_cards(analysis, profile)
         st.markdown('<div style="margin: 32px 0;"></div>', unsafe_allow_html=True)
-        
-        # 3. Coverage Impact Visualization (shows how selected assets extend funding)
-        _render_coverage_impact_visualization(analysis, profile)
-        st.markdown('<div style="margin: 32px 0;"></div>', unsafe_allow_html=True)
 
     st.markdown('<div style="margin: 48px 0;"></div>', unsafe_allow_html=True)
 
