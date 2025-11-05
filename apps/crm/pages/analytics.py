@@ -92,11 +92,11 @@ def get_analytics_data():
     
     # Calculate metrics
     total_customers = len(customers)
-    active_customers = len([c for c in customers if c.get('last_interaction_days', 0) <= 30])
+    active_customers = len([c for c in customers if c.get('last_activity_days', 0) <= 30])
     
-    # Assessment completion rates
-    gcp_completed = len([c for c in customers if c.get('gcp_completed', False)])
-    cost_completed = len([c for c in customers if c.get('cost_planner_completed', False)])
+    # Assessment completion rates  
+    gcp_completed = len([c for c in customers if c.get('has_gcp_assessment', False)])
+    cost_completed = len([c for c in customers if c.get('has_cost_plan', False)])
     
     # Care recommendations breakdown
     care_recommendations = {}

@@ -44,7 +44,7 @@ class NavigatorDataReader:
         
         return customers
     
-    def get_customer_by_id(self, user_id):
+    def get_customer_by_id(self, user_id: str) -> Optional[Dict[str, Any]]:
         """Get detailed customer information by user ID"""
         try:
             # Load basic customer data
@@ -368,7 +368,7 @@ class NavigatorDataReader:
         
         return customers
     
-    def get_customer(self, user_id: str) -> Optional[CustomerProfile]:
+    def get_customer(self, user_id: str) -> Optional[Dict[str, Any]]:
         """Get a specific customer by user ID."""
         # Try regular user file
         user_file = self.users_dir / f"{user_id}.json"
@@ -401,7 +401,7 @@ class NavigatorDataReader:
         
         return None
     
-    def _load_customer_from_file(self, file_path: Path) -> Optional[CustomerProfile]:
+    def _load_customer_from_file(self, file_path: Path) -> Optional[Dict[str, Any]]:
         """Load customer profile from a Navigator data file."""
         try:
             data = json.loads(file_path.read_text())
@@ -415,9 +415,9 @@ class NavigatorDataReader:
             planning_for_relationship = data.get("planning_for_relationship")
             
             # Check completion status (look for product completion markers)
-            gcp_completed = self._check_completion(data, ["gcp", "gcp_v4"])
-            cost_planner_completed = self._check_completion(data, ["cost_planner", "cost_v2"])
-            pfma_completed = self._check_completion(data, ["pfma", "pfma_v3"])
+            has_gcp_assessment = self._check_completion(data, ["gcp", "gcp_v4"])
+            has_cost_plan = self._check_completion(data, ["cost_planner", "cost_v2"])
+            has_financial_assessment = self._check_completion(data, ["pfma", "pfma_v3"])
             
             # Extract assessment data
             care_recommendation = data.get("gcp_care_recommendation")
@@ -431,21 +431,25 @@ class NavigatorDataReader:
             # File modification time as last updated
             last_updated = datetime.fromtimestamp(file_path.stat().st_mtime)
             
-            return CustomerProfile(
-                user_id=user_id,
-                person_name=person_name,
-                relationship_type=relationship_type,
-                planning_for_relationship=planning_for_relationship,
-                last_updated=last_updated,
-                gcp_completed=gcp_completed,
-                cost_planner_completed=cost_planner_completed,
-                pfma_completed=pfma_completed,
-                care_recommendation=care_recommendation,
-                mobility_score=mobility_score,
-                cognitive_score=cognitive_score,
-                estimated_monthly_cost=estimated_monthly_cost,
-                care_hours_needed=care_hours_needed,
-            )
+            # Calculate activity metrics
+            days_since_update = (datetime.now() - last_updated).days
+            
+            return {
+                "user_id": user_id,
+                "person_name": person_name,
+                "relationship_type": relationship_type,
+                "planning_for_relationship": planning_for_relationship,
+                "last_updated": last_updated,
+                "last_activity_days": days_since_update,
+                "has_gcp_assessment": has_gcp_assessment,
+                "has_cost_plan": has_cost_plan,
+                "has_financial_assessment": has_financial_assessment,
+                "care_recommendation": care_recommendation,
+                "mobility_score": mobility_score,
+                "cognitive_score": cognitive_score,
+                "estimated_monthly_cost": estimated_monthly_cost,
+                "care_hours_needed": care_hours_needed,
+            }
             
         except (json.JSONDecodeError, FileNotFoundError, Exception):
             return None
