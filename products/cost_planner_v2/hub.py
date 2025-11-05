@@ -120,8 +120,8 @@ def render():
         },
     ]
 
-    # Filter to only visible modules
-    visible_modules = [m for m in modules_config if m.get("visible", True)]
+    # Filter to only visible modules (explicit check - False means hidden)
+    visible_modules = [m for m in modules_config if m.get("visible", True) is not False]
 
     # Navi panel is rendered by product.py - don't duplicate it here
 
