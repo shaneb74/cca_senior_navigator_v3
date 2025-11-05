@@ -942,3 +942,54 @@ header[data-testid="stHeader"] {
 [data-testid="stAppDeployButton"] {
     display: none !important;
 }
+
+/* ===== MOBILE STREAMLIT CLOUD SPECIFIC HIDING ===== */
+/* Hide "Hosted with Streamlit" footer on mobile */
+.stAppBottomContainer {
+    display: none !important;
+}
+
+/* Hide Streamlit Cloud footer banner */
+.stAppViewContainer > .main > div[data-testid="stAppViewBlockContainer"] ~ div {
+    display: none !important;
+}
+
+/* Hide any GitHub repository links */
+a[href*="github.com"] {
+    display: none !important;
+}
+
+/* Hide Streamlit branding footer */
+.stApp > footer,
+.stApp [data-testid="stFooter"] {
+    display: none !important;
+}
+
+/* Hide mobile-specific Streamlit elements */
+@media (max-width: 768px) {
+    /* Hide mobile footer */
+    .stAppBottomContainer,
+    [data-testid="stAppBottomContainer"] {
+        display: none !important;
+    }
+    
+    /* Hide mobile Streamlit branding */
+    .stApp > div:last-child {
+        display: none !important;
+    }
+    
+    /* Hide any repository information */
+    div[class*="repo"],
+    div[class*="github"],
+    div[class*="streamlit"] {
+        display: none !important;
+    }
+}
+
+/* Nuclear option - hide all external links */
+a[href*="streamlit.io"],
+a[href*="github.com"],
+a[href*="share.streamlit.io"] {
+    display: none !important;
+    visibility: hidden !important;
+}
