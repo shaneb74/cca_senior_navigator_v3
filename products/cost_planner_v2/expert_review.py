@@ -949,7 +949,7 @@ def _render_available_resources_cards(analysis, profile):
 
         # Determine status for styling
         is_selected = st.session_state.expert_review_selected_assets.get(cat_name, False)
-        card_style = "background: #f0f9ff; border: 2px solid #0066cc;" if is_selected else "background: white; border: 1px solid #e5e7eb;"
+        card_style = "background: #f8f9ff; border: 1px solid #e5e7eb; box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);" if is_selected else "background: white; border: 1px solid #e5e7eb;"
 
         # Asset card
         st.markdown(
