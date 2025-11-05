@@ -230,40 +230,77 @@ def render_customer_stats(customers):
     </div>
     """.format(total_customers, active_customers, completed_assessments), unsafe_allow_html=True)
 
-def render_customer_card(customer):
-    """Render individual customer card with clean styling"""
-    name = customer.get('person_name', 'Unknown Customer')
-    user_id = customer.get('user_id', 'N/A')
-    last_activity = customer.get('last_activity', 'Never')
-    status = 'Active' if customer.get('last_activity_days', 999) <= 30 else 'Inactive'
-    status_class = 'status-active' if status == 'Active' else 'status-pending'
+def render_customer_cards_streamlit(customers):
+    """Render customer cards using Streamlit native components"""
     
-    # Determine what assessments/plans they have
-    has_gcp = customer.get('has_gcp_assessment', False)
-    has_cost_plan = customer.get('has_cost_plan', False)
-    
-    progress_items = []
-    if has_gcp:
-        progress_items.append("GCP Assessment")
-    if has_cost_plan:
-        progress_items.append("Cost Plan")
-    
-    progress_text = ", ".join(progress_items) if progress_items else "Getting started"
-    
-    card_html = f"""
-    <div class="customer-card">
-        <div class="customer-name">{name}</div>
-        <div class="customer-meta">ID: {user_id} • Last seen: {last_activity}</div>
-        <div class="customer-status {status_class}">{status}</div>
-        <div class="customer-meta">Progress: {progress_text}</div>
-        <div class="customer-actions">
-            <button class="btn-clean btn-primary" onclick="viewCustomer('{user_id}')">View Details</button>
-            <button class="btn-clean" onclick="addNote('{user_id}')">Add Note</button>
-        </div>
-    </div>
-    """
-    
-    return card_html
+    # Create a grid using Streamlit columns
+    for i in range(0, len(customers), 2):  # 2 cards per row
+        cols = st.columns(2)
+        
+        for j, col in enumerate(cols):
+            if i + j < len(customers):
+                customer = customers[i + j]
+                
+                with col:
+                    # Customer card container
+                    with st.container():
+                        name = customer.get('person_name', 'Unknown Customer')
+                        user_id = customer.get('user_id', 'N/A')
+                        last_activity = customer.get('last_activity', 'Never')
+                        days_since = customer.get('last_activity_days', 999)
+                        status = 'Active' if days_since <= 30 else 'Inactive'
+                        
+                        # Determine progress
+                        has_gcp = customer.get('has_gcp_assessment', False)
+                        has_cost_plan = customer.get('has_cost_plan', False)
+                        
+                        progress_items = []
+                        if has_gcp:
+                            progress_items.append("GCP Assessment")
+                        if has_cost_plan:
+                            progress_items.append("Cost Plan")
+                        progress_text = ", ".join(progress_items) if progress_items else "Getting started"
+                        
+                        # Card styling with container
+                        st.markdown(f"""
+                        <div style="
+                            background: #ffffff;
+                            border: 1px solid #e6edf5;
+                            border-radius: 16px;
+                            padding: 1.5rem;
+                            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+                            margin-bottom: 1rem;
+                        ">
+                            <h3 style="margin: 0 0 0.5rem 0; color: #1f2937;">{name}</h3>
+                            <p style="margin: 0 0 1rem 0; color: #64748b; font-size: 0.95rem;">
+                                ID: {user_id} • Last seen: {last_activity}
+                            </p>
+                            <span style="
+                                display: inline-block;
+                                padding: 0.25rem 0.75rem;
+                                border-radius: 999px;
+                                font-size: 0.875rem;
+                                font-weight: 600;
+                                margin-bottom: 1rem;
+                                background: {'#dcfce7' if status == 'Active' else '#fef3c7'};
+                                color: {'#16a34a' if status == 'Active' else '#d97706'};
+                            ">{status}</span>
+                            <p style="margin: 0; color: #64748b; font-size: 0.95rem;">
+                                Progress: {progress_text}
+                            </p>
+                        </div>
+                        """, unsafe_allow_html=True)
+                        
+                        # Action buttons using Streamlit buttons
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            if st.button("View Details", key=f"view_{user_id}"):
+                                st.session_state['selected_customer'] = user_id
+                                # Could redirect to customer 360 page here
+                        with col2:
+                            if st.button("Add Note", key=f"note_{user_id}"):
+                                st.session_state['add_note_customer'] = user_id
+                                # Could open note dialog here
 
 def render():
     """Main render function for customers page"""
@@ -311,26 +348,8 @@ def render():
         
         # Customer grid
         if filtered_customers:
-            # Create customer cards HTML
-            cards_html = '<div class="customer-grid">'
-            for customer in filtered_customers:
-                cards_html += render_customer_card(customer)
-            cards_html += '</div>'
-            
-            st.markdown(cards_html, unsafe_allow_html=True)
-            
-            # Add JavaScript for card interactions (placeholder)
-            st.markdown("""
-            <script>
-            function viewCustomer(userId) {
-                alert('View customer details: ' + userId);
-            }
-            
-            function addNote(userId) {
-                alert('Add note for customer: ' + userId);
-            }
-            </script>
-            """, unsafe_allow_html=True)
+            st.subheader(f"Customers ({len(filtered_customers)})")
+            render_customer_cards_streamlit(filtered_customers)
         else:
             st.info("No customers match your search criteria.")
             
