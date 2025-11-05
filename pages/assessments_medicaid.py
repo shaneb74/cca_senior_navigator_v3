@@ -114,6 +114,14 @@ def render():
     
     _apply_clean_styling()
     
+    # Use Navi for education instead of info boxes
+    from core.navi_module import render_module_navi_coach
+    render_module_navi_coach(
+        title_text="Understanding Medicaid vs Medicare",
+        body_text="Many people confuse Medicaid and Medicare. Medicare is standard health insurance for seniors 65+ (most seniors have this). Medicaid is a low-income assistance program with strict asset limits. Medicare does NOT cover long-term care, but Medicaid does.",
+        tip_text="If you only have Medicare (the standard senior program), you'll continue to our normal financial assessment. If you're on Medicaid (low-income assistance), we'll provide specialized resources."
+    )
+    
     # Clean title
     st.markdown("""
     <div style='max-width: 900px; margin: 0 auto 40px auto;'>
@@ -121,22 +129,8 @@ def render():
             Medicaid Program Clarification
         </h1>
         <p style='font-size: 15px; color: #64748b; margin: 0;'>
-            Let's make sure we understand which program you're enrolled in
+            Let's confirm which program you're enrolled in
         </p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Educational content - using columns for comparison
-    st.markdown("""
-    <div style='max-width: 900px; margin: 0 auto 24px auto;'>
-        <div style='padding: 16px 20px; background: #f8fafc; border-left: 4px solid #3b82f6; border-radius: 8px;'>
-            <p style='font-size: 15px; font-weight: 600; color: #1e293b; margin: 0 0 8px 0;'>
-                ⚠️ Important: Understanding Medicaid vs Medicare
-            </p>
-            <p style='font-size: 14px; color: #475569; margin: 0;'>
-                Many people confuse these two programs. Let's clarify the difference:
-            </p>
-        </div>
     </div>
     """, unsafe_allow_html=True)
     
@@ -147,9 +141,8 @@ def render():
     with col1:
         st.markdown("""
         <div style='padding: 20px; background: white; border: 1px solid #e2e8f0; border-radius: 8px; height: 100%;'>
-            <div style='font-size: 16px; font-weight: 600; color: #0f172a; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;'>
-                <span style='font-size: 24px;'>🏥</span>
-                <span>MEDICARE</span>
+            <div style='font-size: 16px; font-weight: 600; color: #0f172a; margin-bottom: 16px;'>
+                MEDICARE
             </div>
         """, unsafe_allow_html=True)
         
@@ -157,14 +150,14 @@ def render():
         st.markdown("• Seniors age 65+  \n• Some younger people with disabilities")
         
         st.markdown("**What it covers:**")
-        st.markdown("• Hospital visits  \n• Doctor appointments  \n• Some medical equipment  \n• ❌ **Does NOT cover long-term care**")
+        st.markdown("• Hospital visits  \n• Doctor appointments  \n• Some medical equipment  \n• **Does NOT cover long-term care**")
         
         st.markdown("**Cost:**")
         st.markdown("• Monthly premiums (typically $100-200)  \n• Based on your work history")
         
         st.markdown("""
         <div style='margin-top: 16px; padding: 12px; background: #f8fafc; border-radius: 6px; font-size: 13px; color: #475569;'>
-            <strong>Note:</strong> Most seniors have Medicare. This is the standard health insurance program.
+            Most seniors have Medicare. This is the standard health insurance program.
         </div>
         </div>
         """, unsafe_allow_html=True)
@@ -172,35 +165,34 @@ def render():
     with col2:
         st.markdown("""
         <div style='padding: 20px; background: white; border: 1px solid #e2e8f0; border-radius: 8px; height: 100%;'>
-            <div style='font-size: 16px; font-weight: 600; color: #0f172a; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;'>
-                <span style='font-size: 24px;'>💚</span>
-                <span>MEDICAID</span>
+            <div style='font-size: 16px; font-weight: 600; color: #0f172a; margin-bottom: 16px;'>
+                MEDICAID
             </div>
         """, unsafe_allow_html=True)
         
         st.markdown("**Who qualifies:**")
-        st.markdown("• People with **limited income**  \n• People with **limited assets**  \n• Must meet strict financial requirements")
+        st.markdown("• People with limited income  \n• People with limited assets  \n• Must meet strict financial requirements")
         
         st.markdown("**What it covers:**")
-        st.markdown("• Hospital visits  \n• Doctor appointments  \n• ✅ **Long-term care (nursing homes)**  \n• Some assisted living (varies by state)")
+        st.markdown("• Hospital visits  \n• Doctor appointments  \n• **Long-term care (nursing homes)**  \n• Some assisted living (varies by state)")
         
         st.markdown("**Cost:**")
         st.markdown("• Little to no cost  \n• State/federal assistance program")
         
         st.markdown("""
         <div style='margin-top: 16px; padding: 12px; background: #f8fafc; border-radius: 6px; font-size: 13px; color: #475569;'>
-            <strong>Note:</strong> Medicaid is a low-income assistance program with different planning needs.
+            Medicaid is a low-income assistance program with different planning needs.
         </div>
         </div>
         """, unsafe_allow_html=True)
     
     st.markdown("</div><div style='height: 32px;'></div>", unsafe_allow_html=True)
     
-    # Clarification question
+    # Clarification question - no stupid icons
     st.markdown("""
     <div style='max-width: 900px; margin: 0 auto 16px auto;'>
         <h2 style='font-size: 18px; font-weight: 600; color: #0f172a; margin: 0 0 8px 0;'>
-            Please Confirm Your Enrollment
+            Confirm Your Enrollment
         </h2>
         <p style='font-size: 14px; color: #64748b; margin: 0;'>
             Based on the above information, which program(s) are you enrolled in?
@@ -340,6 +332,8 @@ def render_medicaid_assessment():
     - Modified advisor CTAs (different planning needs)
     """
     
+    _apply_clean_styling()
+    
     # Clean title
     st.markdown("""
     <div style='max-width: 900px; margin: 0 auto 40px auto;'>
@@ -370,10 +364,10 @@ def render_medicaid_assessment():
             Since you're enrolled in Medicaid, your care planning has some unique considerations:
         </p>
         <div style='font-size: 14px; color: #64748b; line-height: 1.7;'>
-            • <strong>Asset Limits:</strong> Medicaid has strict asset limits (typically $2,000 for individuals)<br>
-            • <strong>Income Limits:</strong> Monthly income must be below state thresholds<br>
-            • <strong>Covered Services:</strong> Medicaid covers nursing home care and some home/community-based services<br>
-            • <strong>State Variations:</strong> Rules vary by state
+            • Asset Limits: Medicaid has strict asset limits (typically $2,000 for individuals)<br>
+            • Income Limits: Monthly income must be below state thresholds<br>
+            • Covered Services: Medicaid covers nursing home care and some home/community-based services<br>
+            • State Variations: Rules vary by state
         </div>
         <p style='font-size: 13px; color: #64748b; margin: 16px 0 0 0; padding-top: 12px; border-top: 1px solid #e2e8f0;'>
             Our financial assessment will be simplified since your resources are already within Medicaid guidelines.
@@ -438,9 +432,6 @@ def render_medicaid_assessment():
             placeholder="e.g., HCBS, EDCD, Community Care",
             key="medicaid_waiver_type"
         )
-    
-    st.markdown("</div>", unsafe_allow_html=True)
-    st.markdown("<div style='height: 32px;'></div>", unsafe_allow_html=True)
     
     # Resources and support needed
     st.markdown("""
@@ -549,6 +540,8 @@ def render_medicaid_assessment():
 def render_medicaid_resources():
     """Render Medicaid-specific resources and next steps page."""
     
+    _apply_clean_styling()
+    
     # Clean title
     st.markdown("""
     <div style='max-width: 900px; margin: 0 auto 40px auto;'>
@@ -565,7 +558,7 @@ def render_medicaid_resources():
     st.markdown("""
     <div style='max-width: 900px; margin: 0 auto 32px auto; padding: 20px; background: #f0fdf4; border-left: 4px solid #16a34a; border-radius: 8px;'>
         <p style='font-size: 15px; font-weight: 600; color: #15803d; margin: 0;'>
-            ✓ Thank you for providing this information!
+            Thank you for providing this information.
         </p>
     </div>
     """, unsafe_allow_html=True)
@@ -582,13 +575,13 @@ def render_medicaid_resources():
     </div>
     """, unsafe_allow_html=True)
     
-    # Resource cards - clean styling
+    # Resource cards - clean styling without emoji spam
     st.markdown(f"""
     <div style='max-width: 900px; margin: 0 auto;'>
         <!-- State Medicaid Office -->
         <div style='padding: 24px; background: white; border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 20px;'>
             <div style='font-size: 18px; font-weight: 600; color: #0f172a; margin-bottom: 12px;'>
-                🏛️ {user_state.upper()} Medicaid Office
+                {user_state.upper()} Medicaid Office
             </div>
             <p style='font-size: 14px; color: #475569; margin: 0 0 12px 0;'>
                 Your state's Medicaid office is the best resource for:
@@ -607,7 +600,7 @@ def render_medicaid_resources():
         <!-- Medicaid Planning Attorneys -->
         <div style='padding: 24px; background: white; border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 20px;'>
             <div style='font-size: 18px; font-weight: 600; color: #0f172a; margin-bottom: 12px;'>
-                ⚖️ Medicaid Planning Attorneys
+                Medicaid Planning Attorneys
             </div>
             <p style='font-size: 14px; color: #475569; margin: 0 0 12px 0;'>
                 Specialized attorneys can help with:
@@ -627,15 +620,15 @@ def render_medicaid_resources():
         <!-- Care Coordination -->
         <div style='padding: 24px; background: white; border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 20px;'>
             <div style='font-size: 18px; font-weight: 600; color: #0f172a; margin-bottom: 12px;'>
-                🤝 Care Coordination Resources
+                Care Coordination Resources
             </div>
             <p style='font-size: 14px; color: #475569; margin: 0 0 12px 0;'>
                 These organizations help Medicaid recipients find care:
             </p>
             <div style='font-size: 14px; color: #64748b; line-height: 1.7; margin-bottom: 16px;'>
-                • <strong>Area Agency on Aging:</strong> Local aging services and care coordination<br>
-                • <strong>State SHIP Programs:</strong> Free health insurance counseling<br>
-                • <strong>Long-Term Care Ombudsman:</strong> Advocacy for residents in care facilities
+                • Area Agency on Aging: Local aging services and care coordination<br>
+                • State SHIP Programs: Free health insurance counseling<br>
+                • Long-Term Care Ombudsman: Advocacy for residents in care facilities
             </div>
             <a href='https://eldercare.acl.gov' target='_blank' style='display: inline-block; padding: 8px 16px; background: #3b82f6; color: white; text-decoration: none; border-radius: 6px; font-size: 14px; font-weight: 500;'>
                 Find Local Resources →
@@ -652,10 +645,10 @@ def render_medicaid_resources():
                 we can still assist you with:
             </p>
             <div style='font-size: 14px; color: #64748b; line-height: 1.7;'>
-                • <strong>Care Needs Assessment</strong> — Understanding the level of care needed<br>
-                • <strong>Facility Research</strong> — Finding Medicaid-accepting facilities in your area<br>
-                • <strong>General Education</strong> — Learning about care options and quality indicators<br>
-                • <strong>Family Support</strong> — Resources for family caregivers
+                • Care Needs Assessment: Understanding the level of care needed<br>
+                • Facility Research: Finding Medicaid-accepting facilities in your area<br>
+                • General Education: Learning about care options and quality indicators<br>
+                • Family Support: Resources for family caregivers
             </div>
             <p style='font-size: 13px; color: #64748b; margin: 12px 0 0 0; font-style: italic;'>
                 You can always return to the main lobby to access these tools.
