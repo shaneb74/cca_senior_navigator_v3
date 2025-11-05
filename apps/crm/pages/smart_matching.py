@@ -506,6 +506,10 @@ def render(customer_id=None):
     """Main render function for Smart Community Matching"""
     inject_matching_css()
     
+    # Check for selected customer in session state if no customer_id provided
+    if not customer_id and 'matching_customer' in st.session_state:
+        customer_id = st.session_state['matching_customer']
+    
     if not customer_id:
         # Customer selection interface
         st.markdown("""
@@ -630,8 +634,3 @@ def render(customer_id=None):
         </div>
         """, unsafe_allow_html=True)
 
-# Handle customer selection
-if 'matching_customer' in st.session_state:
-    render(st.session_state['matching_customer'])
-else:
-    render()

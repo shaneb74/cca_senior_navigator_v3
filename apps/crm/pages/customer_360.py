@@ -555,6 +555,10 @@ def render(customer_id=None):
     """Main render function for Customer 360° view"""
     inject_clean_crm_css()
     
+    # Check for selected customer in session state if no customer_id provided
+    if not customer_id and 'selected_customer' in st.session_state:
+        customer_id = st.session_state['selected_customer']
+    
     if not customer_id:
         # Customer selection interface
         st.markdown("""
@@ -598,9 +602,3 @@ def render(customer_id=None):
     render_assessments(customer_data)
     render_ai_next_steps(customer_data)
     render_action_bar()
-
-# Handle customer selection
-if 'selected_customer' in st.session_state:
-    render(st.session_state['selected_customer'])
-else:
-    render()

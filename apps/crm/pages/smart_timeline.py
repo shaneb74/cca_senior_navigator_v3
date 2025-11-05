@@ -411,6 +411,10 @@ def render(customer_id=None):
     """Main render function for Smart Timeline"""
     inject_timeline_css()
     
+    # Check for selected customer in session state if no customer_id provided
+    if not customer_id and 'timeline_customer' in st.session_state:
+        customer_id = st.session_state['timeline_customer']
+    
     if not customer_id:
         # Customer selection interface
         st.markdown("""
@@ -483,8 +487,3 @@ def render(customer_id=None):
     else:
         st.info("No timeline events found for this customer.")
 
-# Handle customer selection
-if 'timeline_customer' in st.session_state:
-    render(st.session_state['timeline_customer'])
-else:
-    render()
