@@ -131,14 +131,6 @@ def _render_gate():
 def _render_booking_form():
     """Render single-step appointment booking form."""
 
-    # Navi panel at top
-    from core.navi_module import render_module_navi_coach
-    render_module_navi_coach(
-        title_text="I'm here to help",
-        body_text="Let's work through this together.",
-        tip_text="💪 Take your time—we'll get through this.",
-    )
-
     # Apply clean CSS with max-width constraint
     st.markdown(
         """
