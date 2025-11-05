@@ -86,6 +86,20 @@ def render():
         tip_text="Your income provides partial coverage. Adding more resources will help extend your plan.",
     )
 
+    # Apply width constraints like other clean pages
+    st.markdown(
+        """
+        <style>
+        .block-container {
+            max-width: 1000px !important;
+            padding-left: 2rem !important;
+            padding-right: 2rem !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
     # Seed default selections once per session (income + liquid assets only)
     _ensure_financial_defaults()
 
@@ -153,9 +167,6 @@ def render():
     if analysis.asset_categories:
         _render_available_resources_cards(analysis, profile)
         st.markdown('<div style="margin: 32px 0;"></div>', unsafe_allow_html=True)
-
-    # 3. Recommended Actions & Resources
-    _render_recommended_actions(analysis)
 
     st.markdown('<div style="margin: 48px 0;"></div>', unsafe_allow_html=True)
 
@@ -858,170 +869,87 @@ def _render_financial_details(analysis, profile):
 
 def _render_available_resources_cards(analysis, profile):
     """
-    Render available resources as expandable cards - one per category.
+    Render available resources as clean asset summary.
     
-    NEW APPROACH: Each asset category is an expander with:
-    - Balance summary in header
-    - Availability status (Ready now, Taxed as income, etc.)
-    - Checkbox to include in care funding plan
-    - Helpful tooltip explaining the asset type
+    STREAMLINED APPROACH: Simple, clean list focused on what matters:
+    - Asset name and current balance
+    - How much is accessible for care
+    - Clean, minimal design without expanders and complex interactions
     """
 
-    st.markdown("### 🏦 Available Resources to Cover Care Costs")
+    st.markdown("### Available Resources")
 
     # Only show if there are assets
     if not analysis.asset_categories:
         st.info("Complete additional financial assessments to see available resources.")
         return
 
-    # Initialize selection state if not exists
-    # NOTE: Defaults are set by _ensure_financial_defaults() at page load
-    # This ensures any new categories discovered are initialized to False (not selected)
-    if "expert_review_selected_assets" not in st.session_state:
-        st.session_state.expert_review_selected_assets = {}
-    
-    # Add any new categories that weren't seeded yet (default to False = not selected)
-    for name in analysis.asset_categories.keys():
-        if name not in st.session_state.expert_review_selected_assets:
-            st.session_state.expert_review_selected_assets[name] = False
+    # Calculate total available
+    total_available = sum(
+        category.accessible_value 
+        for category in analysis.asset_categories.values()
+    )
 
     # Guidance text based on context
     if analysis.monthly_gap > 0:
         st.markdown(
-            "<div style='color: var(--text-secondary); font-size: 14px; margin-bottom: 20px;'>"
-            "Select which resources you'd like to include in your care funding plan. "
-            "We'll show how they extend your years of coverage."
-            "</div>",
-            unsafe_allow_html=True,
+            f"Your income provides partial coverage. These assets can help bridge the ${abs(analysis.monthly_gap):,.0f}/month gap."
         )
     else:
         st.markdown(
-            "<div style='color: var(--text-secondary); font-size: 14px; margin-bottom: 20px;'>"
             "Your income fully covers estimated care costs. These assets are available as reserves if needed."
-            "</div>",
-            unsafe_allow_html=True,
         )
 
-    # Show inline summary of selected assets
-    selected_count = sum(1 for selected in st.session_state.expert_review_selected_assets.values() if selected)
-    selected_total = sum(
-        analysis.asset_categories[name].accessible_value
-        for name, selected in st.session_state.expert_review_selected_assets.items()
-        if selected and name in analysis.asset_categories
+    st.markdown('<div style="height: 20px;"></div>', unsafe_allow_html=True)
+
+    # Clean asset summary in a card
+    st.markdown(
+        """
+        <div style="background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px; margin-bottom: 20px;">
+        """,
+        unsafe_allow_html=True,
     )
 
-    if selected_count > 0:
-        st.markdown(
-            f"""
-            <div style="background: #e7f3ff; border-left: 4px solid #0066cc; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px;">
-                <span style="font-size: 14px; font-weight: 600; color: #003d7a;">
-                    {selected_count} resource{'s' if selected_count != 1 else ''} selected — contributing ${selected_total:,.0f} toward care
-                </span>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-    # Track if any selection changed
-    selection_changed = False
-
-    # Render each asset category as styled expandable card
+    # Render each asset as a clean row
     for cat_name in analysis.recommended_funding_order:
         if cat_name not in analysis.asset_categories:
             continue
 
         category = analysis.asset_categories[cat_name]
+        
+        # Icon mapping
+        icon_map = {
+            "Liquid Assets": "💵",
+            "Retirement Accounts": "🏦", 
+            "Home Equity": "🏠",
+            "Investment Accounts": "📈",
+            "Life Insurance": "🛡️"
+        }
+        
+        icon = icon_map.get(category.display_name, "💰")
+        
+        # Asset row
+        col1, col2 = st.columns([3, 1])
+        
+        with col1:
+            st.markdown(f"**{icon} {category.display_name}**")
+            
+        with col2:
+            st.markdown(f"**${category.accessible_value:,.0f}**")
+            
+        # Add spacing between rows
+        st.markdown('<div style="height: 8px;"></div>', unsafe_allow_html=True)
 
-        # Determine status tag styling
-        if category.liquidation_timeframe == "immediate":
-            status_tag = '<span style="background: #d4edda; color: #155724; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: uppercase;">Ready Now</span>'
-        elif category.tax_implications in ["ordinary_income", "capital_gains"]:
-            status_tag = '<span style="background: #fff3cd; color: #856404; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: uppercase;">Taxed on Withdrawal</span>'
-        elif category.liquidation_timeframe in ["3-6_months", "6-12_months"]:
-            status_tag = '<span style="background: #e2e3e5; color: #383d41; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: uppercase;">May Require Sale</span>'
-        else:
-            status_tag = '<span style="background: #e2e3e5; color: #383d41; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;">Available</span>'
+    # Total summary
+    st.markdown('<div style="height: 16px; border-top: 1px solid #e5e7eb; margin: 16px 0;"></div>', unsafe_allow_html=True)
+    
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        st.markdown("**Total Available Resources**")
+    with col2:
+        st.markdown(f"**${total_available:,.0f}**")
 
-        # Build expander label with balance and status tag
-        expander_label = f"{category.display_name} — ${category.current_balance:,.0f}"
-
-        # Apply light background tint to card
-        card_bg_color = "rgba(220, 252, 231, 0.3)" if category.recommended else "rgba(248, 249, 250, 0.5)"
-
-        # Wrap expander in styled container
-        st.markdown(f'<div style="background: {card_bg_color}; border-radius: 12px; padding: 4px; margin-bottom: 12px; border: 1px solid var(--border-primary); box-shadow: 0 1px 4px rgba(0,0,0,0.08);">', unsafe_allow_html=True)
-
-        with st.expander(expander_label, expanded=False):
-            # Header row with checkbox in top-right
-            header_col, checkbox_col = st.columns([5, 1])
-
-            with header_col:
-                # Status tag inline
-                st.markdown(status_tag, unsafe_allow_html=True)
-
-            with checkbox_col:
-                # Checkbox for selection (top-right corner)
-                current_selection = st.session_state.expert_review_selected_assets.get(cat_name, False)
-                new_selection = st.checkbox(
-                    "Include",
-                    value=current_selection,
-                    key=f"asset_select_{cat_name}",
-                    disabled=not category.recommended,
-                    label_visibility="visible",
-                    help="Include in Care Funding Plan"
-                )
-
-                if new_selection != current_selection:
-                    st.session_state.expert_review_selected_assets[cat_name] = new_selection
-                    selection_changed = True
-                    # Show inline feedback
-                    if new_selection:
-                        st.success("✅ Added to coverage plan", icon="✅")
-                    else:
-                        st.info("Removed from coverage plan")
-
-            st.markdown('<div style="margin-top: 16px;"></div>', unsafe_allow_html=True)
-
-            # Current balance
-            st.markdown(f"**Current Balance:** ${category.current_balance:,.0f}")
-
-            # Available amount if different
-            if category.accessible_value != category.current_balance:
-                diff_pct = (category.accessible_value / category.current_balance) * 100
-                st.markdown(f"**Available Now:** ${category.accessible_value:,.0f} ({diff_pct:.0f}% accessible)")
-
-                # Tooltip explanation
-                if category.tax_implications == "ordinary_income":
-                    st.caption("💡 Withdrawals from retirement accounts may incur tax")
-                elif category.tax_implications == "capital_gains":
-                    st.caption("� Sale proceeds subject to capital gains tax")
-            else:
-                st.markdown(f"**Available Now:** ${category.accessible_value:,.0f}")
-
-            # Availability status
-            timeframe_map = {
-                "immediate": "✅ Ready to Use",
-                "1-3_months": "⏱️ Available in 1-3 Months",
-                "3-6_months": "📅 Available in 3-6 Months",
-                "6-12_months": "📆 Available in 6-12 Months",
-            }
-            timeframe_text = timeframe_map.get(category.liquidation_timeframe, category.liquidation_timeframe)
-            st.markdown(f"**Availability:** {timeframe_text}")
-
-            # Recommendation note
-            if cat_name in analysis.funding_notes:
-                note = analysis.funding_notes[cat_name]
-                st.info(f"💡 {note}")
-
-            # Additional notes
-            if category.notes:
-                st.markdown(f"<div style='font-size: 13px; color: var(--text-secondary); margin-top: 8px;'>{category.notes}</div>", unsafe_allow_html=True)
-
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    # Rerun if selection changed (to update calculations)
-    if selection_changed:
-        st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)
 
 
 def _render_coverage_impact_visualization(analysis, profile):
