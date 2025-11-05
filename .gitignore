@@ -70,6 +70,40 @@ _archive_debug_docs/
 # Documentation - local only, not committed to origin
 Documentation/
 
+# Development documentation (backed up locally)
+ADVISOR_SUMMARY_LLM_GUIDE.md
+CARE_HOURS_*.md
+CLEANUP_*.md
+CLINICAL_RULES_SUMMARY.md
+CODE_QUALITY_REPORT.md
+EXACT_HOURS_FEATURE.md
+GCP_TEST_TOOL_SUMMARY.md
+HOURS_*.md
+IMPLEMENTATION_LLM_TIER_POLICY.md
+JOURNEY_*.md
+LOGIN_PAGE_REBUILD_PLAN.md
+MERGE_CHECKLIST.md
+NAVIGATION_TEST_PLAN.md
+NAVI_*.md
+PHASE_1_SUMMARY.md
+QUICKSTART_NAVI_INTELLIGENCE.md
+RECOMMENDED_REORG_PLAN.md
+SYSTEM_ARCHITECTURE_AND_FLOW.md
+TESTING_GUIDE_NAVI_INTELLIGENCE.md
+docs/ARCHITECTURE.md
+docs/CLAUDE_5E_GUIDE.md
+docs/CSS_ARCHITECTURE.md
+docs/FLAG_REGISTRY.md
+docs/NAVIGATION_HARDENING.md
+docs/OBSOLETE_PNG_ASSETS.md
+docs/REPO_STRUCTURE.md
+docs/TRAINING.md
+docs/cleanup/
+docs/content_contract.md
+docs/history/
+products/cost_planner_v2/MODULE_DEVELOPMENT_GUIDE_KEEP.md
+_local_docs_backup/
+
 # Backup artifacts
 **/*.bak
 **/*.bak?
