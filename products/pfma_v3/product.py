@@ -400,13 +400,36 @@ def _validate_booking(form_data: dict) -> tuple[bool, list[str]]:
 def _render_confirmation(appt: AdvisorAppointment):
     """Render confirmation screen for already-booked appointment."""
 
-    st.markdown("## ✅ Appointment Confirmed")
-
-    st.success(
-        f"**Your consultation is scheduled!**\n\nConfirmation ID: **{appt.confirmation_id}**"
+    # Apply clean CSS with width constraint
+    st.markdown(
+        """
+        <style>
+        .block-container {
+            max-width: 1000px !important;
+            padding-left: 2rem !important;
+            padding-right: 2rem !important;
+        }
+        .confirmation-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
     )
 
-    # Appointment details
+    st.markdown("## ✅ Appointment Confirmed")
+
+    st.markdown(f"**Your consultation is scheduled!**\n\nConfirmation ID: **{appt.confirmation_id}**")
+
+    # Appointment details in clean card
+    st.markdown('<div class="confirmation-card">', unsafe_allow_html=True)
     st.markdown("### Appointment Details")
 
     col1, col2 = st.columns(2)
@@ -426,9 +449,10 @@ def _render_confirmation(appt: AdvisorAppointment):
     if appt.notes:
         st.markdown("**Notes:**")
         st.info(appt.notes)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
 
     # Next steps
-    st.markdown("---")
     st.markdown("### Next Steps")
 
     st.markdown(
@@ -436,10 +460,6 @@ def _render_confirmation(appt: AdvisorAppointment):
         "Visit the **Waiting Room** to prepare for your consultation. "
         "Complete optional prep sections to help your advisor provide personalized guidance."
     )
-
-    # Prep progress
-    if appt.prep_progress > 0:
-        st.progress(appt.prep_progress / 100, text=f"Advisor Prep: {appt.prep_progress}% complete")
 
     # Action button - End of planning journey
     col1, col2, col3 = st.columns([1, 1, 1])
