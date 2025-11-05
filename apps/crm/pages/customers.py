@@ -4,7 +4,7 @@ Clean, professional styling following the lobby design pattern
 """
 import streamlit as st
 from shared.data_access.navigator_reader import NavigatorDataReader
-from shared.data_access.crm_repository import CRMRepository
+from shared.data_access.crm_repository import CrmRepository
 
 def inject_crm_css():
     """Inject clean CRM styling consistent with Navigator lobby"""

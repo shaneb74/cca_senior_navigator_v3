@@ -3,7 +3,7 @@ CRM Contacts page - manage advisor contacts and referral sources
 Clean, professional styling following the lobby design pattern
 """
 import streamlit as st
-from shared.data_access.crm_repository import CRMRepository
+from shared.data_access.crm_repository import CrmRepository
 
 def inject_crm_css():
     """Reuse the same clean CSS from customers page"""
@@ -79,7 +79,7 @@ def render():
     """, unsafe_allow_html=True)
     
     # Load existing contacts
-    crm_repo = CRMRepository()
+    crm_repo = CrmRepository()
     contacts = crm_repo.list_records("contacts")
     
     # Add new contact form

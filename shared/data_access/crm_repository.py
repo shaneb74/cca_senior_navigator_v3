@@ -225,6 +225,55 @@ class CrmRepository:
         
         return None
     
+    # --- Generic Record Management ---
+    
+    def add_record(self, record_type: str, record_data: Dict[str, Any]) -> str:
+        """Add a generic record and return its ID."""
+        record_id = str(uuid.uuid4())
+        record_data["id"] = record_id
+        record_data["created_at"] = datetime.now()
+        
+        filename = f"{record_type}.jsonl"
+        self._append_to_jsonl(filename, record_data)
+        return record_id
+    
+    def list_records(self, record_type: str) -> List[Dict[str, Any]]:
+        """List all records of a given type."""
+        filename = f"{record_type}.jsonl"
+        return self._load_from_jsonl(filename)
+    
+    def get_record(self, record_type: str, record_id: str) -> Optional[Dict[str, Any]]:
+        """Get a specific record by ID."""
+        records = self.list_records(record_type)
+        for record in records:
+            if record.get("id") == record_id:
+                return record
+        return None
+    
+    def update_record(self, record_type: str, record_id: str, updates: Dict[str, Any]) -> bool:
+        """Update a record with new data."""
+        records = self.list_records(record_type)
+        for record in records:
+            if record.get("id") == record_id:
+                record.update(updates)
+                record["updated_at"] = datetime.now()
+                filename = f"{record_type}.jsonl"
+                self._save_to_jsonl(filename, records)
+                return True
+        return False
+    
+    def delete_record(self, record_type: str, record_id: str) -> bool:
+        """Delete a record by ID."""
+        records = self.list_records(record_type)
+        original_count = len(records)
+        records = [r for r in records if r.get("id") != record_id]
+        
+        if len(records) < original_count:
+            filename = f"{record_type}.jsonl"
+            self._save_to_jsonl(filename, records)
+            return True
+        return False
+    
     # --- Utility Methods ---
     
     def _load_from_jsonl(self, filename: str) -> List[Dict[str, Any]]:
