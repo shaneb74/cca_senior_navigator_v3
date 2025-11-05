@@ -1629,10 +1629,12 @@ def _render_page_navigation(
     with col2:
         # Save & Back to Hub
         if st.button("← Back to Assessments", use_container_width=True, type="secondary", key=f"{assessment_key}_save_back"):
-            # Mark assessment as complete (preserve existing data)
+            # Mark assessment as complete and PERSIST to storage
             state_key = f"{product_key}_{assessment_key}"
             if state_key in st.session_state:
                 st.session_state[state_key]["status"] = "done"
+                # CRITICAL: Persist to tiles/cost_v2_modules before navigating
+                _persist_assessment_state(product_key, assessment_key, st.session_state[state_key])
             
             # Clear current assessment and return to hub
             st.session_state.pop(f"{product_key}_current_assessment", None)
@@ -1656,10 +1658,12 @@ def _render_page_navigation(
             button_label = "Finish & Review →"
         
         if st.button(button_label, use_container_width=True, type="primary", key=f"{assessment_key}_save_continue"):
-            # Mark assessment as complete (preserve existing data)
+            # Mark assessment as complete and PERSIST to storage
             state_key = f"{product_key}_{assessment_key}"
             if state_key in st.session_state:
                 st.session_state[state_key]["status"] = "done"
+                # CRITICAL: Persist to tiles/cost_v2_modules before navigating
+                _persist_assessment_state(product_key, assessment_key, st.session_state[state_key])
             
             if next_assessment:
                 # Go to next assessment
