@@ -43,19 +43,118 @@ class NavigatorDataReader:
         
         return customers
     
-    def get_customer_by_id(self, user_id: str) -> Optional[Dict[str, Any]]:
-        """Get detailed data for a specific customer"""
-        # Try regular user files first
-        user_file = self.users_dir / f"{user_id}.json"
-        if user_file.exists():
-            return self._load_detailed_user_data(user_file)
+    def get_customer_by_id(self, user_id):
+        """Get detailed customer information by user ID"""
+        try:
+            # Load basic customer data
+            user_data = self.load_user_data(user_id)
+            if not user_data:
+                return None
+            
+            # Enhance with assessment data
+            customer_data = {
+                'user_id': user_id,
+                'person_name': user_data.get('person_name', 'Unknown'),
+                'relationship_type': user_data.get('relationship_type', 'Unknown'),
+                'last_activity': user_data.get('last_activity', 'Never'),
+                'last_activity_days': self._calculate_days_since_activity(user_data.get('last_activity')),
+                'has_gcp_assessment': False,
+                'has_cost_plan': False,
+                'care_recommendation': None,
+                'assessment_summary': None,
+                'cost_summary': None,
+                'journey_stage': 'Initial Contact'
+            }
+            
+            # Check for GCP assessment
+            gcp_data = self._load_gcp_data(user_id)
+            if gcp_data:
+                customer_data['has_gcp_assessment'] = True
+                customer_data['care_recommendation'] = gcp_data.get('recommendation', 'Assessment Complete')
+                customer_data['assessment_summary'] = self._generate_assessment_summary(gcp_data)
+                customer_data['journey_stage'] = 'Care Assessment Complete'
+            
+            # Check for cost planning
+            cost_data = self._load_cost_data(user_id)
+            if cost_data:
+                customer_data['has_cost_plan'] = True
+                customer_data['cost_summary'] = self._generate_cost_summary(cost_data)
+                if customer_data['has_gcp_assessment']:
+                    customer_data['journey_stage'] = 'Ready for Recommendations'
+                else:
+                    customer_data['journey_stage'] = 'Cost Planning Complete'
+            
+            return customer_data
+            
+        except Exception as e:
+            self.logger.error(f"Error loading customer {user_id}: {e}")
+            return None
+    
+    def _calculate_days_since_activity(self, last_activity):
+        """Calculate days since last activity"""
+        if not last_activity or last_activity == 'Never':
+            return 999
         
-        # Try demo users
-        demo_dir = self.demo_dir / user_id
-        if demo_dir.exists():
-            return self._load_detailed_demo_data(demo_dir)
+        try:
+            from datetime import datetime
+            # Try to parse the date
+            activity_date = datetime.strptime(last_activity, '%Y-%m-%d')
+            days_diff = (datetime.now() - activity_date).days
+            return max(0, days_diff)
+        except:
+            return 999
+    
+    def _load_gcp_data(self, user_id):
+        """Load GCP assessment data for user"""
+        try:
+            gcp_file = self.data_dir / 'users' / user_id / 'gcp_assessment.json'
+            if gcp_file.exists():
+                return self._load_json_file(gcp_file)
+            return None
+        except Exception as e:
+            self.logger.debug(f"No GCP data for {user_id}: {e}")
+            return None
+    
+    def _load_cost_data(self, user_id):
+        """Load cost planning data for user"""
+        try:
+            cost_file = self.data_dir / 'users' / user_id / 'cost_plan.json'
+            if cost_file.exists():
+                return self._load_json_file(cost_file)
+            return None
+        except Exception as e:
+            self.logger.debug(f"No cost data for {user_id}: {e}")
+            return None
+    
+    def _generate_assessment_summary(self, gcp_data):
+        """Generate human-readable assessment summary"""
+        recommendation = gcp_data.get('recommendation', 'Unknown')
+        mobility_score = gcp_data.get('mobility_score', 0)
+        care_level = gcp_data.get('care_level', 'Unknown')
         
-        return None
+        summary = f"Care recommendation: {recommendation}. "
+        
+        if mobility_score:
+            summary += f"Mobility assessment score: {mobility_score}/100. "
+        
+        if care_level and care_level != 'Unknown':
+            summary += f"Care level: {care_level}."
+        
+        return summary.strip()
+    
+    def _generate_cost_summary(self, cost_data):
+        """Generate human-readable cost summary"""
+        budget_range = cost_data.get('budget_range', 'Not specified')
+        monthly_income = cost_data.get('monthly_income', 0)
+        
+        summary = f"Budget range: {budget_range}. "
+        
+        if monthly_income:
+            summary += f"Monthly income: ${monthly_income:,}. "
+        
+        summary += "Financial capacity assessment completed."
+        
+        return summary.strip()
     
     def _load_user_file(self, user_file: Path) -> Optional[Dict[str, Any]]:
         """Load and summarize a regular user file"""
