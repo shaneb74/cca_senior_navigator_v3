@@ -1050,131 +1050,66 @@ def _render_available_resources_cards(analysis, profile):
 
 def _render_coverage_impact_visualization(analysis, profile):
     """
-    Render Coverage Impact Visualization showing how selected assets extend care funding.
+    Render Coverage Impact - Simple summary showing selected asset impact.
     
-    Shows:
-    - Total Selected Assets
-    - Extended Coverage Duration
-    - Coverage Improvement
-    - Visual timeline representation
+    Clean, clear summary without confusing visualizations.
     """
-
-    from products.cost_planner_v2.expert_formulas import calculate_extended_runway
-
-    st.markdown("### 📊 Coverage Analysis (Dynamic)")
 
     # Get current selections
     selected_assets = st.session_state.get("expert_review_selected_assets", {})
-
-    # Calculate extended runway
-    extended_runway = calculate_extended_runway(
-        analysis.monthly_gap if analysis.monthly_gap > 0 else 0,
-        selected_assets,
-        analysis.asset_categories,
-    )
-
+    
     # Calculate total selected value
     total_selected = sum(
         analysis.asset_categories[name].accessible_value
         for name, selected in selected_assets.items()
         if selected and name in analysis.asset_categories
     )
-
-    # Create card background
-    st.markdown('<div style="background: var(--surface-primary); border-radius: 12px; padding: 24px; border: 1px solid var(--border-primary);">', unsafe_allow_html=True)
-
-    # Three-column metrics
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        st.metric(
-            label="Total Selected Assets",
-            value=f"${total_selected:,.0f}",
-        )
-
-    with col2:
-        if analysis.monthly_gap > 0 and total_selected > 0:
-            # Show how gap is covered
-            gap_covered_pct = min((total_selected / (analysis.monthly_gap * 12)) * 100, 999)
-            st.metric(
-                label="First Year Gap Coverage",
-                value=f"{gap_covered_pct:.0f}%",
-            )
-        else:
-            st.metric(
-                label="Monthly Shortfall",
-                value="$0" if analysis.monthly_gap <= 0 else f"${abs(analysis.monthly_gap):,.0f}",
-            )
-
-    with col3:
-        if extended_runway is not None and extended_runway > 0:
-            years = int(extended_runway / 12)
-            months = int(extended_runway % 12)
-
-            if years > 0:
-                runway_display = f"{years} years"
-                if months > 0:
-                    runway_display += f", {months} months"
-            else:
-                runway_display = f"{int(extended_runway)} months"
-
-            # Calculate improvement over base runway
-            if analysis.runway_months and analysis.runway_months > 0:
-                improvement_months = extended_runway - analysis.runway_months
-                improvement_years = improvement_months / 12
-                delta_text = f"+{improvement_years:.1f} years"
-            else:
-                delta_text = "With selected assets"
-
-            st.metric(
-                label="New Coverage Duration",
-                value=runway_display,
-                delta=delta_text,
-                delta_color="normal",
-            )
-        elif analysis.monthly_gap <= 0:
-            st.metric(
-                label="Coverage Duration",
-                value="Indefinite",
-                delta="Income covers costs",
-                delta_color="normal",
-            )
-        else:
-            st.metric(
-                label="Extended Duration",
-                value="Select assets above",
-                delta="to calculate",
-            )
-
-    # Visual timeline bar (simplified for now - can enhance with actual timeline viz)
-    if extended_runway and extended_runway > 0:
-        st.markdown('<div style="margin-top: 24px;">', unsafe_allow_html=True)
-        st.markdown('<div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 8px;">Coverage Timeline</div>', unsafe_allow_html=True)
-
-        # Show income coverage portion vs asset coverage portion
-        if analysis.runway_months and analysis.runway_months > 0:
-            income_portion = (analysis.runway_months / extended_runway) * 100
-            asset_portion = ((extended_runway - analysis.runway_months) / extended_runway) * 100
-        else:
-            income_portion = 0
-            asset_portion = 100
-
+    
+    # Only show if assets are selected
+    if total_selected > 0:
+        st.markdown("### 📊 Selected Assets Impact")
+        
+        # Show impact in clean card
         st.markdown(
             f"""
-            <div style="width: 100%; height: 40px; display: flex; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-primary);">
-                <div style="width: {income_portion}%; background: var(--primary-bg); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: white;">
-                    Income ({analysis.runway_months:.0f}mo)
+            <div style="background: #f0f9ff; border: 1px solid #0066cc; border-radius: 12px; padding: 20px; margin: 20px 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <span style="font-weight: 600; font-size: 16px;">Total Selected Assets</span>
+                    <span style="font-weight: 600; font-size: 18px; color: #0066cc;">${total_selected:,.0f}</span>
                 </div>
-                <div style="width: {asset_portion}%; background: var(--success-bg); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: white;">
-                    + Assets ({extended_runway - (analysis.runway_months or 0):.0f}mo)
-                </div>
-            </div>
             """,
             unsafe_allow_html=True,
         )
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    st.markdown('</div>', unsafe_allow_html=True)
+        
+        # Show coverage impact based on monthly gap
+        if analysis.monthly_gap > 0:
+            months_covered = total_selected / analysis.monthly_gap
+            years_covered = months_covered / 12
+            
+            if years_covered >= 1:
+                coverage_text = f"Covers the ${analysis.monthly_gap:,.0f}/month gap for {years_covered:.1f} years"
+            else:
+                coverage_text = f"Covers the ${analysis.monthly_gap:,.0f}/month gap for {months_covered:.0f} months"
+                
+            st.markdown(
+                f"""
+                <div style="color: #0066cc; font-size: 14px; font-weight: 500;">
+                    {coverage_text}
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+        else:
+            st.markdown(
+                """
+                <div style="color: #0066cc; font-size: 14px; font-weight: 500;">
+                    These assets provide additional security since your income covers monthly costs
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+            
+        st.markdown("</div>", unsafe_allow_html=True)
 
 
 def _render_recommended_actions(analysis):
