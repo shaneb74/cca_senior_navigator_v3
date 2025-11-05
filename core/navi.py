@@ -975,6 +975,35 @@ def render_navi_panel(
                     primary_action={"label": "", "route": ""},
                     variant="module",
                 )
+            elif product_key == "pfma_v3":
+                # PFMA guidance - check completion state for contextual messaging
+                completed_count = ctx.progress.get("completed_count", 0)
+                
+                if completed_count >= 2:
+                    # Nearly there - user has GCP + Cost Planner done
+                    title = "Almost done! Time to connect."
+                    reason = "You've got your care plan and cost estimate. Let's schedule your advisor consultation to put it all together."
+                    encouragement_text = "Your advisor will review everything and help coordinate next steps."
+                    icon = "🎯"
+                else:
+                    # Prerequisites missing
+                    title = "One moment..."
+                    reason = "Let me check that you've completed the prerequisites first."
+                    encouragement_text = "We need your care plan and costs before scheduling."
+                    icon = "⏳"
+
+                render_navi_panel_v2(
+                    title=title,
+                    reason=reason,
+                    encouragement={
+                        "icon": icon,
+                        "text": encouragement_text,
+                        "status": "nearly_there" if completed_count >= 2 else "in_progress",
+                    },
+                    context_chips=[],
+                    primary_action={"label": "", "route": ""},
+                    variant="module",
+                )
             else:
                 # Generic fallback for other products
                 render_navi_panel_v2(
