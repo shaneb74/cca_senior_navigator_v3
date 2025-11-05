@@ -131,13 +131,13 @@ def _render_gate():
 def _render_booking_form():
     """Render single-step appointment booking form."""
 
-    # Apply clean CSS with max-width constraint
+    # Apply clean CSS with max-width constraint matching Navi width
     st.markdown(
         """
         <style>
         .pfma-form-container {
-            max-width: 800px;
-            margin: 0 auto;
+            max-width: 1000px;
+            margin: 24px auto 0 auto;
             padding: 0 20px;
         }
         </style>
