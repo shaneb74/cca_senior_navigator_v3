@@ -424,33 +424,31 @@ def _render_confirmation(appt: AdvisorAppointment):
         unsafe_allow_html=True,
     )
 
-    st.markdown("## ✅ Appointment Confirmed")
+    st.markdown("## Appointment Confirmed")
 
     st.markdown(f"**Your consultation is scheduled!**\n\nConfirmation ID: **{appt.confirmation_id}**")
 
-    # Appointment details in clean card
-    st.markdown('<div class="confirmation-card">', unsafe_allow_html=True)
-    st.markdown("### Appointment Details")
+    # Appointment details in container
+    with st.container():
+        st.markdown("### Appointment Details")
 
-    col1, col2 = st.columns(2)
+        col1, col2 = st.columns(2)
 
-    with col1:
-        st.markdown(f"**Type:** {appt.type.title()}")
-        st.markdown(f"**Timezone:** {_format_timezone(appt.timezone)}")
-        if appt.contact_email:
-            st.markdown(f"**Email:** {appt.contact_email}")
+        with col1:
+            st.markdown(f"**Type:** {appt.type.title()}")
+            st.markdown(f"**Timezone:** {_format_timezone(appt.timezone)}")
+            if appt.contact_email:
+                st.markdown(f"**Email:** {appt.contact_email}")
 
-    with col2:
-        st.markdown(f"**Status:** {appt.status.title()}")
-        st.markdown(f"**Preferred Time:** {appt.time}")
-        if appt.contact_phone:
-            st.markdown(f"**Phone:** {appt.contact_phone}")
+        with col2:
+            st.markdown(f"**Status:** {appt.status.title()}")
+            st.markdown(f"**Preferred Time:** {appt.time}")
+            if appt.contact_phone:
+                st.markdown(f"**Phone:** {appt.contact_phone}")
 
-    if appt.notes:
-        st.markdown("**Notes:**")
-        st.info(appt.notes)
-    
-    st.markdown('</div>', unsafe_allow_html=True)
+        if appt.notes:
+            st.markdown("**Notes:**")
+            st.info(appt.notes)
 
     # Next steps
     st.markdown("### Next Steps")
