@@ -39,15 +39,14 @@ def render():
     MCIP.mark_product_complete("cost_planner_v2")  # Will normalize to "cost_planner"
     print("[COST_EXIT] Marked Cost Planner complete via MCIP")
 
-    # Apply clean modern CSS with proper width constraint
+    # Apply clean modern CSS with proper width constraint like PFMA
     st.markdown(
         """
         <style>
-        /* Exit page container */
-        .exit-page-container {
-            max-width: 1000px;
-            margin: 24px auto 0 auto;
-            padding: 0 20px;
+        .block-container {
+            max-width: 1000px !important;
+            padding-left: 2rem !important;
+            padding-right: 2rem !important;
         }
         
         /* Clean modern card styling */
@@ -153,14 +152,9 @@ def render():
 
     st.markdown('<div style="height: 20px;"></div>', unsafe_allow_html=True)
 
-    # Wrap all content in container
-    st.markdown('<div class="exit-page-container">', unsafe_allow_html=True)
-    
     _render_plan_highlights_card()
     st.markdown('<div style="height: 32px;"></div>', unsafe_allow_html=True)
     _render_whats_next_section()
-    
-    st.markdown('</div>', unsafe_allow_html=True)
 
 
 def _render_navi_completion():
