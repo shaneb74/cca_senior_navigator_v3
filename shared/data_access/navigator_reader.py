@@ -344,7 +344,7 @@ class NavigatorDataReader:
         self.data_root = Path(data_root)
         self.users_dir = self.data_root / "users"
     
-    def get_all_customers(self) -> List[CustomerProfile]:
+    def get_all_customers(self) -> List[Dict[str, Any]]:
         """Get all customer profiles from Navigator data."""
         customers = []
         
@@ -381,6 +381,10 @@ class NavigatorDataReader:
             return self._load_customer_from_file(demo_file)
         
         return None
+    
+    def get_customer_by_id(self, user_id: str) -> Optional[Dict[str, Any]]:
+        """Get a specific customer by user ID (alias for get_customer)."""
+        return self.get_customer(user_id)
     
     def get_customer_raw_data(self, user_id: str) -> Optional[Dict[str, Any]]:
         """Get raw Navigator data for a customer (for detailed analysis)."""
