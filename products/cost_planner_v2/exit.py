@@ -57,6 +57,7 @@ def render():
             border-radius: 12px;
             padding: 24px;
             margin-bottom: 20px;
+            max-width: 700px;
         }
         
         .exit-card h3 {
