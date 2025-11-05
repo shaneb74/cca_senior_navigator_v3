@@ -124,3 +124,7 @@ check_repo_diff.py
 
 # Generated search index (rebuilt from corp_knowledge.jsonl on app start)
 config/corp_index.pkl
+
+# PROTECTION: Never ignore critical docs in .github/docs/
+!.github/docs/
+!.github/docs/*.md
