@@ -167,6 +167,10 @@ def render():
     if analysis.asset_categories:
         _render_available_resources_cards(analysis, profile)
         st.markdown('<div style="margin: 32px 0;"></div>', unsafe_allow_html=True)
+        
+        # 3. Coverage Impact Visualization (shows how selected assets extend funding)
+        _render_coverage_impact_visualization(analysis, profile)
+        st.markdown('<div style="margin: 32px 0;"></div>', unsafe_allow_html=True)
 
     st.markdown('<div style="margin: 48px 0;"></div>', unsafe_allow_html=True)
 
@@ -869,12 +873,13 @@ def _render_financial_details(analysis, profile):
 
 def _render_available_resources_cards(analysis, profile):
     """
-    Render available resources as clean asset summary.
+    Render available resources as clean, selectable cards.
     
-    STREAMLINED APPROACH: Simple, clean list focused on what matters:
-    - Asset name and current balance
-    - How much is accessible for care
-    - Clean, minimal design without expanders and complex interactions
+    CLEAN APPROACH: Each asset is a card with:
+    - Checkbox to include in funding plan
+    - Key details visible without dropdowns
+    - Clean, professional styling
+    - All original functionality preserved
     """
 
     st.markdown("### Available Resources")
@@ -884,11 +889,14 @@ def _render_available_resources_cards(analysis, profile):
         st.info("Complete additional financial assessments to see available resources.")
         return
 
-    # Calculate total available
-    total_available = sum(
-        category.accessible_value 
-        for category in analysis.asset_categories.values()
-    )
+    # Initialize selection state if not exists
+    if "expert_review_selected_assets" not in st.session_state:
+        st.session_state.expert_review_selected_assets = {}
+    
+    # Add any new categories that weren't seeded yet (default to False = not selected)
+    for name in analysis.asset_categories.keys():
+        if name not in st.session_state.expert_review_selected_assets:
+            st.session_state.expert_review_selected_assets[name] = False
 
     # Guidance text based on context
     if analysis.monthly_gap > 0:
@@ -900,17 +908,32 @@ def _render_available_resources_cards(analysis, profile):
             "Your income fully covers estimated care costs. These assets are available as reserves if needed."
         )
 
-    st.markdown('<div style="height: 20px;"></div>', unsafe_allow_html=True)
-
-    # Clean asset summary in a card
-    st.markdown(
-        """
-        <div style="background: white; border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px; margin-bottom: 20px;">
-        """,
-        unsafe_allow_html=True,
+    # Show inline summary of selected assets
+    selected_count = sum(1 for selected in st.session_state.expert_review_selected_assets.values() if selected)
+    selected_total = sum(
+        analysis.asset_categories[name].accessible_value
+        for name, selected in st.session_state.expert_review_selected_assets.items()
+        if selected and name in analysis.asset_categories
     )
 
-    # Render each asset as a clean row
+    if selected_count > 0:
+        st.markdown(
+            f"""
+            <div style="background: #e7f3ff; border-left: 4px solid #0066cc; padding: 12px 16px; border-radius: 8px; margin: 20px 0;">
+                <span style="font-size: 14px; font-weight: 600; color: #003d7a;">
+                    {selected_count} resource{'s' if selected_count != 1 else ''} selected — contributing ${selected_total:,.0f} toward care
+                </span>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    st.markdown('<div style="height: 20px;"></div>', unsafe_allow_html=True)
+
+    # Track if any selection changed
+    selection_changed = False
+
+    # Render each asset as a clean, detailed card
     for cat_name in analysis.recommended_funding_order:
         if cat_name not in analysis.asset_categories:
             continue
@@ -927,29 +950,102 @@ def _render_available_resources_cards(analysis, profile):
         }
         
         icon = icon_map.get(category.display_name, "💰")
-        
-        # Asset row
-        col1, col2 = st.columns([3, 1])
+
+        # Determine status for styling
+        is_selected = st.session_state.expert_review_selected_assets.get(cat_name, False)
+        card_style = "background: #f0f9ff; border: 2px solid #0066cc;" if is_selected else "background: white; border: 1px solid #e5e7eb;"
+
+        # Asset card
+        st.markdown(
+            f"""
+            <div style="{card_style} border-radius: 12px; padding: 20px; margin-bottom: 16px;">
+            """,
+            unsafe_allow_html=True,
+        )
+
+        # Header with checkbox
+        col1, col2 = st.columns([4, 1])
         
         with col1:
             st.markdown(f"**{icon} {category.display_name}**")
-            
+        
         with col2:
-            st.markdown(f"**${category.accessible_value:,.0f}**")
+            # Checkbox for selection
+            current_selection = st.session_state.expert_review_selected_assets.get(cat_name, False)
+            new_selection = st.checkbox(
+                "Include",
+                value=current_selection,
+                key=f"asset_select_{cat_name}",
+                disabled=not category.recommended,
+                help="Include in Care Funding Plan"
+            )
+
+            if new_selection != current_selection:
+                st.session_state.expert_review_selected_assets[cat_name] = new_selection
+                selection_changed = True
+
+        # Key details in clean layout
+        detail_col1, detail_col2 = st.columns([1, 1])
+        
+        with detail_col1:
+            st.markdown(f"**Current Balance:** ${category.current_balance:,.0f}")
             
-        # Add spacing between rows
-        st.markdown('<div style="height: 8px;"></div>', unsafe_allow_html=True)
+            # Availability status
+            timeframe_map = {
+                "immediate": "✅ Ready to Use",
+                "1-3_months": "⏱️ Available in 1-3 Months", 
+                "3-6_months": "📅 Available in 3-6 Months",
+                "6-12_months": "📆 Available in 6-12 Months",
+            }
+            timeframe_text = timeframe_map.get(category.liquidation_timeframe, category.liquidation_timeframe)
+            st.markdown(f"**Availability:** {timeframe_text}")
+            
+        with detail_col2:
+            # Available amount if different
+            if category.accessible_value != category.current_balance:
+                diff_pct = (category.accessible_value / category.current_balance) * 100
+                st.markdown(f"**Available Now:** ${category.accessible_value:,.0f} ({diff_pct:.0f}% accessible)")
+            else:
+                st.markdown(f"**Available Now:** ${category.accessible_value:,.0f}")
+                
+            # Tax implications
+            if category.tax_implications == "ordinary_income":
+                st.caption("💡 Withdrawals may incur income tax")
+            elif category.tax_implications == "capital_gains":
+                st.caption("💡 Sale proceeds subject to capital gains tax")
+
+        # Recommendation note
+        if cat_name in analysis.funding_notes:
+            note = analysis.funding_notes[cat_name]
+            st.info(f"💡 {note}")
+
+        # Additional notes
+        if category.notes:
+            st.markdown(f"<div style='font-size: 13px; color: #666; margin-top: 8px; font-style: italic;'>{category.notes}</div>", unsafe_allow_html=True)
+
+        st.markdown("</div>", unsafe_allow_html=True)
 
     # Total summary
-    st.markdown('<div style="height: 16px; border-top: 1px solid #e5e7eb; margin: 16px 0;"></div>', unsafe_allow_html=True)
+    total_available = sum(
+        category.accessible_value 
+        for category in analysis.asset_categories.values()
+    )
     
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        st.markdown("**Total Available Resources**")
-    with col2:
-        st.markdown(f"**${total_available:,.0f}**")
+    st.markdown(
+        f"""
+        <div style="background: #f8f9fa; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; margin-top: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-weight: 600; font-size: 16px;">Total Available Resources</span>
+                <span style="font-weight: 600; font-size: 18px; color: #0066cc;">${total_available:,.0f}</span>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
-    st.markdown("</div>", unsafe_allow_html=True)
+    # Rerun if selection changed (to update calculations)
+    if selection_changed:
+        st.rerun()
 
 
 def _render_coverage_impact_visualization(analysis, profile):
