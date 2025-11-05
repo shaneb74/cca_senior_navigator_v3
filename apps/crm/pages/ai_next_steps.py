@@ -392,52 +392,82 @@ def analyze_customer_needs(customer_data):
     return recommendations
 
 def render_priority_section(priority, recommendations, title, color):
-    """Render a priority section with recommendations"""
+    """Render a priority section with recommendations using Streamlit components"""
     count = len(recommendations)
     
-    section_html = f"""
-    <div class="priority-section">
-        <div class="priority-header priority-{priority}">
-            <div class="priority-icon">{'🔥' if priority == 'urgent' else '⚡' if priority == 'high' else '📋'}</div>
-            <h2 class="priority-title">{title}</h2>
-            <span class="priority-count">{count}</span>
-        </div>
-        <div class="recommendation-list">
-    """
+    # Header with count
+    icon = '🔥' if priority == 'urgent' else '⚡' if priority == 'high' else '📋'
+    header_color = "#dc2626" if priority == 'urgent' else "#d97706" if priority == 'high' else "#059669"
     
-    for rec in recommendations:
-        section_html += f"""
-        <div class="recommendation-card">
-            <div class="rec-header">
-                <h3 class="rec-customer">{rec['customer']}</h3>
-                <span class="rec-timeline">{rec['timeline']}</span>
-            </div>
-            <p class="rec-action">{rec['action']}</p>
-            <p class="rec-reason">{rec['reason']}</p>
-            <div class="rec-tags">
-        """
-        
-        for tag in rec['tags']:
-            section_html += f'<span class="rec-tag tag-{tag.replace("-", "_")}">{tag}</span>'
-        
-        section_html += """
-            </div>
-            <div class="action-buttons">
-                <button class="btn-primary">Take Action</button>
-                <button class="btn-secondary">View Customer</button>
-            </div>
+    st.markdown(f"""
+    <div style="background: linear-gradient(135deg, {header_color}, {header_color}cc); 
+                color: white; padding: 1.5rem; border-radius: 16px 16px 0 0; 
+                display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center;">
+            <span style="font-size: 1.5rem; margin-right: 1rem;">{icon}</span>
+            <h3 style="margin: 0; font-size: 1.25rem; font-weight: 700;">{title}</h3>
         </div>
-        """
-    
-    section_html += """
-        </div>
+        <span style="background: rgba(255,255,255,0.2); padding: 0.25rem 0.75rem; 
+                     border-radius: 999px; font-size: 0.875rem; font-weight: 600;">{count}</span>
     </div>
+    """, unsafe_allow_html=True)
+    
+    # Recommendations container
+    container_style = """
+    background: white; border: 1px solid #e5e7eb; border-top: none;
+    border-radius: 0 0 16px 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.06);
     """
     
-    return section_html
+    with st.container():
+        st.markdown(f'<div style="{container_style}">', unsafe_allow_html=True)
+        
+        for i, rec in enumerate(recommendations):
+            # Individual recommendation card
+            border_bottom = "border-bottom: 1px solid #f3f4f6;" if i < len(recommendations) - 1 else ""
+            
+            st.markdown(f"""
+            <div style="padding: 1.5rem; {border_bottom}">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                    <h4 style="margin: 0; font-size: 1.1rem; font-weight: 700; color: #1f2937;">{rec['customer']}</h4>
+                    <span style="font-size: 0.875rem; color: #6b7280; font-weight: 500;">{rec['timeline']}</span>
+                </div>
+                <p style="margin: 0 0 1rem 0; font-size: 1rem; color: #374151; font-weight: 600;">{rec['action']}</p>
+                <p style="margin: 0 0 1rem 0; font-size: 0.9rem; color: #6b7280; line-height: 1.5;">{rec['reason']}</p>
+            """, unsafe_allow_html=True)
+            
+            # Tags
+            tags_html = '<div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem;">'
+            for tag in rec['tags']:
+                tag_style = {
+                    'ai-generated': 'background: #ede9fe; color: #7c3aed;',
+                    'automated': 'background: #dbeafe; color: #1e40af;',
+                    'overdue': 'background: #fef2f2; color: #dc2626;',
+                    'ready': 'background: #f0fdf4; color: #166534;',
+                    'incomplete': 'background: #fef3c7; color: #d97706;',
+                    'onboarding': 'background: #f0f9ff; color: #0284c7;',
+                    're-engagement': 'background: #fdf4ff; color: #c026d3;'
+                }.get(tag.replace('-', '_'), 'background: #f3f4f6; color: #374151;')
+                
+                tags_html += f"""
+                <span style="{tag_style} padding: 0.25rem 0.75rem; border-radius: 999px; 
+                             font-size: 0.75rem; font-weight: 600;">{tag}</span>
+                """
+            tags_html += '</div>'
+            st.markdown(tags_html, unsafe_allow_html=True)
+            
+            # Action buttons
+            col1, col2, col3 = st.columns([1, 1, 4])
+            with col1:
+                st.button("Take Action", key=f"action_{priority}_{i}", type="primary")
+            with col2:
+                st.button("View Customer", key=f"view_{priority}_{i}")
+            
+            st.markdown('</div>', unsafe_allow_html=True)
+        
+        st.markdown('</div>', unsafe_allow_html=True)
 
 def render_insights_summary(recommendations):
-    """Render AI insights summary"""
+    """Render AI insights summary using Streamlit components"""
     total_recs = sum(len(recs) for recs in recommendations.values())
     urgent_count = len(recommendations['urgent'])
     high_count = len(recommendations['high'])
@@ -446,43 +476,74 @@ def render_insights_summary(recommendations):
     engagement_rate = max(0, 100 - (urgent_count * 10))  # Decreases with urgent issues
     completion_rate = max(0, 85 - (urgent_count * 5))   # Affected by urgent items
     
-    summary_html = f"""
-    <div class="insights-summary">
+    # Header
+    st.markdown("""
+    <div style="background: linear-gradient(135deg, #f8fafc, #f1f5f9); border: 1px solid #e2e8f0; 
+                border-radius: 16px; padding: 2rem; margin: 2rem 0;">
         <h2 style="margin: 0 0 1rem 0; color: #1e293b; font-size: 1.5rem; font-weight: 700;">
             🤖 AI Performance Dashboard
         </h2>
         <p style="margin: 0; color: #64748b; font-size: 1rem;">
             Real-time analysis replacing 46+ manual QuickBase reports
         </p>
-        
-        <div class="insights-grid">
-            <div class="insight-metric">
-                <div class="metric-number">{total_recs}</div>
-                <div class="metric-label">Active Recommendations</div>
-                <div class="metric-change change-positive">↑ AI Generated</div>
-            </div>
-            <div class="insight-metric">
-                <div class="metric-number">{urgent_count}</div>
-                <div class="metric-label">Urgent Actions</div>
-                <div class="metric-change {'change-negative' if urgent_count > 0 else 'change-positive'}">
-                    {'⚠️ Needs attention' if urgent_count > 0 else '✅ All good'}
-                </div>
-            </div>
-            <div class="insight-metric">
-                <div class="metric-number">{engagement_rate}%</div>
-                <div class="metric-label">Engagement Health</div>
-                <div class="metric-change change-positive">📈 Tracking well</div>
-            </div>
-            <div class="insight-metric">
-                <div class="metric-number">{completion_rate}%</div>
-                <div class="metric-label">Journey Completion</div>
-                <div class="metric-change change-positive">🎯 On target</div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Metrics grid using Streamlit columns
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.markdown(f"""
+        <div style="text-align: center; background: white; border: 1px solid #e2e8f0; 
+                    border-radius: 12px; padding: 1.5rem;">
+            <div style="font-size: 2.5rem; font-weight: 700; color: #1e293b; margin: 0;">{total_recs}</div>
+            <div style="font-size: 0.875rem; color: #64748b; margin: 0.5rem 0 0 0; 
+                       text-transform: uppercase; letter-spacing: 0.05em;">Active Recommendations</div>
+            <div style="font-size: 0.8rem; margin: 0.25rem 0 0 0; font-weight: 600; color: #059669;">
+                ↑ AI Generated
             </div>
         </div>
-    </div>
-    """
+        """, unsafe_allow_html=True)
     
-    return summary_html
+    with col2:
+        st.markdown(f"""
+        <div style="text-align: center; background: white; border: 1px solid #e2e8f0; 
+                    border-radius: 12px; padding: 1.5rem;">
+            <div style="font-size: 2.5rem; font-weight: 700; color: #1e293b; margin: 0;">{urgent_count}</div>
+            <div style="font-size: 0.875rem; color: #64748b; margin: 0.5rem 0 0 0; 
+                       text-transform: uppercase; letter-spacing: 0.05em;">Urgent Actions</div>
+            <div style="font-size: 0.8rem; margin: 0.25rem 0 0 0; font-weight: 600; 
+                       color: {'#dc2626' if urgent_count > 0 else '#059669'};">
+                {'⚠️ Needs attention' if urgent_count > 0 else '✅ All good'}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col3:
+        st.markdown(f"""
+        <div style="text-align: center; background: white; border: 1px solid #e2e8f0; 
+                    border-radius: 12px; padding: 1.5rem;">
+            <div style="font-size: 2.5rem; font-weight: 700; color: #1e293b; margin: 0;">{engagement_rate}%</div>
+            <div style="font-size: 0.875rem; color: #64748b; margin: 0.5rem 0 0 0; 
+                       text-transform: uppercase; letter-spacing: 0.05em;">Engagement Health</div>
+            <div style="font-size: 0.8rem; margin: 0.25rem 0 0 0; font-weight: 600; color: #059669;">
+                📈 Tracking well
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col4:
+        st.markdown(f"""
+        <div style="text-align: center; background: white; border: 1px solid #e2e8f0; 
+                    border-radius: 12px; padding: 1.5rem;">
+            <div style="font-size: 2.5rem; font-weight: 700; color: #1e293b; margin: 0;">{completion_rate}%</div>
+            <div style="font-size: 0.875rem; color: #64748b; margin: 0.5rem 0 0 0; 
+                       text-transform: uppercase; letter-spacing: 0.05em;">Journey Completion</div>
+            <div style="font-size: 0.8rem; margin: 0.25rem 0 0 0; font-weight: 600; color: #059669;">
+                🎯 On target
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
 def render():
     """Main render function for AI Next Steps Engine"""
@@ -505,29 +566,22 @@ def render():
     recommendations = generate_ai_recommendations()
     
     # Render insights summary
-    st.markdown(render_insights_summary(recommendations), unsafe_allow_html=True)
+    render_insights_summary(recommendations)
     
-    # Render priority sections
-    st.markdown('<div class="priority-grid">', unsafe_allow_html=True)
+    # Render priority sections in grid layout
+    col1, col2 = st.columns(2)
     
-    st.markdown(
-        render_priority_section('urgent', recommendations['urgent'], 'Urgent Actions', '#dc2626'),
-        unsafe_allow_html=True
-    )
+    with col1:
+        if recommendations['urgent']:
+            render_priority_section('urgent', recommendations['urgent'], 'Urgent Actions', '#dc2626')
     
-    st.markdown(
-        render_priority_section('high', recommendations['high'], 'High Priority', '#d97706'),
-        unsafe_allow_html=True
-    )
-    
-    st.markdown('</div>', unsafe_allow_html=True)
+    with col2:
+        if recommendations['high']:
+            render_priority_section('high', recommendations['high'], 'High Priority', '#d97706')
     
     # Medium priority in full width
     if recommendations['medium']:
-        st.markdown(
-            render_priority_section('medium', recommendations['medium'], 'Medium Priority', '#059669'),
-            unsafe_allow_html=True
-        )
+        render_priority_section('medium', recommendations['medium'], 'Medium Priority', '#059669')
     
     # Show AI capabilities info
     st.markdown("""
