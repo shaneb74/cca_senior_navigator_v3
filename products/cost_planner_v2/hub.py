@@ -115,7 +115,7 @@ def render():
             "icon": "🧭",
             "estimated_time": "5-7 min",
             "required": False,
-            "visible": medicaid_planning_interest,  # Only show if interested in Medicaid planning
+            "visible": False,  # Hidden - only shown programmatically when needed
             "sort_order": 6,
         },
     ]
