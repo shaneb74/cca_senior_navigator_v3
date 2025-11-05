@@ -57,9 +57,6 @@ def render():
             border-radius: 12px;
             padding: 24px;
             margin-bottom: 20px;
-            max-width: 700px;
-            margin-left: auto;
-            margin-right: auto;
         }
         
         .exit-card h3 {
@@ -156,12 +153,14 @@ def render():
 
     st.markdown('<div style="height: 20px;"></div>', unsafe_allow_html=True)
 
-    # Use container with max-width styling
-    container = st.container()
-    with container:
-        _render_plan_highlights_card()
-        st.markdown('<div style="height: 32px;"></div>', unsafe_allow_html=True)
-        _render_whats_next_section()
+    # Wrap all content in container
+    st.markdown('<div class="exit-page-container">', unsafe_allow_html=True)
+    
+    _render_plan_highlights_card()
+    st.markdown('<div style="height: 32px;"></div>', unsafe_allow_html=True)
+    _render_whats_next_section()
+    
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
 def _render_navi_completion():
