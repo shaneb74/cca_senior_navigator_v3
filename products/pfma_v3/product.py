@@ -445,7 +445,7 @@ def _render_confirmation(appt: AdvisorAppointment):
 
     st.markdown(
         "**While you wait for your appointment:**\n\n"
-        "Visit the **Waiting Room** to prepare for your consultation. "
+        "Visit the **Lobby** to prepare for your consultation. "
         "Complete optional prep sections to help your advisor provide personalized guidance."
     )
 
