@@ -34,6 +34,38 @@ if IS_PRODUCTION:
         'About': None
     }
 
+# JavaScript to remove Streamlit footer elements
+FOOTER_REMOVAL_JS = """
+<script>
+function removeStreamlitFooter() {
+    // Remove footer elements
+    const footers = document.querySelectorAll('footer, [data-testid="stFooter"]');
+    footers.forEach(el => el.remove());
+    
+    // Remove elements containing "Hosted with Streamlit"
+    const allElements = document.querySelectorAll('*');
+    allElements.forEach(el => {
+        if (el.textContent && el.textContent.includes('Hosted with Streamlit')) {
+            el.remove();
+        }
+    });
+    
+    // Remove GitHub links
+    const githubLinks = document.querySelectorAll('a[href*="github.com"]');
+    githubLinks.forEach(el => el.remove());
+    
+    // Remove Streamlit branding
+    const streamlitLinks = document.querySelectorAll('a[href*="streamlit.io"]');
+    streamlitLinks.forEach(el => el.remove());
+}
+
+// Run immediately and on DOM changes
+removeStreamlitFooter();
+const observer = new MutationObserver(removeStreamlitFooter);
+observer.observe(document.body, {childList: true, subtree: true});
+</script>
+"""
+
 from core.events import log_event
 from core.nav import current_route, load_nav
 
@@ -367,6 +399,10 @@ if route in log_routes:
     print(f"[ROUTER] page={route} -> {module_path}")
 
 PAGES[route]["render"]()
+
+# Inject footer removal JavaScript in production
+if IS_PRODUCTION:
+    st.components.v1.html(FOOTER_REMOVAL_JS, height=0)
 
 if not uses_layout_frame:
     page_container_close()

@@ -943,53 +943,41 @@ header[data-testid="stHeader"] {
     display: none !important;
 }
 
-/* ===== MOBILE STREAMLIT CLOUD SPECIFIC HIDING ===== */
-/* Hide "Hosted with Streamlit" footer on mobile */
+/* ===== TARGETED STREAMLIT FOOTER HIDING ===== */
+/* Hide specific Streamlit footer elements only */
+footer[data-testid="stFooter"],
+div[data-testid="stBottomContainer"],
 .stAppBottomContainer {
     display: none !important;
 }
 
-/* Hide Streamlit Cloud footer banner */
-.stAppViewContainer > .main > div[data-testid="stAppViewBlockContainer"] ~ div {
+/* Hide GitHub links in footer only */
+footer a[href*="github.com"],
+div[class*="footer"] a[href*="github.com"],
+div[class*="bottom"] a[href*="github.com"] {
     display: none !important;
 }
 
-/* Hide any GitHub repository links */
-a[href*="github.com"] {
+/* Hide "Hosted with Streamlit" text specifically */
+div:contains("Hosted with Streamlit"),
+span:contains("Hosted with Streamlit"),
+p:contains("Hosted with Streamlit") {
     display: none !important;
 }
 
-/* Hide Streamlit branding footer */
-.stApp > footer,
-.stApp [data-testid="stFooter"] {
-    display: none !important;
-}
-
-/* Hide mobile-specific Streamlit elements */
+/* Mobile-specific footer hiding - more targeted */
 @media (max-width: 768px) {
-    /* Hide mobile footer */
-    .stAppBottomContainer,
-    [data-testid="stAppBottomContainer"] {
+    /* Hide only bottom container elements */
+    footer,
+    div[class*="bottom-container"],
+    div[class*="app-footer"] {
         display: none !important;
     }
     
-    /* Hide mobile Streamlit branding */
-    .stApp > div:last-child {
+    /* Hide external links in footer context only */
+    footer a,
+    div[class*="footer"] a[href*="streamlit.io"],
+    div[class*="footer"] a[href*="github.com"] {
         display: none !important;
     }
-    
-    /* Hide any repository information */
-    div[class*="repo"],
-    div[class*="github"],
-    div[class*="streamlit"] {
-        display: none !important;
-    }
-}
-
-/* Nuclear option - hide all external links */
-a[href*="streamlit.io"],
-a[href*="github.com"],
-a[href*="share.streamlit.io"] {
-    display: none !important;
-    visibility: hidden !important;
 }
