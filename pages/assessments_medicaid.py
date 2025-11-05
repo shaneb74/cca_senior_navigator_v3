@@ -18,10 +18,103 @@ import streamlit as st
 from core.nav import route_to
 
 
+# Apply clean styling to override Streamlit defaults
+def _apply_clean_styling():
+    """Apply custom CSS to make the page look professional."""
+    st.markdown("""
+    <style>
+    /* Hide Streamlit branding */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    
+    /* Clean info boxes */
+    .stAlert {
+        background-color: #f8fafc !important;
+        border-left: 4px solid #3b82f6 !important;
+        border-radius: 8px !important;
+        padding: 20px !important;
+    }
+    
+    /* Clean radio buttons */
+    .stRadio > label {
+        font-size: 14px !important;
+        font-weight: 500 !important;
+        color: #475569 !important;
+    }
+    
+    .stRadio > div {
+        gap: 12px !important;
+    }
+    
+    .stRadio label {
+        background: white !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 8px !important;
+        padding: 12px 16px !important;
+        cursor: pointer !important;
+        transition: all 0.2s !important;
+    }
+    
+    .stRadio label:hover {
+        border-color: #3b82f6 !important;
+        background: #f8fafc !important;
+    }
+    
+    /* Clean checkboxes */
+    .stCheckbox {
+        background: white !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 8px !important;
+        padding: 12px 16px !important;
+    }
+    
+    /* Clean text inputs */
+    .stTextInput input, .stTextArea textarea {
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 6px !important;
+        padding: 10px 12px !important;
+        font-size: 14px !important;
+    }
+    
+    .stTextInput input:focus, .stTextArea textarea:focus {
+        border-color: #3b82f6 !important;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+    }
+    
+    /* Clean multiselect */
+    .stMultiSelect {
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 6px !important;
+    }
+    
+    /* Remove excessive spacing */
+    .block-container {
+        padding-top: 2rem !important;
+        padding-bottom: 2rem !important;
+    }
+    
+    /* Clean buttons */
+    .stButton button {
+        border-radius: 6px !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+        padding: 10px 20px !important;
+    }
+    
+    /* Hide emoji spam in section headers */
+    h1, h2, h3 {
+        color: #0f172a !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+
 def render():
     """Render Medicaid clarification and assessment page."""
     
-    # Clean title without emoji vomit
+    _apply_clean_styling()
+    
+    # Clean title
     st.markdown("""
     <div style='max-width: 900px; margin: 0 auto 40px auto;'>
         <h1 style='font-size: 32px; font-weight: 700; color: #0f172a; margin: 0 0 8px 0;'>
@@ -33,100 +126,80 @@ def render():
     </div>
     """, unsafe_allow_html=True)
     
-    # Educational content block - clean styling
+    # Educational content - using columns for comparison
     st.markdown("""
-    <div style='max-width: 900px; margin: 0 auto 32px auto; padding: 20px; background: #f8fafc; border-left: 4px solid #3b82f6; border-radius: 8px;'>
-        <p style='font-size: 15px; font-weight: 600; color: #1e293b; margin: 0 0 12px 0;'>
-            ⚠️ Important: Understanding Medicaid vs Medicare
-        </p>
-        <p style='font-size: 14px; color: #475569; margin: 0;'>
-            Many people confuse these two programs. Let's clarify the difference:
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Two-column comparison - clean cards
-    st.markdown("""
-    <div style='max-width: 900px; margin: 0 auto 40px auto;'>
-        <div style='display: grid; grid-template-columns: 1fr 1fr; gap: 24px;'>
-            <!-- Medicare Card -->
-            <div style='padding: 24px; background: white; border: 1px solid #e2e8f0; border-radius: 12px;'>
-                <div style='font-size: 18px; font-weight: 600; color: #0f172a; margin-bottom: 16px;'>
-                    🏥 MEDICARE
-                </div>
-                <div style='margin-bottom: 16px;'>
-                    <div style='font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 8px;'>Who qualifies:</div>
-                    <div style='font-size: 14px; color: #64748b; line-height: 1.6;'>
-                        • Seniors age 65+<br>
-                        • Some younger people with disabilities
-                    </div>
-                </div>
-                <div style='margin-bottom: 16px;'>
-                    <div style='font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 8px;'>What it covers:</div>
-                    <div style='font-size: 14px; color: #64748b; line-height: 1.6;'>
-                        • Hospital visits<br>
-                        • Doctor appointments<br>
-                        • Some medical equipment<br>
-                        • <span style='color: #dc2626; font-weight: 500;'>Does NOT cover long-term care</span>
-                    </div>
-                </div>
-                <div style='margin-bottom: 16px;'>
-                    <div style='font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 8px;'>Cost:</div>
-                    <div style='font-size: 14px; color: #64748b; line-height: 1.6;'>
-                        • Monthly premiums (typically $100-200)<br>
-                        • Based on your work history
-                    </div>
-                </div>
-                <div style='padding: 12px; background: #f1f5f9; border-radius: 6px;'>
-                    <div style='font-size: 13px; color: #475569;'>
-                        <strong>Note:</strong> Most seniors have Medicare. This is the standard health insurance program.
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Medicaid Card -->
-            <div style='padding: 24px; background: white; border: 1px solid #e2e8f0; border-radius: 12px;'>
-                <div style='font-size: 18px; font-weight: 600; color: #0f172a; margin-bottom: 16px;'>
-                    💚 MEDICAID
-                </div>
-                <div style='margin-bottom: 16px;'>
-                    <div style='font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 8px;'>Who qualifies:</div>
-                    <div style='font-size: 14px; color: #64748b; line-height: 1.6;'>
-                        • People with <strong>limited income</strong><br>
-                        • People with <strong>limited assets</strong><br>
-                        • Must meet strict financial requirements
-                    </div>
-                </div>
-                <div style='margin-bottom: 16px;'>
-                    <div style='font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 8px;'>What it covers:</div>
-                    <div style='font-size: 14px; color: #64748b; line-height: 1.6;'>
-                        • Hospital visits<br>
-                        • Doctor appointments<br>
-                        • <span style='color: #16a34a; font-weight: 500;'>Long-term care (nursing homes)</span><br>
-                        • Some assisted living (varies by state)
-                    </div>
-                </div>
-                <div style='margin-bottom: 16px;'>
-                    <div style='font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 8px;'>Cost:</div>
-                    <div style='font-size: 14px; color: #64748b; line-height: 1.6;'>
-                        • Little to no cost<br>
-                        • State/federal assistance program
-                    </div>
-                </div>
-                <div style='padding: 12px; background: #f1f5f9; border-radius: 6px;'>
-                    <div style='font-size: 13px; color: #475569;'>
-                        <strong>Note:</strong> Medicaid is a low-income assistance program with different planning needs.
-                    </div>
-                </div>
-            </div>
+    <div style='max-width: 900px; margin: 0 auto 24px auto;'>
+        <div style='padding: 16px 20px; background: #f8fafc; border-left: 4px solid #3b82f6; border-radius: 8px;'>
+            <p style='font-size: 15px; font-weight: 600; color: #1e293b; margin: 0 0 8px 0;'>
+                ⚠️ Important: Understanding Medicaid vs Medicare
+            </p>
+            <p style='font-size: 14px; color: #475569; margin: 0;'>
+                Many people confuse these two programs. Let's clarify the difference:
+            </p>
         </div>
     </div>
     """, unsafe_allow_html=True)
     
-    # Clarification question - clean styling
+    st.markdown("<div style='max-width: 900px; margin: 0 auto;'>", unsafe_allow_html=True)
+    
+    col1, col2 = st.columns(2, gap="large")
+    
+    with col1:
+        st.markdown("""
+        <div style='padding: 20px; background: white; border: 1px solid #e2e8f0; border-radius: 8px; height: 100%;'>
+            <div style='font-size: 16px; font-weight: 600; color: #0f172a; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;'>
+                <span style='font-size: 24px;'>🏥</span>
+                <span>MEDICARE</span>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        st.markdown("**Who qualifies:**")
+        st.markdown("• Seniors age 65+  \n• Some younger people with disabilities")
+        
+        st.markdown("**What it covers:**")
+        st.markdown("• Hospital visits  \n• Doctor appointments  \n• Some medical equipment  \n• ❌ **Does NOT cover long-term care**")
+        
+        st.markdown("**Cost:**")
+        st.markdown("• Monthly premiums (typically $100-200)  \n• Based on your work history")
+        
+        st.markdown("""
+        <div style='margin-top: 16px; padding: 12px; background: #f8fafc; border-radius: 6px; font-size: 13px; color: #475569;'>
+            <strong>Note:</strong> Most seniors have Medicare. This is the standard health insurance program.
+        </div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown("""
+        <div style='padding: 20px; background: white; border: 1px solid #e2e8f0; border-radius: 8px; height: 100%;'>
+            <div style='font-size: 16px; font-weight: 600; color: #0f172a; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;'>
+                <span style='font-size: 24px;'>💚</span>
+                <span>MEDICAID</span>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        st.markdown("**Who qualifies:**")
+        st.markdown("• People with **limited income**  \n• People with **limited assets**  \n• Must meet strict financial requirements")
+        
+        st.markdown("**What it covers:**")
+        st.markdown("• Hospital visits  \n• Doctor appointments  \n• ✅ **Long-term care (nursing homes)**  \n• Some assisted living (varies by state)")
+        
+        st.markdown("**Cost:**")
+        st.markdown("• Little to no cost  \n• State/federal assistance program")
+        
+        st.markdown("""
+        <div style='margin-top: 16px; padding: 12px; background: #f8fafc; border-radius: 6px; font-size: 13px; color: #475569;'>
+            <strong>Note:</strong> Medicaid is a low-income assistance program with different planning needs.
+        </div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    st.markdown("</div><div style='height: 32px;'></div>", unsafe_allow_html=True)
+    
+    # Clarification question
     st.markdown("""
-    <div style='max-width: 900px; margin: 0 auto 24px auto;'>
-        <h2 style='font-size: 20px; font-weight: 600; color: #0f172a; margin: 0 0 8px 0;'>
+    <div style='max-width: 900px; margin: 0 auto 16px auto;'>
+        <h2 style='font-size: 18px; font-weight: 600; color: #0f172a; margin: 0 0 8px 0;'>
             Please Confirm Your Enrollment
         </h2>
         <p style='font-size: 14px; color: #64748b; margin: 0;'>
@@ -139,10 +212,9 @@ def render():
     if "medicaid_confirmation" not in st.session_state:
         st.session_state.medicaid_confirmation = None
     
-    # Clean container for radio buttons
+    # Radio button options with cleaner container
     st.markdown("<div style='max-width: 900px; margin: 0 auto;'>", unsafe_allow_html=True)
     
-    # Radio button options
     medicaid_status = st.radio(
         "Select your situation:",
         options=[
@@ -162,8 +234,7 @@ def render():
         label_visibility="collapsed"
     )
     
-    st.markdown("</div>", unsafe_allow_html=True)
-    st.markdown("<div style='height: 32px;'></div>", unsafe_allow_html=True)
+    st.markdown("</div><div style='height: 24px;'></div>", unsafe_allow_html=True)
     
     # Navigation buttons - clean styling
     st.markdown("<div style='max-width: 900px; margin: 0 auto;'>", unsafe_allow_html=True)
