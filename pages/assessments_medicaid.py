@@ -388,24 +388,6 @@ def render_medicaid_resources():
     
     st.markdown("</div>", unsafe_allow_html=True)
 
-    
-    # Navi panel with empathetic messaging
-    from core.navi_module import render_module_navi_coach
-    render_module_navi_coach(
-        title_text="We understand you're working with limited resources",
-        body_text="Medicaid has specific rules and limits. Let's gather some basic information to help guide your planning.",
-        tip_text="Since you're on Medicaid, the financial planning process is different. We'll focus on maintaining eligibility while ensuring quality care."
-    )
-    
-    # Info about Medicaid planning - clean styling
-    st.markdown("""
-    <div style='max-width: 900px; margin: 0 auto 32px auto; padding: 20px; background: #f8fafc; border-left: 4px solid #3b82f6; border-radius: 8px;'>
-        <p style='font-size: 15px; font-weight: 600; color: #1e293b; margin: 0 0 16px 0;'>
-            About Medicaid & Long-Term Care
-        </p>
-        <p style='font-size: 14px; color: #475569; margin: 0 0 12px 0;'>
-            Since you're enrolled in Medicaid, your care planning has some unique considerations:
-        </p>
         <div style='font-size: 14px; color: #64748b; line-height: 1.7;'>
             • Asset Limits: Medicaid has strict asset limits (typically $2,000 for individuals)<br>
             • Income Limits: Monthly income must be below state thresholds<br>
@@ -579,9 +561,6 @@ def render_medicaid_resources():
     
     st.markdown("</div>", unsafe_allow_html=True)
 
-
-def render_medicaid_resources():
-    """Render Medicaid-specific resources and next steps page."""
     
     _apply_clean_styling()
     
