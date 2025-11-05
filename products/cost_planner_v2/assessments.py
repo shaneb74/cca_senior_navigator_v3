@@ -1217,18 +1217,40 @@ def _render_section_content(
     if new_values:
         # Check if VA-related fields changed before updating
         va_fields_changed = False
+        va_dependents_changed = False
         if assessment_key == "va_benefits" and section.get("id") == "va_disability":
             va_fields_changed = any(
                 key in new_values 
                 for key in ["has_va_disability", "va_disability_rating", "va_dependents"]
             )
+            # Only rerun when dependents changes (not rating)
+            va_dependents_changed = (
+                "va_dependents" in new_values 
+                and state.get("va_dependents") != new_values["va_dependents"]
+            )
         
+        # Update both local state AND session_state immediately
         state.update(new_values)
+        
+        # CRITICAL: Also update the session_state dict directly so rerun picks up new values
+        state_key = f"{product_key}_{assessment_key}"
+        if state_key in st.session_state:
+            st.session_state[state_key].update(new_values)
 
-        # Re-calculate VA disability if relevant fields changed, but don't rerun
-        # The calculation will be visible on the next natural rerun (next user interaction)
+        # Re-calculate VA disability if relevant fields changed
         if va_fields_changed:
             _auto_populate_va_disability(state)
+            # Also update session_state with calculated value
+            if state_key in st.session_state:
+                st.session_state[state_key]["va_disability_monthly"] = state.get("va_disability_monthly")
+            
+            # Persist first so the calculated value is saved
+            _persist_assessment_state(product_key, assessment_key, state)
+            
+            # Force immediate rerun ONLY when dependents status changes
+            if va_dependents_changed:
+                st.rerun()
+                return  # Exit after rerun to prevent double persistence
 
         _persist_assessment_state(product_key, assessment_key, state)
 
