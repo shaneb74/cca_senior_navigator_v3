@@ -386,101 +386,166 @@ def render_key_metrics(customer_data):
     st.markdown(metrics_html, unsafe_allow_html=True)
 
 def render_assessments(customer_data):
-    """Render assessment cards with clean styling"""
-    assessments_html = '<div class="assessment-grid">'
+    """Render assessment cards with clean styling using Streamlit components"""
+    
+    st.subheader("Assessment Overview")
+    
+    # Create 3-column layout for assessment cards
+    col1, col2, col3 = st.columns(3)
     
     # GCP Assessment Card
-    if customer_data.get('has_gcp_assessment'):
-        gcp_recommendation = customer_data.get('care_recommendation', 'Assessment completed')
-        badge_class = f"badge-{gcp_recommendation.lower().replace(' ', '-')}" if gcp_recommendation else "recommendation-badge"
-        
-        assessments_html += f"""
-        <div class="assessment-card">
-            <div class="assessment-header">
-                <div class="assessment-icon icon-gcp">🧠</div>
-                <div>
-                    <h3 class="assessment-title">Guided Care Plan</h3>
-                    <p class="assessment-subtitle">Completed assessment</p>
+    with col1:
+        if customer_data.get('has_gcp_assessment'):
+            gcp_recommendation = customer_data.get('care_recommendation', 'Assessment completed')
+            
+            st.markdown(f"""
+            <div style="
+                background: #ffffff;
+                border: 1px solid #e6edf5;
+                border-radius: 12px;
+                padding: 1.25rem;
+                box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+                margin-bottom: 1rem;
+            ">
+                <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+                    <div style="font-size: 1.5rem; margin-right: 0.75rem;">🧠</div>
+                    <div>
+                        <h4 style="margin: 0; color: #1f2937;">Guided Care Plan</h4>
+                        <p style="margin: 0; color: #16a34a; font-size: 0.875rem;">Completed assessment</p>
+                    </div>
                 </div>
+                <div style="
+                    background: #dcfce7;
+                    color: #16a34a;
+                    padding: 0.5rem 1rem;
+                    border-radius: 999px;
+                    font-size: 0.875rem;
+                    font-weight: 600;
+                    text-align: center;
+                    margin-bottom: 0.75rem;
+                ">{gcp_recommendation}</div>
+                <p style="margin: 0; color: #64748b; font-size: 0.875rem;">
+                    Care recommendation based on comprehensive assessment of needs, mobility, and preferences.
+                </p>
             </div>
-            <div class="assessment-content">
-                <div class="recommendation-badge {badge_class}">{gcp_recommendation}</div>
-                <p>Care recommendation based on comprehensive assessment of needs, mobility, and preferences.</p>
-            </div>
-        </div>
-        """
-    else:
-        assessments_html += """
-        <div class="assessment-card">
-            <div class="assessment-header">
-                <div class="assessment-icon icon-gcp">🧠</div>
-                <div>
-                    <h3 class="assessment-title">Guided Care Plan</h3>
-                    <p class="assessment-subtitle">Not started</p>
+            """, unsafe_allow_html=True)
+        else:
+            st.markdown(f"""
+            <div style="
+                background: #ffffff;
+                border: 1px solid #e6edf5;
+                border-radius: 12px;
+                padding: 1.25rem;
+                box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+                margin-bottom: 1rem;
+            ">
+                <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+                    <div style="font-size: 1.5rem; margin-right: 0.75rem;">🧠</div>
+                    <div>
+                        <h4 style="margin: 0; color: #1f2937;">Guided Care Plan</h4>
+                        <p style="margin: 0; color: #f59e0b; font-size: 0.875rem;">Not started</p>
+                    </div>
                 </div>
+                <p style="margin: 0; color: #64748b; font-size: 0.875rem;">
+                    Customer has not completed the care assessment. This is a key next step for understanding their needs.
+                </p>
             </div>
-            <div class="assessment-content">
-                <p>Customer has not completed the care assessment. This is a key next step for understanding their needs.</p>
-            </div>
-        </div>
-        """
+            """, unsafe_allow_html=True)
     
     # Cost Planner Card
-    if customer_data.get('has_cost_plan'):
-        assessments_html += """
-        <div class="assessment-card">
-            <div class="assessment-header">
-                <div class="assessment-icon icon-cost">💰</div>
-                <div>
-                    <h3 class="assessment-title">Cost Planner</h3>
-                    <p class="assessment-subtitle">Completed analysis</p>
+    with col2:
+        if customer_data.get('has_cost_plan'):
+            st.markdown(f"""
+            <div style="
+                background: #ffffff;
+                border: 1px solid #e6edf5;
+                border-radius: 12px;
+                padding: 1.25rem;
+                box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+                margin-bottom: 1rem;
+            ">
+                <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+                    <div style="font-size: 1.5rem; margin-right: 0.75rem;">💰</div>
+                    <div>
+                        <h4 style="margin: 0; color: #1f2937;">Cost Planner</h4>
+                        <p style="margin: 0; color: #16a34a; font-size: 0.875rem;">Completed analysis</p>
+                    </div>
                 </div>
+                <div style="
+                    background: #dbeafe;
+                    color: #2563eb;
+                    padding: 0.5rem 1rem;
+                    border-radius: 999px;
+                    font-size: 0.875rem;
+                    font-weight: 600;
+                    text-align: center;
+                    margin-bottom: 0.75rem;
+                ">Budget established</div>
+                <p style="margin: 0; color: #64748b; font-size: 0.875rem;">
+                    Financial capacity and budget range determined. Ready for community recommendations.
+                </p>
             </div>
-            <div class="assessment-content">
-                <div class="recommendation-badge">Budget established</div>
-                <p>Financial capacity and budget range determined. Ready for community recommendations.</p>
-            </div>
-        </div>
-        """
-    else:
-        assessments_html += """
-        <div class="assessment-card">
-            <div class="assessment-header">
-                <div class="assessment-icon icon-cost">💰</div>
-                <div>
-                    <h3 class="assessment-title">Cost Planner</h3>
-                    <p class="assessment-subtitle">Not started</p>
+            """, unsafe_allow_html=True)
+        else:
+            st.markdown(f"""
+            <div style="
+                background: #ffffff;
+                border: 1px solid #e6edf5;
+                border-radius: 12px;
+                padding: 1.25rem;
+                box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+                margin-bottom: 1rem;
+            ">
+                <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+                    <div style="font-size: 1.5rem; margin-right: 0.75rem;">💰</div>
+                    <div>
+                        <h4 style="margin: 0; color: #1f2937;">Cost Planner</h4>
+                        <p style="margin: 0; color: #f59e0b; font-size: 0.875rem;">Not started</p>
+                    </div>
                 </div>
+                <p style="margin: 0; color: #64748b; font-size: 0.875rem;">
+                    Customer has not completed cost planning. Understanding budget is crucial for community matching.
+                </p>
             </div>
-            <div class="assessment-content">
-                <p>Customer has not completed cost planning. Understanding budget is crucial for community matching.</p>
-            </div>
-        </div>
-        """
+            """, unsafe_allow_html=True)
     
     # Family Context Card
-    relationship = customer_data.get('relationship_type', 'Unknown')
-    assessments_html += f"""
-    <div class="assessment-card">
-        <div class="assessment-header">
-            <div class="assessment-icon icon-family">👨‍👩‍👧‍👦</div>
-            <div>
-                <h3 class="assessment-title">Family Context</h3>
-                <p class="assessment-subtitle">Relationship established</p>
+    with col3:
+        relationship = customer_data.get('relationship_type', 'Unknown')
+        st.markdown(f"""
+        <div style="
+            background: #ffffff;
+            border: 1px solid #e6edf5;
+            border-radius: 12px;
+            padding: 1.25rem;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+            margin-bottom: 1rem;
+        ">
+            <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+                <div style="font-size: 1.5rem; margin-right: 0.75rem;">👨‍👩‍👧‍👦</div>
+                <div>
+                    <h4 style="margin: 0; color: #1f2937;">Family Context</h4>
+                    <p style="margin: 0; color: #16a34a; font-size: 0.875rem;">Relationship established</p>
+                </div>
             </div>
+            <div style="
+                background: #f3f4f6;
+                color: #374151;
+                padding: 0.5rem 1rem;
+                border-radius: 999px;
+                font-size: 0.875rem;
+                font-weight: 600;
+                text-align: center;
+                margin-bottom: 0.75rem;
+            ">{relationship}</div>
+            <p style="margin: 0; color: #64748b; font-size: 0.875rem;">
+                Understanding family dynamics and decision-making structure for effective communication.
+            </p>
         </div>
-        <div class="assessment-content">
-            <div class="recommendation-badge">{relationship}</div>
-            <p>Understanding family dynamics and decision-making structure for effective communication.</p>
-        </div>
-    </div>
-    """
-    
-    assessments_html += '</div>'
-    st.markdown(assessments_html, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
 
 def render_ai_next_steps(customer_data):
-    """Render AI-powered next steps"""
+    """Render AI-powered next steps using Streamlit components"""
     has_gcp = customer_data.get('has_gcp_assessment', False)
     has_cost = customer_data.get('has_cost_plan', False)
     days_since = customer_data.get('last_activity_days', 0)
@@ -510,33 +575,56 @@ def render_ai_next_steps(customer_data):
             ("Guide through Navigator", "Help complete assessments"),
             ("Send getting started resources", "Provide helpful materials")
         ]
-    
-    next_steps_html = f"""
-    <div class="next-steps">
-        <h2 class="next-steps-title">
-            Recommended Next Steps
-            <span class="ai-badge">AI Powered</span>
-        </h2>
-        <ul class="step-list">
-    """
-    
-    for i, (title, description) in enumerate(steps, 1):
-        next_steps_html += f"""
-        <li class="step-item">
-            <div class="step-number">{i}</div>
-            <div class="step-content">
-                <div class="step-title">{title}</div>
-                <div class="step-description">{description}</div>
-            </div>
-        </li>
-        """
-    
-    next_steps_html += """
-        </ul>
+
+    # Header with AI badge
+    st.markdown("""
+    <div style="display: flex; align-items: center; margin-bottom: 1.5rem;">
+        <h3 style="margin: 0; color: #1f2937;">Recommended Next Steps</h3>
+        <span style="
+            background: #8b5cf6;
+            color: #ffffff;
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 1rem;
+        ">AI Powered</span>
     </div>
-    """
+    """, unsafe_allow_html=True)
     
-    st.markdown(next_steps_html, unsafe_allow_html=True)
+    # Render steps using Streamlit components
+    for i, (title, description) in enumerate(steps, 1):
+        st.markdown(f"""
+        <div style="
+            display: flex;
+            align-items: flex-start;
+            background: #ffffff;
+            border: 1px solid #e6edf5;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+        ">
+            <div style="
+                background: #2563eb;
+                color: #ffffff;
+                width: 2rem;
+                height: 2rem;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 600;
+                font-size: 0.875rem;
+                margin-right: 1rem;
+                flex-shrink: 0;
+            ">{i}</div>
+            <div>
+                <h4 style="margin: 0 0 0.25rem 0; color: #1f2937; font-size: 1rem;">{title}</h4>
+                <p style="margin: 0; color: #64748b; font-size: 0.875rem;">{description}</p>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
 def render_action_bar():
     """Render clean action buttons"""
