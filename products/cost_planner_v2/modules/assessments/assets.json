@@ -14,66 +14,12 @@
       "icon": "🏦",
       "help_text": "Enter {NAME_POS} asset details. All fields are optional - skip any that don't apply.",
       "fields": [],
-      "info_boxes": [
-        {
-          "type": "info",
-          "message": "💡 Inputs stay visible. You can save and come back anytime."
-        }
-      ]
-    },
-    {
-      "id": "household_context",
-      "title": "Household Context",
-      "icon": "👥",
-      "help_text": "Let me know if anyone else shares ownership or limits how assets can be used.",
-      "layout": "single_column",
-      "fields": [
-        {
-          "key": "asset_has_partner",
-          "label": "Do you share assets with a spouse or partner?",
-          "type": "select",
-          "required": false,
-          "options": [
-            {
-              "value": "no_partner",
-              "label": "No, assets are only in my name"
-            },
-            {
-              "value": "partner_separate",
-              "label": "Yes, but we keep finances separate"
-            },
-            {
-              "value": "partner_shared",
-              "label": "Yes, we pool assets for care decisions"
-            }
-          ],
-          "default": "no_partner",
-          "help": "Helps me understand which resources are truly available for care."
-        },
-        {
-          "key": "asset_legal_restrictions",
-          "label": "Any legal or family restrictions on using these assets?",
-          "type": "textarea",
-          "required": false,
-          "help": "Example: community property rules, assets earmarked for a spouse, or power-of-attorney considerations.",
-          "visible_if": {
-            "field": "asset_has_partner",
-            "not_equals": "no_partner"
-          }
-        }
-      ],
-      "info_boxes": [
-        {
-          "type": "info",
-          "message": "👥 If assets are co-owned, note who must approve decisions. This prevents surprises when planning how to pay for care."
-        }
-      ]
+      "info_boxes": []
     },
     {
       "id": "liquid_assets",
       "title": "Liquid Assets",
       "icon": "🏦",
-      "help_text": "Cash and easily accessible funds",
       "layout": "single_column",
       "fields": [
         {
@@ -97,33 +43,33 @@
           "step": 1000,
           "default": 0,
           "help": "Savings accounts, money market accounts, certificates of deposit"
-        },
-        {
-          "key": "cash_on_hand",
-          "label": "Cash on Hand",
-          "type": "currency",
-          "required": false,
-          "min": 0,
-          "max": 100000,
-          "step": 100,
-          "default": 0,
-          "help": "Physical cash kept at home or in a safe"
         }
       ],
-      "info_boxes": [
-        {
-          "type": "info",
-          "message": "💰 Liquid assets are important for immediate care costs. Medicaid allows up to $2,000 for individuals (2024)."
-        }
-      ]
+      "info_boxes": []
     },
     {
-      "id": "investments",
+      "id": "investments_gateway",
       "title": "Investments",
       "icon": "📈",
-      "help_text": "Brokerage accounts and investment holdings",
       "layout": "single_column",
       "fields": [
+        {
+          "key": "has_investments",
+          "label": "Do you have investment accounts (stocks, bonds, mutual funds, ETFs)?",
+          "type": "radio",
+          "required": false,
+          "options": [
+            {
+              "value": "no",
+              "label": "No"
+            },
+            {
+              "value": "yes",
+              "label": "Yes"
+            }
+          ],
+          "default": "no"
+        },
         {
           "key": "brokerage_stocks_bonds",
           "label": "Stocks & Bonds",
@@ -133,7 +79,11 @@
           "max": 50000000,
           "step": 5000,
           "default": 0,
-          "help": "Individual stocks, bonds, and treasuries"
+          "help": "Individual stocks, bonds, and treasuries",
+          "visible_if": {
+            "field": "has_investments",
+            "equals": "yes"
+          }
         },
         {
           "key": "brokerage_mf_etf",
@@ -144,7 +94,11 @@
           "max": 50000000,
           "step": 5000,
           "default": 0,
-          "help": "Mutual funds, exchange-traded funds, index funds"
+          "help": "Mutual funds, exchange-traded funds, index funds",
+          "visible_if": {
+            "field": "has_investments",
+            "equals": "yes"
+          }
         },
         {
           "key": "brokerage_other",
@@ -155,23 +109,38 @@
           "max": 50000000,
           "step": 5000,
           "default": 0,
-          "help": "Options, commodities, cryptocurrency, or other investment vehicles"
+          "help": "Options, commodities, cryptocurrency, or other investment vehicles",
+          "visible_if": {
+            "field": "has_investments",
+            "equals": "yes"
+          }
         }
       ],
-      "info_boxes": [
-        {
-          "type": "info",
-          "message": "📈 Investment accounts can provide flexibility for care costs. Note any restrictions or market timing concerns."
-        }
-      ]
+      "info_boxes": []
     },
     {
-      "id": "retirement_accounts",
+      "id": "retirement_accounts_gateway",
       "title": "Retirement Accounts",
       "icon": "🏦",
-      "help_text": "IRAs, 401(k)s, and other retirement savings",
       "layout": "single_column",
       "fields": [
+        {
+          "key": "has_retirement_accounts",
+          "label": "Do you have retirement accounts (IRA, 401(k), pension)?",
+          "type": "radio",
+          "required": false,
+          "options": [
+            {
+              "value": "no",
+              "label": "No"
+            },
+            {
+              "value": "yes",
+              "label": "Yes"
+            }
+          ],
+          "default": "no"
+        },
         {
           "key": "retirement_traditional",
           "label": "Traditional IRA / 401(k)",
@@ -181,7 +150,11 @@
           "max": 50000000,
           "step": 5000,
           "default": 0,
-          "help": "Pre-tax retirement accounts (Traditional IRA, 401(k), 403(b), SEP-IRA, etc.)"
+          "help": "Pre-tax retirement accounts (Traditional IRA, 401(k), 403(b), SEP-IRA, etc.)",
+          "visible_if": {
+            "field": "has_retirement_accounts",
+            "equals": "yes"
+          }
         },
         {
           "key": "retirement_roth",
@@ -192,7 +165,11 @@
           "max": 50000000,
           "step": 5000,
           "default": 0,
-          "help": "Post-tax retirement accounts (Roth IRA, Roth 401(k))"
+          "help": "Post-tax retirement accounts (Roth IRA, Roth 401(k))",
+          "visible_if": {
+            "field": "has_retirement_accounts",
+            "equals": "yes"
+          }
         },
         {
           "key": "retirement_pension_value",
@@ -203,69 +180,37 @@
           "max": 50000000,
           "step": 10000,
           "default": 0,
-          "help": "Current lump-sum value of pension (if applicable and accessible)"
+          "help": "Current lump-sum value of pension (if applicable and accessible)",
+          "visible_if": {
+            "field": "has_retirement_accounts",
+            "equals": "yes"
+          }
         }
       ],
-      "info_boxes": [
-        {
-          "type": "info",
-          "message": "🏦 Retirement accounts often have penalties for early withdrawal (before age 59½) and required minimum distributions (after age 73)."
-        }
-      ]
+      "info_boxes": []
     },
     {
-      "id": "real_estate_other",
+      "id": "real_estate_gateway",
       "title": "Real Estate & Other",
       "icon": "🏠",
-      "help_text": "Property, vehicles, and other valuable assets",
       "layout": "single_column",
-      "mode_config": {
-        "supports_basic_advanced": true,
-        "basic_mode_aggregate": "real_estate_total",
-        "advanced_mode_fields": [
-          "home_equity_estimate",
-          "real_estate_other"
-        ]
-      },
       "fields": [
         {
-          "key": "real_estate_total",
-          "label": "Real Estate (Total)",
-          "type": "aggregate_input",
+          "key": "has_real_estate",
+          "label": "Do you have home equity or other real estate?",
+          "type": "radio",
           "required": false,
-          "min": 0,
-          "max": 50000000,
-          "step": 25000,
-          "default": 0,
-          "help": "Enter total real estate value in Basic mode. Calculated automatically in Advanced mode.",
-          "aggregate_from": [
-            "home_equity_estimate",
-            "real_estate_other"
-          ],
-          "mode_behavior": {
-            "basic": {
-              "display": "input",
-              "editable": true,
-              "distribution_strategy": "even",
-              "help": "Enter your total real estate value. We'll split it evenly across primary home and other property."
+          "options": [
+            {
+              "value": "no",
+              "label": "No"
             },
-            "advanced": {
-              "display": "calculated_label",
-              "editable": false,
-              "help": "Automatically calculated from home equity and other real estate below."
+            {
+              "value": "yes",
+              "label": "Yes"
             }
-          },
-          "unallocated": {
-            "enabled": true,
-            "show_in_mode": "advanced",
-            "actions": [
-              "clear_original",
-              "move_to_other"
-            ],
-            "other_field_key": "real_estate_other",
-            "label": "Unallocated Real Estate",
-            "help": "Difference between your original estimate and allocated amounts. Not included in calculations."
-          }
+          ],
+          "default": "no"
         },
         {
           "key": "home_equity_estimate",
@@ -277,9 +222,10 @@
           "step": 25000,
           "default": 0,
           "help": "Estimated home value minus outstanding mortgage",
-          "visible_in_modes": [
-            "advanced"
-          ]
+          "visible_if": {
+            "field": "has_real_estate",
+            "equals": "yes"
+          }
         },
         {
           "key": "real_estate_other",
@@ -291,100 +237,51 @@
           "step": 25000,
           "default": 0,
           "help": "Rental properties, vacation homes, land, etc.",
-          "visible_in_modes": [
-            "advanced"
-          ]
-        },
-        {
-          "key": "life_insurance_cash_value",
-          "label": "Life Insurance Cash Value",
-          "type": "currency",
-          "required": false,
-          "min": 0,
-          "max": 10000000,
-          "step": 5000,
-          "default": 0,
-          "help": "Cash surrender value of life insurance policies"
+          "visible_if": {
+            "field": "has_real_estate",
+            "equals": "yes"
+          }
         }
       ],
-      "info_boxes": [
-        {
-          "type": "info",
-          "message": "🏠 Primary home is often Medicaid-exempt (up to equity limits). Consider timing and liquidity for accessing home equity."
-        }
-      ]
+      "info_boxes": []
     },
     {
-      "id": "debts_obligations",
+      "id": "debts_obligations_gateway",
       "title": "Debts & Obligations",
       "icon": "💳",
-      "help_text": "Outstanding debts and financial obligations",
       "layout": "single_column",
-      "mode_config": {
-        "supports_basic_advanced": true,
-        "basic_mode_aggregate": "total_debts",
-        "advanced_mode_fields": [
-          "primary_residence_mortgage",
-          "other_real_estate_debt",
-          "secured_loans",
-          "unsecured_debt"
-        ]
-      },
       "fields": [
         {
-          "key": "total_debts",
-          "label": "Total Debts (All)",
-          "type": "aggregate_input",
+          "key": "has_debts",
+          "label": "Do you have any outstanding debts (mortgages, loans, credit cards)?",
+          "type": "radio",
           "required": false,
-          "min": 0,
-          "max": 10000000,
-          "step": 5000,
-          "default": 0,
-          "help": "Enter total debt in Basic mode. Calculated automatically in Advanced mode.",
-          "aggregate_from": [
-            "primary_residence_mortgage",
-            "other_real_estate_debt",
-            "secured_loans",
-            "unsecured_debt"
-          ],
-          "mode_behavior": {
-            "basic": {
-              "display": "input",
-              "editable": true,
-              "distribution_strategy": "even",
-              "help": "Enter your total debt. We'll split it evenly across mortgage, other real estate debt, secured loans, and unsecured debt."
+          "options": [
+            {
+              "value": "no",
+              "label": "No"
             },
-            "advanced": {
-              "display": "calculated_label",
-              "editable": false,
-              "help": "Automatically calculated from all debt categories below."
+            {
+              "value": "yes",
+              "label": "Yes"
             }
-          },
-          "unallocated": {
-            "enabled": true,
-            "show_in_mode": "advanced",
-            "actions": [
-              "clear_original",
-              "move_to_other"
-            ],
-            "other_field_key": "unsecured_debt",
-            "label": "Unallocated Debt",
-            "help": "Difference between your original estimate and allocated amounts. Not included in calculations."
-          }
+          ],
+          "default": "no"
         },
         {
           "key": "primary_residence_mortgage",
-          "label": "Primary Residence Mortgage Balance",
+          "label": "Second Mortgage / HELOC Balance",
           "type": "currency",
           "required": false,
           "min": 0,
           "max": 10000000,
           "step": 5000,
           "default": 0,
-          "help": "Outstanding mortgage balance on your primary residence (if home_equity_estimate already accounts for this, leave at $0)",
-          "visible_in_modes": [
-            "advanced"
-          ]
+          "help": "Home equity lines of credit or second mortgages on primary residence",
+          "visible_if": {
+            "field": "has_debts",
+            "equals": "yes"
+          }
         },
         {
           "key": "other_real_estate_debt",
@@ -396,9 +293,10 @@
           "step": 5000,
           "default": 0,
           "help": "Mortgages or loans on rental properties, vacation homes, etc.",
-          "visible_in_modes": [
-            "advanced"
-          ]
+          "visible_if": {
+            "field": "has_debts",
+            "equals": "yes"
+          }
         },
         {
           "key": "secured_loans",
@@ -409,10 +307,11 @@
           "max": 5000000,
           "step": 1000,
           "default": 0,
-          "help": "Auto loans, boat loans, equipment loans, home equity lines of credit, etc.",
-          "visible_in_modes": [
-            "advanced"
-          ]
+          "help": "Auto loans, boat loans, equipment loans, etc.",
+          "visible_if": {
+            "field": "has_debts",
+            "equals": "yes"
+          }
         },
         {
           "key": "unsecured_debt",
@@ -424,21 +323,13 @@
           "step": 500,
           "default": 0,
           "help": "Credit card balances, personal loans, medical debt, etc.",
-          "visible_in_modes": [
-            "advanced"
-          ]
+          "visible_if": {
+            "field": "has_debts",
+            "equals": "yes"
+          }
         }
       ],
-      "info_boxes": [
-        {
-          "type": "info",
-          "message": "💡 Debts reduce your net worth available for care. Medicaid asset limits consider net value after debts."
-        },
-        {
-          "type": "warning",
-          "message": "⚠️ If your home_equity_estimate already subtracts the mortgage, set primary_residence_mortgage to $0 to avoid double-counting."
-        }
-      ]
+      "info_boxes": []
     },
     {
       "id": "results",
@@ -456,22 +347,20 @@
     "help": "Total assets minus total debts. Calculated automatically from the values you entered above."
   },
   "output_contract": {
-    "asset_has_partner": "string",
-    "asset_legal_restrictions": "string",
     "checking_balance": "number",
     "savings_cds_balance": "number",
-    "cash_on_hand": "number",
+    "has_investments": "string",
     "brokerage_stocks_bonds": "number",
     "brokerage_mf_etf": "number",
     "brokerage_other": "number",
+    "has_retirement_accounts": "string",
     "retirement_traditional": "number",
     "retirement_roth": "number",
     "retirement_pension_value": "number",
-    "real_estate_total": "number",
+    "has_real_estate": "string",
     "home_equity_estimate": "number",
     "real_estate_other": "number",
-    "life_insurance_cash_value": "number",
-    "total_debts": "number",
+    "has_debts": "string",
     "primary_residence_mortgage": "number",
     "other_real_estate_debt": "number",
     "secured_loans": "number",

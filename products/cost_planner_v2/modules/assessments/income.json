@@ -12,248 +12,154 @@
       "type": "intro",
       "title": "{NAME_POS} Income Assessment",
       "icon": "💰",
-      "help_text": "Let's capture {NAME_POS} income. Use Basic for a quick total or Advanced if you want to break it down.",
+      "help_text": "",
       "fields": [],
-      "info_boxes": [
-        {
-          "type": "info",
-          "message": "💡 You can save and come back anytime. Your progress is automatically tracked."
-        }
-      ]
-    },
-    {
-      "id": "household_context",
-      "title": "Household Context",
-      "icon": "👥",
-      "help_text": "Tell me about anyone who shares income or expenses with you.",
-      "layout": "single_column",
-      "fields": [
-        {
-          "key": "has_partner",
-          "label": "Do you have a spouse or partner involved in {NAME_POS} finances?",
-          "type": "select",
-          "required": false,
-          "level": "basic",
-          "options": [
-            {
-              "value": "no_partner",
-              "label": "No partner"
-            },
-            {
-              "value": "partner_separate",
-              "label": "Yes, but we keep finances separate"
-            },
-            {
-              "value": "partner_shared",
-              "label": "Yes, we share income and expenses"
-            }
-          ],
-          "default": "no_partner",
-          "help": "This helps me understand whether to account for shared household income for {NAME_POS} care."
-        },
-        {
-          "key": "partner_income_monthly",
-          "label": "Partner's Monthly Contribution Toward {NAME_POS} Care",
-          "type": "currency",
-          "required": false,
-          "level": "basic",
-          "min": 0,
-          "max": 50000,
-          "step": 100,
-          "default": 0,
-          "help": "If your spouse/partner will help cover {NAME_POS} care, enter the amount they can reliably contribute each month.",
-          "visible_if": {
-            "field": "has_partner",
-            "equals": "partner_shared"
-          }
-        },
-        {
-          "key": "shared_finance_notes",
-          "label": "Anything important about how you share finances?",
-          "type": "textarea",
-          "required": false,
-          "level": "advanced",
-          "help": "Mention separate accounts, legal restrictions, or other details that affect how shared income can be used.",
-          "visible_if": {
-            "field": "has_partner",
-            "not_equals": "no_partner"
-          }
-        }
-      ],
-      "info_boxes": [
-        {
-          "type": "info",
-          "message": "👥 If you keep finances separate, note what is realistically available for care so we can build the right plan."
-        }
-      ]
+      "info_boxes": []
     },
     {
       "id": "social_security_pensions",
       "title": "Social Security & Pensions",
-      "icon": "🏛️",
-      "help_text": "Monthly Social Security and pension income",
+      "icon": "",
+      "help_text": "",
       "layout": "single_column",
       "fields": [
         {
           "key": "ss_monthly",
-          "label": "Social Security (Monthly)",
+          "label": "Social Security",
           "type": "currency",
           "required": false,
           "min": 0,
           "max": 5000,
           "step": 10,
           "default": 0,
-          "help": "Total monthly Social Security benefits after deductions"
+          "help": "Monthly Social Security benefits"
         },
         {
           "key": "pension_monthly",
-          "label": "Pension (Monthly)",
+          "label": "Pension",
           "type": "currency",
           "required": false,
           "min": 0,
           "max": 20000,
           "step": 100,
           "default": 0,
-          "help": "Total monthly pension income from all sources"
+          "help": "Monthly pension income"
         }
       ],
-      "info_boxes": [
-        {
-          "type": "info",
-          "message": "📊 Social Security: Age 62 (reduced) vs. 66-67 (full) vs. 70 (max, up to 30% more). Average 2024: $1,907/month. Pension: Lifetime guaranteed income is valuable for care planning."
-        }
-      ]
+      "info_boxes": []
     },
     {
-      "id": "employment_other",
-      "title": "Employment & Other Income",
-      "icon": "💼",
-      "help_text": "Current employment and other regular monthly income",
+      "id": "additional_income_gateway",
+      "title": "Additional Income",
+      "icon": "💰",
       "layout": "single_column",
       "fields": [
         {
-          "key": "employment_status",
-          "label": "Employment Status",
-          "type": "select",
+          "key": "has_additional_income",
+          "label": "Do you have additional income from family, alimony, or rental properties?",
+          "type": "radio",
           "required": false,
           "options": [
             {
-              "value": "not_employed",
-              "label": "Not employed"
+              "value": "no",
+              "label": "No"
             },
             {
-              "value": "part_time",
-              "label": "Part-time employment"
-            },
-            {
-              "value": "full_time",
-              "label": "Full-time employment"
-            },
-            {
-              "value": "self_employed",
-              "label": "Self-employed"
+              "value": "yes",
+              "label": "Yes"
             }
           ],
-          "default": "not_employed",
-          "help": "Current employment situation"
+          "default": "no"
         },
         {
-          "key": "employment_income",
-          "label": "Employment Income (Monthly)",
+          "key": "family_support_monthly",
+          "label": "Family Support",
           "type": "currency",
           "required": false,
           "min": 0,
           "max": 50000,
           "step": 100,
           "default": 0,
-          "help": "Net monthly income from employment or self-employment"
-        },
-        {
-          "key": "other_income",
-          "label": "Other Monthly Income",
-          "type": "currency",
-          "required": false,
-          "min": 0,
-          "max": 50000,
-          "step": 100,
-          "default": 0,
-          "help": "Any other regular monthly income not listed elsewhere"
-        }
-      ],
-      "info_boxes": [
-        {
-          "type": "info",
-          "message": "⚠️ Social Security impact: Earnings above $22,320 (2024) may reduce SS benefits if claiming before full retirement age."
-        }
-      ]
-    },
-    {
-      "id": "additional_income",
-      "title": "Additional Income (Advanced)",
-      "icon": "💵",
-      "help_text": "Detailed breakdown of additional income sources",
-      "layout": "single_column",
-      "mode_config": {
-        "supports_basic_advanced": true,
-        "basic_mode_aggregate": "additional_income_total",
-        "advanced_mode_fields": [
-          "annuity_monthly",
-          "retirement_distributions_monthly",
-          "dividends_interest_monthly",
-          "rental_income_monthly",
-          "alimony_support_monthly",
-          "ltc_insurance_monthly",
-          "family_support_monthly"
-        ]
-      },
-      "fields": [
-        {
-          "key": "additional_income_total",
-          "label": "Additional Income (Total Monthly)",
-          "type": "aggregate_input",
-          "required": false,
-          "min": 0,
-          "max": 200000,
-          "step": 100,
-          "default": 0,
-          "help": "Enter total additional monthly income in Basic mode. Calculated automatically in Advanced mode.",
-          "aggregate_from": [
-            "annuity_monthly",
-            "retirement_distributions_monthly",
-            "dividends_interest_monthly",
-            "rental_income_monthly",
-            "alimony_support_monthly",
-            "ltc_insurance_monthly",
-            "family_support_monthly"
-          ],
-          "mode_behavior": {
-            "basic": {
-              "display": "input",
-              "editable": true,
-              "distribution_strategy": "even",
-              "help": "Enter your total additional monthly income from all other sources. We'll split it evenly across categories."
-            },
-            "advanced": {
-              "display": "calculated_label",
-              "editable": false,
-              "help": "Automatically calculated from all additional income sources below."
-            }
-          },
-          "unallocated": {
-            "enabled": true,
-            "show_in_mode": "advanced",
-            "actions": [
-              "clear_original",
-              "move_to_other"
-            ],
-            "other_field_key": "dividends_interest_monthly",
-            "label": "Unallocated Additional Income",
-            "help": "Difference between your original estimate and allocated amounts. Not included in calculations."
+          "help": "Monthly contributions from family",
+          "visible_if": {
+            "field": "has_additional_income",
+            "equals": "yes"
           }
         },
         {
+          "key": "alimony_support_monthly",
+          "label": "Alimony/Support",
+          "type": "currency",
+          "required": false,
+          "min": 0,
+          "max": 50000,
+          "step": 100,
+          "default": 0,
+          "help": "Monthly alimony or support payments",
+          "visible_if": {
+            "field": "has_additional_income",
+            "equals": "yes"
+          }
+        },
+        {
+          "key": "rental_income_monthly",
+          "label": "Rental Income",
+          "type": "currency",
+          "required": false,
+          "min": 0,
+          "max": 50000,
+          "step": 100,
+          "default": 0,
+          "help": "Net monthly rental income",
+          "visible_if": {
+            "field": "has_additional_income",
+            "equals": "yes"
+          }
+        },
+        {
+          "key": "other_income_monthly",
+          "label": "Other monthly income",
+          "type": "currency",
+          "required": false,
+          "min": 0,
+          "max": 50000,
+          "step": 100,
+          "default": 0,
+          "help": "Part-time gigs, consulting, hobby income, etc.",
+          "visible_if": {
+            "field": "has_additional_income",
+            "equals": "yes"
+          }
+        }
+      ],
+      "info_boxes": []
+    },
+    {
+      "id": "investment_income_gateway",
+      "title": "Investment Income",
+      "icon": "📈",
+      "layout": "single_column",
+      "fields": [
+        {
+          "key": "has_investment_income",
+          "label": "Do you receive monthly investment income from annuities, 401(k)/IRA distributions, or dividends?",
+          "type": "radio",
+          "required": false,
+          "options": [
+            {
+              "value": "no",
+              "label": "No"
+            },
+            {
+              "value": "yes",
+              "label": "Yes"
+            }
+          ],
+          "default": "no"
+        },
+        {
           "key": "annuity_monthly",
-          "label": "Annuity (Monthly)",
+          "label": "Annuity",
           "type": "currency",
           "required": false,
           "min": 0,
@@ -261,13 +167,14 @@
           "step": 100,
           "default": 0,
           "help": "Monthly annuity payments",
-          "visible_in_modes": [
-            "advanced"
-          ]
+          "visible_if": {
+            "field": "has_investment_income",
+            "equals": "yes"
+          }
         },
         {
           "key": "retirement_distributions_monthly",
-          "label": "IRA/401(k) Distributions (Monthly)",
+          "label": "IRA/401(k) Distributions",
           "type": "currency",
           "required": false,
           "min": 0,
@@ -275,13 +182,14 @@
           "step": 100,
           "default": 0,
           "help": "Monthly withdrawals from retirement accounts",
-          "visible_in_modes": [
-            "advanced"
-          ]
+          "visible_if": {
+            "field": "has_investment_income",
+            "equals": "yes"
+          }
         },
         {
           "key": "dividends_interest_monthly",
-          "label": "Dividends & Interest (Monthly)",
+          "label": "Dividends & Interest",
           "type": "currency",
           "required": false,
           "min": 0,
@@ -289,73 +197,65 @@
           "step": 100,
           "default": 0,
           "help": "Monthly income from investments",
-          "visible_in_modes": [
-            "advanced"
-          ]
-        },
-        {
-          "key": "rental_income_monthly",
-          "label": "Rental Income (Monthly)",
-          "type": "currency",
-          "required": false,
-          "min": 0,
-          "max": 50000,
-          "step": 100,
-          "default": 0,
-          "help": "Net monthly income from rental properties",
-          "visible_in_modes": [
-            "advanced"
-          ]
-        },
-        {
-          "key": "alimony_support_monthly",
-          "label": "Alimony/Support (Monthly)",
-          "type": "currency",
-          "required": false,
-          "min": 0,
-          "max": 50000,
-          "step": 100,
-          "default": 0,
-          "help": "Monthly alimony or support payments received",
-          "visible_in_modes": [
-            "advanced"
-          ]
-        },
-        {
-          "key": "ltc_insurance_monthly",
-          "label": "Long-Term Care Insurance Benefits",
-          "type": "currency",
-          "required": false,
-          "min": 0,
-          "max": 50000,
-          "step": 100,
-          "default": 0,
-          "help": "Monthly payout from long-term care insurance",
-          "visible_in_modes": [
-            "advanced"
-          ]
-        },
-        {
-          "key": "family_support_monthly",
-          "label": "Family Support (Monthly)",
-          "type": "currency",
-          "required": false,
-          "min": 0,
-          "max": 50000,
-          "step": 100,
-          "default": 0,
-          "help": "Contributions from family for care costs",
-          "visible_in_modes": [
-            "advanced"
-          ]
+          "visible_if": {
+            "field": "has_investment_income",
+            "equals": "yes"
+          }
         }
       ],
-      "info_boxes": [
+      "info_boxes": []
+    },
+    {
+      "id": "household_context_gateway",
+      "title": "Household Context",
+      "icon": "👥",
+      "layout": "single_column",
+      "fields": [
         {
-          "type": "info",
-          "message": "💡 Breaking down income sources helps identify guaranteed vs. variable income for better care planning."
+          "key": "has_partner_help",
+          "label": "Does anyone else help cover care costs?",
+          "type": "radio",
+          "required": false,
+          "options": [
+            {
+              "value": "no",
+              "label": "No"
+            },
+            {
+              "value": "yes",
+              "label": "Yes, my spouse/partner helps"
+            }
+          ],
+          "default": "no"
+        },
+        {
+          "key": "partner_income_monthly",
+          "label": "Partner's Monthly Contribution",
+          "type": "currency",
+          "required": false,
+          "min": 0,
+          "max": 50000,
+          "step": 100,
+          "default": 0,
+          "help": "Amount your spouse/partner contributes monthly",
+          "visible_if": {
+            "field": "has_partner_help",
+            "equals": "yes"
+          }
+        },
+        {
+          "key": "shared_finance_notes",
+          "label": "Any important notes about shared finances?",
+          "type": "textarea",
+          "required": false,
+          "help": "Separate accounts, legal restrictions, etc.",
+          "visible_if": {
+            "field": "has_partner_help",
+            "equals": "yes"
+          }
         }
-      ]
+      ],
+      "info_boxes": []
     },
     {
       "id": "results",
@@ -368,26 +268,24 @@
   "summary": {
     "type": "calculated",
     "label": "Total Monthly Income",
-    "formula": "sum(ss_monthly, pension_monthly, employment_income, other_income, annuity_monthly, retirement_distributions_monthly, dividends_interest_monthly, rental_income_monthly, alimony_support_monthly, ltc_insurance_monthly, family_support_monthly, partner_income_monthly)",
+    "formula": "sum(ss_monthly, pension_monthly, annuity_monthly, retirement_distributions_monthly, dividends_interest_monthly, rental_income_monthly, alimony_support_monthly, family_support_monthly, other_income_monthly, partner_income_monthly)",
     "display_format": "${:,.0f}/month"
   },
   "output_contract": {
-    "has_partner": "string",
-    "partner_income_monthly": "number",
-    "shared_finance_notes": "string",
     "ss_monthly": "number",
     "pension_monthly": "number",
-    "employment_status": "string",
-    "employment_income": "number",
-    "other_income": "number",
-    "additional_income_total": "number",
+    "has_additional_income": "string",
+    "family_support_monthly": "number",
+    "alimony_support_monthly": "number",
+    "rental_income_monthly": "number",
+    "other_income_monthly": "number",
+    "has_investment_income": "string",
     "annuity_monthly": "number",
     "retirement_distributions_monthly": "number",
     "dividends_interest_monthly": "number",
-    "rental_income_monthly": "number",
-    "alimony_support_monthly": "number",
-    "ltc_insurance_monthly": "number",
-    "family_support_monthly": "number",
+    "has_partner_help": "string",
+    "partner_income_monthly": "number",
+    "shared_finance_notes": "string",
     "total_monthly_income": "calculated"
   }
 }

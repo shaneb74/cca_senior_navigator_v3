@@ -182,6 +182,12 @@ def _render_incomplete_state():
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         if st.button("← Back to Assessments", use_container_width=True, type="primary"):
+            # Update URL query params for browser navigation
+            st.query_params["page"] = "cost_v2"
+            st.query_params["step"] = "assessments"
+            if "assessment" in st.query_params:
+                del st.query_params["assessment"]
+            
             st.session_state.cost_v2_step = "assessments"
             st.rerun()
 
@@ -811,10 +817,12 @@ def _render_financial_details(analysis, profile):
             details.append(f"Social Security ${profile.ss_monthly:,.0f}")
         if profile.pension_monthly > 0:
             details.append(f"Pension ${profile.pension_monthly:,.0f}")
-        if profile.employment_monthly > 0:
-            details.append(f"Employment ${profile.employment_monthly:,.0f}")
-        if profile.other_income_monthly > 0:
-            details.append(f"Other ${profile.other_income_monthly:,.0f}")
+        if profile.annuity_monthly > 0:
+            details.append(f"Annuity ${profile.annuity_monthly:,.0f}")
+        if profile.retirement_distributions_monthly > 0:
+            details.append(f"Retirement Distributions ${profile.retirement_distributions_monthly:,.0f}")
+        if profile.rental_income_monthly > 0:
+            details.append(f"Rental Income ${profile.rental_income_monthly:,.0f}")
 
         if details:
             st.markdown(
@@ -1181,10 +1189,22 @@ def _render_navigation():
 
     with col1:
         if st.button("← Back to Assessments", use_container_width=True):
+            # Update URL query params for browser navigation
+            st.query_params["page"] = "cost_v2"
+            st.query_params["step"] = "assessments"
+            if "assessment" in st.query_params:
+                del st.query_params["assessment"]
+            
             st.session_state.cost_v2_step = "assessments"
             st.rerun()
 
     with col3:
         if st.button("Exit Cost Planner →", use_container_width=True):
+            # Update URL query params for browser navigation
+            st.query_params["page"] = "cost_v2"
+            st.query_params["step"] = "exit"
+            if "assessment" in st.query_params:
+                del st.query_params["assessment"]
+            
             st.session_state.cost_v2_step = "exit"
             st.rerun()

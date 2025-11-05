@@ -167,20 +167,6 @@
             "field": "has_va_disability",
             "equals": "yes"
           }
-        },
-        {
-          "key": "va_disability_notes",
-          "label": "VA Disability Notes (Optional)",
-          "type": "textarea",
-          "required": false,
-          "help": "Any additional context: pending increases, appeals, combined ratings from multiple conditions.",
-          "visible_if": {
-            "field": "has_va_disability",
-            "in": [
-              "yes",
-              "applied"
-            ]
-          }
         }
       ],
       "info_boxes": [
@@ -314,7 +300,6 @@
     "va_disability_rating": "number",
     "va_dependents": "string",
     "va_disability_monthly": "number",
-    "va_disability_notes": "string",
     "has_aid_attendance": "string",
     "aid_attendance_monthly": "number",
     "aanda_household_status": "string",
