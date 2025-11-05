@@ -35,7 +35,6 @@ _SINGLE_PAGE_ASSESSMENTS: set[str] = {
     "va_benefits",
     "health_insurance",
     "life_insurance",
-    "medicaid_navigation",
 }
 
 
@@ -255,10 +254,20 @@ def _render_assessment_card(assessment: dict[str, Any], product_key: str) -> Non
     # Get summary value if assessment is complete
     summary_text = ""
     if is_complete:
-        modules = st.session_state.get("cost_v2_modules", {})
-        if key in modules:
-            data = modules[key].get("data", {})
-            
+        # Try tiles first (primary source), then cost_v2_modules (secondary)
+        tiles = st.session_state.get("tiles", {})
+        product_tiles = tiles.get(product_key, {})
+        assessments_state = product_tiles.get("assessments", {})
+        data = assessments_state.get(key, {})
+        
+        # Fall back to cost_v2_modules if not in tiles
+        if not data:
+            modules = st.session_state.get("cost_v2_modules", {})
+            if key in modules:
+                data = modules[key].get("data", {})
+        
+        # Extract summary based on assessment type
+        if data:
             if key == "income":
                 total = data.get("total_monthly_income", 0)
                 if total > 0:
@@ -861,21 +870,30 @@ def render_assessment_page(assessment_key: str, product_key: str = "cost_planner
         st.error(f"⚠️ Assessment '{assessment_key}' not found.")
         return
 
-    # Initialize state - load from cost_v2_modules if available (e.g., demo users)
+    # Initialize state - load from persistent storage if available
     state_key = f"{product_key}_{assessment_key}"
 
+    # Only initialize if not already in session_state (preserve active editing session)
+    if state_key not in st.session_state:
+        # Try loading from tiles first (primary source of truth)
+        # CRITICAL: Use setdefault to get the ACTUAL reference, not a copy
+        tiles = st.session_state.setdefault("tiles", {})
+        product_tiles = tiles.setdefault(product_key, {})
+        assessments_state = product_tiles.setdefault("assessments", {})
+        saved_data = assessments_state.get(assessment_key)
 
-    # Initialize state - load from cost_v2_modules if available (e.g., demo users)
-    # This handles both initial load (demo users) and restart scenarios
-    modules = st.session_state.get("cost_v2_modules", {})
+        # Fall back to cost_v2_modules if not in tiles (legacy/demo users)
+        if not saved_data:
+            modules = st.session_state.get("cost_v2_modules", {})
+            if assessment_key in modules:
+                saved_data = modules[assessment_key].get("data", {})
 
-    if assessment_key in modules:
-        module_data = modules[assessment_key].get("data", {})
-        if module_data and state_key not in st.session_state:
-            # Pre-populate from saved data
-            st.session_state[state_key] = module_data.copy()
+        # Initialize with saved data if found, otherwise empty dict
+        if saved_data:
+            st.session_state[state_key] = saved_data.copy()
+        else:
+            st.session_state[state_key] = {}
 
-    st.session_state.setdefault(state_key, {})
     state = st.session_state[state_key]
 
     # Render Navi guidance at top - clean panel like the hub
@@ -960,15 +978,27 @@ def _render_single_page_assessment(
 
     state_key = f"{product_key}_{assessment_key}"
 
-    # Pre-populate from cost_v2_modules if available (demo users, restart scenarios)
-    modules = st.session_state.get("cost_v2_modules", {})
+    # Only initialize if not already in session_state (preserve active editing session)
+    if state_key not in st.session_state:
+        # Try loading from tiles first (primary source of truth)
+        # CRITICAL: Use setdefault to get the ACTUAL reference, not a copy
+        tiles = st.session_state.setdefault("tiles", {})
+        product_tiles = tiles.setdefault(product_key, {})
+        assessments_state = product_tiles.setdefault("assessments", {})
+        saved_data = assessments_state.get(assessment_key)
 
-    if assessment_key in modules:
-        module_data = modules[assessment_key].get("data", {})
-        if module_data and state_key not in st.session_state:
-            st.session_state[state_key] = module_data.copy()
+        # Fall back to cost_v2_modules if not in tiles (legacy/demo users)
+        if not saved_data:
+            modules = st.session_state.get("cost_v2_modules", {})
+            if assessment_key in modules:
+                saved_data = modules[assessment_key].get("data", {})
 
-    st.session_state.setdefault(state_key, {})
+        # Initialize with saved data if found, otherwise empty dict
+        if saved_data:
+            st.session_state[state_key] = saved_data.copy()
+        else:
+            st.session_state[state_key] = {}
+
     state = st.session_state[state_key]
 
     success_flash_key = f"{state_key}._flash_success"
@@ -1494,12 +1524,25 @@ def _is_assessment_visible(assessment: dict[str, Any], flags: dict[str, Any]) ->
 
 
 def _is_assessment_complete(assessment_key: str, product_key: str) -> bool:
-    """Check if an assessment is complete."""
+    """Check if an assessment is complete by checking persistent storage."""
 
-    state_key = f"{product_key}_{assessment_key}"
-    state = st.session_state.get(state_key, {})
-
-    return state.get("status") == "done"
+    # Check persistent storage (tiles first, then cost_v2_modules)
+    # Don't rely on temporary working state which may not exist
+    tiles = st.session_state.get("tiles", {})
+    product_tiles = tiles.get(product_key, {})
+    assessments_state = product_tiles.get("assessments", {})
+    saved_data = assessments_state.get(assessment_key)
+    
+    if saved_data and saved_data.get("status") == "done":
+        return True
+    
+    # Fall back to cost_v2_modules
+    modules = st.session_state.get("cost_v2_modules", {})
+    if assessment_key in modules:
+        module_status = modules[assessment_key].get("status")
+        return module_status == "completed"
+    
+    return False
 
 
 def _get_assessment_progress(assessment_key: str, product_key: str) -> int:
@@ -1596,10 +1639,12 @@ def _render_page_navigation(
     with col2:
         # Save & Back to Hub
         if st.button("← Back to Assessments", use_container_width=True, type="secondary", key=f"{assessment_key}_save_back"):
-            # Mark assessment as complete (preserve existing data)
+            # Mark assessment as complete and PERSIST to storage
             state_key = f"{product_key}_{assessment_key}"
             if state_key in st.session_state:
                 st.session_state[state_key]["status"] = "done"
+                # CRITICAL: Persist to tiles/cost_v2_modules before navigating
+                _persist_assessment_state(product_key, assessment_key, st.session_state[state_key])
             
             # Clear current assessment and return to hub
             st.session_state.pop(f"{product_key}_current_assessment", None)
@@ -1623,10 +1668,12 @@ def _render_page_navigation(
             button_label = "Finish & Review →"
         
         if st.button(button_label, use_container_width=True, type="primary", key=f"{assessment_key}_save_continue"):
-            # Mark assessment as complete (preserve existing data)
+            # Mark assessment as complete and PERSIST to storage
             state_key = f"{product_key}_{assessment_key}"
             if state_key in st.session_state:
                 st.session_state[state_key]["status"] = "done"
+                # CRITICAL: Persist to tiles/cost_v2_modules before navigating
+                _persist_assessment_state(product_key, assessment_key, st.session_state[state_key])
             
             if next_assessment:
                 # Go to next assessment

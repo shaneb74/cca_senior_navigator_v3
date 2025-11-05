@@ -108,20 +108,10 @@ def render():
             "visible": True,
             "sort_order": 5,
         },
-        {
-            "key": "medicaid_navigation",
-            "title": "Medicaid Navigation",
-            "description": "Medicaid planning and eligibility assessment",
-            "icon": "🧭",
-            "estimated_time": "5-7 min",
-            "required": False,
-            "visible": medicaid_planning_interest,  # Only show if interested in Medicaid planning
-            "sort_order": 6,
-        },
     ]
 
-    # Filter to only visible modules
-    visible_modules = [m for m in modules_config if m.get("visible", True)]
+    # Filter to only visible modules (explicit check - False means hidden)
+    visible_modules = [m for m in modules_config if m.get("visible", True) is not False]
 
     # Navi panel is rendered by product.py - don't duplicate it here
 
@@ -1003,35 +993,6 @@ def _render_summary():
                 if data.get("ltc_rider"):
                     options.append("LTC Rider")
                 st.markdown(f"**Available Riders:** {', '.join(options)}")
-
-            st.markdown("---")
-
-    # =========================================================================
-    # MEDICAID PLANNING SECTION
-    # =========================================================================
-    if modules_state.get("medicaid_navigation", {}).get("data"):
-        data = modules_state["medicaid_navigation"]["data"]
-        interest = data.get("medicaid_interest", "not_interested")
-
-        if interest != "not_interested":
-            st.markdown("#### 🧭 Medicaid Planning")
-
-            col1, col2 = st.columns(2)
-
-            with col1:
-                interest_labels = {
-                    "learning": "Learning about Medicaid",
-                    "may_need_soon": "May need within 1-2 years",
-                    "need_now": "Need to apply soon",
-                    "already_enrolled": "Already enrolled",
-                }
-                st.markdown(f"**Status:** {interest_labels.get(interest, interest)}")
-
-            with col2:
-                if data.get("preliminary_eligible"):
-                    st.markdown("✅ **Preliminarily Eligible**")
-                else:
-                    st.markdown("⚠️ **Planning May Be Needed**")
 
             st.markdown("---")
 

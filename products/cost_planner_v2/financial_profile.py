@@ -302,29 +302,15 @@ def build_financial_profile(product_key: str = "cost_planner_v2") -> FinancialPr
             + profile.aid_attendance_monthly
         )
 
-    # ==== MEDICAID PLANNING ASSESSMENT (optional - flag-gated) ====
-    medicaid_data = assessments_state.get("medicaid_navigation", {})
-    if medicaid_data:
-        profile.medicaid_status = medicaid_data.get("medicaid_status", "not_enrolled")
-        profile.interested_in_spend_down = bool(
-            medicaid_data.get("interested_in_spend_down", False)
-        )
-        profile.spend_down_timeline = medicaid_data.get("spend_down_timeline")
-        profile.has_estate_plan = medicaid_data.get("has_estate_plan", [])
-        # NEW: Capture additional Medicaid planning context
-        profile.aware_of_asset_limits = medicaid_data.get("aware_of_asset_limits", "no")
-        profile.current_asset_position = medicaid_data.get("current_asset_position", "unknown")
-        profile.aware_of_estate_recovery = bool(
-            medicaid_data.get("aware_of_estate_recovery", False)
-        )
-        profile.interested_in_elder_law = bool(medicaid_data.get("interested_in_elder_law", False))
+    # ==== MEDICAID PLANNING ASSESSMENT (removed - users routed to off-ramp) ====
+    # Medicaid users are now routed to Medicaid.gov before reaching assessments
+    # No need to collect this data as we cannot help with Medicaid placement
 
     # ==== CALCULATE METADATA ====
     profile.completeness_percentage = _calculate_completeness(assessments_state)
     profile.required_assessments_complete = _check_required_complete(assessments_state)
     profile.optional_assessments_complete = {
         "va_benefits": bool(va_data),
-        "medicaid_planning": bool(medicaid_data),
     }
 
     import datetime
@@ -353,7 +339,6 @@ def _calculate_completeness(assessments_state: dict[str, Any]) -> float:
         "health_insurance",
         "life_insurance",
         "va_benefits",
-        "medicaid_navigation",
     ]
     completed_optional = sum(1 for key in optional_assessments if assessments_state.get(key))
 
