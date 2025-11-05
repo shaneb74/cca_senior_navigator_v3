@@ -1514,12 +1514,25 @@ def _is_assessment_visible(assessment: dict[str, Any], flags: dict[str, Any]) ->
 
 
 def _is_assessment_complete(assessment_key: str, product_key: str) -> bool:
-    """Check if an assessment is complete."""
+    """Check if an assessment is complete by checking persistent storage."""
 
-    state_key = f"{product_key}_{assessment_key}"
-    state = st.session_state.get(state_key, {})
-
-    return state.get("status") == "done"
+    # Check persistent storage (tiles first, then cost_v2_modules)
+    # Don't rely on temporary working state which may not exist
+    tiles = st.session_state.get("tiles", {})
+    product_tiles = tiles.get(product_key, {})
+    assessments_state = product_tiles.get("assessments", {})
+    saved_data = assessments_state.get(assessment_key)
+    
+    if saved_data and saved_data.get("status") == "done":
+        return True
+    
+    # Fall back to cost_v2_modules
+    modules = st.session_state.get("cost_v2_modules", {})
+    if assessment_key in modules:
+        module_status = modules[assessment_key].get("status")
+        return module_status == "completed"
+    
+    return False
 
 
 def _get_assessment_progress(assessment_key: str, product_key: str) -> int:
