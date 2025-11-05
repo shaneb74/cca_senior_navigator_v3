@@ -115,8 +115,13 @@ def render():
                 "is_homeowner": is_homeowner,
             }
 
-            # Proceed to assessment hub (with tiles)
-            st.session_state.cost_v2_step = "assessments"
+            # ROUTING DECISION: Medicaid users need clarification before proceeding
+            if is_on_medicaid:
+                # Route to Medicaid disambiguation page to confirm Medicaid vs Medicare
+                st.session_state.cost_v2_step = "medicaid_clarification"
+            else:
+                # Proceed to normal assessment hub (with tiles)
+                st.session_state.cost_v2_step = "assessments"
             st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
 

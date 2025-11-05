@@ -125,6 +125,10 @@ def render():
         _render_auth_step()
     elif current_step == "triage":
         _render_triage_step()
+    elif current_step == "medicaid_clarification":
+        _render_medicaid_clarification_step()
+    elif current_step == "medicaid_resources":
+        _render_medicaid_resources_step()
     elif current_step in ["modules", "assessments"]:
         # Support both old "modules" and new "assessments" step names for backward compatibility
         _render_assessments_step()
@@ -171,6 +175,20 @@ def _render_triage_step():
     from products.cost_planner_v2 import triage
 
     triage.render()
+
+
+def _render_medicaid_clarification_step():
+    """Step 3a: Medicaid vs Medicare clarification."""
+    from pages.assessments_medicaid import render
+    
+    render()
+
+
+def _render_medicaid_resources_step():
+    """Step 3c: Medicaid off-ramp - point to Medicaid.gov."""
+    from pages.assessments_medicaid import render_medicaid_resources
+    
+    render_medicaid_resources()
 
 
 def _render_assessments_step():
@@ -341,7 +359,6 @@ def _handle_restart_if_needed() -> None:
         "cost_planner_v2_va_benefits",
         "cost_planner_v2_health_insurance",
         "cost_planner_v2_life_insurance",
-        "cost_planner_v2_medicaid_navigation",
     ]
     for key in module_keys:
         if key in st.session_state:

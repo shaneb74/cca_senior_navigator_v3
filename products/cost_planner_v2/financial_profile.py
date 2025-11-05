@@ -34,19 +34,16 @@ class FinancialProfile:
     # ==== INCOME SOURCES ====
     ss_monthly: float = 0.0
     pension_monthly: float = 0.0
-    employment_status: str = "not_employed"
-    employment_monthly: float = 0.0
     has_partner: str = "no_partner"
     shared_finance_notes: str = ""
     partner_income_monthly: float = 0.0
-    retirement_withdrawals_monthly: float = 0.0
+    annuity_monthly: float = 0.0
+    retirement_distributions_monthly: float = 0.0
+    dividends_interest_monthly: float = 0.0
     rental_income_monthly: float = 0.0
+    alimony_support_monthly: float = 0.0
     ltc_insurance_monthly: float = 0.0
     family_support_monthly: float = 0.0
-    periodic_income_avg_monthly: float = 0.0
-    periodic_income_frequency: str = "annual"  # NEW: "monthly", "quarterly", "semi_annual", "annual", "as_needed"
-    periodic_income_notes: str = ""  # NEW: RMD schedules, dividend timing, asset sale plans
-    other_income_monthly: float = 0.0
     total_monthly_income: float = 0.0
     income_breakdown: dict[str, float] = field(default_factory=dict)
 
@@ -160,24 +157,18 @@ def build_financial_profile(product_key: str = "cost_planner_v2") -> FinancialPr
         income_data = normalize_income_data(income_raw)
         profile.ss_monthly = float(income_data.get("ss_monthly", 0.0))
         profile.pension_monthly = float(income_data.get("pension_monthly", 0.0))
-        profile.employment_status = income_data.get("employment_status", "not_employed")
-        profile.employment_monthly = float(income_data.get("employment_monthly", 0.0))
         profile.has_partner = income_data.get("has_partner", "no_partner")
         profile.shared_finance_notes = income_data.get("shared_finance_notes", "")
         profile.partner_income_monthly = float(income_data.get("partner_income_monthly", 0.0))
-        profile.retirement_withdrawals_monthly = float(
-            income_data.get("retirement_withdrawals_monthly", 0.0)
+        profile.annuity_monthly = float(income_data.get("annuity_monthly", 0.0))
+        profile.retirement_distributions_monthly = float(
+            income_data.get("retirement_distributions_monthly", 0.0)
         )
+        profile.dividends_interest_monthly = float(income_data.get("dividends_interest_monthly", 0.0))
         profile.rental_income_monthly = float(income_data.get("rental_income_monthly", 0.0))
+        profile.alimony_support_monthly = float(income_data.get("alimony_support_monthly", 0.0))
         profile.ltc_insurance_monthly = float(income_data.get("ltc_insurance_monthly", 0.0))
         profile.family_support_monthly = float(income_data.get("family_support_monthly", 0.0))
-        profile.periodic_income_avg_monthly = float(
-            income_data.get("periodic_income_avg_monthly", 0.0)
-        )
-        # NEW: Capture periodic income details
-        profile.periodic_income_frequency = income_data.get("periodic_income_frequency", "annual")
-        profile.periodic_income_notes = income_data.get("periodic_income_notes", "")
-        profile.other_income_monthly = float(income_data.get("other_income_monthly", 0.0))
         profile.total_monthly_income = float(
             income_data.get("total_monthly_income", profile.total_monthly_income)
         )
@@ -311,29 +302,15 @@ def build_financial_profile(product_key: str = "cost_planner_v2") -> FinancialPr
             + profile.aid_attendance_monthly
         )
 
-    # ==== MEDICAID PLANNING ASSESSMENT (optional - flag-gated) ====
-    medicaid_data = assessments_state.get("medicaid_navigation", {})
-    if medicaid_data:
-        profile.medicaid_status = medicaid_data.get("medicaid_status", "not_enrolled")
-        profile.interested_in_spend_down = bool(
-            medicaid_data.get("interested_in_spend_down", False)
-        )
-        profile.spend_down_timeline = medicaid_data.get("spend_down_timeline")
-        profile.has_estate_plan = medicaid_data.get("has_estate_plan", [])
-        # NEW: Capture additional Medicaid planning context
-        profile.aware_of_asset_limits = medicaid_data.get("aware_of_asset_limits", "no")
-        profile.current_asset_position = medicaid_data.get("current_asset_position", "unknown")
-        profile.aware_of_estate_recovery = bool(
-            medicaid_data.get("aware_of_estate_recovery", False)
-        )
-        profile.interested_in_elder_law = bool(medicaid_data.get("interested_in_elder_law", False))
+    # ==== MEDICAID PLANNING ASSESSMENT (removed - users routed to off-ramp) ====
+    # Medicaid users are now routed to Medicaid.gov before reaching assessments
+    # No need to collect this data as we cannot help with Medicaid placement
 
     # ==== CALCULATE METADATA ====
     profile.completeness_percentage = _calculate_completeness(assessments_state)
     profile.required_assessments_complete = _check_required_complete(assessments_state)
     profile.optional_assessments_complete = {
         "va_benefits": bool(va_data),
-        "medicaid_planning": bool(medicaid_data),
     }
 
     import datetime
@@ -362,7 +339,6 @@ def _calculate_completeness(assessments_state: dict[str, Any]) -> float:
         "health_insurance",
         "life_insurance",
         "va_benefits",
-        "medicaid_navigation",
     ]
     completed_optional = sum(1 for key in optional_assessments if assessments_state.get(key))
 
