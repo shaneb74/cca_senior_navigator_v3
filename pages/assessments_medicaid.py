@@ -283,8 +283,7 @@ def _handle_medicaid_confirmation(status: str):
     """
     
     if status in ["medicaid_only", "both"]:
-        # User confirmed they ARE on Medicaid
-        # Keep the Medicaid flag set, route to simplified assessment
+        # User confirmed they ARE on Medicaid - off-ramp to resources
         st.session_state.flags["medicaid_planning_interest"] = True
         st.session_state.flags["confirmed_medicaid_user"] = True
         
@@ -293,8 +292,8 @@ def _handle_medicaid_confirmation(status: str):
         if "profile" in st.session_state:
             st.session_state.profile["qualifiers"]["is_on_medicaid"] = True
         
-        # Route to simplified Medicaid assessment
-        st.session_state.cost_v2_step = "medicaid_assessment"
+        # Route straight to Medicaid off-ramp (we can't help them)
+        st.session_state.cost_v2_step = "medicaid_resources"
         st.rerun()
         
     elif status == "medicare_only":
@@ -322,15 +321,9 @@ def _handle_medicaid_confirmation(status: str):
         st.rerun()
 
 
-def render_medicaid_assessment():
-    """Render simplified Medicaid-specific assessment.
-    
-    For users who confirmed they're on Medicaid, this provides:
-    - Empathetic messaging about limited resources
-    - Simplified data collection (Medicaid limits are standard)
-    - Focus on Medicaid eligibility and state-specific rules
-    - Modified advisor CTAs (different planning needs)
-    """
+
+def render_medicaid_resources():
+    """Simple Medicaid off-ramp - we can't help, point to Medicaid.gov."""
     
     _apply_clean_styling()
     
@@ -338,13 +331,63 @@ def render_medicaid_assessment():
     st.markdown("""
     <div style='max-width: 900px; margin: 0 auto 40px auto;'>
         <h1 style='font-size: 32px; font-weight: 700; color: #0f172a; margin: 0 0 8px 0;'>
-            Medicaid Planning Assessment
+            Medicaid Resources
         </h1>
         <p style='font-size: 15px; color: #64748b; margin: 0;'>
-            Let's gather some basic information to help guide your planning
+            For Medicaid-specific assistance, please use the official resources below
         </p>
     </div>
     """, unsafe_allow_html=True)
+    
+    # Direct message - we can't help
+    st.markdown("""
+    <div style='max-width: 900px; margin: 0 auto 32px auto; padding: 24px; background: #f8fafc; border-left: 4px solid #3b82f6; border-radius: 8px;'>
+        <p style='font-size: 15px; font-weight: 600; color: #1e293b; margin: 0 0 12px 0;'>
+            About Medicaid & Our Services
+        </p>
+        <p style='font-size: 14px; color: #475569; margin: 0 0 12px 0;'>
+            Our Concierge Care Advisors specialize in private-pay senior care placement. Unfortunately, 
+            we are not able to assist with Medicaid placements or Medicaid-related planning.
+        </p>
+        <p style='font-size: 14px; color: #475569; margin: 0;'>
+            For assistance with Medicaid coverage and care options, please visit the official Medicaid resources below.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Single resource card - Medicaid.gov
+    st.markdown("""
+    <div style='max-width: 900px; margin: 0 auto 32px auto;'>
+        <div style='padding: 24px; background: white; border: 1px solid #e2e8f0; border-radius: 12px;'>
+            <div style='font-size: 18px; font-weight: 600; color: #0f172a; margin-bottom: 12px;'>
+                Medicaid.gov
+            </div>
+            <p style='font-size: 14px; color: #475569; margin: 0 0 12px 0;'>
+                The official Medicaid website provides:
+            </p>
+            <div style='font-size: 14px; color: #64748b; line-height: 1.7; margin-bottom: 16px;'>
+                • State-specific Medicaid office contact information<br>
+                • Eligibility requirements and asset limits<br>
+                • Covered services and benefits<br>
+                • Application instructions<br>
+                • Medicaid-accepting provider search
+            </div>
+            <a href='https://www.medicaid.gov' target='_blank' style='display: inline-block; padding: 10px 20px; background: #3b82f6; color: white; text-decoration: none; border-radius: 6px; font-size: 14px; font-weight: 500;'>
+                Visit Medicaid.gov →
+            </a>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Navigation - just back to lobby
+    st.markdown("<div style='max-width: 900px; margin: 0 auto;'>", unsafe_allow_html=True)
+    
+    if st.button("← Return to Lobby", use_container_width=True, type="primary"):
+        from core.nav import route_to
+        route_to("hub")
+    
+    st.markdown("</div>", unsafe_allow_html=True)
+
     
     # Navi panel with empathetic messaging
     from core.navi_module import render_module_navi_coach

@@ -127,8 +127,6 @@ def render():
         _render_triage_step()
     elif current_step == "medicaid_clarification":
         _render_medicaid_clarification_step()
-    elif current_step == "medicaid_assessment":
-        _render_medicaid_assessment_step()
     elif current_step == "medicaid_resources":
         _render_medicaid_resources_step()
     elif current_step in ["modules", "assessments"]:
@@ -186,15 +184,8 @@ def _render_medicaid_clarification_step():
     render()
 
 
-def _render_medicaid_assessment_step():
-    """Step 3b: Simplified Medicaid assessment."""
-    from pages.assessments_medicaid import render_medicaid_assessment
-    
-    render_medicaid_assessment()
-
-
 def _render_medicaid_resources_step():
-    """Step 3c: Medicaid resources and next steps."""
+    """Step 3c: Medicaid off-ramp - point to Medicaid.gov."""
     from pages.assessments_medicaid import render_medicaid_resources
     
     render_medicaid_resources()
