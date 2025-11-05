@@ -206,58 +206,6 @@
       "info_boxes": []
     },
     {
-      "id": "household_context_gateway",
-      "title": "Household Context",
-      "icon": "👥",
-      "layout": "single_column",
-      "fields": [
-        {
-          "key": "has_partner_help",
-          "label": "Does anyone else help cover care costs?",
-          "type": "radio",
-          "required": false,
-          "options": [
-            {
-              "value": "no",
-              "label": "No"
-            },
-            {
-              "value": "yes",
-              "label": "Yes, my spouse/partner helps"
-            }
-          ],
-          "default": "no"
-        },
-        {
-          "key": "partner_income_monthly",
-          "label": "Partner's Monthly Contribution",
-          "type": "currency",
-          "required": false,
-          "min": 0,
-          "max": 50000,
-          "step": 100,
-          "default": 0,
-          "help": "Amount your spouse/partner contributes monthly",
-          "visible_if": {
-            "field": "has_partner_help",
-            "equals": "yes"
-          }
-        },
-        {
-          "key": "shared_finance_notes",
-          "label": "Any important notes about shared finances?",
-          "type": "textarea",
-          "required": false,
-          "help": "Separate accounts, legal restrictions, etc.",
-          "visible_if": {
-            "field": "has_partner_help",
-            "equals": "yes"
-          }
-        }
-      ],
-      "info_boxes": []
-    },
-    {
       "id": "results",
       "type": "results",
       "title": "Income Assessment Complete",
