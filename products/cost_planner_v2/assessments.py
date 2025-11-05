@@ -860,21 +860,29 @@ def render_assessment_page(assessment_key: str, product_key: str = "cost_planner
         st.error(f"⚠️ Assessment '{assessment_key}' not found.")
         return
 
-    # Initialize state - load from cost_v2_modules if available (e.g., demo users)
+    # Initialize state - load from persistent storage if available
     state_key = f"{product_key}_{assessment_key}"
 
+    # Only initialize if not already in session_state (preserve active editing session)
+    if state_key not in st.session_state:
+        # Try loading from tiles first (primary source of truth)
+        tiles = st.session_state.get("tiles", {})
+        product_tiles = tiles.get(product_key, {})
+        assessments_state = product_tiles.get("assessments", {})
+        saved_data = assessments_state.get(assessment_key)
 
-    # Initialize state - load from cost_v2_modules if available (e.g., demo users)
-    # This handles both initial load (demo users) and restart scenarios
-    modules = st.session_state.get("cost_v2_modules", {})
+        # Fall back to cost_v2_modules if not in tiles (legacy/demo users)
+        if not saved_data:
+            modules = st.session_state.get("cost_v2_modules", {})
+            if assessment_key in modules:
+                saved_data = modules[assessment_key].get("data", {})
 
-    if assessment_key in modules:
-        module_data = modules[assessment_key].get("data", {})
-        if module_data and state_key not in st.session_state:
-            # Pre-populate from saved data
-            st.session_state[state_key] = module_data.copy()
+        # Initialize with saved data if found, otherwise empty dict
+        if saved_data:
+            st.session_state[state_key] = saved_data.copy()
+        else:
+            st.session_state[state_key] = {}
 
-    st.session_state.setdefault(state_key, {})
     state = st.session_state[state_key]
 
     # Render Navi guidance at top - clean panel like the hub
@@ -959,15 +967,26 @@ def _render_single_page_assessment(
 
     state_key = f"{product_key}_{assessment_key}"
 
-    # Pre-populate from cost_v2_modules if available (demo users, restart scenarios)
-    modules = st.session_state.get("cost_v2_modules", {})
+    # Only initialize if not already in session_state (preserve active editing session)
+    if state_key not in st.session_state:
+        # Try loading from tiles first (primary source of truth)
+        tiles = st.session_state.get("tiles", {})
+        product_tiles = tiles.get(product_key, {})
+        assessments_state = product_tiles.get("assessments", {})
+        saved_data = assessments_state.get(assessment_key)
 
-    if assessment_key in modules:
-        module_data = modules[assessment_key].get("data", {})
-        if module_data and state_key not in st.session_state:
-            st.session_state[state_key] = module_data.copy()
+        # Fall back to cost_v2_modules if not in tiles (legacy/demo users)
+        if not saved_data:
+            modules = st.session_state.get("cost_v2_modules", {})
+            if assessment_key in modules:
+                saved_data = modules[assessment_key].get("data", {})
 
-    st.session_state.setdefault(state_key, {})
+        # Initialize with saved data if found, otherwise empty dict
+        if saved_data:
+            st.session_state[state_key] = saved_data.copy()
+        else:
+            st.session_state[state_key] = {}
+
     state = st.session_state[state_key]
 
     success_flash_key = f"{state_key}._flash_success"
