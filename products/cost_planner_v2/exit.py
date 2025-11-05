@@ -43,6 +43,13 @@ def render():
     st.markdown(
         """
         <style>
+        /* Force block container width constraint */
+        .block-container {
+            max-width: 1000px !important;
+            padding-left: 2rem !important;
+            padding-right: 2rem !important;
+        }
+        
         /* Container for all exit content */
         .exit-container {
             max-width: 900px;
@@ -159,19 +166,6 @@ def render():
     # Use container with max-width styling
     container = st.container()
     with container:
-        st.markdown(
-            """
-            <style>
-            [data-testid="stVerticalBlock"] > [style*="flex-direction: column;"] > [data-testid="stVerticalBlock"] {
-                max-width: 900px;
-                margin: 0 auto;
-                padding: 0 20px;
-            }
-            </style>
-            """,
-            unsafe_allow_html=True,
-        )
-        
         _render_plan_highlights_card()
         st.markdown('<div style="height: 32px;"></div>', unsafe_allow_html=True)
         _render_whats_next_section()

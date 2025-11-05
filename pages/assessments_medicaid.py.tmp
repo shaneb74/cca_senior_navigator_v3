@@ -1,0 +1,390 @@
+"""
+Medicaid Clarification & Assessment Page
+
+This page helps disambiguate between Medicaid and Medicare, since many users
+confuse these two programs. It provides educational content and routes users
+to the appropriate flow based on their actual enrollment status.
+
+Flow:
+1. User indicated they're on "Medicaid or State Assistance" in triage
+2. This page explains the difference between Medicaid and Medicare
+3. User confirms which program(s) they're actually enrolled in
+4. Route A: Medicaid confirmed → Simplified Medicaid assessment
+5. Route B: Medicare only → Return to normal financial assessment (unset flag)
+"""
+
+import streamlit as st
+
+from core.nav import route_to
+
+
+# Apply clean styling to override Streamlit defaults
+def _apply_clean_styling():
+    """Apply custom CSS to make the page look professional."""
+    st.markdown("""
+    <style>
+    /* Hide Streamlit branding */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    
+    /* Clean info boxes */
+    .stAlert {
+        background-color: #f8fafc !important;
+        border-left: 4px solid #3b82f6 !important;
+        border-radius: 8px !important;
+        padding: 20px !important;
+    }
+    
+    /* Clean radio buttons */
+    .stRadio > label {
+        font-size: 14px !important;
+        font-weight: 500 !important;
+        color: #475569 !important;
+    }
+    
+    .stRadio > div {
+        gap: 12px !important;
+    }
+    
+    .stRadio label {
+        background: white !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 8px !important;
+        padding: 12px 16px !important;
+        cursor: pointer !important;
+        transition: all 0.2s !important;
+    }
+    
+    .stRadio label:hover {
+        border-color: #3b82f6 !important;
+        background: #f8fafc !important;
+    }
+    
+    /* Clean checkboxes */
+    .stCheckbox {
+        background: white !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 8px !important;
+        padding: 12px 16px !important;
+    }
+    
+    /* Clean text inputs */
+    .stTextInput input, .stTextArea textarea {
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 6px !important;
+        padding: 10px 12px !important;
+        font-size: 14px !important;
+    }
+    
+    .stTextInput input:focus, .stTextArea textarea:focus {
+        border-color: #3b82f6 !important;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+    }
+    
+    /* Clean multiselect */
+    .stMultiSelect {
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 6px !important;
+    }
+    
+    /* Remove excessive spacing */
+    .block-container {
+        padding-top: 2rem !important;
+        padding-bottom: 2rem !important;
+    }
+    
+    /* Clean buttons */
+    .stButton button {
+        border-radius: 6px !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+        padding: 10px 20px !important;
+    }
+    
+    /* Hide emoji spam in section headers */
+    h1, h2, h3 {
+        color: #0f172a !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+
+def render():
+    """Render Medicaid clarification and assessment page."""
+    
+    _apply_clean_styling()
+    
+    # Use Navi for education instead of info boxes
+    from core.navi_module import render_module_navi_coach
+    render_module_navi_coach(
+        title_text="Understanding Medicaid vs Medicare",
+        body_text="Many people confuse Medicaid and Medicare. Medicare is standard health insurance for seniors 65+ (most seniors have this). Medicaid is a low-income assistance program with strict asset limits. Medicare does NOT cover long-term care, but Medicaid does.",
+        tip_text="If you only have Medicare (the standard senior program), you'll continue to our normal financial assessment. If you're on Medicaid (low-income assistance), we'll provide specialized resources."
+    )
+    
+    # Clean title
+    st.markdown("""
+    <div style='max-width: 900px; margin: 0 auto 40px auto;'>
+        <h1 style='font-size: 32px; font-weight: 700; color: #0f172a; margin: 0 0 8px 0;'>
+            Medicaid Program Clarification
+        </h1>
+        <p style='font-size: 15px; color: #64748b; margin: 0;'>
+            Let's confirm which program you're enrolled in
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown("<div style='max-width: 900px; margin: 0 auto;'>", unsafe_allow_html=True)
+    
+    col1, col2 = st.columns(2, gap="large")
+    
+    with col1:
+        st.markdown("""
+        <div style='padding: 20px; background: white; border: 1px solid #e2e8f0; border-radius: 8px; height: 100%;'>
+            <div style='font-size: 16px; font-weight: 600; color: #0f172a; margin-bottom: 16px;'>
+                MEDICARE
+            </div>
+        """, unsafe_allow_html=True)
+        
+        st.markdown("**Who qualifies:**")
+        st.markdown("• Seniors age 65+  \n• Some younger people with disabilities")
+        
+        st.markdown("**What it covers:**")
+        st.markdown("• Hospital visits  \n• Doctor appointments  \n• Some medical equipment  \n• **Does NOT cover long-term care**")
+        
+        st.markdown("**Cost:**")
+        st.markdown("• Monthly premiums (typically $100-200)  \n• Based on your work history")
+        
+        st.markdown("""
+        <div style='margin-top: 16px; padding: 12px; background: #f8fafc; border-radius: 6px; font-size: 13px; color: #475569;'>
+            Most seniors have Medicare. This is the standard health insurance program.
+        </div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown("""
+        <div style='padding: 20px; background: white; border: 1px solid #e2e8f0; border-radius: 8px; height: 100%;'>
+            <div style='font-size: 16px; font-weight: 600; color: #0f172a; margin-bottom: 16px;'>
+                MEDICAID
+            </div>
+        """, unsafe_allow_html=True)
+        
+        st.markdown("**Who qualifies:**")
+        st.markdown("• People with limited income  \n• People with limited assets  \n• Must meet strict financial requirements")
+        
+        st.markdown("**What it covers:**")
+        st.markdown("• Hospital visits  \n• Doctor appointments  \n• **Long-term care (nursing homes)**  \n• Some assisted living (varies by state)")
+        
+        st.markdown("**Cost:**")
+        st.markdown("• Little to no cost  \n• State/federal assistance program")
+        
+        st.markdown("""
+        <div style='margin-top: 16px; padding: 12px; background: #f8fafc; border-radius: 6px; font-size: 13px; color: #475569;'>
+            Medicaid is a low-income assistance program with different planning needs.
+        </div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    st.markdown("</div><div style='height: 32px;'></div>", unsafe_allow_html=True)
+    
+    # Clarification question - no stupid icons
+    st.markdown("""
+    <div style='max-width: 900px; margin: 0 auto 16px auto;'>
+        <h2 style='font-size: 18px; font-weight: 600; color: #0f172a; margin: 0 0 8px 0;'>
+            Confirm Your Enrollment
+        </h2>
+        <p style='font-size: 14px; color: #64748b; margin: 0;'>
+            Based on the above information, which program(s) are you enrolled in?
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Initialize selection state
+    if "medicaid_confirmation" not in st.session_state:
+        st.session_state.medicaid_confirmation = None
+    
+    # Radio button options with cleaner container
+    st.markdown("<div style='max-width: 900px; margin: 0 auto;'>", unsafe_allow_html=True)
+    
+    medicaid_status = st.radio(
+        "Select your situation:",
+        options=[
+            "medicaid_only",
+            "medicare_only", 
+            "both",
+            "neither"
+        ],
+        format_func=lambda x: {
+            "medicaid_only": "I am enrolled in MEDICAID (low-income state assistance)",
+            "medicare_only": "I only have MEDICARE (standard senior health insurance)",
+            "both": "I am enrolled in BOTH Medicaid AND Medicare",
+            "neither": "I'm not sure / Not enrolled in either"
+        }[x],
+        index=None,
+        key="medicaid_clarification_radio",
+        label_visibility="collapsed"
+    )
+    
+    st.markdown("</div><div style='height: 24px;'></div>", unsafe_allow_html=True)
+    
+    # Navigation buttons - clean styling
+    st.markdown("<div style='max-width: 900px; margin: 0 auto;'>", unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns([1, 2, 1])
+    
+    with col1:
+        st.markdown('<div data-role="secondary">', unsafe_allow_html=True)
+        if st.button("← Back", key="medicaid_clarif_back", use_container_width=True):
+            st.session_state.cost_v2_step = "triage"
+            st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown('<div data-role="primary">', unsafe_allow_html=True)
+        if medicaid_status:
+            if st.button(
+                "Continue →",
+                type="primary",
+                use_container_width=True,
+                key="medicaid_clarif_continue"
+            ):
+                _handle_medicaid_confirmation(medicaid_status)
+        else:
+            st.button(
+                "Continue →",
+                type="primary",
+                use_container_width=True,
+                disabled=True,
+                help="Please select an option above to continue",
+                key="medicaid_clarif_continue_disabled"
+            )
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    with col3:
+        st.markdown('<div data-role="secondary">', unsafe_allow_html=True)
+        if st.button("← Back to Lobby", key="medicaid_clarif_back_lobby", use_container_width=True):
+            route_to("hub_lobby")
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+def _handle_medicaid_confirmation(status: str):
+    """Handle user's confirmation of Medicaid enrollment.
+    
+    Routes to appropriate flow based on actual enrollment:
+    - Medicaid (only or with Medicare) → Simplified Medicaid assessment
+    - Medicare only → Normal financial assessment (unset Medicaid flag)
+    - Neither/Unsure → Return to triage for clarification
+    
+    Args:
+        status: One of "medicaid_only", "medicare_only", "both", "neither"
+    """
+    
+    if status in ["medicaid_only", "both"]:
+        # User confirmed they ARE on Medicaid - off-ramp to resources
+        st.session_state.flags["medicaid_planning_interest"] = True
+        st.session_state.flags["confirmed_medicaid_user"] = True
+        
+        # Update qualifiers
+        st.session_state.cost_v2_qualifiers["is_on_medicaid"] = True
+        if "profile" in st.session_state:
+            st.session_state.profile["qualifiers"]["is_on_medicaid"] = True
+        
+        # Route straight to Medicaid off-ramp (we can't help them)
+        st.session_state.cost_v2_step = "medicaid_resources"
+        st.rerun()
+        
+    elif status == "medicare_only":
+        # User only has Medicare (common confusion)
+        # UNSET Medicaid flag, route to normal financial assessment
+        st.session_state.flags["medicaid_planning_interest"] = False
+        st.session_state.flags["confirmed_medicaid_user"] = False
+        
+        # Update qualifiers
+        st.session_state.cost_v2_qualifiers["is_on_medicaid"] = False
+        if "profile" in st.session_state:
+            st.session_state.profile["qualifiers"]["is_on_medicaid"] = False
+        
+        # Note: They likely have Medicare, which is normal for seniors
+        st.session_state.flags["has_medicare"] = True
+        
+        # Route to normal financial assessment hub
+        st.session_state.cost_v2_step = "assessments"
+        st.rerun()
+        
+    else:  # neither or unsure
+        # User is unsure - send back to triage
+        st.warning("Please return to the previous question to clarify your enrollment status.")
+        st.session_state.cost_v2_step = "triage"
+        st.rerun()
+
+
+
+def render_medicaid_resources():
+    """Simple Medicaid off-ramp - we can't help, point to Medicaid.gov."""
+    
+    _apply_clean_styling()
+    
+    # Clean title
+    st.markdown("""
+    <div style='max-width: 900px; margin: 0 auto 40px auto;'>
+        <h1 style='font-size: 32px; font-weight: 700; color: #0f172a; margin: 0 0 8px 0;'>
+            Medicaid Resources
+        </h1>
+        <p style='font-size: 15px; color: #64748b; margin: 0;'>
+            For Medicaid-specific assistance, please use the official resources below
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Direct message - we can't help
+    st.markdown("""
+    <div style='max-width: 900px; margin: 0 auto 32px auto; padding: 24px; background: #f8fafc; border-left: 4px solid #3b82f6; border-radius: 8px;'>
+        <p style='font-size: 15px; font-weight: 600; color: #1e293b; margin: 0 0 12px 0;'>
+            About Medicaid & Our Services
+        </p>
+        <p style='font-size: 14px; color: #475569; margin: 0 0 12px 0;'>
+            Our Concierge Care Advisors specialize in private-pay senior care placement. Unfortunately, 
+            we are not able to assist with Medicaid placements or Medicaid-related planning.
+        </p>
+        <p style='font-size: 14px; color: #475569; margin: 0;'>
+            For assistance with Medicaid coverage and care options, please visit the official Medicaid resources below.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Single resource card - Medicaid.gov
+    st.markdown("""
+    <div style='max-width: 900px; margin: 0 auto 32px auto;'>
+        <div style='padding: 24px; background: white; border: 1px solid #e2e8f0; border-radius: 12px;'>
+            <div style='font-size: 18px; font-weight: 600; color: #0f172a; margin-bottom: 12px;'>
+                Medicaid.gov
+            </div>
+            <p style='font-size: 14px; color: #475569; margin: 0 0 12px 0;'>
+                The official Medicaid website provides:
+            </p>
+            <div style='font-size: 14px; color: #64748b; line-height: 1.7; margin-bottom: 16px;'>
+                • State-specific Medicaid office contact information<br>
+                • Eligibility requirements and asset limits<br>
+                • Covered services and benefits<br>
+                • Application instructions<br>
+                • Medicaid-accepting provider search
+            </div>
+            <a href='https://www.medicaid.gov' target='_blank' style='display: inline-block; padding: 10px 20px; background: #3b82f6; color: white; text-decoration: none; border-radius: 6px; font-size: 14px; font-weight: 500;'>
+                Visit Medicaid.gov →
+            </a>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Navigation - just back to lobby
+    st.markdown("<div style='max-width: 900px; margin: 0 auto;'>", unsafe_allow_html=True)
+    
+    if st.button("← Return to Lobby", use_container_width=True, type="primary"):
+        from core.nav import route_to
+        route_to("hub")
+    
+    st.markdown("</div>", unsafe_allow_html=True)
+
