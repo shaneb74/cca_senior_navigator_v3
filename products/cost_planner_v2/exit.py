@@ -77,8 +77,12 @@ def render():
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px 0;
+            padding: 8px 0;
             border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .highlight-row:first-child {
+            padding-top: 0;
         }
         
         .highlight-row:last-child {
@@ -149,14 +153,25 @@ def render():
 
     st.markdown('<div style="height: 20px;"></div>', unsafe_allow_html=True)
 
-    # Wrap all content in container
-    st.markdown('<div class="exit-container">', unsafe_allow_html=True)
-    
-    _render_plan_highlights_card()
-    st.markdown('<div style="height: 32px;"></div>', unsafe_allow_html=True)
-    _render_whats_next_section()
-    
-    st.markdown('</div>', unsafe_allow_html=True)
+    # Use container with max-width styling
+    container = st.container()
+    with container:
+        st.markdown(
+            """
+            <style>
+            [data-testid="stVerticalBlock"] > [style*="flex-direction: column;"] > [data-testid="stVerticalBlock"] {
+                max-width: 900px;
+                margin: 0 auto;
+                padding: 0 20px;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
+        
+        _render_plan_highlights_card()
+        st.markdown('<div style="height: 32px;"></div>', unsafe_allow_html=True)
+        _render_whats_next_section()
 
 
 def _render_navi_completion():
@@ -170,9 +185,6 @@ def _render_navi_completion():
 
 def _render_plan_highlights_card():
     """Render plan highlights in clean rows."""
-
-    st.markdown('<div class="exit-card">', unsafe_allow_html=True)
-    st.markdown("<h3>Plan Highlights</h3>", unsafe_allow_html=True)
 
     # Get care recommendation
     from core.mcip import MCIP
@@ -224,50 +236,38 @@ def _render_plan_highlights_card():
     
     combined = (base_care or 0.0) + home_carry
 
-    # Display highlights in clean rows
+    # Build complete card HTML as one block
+    card_html = '<div class="exit-card"><h3>Plan Highlights</h3>'
+    
+    # Care plan and confidence
     if recommendation:
         tier_label = recommendation.tier.replace("_", " ").title()
         confidence_pct = int(recommendation.confidence * 100)
-        
-        st.markdown(
-            f"""
-            <div class="highlight-row">
-                <div class="highlight-label">Recommended Care Plan</div>
-                <div class="highlight-value">{tier_label}</div>
-            </div>
-            <div class="highlight-row">
-                <div class="highlight-label">Confidence Level</div>
-                <div class="highlight-value">{confidence_pct}%</div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-    # Monthly costs
-    st.markdown(
-        f"""
-        <div class="highlight-row">
-            <div class="highlight-label">Monthly Care Cost</div>
-            <div class="highlight-value">${base_care:,.0f}/mo</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+        card_html += f'''<div class="highlight-row">
+<div class="highlight-label">Recommended Care Plan</div>
+<div class="highlight-value">{tier_label}</div>
+</div>
+<div class="highlight-row">
+<div class="highlight-label">Confidence Level</div>
+<div class="highlight-value">{confidence_pct}%</div>
+</div>'''
     
+    # Monthly care cost
+    card_html += f'''<div class="highlight-row">
+<div class="highlight-label">Monthly Care Cost</div>
+<div class="highlight-value">${base_care:,.0f}/mo</div>
+</div>'''
+    
+    # Home carry if present
     if home_carry and home_carry > 0:
-        st.markdown(
-            f"""
-            <div class="highlight-row">
-                <div class="highlight-label">Home Carrying Cost</div>
-                <div class="highlight-value">+${home_carry:,.0f}/mo</div>
-            </div>
-            <div class="highlight-row">
-                <div class="highlight-label">Combined Monthly Cost</div>
-                <div class="highlight-value">${combined:,.0f}/mo</div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+        card_html += f'''<div class="highlight-row">
+<div class="highlight-label">Home Carrying Cost</div>
+<div class="highlight-value">+${home_carry:,.0f}/mo</div>
+</div>
+<div class="highlight-row">
+<div class="highlight-label">Combined Monthly Cost</div>
+<div class="highlight-value">${combined:,.0f}/mo</div>
+</div>'''
     
     # Monthly gap/surplus
     if metrics["monthly_gap"] >= 0:
@@ -277,17 +277,14 @@ def _render_plan_highlights_card():
         gap_label = "Monthly Gap"
         gap_value = f"${abs(metrics['monthly_gap']):,.0f}"
     
-    st.markdown(
-        f"""
-        <div class="highlight-row">
-            <div class="highlight-label">{gap_label}</div>
-            <div class="highlight-value">{gap_value}</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    st.markdown("</div>", unsafe_allow_html=True)
+    card_html += f'''<div class="highlight-row">
+<div class="highlight-label">{gap_label}</div>
+<div class="highlight-value">{gap_value}</div>
+</div>'''
+    
+    # Close card and render complete HTML block
+    card_html += '</div>'
+    st.markdown(card_html, unsafe_allow_html=True)
 
 
 def _calculate_completion_metrics() -> dict:
@@ -389,9 +386,15 @@ def _render_whats_next_section():
     col1, col2, col3 = st.columns(3, gap="medium")
 
     with col1:
-        st.markdown('<div class="next-step-card">', unsafe_allow_html=True)
-        st.markdown("<h3>Meet with an Advisor</h3>", unsafe_allow_html=True)
-        st.markdown("<p>Review your plan with a certified senior care advisor</p>", unsafe_allow_html=True)
+        st.markdown(
+            """
+            <div class="next-step-card">
+                <h3>Meet with an Advisor</h3>
+                <p>Review your plan with a certified senior care advisor</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
         if st.button(
             "Schedule Meeting", use_container_width=True, type="primary", key="schedule_advisor_btn"
         ):
@@ -399,26 +402,35 @@ def _render_whats_next_section():
 
             st.session_state.cost_planner_v2_complete = True
             route_to("pfma_v3")
-        st.markdown("</div>", unsafe_allow_html=True)
 
     with col2:
-        st.markdown('<div class="next-step-card">', unsafe_allow_html=True)
-        st.markdown("<h3>Download Your Plan</h3>", unsafe_allow_html=True)
-        st.markdown("<p>Get a PDF copy of your comprehensive financial plan</p>", unsafe_allow_html=True)
+        st.markdown(
+            """
+            <div class="next-step-card">
+                <h3>Download Your Plan</h3>
+                <p>Get a PDF copy of your comprehensive financial plan</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
         if st.button("Download PDF", use_container_width=True, key="download_pdf_btn"):
             st.info("📄 PDF generation coming soon!")
-        st.markdown("</div>", unsafe_allow_html=True)
 
     with col3:
-        st.markdown('<div class="next-step-card">', unsafe_allow_html=True)
-        st.markdown("<h3>Return to Lobby</h3>", unsafe_allow_html=True)
-        st.markdown("<p>Explore other tools and resources in your dashboard</p>", unsafe_allow_html=True)
+        st.markdown(
+            """
+            <div class="next-step-card">
+                <h3>Return to Lobby</h3>
+                <p>Explore other tools and resources in your dashboard</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
         if st.button("Go to Lobby", use_container_width=True, key="goto_lobby_btn"):
             from core.url_helpers import back_to_lobby
 
             st.session_state.cost_planner_v2_complete = True
             back_to_lobby()
-        st.markdown("</div>", unsafe_allow_html=True)
 
 
 def _clear_all_data():
