@@ -601,7 +601,7 @@ def _build_completed_tiles() -> list[ProductTileHub]:
             title="Cost Planner",
             desc=cost_outcome,
             primary_label="View Details",
-            primary_route="?page=cost_planner_v2",
+            primary_route="?page=cost_v2&step=expert_review",
             variant="success",
             order=900,
             visible=True,

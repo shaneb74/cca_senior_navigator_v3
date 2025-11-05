@@ -10,7 +10,6 @@ New module structure (v3.0.0):
 - va_benefits: VA Disability and Aid & Attendance
 - health_insurance: Medicare, Medicaid, LTC insurance
 - life_insurance: Life insurance policies and cash value
-- medicaid_navigation: Medicaid planning and eligibility
 """
 
 __all__ = [
@@ -19,5 +18,4 @@ __all__ = [
     "va_benefits",
     "health_insurance",
     "life_insurance",
-    "medicaid_navigation",
 ]

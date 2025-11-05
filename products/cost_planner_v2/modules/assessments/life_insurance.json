@@ -74,7 +74,7 @@
           "max": 10000000,
           "step": 10000,
           "default": 0,
-          "help": "The amount paid to beneficiaries upon death. This helps us understand the full scope of your policy.",
+          "help": "The amount paid to beneficiaries upon death",
           "visible_if": {
             "field": "has_life_insurance",
             "equals": "yes"
@@ -89,7 +89,7 @@
           "max": 10000,
           "step": 50,
           "default": 0,
-          "help": "Your monthly premium cost. This helps us factor ongoing insurance expenses into your care budget.",
+          "help": "Your monthly premium cost",
           "visible_if": {
             "field": "has_life_insurance",
             "equals": "yes"
@@ -100,7 +100,7 @@
           "label": "Primary Beneficiary (Optional)",
           "type": "text",
           "required": false,
-          "help": "Who receives the death benefit? This context may be relevant for estate and care planning.",
+          "help": "Context may be relevant for estate and care planning",
           "visible_if": {
             "field": "has_life_insurance",
             "equals": "yes"

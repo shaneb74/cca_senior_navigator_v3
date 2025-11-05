@@ -15,48 +15,35 @@ INCOME_NUMERIC_FIELDS = [
     # Basic fields
     "ss_monthly",
     "pension_monthly",
-    "employment_income",  # Fixed: was employment_monthly
-    "other_income",  # Fixed: was other_monthly
     "partner_income_monthly",
 
-    # Advanced fields (from income.json)
+    # Additional income fields
     "annuity_monthly",
-    "retirement_distributions_monthly",  # Fixed: was retirement_withdrawals_monthly
+    "retirement_distributions_monthly",
     "dividends_interest_monthly",
     "rental_income_monthly",
     "alimony_support_monthly",
-    "ltc_insurance_monthly",
     "family_support_monthly",
+    "other_income_monthly",
 ]
 
 # Assets field metadata ------------------------------------------------------
 
-# Basic total fields (mutually exclusive with advanced breakdowns)
-ASSET_BASIC_FIELDS = [
-    "cash_liquid_total",
-    "brokerage_total",
-    "retirement_total",
-    "home_equity_estimate",
-]
-
-# Advanced breakdown fields (mutually exclusive with basic totals)
-ASSET_ADVANCED_FIELDS = [
-    # Liquid Assets (3 fields)
+# All asset fields (no mode toggle)
+ASSET_FIELDS = [
+    # Liquid Assets
     "checking_balance",
     "savings_cds_balance",
-    "cash_on_hand",
-    # Investments (3 fields)
+    # Investments
     "brokerage_stocks_bonds",
     "brokerage_mf_etf",
     "brokerage_other",
-    # Retirement (3 fields)
+    # Retirement
     "retirement_traditional",
     "retirement_roth",
     "retirement_pension_value",
-]
-
-# Additional asset fields (included in both modes)
-ASSET_OTHER_FIELDS = [
+    # Real Estate & Other
+    "home_equity_estimate",
     "real_estate_other",
     "life_insurance_cash_value",
 ]
@@ -69,13 +56,8 @@ ASSET_DEBT_FIELDS = [
     "unsecured_debt",
 ]
 
-# Legacy field names (for backwards compatibility)
-ASSET_NUMERIC_FIELDS = (
-    ASSET_BASIC_FIELDS
-    + ASSET_ADVANCED_FIELDS
-    + ASSET_OTHER_FIELDS
-    + ASSET_DEBT_FIELDS
-)
+# All numeric fields (for backwards compatibility)
+ASSET_NUMERIC_FIELDS = ASSET_FIELDS + ASSET_DEBT_FIELDS
 
 ASSET_BOOL_FIELDS = [
     "liquid_assets_has_loan",
@@ -125,9 +107,8 @@ def normalize_income_data(income_data: dict[str, Any]) -> dict[str, Any]:
 
     normalized["has_partner"] = normalized.get("has_partner") or "no_partner"
     normalized["shared_finance_notes"] = _to_str(normalized.get("shared_finance_notes", ""), "")
-    normalized["employment_status"] = normalized.get("employment_status") or "not_employed"
 
-    # Calculate total using corrected field names
+    # Calculate total
     normalized["total_monthly_income"] = calculate_total_monthly_income(normalized)
 
     return normalized
@@ -138,7 +119,6 @@ def calculate_total_monthly_income(income_data: dict[str, Any]) -> float:
     Calculate total monthly income from all sources.
     
     Uses field names from income.json config to match UI form fields.
-    Includes both basic and advanced income sources.
     """
     normalized = dict(income_data or {})
     for key in INCOME_NUMERIC_FIELDS:
@@ -149,18 +129,16 @@ def calculate_total_monthly_income(income_data: dict[str, Any]) -> float:
             # Basic income sources
             normalized.get("ss_monthly", 0.0),
             normalized.get("pension_monthly", 0.0),
-            normalized.get("employment_income", 0.0),  # Fixed: was employment_monthly
-            normalized.get("other_income", 0.0),  # Fixed: was other_monthly
             normalized.get("partner_income_monthly", 0.0),
 
-            # Advanced income sources (from income.json)
-            normalized.get("annuity_monthly", 0.0),  # Fixed: was missing
-            normalized.get("retirement_distributions_monthly", 0.0),  # Fixed: was retirement_withdrawals_monthly
-            normalized.get("dividends_interest_monthly", 0.0),  # Fixed: was missing
+            # Additional income sources
+            normalized.get("annuity_monthly", 0.0),
+            normalized.get("retirement_distributions_monthly", 0.0),
+            normalized.get("dividends_interest_monthly", 0.0),
             normalized.get("rental_income_monthly", 0.0),
-            normalized.get("alimony_support_monthly", 0.0),  # Fixed: was missing
-            normalized.get("ltc_insurance_monthly", 0.0),
+            normalized.get("alimony_support_monthly", 0.0),
             normalized.get("family_support_monthly", 0.0),
+            normalized.get("other_income_monthly", 0.0),
         ]
     )
 
@@ -172,20 +150,18 @@ def income_breakdown(income_data: dict[str, Any]) -> dict[str, float]:
     breakdown = {
         "social_security": data.get("ss_monthly", 0.0),
         "pension": data.get("pension_monthly", 0.0),
-        "employment": data.get("employment_income", 0.0),  # Fixed: was employment_monthly
         "annuity": data.get("annuity_monthly", 0.0),
-        "retirement_distributions": data.get("retirement_distributions_monthly", 0.0),  # Fixed
+        "retirement_distributions": data.get("retirement_distributions_monthly", 0.0),
         "dividends_interest": data.get("dividends_interest_monthly", 0.0),
         "rental_income": data.get("rental_income_monthly", 0.0),
         "alimony_support": data.get("alimony_support_monthly", 0.0),
-        "insurance_benefits": data.get("ltc_insurance_monthly", 0.0),
         "family_support": data.get("family_support_monthly", 0.0),
         "partner_income": data.get("partner_income_monthly", 0.0),
-        "other_income": data.get("other_income", 0.0),  # Fixed: was other_monthly
+        "other_income": data.get("other_income_monthly", 0.0),
     }
     breakdown["total"] = sum(breakdown.values())
     breakdown["additional_sources"] = breakdown["total"] - (
-        breakdown["social_security"] + breakdown["pension"] + breakdown["employment"]
+        breakdown["social_security"] + breakdown["pension"]
     )
 
     return breakdown
@@ -217,12 +193,11 @@ def normalize_asset_data(assets_data: dict[str, Any]) -> dict[str, Any]:
         normalized.get("primary_residence_liquidity_window") or "under_6_months"
     )
 
-    # NEW: Aggregate detailed fields into simplified fields for FinancialProfile
+    # Aggregate detailed fields into simplified fields for FinancialProfile
     # This allows FinancialProfile to access aggregated values directly
     normalized["checking_savings"] = (
         normalized.get("checking_balance", 0.0)
         + normalized.get("savings_cds_balance", 0.0)
-        + normalized.get("cash_on_hand", 0.0)
     )
 
     normalized["investment_accounts"] = (
@@ -260,8 +235,8 @@ def calculate_total_asset_value(assets_data: dict[str, Any]) -> float:
     """
     Calculate gross asset value before debts.
     
-    Uses all detailed breakdown fields from restored asset sections:
-    - Liquid Assets: checking_balance, savings_cds_balance, cash_on_hand
+    Uses all asset fields:
+    - Liquid Assets: checking_balance, savings_cds_balance
     - Investments: brokerage_stocks_bonds, brokerage_mf_etf, brokerage_other
     - Retirement: retirement_traditional, retirement_roth, retirement_pension_value
     - Real Estate: home_equity_estimate, real_estate_other
@@ -271,28 +246,27 @@ def calculate_total_asset_value(assets_data: dict[str, Any]) -> float:
     for key in ASSET_NUMERIC_FIELDS:
         data[key] = _to_float(data.get(key, 0.0))
 
-    # Liquid Assets (3 fields)
+    # Liquid Assets
     liquid_assets = (
         data.get("checking_balance", 0.0)
         + data.get("savings_cds_balance", 0.0)
-        + data.get("cash_on_hand", 0.0)
     )
 
-    # Investments (3 fields)
+    # Investments
     investments = (
         data.get("brokerage_stocks_bonds", 0.0)
         + data.get("brokerage_mf_etf", 0.0)
         + data.get("brokerage_other", 0.0)
     )
 
-    # Retirement Accounts (3 fields)
+    # Retirement Accounts
     retirement = (
         data.get("retirement_traditional", 0.0)
         + data.get("retirement_roth", 0.0)
         + data.get("retirement_pension_value", 0.0)
     )
 
-    # Real Estate (from Real Estate section - mode toggle enabled)
+    # Real Estate
     home_value = data.get("home_equity_estimate", 0.0)
     other_real_estate = data.get("real_estate_other", 0.0)
 
@@ -333,8 +307,8 @@ def asset_breakdown(assets_data: dict[str, Any]) -> dict[str, float]:
     """
     Return categorical breakdown of assets and debts for display in Financial Review.
     
-    Uses restored field structure:
-    - liquid_assets: checking + savings + cash_on_hand
+    Asset categories:
+    - liquid_assets: checking + savings
     - investment_accounts: stocks/bonds + mutual funds + other
     - retirement_accounts: traditional + roth + pension
     - real_estate: home equity + other property
@@ -346,7 +320,6 @@ def asset_breakdown(assets_data: dict[str, Any]) -> dict[str, float]:
     liquid_assets = (
         data.get("checking_balance", 0.0)
         + data.get("savings_cds_balance", 0.0)
-        + data.get("cash_on_hand", 0.0)
     )
 
     investment_accounts = (

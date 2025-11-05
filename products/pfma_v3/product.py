@@ -131,6 +131,20 @@ def _render_gate():
 def _render_booking_form():
     """Render single-step appointment booking form."""
 
+    # Apply clean CSS with proper width constraint
+    st.markdown(
+        """
+        <style>
+        .block-container {
+            max-width: 1000px !important;
+            padding-left: 2rem !important;
+            padding-right: 2rem !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
     st.markdown("## 📅 Schedule Your Consultation")
 
     st.markdown(
@@ -221,11 +235,10 @@ def _render_booking_form():
     with col5:
         appointment_type = st.selectbox(
             "Appointment Type *",
-            options=["video", "phone", "in_person"],
+            options=["video", "phone"],
             format_func=lambda x: {
                 "video": "📹 Video Call",
                 "phone": "📞 Phone Call",
-                "in_person": "🏢 In-Person",
             }.get(x, x),
             help="How would you like to meet with your advisor?",
         )
@@ -387,71 +400,62 @@ def _validate_booking(form_data: dict) -> tuple[bool, list[str]]:
 def _render_confirmation(appt: AdvisorAppointment):
     """Render confirmation screen for already-booked appointment."""
 
-    st.markdown("## ✅ Appointment Confirmed")
-
-    st.success(
-        f"**Your consultation is scheduled!**\n\nConfirmation ID: **{appt.confirmation_id}**"
+    # Apply clean CSS with width constraint
+    st.markdown(
+        """
+        <style>
+        .block-container {
+            max-width: 1000px !important;
+            padding-left: 2rem !important;
+            padding-right: 2rem !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
     )
 
-    # Appointment details
-    st.markdown("### Appointment Details")
+    st.markdown("## Appointment Confirmed")
 
-    col1, col2 = st.columns(2)
+    st.markdown(f"**Your consultation is scheduled!**\n\nConfirmation ID: **{appt.confirmation_id}**")
 
-    with col1:
-        st.markdown(f"**Type:** {appt.type.title()}")
-        st.markdown(f"**Timezone:** {_format_timezone(appt.timezone)}")
-        if appt.contact_email:
-            st.markdown(f"**Email:** {appt.contact_email}")
+    # Appointment details in container
+    with st.container():
+        st.markdown("### Appointment Details")
 
-    with col2:
-        st.markdown(f"**Status:** {appt.status.title()}")
-        st.markdown(f"**Preferred Time:** {appt.time}")
-        if appt.contact_phone:
-            st.markdown(f"**Phone:** {appt.contact_phone}")
+        col1, col2 = st.columns(2)
 
-    if appt.notes:
-        st.markdown("**Notes:**")
-        st.info(appt.notes)
+        with col1:
+            st.markdown(f"**Type:** {appt.type.title()}")
+            st.markdown(f"**Timezone:** {_format_timezone(appt.timezone)}")
+            if appt.contact_email:
+                st.markdown(f"**Email:** {appt.contact_email}")
+
+        with col2:
+            st.markdown(f"**Status:** {appt.status.title()}")
+            st.markdown(f"**Preferred Time:** {appt.time}")
+            if appt.contact_phone:
+                st.markdown(f"**Phone:** {appt.contact_phone}")
+
+        if appt.notes:
+            st.markdown("**Notes:**")
+            st.info(appt.notes)
 
     # Next steps
-    st.markdown("---")
     st.markdown("### Next Steps")
 
     st.markdown(
         "**While you wait for your appointment:**\n\n"
-        "Visit the **Waiting Room** to prepare for your consultation. "
+        "Visit the **Lobby** to prepare for your consultation. "
         "Complete optional prep sections to help your advisor provide personalized guidance."
     )
 
-    # Prep progress
-    if appt.prep_progress > 0:
-        st.progress(appt.prep_progress / 100, text=f"Advisor Prep: {appt.prep_progress}% complete")
-
-    # Action buttons
-    col_btn1, col_btn2, col_btn3 = st.columns(3)
-
-    with col_btn1:
-        if st.button("← Return to Lobby", type="secondary", use_container_width=True):
-            route_to("hub_lobby")
-            # Mark Planning journey complete after appointment booking
-            from core.journeys import mark_journey_complete
-            mark_journey_complete("planning")
-
-    with col_btn2:
-        if st.button("🎯 Prepare for Appointment", type="primary", use_container_width=True):
-            log_event("waiting_room.unlocked", {"from_product": "pfma_v3"})
-            # Phase Post-CSS: Mark PFMA product as complete
-            from core.events import mark_product_complete
-            user_ctx = st.session_state.get("user_ctx", {})
-            user_ctx = mark_product_complete(user_ctx, "pfma_v3")
-            st.session_state["user_ctx"] = user_ctx
-            route_to("advisor_prep")
-
-    with col_btn3:
-        if st.button("Return to Lobby →", type="secondary", use_container_width=True):
+    # Action button - End of planning journey
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col2:
+        if st.button("Return to Lobby", type="primary", use_container_width=True):
             log_event("lobby.return", {"from_product": "pfma_v3"})
-            route_to("hub_lobby")
-            # Mark Planning journey complete after appointment booking
+            # Mark Planning journey complete
             from core.journeys import mark_journey_complete
             mark_journey_complete("planning")
+            route_to("hub_lobby")
+

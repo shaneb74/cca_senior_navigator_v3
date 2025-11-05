@@ -108,20 +108,10 @@ def render():
             "visible": True,
             "sort_order": 5,
         },
-        {
-            "key": "medicaid_navigation",
-            "title": "Medicaid Navigation",
-            "description": "Medicaid planning and eligibility assessment",
-            "icon": "🧭",
-            "estimated_time": "5-7 min",
-            "required": False,
-            "visible": medicaid_planning_interest,  # Only show if interested in Medicaid planning
-            "sort_order": 6,
-        },
     ]
 
-    # Filter to only visible modules
-    visible_modules = [m for m in modules_config if m.get("visible", True)]
+    # Filter to only visible modules (explicit check - False means hidden)
+    visible_modules = [m for m in modules_config if m.get("visible", True) is not False]
 
     # Navi panel is rendered by product.py - don't duplicate it here
 
@@ -1007,35 +997,6 @@ def _render_summary():
             st.markdown("---")
 
     # =========================================================================
-    # MEDICAID PLANNING SECTION
-    # =========================================================================
-    if modules_state.get("medicaid_navigation", {}).get("data"):
-        data = modules_state["medicaid_navigation"]["data"]
-        interest = data.get("medicaid_interest", "not_interested")
-
-        if interest != "not_interested":
-            st.markdown("#### 🧭 Medicaid Planning")
-
-            col1, col2 = st.columns(2)
-
-            with col1:
-                interest_labels = {
-                    "learning": "Learning about Medicaid",
-                    "may_need_soon": "May need within 1-2 years",
-                    "need_now": "Need to apply soon",
-                    "already_enrolled": "Already enrolled",
-                }
-                st.markdown(f"**Status:** {interest_labels.get(interest, interest)}")
-
-            with col2:
-                if data.get("preliminary_eligible"):
-                    st.markdown("✅ **Preliminarily Eligible**")
-                else:
-                    st.markdown("⚠️ **Planning May Be Needed**")
-
-            st.markdown("---")
-
-    # =========================================================================
     # FINANCIAL TIMELINE
     # =========================================================================
     financial_data = st.session_state.get("financial_assessment_complete")
@@ -1184,11 +1145,9 @@ def _publish_to_mcip():
         "family_support": income_sources_breakdown.get("family_support", 0.0),
         "partner_income": income_sources_breakdown.get("partner_income", 0.0),
         "periodic_income": income_sources_breakdown.get("periodic_income", 0.0),
-        "other_income": income_sources_breakdown.get("other_income", 0.0),
     }
     # Legacy fields for backward compatibility
     monthly_income_sources["investment"] = normalized_income.get("investment_monthly", 0.0)
-    monthly_income_sources["other"] = normalized_income.get("other_monthly", 0.0)
     total_monthly_income = calculate_total_monthly_income(normalized_income)
 
     # =========================================================================
