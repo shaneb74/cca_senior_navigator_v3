@@ -43,34 +43,41 @@ def render():
     st.markdown(
         """
         <style>
+        /* Container for all exit content */
+        .exit-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
         /* Clean modern card styling */
         .exit-card {
             background: white;
             border: 1px solid #e5e7eb;
             border-radius: 12px;
-            padding: 32px;
-            margin-bottom: 24px;
+            padding: 24px;
+            margin-bottom: 20px;
         }
         
         .exit-card h3 {
             font-size: 20px;
             font-weight: 600;
             color: #111827;
-            margin: 0 0 20px 0;
+            margin: 0 0 16px 0;
         }
         
         .accomplishment-item {
             font-size: 15px;
             color: #374151;
-            line-height: 1.8;
-            margin-bottom: 8px;
+            line-height: 1.6;
+            margin-bottom: 6px;
         }
         
         .highlight-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 16px 0;
+            padding: 12px 0;
             border-bottom: 1px solid #f3f4f6;
         }
         
@@ -94,9 +101,9 @@ def render():
             background: #f9fafb;
             border: 1px solid #e5e7eb;
             border-radius: 12px;
-            padding: 28px;
+            padding: 24px;
             height: 100%;
-            min-height: 220px;
+            min-height: 200px;
             display: flex;
             flex-direction: column;
         }
@@ -105,15 +112,27 @@ def render():
             font-size: 18px;
             font-weight: 600;
             color: #111827;
-            margin: 0 0 12px 0;
+            margin: 0 0 8px 0;
         }
         
         .next-step-card p {
             font-size: 14px;
             color: #6b7280;
-            line-height: 1.6;
-            margin: 0 0 20px 0;
+            line-height: 1.5;
+            margin: 0 0 16px 0;
             flex-grow: 1;
+        }
+        
+        .whats-next-title {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        
+        .whats-next-title h2 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #111827;
+            margin: 0;
         }
         </style>
         """,
@@ -128,12 +147,16 @@ def render():
         tip_text=None,
     )
 
-    st.markdown('<div style="height: 32px;"></div>', unsafe_allow_html=True)
+    st.markdown('<div style="height: 20px;"></div>', unsafe_allow_html=True)
 
-    _render_accomplishments_card()
+    # Wrap all content in container
+    st.markdown('<div class="exit-container">', unsafe_allow_html=True)
+    
     _render_plan_highlights_card()
-    st.markdown('<div style="height: 40px;"></div>', unsafe_allow_html=True)
+    st.markdown('<div style="height: 32px;"></div>', unsafe_allow_html=True)
     _render_whats_next_section()
+    
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
 def _render_navi_completion():
@@ -145,32 +168,11 @@ def _render_navi_completion():
     pass  # No longer used
 
 
-def _render_accomplishments_card():
-    """Render accomplishments checklist card with clean styling."""
-
-    st.markdown('<div class="exit-card">', unsafe_allow_html=True)
-    st.markdown("<h3>✓ Summary of What You've Accomplished</h3>", unsafe_allow_html=True)
-
-    accomplishments = [
-        "Authenticated and secured your account",
-        "Completed your Guided Care Plan",
-        "Assessed income and available assets",
-        "Calculated care costs and coverage",
-        "Reviewed your financial runway",
-        "Had expert review of your financial plan",
-    ]
-
-    for item in accomplishments:
-        st.markdown(f'<div class="accomplishment-item">• {item}</div>', unsafe_allow_html=True)
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
-
 def _render_plan_highlights_card():
-    """Render plan highlights with clean two-column layout."""
+    """Render plan highlights in clean rows."""
 
     st.markdown('<div class="exit-card">', unsafe_allow_html=True)
-    st.markdown("<h3>💡 Plan Highlights</h3>", unsafe_allow_html=True)
+    st.markdown("<h3>Plan Highlights</h3>", unsafe_allow_html=True)
 
     # Get care recommendation
     from core.mcip import MCIP
@@ -376,11 +378,9 @@ def _render_whats_next_section():
 
     st.markdown(
         """
-        <div style="text-align: center; margin-bottom: 32px;">
-            <h2 style="font-size: 28px; font-weight: 700; color: #111827; margin: 0;">
-                🚀 What's Next
-            </h2>
-        </div>
+        <h2 style="font-size: 24px; font-weight: 600; color: #111827; margin: 0 0 24px 0;">
+            What's Next
+        </h2>
         """,
         unsafe_allow_html=True,
     )
@@ -390,7 +390,7 @@ def _render_whats_next_section():
 
     with col1:
         st.markdown('<div class="next-step-card">', unsafe_allow_html=True)
-        st.markdown("<h3>📅 Meet with an Advisor</h3>", unsafe_allow_html=True)
+        st.markdown("<h3>Meet with an Advisor</h3>", unsafe_allow_html=True)
         st.markdown("<p>Review your plan with a certified senior care advisor</p>", unsafe_allow_html=True)
         if st.button(
             "Schedule Meeting", use_container_width=True, type="primary", key="schedule_advisor_btn"
@@ -403,7 +403,7 @@ def _render_whats_next_section():
 
     with col2:
         st.markdown('<div class="next-step-card">', unsafe_allow_html=True)
-        st.markdown("<h3>📄 Download Your Plan</h3>", unsafe_allow_html=True)
+        st.markdown("<h3>Download Your Plan</h3>", unsafe_allow_html=True)
         st.markdown("<p>Get a PDF copy of your comprehensive financial plan</p>", unsafe_allow_html=True)
         if st.button("Download PDF", use_container_width=True, key="download_pdf_btn"):
             st.info("📄 PDF generation coming soon!")
@@ -411,7 +411,7 @@ def _render_whats_next_section():
 
     with col3:
         st.markdown('<div class="next-step-card">', unsafe_allow_html=True)
-        st.markdown("<h3>🏠 Return to Lobby</h3>", unsafe_allow_html=True)
+        st.markdown("<h3>Return to Lobby</h3>", unsafe_allow_html=True)
         st.markdown("<p>Explore other tools and resources in your dashboard</p>", unsafe_allow_html=True)
         if st.button("Go to Lobby", use_container_width=True, key="goto_lobby_btn"):
             from core.url_helpers import back_to_lobby
