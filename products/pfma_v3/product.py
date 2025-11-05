@@ -131,6 +131,31 @@ def _render_gate():
 def _render_booking_form():
     """Render single-step appointment booking form."""
 
+    # Navi panel at top
+    from core.navi_module import render_module_navi_coach
+    render_module_navi_coach(
+        title_text="I'm here to help",
+        body_text="Let's work through this together.",
+        tip_text="💪 Take your time—we'll get through this.",
+    )
+
+    # Apply clean CSS with max-width constraint
+    st.markdown(
+        """
+        <style>
+        .pfma-form-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    # Wrap form in container
+    st.markdown('<div class="pfma-form-container">', unsafe_allow_html=True)
+
     st.markdown("## 📅 Schedule Your Consultation")
 
     st.markdown(
@@ -221,11 +246,10 @@ def _render_booking_form():
     with col5:
         appointment_type = st.selectbox(
             "Appointment Type *",
-            options=["video", "phone", "in_person"],
+            options=["video", "phone"],
             format_func=lambda x: {
                 "video": "📹 Video Call",
                 "phone": "📞 Phone Call",
-                "in_person": "🏢 In-Person",
             }.get(x, x),
             help="How would you like to meet with your advisor?",
         )
@@ -266,6 +290,9 @@ def _render_booking_form():
     with col_submit2:
         if st.button("📅 Book Appointment", type="primary", use_container_width=True):
             _handle_booking_submit(form_data)
+
+    # Close form container
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
 def _format_timezone(tz: str) -> str:

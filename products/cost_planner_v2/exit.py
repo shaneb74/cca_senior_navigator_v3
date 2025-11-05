@@ -58,6 +58,8 @@ def render():
             padding: 24px;
             margin-bottom: 20px;
             max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
         }
         
         .exit-card h3 {
