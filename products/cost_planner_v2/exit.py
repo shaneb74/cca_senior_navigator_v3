@@ -39,21 +39,14 @@ def render():
     MCIP.mark_product_complete("cost_planner_v2")  # Will normalize to "cost_planner"
     print("[COST_EXIT] Marked Cost Planner complete via MCIP")
 
-    # Apply clean modern CSS
+    # Apply clean modern CSS with proper width constraint
     st.markdown(
         """
         <style>
-        /* Force block container width constraint */
-        .block-container {
-            max-width: 1000px !important;
-            padding-left: 2rem !important;
-            padding-right: 2rem !important;
-        }
-        
-        /* Container for all exit content */
-        .exit-container {
-            max-width: 900px;
-            margin: 0 auto;
+        /* Exit page container */
+        .exit-page-container {
+            max-width: 1000px;
+            margin: 24px auto 0 auto;
             padding: 0 20px;
         }
         
