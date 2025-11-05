@@ -154,7 +154,7 @@ def render():
 
     # Page header
     st.markdown(
-        '<div class="mod-head"><div class="mod-head-row"><h2 class="h2">💰 Financial Review</h2></div></div>',
+        '<div class="mod-head"><div class="mod-head-row"><h2 class="h2">Financial Review</h2></div></div>',
         unsafe_allow_html=True,
     )
 
@@ -184,7 +184,7 @@ def _render_incomplete_state():
     # Minimal content
     st.markdown('<div class="sn-app module-container">', unsafe_allow_html=True)
     st.markdown(
-        '<div class="mod-head"><div class="mod-head-row"><h2 class="h2">💰 Financial Review</h2></div></div>',
+        '<div class="mod-head"><div class="mod-head-row"><h2 class="h2">Financial Review</h2></div></div>',
         unsafe_allow_html=True,
     )
 
@@ -294,9 +294,9 @@ def _render_navi_guidance(analysis, profile):
     # Fully funded (30+ years OR income alone ≥90%)
     if coverage_years >= 30 or income_coverage_pct >= 90:
         title = "Excellent Financial Position"
-        reason = f"🔹 **Coverage Duration:** {coverage_duration}  \n\nYour income and resources cover your estimated care costs for the long term."
+        reason = f"**Coverage Duration:** {coverage_duration}  \n\nYour income and resources cover your estimated care costs for the long term."
         encouragement = {
-            "icon": "✅",
+            "icon": "",
             "text": "Excellent. Your income and resources cover your care for 30 years or more.",
             "status": "complete",
         }
@@ -304,17 +304,17 @@ def _render_navi_guidance(analysis, profile):
     # Very strong coverage (15-29 years)
     elif 15 <= coverage_years < 30:
         title = "Strong Financial Security"
-        reason = f"🔹 **Coverage Duration:** {coverage_duration}  \n\nYou have substantial coverage that funds care well into the future."
+        reason = f"**Coverage Duration:** {coverage_duration}  \n\nYou have substantial coverage that funds care well into the future."
 
         if selected_count > 0:
             encouragement = {
-                "icon": "✅",
+                "icon": "",
                 "text": "You're in good shape. Your resources fund care for nearly two decades.",
                 "status": "complete",
             }
         else:
             encouragement = {
-                "icon": "👍",
+                "icon": "",
                 "text": "Strong foundation. Your income provides excellent long-term coverage.",
                 "status": "active",
             }
@@ -322,11 +322,11 @@ def _render_navi_guidance(analysis, profile):
     # Moderate coverage (5-14 years)
     elif 5 <= coverage_years < 15:
         title = "Solid Financial Foundation"
-        reason = f"🔹 **Coverage Duration:** {coverage_duration}  \n\nYour resources provide meaningful coverage. Let's review options to extend your plan."
+        reason = f"**Coverage Duration:** {coverage_duration}  \n\nYour resources provide meaningful coverage. Let's review options to extend your plan."
 
         if selected_count > 0 and coverage_years >= 10:
             encouragement = {
-                "icon": "👍",
+                "icon": "",
                 "text": "You're building a sustainable plan. Your combined resources provide strong coverage.",
                 "status": "active",
             }
@@ -338,7 +338,7 @@ def _render_navi_guidance(analysis, profile):
             }
         else:
             encouragement = {
-                "icon": "📊",
+                "icon": "",
                 "text": "Your income provides a strong foundation. Adding available resources can extend your plan.",
                 "status": "active",
             }
@@ -346,7 +346,7 @@ def _render_navi_guidance(analysis, profile):
     # Limited coverage (under 5 years)
     else:
         title = "Planning Opportunity"
-        reason = f"🔹 **Coverage Duration:** {coverage_duration}  \n\nLet's work together to build a sustainable care funding strategy."
+        reason = f"**Coverage Duration:** {coverage_duration}  \n\nLet's work together to build a sustainable care funding strategy."
 
         if selected_count > 0 and coverage_years >= 2:
             encouragement = {
@@ -564,14 +564,14 @@ def _render_financial_summary_banner(analysis, profile):
 <span style="font-size: 14px; font-weight: 700; color: var(--text-primary);">Net Available Assets</span>
 <span style="font-size: 18px; font-weight: 700; color: var(--primary-fg);">${net_assets:,.0f}</span>
 </div>
-<div style="font-size: 12px; color: var(--text-secondary); margin-top: 8px; font-style: italic;">💡 Calculations use net values after debt obligations</div>
+<div style="font-size: 12px; color: var(--text-secondary); margin-top: 8px; font-style: italic;">Calculations use net values after debt obligations</div>
 </div>
 """
 
     # Build unified banner HTML (NO leading whitespace)
     banner_html = f"""<div style="background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); border-radius: 16px; padding: 32px; border: 2px solid var(--border-primary); box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 8px;">
 <div style="display: flex; align-items: center; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 2px solid var(--border-secondary);">
-<div style="font-size: 18px; font-weight: 700; color: var(--text-primary); text-transform: uppercase; letter-spacing: 1px;">💰 Financial Summary</div>
+<div style="font-size: 18px; font-weight: 700; color: var(--text-primary); text-transform: uppercase; letter-spacing: 1px;">Financial Summary</div>
 </div>
 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 28px;">
 <div style="background: rgba(255,255,255,0.7); padding: 20px; border-radius: 12px; border: 1px solid var(--border-secondary);">
@@ -978,23 +978,23 @@ def _render_available_resources_cards(analysis, profile):
 
         category = analysis.asset_categories[cat_name]
         
-        # Icon mapping
+        # Icon mapping - clean text labels instead of emojis
         icon_map = {
-            "Liquid Assets": "💵",
-            "Retirement Accounts": "🏦", 
-            "Home Equity": "🏠",
-            "Investment Accounts": "📈",
-            "Life Insurance": "🛡️"
+            "Liquid Assets": "Liquid Assets",
+            "Retirement Accounts": "Retirement Accounts", 
+            "Home Equity": "Home Equity",
+            "Investment Accounts": "Investment Accounts",
+            "Life Insurance": "Life Insurance"
         }
         
-        icon = icon_map.get(category.display_name, "💰")
+        icon = icon_map.get(category.display_name, category.display_name)
 
         # Simple asset display - no containers or custom styling
         # Header with checkbox
         col1, col2 = st.columns([4, 1])
         
         with col1:
-            st.markdown(f"**{icon} {category.display_name}**")
+            st.markdown(f"**{icon}**")
         
         with col2:
             # Checkbox for selection
@@ -1019,10 +1019,10 @@ def _render_available_resources_cards(analysis, profile):
             
             # Availability status
             timeframe_map = {
-                "immediate": "✅ Ready to Use",
-                "1-3_months": "⏱️ Available in 1-3 Months", 
-                "3-6_months": "📅 Available in 3-6 Months",
-                "6-12_months": "📆 Available in 6-12 Months",
+                "immediate": "Ready to Use",
+                "1-3_months": "Available in 1-3 Months", 
+                "3-6_months": "Available in 3-6 Months",
+                "6-12_months": "Available in 6-12 Months",
             }
             timeframe_text = timeframe_map.get(category.liquidation_timeframe, category.liquidation_timeframe)
             st.markdown(f"**Availability:** {timeframe_text}")
@@ -1037,14 +1037,14 @@ def _render_available_resources_cards(analysis, profile):
                 
             # Tax implications
             if category.tax_implications == "ordinary_income":
-                st.caption("💡 Withdrawals may incur income tax")
+                st.caption("Withdrawals may incur income tax")
             elif category.tax_implications == "capital_gains":
-                st.caption("💡 Sale proceeds subject to capital gains tax")
+                st.caption("Sale proceeds subject to capital gains tax")
 
         # Recommendation note
         if cat_name in analysis.funding_notes:
             note = analysis.funding_notes[cat_name]
-            st.markdown(f"<div style='background: #f8f9fa; border-left: 3px solid #0066cc; padding: 8px 12px; border-radius: 4px; margin: 8px 0; font-size: 13px; color: #333;'>💡 {note}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div style='background: #f8f9fa; border-left: 3px solid #0066cc; padding: 8px 12px; border-radius: 4px; margin: 8px 0; font-size: 13px; color: #333;'>{note}</div>", unsafe_allow_html=True)
 
         # Additional notes
         if category.notes:
@@ -1095,7 +1095,7 @@ def _render_coverage_impact_visualization(analysis, profile):
     
     # Only show if assets are selected
     if total_selected > 0:
-        st.markdown("### 📊 Selected Assets Impact")
+        st.markdown("### Selected Assets Impact")
         
         # Show impact in clean card
         st.markdown(
