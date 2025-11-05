@@ -359,7 +359,6 @@ def _handle_restart_if_needed() -> None:
         "cost_planner_v2_va_benefits",
         "cost_planner_v2_health_insurance",
         "cost_planner_v2_life_insurance",
-        "cost_planner_v2_medicaid_navigation",
     ]
     for key in module_keys:
         if key in st.session_state:

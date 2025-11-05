@@ -332,7 +332,6 @@ def _clear_all_data():
         "cost_v2_va_benefits",
         "cost_v2_health_insurance",
         "cost_v2_life_insurance",
-        "cost_v2_medicaid_navigation",
         "cost_v2_advisor_notes",
         "cost_v2_schedule_advisor",
         "cost_v2_show_restart_confirm",
