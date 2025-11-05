@@ -930,18 +930,11 @@ header[data-testid="stHeader"] {
     display: none !important;
 }
 
-/* Hide app view source */
-.stApp > div:first-child {
-    display: none !important;
-}
+/* REMOVED: Hide app view source - this was breaking the app */
+/* .stApp > div:first-child { display: none !important; } */
 
 /* Hide status indicators */
 .stStatusWidget {
-    display: none !important;
-}
-
-/* Clean up any remaining Streamlit UI elements */
-.css-1inwz65 {
     display: none !important;
 }
 
