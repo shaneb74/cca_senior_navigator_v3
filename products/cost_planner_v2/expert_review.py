@@ -1013,7 +1013,7 @@ def _render_available_resources_cards(analysis, profile):
         # Recommendation note
         if cat_name in analysis.funding_notes:
             note = analysis.funding_notes[cat_name]
-            st.info(f"💡 {note}")
+            st.markdown(f"<div style='background: #f8f9fa; border-left: 3px solid #0066cc; padding: 8px 12px; border-radius: 4px; margin: 8px 0; font-size: 13px; color: #333;'>💡 {note}</div>", unsafe_allow_html=True)
 
         # Additional notes
         if category.notes:
