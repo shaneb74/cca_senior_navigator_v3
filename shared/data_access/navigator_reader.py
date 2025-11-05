@@ -409,8 +409,12 @@ class NavigatorDataReader:
             # Extract user ID from filename
             user_id = file_path.stem
             
-            # Extract basic profile info
+            # Extract basic profile info (handle both regular and demo user formats)
             person_name = data.get("person_name")
+            if person_name is None and "profile" in data:
+                # Demo user format: name is in profile section
+                person_name = data["profile"].get("person_name")
+            
             relationship_type = data.get("relationship_type") 
             planning_for_relationship = data.get("planning_for_relationship")
             
@@ -421,6 +425,15 @@ class NavigatorDataReader:
             
             # Extract assessment data
             care_recommendation = data.get("gcp_care_recommendation")
+            
+            # Also check MCIP contracts for care recommendation
+            if not care_recommendation and "mcip_contracts" in data:
+                contracts = data["mcip_contracts"]
+                if "care_recommendation" in contracts:
+                    contract = contracts["care_recommendation"]
+                    if isinstance(contract, dict):
+                        care_recommendation = contract.get("tier")
+            
             mobility_score = data.get("gcp_mobility_score")
             cognitive_score = data.get("gcp_cognitive_score")
             
@@ -456,11 +469,41 @@ class NavigatorDataReader:
     
     def _check_completion(self, data: Dict[str, Any], product_keys: List[str]) -> bool:
         """Check if a product is completed based on various possible keys."""
+        # Check traditional completion markers
         for key in product_keys:
             if data.get(f"{key}_completed"):
                 return True
             if data.get(f"{key}_completion_date"):
                 return True
+        
+        # Check MCIP contracts for completion
+        if "mcip_contracts" in data:
+            contracts = data["mcip_contracts"]
+            for key in product_keys:
+                if key == "gcp" or key == "gcp_v4":
+                    # Check for care_recommendation contract (indicates GCP completion)
+                    if "care_recommendation" in contracts:
+                        contract = contracts["care_recommendation"]
+                        if isinstance(contract, dict) and contract.get("status") == "complete":
+                            return True
+                elif key in contracts:
+                    contract = contracts[key]
+                    if isinstance(contract, dict) and contract.get("status") == "complete":
+                        return True
+        
+        # Check tile completion status
+        if "tiles" in data:
+            tiles = data["tiles"]
+            for key in product_keys:
+                if key in tiles:
+                    tile = tiles[key]
+                    if isinstance(tile, dict):
+                        # Check various completion indicators
+                        if tile.get("status") == "done" or tile.get("completed") is True:
+                            return True
+                        if tile.get("progress") == 100.0:
+                            return True
+        
         return False
     
     def get_customer_statistics(self) -> Dict[str, Any]:
