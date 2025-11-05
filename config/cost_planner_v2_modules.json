@@ -160,8 +160,7 @@
           "id": "liquid_assets",
           "title": "Liquid Assets",
           "icon": "💵",
-          "help_text": "Easily accessible cash and savings",
-          "layout": "two_column",
+          "help_text": "Easily accessible cash and savings in bank accounts, CDs, and money market funds",
           "fields": [
             {
               "key": "checking_savings",
@@ -172,8 +171,7 @@
               "max": 10000000,
               "step": 1000,
               "default": 0,
-              "help": "Total in bank accounts",
-              "column": 1
+              "help": "Total in bank accounts"
             },
             {
               "key": "cds_money_market",
@@ -184,24 +182,26 @@
               "max": 10000000,
               "step": 1000,
               "default": 0,
-              "help": "Certificates of deposit and money market funds",
-              "column": 2
+              "help": "Certificates of deposit and money market funds"
             }
-          ],
-          "summary": {
-            "type": "calculated",
-            "label": "Total Liquid Assets",
-            "formula": "sum(checking_savings, cds_money_market)",
-            "display_format": "${:,.0f}"
-          }
+          ]
         },
         {
           "id": "retirement_accounts",
           "title": "Retirement Accounts",
           "icon": "📊",
-          "help_text": "401(k), IRA, and other retirement savings",
-          "layout": "two_column",
+          "help_text": "401(k), IRA, and other retirement savings accounts",
           "fields": [
+            {
+              "key": "has_retirement_accounts",
+              "label": "Do you have retirement accounts?",
+              "type": "radio",
+              "options": [
+                {"value": "yes", "label": "Yes"},
+                {"value": "no", "label": "No"}
+              ],
+              "default": "no"
+            },
             {
               "key": "ira_traditional",
               "label": "Traditional IRA",
@@ -212,7 +212,10 @@
               "step": 5000,
               "default": 0,
               "help": "Traditional IRA balance",
-              "column": 1
+              "visible_if": {
+                "field": "has_retirement_accounts",
+                "equals": "yes"
+              }
             },
             {
               "key": "ira_roth",
@@ -224,7 +227,10 @@
               "step": 5000,
               "default": 0,
               "help": "Roth IRA balance",
-              "column": 1
+              "visible_if": {
+                "field": "has_retirement_accounts",
+                "equals": "yes"
+              }
             },
             {
               "key": "k401_403b",
@@ -236,7 +242,10 @@
               "step": 5000,
               "default": 0,
               "help": "Employer retirement plan balance",
-              "column": 2
+              "visible_if": {
+                "field": "has_retirement_accounts",
+                "equals": "yes"
+              }
             },
             {
               "key": "other_retirement",
@@ -248,23 +257,29 @@
               "step": 5000,
               "default": 0,
               "help": "Other retirement savings (SEP IRA, pension plans)",
-              "column": 2
+              "visible_if": {
+                "field": "has_retirement_accounts",
+                "equals": "yes"
+              }
             }
-          ],
-          "summary": {
-            "type": "calculated",
-            "label": "Total Retirement Accounts",
-            "formula": "sum(ira_traditional, ira_roth, k401_403b, other_retirement)",
-            "display_format": "${:,.0f}"
-          }
+          ]
         },
         {
           "id": "investments",
           "title": "Investments",
           "icon": "📈",
-          "help_text": "Stocks, bonds, mutual funds, and other investments",
-          "layout": "two_column",
+          "help_text": "Stocks, bonds, mutual funds, and other investment accounts",
           "fields": [
+            {
+              "key": "has_investments",
+              "label": "Do you have investments outside of retirement accounts?",
+              "type": "radio",
+              "options": [
+                {"value": "yes", "label": "Yes"},
+                {"value": "no", "label": "No"}
+              ],
+              "default": "no"
+            },
             {
               "key": "stocks_bonds",
               "label": "Stocks & Bonds",
@@ -275,7 +290,10 @@
               "step": 10000,
               "default": 0,
               "help": "Individual stocks and bonds",
-              "column": 1
+              "visible_if": {
+                "field": "has_investments",
+                "equals": "yes"
+              }
             },
             {
               "key": "mutual_funds",
@@ -287,22 +305,29 @@
               "step": 10000,
               "default": 0,
               "help": "Mutual funds and exchange-traded funds",
-              "column": 2
+              "visible_if": {
+                "field": "has_investments",
+                "equals": "yes"
+              }
             }
-          ],
-          "summary": {
-            "type": "calculated",
-            "label": "Total Investments",
-            "formula": "sum(stocks_bonds, mutual_funds)",
-            "display_format": "${:,.0f}"
-          }
+          ]
         },
         {
           "id": "real_estate",
-          "title": "Real Estate",
+          "title": "Real Estate & Property",
           "icon": "🏠",
-          "help_text": "Property excluding primary residence",
+          "help_text": "Home equity and investment property values",
           "fields": [
+            {
+              "key": "has_real_estate",
+              "label": "Do you own real estate?",
+              "type": "radio",
+              "options": [
+                {"value": "yes", "label": "Yes"},
+                {"value": "no", "label": "No"}
+              ],
+              "default": "no"
+            },
             {
               "key": "primary_residence_value",
               "label": "Primary Residence Value",
@@ -313,7 +338,11 @@
               "step": 25000,
               "default": 0,
               "help": "Estimated market value of your home",
-              "info": "ℹ️ May be protected under Medicaid rules"
+              "info": "ℹ️ May be protected under Medicaid rules",
+              "visible_if": {
+                "field": "has_real_estate",
+                "equals": "yes"
+              }
             },
             {
               "key": "primary_residence_mortgage",
@@ -324,7 +353,11 @@
               "max": 10000000,
               "step": 10000,
               "default": 0,
-              "help": "Outstanding mortgage on primary residence"
+              "help": "Outstanding mortgage on primary residence",
+              "visible_if": {
+                "field": "has_real_estate",
+                "equals": "yes"
+              }
             },
             {
               "key": "investment_property",
@@ -335,14 +368,11 @@
               "max": 50000000,
               "step": 25000,
               "default": 0,
-              "help": "Rental properties, vacation homes, land"
-            }
-          ],
-          "calculations": [
-            {
-              "key": "primary_equity",
-              "formula": "primary_residence_value - primary_residence_mortgage",
-              "label": "Home Equity"
+              "help": "Rental properties, vacation homes, land",
+              "visible_if": {
+                "field": "has_real_estate",
+                "equals": "yes"
+              }
             }
           ]
         },
@@ -350,7 +380,19 @@
           "id": "other_assets",
           "title": "Other Assets",
           "icon": "💎",
+          "help_text": "Business ownership, vehicles, collections, and other valuables",
           "fields": [
+            {
+              "key": "has_other_assets",
+              "label": "Do you have other assets?",
+              "description": "business, vehicles, collections, etc.",
+              "type": "radio",
+              "options": [
+                {"value": "yes", "label": "Yes"},
+                {"value": "no", "label": "No"}
+              ],
+              "default": "no"
+            },
             {
               "key": "business_value",
               "label": "Business Ownership Value",
@@ -360,7 +402,11 @@
               "max": 50000000,
               "step": 25000,
               "default": 0,
-              "help": "Value of business interests"
+              "help": "Value of business interests",
+              "visible_if": {
+                "field": "has_other_assets",
+                "equals": "yes"
+              }
             },
             {
               "key": "other_assets_value",
@@ -372,7 +418,75 @@
               "max": 10000000,
               "step": 5000,
               "default": 0,
-              "help": "Vehicles, jewelry, collections, other valuables"
+              "help": "Vehicles, jewelry, collections, other valuables",
+              "visible_if": {
+                "field": "has_other_assets",
+                "equals": "yes"
+              }
+            }
+          ]
+        },
+        {
+          "id": "debts_obligations",
+          "title": "Debts & Obligations",
+          "icon": "💳",
+          "help_text": "Credit cards, loans, and other outstanding debts",
+          "fields": [
+            {
+              "key": "has_debts",
+              "label": "Do you have outstanding debts?",
+              "description": "credit cards, loans, etc.",
+              "type": "radio",
+              "options": [
+                {"value": "yes", "label": "Yes"},
+                {"value": "no", "label": "No"}
+              ],
+              "default": "no"
+            },
+            {
+              "key": "credit_card_debt",
+              "label": "Credit Card Debt",
+              "type": "currency",
+              "required": false,
+              "min": 0,
+              "max": 1000000,
+              "step": 1000,
+              "default": 0,
+              "help": "Total credit card balances",
+              "visible_if": {
+                "field": "has_debts",
+                "equals": "yes"
+              }
+            },
+            {
+              "key": "personal_loans",
+              "label": "Personal Loans",
+              "type": "currency",
+              "required": false,
+              "min": 0,
+              "max": 10000000,
+              "step": 5000,
+              "default": 0,
+              "help": "Personal loans, auto loans, etc.",
+              "visible_if": {
+                "field": "has_debts",
+                "equals": "yes"
+              }
+            },
+            {
+              "key": "other_debt",
+              "label": "Other Debt",
+              "type": "currency",
+              "required": false,
+              "min": 0,
+              "max": 10000000,
+              "step": 5000,
+              "default": 0,
+              "help": "Medical bills, tax liens, other obligations",
+              "visible_if": {
+                "field": "has_debts",
+                "equals": "yes"
+              }
             }
           ]
         }
@@ -380,7 +494,7 @@
       "summary": {
         "type": "calculated",
         "label": "Total Available Assets",
-        "formula": "sum(checking_savings, cds_money_market, ira_traditional, ira_roth, k401_403b, other_retirement, stocks_bonds, mutual_funds, investment_property, business_value, other_assets_value)",
+        "formula": "sum(checking_savings, cds_money_market, ira_traditional, ira_roth, k401_403b, other_retirement, stocks_bonds, mutual_funds, primary_residence_value, investment_property, business_value, other_assets_value) - sum(primary_residence_mortgage, credit_card_debt, personal_loans, other_debt)",
         "display_format": "${:,.0f}"
       },
       "output_contract": {

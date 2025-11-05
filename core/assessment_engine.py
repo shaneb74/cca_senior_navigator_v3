@@ -329,11 +329,15 @@ def _render_fields(section: dict[str, Any], state: dict[str, Any], mode: str = "
         widget_key = f"field_{key}"
 
         # RENDER CUSTOM HTML LABEL (visible regardless of CSS)
+        # Use larger font size for radio buttons (gateway questions)
+        label_font_size = "16px" if field_type == "radio" else "14px"
+        label_margin_bottom = "8px" if field_type == "radio" else "4px"
+        
         label_html = f"""
-        <div style="margin-bottom: 4px;">
+        <div style="margin-bottom: {label_margin_bottom};">
             <label style="
                 display: block;
-                font-size: 14px;
+                font-size: {label_font_size};
                 font-weight: 500;
                 color: #1e293b;
                 line-height: 1.4;
@@ -363,39 +367,67 @@ def _render_fields(section: dict[str, Any], state: dict[str, Any], mode: str = "
         elif field_type == "currency":
             min_val = field.get("min", 0.0)
             max_val = field.get("max", 10000000.0)
-            step = field.get("step", 100.0)
             readonly = field.get("readonly", False)
 
-            # Ensure all numeric values are the same type (float for currency to support cents)
-            min_val = float(min_val)
-            max_val = float(max_val)
-            step = float(step)
-
-            # Handle current value - convert to float if present, otherwise use min_val (already float)
-            if current_value is not None:
-                current_value = float(current_value)
+            # Get current value as string for display
+            if current_value is not None and current_value != 0:
+                # Format existing value for display (without $ sign)
+                display_value = f"{float(current_value):,.2f}"
             else:
-                current_value = min_val  # Already converted to float above
+                display_value = ""
+
+            # Add JavaScript to blur (unfocus) the input on Enter key
+            # This triggers the on_change callback and moves focus away
+            st.markdown(
+                f"""
+                <script>
+                document.addEventListener('DOMContentLoaded', function() {{
+                    const inputs = document.querySelectorAll('input[type="text"]');
+                    inputs.forEach(input => {{
+                        input.addEventListener('keydown', function(e) {{
+                            if (e.key === 'Enter') {{
+                                e.preventDefault();
+                                this.blur();  // Remove focus, triggers on_change
+                            }}
+                        }});
+                    }});
+                }});
+                </script>
+                """,
+                unsafe_allow_html=True,
+            )
 
             # Define on_change callback to trigger immediate rerun for aggregate updates
             def _on_currency_change():
                 """Callback to ensure UI updates immediately when currency field changes."""
-                # Force a rerun so aggregate totals update immediately
-                pass  # The act of having an on_change callback triggers the rerun
+                # Parse and save the value immediately when user presses Enter or leaves field
+                pass  # The rerun happens automatically
 
-            value = container.number_input(
-                label=label,  # Still need this for accessibility
-                label_visibility="collapsed",  # Hide Streamlit's label
-                min_value=min_val,
-                max_value=max_val,
-                value=current_value,
-                step=step,
-                format="%.2f",  # Support cents (e.g., $1,908.95)
+            # Use text_input instead of number_input for better UX
+            text_value = container.text_input(
+                label=label,
+                label_visibility="collapsed",
+                value=display_value,
                 help=help_text,
-                key=widget_key,  # Use widget_key variable
-                disabled=readonly,  # Make read-only if specified
-                on_change=_on_currency_change,  # Trigger rerun for immediate aggregate updates
+                key=widget_key,
+                disabled=readonly,
+                placeholder="0.00",
+                on_change=_on_currency_change,
             )
+
+            # Parse the text input back to float
+            value = 0.0
+            if text_value:
+                # Remove commas and other formatting
+                cleaned = text_value.replace(",", "").replace("$", "").strip()
+                try:
+                    value = float(cleaned)
+                    # Clamp to min/max
+                    value = max(min_val, min(value, max_val))
+                except ValueError:
+                    # Invalid input - keep previous value
+                    value = float(current_value) if current_value else 0.0
+            
             new_values[key] = value
 
         elif field_type == "select":
@@ -438,6 +470,45 @@ def _render_fields(section: dict[str, Any], state: dict[str, Any], mode: str = "
                 value = option_values[selected_index]
             except (ValueError, IndexError):
                 # Fallback: use first option's value
+                value = option_values[0] if option_values else None
+
+            new_values[key] = value
+
+        elif field_type == "radio":
+            options = field.get("options", [])
+            option_labels = [opt.get("label", opt.get("value")) for opt in options]
+            option_values = [opt.get("value", opt.get("label")) for opt in options]
+
+            # Find current index based on current_value
+            current_index = 0
+            if current_value is not None:
+                try:
+                    current_index = option_values.index(current_value)
+                except ValueError:
+                    try:
+                        current_index = option_labels.index(current_value)
+                    except ValueError:
+                        current_index = 0
+
+            # Add extra spacing before radio buttons for better visual separation
+            container.markdown("<div style='margin-bottom: 12px;'></div>", unsafe_allow_html=True)
+
+            # Use radio buttons with horizontal layout for yes/no
+            selected_label = container.radio(
+                label=label,
+                label_visibility="collapsed",
+                options=option_labels,
+                index=current_index,
+                help=help_text,
+                key=widget_key,
+                horizontal=True,  # Display as horizontal pills
+            )
+
+            # Map back to value
+            try:
+                selected_index = option_labels.index(selected_label)
+                value = option_values[selected_index]
+            except (ValueError, IndexError):
                 value = option_values[0] if option_values else None
 
             new_values[key] = value
@@ -623,19 +694,10 @@ def _is_field_visible(field: dict[str, Any], state: dict[str, Any], new_values: 
 
 
 def _render_info_boxes(info_boxes: list[dict[str, Any]]) -> None:
-    """Render info boxes from JSON config."""
-    for box in info_boxes:
-        box_type = box.get("type", "info")
-        message = box.get("message", "")
-
-        if box_type == "success":
-            st.success(message)
-        elif box_type == "warning":
-            st.warning(message)
-        elif box_type == "error":
-            st.error(message)
-        else:
-            st.info(message)
+    """Render info boxes from JSON config - using clean minimal design."""
+    # Skip rendering info boxes - guidance comes from Navi panel instead
+    # This prevents colorful Streamlit banners and keeps UI clean
+    pass
 
 
 def _render_results_view(

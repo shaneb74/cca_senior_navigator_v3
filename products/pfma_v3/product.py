@@ -428,30 +428,13 @@ def _render_confirmation(appt: AdvisorAppointment):
     if appt.prep_progress > 0:
         st.progress(appt.prep_progress / 100, text=f"Advisor Prep: {appt.prep_progress}% complete")
 
-    # Action buttons
-    col_btn1, col_btn2, col_btn3 = st.columns(3)
-
-    with col_btn1:
-        if st.button("← Return to Lobby", type="secondary", use_container_width=True):
-            route_to("hub_lobby")
-            # Mark Planning journey complete after appointment booking
-            from core.journeys import mark_journey_complete
-            mark_journey_complete("planning")
-
-    with col_btn2:
-        if st.button("🎯 Prepare for Appointment", type="primary", use_container_width=True):
-            log_event("waiting_room.unlocked", {"from_product": "pfma_v3"})
-            # Phase Post-CSS: Mark PFMA product as complete
-            from core.events import mark_product_complete
-            user_ctx = st.session_state.get("user_ctx", {})
-            user_ctx = mark_product_complete(user_ctx, "pfma_v3")
-            st.session_state["user_ctx"] = user_ctx
-            route_to("advisor_prep")
-
-    with col_btn3:
-        if st.button("Return to Lobby →", type="secondary", use_container_width=True):
+    # Action button - End of planning journey
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col2:
+        if st.button("Return to Lobby", type="primary", use_container_width=True):
             log_event("lobby.return", {"from_product": "pfma_v3"})
-            route_to("hub_lobby")
-            # Mark Planning journey complete after appointment booking
+            # Mark Planning journey complete
             from core.journeys import mark_journey_complete
             mark_journey_complete("planning")
+            route_to("hub_lobby")
+

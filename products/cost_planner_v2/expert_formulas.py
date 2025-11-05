@@ -505,15 +505,6 @@ def _generate_recommendations(
     if profile.interested_in_elder_law:
         resources.insert(0, "🏛️ Elder Law Attorney Referral - specialized Medicaid planning")
 
-    # Periodic income notes (context for PDF export)
-    if profile.periodic_income_notes:
-        # Add note to action items if it contains important timing info
-        if any(
-            keyword in profile.periodic_income_notes.lower()
-            for keyword in ["rmd", "required", "distribute", "sell", "sale"]
-        ):
-            action_items.append("📝 Review periodic income timing notes for planning coordination")
-
     # Asset liquidity concerns
     if profile.asset_liquidity_concerns not in ["no_concerns", ""]:
         action_items.append("⚠️ Review asset liquidity constraints before relying on reserves")

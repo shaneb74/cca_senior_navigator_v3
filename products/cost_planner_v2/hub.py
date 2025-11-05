@@ -1184,11 +1184,9 @@ def _publish_to_mcip():
         "family_support": income_sources_breakdown.get("family_support", 0.0),
         "partner_income": income_sources_breakdown.get("partner_income", 0.0),
         "periodic_income": income_sources_breakdown.get("periodic_income", 0.0),
-        "other_income": income_sources_breakdown.get("other_income", 0.0),
     }
     # Legacy fields for backward compatibility
     monthly_income_sources["investment"] = normalized_income.get("investment_monthly", 0.0)
-    monthly_income_sources["other"] = normalized_income.get("other_monthly", 0.0)
     total_monthly_income = calculate_total_monthly_income(normalized_income)
 
     # =========================================================================
