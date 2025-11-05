@@ -947,17 +947,13 @@ def _render_available_resources_cards(analysis, profile):
         
         icon = icon_map.get(category.display_name, "💰")
 
-        # Determine status for styling
-        is_selected = st.session_state.expert_review_selected_assets.get(cat_name, False)
-        card_style = "background: #f8f9ff; border: 1px solid #e5e7eb; box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);" if is_selected else "background: white; border: 1px solid #e5e7eb;"
-
-        # Asset card
-        st.markdown(
-            f"""
-            <div style="{card_style} border-radius: 12px; padding: 20px; margin-bottom: 16px;">
-            """,
-            unsafe_allow_html=True,
-        )
+        # Asset card - use container instead of manual div
+        with st.container():
+            # Apply styling to container
+            if st.session_state.expert_review_selected_assets.get(cat_name, False):
+                st.markdown('<div style="background: #f8f9ff; padding: 20px; border-radius: 12px; margin-bottom: 16px; border: 1px solid #e5e7eb;">', unsafe_allow_html=True)
+            else:
+                st.markdown('<div style="background: white; padding: 20px; border-radius: 12px; margin-bottom: 16px; border: 1px solid #e5e7eb;">', unsafe_allow_html=True)
 
         # Header with checkbox
         col1, col2 = st.columns([4, 1])
@@ -1019,7 +1015,7 @@ def _render_available_resources_cards(analysis, profile):
         if category.notes:
             st.markdown(f"<div style='font-size: 13px; color: #666; margin-top: 8px; font-style: italic;'>{category.notes}</div>", unsafe_allow_html=True)
 
-        st.markdown("</div>", unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
 
     # Total summary
     total_available = sum(
