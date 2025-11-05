@@ -1,0 +1,46 @@
+/* Hide Streamlit branding and developer tools */
+
+/* Hide the main menu button */
+#MainMenu {
+    visibility: hidden;
+}
+
+/* Hide the Streamlit footer */
+footer {
+    visibility: hidden;
+}
+
+/* Hide the "Made with Streamlit" footer */
+.reportview-container .main footer {
+    visibility: hidden;
+}
+
+/* Hide the Streamlit header */
+header {
+    visibility: hidden;
+}
+
+/* Hide any "Deploy" buttons */
+.stApp > div:first-child {
+    display: none;
+}
+
+/* Hide view source code option */
+.viewerBadge_container__1QSob {
+    display: none;
+}
+
+/* Hide any GitHub references in UI */
+[data-testid="stToolbar"] {
+    display: none;
+}
+
+/* Additional hiding for development indicators */
+[data-testid="stDecoration"] {
+    display: none;
+}
+
+/* Hide any remaining menu items */
+.css-1inwz65 {
+    display: none;
+}

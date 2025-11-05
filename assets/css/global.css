@@ -893,3 +893,59 @@ div[data-role="secondary"] .stButton > button[kind="secondary"][data-testid="stB
     font-size: 14px;
   }
 }
+
+/* ===== HIDE STREAMLIT BRANDING AND DEV TOOLS ===== */
+/* Hide main menu (hamburger) */
+#MainMenu {
+    visibility: hidden !important;
+}
+
+/* Hide Streamlit footer */
+footer {
+    visibility: hidden !important;
+}
+
+/* Hide "Made with Streamlit" */
+.reportview-container .main footer {
+    visibility: hidden !important;
+}
+
+/* Hide Streamlit header */
+header[data-testid="stHeader"] {
+    display: none !important;
+}
+
+/* Hide toolbar */
+[data-testid="stToolbar"] {
+    display: none !important;
+}
+
+/* Hide decoration elements */
+[data-testid="stDecoration"] {
+    display: none !important;
+}
+
+/* Hide any GitHub/source code links */
+.viewerBadge_container__1QSob {
+    display: none !important;
+}
+
+/* Hide app view source */
+.stApp > div:first-child {
+    display: none !important;
+}
+
+/* Hide status indicators */
+.stStatusWidget {
+    display: none !important;
+}
+
+/* Clean up any remaining Streamlit UI elements */
+.css-1inwz65 {
+    display: none !important;
+}
+
+/* Hide any deploy buttons or similar */
+[data-testid="stAppDeployButton"] {
+    display: none !important;
+}

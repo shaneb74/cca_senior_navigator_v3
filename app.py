@@ -21,6 +21,23 @@ else:
 logging.getLogger("streamlit.watcher.local_sources_watcher").setLevel(logging.ERROR)
 logging.getLogger("streamlit.watcher").setLevel(logging.ERROR)
 
+# Production environment detection and protection
+IS_PRODUCTION = os.getenv("STREAMLIT_SHARING_MODE") == "true" or "streamlit" in os.getenv("SERVER_SOFTWARE", "").lower()
+
+if IS_PRODUCTION:
+    # Additional protection for production/cloud deployment
+    st.set_page_config(
+        page_title="Senior Navigator",
+        page_icon="🏠",
+        layout="wide",
+        initial_sidebar_state="collapsed",
+        menu_items={
+            'Get Help': None,
+            'Report a bug': None,
+            'About': None
+        }
+    )
+
 from core.events import log_event
 from core.nav import current_route, load_nav
 

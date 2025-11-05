@@ -20,3 +20,14 @@ messageFormat = "%(asctime)s %(levelname)s %(message)s"
 
 [server]
 fileWatcherType = "poll"
+enableCORS = false
+enableXsrfProtection = false
+
+[ui]
+hideTopBar = true
+
+[runner]
+magicEnabled = false
+
+[global]
+showWarningOnDirectExecution = false
