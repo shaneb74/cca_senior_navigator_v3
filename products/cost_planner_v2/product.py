@@ -125,6 +125,12 @@ def render():
         _render_auth_step()
     elif current_step == "triage":
         _render_triage_step()
+    elif current_step == "medicaid_clarification":
+        _render_medicaid_clarification_step()
+    elif current_step == "medicaid_assessment":
+        _render_medicaid_assessment_step()
+    elif current_step == "medicaid_resources":
+        _render_medicaid_resources_step()
     elif current_step in ["modules", "assessments"]:
         # Support both old "modules" and new "assessments" step names for backward compatibility
         _render_assessments_step()
@@ -171,6 +177,27 @@ def _render_triage_step():
     from products.cost_planner_v2 import triage
 
     triage.render()
+
+
+def _render_medicaid_clarification_step():
+    """Step 3a: Medicaid vs Medicare clarification."""
+    from pages.assessments_medicaid import render
+    
+    render()
+
+
+def _render_medicaid_assessment_step():
+    """Step 3b: Simplified Medicaid assessment."""
+    from pages.assessments_medicaid import render_medicaid_assessment
+    
+    render_medicaid_assessment()
+
+
+def _render_medicaid_resources_step():
+    """Step 3c: Medicaid resources and next steps."""
+    from pages.assessments_medicaid import render_medicaid_resources
+    
+    render_medicaid_resources()
 
 
 def _render_assessments_step():
