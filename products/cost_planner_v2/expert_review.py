@@ -947,14 +947,7 @@ def _render_available_resources_cards(analysis, profile):
         
         icon = icon_map.get(category.display_name, "💰")
 
-        # Asset card - use container instead of manual div
-        with st.container():
-            # Apply styling to container
-            if st.session_state.expert_review_selected_assets.get(cat_name, False):
-                st.markdown('<div style="background: #f8f9ff; padding: 20px; border-radius: 12px; margin-bottom: 16px; border: 1px solid #e5e7eb;">', unsafe_allow_html=True)
-            else:
-                st.markdown('<div style="background: white; padding: 20px; border-radius: 12px; margin-bottom: 16px; border: 1px solid #e5e7eb;">', unsafe_allow_html=True)
-
+        # Simple asset display - no containers or custom styling
         # Header with checkbox
         col1, col2 = st.columns([4, 1])
         
@@ -1013,9 +1006,10 @@ def _render_available_resources_cards(analysis, profile):
 
         # Additional notes
         if category.notes:
-            st.markdown(f"<div style='font-size: 13px; color: #666; margin-top: 8px; font-style: italic;'>{category.notes}</div>", unsafe_allow_html=True)
-
-            st.markdown("</div>", unsafe_allow_html=True)
+            st.caption(f"_{category.notes}_")
+            
+        # Add separator
+        st.markdown("---")
 
     # Total summary
     total_available = sum(
