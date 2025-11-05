@@ -35,7 +35,6 @@ _SINGLE_PAGE_ASSESSMENTS: set[str] = {
     "va_benefits",
     "health_insurance",
     "life_insurance",
-    "medicaid_navigation",
 }
 
 
