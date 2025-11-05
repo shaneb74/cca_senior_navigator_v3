@@ -866,9 +866,10 @@ def render_assessment_page(assessment_key: str, product_key: str = "cost_planner
     # Only initialize if not already in session_state (preserve active editing session)
     if state_key not in st.session_state:
         # Try loading from tiles first (primary source of truth)
-        tiles = st.session_state.get("tiles", {})
-        product_tiles = tiles.get(product_key, {})
-        assessments_state = product_tiles.get("assessments", {})
+        # CRITICAL: Use setdefault to get the ACTUAL reference, not a copy
+        tiles = st.session_state.setdefault("tiles", {})
+        product_tiles = tiles.setdefault(product_key, {})
+        assessments_state = product_tiles.setdefault("assessments", {})
         saved_data = assessments_state.get(assessment_key)
 
         # Fall back to cost_v2_modules if not in tiles (legacy/demo users)
@@ -970,9 +971,10 @@ def _render_single_page_assessment(
     # Only initialize if not already in session_state (preserve active editing session)
     if state_key not in st.session_state:
         # Try loading from tiles first (primary source of truth)
-        tiles = st.session_state.get("tiles", {})
-        product_tiles = tiles.get(product_key, {})
-        assessments_state = product_tiles.get("assessments", {})
+        # CRITICAL: Use setdefault to get the ACTUAL reference, not a copy
+        tiles = st.session_state.setdefault("tiles", {})
+        product_tiles = tiles.setdefault(product_key, {})
+        assessments_state = product_tiles.setdefault("assessments", {})
         saved_data = assessments_state.get(assessment_key)
 
         # Fall back to cost_v2_modules if not in tiles (legacy/demo users)
