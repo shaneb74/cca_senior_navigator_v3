@@ -409,16 +409,6 @@ def _render_confirmation(appt: AdvisorAppointment):
             padding-left: 2rem !important;
             padding-right: 2rem !important;
         }
-        .confirmation-card {
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-            padding: 24px;
-            margin-bottom: 20px;
-            max-width: 700px;
-            margin-left: auto;
-            margin-right: auto;
-        }
         </style>
         """,
         unsafe_allow_html=True,
