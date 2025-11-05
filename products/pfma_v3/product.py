@@ -131,22 +131,19 @@ def _render_gate():
 def _render_booking_form():
     """Render single-step appointment booking form."""
 
-    # Apply clean CSS with max-width constraint matching Navi width
+    # Apply clean CSS with proper width constraint
     st.markdown(
         """
         <style>
-        .pfma-form-container {
-            max-width: 1000px;
-            margin: 24px auto 0 auto;
-            padding: 0 20px;
+        .block-container {
+            max-width: 1000px !important;
+            padding-left: 2rem !important;
+            padding-right: 2rem !important;
         }
         </style>
         """,
         unsafe_allow_html=True,
     )
-
-    # Wrap form in container
-    st.markdown('<div class="pfma-form-container">', unsafe_allow_html=True)
 
     st.markdown("## 📅 Schedule Your Consultation")
 
@@ -282,9 +279,6 @@ def _render_booking_form():
     with col_submit2:
         if st.button("📅 Book Appointment", type="primary", use_container_width=True):
             _handle_booking_submit(form_data)
-
-    # Close form container
-    st.markdown('</div>', unsafe_allow_html=True)
 
 
 def _format_timezone(tz: str) -> str:
