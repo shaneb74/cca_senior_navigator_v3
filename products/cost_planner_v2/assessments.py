@@ -254,10 +254,20 @@ def _render_assessment_card(assessment: dict[str, Any], product_key: str) -> Non
     # Get summary value if assessment is complete
     summary_text = ""
     if is_complete:
-        modules = st.session_state.get("cost_v2_modules", {})
-        if key in modules:
-            data = modules[key].get("data", {})
-            
+        # Try tiles first (primary source), then cost_v2_modules (secondary)
+        tiles = st.session_state.get("tiles", {})
+        product_tiles = tiles.get(product_key, {})
+        assessments_state = product_tiles.get("assessments", {})
+        data = assessments_state.get(key, {})
+        
+        # Fall back to cost_v2_modules if not in tiles
+        if not data:
+            modules = st.session_state.get("cost_v2_modules", {})
+            if key in modules:
+                data = modules[key].get("data", {})
+        
+        # Extract summary based on assessment type
+        if data:
             if key == "income":
                 total = data.get("total_monthly_income", 0)
                 if total > 0:
