@@ -109,7 +109,9 @@ page = st.sidebar.radio(
         "📊 Dashboard", 
         "👥 Customers", 
         "🎯 Customer 360°",
-        "📞 Appointments", 
+        "🕒 Smart Timeline",
+        "🤖 AI Next Steps",
+        "� Appointments", 
         "📝 Notes & Interactions",
         "📈 Analytics"
     ],
@@ -136,7 +138,13 @@ try:
     elif page == "🎯 Customer 360°":
         from apps.crm.pages.customer_360 import render
         render()
-    elif page == "📞 Appointments":
+    elif page == "🕒 Smart Timeline":
+        from apps.crm.pages.smart_timeline import render
+        render()
+    elif page == "🤖 AI Next Steps":
+        from apps.crm.pages.ai_next_steps import render
+        render()
+    elif page == "� Appointments":
         from apps.crm.pages.appointments import render
         render()
     elif page == "📝 Notes & Interactions":
