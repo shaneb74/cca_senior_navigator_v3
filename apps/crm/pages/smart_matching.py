@@ -6,6 +6,7 @@ import streamlit as st
 import json
 from pathlib import Path
 from shared.data_access.navigator_reader import NavigatorDataReader
+from shared.data_access.quickbase_client import quickbase_client
 
 def inject_matching_css():
     """Professional community matching styling"""
@@ -298,74 +299,25 @@ def inject_matching_css():
     st.session_state["_matching_css"] = True
 
 def load_community_database():
-    """Load community data (simulated for demo)"""
-    # In production, this would connect to partner database
-    communities = [
-        {
-            "id": "com_001",
-            "name": "Sunrise Senior Living",
-            "location": "Bellevue, WA",
-            "care_levels": ["independent", "assisted_living", "memory_care"],
-            "monthly_cost": {"min": 4500, "max": 7200},
-            "amenities": ["fitness_center", "dining", "transportation", "activities"],
-            "specializations": ["alzheimers", "physical_therapy"],
-            "rating": 4.8,
-            "availability": "immediate",
-            "contact": "Sarah Chen - (425) 555-0123"
-        },
-        {
-            "id": "com_002", 
-            "name": "Emerald Heights",
-            "location": "Redmond, WA",
-            "care_levels": ["independent", "assisted_living"],
-            "monthly_cost": {"min": 3800, "max": 6500},
-            "amenities": ["gardens", "library", "dining", "wellness"],
-            "specializations": ["rehabilitation", "wellness"],
-            "rating": 4.6,
-            "availability": "2_weeks",
-            "contact": "Michael Torres - (425) 555-0156"
-        },
-        {
-            "id": "com_003",
-            "name": "Memory Care Specialists",
-            "location": "Seattle, WA", 
-            "care_levels": ["memory_care", "memory_care_high_acuity"],
-            "monthly_cost": {"min": 6000, "max": 9500},
-            "amenities": ["secure_units", "specialized_staff", "therapy"],
-            "specializations": ["dementia", "alzheimers", "behavioral_support"],
-            "rating": 4.9,
-            "availability": "immediate",
-            "contact": "Dr. Lisa Park - (206) 555-0198"
-        },
-        {
-            "id": "com_004",
-            "name": "Golden Years Community",
-            "location": "Kirkland, WA",
-            "care_levels": ["independent", "assisted_living"],
-            "monthly_cost": {"min": 3200, "max": 5800},
-            "amenities": ["pool", "cafe", "activities", "transportation"],
-            "specializations": ["social_activities", "wellness"],
-            "rating": 4.4,
-            "availability": "1_month",
-            "contact": "Amanda Wilson - (425) 555-0134"
-        }
-    ]
-    
-    return communities
+    """Load community data from QuickBase WA Communities table"""
+    return quickbase_client.get_communities()
 
 def calculate_match_score(customer_data, community):
-    """AI-powered matching algorithm"""
+    """AI-powered matching algorithm - respects care level gating based on diagnosis"""
     score = 0
     reasons = []
     
-    # Care level matching (40% weight)
+    # Care level matching (40% weight) - Use actual recommendation which respects gating
     care_recommendation = customer_data.get('care_recommendation', '').lower()
+    
     if care_recommendation in community['care_levels']:
         score += 40
         reasons.append(f"Perfect care level match: {care_recommendation}")
     elif any(level in care_recommendation for level in community['care_levels']):
         score += 25
         reasons.append(f"Compatible care levels available")
+    else:
+        reasons.append(f"Care level mismatch: needs {care_recommendation}, available {community['care_levels']}")
     
     # Budget compatibility (30% weight)
     # Simulate budget from customer data
@@ -380,16 +332,27 @@ def calculate_match_score(customer_data, community):
         score += 15
         reasons.append(f"Partial budget overlap available")
     
-    # Availability (20% weight)
+    # Availability (20% weight) - Enhanced with real vacancy data
     if community['availability'] == 'immediate':
         score += 20
-        reasons.append("Immediate availability")
+        reasons.append("✅ Immediate availability")
     elif community['availability'] == '2_weeks':
         score += 15
-        reasons.append("Available within 2 weeks")
+        reasons.append("⏰ Available within 2 weeks")
+    elif community['availability'] == 'waitlist':
+        score += 5
+        reasons.append("⏳ Waitlist available")
+    elif community['availability'] == 'contact':
+        score += 10
+        reasons.append("📞 Contact for availability details")
     else:
         score += 10
         reasons.append("Limited availability")
+    
+    # Bonus for specific vacancy information from QuickBase
+    if community.get('available_beds', 0) > 0:
+        score += 5
+        reasons.append(f"🛏️ {community['available_beds']} beds currently available")
     
     # Quality rating (10% weight)
     if community['rating'] >= 4.7:
@@ -445,7 +408,7 @@ def render_community_match(community, score, reasons):
     # Format cost range
     cost_range = f"${community['monthly_cost']['min']:,} - ${community['monthly_cost']['max']:,}"
     
-    # Generate highlights from reasons
+    # Generate highlights from reasons (using clean text only)
     highlights_html = ""
     for reason in reasons[:3]:  # Show top 3 reasons
         highlights_html += f"""
@@ -607,8 +570,98 @@ def render(customer_id=None):
     if matches:
         st.markdown('<div class="matches-grid">', unsafe_allow_html=True)
         
-        for community, score, reasons in matches:
-            st.markdown(render_community_match(community, score, reasons), unsafe_allow_html=True)
+        for idx, (community, score, reasons) in enumerate(matches):
+            # Render match card with clean Streamlit components instead of complex HTML
+            with st.container():
+                col1, col2 = st.columns([3, 1])
+                with col1:
+                    st.markdown(f"**{community['name']}** - {score}% Match")
+                    st.markdown(f"📍 {community['location']}")
+                with col2:
+                    st.markdown(f"**{score}%** Match", help="AI-powered compatibility score")
+                
+                # Show highlights as clean bullet points
+                st.markdown("**Match Highlights:**")
+                for reason in reasons[:3]:
+                    st.markdown(f"• ✅ {reason}")
+                
+                # Show details
+                cost_range = f"${community['monthly_cost']['min']:,} - ${community['monthly_cost']['max']:,}"
+                avail_map = {
+                    'immediate': '✅ Immediate',
+                    '2_weeks': '⏰ 2 weeks', 
+                    '1_month': '📅 1 month',
+                    'waitlist': '⏳ Waitlist',
+                    'contact': '📞 Contact for details'
+                }
+                availability = avail_map.get(community['availability'], 'Contact for details')
+                
+                # Create columns for metrics including vacancy info
+                col1, col2, col3, col4 = st.columns(4)
+                with col1:
+                    st.metric("Monthly Cost", cost_range)
+                with col2:
+                    st.metric("Availability", availability)
+                with col3:
+                    st.metric("Rating", f"{community['rating']}/5 ⭐")
+                with col4:
+                    # Show real-time vacancy data from QuickBase
+                    if community.get('available_beds', 0) > 0:
+                        st.metric("Open Beds", f"{community['available_beds']} available")
+                    elif community.get('vacancy_status'):
+                        st.metric("Vacancy Status", community['vacancy_status'])
+                    else:
+                        st.metric("Capacity", f"{community.get('total_beds', 'N/A')} beds")
+                
+                # Action buttons with guaranteed unique keys using index
+                col1, col2 = st.columns(2)
+                with col1:
+                    # Use index to guarantee unique keys
+                    button_key = f"contact_{idx}_{hash(str(community)) % 10000}"
+                    if st.button(f"📞 Contact {community['name']}", key=button_key):
+                        # Display detailed contact information from QuickBase
+                        contact_info = f"**Contact Information:**\n\n"
+                        
+                        if community.get('licensee'):
+                            contact_info += f"**Licensee:** {community['licensee']}\n\n"
+                        
+                        if community.get('cell_phone'):
+                            contact_info += f"**Cell Phone:** {community['cell_phone']}\n\n"
+                        
+                        if community.get('phone') and community.get('phone') != community.get('cell_phone'):
+                            contact_info += f"**Phone:** {community['phone']}\n\n"
+                        
+                        if community.get('email'):
+                            contact_info += f"**Email:** {community['email']}\n\n"
+                        
+                        if community.get('address'):
+                            contact_info += f"**Address:** {community['address']}"
+                        
+                        st.success(contact_info)
+                with col2:
+                    # Use index to guarantee unique keys
+                    details_key = f"details_{idx}_{hash(str(community)) % 10000}"
+                    if st.button(f"📋 View Details", key=details_key):
+                        # Show detailed community information including vacancy data
+                        details = f"**{community['name']} Details:**\n\n"
+                        details += f"**Care Type:** {community.get('care_type', 'Not specified')}\n\n"
+                        details += f"**Care Levels:** {', '.join(community.get('care_levels', []))}\n\n"
+                        details += f"**Monthly Cost:** ${community['monthly_cost']['min']:,} - ${community['monthly_cost']['max']:,}\n\n"
+                        details += f"**Rating:** {community['rating']}/5 ⭐\n\n"
+                        details += f"**Availability:** {availability}\n\n"
+                        
+                        # Add real-time vacancy information from QuickBase
+                        if community.get('vacancy_info'):
+                            details += f"**Current Vacancy Info:** {community['vacancy_info']}\n\n"
+                        if community.get('available_beds', 0) > 0:
+                            details += f"**Available Beds:** {community['available_beds']} currently open\n\n"
+                        if community.get('total_beds'):
+                            details += f"**Total Capacity:** {community['total_beds']} beds\n\n"
+                        
+                        details += f"**Address:** {community.get('address', 'Not specified')}"
+                        st.info(details)
+                
+                st.markdown("---")
         
         st.markdown('</div>', unsafe_allow_html=True)
         

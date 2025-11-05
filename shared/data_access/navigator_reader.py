@@ -172,10 +172,13 @@ class NavigatorDataReader:
             days_since_activity = (datetime.now() - last_modified).days
             
             # Check what assessments/plans exist
-            has_gcp_assessment = bool(data.get('gcp_assessment_complete') or 
-                                    data.get('care_recommendation'))
-            has_cost_plan = bool(data.get('cost_planner_complete') or 
-                               data.get('estimated_monthly_cost'))
+            # Check for completion using comprehensive detection
+            has_gcp_assessment = (bool(data.get('gcp_assessment_complete') or 
+                                     data.get('care_recommendation')) or
+                                 self._check_completion(data, ["gcp", "gcp_v4"]))
+            has_cost_plan = (bool(data.get('cost_planner_complete') or 
+                                data.get('estimated_monthly_cost')) or
+                           self._check_completion(data, ["cost_planner", "cost_v2", "cost_planner_v2"]))
             
             return {
                 'user_id': user_id,
@@ -424,19 +427,21 @@ class NavigatorDataReader:
             
             # Check completion status (look for product completion markers)
             has_gcp_assessment = self._check_completion(data, ["gcp", "gcp_v4"])
-            has_cost_plan = self._check_completion(data, ["cost_planner", "cost_v2"])
+            has_cost_plan = self._check_completion(data, ["cost_planner", "cost_v2", "cost_planner_v2"])
             has_financial_assessment = self._check_completion(data, ["pfma", "pfma_v3"])
             
             # Extract assessment data
             care_recommendation = data.get("gcp_care_recommendation")
+            tier_rankings = []
             
-            # Also check MCIP contracts for care recommendation
+            # Also check MCIP contracts for care recommendation and tier rankings
             if not care_recommendation and "mcip_contracts" in data:
                 contracts = data["mcip_contracts"]
                 if "care_recommendation" in contracts:
                     contract = contracts["care_recommendation"]
                     if isinstance(contract, dict):
                         care_recommendation = contract.get("tier")
+                        tier_rankings = contract.get("tier_rankings", [])
             
             mobility_score = data.get("gcp_mobility_score")
             cognitive_score = data.get("gcp_cognitive_score")
@@ -462,6 +467,7 @@ class NavigatorDataReader:
                 "has_cost_plan": has_cost_plan,
                 "has_financial_assessment": has_financial_assessment,
                 "care_recommendation": care_recommendation,
+                "tier_rankings": tier_rankings,
                 "mobility_score": mobility_score,
                 "cognitive_score": cognitive_score,
                 "estimated_monthly_cost": estimated_monthly_cost,

@@ -27,6 +27,21 @@ st.set_page_config(
 # CRM-specific styling
 st.markdown("""
 <style>
+    /* Hide only Streamlit's automatic page navigation, not the entire sidebar */
+    [data-testid="stSidebarNav"] {
+        display: none !important;
+    }
+    
+    /* Hide the specific auto-generated navigation list */
+    .css-1d391kg, .css-1rs6os, .css-17eq0hr {
+        display: none !important;
+    }
+    
+    /* Keep sidebar visible but hide auto nav */
+    section[data-testid="stSidebar"] nav {
+        display: none !important;
+    }
+    
     /* CRM-specific styling */
     .crm-header {
         background: linear-gradient(90deg, #1e3a8a, #3b82f6);
@@ -41,6 +56,7 @@ st.markdown("""
         padding: 1rem;
         border-radius: 0.5rem;
         border-left: 4px solid #3b82f6;
+        margin-top: 1rem;
     }
     
     .customer-card {
@@ -95,16 +111,21 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# Navigation Sidebar
+# Navigation Sidebar - Clean CRM-only navigation
 st.sidebar.markdown("""
 <div class="crm-nav">
-    <h3 style="margin: 0 0 1rem 0; color: #1e40af;">CRM Navigation</h3>
+    <h2 style="margin: 0 0 1rem 0; color: #1e40af; font-size: 1.25rem;">🏢 CRM Navigation</h2>
+    <p style="margin: 0 0 1rem 0; color: #64748b; font-size: 0.875rem;">Advisor Dashboard</p>
 </div>
 """, unsafe_allow_html=True)
 
-# Main navigation
+# Initialize navigation if not set
+if 'navigation_page' not in st.session_state:
+    st.session_state.navigation_page = "📊 Dashboard"
+
+# Main CRM navigation - clean and focused
 page = st.sidebar.radio(
-    "Go to:",
+    "Select a page:",
     [
         "📊 Dashboard", 
         "👥 Customers", 
@@ -116,7 +137,8 @@ page = st.sidebar.radio(
         "📝 Notes & Interactions",
         "📈 Analytics"
     ],
-    index=0
+    index=0,
+    key="navigation_page"
 )
 
 # Environment indicator
