@@ -1,17 +1,19 @@
 """
 PFMA v3 - Plan with My Advisor (Booking-First Model)
 
-Simplified single-step appointment booking:
+Enhanced appointment booking with preferences collection:
 1. Check prerequisites via MCIP (requires Cost Planner)
 2. Show friendly gate if prerequisites missing
 3. Single booking form with strict validation
-4. Publish AdvisorAppointment to MCIP when complete
-5. Route to Waiting Room for optional Advisor Prep
+4. Collect customer preferences for CRM matching
+5. Publish AdvisorAppointment to MCIP when complete
+6. Route to Waiting Room for optional Advisor Prep
 
 Key changes from v2:
 - Single step (booking only) vs 5 steps
+- Added "More About {Name}" preferences collection
 - No verification sections (moved to optional Advisor Prep)
-- Immediate handoff to Waiting Room
+- Enhanced CRM matching data collection
 - Booking = complete (no multi-step progress tracking)
 """
 
@@ -24,6 +26,7 @@ from core.events import log_event
 from core.mcip import MCIP, AdvisorAppointment
 from core.nav import route_to
 from core.navi import render_navi_panel
+from core.preferences import PreferencesManager, CustomerPreferences
 
 
 def render():
@@ -50,10 +53,24 @@ def render():
         _render_gate()
         return
 
-    # Step 2: Check if already booked
+    # Step 2: Check appointment and preferences status
     appt = MCIP.get_advisor_appointment()
-    if appt and appt.scheduled:
-        # Already booked - show confirmation and route options
+    preferences = PreferencesManager.get_preferences()
+    
+    # Check what screen to show based on state
+    show_preferences = (
+        appt and appt.scheduled and  # Appointment is booked
+        not st.session_state.get("pfma_preferences_complete", False) and  # Preferences not marked complete
+        not st.session_state.get("pfma_skip_preferences", False)  # User hasn't chosen to skip
+    )
+    
+    if show_preferences:
+        # Show preferences collection screen
+        render_navi_panel(location="product", product_key="pfma_v3", module_config=None)
+        _render_preferences_collection(appt)
+        return
+    elif appt and appt.scheduled:
+        # Already booked and preferences handled - show confirmation
         render_navi_panel(location="product", product_key="pfma_v3", module_config=None)
         _render_confirmation(appt)
         return
@@ -332,10 +349,6 @@ def _handle_booking_submit(form_data: dict):
     # Save to MCIP
     MCIP.set_advisor_appointment(appointment)
 
-    # Mark PFMA complete (using canonical key)
-    MCIP.mark_product_complete("pfma")
-    print("[PFMA] Marked PFMA/My Advisor complete")
-
     # Log events
     log_event(
         "pfma.booking.submitted",
@@ -354,7 +367,7 @@ def _handle_booking_submit(form_data: dict):
     # Clear form
     st.session_state["pfma_v3_form"] = {}
 
-    # Force rerun to show confirmation
+    # Force rerun to show preferences collection (not confirmation yet)
     st.rerun()
 
 
@@ -390,6 +403,341 @@ def _validate_booking(form_data: dict) -> tuple[bool, list[str]]:
         errors.append("Appointment type is required")
 
     return (len(errors) == 0, errors)
+
+
+# =============================================================================
+# PREFERENCES COLLECTION SCREEN  
+# =============================================================================
+
+
+def _render_preferences_collection(appt: AdvisorAppointment):
+    """Render 'More About {Name}' preferences collection screen."""
+    
+    # Get customer name from profile or appointment
+    profile = st.session_state.get("profile", {})
+    customer_name = profile.get("name", "you")
+    
+    # Apply clean CSS
+    st.markdown(
+        """
+        <style>
+        .block-container {
+            max-width: 1200px !important;
+            padding-left: 2rem !important;
+            padding-right: 2rem !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(f"## More About {customer_name}")
+    st.markdown(
+        f"**Great! Your appointment is confirmed.** To help your advisor provide the best recommendations, "
+        f"please share a bit more about {customer_name}'s preferences and situation."
+    )
+    
+    # Show appointment confirmation briefly
+    with st.expander("📅 Your Appointment Details", expanded=False):
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown(f"**Confirmation:** {appt.confirmation_id}")
+            st.markdown(f"**Type:** {appt.type.title()}")
+        with col2:
+            st.markdown(f"**Preferred Time:** {appt.time}")
+            if appt.contact_email:
+                st.markdown(f"**Email:** {appt.contact_email}")
+
+    st.markdown("---")
+
+    # Get or create preferences
+    preferences = PreferencesManager.get_preferences()
+    if not preferences:
+        # Create default preferences based on GCP recommendation
+        care_rec = MCIP.get_care_recommendation()
+        care_tier = care_rec.tier if care_rec else "assisted_living"
+        preferences = PreferencesManager.create_default_preferences(care_tier)
+
+    # Form for preferences collection
+    st.markdown("### Preferences & Situation")
+    
+    # Store form data in session state for persistence across reruns
+    if "preferences_form" not in st.session_state:
+        st.session_state["preferences_form"] = {
+            "preferred_regions": preferences.preferred_regions,
+            "max_distance": preferences.max_distance_miles,
+            "care_environment": preferences.care_environment_preference,
+            "move_timeline": preferences.move_timeline,
+            "budget_comfort": preferences.budget_comfort_level,
+            "activity_preferences": preferences.activity_preferences,
+            "family_contact": preferences.primary_family_contact,
+            "family_location": preferences.family_location,
+            "current_support": preferences.current_support_level,
+            "move_triggers": preferences.move_triggers,
+        }
+
+    form_data = st.session_state["preferences_form"]
+
+    # Geographic Preferences
+    with st.expander("🗺️ **Location & Geographic Preferences**", expanded=True):
+        st.markdown("*Help us find communities in the right areas*")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            regions = st.multiselect(
+                "Preferred regions/areas",
+                options=[
+                    "bellevue_area", "seattle", "eastside", "north_seattle", "south_seattle",
+                    "tacoma", "spokane", "vancouver_wa", "olympia", "everett", "washington_state"
+                ],
+                default=form_data.get("preferred_regions", []),
+                format_func=lambda x: {
+                    "bellevue_area": "Bellevue Area",
+                    "seattle": "Seattle",
+                    "eastside": "Eastside (Bellevue, Redmond, Kirkland)",
+                    "north_seattle": "North Seattle",
+                    "south_seattle": "South Seattle", 
+                    "tacoma": "Tacoma Area",
+                    "spokane": "Spokane Area",
+                    "vancouver_wa": "Vancouver, WA",
+                    "olympia": "Olympia Area",
+                    "everett": "Everett Area",
+                    "washington_state": "Anywhere in Washington State"
+                }.get(x, x.replace("_", " ").title()),
+                help="Select areas you'd prefer for community locations"
+            )
+            form_data["preferred_regions"] = regions
+        
+        with col2:
+            max_distance = st.selectbox(
+                "Maximum distance preference",
+                options=[None, 5, 10, 15, 25, 50],
+                index=[None, 5, 10, 15, 25, 50].index(form_data.get("max_distance")),
+                format_func=lambda x: "No preference" if x is None else f"Within {x} miles",
+                help="Maximum distance from current location or family"
+            )
+            form_data["max_distance"] = max_distance
+
+    # Care & Timeline Preferences
+    with st.expander("🏠 **Care Level & Timeline**", expanded=True):
+        st.markdown("*Help us understand care needs and timing*")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            care_env = st.selectbox(
+                "Preferred care environment",
+                options=["independent", "assisted_living", "memory_care", "in_home", "exploring"],
+                index=["independent", "assisted_living", "memory_care", "in_home", "exploring"].index(
+                    form_data.get("care_environment", "assisted_living")
+                ),
+                format_func=lambda x: {
+                    "independent": "Independent Living",
+                    "assisted_living": "Assisted Living", 
+                    "memory_care": "Memory Care",
+                    "in_home": "In-Home Care",
+                    "exploring": "Still exploring options"
+                }.get(x, x.replace("_", " ").title()),
+                help="Based on your assessment results and preferences"
+            )
+            form_data["care_environment"] = care_env
+        
+        with col2:
+            timeline = st.selectbox(
+                "Move timeline",
+                options=["immediate", "2_4_weeks", "2_3_months", "exploring", "future_planning"],
+                index=["immediate", "2_4_weeks", "2_3_months", "exploring", "future_planning"].index(
+                    form_data.get("move_timeline", "exploring")
+                ),
+                format_func=lambda x: {
+                    "immediate": "Immediate (within 2 weeks)",
+                    "2_4_weeks": "2-4 weeks",
+                    "2_3_months": "2-3 months", 
+                    "exploring": "Exploring options",
+                    "future_planning": "Future planning"
+                }.get(x, x.replace("_", " ").title()),
+                help="What's your preferred timeline for a potential move?"
+            )
+            form_data["move_timeline"] = timeline
+
+    # Budget & Lifestyle
+    with st.expander("💰 **Budget & Lifestyle Preferences**", expanded=True):
+        st.markdown("*Help us find communities that match your needs and budget*")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            budget = st.selectbox(
+                "Budget comfort level",
+                options=["tight", "moderate", "comfortable", "luxury"],
+                index=["tight", "moderate", "comfortable", "luxury"].index(
+                    form_data.get("budget_comfort", "moderate")
+                ),
+                format_func=lambda x: {
+                    "tight": "Budget-conscious",
+                    "moderate": "Moderate budget",
+                    "comfortable": "Comfortable budget", 
+                    "luxury": "Premium/luxury options"
+                }.get(x, x.title()),
+                help="What budget range feels most comfortable?"
+            )
+            form_data["budget_comfort"] = budget
+        
+        with col2:
+            activities = st.multiselect(
+                "Activity preferences",
+                options=["fitness", "arts", "social", "quiet", "outdoors", "games", "music", "crafts"],
+                default=form_data.get("activity_preferences", []),
+                format_func=lambda x: {
+                    "fitness": "Fitness & Exercise",
+                    "arts": "Arts & Crafts",
+                    "social": "Social Activities",
+                    "quiet": "Quiet Spaces",
+                    "outdoors": "Outdoor Activities",
+                    "games": "Games & Cards", 
+                    "music": "Music & Entertainment",
+                    "crafts": "Crafts & Hobbies"
+                }.get(x, x.title()),
+                help="What types of activities are most appealing?"
+            )
+            form_data["activity_preferences"] = activities
+
+    # Family & Support Context
+    with st.expander("👥 **Family & Support Context**", expanded=True):
+        st.markdown("*Help us understand the support system and family involvement*")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            family_contact = st.text_input(
+                "Primary family contact/decision maker",
+                value=form_data.get("family_contact", ""),
+                placeholder="e.g., Sarah (daughter), John (son)",
+                help="Who is the main family contact or decision maker?"
+            )
+            form_data["family_contact"] = family_contact
+            
+            family_location = st.selectbox(
+                "Family location",
+                options=["nearby", "distant", "out_of_state", "none"],
+                index=["nearby", "distant", "out_of_state", "none"].index(
+                    form_data.get("family_location", "nearby")
+                ),
+                format_func=lambda x: {
+                    "nearby": "Nearby (within 30 minutes)",
+                    "distant": "Distant (1+ hours away)",
+                    "out_of_state": "Out of state",
+                    "none": "No close family"
+                }.get(x, x.replace("_", " ").title()),
+                help="Where is the primary family support located?"
+            )
+            form_data["family_location"] = family_location
+        
+        with col2:
+            current_support = st.selectbox(
+                "Current support level",
+                options=["independent", "family_help", "hired_care", "minimal"],
+                index=["independent", "family_help", "hired_care", "minimal"].index(
+                    form_data.get("current_support", "independent")
+                ),
+                format_func=lambda x: {
+                    "independent": "Mostly independent",
+                    "family_help": "Some family help",
+                    "hired_care": "Has hired care",
+                    "minimal": "Minimal support"
+                }.get(x, x.replace("_", " ").title()),
+                help="What's the current level of support or assistance?"
+            )
+            form_data["current_support"] = current_support
+            
+            move_triggers = st.multiselect(
+                "What's prompting consideration of a move?",
+                options=["safety_concern", "family_worry", "planned_transition", "health_change", "social_isolation", "home_maintenance"],
+                default=form_data.get("move_triggers", []),
+                format_func=lambda x: {
+                    "safety_concern": "Safety concerns",
+                    "family_worry": "Family worry/concern",
+                    "planned_transition": "Planned life transition",
+                    "health_change": "Health changes",
+                    "social_isolation": "Social isolation",
+                    "home_maintenance": "Home maintenance burden"
+                }.get(x, x.replace("_", " ").title()),
+                help="What factors are leading to this exploration? (Select all that apply)"
+            )
+            form_data["move_triggers"] = move_triggers
+
+    st.markdown("---")
+
+    # Action buttons
+    col1, col2, col3 = st.columns([2, 1, 1])
+    
+    with col1:
+        st.caption("This information helps your advisor provide personalized recommendations.")
+    
+    with col2:
+        if st.button("Skip for Now", use_container_width=True):
+            # User chose to skip preferences
+            st.session_state["pfma_skip_preferences"] = True
+            _complete_pfma_process()
+            st.rerun()
+    
+    with col3:
+        if st.button("Save & Continue", type="primary", use_container_width=True):
+            # Save preferences and mark as complete
+            _save_preferences_and_complete(form_data)
+            st.rerun()
+
+
+def _save_preferences_and_complete(form_data: dict):
+    """Save preferences and complete PFMA process."""
+    
+    # Create preferences object
+    preferences = CustomerPreferences(
+        preferred_regions=form_data.get("preferred_regions", []),
+        max_distance_miles=form_data.get("max_distance"),
+        care_environment_preference=form_data.get("care_environment", "assisted_living"),
+        move_timeline=form_data.get("move_timeline", "exploring"),
+        budget_comfort_level=form_data.get("budget_comfort", "moderate"),
+        activity_preferences=form_data.get("activity_preferences", []),
+        primary_family_contact=form_data.get("family_contact", ""),
+        family_location=form_data.get("family_location", "nearby"),
+        current_support_level=form_data.get("current_support", "independent"),
+        move_triggers=form_data.get("move_triggers", []),
+        completion_status="complete",
+    )
+    
+    # Save preferences
+    PreferencesManager.save_preferences(preferences)
+    
+    # Mark preferences as complete
+    st.session_state["pfma_preferences_complete"] = True
+    
+    # Complete PFMA process
+    _complete_pfma_process()
+    
+    # Log preferences completion
+    log_event(
+        "pfma.preferences.completed",
+        {
+            "regions_count": len(preferences.preferred_regions),
+            "care_environment": preferences.care_environment_preference,
+            "timeline": preferences.move_timeline,
+            "budget_level": preferences.budget_comfort_level,
+            "has_family_contact": bool(preferences.primary_family_contact),
+        }
+    )
+
+
+def _complete_pfma_process():
+    """Complete the PFMA process and mark as done."""
+    # Mark PFMA complete (using canonical key)
+    MCIP.mark_product_complete("pfma")
+    print("[PFMA] Marked PFMA/My Advisor complete")
+    
+    # Clear form data
+    if "preferences_form" in st.session_state:
+        del st.session_state["preferences_form"]
 
 
 # =============================================================================
@@ -439,6 +787,13 @@ def _render_confirmation(appt: AdvisorAppointment):
         if appt.notes:
             st.markdown("**Notes:**")
             st.info(appt.notes)
+
+    # Show preferences status
+    preferences = PreferencesManager.get_preferences()
+    if preferences and preferences.completion_status == "complete":
+        st.success("✅ **Preferences collected** - Your advisor will have detailed information about your needs and preferences.")
+    elif st.session_state.get("pfma_skip_preferences", False):
+        st.info("ℹ️ **Preferences skipped** - You can always share more details during your appointment.")
 
     # Next steps
     st.markdown("### Next Steps")
