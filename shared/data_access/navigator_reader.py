@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
+from dataclasses import dataclass
 
 class NavigatorDataReader:
     """Read-only access to Navigator customer data for CRM use"""
@@ -306,13 +307,6 @@ class NavigatorDataReader:
             summary['cost_analysis'] = customer_data['costplan']
         
         return summary
-from __future__ import annotations
-
-import json
-from pathlib import Path
-from typing import Any, Dict, List, Optional
-from dataclasses import dataclass
-from datetime import datetime
 
 
 @dataclass
@@ -337,6 +331,10 @@ class CustomerProfile:
     # Cost planning data
     estimated_monthly_cost: Optional[float] = None
     care_hours_needed: Optional[int] = None
+
+
+# Singleton instance for easy access
+navigator_data = NavigatorDataReader()
 
 
 class NavigatorDataReader:
