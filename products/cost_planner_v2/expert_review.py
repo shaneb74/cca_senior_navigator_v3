@@ -923,6 +923,48 @@ def _render_available_resources_cards(analysis, profile):
             """,
             unsafe_allow_html=True,
         )
+        
+        # Real-time coverage impact calculation
+        if analysis.monthly_gap > 0:
+            months_covered = selected_total / analysis.monthly_gap
+            years_covered = months_covered / 12
+            
+            if years_covered >= 1:
+                coverage_display = f"{years_covered:.1f} years"
+                coverage_detail = f"({months_covered:.0f} months)"
+            else:
+                coverage_display = f"{months_covered:.0f} months"
+                coverage_detail = ""
+                
+            st.markdown(
+                f"""
+                <div style="background: #f0f9ff; border: 1px solid #0066cc; border-radius: 8px; padding: 16px; margin: 10px 0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-weight: 600; color: #333;">Coverage Duration:</span>
+                        <span style="font-weight: 700; font-size: 18px; color: #0066cc;">{coverage_display} {coverage_detail}</span>
+                    </div>
+                    <div style="font-size: 13px; color: #666; margin-top: 4px;">
+                        Selected assets cover the ${analysis.monthly_gap:,.0f}/month gap
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+        else:
+            st.markdown(
+                f"""
+                <div style="background: #f0f9ff; border: 1px solid #0066cc; border-radius: 8px; padding: 16px; margin: 10px 0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-weight: 600; color: #333;">Additional Security:</span>
+                        <span style="font-weight: 700; font-size: 18px; color: #0066cc;">${selected_total:,.0f}</span>
+                    </div>
+                    <div style="font-size: 13px; color: #666; margin-top: 4px;">
+                        Income covers costs - these assets provide reserves
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
     st.markdown('<div style="height: 20px;"></div>', unsafe_allow_html=True)
 
