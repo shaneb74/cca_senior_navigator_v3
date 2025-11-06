@@ -104,6 +104,23 @@ def render():
         # Get all appointments
         appointments = crm_repo.list_records("appointments")
         
+        # Ensure all appointments have IDs (backwards compatibility)
+        needs_save = False
+        for appt in appointments:
+            if not appt.get('id'):
+                appt['id'] = str(uuid.uuid4())
+                needs_save = True
+        
+        if needs_save:
+            # Save back with IDs
+            import json
+            from pathlib import Path
+            crm_dir = Path("data/crm")
+            file_path = crm_dir / "appointments.jsonl"
+            with open(file_path, 'w') as f:
+                for record in appointments:
+                    f.write(json.dumps(record, ensure_ascii=False) + '\n')
+        
         # Filter upcoming appointments (status = scheduled)
         upcoming_appointments = [a for a in appointments if a.get('status', '').lower() == 'scheduled']
         
@@ -112,6 +129,7 @@ def render():
         
         if upcoming_appointments:
             for idx, appointment in enumerate(upcoming_appointments):
+                appt_id = appointment.get('id', '')
                 customer_name = appointment.get('customer_name', 'Unknown Customer')
                 attendee_name = appointment.get('attendee_name', customer_name)
                 relation = appointment.get('relation_to_recipient', 'Self')
@@ -132,8 +150,8 @@ def render():
                 if care_prep.get('budget_min') and care_prep.get('budget_max'):
                     budget_range = f"${care_prep['budget_min']:,} - ${care_prep['budget_max']:,}/month"
                 
-                # Create unique key for this appointment using created_at timestamp
-                appt_key = f"appt_{created_at}_{idx}"
+                # Create unique key for this appointment using ID
+                appt_key = f"appt_{appt_id}_{idx}"
                 
                 with st.container():
                     # Display appointment details
@@ -208,12 +226,12 @@ def render():
                         col_yes, col_no, col_spacer = st.columns([1, 1, 3])
                         with col_yes:
                             if st.button("Yes, Delete", key=f"confirm_yes_{appt_key}", type="primary"):
-                                # Delete the appointment using created_at as unique identifier
-                                all_appointments = crm_repo.list_records("appointments")
-                                filtered = [a for a in all_appointments if a.get('created_at') != created_at]
-                                crm_repo.data["appointments"] = filtered
-                                crm_repo.save()
-                                st.success(f"✅ Appointment deleted")
+                                # Delete appointment by ID
+                                if crm_repo.delete_record("appointments", appt_id):
+                                    st.success(f"✅ Appointment deleted")
+                                else:
+                                    st.error("Could not delete appointment")
+                                
                                 del st.session_state[f'confirm_delete_{appt_key}']
                                 st.rerun()
                         with col_no:
@@ -274,21 +292,23 @@ def render():
                             col_save, col_cancel = st.columns(2)
                             with col_save:
                                 if st.form_submit_button("💾 Save Changes", type="primary"):
-                                    # Update the appointment
-                                    all_appointments = crm_repo.list_records("appointments")
-                                    for a in all_appointments:
-                                        if a.get('created_at') == created_at:
-                                            a['customer_name'] = edit_customer
-                                            a['appointment_type'] = edit_type
-                                            a['scheduled_at'] = f"{edit_date} at {edit_time.strftime('%I:%M %p')}"
-                                            a['timezone'] = edit_tz
-                                            a['contact_email'] = edit_email
-                                            a['contact_phone'] = edit_phone
-                                            a['notes'] = edit_notes
-                                            a['preferred_time'] = edit_time.strftime('%I:%M %p')
-                                            break
-                                    crm_repo.save()
-                                    st.success("✅ Appointment updated")
+                                    # Update appointment by ID
+                                    updates = {
+                                        'customer_name': edit_customer,
+                                        'appointment_type': edit_type,
+                                        'scheduled_at': f"{edit_date} at {edit_time.strftime('%I:%M %p')}",
+                                        'timezone': edit_tz,
+                                        'contact_email': edit_email,
+                                        'contact_phone': edit_phone,
+                                        'notes': edit_notes,
+                                        'preferred_time': edit_time.strftime('%I:%M %p')
+                                    }
+                                    
+                                    if crm_repo.update_record("appointments", appt_id, updates):
+                                        st.success("✅ Appointment updated")
+                                    else:
+                                        st.error("Could not update appointment")
+                                    
                                     del st.session_state[f'editing_{appt_key}']
                                     st.rerun()
                             with col_cancel:
