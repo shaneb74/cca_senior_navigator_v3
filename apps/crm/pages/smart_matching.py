@@ -303,6 +303,7 @@ def load_community_database():
     return quickbase_client.get_communities()
 
 def calculate_match_score(customer_data, community):
+<<<<<<< Updated upstream
     """AI-powered matching algorithm - respects care level gating based on diagnosis"""
     score = 0
     reasons = []
@@ -316,9 +317,35 @@ def calculate_match_score(customer_data, community):
     elif any(level in care_recommendation for level in community['care_levels']):
         score += 25
         reasons.append(f"Compatible care levels available")
-    else:
-        reasons.append(f"Care level mismatch: needs {care_recommendation}, available {community['care_levels']}")
+=======
+    """Enhanced AI-powered matching algorithm with QuickBase integration and customer preferences"""
+    score = 0
+    reasons = []
     
+    # Get customer preferences if available
+    preferences = PreferencesManager.get_preferences()
+    pref_data = PreferencesManager.get_crm_matching_data() if preferences else {}
+    
+    # Get QuickBase-specific data for advanced matching
+    qb_data = community.get('qb_data', {})
+    
+    # CRITICAL SAFETY & MEDICAL MATCHING (40% weight)
+    # These are placement blockers if needed but not available
+    
+    # Care level matching (25% weight) - Use actual recommendation which respects gating
+    care_recommendation = customer_data.get('care_recommendation', '').lower()
+    
+    if care_recommendation in community['care_levels']:
+        score += 25
+        reasons.append(f"✅ Perfect care level match: {care_recommendation}")
+    elif any(level in care_recommendation for level in community['care_levels']):
+        score += 18
+        reasons.append(f"✅ Compatible care levels available")
+>>>>>>> Stashed changes
+    else:
+        reasons.append(f"⚠️ Care level mismatch: needs {care_recommendation}, available {community['care_levels']}")
+    
+<<<<<<< Updated upstream
     # Budget compatibility (30% weight)
     # Simulate budget from customer data
     budget_min = 3000  # Would come from Navigator cost planning
@@ -338,6 +365,220 @@ def calculate_match_score(customer_data, community):
         reasons.append("✅ Immediate availability")
     elif community['availability'] == '2_weeks':
         score += 15
+=======
+    # Critical equipment/capability matching (15% weight total)
+    critical_matches = 0
+    critical_total = 0
+    
+    # Check for mobility assistance needs (HIGH PRIORITY)
+    if customer_data.get('mobility_assistance') or pref_data.get('needs_mobility_assistance'):
+        critical_total += 1
+        if qb_data.get('hoyer_lift'):
+            score += 8
+            critical_matches += 1
+            reasons.append("🦽 Critical: Hoyer Lift available for mobility assistance")
+        else:
+            reasons.append("⚠️ Critical: Mobility assistance needed but no Hoyer Lift")
+    
+    # Check for memory care needs (HIGH PRIORITY)
+    if 'memory' in care_recommendation or pref_data.get('needs_memory_care'):
+        critical_total += 1
+        if qb_data.get('memory_care_dedicated'):
+            score += 8
+            critical_matches += 1
+            reasons.append("🧠 Critical: Dedicated Memory Care unit available")
+        else:
+            reasons.append("⚠️ Critical: Memory care needed but not specialized facility")
+    
+    # Check for heavy care needs (MEDIUM PRIORITY)
+    if customer_data.get('complex_care') or pref_data.get('needs_heavy_care'):
+        critical_total += 1
+        if qb_data.get('two_person_transfers'):
+            score += 4
+            critical_matches += 1
+            reasons.append("👥 Two-person transfer capability available")
+        elif qb_data.get('awake_staff'):
+            score += 3
+            critical_matches += 1
+            reasons.append("🌙 24/7 awake staff for complex care needs")
+    
+    # Check for bariatric needs (MEDIUM PRIORITY)
+    if customer_data.get('bariatric_care') or pref_data.get('needs_bariatric'):
+        critical_total += 1
+        if qb_data.get('bariatric'):
+            score += 6
+            critical_matches += 1
+            reasons.append("💪 Bariatric care capabilities available")
+        else:
+            reasons.append("⚠️ Bariatric care needed but not available")
+    
+    # COMMON MEDICAL SERVICES MATCHING (15% weight)
+    medical_score = 0
+    
+    # Diabetes/insulin management (VERY COMMON)
+    if customer_data.get('diabetes') or pref_data.get('needs_insulin'):
+        if qb_data.get('insulin_management'):
+            medical_score += 6
+            reasons.append("💉 Insulin management services available")
+        else:
+            reasons.append("ℹ️ Diabetes care - verify insulin management capability")
+    
+    # Wound care services (COMMON)
+    if customer_data.get('wound_care') or pref_data.get('needs_wound_care'):
+        if qb_data.get('wound_care'):
+            medical_score += 4
+            reasons.append("🩹 Professional wound care services available")
+        else:
+            reasons.append("ℹ️ Wound care needed - verify clinical capabilities")
+    
+    # 24/7 supervision (HIGH-RISK RESIDENTS)
+    if customer_data.get('high_risk') or pref_data.get('needs_supervision'):
+        if qb_data.get('awake_staff'):
+            medical_score += 5
+            reasons.append("👨‍⚕️ 24/7 awake staff supervision available")
+        else:
+            reasons.append("⚠️ 24/7 supervision needed - verify staffing levels")
+    
+    score += medical_score
+    
+    # HIGH-IMPACT LIFESTYLE PREFERENCES (20% weight)
+    lifestyle_score = 0
+    
+    # Pet policies (MAJOR QUALITY OF LIFE FACTOR)
+    if pref_data.get('has_pets') or customer_data.get('emotional_support_animal'):
+        if qb_data.get('pet_friendly'):
+            lifestyle_score += 10
+            reasons.append("🐕 Pet-friendly policies - emotional support available")
+        else:
+            lifestyle_score -= 5
+            reasons.append("❌ Pets not allowed - may impact placement")
+    
+    # Language/cultural compatibility (COMMUNICATION CRITICAL)
+    family_language = pref_data.get('primary_language', 'English')
+    if family_language != 'English':
+        community_languages = qb_data.get('languages_spoken', '')
+        if family_language.lower() in community_languages.lower():
+            lifestyle_score += 8
+            reasons.append(f"🗣️ {family_language} language services available")
+        else:
+            lifestyle_score -= 3
+            reasons.append(f"⚠️ {family_language} language services not confirmed")
+    
+    # Independence preferences (COOKING AUTONOMY)
+    if pref_data.get('values_independence') or customer_data.get('independent_living'):
+        if qb_data.get('full_kitchen'):
+            lifestyle_score += 6
+            reasons.append("🍳 Full kitchen available for independent cooking")
+        else:
+            reasons.append("ℹ️ Dining services provided - limited cooking independence")
+    
+    score += lifestyle_score
+    
+    # GEOGRAPHIC PREFERENCE MATCHING (15% weight)
+    location_score = 0
+    if pref_data.get('preferred_regions'):
+        community_location = community.get('location', '').lower()
+        
+        for region in pref_data['preferred_regions']:
+            if region == 'bellevue_area' and 'bellevue' in community_location:
+                location_score += 15
+                reasons.append("🎯 Perfect: Preferred Bellevue area location")
+                break
+            elif region == 'eastside' and any(city in community_location for city in ['bellevue', 'redmond', 'kirkland']):
+                location_score += 12
+                reasons.append("🎯 Excellent: Preferred Eastside location")
+                break
+            elif region == 'seattle' and 'seattle' in community_location:
+                location_score += 12
+                reasons.append("🎯 Excellent: Preferred Seattle area location")
+                break
+            elif region == 'washington_state':
+                location_score += 8
+                reasons.append("✓ Within preferred Washington state")
+                break
+        
+        if location_score == 0:
+            reasons.append("⚠️ Outside preferred geographic areas")
+    else:
+        # Default geographic bonus for Bellevue (if no preferences)
+        if 'bellevue' in community.get('location', '').lower():
+            location_score += 10
+            reasons.append("🏠 Bellevue location advantage")
+    
+    score += location_score
+    
+    # BUDGET COMPATIBILITY (10% weight)
+    budget_min = 3000  # Default
+    budget_max = 6000  # Default
+    
+    # Adjust budget based on preferences
+    if pref_data.get('budget_level') == 'tight':
+        budget_max = 5000
+        budget_min = 2500
+    elif pref_data.get('budget_level') == 'comfortable':
+        budget_min = 4000
+        budget_max = 8000
+    elif pref_data.get('budget_level') == 'luxury':
+        budget_min = 6000
+        budget_max = 12000
+    
+    if (budget_min <= community['monthly_cost']['max'] and 
+        budget_max >= community['monthly_cost']['min']):
+        score += 10
+        reasons.append(f"💰 Budget compatible: ${community['monthly_cost']['min']:,}-${community['monthly_cost']['max']:,}")
+    elif budget_max >= community['monthly_cost']['min']:
+        score += 5
+        reasons.append(f"💰 Partial budget overlap available")
+    else:
+        score -= 5
+        reasons.append(f"⚠️ Budget concern: ${community['monthly_cost']['min']:,}-${community['monthly_cost']['max']:,}")
+    
+    # AVAILABILITY & TIMING (10% weight)
+    timeline = pref_data.get('timeline', 'exploring')
+    if timeline == 'immediate' and community['availability'] == 'immediate':
+        score += 10
+        reasons.append("🚨 Perfect: Immediate availability matches urgent timeline")
+    elif timeline == '2_4_weeks' and community['availability'] in ['immediate', '2_weeks']:
+        score += 8
+        reasons.append("⏰ Excellent: Availability matches 2-4 week timeline")
+    elif timeline == 'exploring' and community['availability'] == 'contact':
+        score += 6
+        reasons.append("🔍 Good: Contact for availability - ideal for exploration")
+    else:
+        score += 4
+        reasons.append("✓ Standard availability consideration")
+    
+    # Bonus for specific vacancy information from QuickBase
+    if community.get('available_beds', 0) > 0:
+        score += 2
+        reasons.append(f"🛏️ {community['available_beds']} beds currently available")
+    
+    # QUALITY RATING BONUS (5% weight)
+    if community['rating'] >= 4.7:
+        score += 5
+        reasons.append(f"⭐ Excellent rating: {community['rating']}/5")
+    elif community['rating'] >= 4.5:
+        score += 3
+        reasons.append(f"⭐ High rating: {community['rating']}/5")
+    else:
+        score += 2
+        reasons.append(f"⭐ Good rating: {community['rating']}/5")
+    
+    # Calculate critical match percentage for priority sorting
+    critical_match_rate = (critical_matches / critical_total * 100) if critical_total > 0 else 100
+    
+    # Add critical match indicator to reasons
+    if critical_total > 0:
+        if critical_match_rate == 100:
+            reasons.insert(0, f"✅ ALL critical needs met ({critical_matches}/{critical_total})")
+        elif critical_match_rate >= 50:
+            reasons.insert(0, f"⚠️ Most critical needs met ({critical_matches}/{critical_total})")
+        else:
+            reasons.insert(0, f"❌ Critical needs gaps ({critical_matches}/{critical_total})")
+    
+    return min(score, 100), reasons
+        score += 8
+>>>>>>> Stashed changes
         reasons.append("⏰ Available within 2 weeks")
     elif community['availability'] == 'waitlist':
         score += 5
@@ -514,18 +755,28 @@ def render(customer_id=None):
         st.markdown("""
         ---
         
-        ### 🚀 **QuickBase Community Transformation**
+        ### 🚀 **Enhanced QuickBase Community Matching**
         
         **Before:** 132 manual fields per community requiring constant spreadsheet maintenance  
-        **After:** AI-powered matching using Navigator assessment data
+        **After:** Focused AI-driven matching using 11 high-impact criteria for precise care compatibility
         
-        **Key Improvements:**
-        - ✅ **Smart matching algorithm** - Care level + budget + availability scoring
-        - ✅ **Real-time recommendations** - No manual community research required  
-        - ✅ **Navigator integration** - Uses GCP and cost planning data automatically
-        - ✅ **Quality scoring** - Partner ratings and availability tracking
+        **Critical Safety Matching:**
+        - 🦽 Hoyer Lift availability for mobility assistance
+        - 🧠 Dedicated Memory Care for specialized needs  
+        - 👥 Two-person transfer capabilities for complex care
+        - 💪 Bariatric care equipment and training
         
-        *This replaces QuickBase's complex community database with intelligent, automated matching.*
+        **Medical Service Compatibility:**
+        - 💉 Insulin management for diabetes care
+        - 🩹 Professional wound care services
+        - 👨‍⚕️ 24/7 awake staff supervision
+        
+        **Quality of Life Factors:**
+        - 🐕 Pet-friendly policies for emotional support
+        - 🗣️ Language services for cultural compatibility
+        - 🍳 Full kitchen access for independence
+        
+        *This transforms QuickBase's 132-field complexity into intelligent, safety-first community matching.*
         """)
         
         return
