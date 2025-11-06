@@ -171,6 +171,13 @@ def _render_booking_form():
 
     # Form fields
     st.markdown("### Your Information")
+    
+    # Debug: Show current form data and option to clear
+    if st.checkbox("🔧 Debug: Show form data", help="Developer option to inspect form state"):
+        st.json(form_data)
+        if st.button("Clear Form Data", help="Clear cached form data for testing"):
+            st.session_state["pfma_v3_form"] = {}
+            st.rerun()
 
     col1, col2 = st.columns(2)
 
@@ -335,10 +342,16 @@ def _handle_booking_submit(form_data: dict):
 
     # Convert to customer in CRM (appointment booking makes them a customer)
     try:
+        care_recipient_name = form_data.get("name", "").strip()
+        contact_email = form_data.get("email", "").strip() or None
+        contact_phone = form_data.get("phone", "").strip() or None
+        
+        print(f"[PFMA] Converting to customer with name: '{care_recipient_name}'")
+        
         customer_id = convert_to_customer(
-            name=form_data.get("name", "").strip(),
-            email=form_data.get("email", "").strip() or None,
-            phone=form_data.get("phone", "").strip() or None,
+            name=care_recipient_name,
+            email=contact_email,
+            phone=contact_phone,
             source="appointment_booking"
         )
         crm_status = get_crm_status()
