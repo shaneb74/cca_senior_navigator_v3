@@ -296,7 +296,7 @@ def render_appointments(customer_id):
     # Quick action to schedule
     if st.button("➕ Schedule New Appointment", type="primary"):
         st.session_state['schedule_for_customer'] = customer_id
-        st.switch_page("apps/crm/pages/appointments.py")
+        st.info("📞 Please navigate to **Appointments** page using the sidebar to schedule")
     
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -336,7 +336,7 @@ def render_notes(customer_id):
     # Quick action to add note
     if st.button("➕ Add Note", type="primary"):
         st.session_state['add_note_customer'] = customer_id
-        st.switch_page("apps/crm/pages/notes.py")
+        st.info("📝 Please navigate to **Notes & Interactions** page using the sidebar to add a note")
     
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -380,25 +380,25 @@ def render_quick_actions(customer_id, customer_data):
     with col1:
         if st.button("📞 Schedule Call", use_container_width=True):
             st.session_state['schedule_for_customer'] = customer_id
-            st.switch_page("apps/crm/pages/appointments.py")
+            st.toast("📞 Customer marked for scheduling - use Appointments page")
     
     with col2:
         if st.button("📝 Add Note", use_container_width=True):
             st.session_state['add_note_customer'] = customer_id
-            st.switch_page("apps/crm/pages/notes.py")
+            st.toast("📝 Customer marked for note - use Notes page")
     
     with col3:
         if st.button("📧 Send Email", use_container_width=True):
             email = customer_data.get('email') or customer_data.get('contact_email')
             if email:
-                st.info(f"Email: {email}")
+                st.info(f"📧 Email: {email}")
             else:
                 st.warning("No email on file")
     
     with col4:
         if st.button("🏘️ Match Communities", use_container_width=True):
             st.session_state['match_for_customer'] = customer_id
-            st.switch_page("apps/crm/pages/smart_matching.py")
+            st.toast("🏘️ Customer marked for matching - use Smart Matching page")
 
 
 def render():
@@ -409,20 +409,23 @@ def render():
     customer_id = st.session_state.get('selected_customer')
     
     if not customer_id:
-        st.warning("No customer selected")
-        st.info("Please select a customer from the Customers page or Dashboard to view their 360° profile.")
-        
-        if st.button("← Back to Customers"):
-            st.switch_page("apps/crm/pages/customers.py")
+        st.warning("⚠️ No customer selected")
+        st.info("👉 Please select a customer from the Customers page to view their 360° profile.")
+        st.markdown("---")
+        st.markdown("**How to view a customer:**")
+        st.markdown("1. Go to **👥 Customers** page (use sidebar)")
+        st.markdown("2. Click **View Details** on any customer card")
         return
     
     # Load customer data from CRM
     customer_data = get_crm_customer_by_id(customer_id)
     
     if not customer_data:
-        st.error(f"Customer not found: {customer_id}")
-        if st.button("← Back to Customers"):
-            st.switch_page("apps/crm/pages/customers.py")
+        st.error(f"❌ Customer not found: {customer_id}")
+        st.info("The customer may have been deleted or the ID is invalid.")
+        if st.button("Clear Selection"):
+            del st.session_state['selected_customer']
+            st.rerun()
         return
     
     # Load Navigator-specific data
@@ -431,8 +434,11 @@ def render():
     
     # Back button
     if st.button("← Back to Customers"):
-        del st.session_state['selected_customer']
-        st.switch_page("apps/crm/pages/customers.py")
+        # Clear the selected customer and return to customers page
+        if 'selected_customer' in st.session_state:
+            del st.session_state['selected_customer']
+        st.info("👈 Use sidebar to navigate back to Customers page")
+        st.rerun()
     
     # Render customer profile
     render_customer_header(customer_data)
