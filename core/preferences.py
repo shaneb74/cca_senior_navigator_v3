@@ -14,44 +14,37 @@ import streamlit as st
 
 @dataclass
 class CustomerPreferences:
-    """Customer preferences for community matching and advisor preparation."""
+    """Streamlined customer preferences for QuickBase community matching."""
 
-    # Geographic & Location Preferences
-    preferred_regions: List[str] = field(default_factory=list)  # ["bellevue_area", "seattle", "eastside"]
-    max_distance_miles: Optional[int] = None  # Maximum distance from current location or family
-    transportation_access: str = "flexible"  # "public_transit", "family_visits", "driving", "flexible"
+    # ESSENTIAL: Person receiving care (for CRM records)
+    care_recipient_name: str = ""  # Full name (legacy compatibility)
+    first_name: str = ""  # First name for CRM customer creation
+    last_name: str = ""   # Last name for CRM customer creation
     
-    # Care Level & Services
-    care_environment_preference: str = "assisted_living"  # "independent", "assisted_living", "memory_care", "in_home"
-    specific_care_services: List[str] = field(default_factory=list)  # ["medication_mgmt", "mobility_help", "diabetes_care"]
-    medical_specializations: List[str] = field(default_factory=list)  # ["physical_therapy", "diabetes", "alzheimers"]
+    # ESSENTIAL: Geographic matching (ZIP + radius for precise location)
+    zip_code: str = ""  # ZIP code for location-based search
+    search_radius: str = "25"  # Search radius in miles ("10", "25", "50", etc.)
     
-    # Financial Preferences
-    budget_comfort_level: str = "moderate"  # "tight", "moderate", "comfortable", "luxury"
-    payment_preference: List[str] = field(default_factory=list)  # ["private_pay", "va_benefits", "insurance"]
-    priority_vs_budget: str = "balanced"  # "essential_only", "balanced", "prefer_amenities"
+    # ESSENTIAL: Timeline urgency (QuickBase Field 59 - Vacancy matching)  
+    move_timeline: str = "exploring"  # "immediate", "1_2_months", "exploring"
     
-    # Social & Lifestyle
-    activity_preferences: List[str] = field(default_factory=list)  # ["fitness", "arts", "social", "quiet", "outdoors"]
-    dining_preferences: List[str] = field(default_factory=list)  # ["dietary_restrictions", "flexible_timing", "social_dining"]
-    pet_requirements: str = "none"  # "none", "current_pets", "pet_friendly_preferred"
-    visitor_importance: str = "moderate"  # "low", "moderate", "high", "critical"
+    # ESSENTIAL: Care level confirmation (QuickBase Field 21 - Care Type)
+    care_environment_preference: str = "assisted_living"  # Confirms GCP recommendation
     
-    # Timeline & Urgency
-    move_timeline: str = "exploring"  # "immediate", "2_4_weeks", "2_3_months", "exploring", "future_planning"
-    current_situation_stability: str = "stable"  # "urgent", "declining", "stable", "planned"
-    move_triggers: List[str] = field(default_factory=list)  # ["safety_concern", "family_worry", "planned_transition"]
+    # DETAILED COMMUNITY FEATURES: QuickBase checkbox field matching
+    medical_features: List[str] = field(default_factory=list)  # ["hoyer_lift", "house_doctor", etc.]
+    accommodation_features: List[str] = field(default_factory=list)  # ["full_kitchen", "air_conditioning", etc.]
+    amenity_features: List[str] = field(default_factory=list)  # ["pool", "water_view", etc.]
+    lifestyle_features: List[str] = field(default_factory=list)  # ["allows_pets", "accepts_smokers", etc.]
     
-    # Family & Support Context
-    primary_family_contact: str = ""  # Name of main decision maker/contact
-    family_location: str = "nearby"  # "nearby", "distant", "out_of_state", "none"
-    current_support_level: str = "independent"  # "independent", "family_help", "hired_care", "minimal"
+    # LEGACY COMPATIBILITY: Keep preferred_regions for backward compatibility
+    preferred_regions: List[str] = field(default_factory=list)  # DEPRECATED - use zip_code + search_radius
     
     # Metadata
     collected_at: str = field(default_factory=lambda: datetime.now().isoformat())
     updated_at: str = field(default_factory=lambda: datetime.now().isoformat())
-    version: str = "1.0"  # Schema version for future compatibility
-    completion_status: str = "partial"  # "partial", "complete", "needs_update"
+    version: str = "3.2"  # Schema version - now includes ZIP + radius location
+    completion_status: str = "partial"  # "partial", "complete"
 
 
 class PreferencesManager:
@@ -126,107 +119,126 @@ class PreferencesManager:
         if care_recommendation:
             care_env = care_recommendation
         
-        # Set default regions based on location (if available)
-        default_regions = []
-        profile = st.session_state.get("profile", {})
-        location = profile.get("location", "").lower()
-        if "bellevue" in location or "seattle" in location:
-            default_regions = ["bellevue_area", "eastside"]
-        elif "wa" in location or "washington" in location:
-            default_regions = ["washington_state"]
+        # Set default ZIP code from cost planner if available
+        default_zip = ""
+        cost_data = st.session_state.get("cost", {})
+        cost_inputs = cost_data.get("inputs", {})
+        cost_zip = cost_inputs.get("zip") or st.session_state.get("cost.inputs", {}).get("zip")
+        if cost_zip:
+            default_zip = cost_zip
         
         return CustomerPreferences(
             care_environment_preference=care_env,
-            preferred_regions=default_regions,
+            zip_code=default_zip,
+            search_radius="25",  # Default 25 mile radius
             completion_status="partial",
         )
     
     @classmethod
-    def get_crm_matching_data(cls) -> Dict[str, Any]:
-        """Extract preferences data for CRM community matching.
+    def get_crm_matching_data(cls) -> dict:
+        """Get preferences data optimized for CRM community matching.
         
         Returns:
-            Dict with key-value pairs for CRM matching algorithm
+            Dictionary with essential matching criteria for QuickBase CRM
         """
         preferences = cls.get_preferences()
         if not preferences:
             return {}
         
-        return {
-            # Geographic matching
-            "preferred_regions": preferences.preferred_regions,
-            "max_distance_miles": preferences.max_distance_miles,
-            "transportation_needs": preferences.transportation_access,
-            
-            # Care level matching
+        # Base data for all care types
+        base_data = {
+            "care_recipient_name": preferences.care_recipient_name,
             "care_environment": preferences.care_environment_preference,
-            "required_services": preferences.specific_care_services,
-            "medical_specializations": preferences.medical_specializations,
-            
-            # Urgency for vacancy matching
-            "timeline": preferences.move_timeline,
-            "urgency_level": preferences.current_situation_stability,
-            
-            # Budget considerations
-            "budget_level": preferences.budget_comfort_level,
-            "payment_methods": preferences.payment_preference,
-            
-            # Lifestyle matching
-            "activity_preferences": preferences.activity_preferences,
-            "pet_requirements": preferences.pet_requirements,
-            "visitor_importance": preferences.visitor_importance,
-            
-            # Family context
-            "family_proximity": preferences.family_location,
-            "support_level": preferences.current_support_level,
-            
-            # Metadata
-            "preferences_complete": preferences.completion_status == "complete",
-            "last_updated": preferences.updated_at,
+            "completion_status": preferences.completion_status,
+            "last_updated": preferences.last_updated.isoformat() if preferences.last_updated else None,
         }
+        
+        # Add type-specific data
+        if preferences.care_environment_preference == "in_home":
+            # In-home care specific data
+            import streamlit as st
+            in_home_details = st.session_state.get("in_home_care_details", {})
+            
+            base_data.update({
+                "current_living_situation": in_home_details.get("current_living_situation"),
+                "care_start_timeline": in_home_details.get("care_start_timeline"),
+                "primary_care_needs": in_home_details.get("primary_care_needs", []),
+                "care_type": "in_home"
+            })
+        else:
+            # Community care specific data  
+            base_data.update({
+                "zip_code": preferences.zip_code,
+                "search_radius": preferences.search_radius,
+                "move_timeline": preferences.move_timeline,
+                "care_type": "community",
+                # Detailed QuickBase community features for matching
+                "medical_features": getattr(preferences, 'medical_features', []),
+                "accommodation_features": getattr(preferences, 'accommodation_features', []),
+                "amenity_features": getattr(preferences, 'amenity_features', []),
+                "lifestyle_features": getattr(preferences, 'lifestyle_features', []),
+                # Legacy compatibility
+                "preferred_regions": getattr(preferences, 'preferred_regions', []),
+            })
+        
+        return base_data
     
     @classmethod
     def get_completion_percentage(cls) -> int:
-        """Calculate completion percentage of preferences collection.
+        """Calculate completion percentage of essential preferences.
         
         Returns:
-            Percentage (0-100) of preferences completed
+            Percentage (0-100) of essential preferences completed
         """
         preferences = cls.get_preferences()
         if not preferences:
             return 0
         
-        # Count completed sections
+        # Determine care type from environment preference
+        is_community_care = preferences.care_environment_preference in [
+            "assisted_living", "memory_care", "memory_care_high_acuity", "independent"
+        ]
+        is_in_home_care = preferences.care_environment_preference == "in_home"
+        
+        # Count completed essential fields (4 total for both types)
         completed = 0
-        total = 7  # Total number of preference sections
+        total = 4
         
-        # Geographic preferences
-        if preferences.preferred_regions or preferences.max_distance_miles:
+        # 1. Care recipient name (universal)
+        if preferences.care_recipient_name.strip():
             completed += 1
         
-        # Care preferences  
-        if preferences.care_environment_preference != "assisted_living" or preferences.specific_care_services:
-            completed += 1
-        
-        # Financial preferences
-        if preferences.budget_comfort_level != "moderate" or preferences.payment_preference:
-            completed += 1
-        
-        # Lifestyle preferences
-        if preferences.activity_preferences or preferences.dining_preferences:
-            completed += 1
-        
-        # Timeline preferences
-        if preferences.move_timeline != "exploring":
-            completed += 1
-        
-        # Family context
-        if preferences.primary_family_contact or preferences.family_location != "nearby":
-            completed += 1
-        
-        # Support context
-        if preferences.current_support_level != "independent":
-            completed += 1
+        if is_community_care:
+            # Community care completion logic
+            
+            # 2. Geographic preferences (ZIP code)
+            if preferences.zip_code.strip():
+                completed += 1
+            
+            # 3. Timeline 
+            if preferences.move_timeline != "exploring":
+                completed += 1
+                
+            # 4. Care environment confirmation
+            if preferences.care_environment_preference in ["assisted_living", "memory_care", "memory_care_high_acuity", "independent"]:
+                completed += 1
+                
+        elif is_in_home_care:
+            # In-home care completion logic (check session state for in-home details)
+            import streamlit as st
+            in_home_details = st.session_state.get("in_home_care_details", {})
+            
+            # 2. Living situation
+            if in_home_details.get("current_living_situation"):
+                completed += 1
+            
+            # 3. Care timeline
+            if in_home_details.get("care_start_timeline", "exploring") != "exploring":
+                completed += 1
+            
+            # 4. Care needs
+            if in_home_details.get("primary_care_needs"):
+                completed += 1
         
         return int((completed / total) * 100)
 

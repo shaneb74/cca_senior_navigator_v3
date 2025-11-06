@@ -22,6 +22,8 @@ from datetime import datetime
 
 import streamlit as st
 
+from core.crm_ids import create_lead, convert_to_customer, get_crm_status
+
 from core.events import log_event
 from core.mcip import MCIP, AdvisorAppointment
 from core.nav import route_to
@@ -57,11 +59,15 @@ def render():
     appt = MCIP.get_advisor_appointment()
     preferences = PreferencesManager.get_preferences()
     
+    # Check for force booking parameter to show the new booking form
+    force_booking = st.query_params.get("force_booking") == "true"
+    
     # Check what screen to show based on state
     show_preferences = (
         appt and appt.scheduled and  # Appointment is booked
         not st.session_state.get("pfma_preferences_complete", False) and  # Preferences not marked complete
-        not st.session_state.get("pfma_skip_preferences", False)  # User hasn't chosen to skip
+        not st.session_state.get("pfma_skip_preferences", False) and  # User hasn't chosen to skip
+        not force_booking  # Not forcing booking view
     )
     
     if show_preferences:
@@ -199,7 +205,9 @@ def _render_booking_form():
         )
         if name != form_data.get("name"):
             form_data["name"] = name
-            log_event("pfma.booking.field_edited", {"field": "name"})
+            # Generate lead_id on first meaningful form interaction
+            lead_id = create_lead(name=name, source="pfma")
+            log_event("pfma.booking.field_edited", {"field": "name", "lead_id": lead_id})
 
     with col2:
         email = st.text_input(
@@ -210,7 +218,9 @@ def _render_booking_form():
         )
         if email != form_data.get("email"):
             form_data["email"] = email
-            log_event("pfma.booking.field_edited", {"field": "email"})
+            # Generate lead_id on first meaningful form interaction
+            lead_id = get_or_create_lead_id()
+            log_event("pfma.booking.field_edited", {"field": "email", "lead_id": lead_id})
 
     col3, col4 = st.columns(2)
 
@@ -223,7 +233,9 @@ def _render_booking_form():
         )
         if phone != form_data.get("phone"):
             form_data["phone"] = phone
-            log_event("pfma.booking.field_edited", {"field": "phone"})
+            # Generate lead_id on first meaningful form interaction
+            lead_id = create_lead(phone=phone, source="pfma")
+            log_event("pfma.booking.field_edited", {"field": "phone", "lead_id": lead_id})
 
     with col4:
         timezone = st.selectbox(
@@ -346,6 +358,17 @@ def _handle_booking_submit(form_data: dict):
         prep_progress=0,
     )
 
+    # Convert lead to customer (generates customer_id, preserves lead_id)
+    customer_id = convert_to_customer(
+        name=form_data.get("name"),
+        email=form_data.get("email"), 
+        phone=form_data.get("phone"),
+        source="appointment_booking"
+    )
+    crm_status = get_crm_status()
+    
+    print(f"[PFMA] Appointment booked - CRM Status: {crm_status}")
+
     # Save to MCIP
     MCIP.set_advisor_appointment(appointment)
 
@@ -357,11 +380,19 @@ def _handle_booking_submit(form_data: dict):
             "timezone": appointment.timezone,
             "has_email": bool(appointment.contact_email),
             "has_phone": bool(appointment.contact_phone),
+            "lead_id": crm_status["lead_id"],
+            "customer_id": crm_status["customer_id"],
+            "crm_status": crm_status["user_type"],
         },
     )
 
     log_event(
-        "pfma.appointment.requested", {"confirmation_id": confirmation_id, "type": appointment.type}
+        "pfma.appointment.requested", {
+            "confirmation_id": confirmation_id, 
+            "type": appointment.type,
+            "lead_id": crm_status["lead_id"],
+            "customer_id": crm_status["customer_id"],
+        }
     )
 
     # Clear form
@@ -411,18 +442,18 @@ def _validate_booking(form_data: dict) -> tuple[bool, list[str]]:
 
 
 def _render_preferences_collection(appt: AdvisorAppointment):
-    """Render 'More About {Name}' preferences collection screen."""
+    """Render preferences collection using the exact same structure as booking form."""
     
     # Get customer name from profile or appointment
     profile = st.session_state.get("profile", {})
     customer_name = profile.get("name", "you")
     
-    # Apply clean CSS
+    # Apply clean CSS with proper width constraint (EXACT SAME AS BOOKING)
     st.markdown(
         """
         <style>
         .block-container {
-            max-width: 1200px !important;
+            max-width: 1000px !important;
             padding-left: 2rem !important;
             padding-right: 2rem !important;
         }
@@ -433,8 +464,8 @@ def _render_preferences_collection(appt: AdvisorAppointment):
 
     st.markdown(f"## More About {customer_name}")
     st.markdown(
-        f"**Great! Your appointment is confirmed.** To help your advisor provide the best recommendations, "
-        f"please share a bit more about {customer_name}'s preferences and situation."
+        f"**Great! Your appointment is confirmed.** To help your advisor find the best community matches, "
+        f"please answer these 4 quick questions (takes about 1 minute)."
     )
     
     # Show appointment confirmation briefly
@@ -450,262 +481,417 @@ def _render_preferences_collection(appt: AdvisorAppointment):
 
     st.markdown("---")
 
-    # Get or create preferences
+    # Get or create preferences and check recommendation type
     preferences = PreferencesManager.get_preferences()
+    care_rec = MCIP.get_care_recommendation()
+    care_tier = care_rec.tier if care_rec else "assisted_living"
+    
+    # Determine if this is community-based care or in-home care
+    is_community_care = care_tier in ["assisted_living", "memory_care", "memory_care_high_acuity", "independent"]
+    is_in_home_care = care_tier == "in_home"
+    
     if not preferences:
-        # Create default preferences based on GCP recommendation
-        care_rec = MCIP.get_care_recommendation()
-        care_tier = care_rec.tier if care_rec else "assisted_living"
         preferences = PreferencesManager.create_default_preferences(care_tier)
 
-    # Form for preferences collection
-    st.markdown("### Preferences & Situation")
+    # Streamlined form for essential preferences only
+    if is_community_care:
+        st.markdown("### Essential Information for Community Matching")
+        st.markdown("*These questions help your advisor find communities with availability that match your needs.*")
+        form_title = "community matching"
+    else:  # in_home_care
+        st.markdown("### Essential Information for In-Home Care Planning")
+        st.markdown("*These questions help your advisor plan the best in-home care approach for your situation.*")
+        form_title = "in-home care planning"
     
-    # Store form data in session state for persistence across reruns
+    # Initialize form state (EXACT SAME PATTERN AS BOOKING)
     if "preferences_form" not in st.session_state:
-        st.session_state["preferences_form"] = {
-            "preferred_regions": preferences.preferred_regions,
-            "max_distance": preferences.max_distance_miles,
-            "care_environment": preferences.care_environment_preference,
-            "move_timeline": preferences.move_timeline,
-            "budget_comfort": preferences.budget_comfort_level,
-            "activity_preferences": preferences.activity_preferences,
-            "family_contact": preferences.primary_family_contact,
-            "family_location": preferences.family_location,
-            "current_support": preferences.current_support_level,
-            "move_triggers": preferences.move_triggers,
-        }
+        if is_community_care:
+            # Extract first/last name if care_recipient_name exists
+            existing_name = preferences.care_recipient_name
+            name_parts = existing_name.split() if existing_name else []
+            first_name = name_parts[0] if len(name_parts) > 0 else ""
+            last_name = " ".join(name_parts[1:]) if len(name_parts) > 1 else ""
+            
+            # Get ZIP code from cost planner for pre-population
+            cost_data = st.session_state.get("cost", {})
+            cost_inputs = cost_data.get("inputs", {})
+            cost_zip = cost_inputs.get("zip") or st.session_state.get("cost.inputs", {}).get("zip")
+            
+            st.session_state["preferences_form"] = {
+                "care_recipient_name": preferences.care_recipient_name,
+                "first_name": first_name,
+                "last_name": last_name,
+                "zip_code": getattr(preferences, 'zip_code', '') or cost_zip or "",
+                "search_radius": getattr(preferences, 'search_radius', '25'),
+                "move_timeline": preferences.move_timeline,
+                "care_environment": preferences.care_environment_preference,
+                "medical_features": getattr(preferences, 'medical_features', []),
+                "accommodation_features": getattr(preferences, 'accommodation_features', []),
+                "amenity_features": getattr(preferences, 'amenity_features', []),
+                "lifestyle_features": getattr(preferences, 'lifestyle_features', []),
+            }
+        else:  # in_home_care
+            # Extract first/last name if care_recipient_name exists
+            existing_name = preferences.care_recipient_name
+            name_parts = existing_name.split() if existing_name else []
+            first_name = name_parts[0] if len(name_parts) > 0 else ""
+            last_name = " ".join(name_parts[1:]) if len(name_parts) > 1 else ""
+            
+            st.session_state["preferences_form"] = {
+                "care_recipient_name": preferences.care_recipient_name,
+                "first_name": first_name,
+                "last_name": last_name,
+                "current_living_situation": "own_home",
+                "care_start_timeline": "exploring",
+                "primary_care_needs": [],
+            }
 
     form_data = st.session_state["preferences_form"]
 
-    # Geographic Preferences
-    with st.expander("🗺️ **Location & Geographic Preferences**", expanded=True):
-        st.markdown("*Help us find communities in the right areas*")
+    # Care recipient name (split into first/last for CRM)
+    col_name1, col_name2 = st.columns(2)
+    
+    with col_name1:
+        first_name = st.text_input(
+            "First Name *",
+            value=form_data.get("first_name", ""),
+            placeholder="e.g., Mary",
+            help="First name of person receiving care",
+        )
+        if first_name != form_data.get("first_name"):
+            form_data["first_name"] = first_name
+    
+    with col_name2:
+        last_name = st.text_input(
+            "Last Name *",
+            value=form_data.get("last_name", ""),
+            placeholder="e.g., Johnson",
+            help="Last name of person receiving care",
+        )
+        if last_name != form_data.get("last_name"):
+            form_data["last_name"] = last_name
+    
+    # Combine for legacy compatibility and display
+    care_recipient_name = f"{first_name.strip()} {last_name.strip()}".strip()
+    if care_recipient_name != form_data.get("care_recipient_name"):
+        form_data["care_recipient_name"] = care_recipient_name
+    
+    if is_community_care:
+        # Community Care Questions (AL/MC/Independent)
         
+        # ZIP code and search radius in columns
         col1, col2 = st.columns(2)
         
         with col1:
-            regions = st.multiselect(
-                "Preferred regions/areas",
-                options=[
-                    "bellevue_area", "seattle", "eastside", "north_seattle", "south_seattle",
-                    "tacoma", "spokane", "vancouver_wa", "olympia", "everett", "washington_state"
-                ],
-                default=form_data.get("preferred_regions", []),
-                format_func=lambda x: {
-                    "bellevue_area": "Bellevue Area",
-                    "seattle": "Seattle",
-                    "eastside": "Eastside (Bellevue, Redmond, Kirkland)",
-                    "north_seattle": "North Seattle",
-                    "south_seattle": "South Seattle", 
-                    "tacoma": "Tacoma Area",
-                    "spokane": "Spokane Area",
-                    "vancouver_wa": "Vancouver, WA",
-                    "olympia": "Olympia Area",
-                    "everett": "Everett Area",
-                    "washington_state": "Anywhere in Washington State"
-                }.get(x, x.replace("_", " ").title()),
-                help="Select areas you'd prefer for community locations"
+            # Get ZIP code from cost planner
+            cost_data = st.session_state.get("cost", {})
+            cost_inputs = cost_data.get("inputs", {})
+            cost_zip = cost_inputs.get("zip") or st.session_state.get("cost.inputs", {}).get("zip")
+            
+            zip_code = st.text_input(
+                "ZIP Code",
+                value=form_data.get("zip_code", cost_zip or ""),
+                placeholder="12345",
+                max_chars=5,
+                help="Pre-populated from your cost estimate",
+                key="preferences_zip_code"
             )
-            form_data["preferred_regions"] = regions
+            if zip_code != form_data.get("zip_code"):
+                form_data["zip_code"] = zip_code
         
         with col2:
-            max_distance = st.selectbox(
-                "Maximum distance preference",
-                options=[None, 5, 10, 15, 25, 50],
-                index=[None, 5, 10, 15, 25, 50].index(form_data.get("max_distance")),
-                format_func=lambda x: "No preference" if x is None else f"Within {x} miles",
-                help="Maximum distance from current location or family"
-            )
-            form_data["max_distance"] = max_distance
-
-    # Care & Timeline Preferences
-    with st.expander("🏠 **Care Level & Timeline**", expanded=True):
-        st.markdown("*Help us understand care needs and timing*")
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            care_env = st.selectbox(
-                "Preferred care environment",
-                options=["independent", "assisted_living", "memory_care", "in_home", "exploring"],
-                index=["independent", "assisted_living", "memory_care", "in_home", "exploring"].index(
-                    form_data.get("care_environment", "assisted_living")
+            search_radius = st.selectbox(
+                "Search Radius",
+                options=["10", "25", "50", "75", "100", "no_limit"],
+                index=["10", "25", "50", "75", "100", "no_limit"].index(
+                    form_data.get("search_radius", "25")
                 ),
                 format_func=lambda x: {
-                    "independent": "Independent Living",
-                    "assisted_living": "Assisted Living", 
-                    "memory_care": "Memory Care",
-                    "in_home": "In-Home Care",
-                    "exploring": "Still exploring options"
-                }.get(x, x.replace("_", " ").title()),
-                help="Based on your assessment results and preferences"
+                    "10": "10 miles",
+                    "25": "25 miles",
+                    "50": "50 miles", 
+                    "75": "75 miles",
+                    "100": "100 miles",
+                    "no_limit": "No distance limit"
+                }.get(x, f"{x} miles"),
+                help="How far from your ZIP code to search for communities",
+                key="preferences_search_radius"
             )
-            form_data["care_environment"] = care_env
+            if search_radius != form_data.get("search_radius"):
+                form_data["search_radius"] = search_radius
+
+        # Timeline for moving
+        timeline = st.selectbox(
+            "What's your timeline for moving?",
+            options=["immediate", "2_4_weeks", "2_3_months", "exploring", "future_planning"],
+            index=["immediate", "2_4_weeks", "2_3_months", "exploring", "future_planning"].index(
+                form_data.get("move_timeline", "exploring")
+            ),
+            format_func=lambda x: {
+                "immediate": "Immediate (within 2 weeks)",
+                "2_4_weeks": "2-4 weeks",
+                "2_3_months": "2-3 months", 
+                "exploring": "Exploring options",
+                "future_planning": "Future planning"
+            }.get(x, x.replace("_", " ").title()),
+            help="This helps find communities with matching availability",
+            key="preferences_timeline_select"
+        )
+        if timeline != form_data.get("move_timeline"):
+            form_data["move_timeline"] = timeline
+
+        # Care environment (auto-populated from GCP, read-only)
+        st.markdown(f"**Care Level Recommendation:** {care_tier.replace('_', ' ').title()}")
+        st.caption("Based on your assessment results - this helps match the right level of care")        # Store the care tier (not user-selectable)
+        if form_data.get("care_environment") != care_tier:
+            form_data["care_environment"] = care_tier
+
+        # Community Features & Amenities (Community Care Only)
+        st.markdown("### Community Features & Amenities")
+        st.caption("Select features that are important to you (optional)")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("**Medical & Care Features:**")
+            medical_features = st.multiselect(
+                "Medical & Care Features",
+                options=["hoyer_lift", "house_doctor", "awake_night_staff", "insulin_management", "medicaid_accepted"],
+                default=form_data.get("medical_features", []),
+                format_func=lambda x: {
+                    "hoyer_lift": "Hoyer Lift Available",
+                    "house_doctor": "House Doctor on Site",
+                    "awake_night_staff": "Awake Night Staff",
+                    "insulin_management": "Insulin Management",
+                    "medicaid_accepted": "Medicaid Accepted"
+                }.get(x, x.replace("_", " ").title()),
+                help="Medical services and specialized care equipment",
+                label_visibility="collapsed",
+                key="medical_features_select"
+            )
+            if medical_features != form_data.get("medical_features"):
+                form_data["medical_features"] = medical_features
+                
+            st.markdown("**Accommodation Features:**")
+            accommodation_features = st.multiselect(
+                "Accommodation Features",
+                options=["full_kitchen", "air_conditioning", "two_bedroom", "covered_parking", "extra_storage"],
+                default=form_data.get("accommodation_features", []),
+                format_func=lambda x: {
+                    "full_kitchen": "Full Kitchen in Unit",
+                    "air_conditioning": "Air Conditioning",
+                    "two_bedroom": "Two Bedroom Options",
+                    "covered_parking": "Covered Parking",
+                    "extra_storage": "Extra Storage Space"
+                }.get(x, x.replace("_", " ").title()),
+                help="Living space features and accommodations",
+                label_visibility="collapsed",
+                key="accommodation_features_select"
+            )
+            if accommodation_features != form_data.get("accommodation_features"):
+                form_data["accommodation_features"] = accommodation_features
         
         with col2:
-            timeline = st.selectbox(
-                "Move timeline",
-                options=["immediate", "2_4_weeks", "2_3_months", "exploring", "future_planning"],
-                index=["immediate", "2_4_weeks", "2_3_months", "exploring", "future_planning"].index(
-                    form_data.get("move_timeline", "exploring")
+            st.markdown("**Amenities & Activities:**")
+            amenity_features = st.multiselect(
+                "Amenities & Activities",
+                options=["pool", "water_view", "patio", "generator", "cottages"],
+                default=form_data.get("amenity_features", []),
+                format_func=lambda x: {
+                    "pool": "Swimming Pool",
+                    "water_view": "Water View",
+                    "patio": "Private Patio/Balcony",
+                    "generator": "Backup Generator",
+                    "cottages": "Cottage-Style Living"
+                }.get(x, x.replace("_", " ").title()),
+                help="Recreation and lifestyle amenities",
+                label_visibility="collapsed",
+                key="amenity_features_select"
+            )
+            if amenity_features != form_data.get("amenity_features"):
+                form_data["amenity_features"] = amenity_features
+                
+            st.markdown("**Lifestyle Policies:**")
+            lifestyle_features = st.multiselect(
+                "Lifestyle Policies",
+                options=["allows_pets", "accepts_smokers", "has_pets_in_home"],
+                default=form_data.get("lifestyle_features", []),
+                format_func=lambda x: {
+                    "allows_pets": "Allows Pets with Placement",
+                    "accepts_smokers": "Accepts Smokers",
+                    "has_pets_in_home": "Community Has Therapy Pets"
+                }.get(x, x.replace("_", " ").title()),
+                help="Pet policies and lifestyle accommodations",
+                label_visibility="collapsed",
+                key="lifestyle_features_select"
+            )
+            if lifestyle_features != form_data.get("lifestyle_features"):
+                form_data["lifestyle_features"] = lifestyle_features
+        
+    else:  # in_home_care
+        # In-Home Care Questions in columns (SAME PATTERN AS BOOKING)
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            living_situation = st.selectbox(
+                "What's the current living situation?",
+                options=["own_home", "family_home", "apartment", "senior_housing", "other"],
+                index=["own_home", "family_home", "apartment", "senior_housing", "other"].index(
+                    form_data.get("current_living_situation", "own_home")
+                ),
+                format_func=lambda x: {
+                    "own_home": "Living in own home",
+                    "family_home": "Living with family",
+                    "apartment": "Living in apartment/condo",
+                    "senior_housing": "Already in senior housing",
+                    "other": "Other living arrangement"
+                }.get(x, x.replace("_", " ").title()),
+                help="This helps determine the best in-home care approach",
+            )
+            if living_situation != form_data.get("current_living_situation"):
+                form_data["current_living_situation"] = living_situation
+        
+        with col2:
+            care_timeline = st.selectbox(
+                "When would in-home care ideally start?",
+                options=["immediate", "2_4_weeks", "2_3_months", "exploring", "emergency_backup"],
+                index=["immediate", "2_4_weeks", "2_3_months", "exploring", "emergency_backup"].index(
+                    form_data.get("care_start_timeline", "exploring")
                 ),
                 format_func=lambda x: {
                     "immediate": "Immediate (within 2 weeks)",
                     "2_4_weeks": "2-4 weeks",
                     "2_3_months": "2-3 months", 
                     "exploring": "Exploring options",
-                    "future_planning": "Future planning"
+                    "emergency_backup": "Emergency backup plan"
                 }.get(x, x.replace("_", " ").title()),
-                help="What's your preferred timeline for a potential move?"
+                help="This helps prioritize caregiver availability and planning",
             )
-            form_data["move_timeline"] = timeline
+            if care_timeline != form_data.get("care_start_timeline"):
+                form_data["care_start_timeline"] = care_timeline
 
-    # Budget & Lifestyle
-    with st.expander("💰 **Budget & Lifestyle Preferences**", expanded=True):
-        st.markdown("*Help us find communities that match your needs and budget*")
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            budget = st.selectbox(
-                "Budget comfort level",
-                options=["tight", "moderate", "comfortable", "luxury"],
-                index=["tight", "moderate", "comfortable", "luxury"].index(
-                    form_data.get("budget_comfort", "moderate")
-                ),
-                format_func=lambda x: {
-                    "tight": "Budget-conscious",
-                    "moderate": "Moderate budget",
-                    "comfortable": "Comfortable budget", 
-                    "luxury": "Premium/luxury options"
-                }.get(x, x.title()),
-                help="What budget range feels most comfortable?"
-            )
-            form_data["budget_comfort"] = budget
-        
-        with col2:
-            activities = st.multiselect(
-                "Activity preferences",
-                options=["fitness", "arts", "social", "quiet", "outdoors", "games", "music", "crafts"],
-                default=form_data.get("activity_preferences", []),
-                format_func=lambda x: {
-                    "fitness": "Fitness & Exercise",
-                    "arts": "Arts & Crafts",
-                    "social": "Social Activities",
-                    "quiet": "Quiet Spaces",
-                    "outdoors": "Outdoor Activities",
-                    "games": "Games & Cards", 
-                    "music": "Music & Entertainment",
-                    "crafts": "Crafts & Hobbies"
-                }.get(x, x.title()),
-                help="What types of activities are most appealing?"
-            )
-            form_data["activity_preferences"] = activities
-
-    # Family & Support Context
-    with st.expander("👥 **Family & Support Context**", expanded=True):
-        st.markdown("*Help us understand the support system and family involvement*")
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            family_contact = st.text_input(
-                "Primary family contact/decision maker",
-                value=form_data.get("family_contact", ""),
-                placeholder="e.g., Sarah (daughter), John (son)",
-                help="Who is the main family contact or decision maker?"
-            )
-            form_data["family_contact"] = family_contact
-            
-            family_location = st.selectbox(
-                "Family location",
-                options=["nearby", "distant", "out_of_state", "none"],
-                index=["nearby", "distant", "out_of_state", "none"].index(
-                    form_data.get("family_location", "nearby")
-                ),
-                format_func=lambda x: {
-                    "nearby": "Nearby (within 30 minutes)",
-                    "distant": "Distant (1+ hours away)",
-                    "out_of_state": "Out of state",
-                    "none": "No close family"
-                }.get(x, x.replace("_", " ").title()),
-                help="Where is the primary family support located?"
-            )
-            form_data["family_location"] = family_location
-        
-        with col2:
-            current_support = st.selectbox(
-                "Current support level",
-                options=["independent", "family_help", "hired_care", "minimal"],
-                index=["independent", "family_help", "hired_care", "minimal"].index(
-                    form_data.get("current_support", "independent")
-                ),
-                format_func=lambda x: {
-                    "independent": "Mostly independent",
-                    "family_help": "Some family help",
-                    "hired_care": "Has hired care",
-                    "minimal": "Minimal support"
-                }.get(x, x.replace("_", " ").title()),
-                help="What's the current level of support or assistance?"
-            )
-            form_data["current_support"] = current_support
-            
-            move_triggers = st.multiselect(
-                "What's prompting consideration of a move?",
-                options=["safety_concern", "family_worry", "planned_transition", "health_change", "social_isolation", "home_maintenance"],
-                default=form_data.get("move_triggers", []),
-                format_func=lambda x: {
-                    "safety_concern": "Safety concerns",
-                    "family_worry": "Family worry/concern",
-                    "planned_transition": "Planned life transition",
-                    "health_change": "Health changes",
-                    "social_isolation": "Social isolation",
-                    "home_maintenance": "Home maintenance burden"
-                }.get(x, x.replace("_", " ").title()),
-                help="What factors are leading to this exploration? (Select all that apply)"
-            )
-            form_data["move_triggers"] = move_triggers
-
+        # Primary care needs
+        care_needs = st.multiselect(
+            "What are the primary care needs?",
+            options=["personal_care", "medication_management", "mobility_assistance", "meal_preparation", "companionship", "safety_supervision", "medical_coordination"],
+            default=form_data.get("primary_care_needs", []),
+            format_func=lambda x: {
+                "personal_care": "Personal care (bathing, dressing)",
+                "medication_management": "Medication management",
+                "mobility_assistance": "Mobility assistance",
+                "meal_preparation": "Meal preparation",
+                "companionship": "Companionship & social interaction",
+                "safety_supervision": "Safety supervision",
+                "medical_coordination": "Medical appointment coordination"
+            }.get(x, x.replace("_", " ").title()),
+            help="Select the main types of care assistance needed",
+            key="primary_care_needs_select"
+        )
+        if care_needs != form_data.get("primary_care_needs"):
+            form_data["primary_care_needs"] = care_needs
+    
+    # Validation and submit (EXACT SAME PATTERN AS BOOKING)
     st.markdown("---")
 
-    # Action buttons
-    col1, col2, col3 = st.columns([2, 1, 1])
-    
-    with col1:
-        st.caption("This information helps your advisor provide personalized recommendations.")
-    
-    with col2:
+    col_submit1, col_submit2, col_submit3 = st.columns([2, 1, 1])
+
+    with col_submit1:
+        if is_community_care:
+            st.caption("*Takes 1 minute • These questions match you with communities that have availability in your preferred areas and care level.")
+        else:
+            st.caption("*Takes 1 minute • These questions help plan the best in-home care approach for your specific situation.")
+
+    with col_submit2:
         if st.button("Skip for Now", use_container_width=True):
-            # User chose to skip preferences
             st.session_state["pfma_skip_preferences"] = True
             _complete_pfma_process()
             st.rerun()
-    
-    with col3:
+
+    with col_submit3:
         if st.button("Save & Continue", type="primary", use_container_width=True):
-            # Save preferences and mark as complete
-            _save_preferences_and_complete(form_data)
+            _save_preferences_and_complete(form_data, is_community_care)
             st.rerun()
 
 
-def _save_preferences_and_complete(form_data: dict):
-    """Save preferences and complete PFMA process."""
+def _save_preferences_and_complete(form_data: dict, is_community_care: bool):
+    """Save conditional preferences and complete PFMA process."""
     
-    # Create preferences object
-    preferences = CustomerPreferences(
-        preferred_regions=form_data.get("preferred_regions", []),
-        max_distance_miles=form_data.get("max_distance"),
-        care_environment_preference=form_data.get("care_environment", "assisted_living"),
-        move_timeline=form_data.get("move_timeline", "exploring"),
-        budget_comfort_level=form_data.get("budget_comfort", "moderate"),
-        activity_preferences=form_data.get("activity_preferences", []),
-        primary_family_contact=form_data.get("family_contact", ""),
-        family_location=form_data.get("family_location", "nearby"),
-        current_support_level=form_data.get("current_support", "independent"),
-        move_triggers=form_data.get("move_triggers", []),
-        completion_status="complete",
-    )
+    # Create conditional preferences object based on care type
+    if is_community_care:
+        # Community care preferences (AL/MC/Independent)
+        preferences = CustomerPreferences(
+            care_recipient_name=form_data.get("care_recipient_name", ""),
+            first_name=form_data.get("first_name", ""),
+            last_name=form_data.get("last_name", ""),
+            zip_code=form_data.get("zip_code", ""),
+            search_radius=form_data.get("search_radius", "25"),
+            move_timeline=form_data.get("move_timeline", "exploring"),
+            care_environment_preference=form_data.get("care_environment", "assisted_living"),
+            medical_features=form_data.get("medical_features", []),
+            accommodation_features=form_data.get("accommodation_features", []),
+            amenity_features=form_data.get("amenity_features", []),
+            lifestyle_features=form_data.get("lifestyle_features", []),
+            completion_status="complete",
+        )
+        
+        # Log community care preferences completion
+        crm_status = get_crm_status()
+        log_event(
+            "pfma.preferences.completed.community_care",
+            {
+                "has_care_recipient_name": bool(preferences.care_recipient_name.strip()),
+                "has_zip_code": bool(preferences.zip_code.strip()),
+                "search_radius": preferences.search_radius,
+                "timeline": preferences.move_timeline,
+                "care_environment": preferences.care_environment_preference,
+                "medical_features_count": len(preferences.medical_features),
+                "accommodation_features_count": len(preferences.accommodation_features),
+                "amenity_features_count": len(preferences.amenity_features),
+                "lifestyle_features_count": len(preferences.lifestyle_features),
+                "version": "zip_radius_v3.2_community",
+                "lead_id": crm_status["lead_id"],
+                "customer_id": crm_status["customer_id"],
+                "crm_status": crm_status["user_type"],
+            }
+        )
+    else:
+        # In-home care preferences (different structure)
+        # For now, store in the same structure but with in-home specific fields
+        preferences = CustomerPreferences(
+            care_recipient_name=form_data.get("care_recipient_name", ""),
+            first_name=form_data.get("first_name", ""),
+            last_name=form_data.get("last_name", ""),
+            preferred_regions=[],  # Not applicable for in-home
+            move_timeline=form_data.get("care_start_timeline", "exploring"),  # Re-purpose as care start timeline
+            care_environment_preference="in_home",
+            completion_status="complete",
+            # Note: In future, we might want a separate InHomeCarePreferences dataclass
+            # For now, we'll store in-home specific data in session state
+        )
+        
+        # Store in-home specific data in session state for advisor reference
+        st.session_state["in_home_care_details"] = {
+            "current_living_situation": form_data.get("current_living_situation", "own_home"),
+            "care_start_timeline": form_data.get("care_start_timeline", "exploring"), 
+            "primary_care_needs": form_data.get("primary_care_needs", []),
+        }
+        
+        # Log in-home care preferences completion
+        crm_status = get_crm_status()
+        log_event(
+            "pfma.preferences.completed.in_home_care",
+            {
+                "has_care_recipient_name": bool(preferences.care_recipient_name.strip()),
+                "living_situation": form_data.get("current_living_situation", "own_home"),
+                "care_timeline": form_data.get("care_start_timeline", "exploring"),
+                "care_needs_count": len(form_data.get("primary_care_needs", [])),
+                "version": "streamlined_v2_in_home",
+                "lead_id": crm_status["lead_id"],
+                "customer_id": crm_status["customer_id"],
+                "crm_status": crm_status["user_type"],
+            }
+        )
     
     # Save preferences
     PreferencesManager.save_preferences(preferences)
@@ -715,18 +901,6 @@ def _save_preferences_and_complete(form_data: dict):
     
     # Complete PFMA process
     _complete_pfma_process()
-    
-    # Log preferences completion
-    log_event(
-        "pfma.preferences.completed",
-        {
-            "regions_count": len(preferences.preferred_regions),
-            "care_environment": preferences.care_environment_preference,
-            "timeline": preferences.move_timeline,
-            "budget_level": preferences.budget_comfort_level,
-            "has_family_contact": bool(preferences.primary_family_contact),
-        }
-    )
 
 
 def _complete_pfma_process():
