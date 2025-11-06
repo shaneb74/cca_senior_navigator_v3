@@ -119,9 +119,14 @@ st.sidebar.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# Initialize navigation if not set
-if 'navigation_page' not in st.session_state:
-    st.session_state.navigation_page = "📊 Dashboard"
+# Initialize navigation default
+default_page = "📊 Dashboard"
+
+# Clear any problematic session state keys that might cause conflicts
+problematic_keys = ['_FormSubmitter', '_auto_rerun', '_reruns']
+for key in problematic_keys:
+    if key in st.session_state:
+        del st.session_state[key]
 
 # Main CRM navigation - clean and focused
 page = st.sidebar.radio(
@@ -137,8 +142,7 @@ page = st.sidebar.radio(
         "📝 Notes & Interactions",
         "📈 Analytics"
     ],
-    index=0,
-    key="navigation_page"
+    index=0
 )
 
 # Environment indicator
