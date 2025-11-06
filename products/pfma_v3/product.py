@@ -153,24 +153,51 @@ def _render_booking_form():
         "navigate options, coordinate benefits, and connect with trusted partners."
     )
 
-    # Initialize form state with demo data for testing/demos
+    # Initialize form state with contextual prefill from Welcome/Audience
     if "pfma_v3_form" not in st.session_state:
-        # Prepopulate with dummy data for quick testing/demos
+        # Get context from session state
+        relationship_type = st.session_state.get("relationship_type", "")
+        person_name = st.session_state.get("person_name") or st.session_state.get("planning_for_name", "")
+        planning_for = st.session_state.get("planning_for_relationship", "")
+        
+        # Determine if planning for self
+        is_self = (
+            relationship_type == "Myself" or 
+            planning_for == "self" or
+            relationship_type == "Self"
+        )
+        
+        # Set defaults based on context
+        if is_self:
+            # User is care recipient
+            default_relation = "Self"
+            default_attendee = person_name if person_name else ""
+            default_care_recipient = person_name if person_name else ""
+        else:
+            # User is helping someone else
+            default_relation = relationship_type if relationship_type and relationship_type != "Myself" else "Daughter/Son"
+            default_attendee = ""  # We don't know attendee name yet
+            default_care_recipient = person_name if person_name else ""
+        
         st.session_state["pfma_v3_form"] = {
-            "name": "Shane",
-            "email": "sarah@example.com",
-            "phone": "555-123-4567",
+            "attendee_name": default_attendee,
+            "relation": default_relation,
+            "care_recipient_name": default_care_recipient,
+            "email": "",
+            "phone": "",
             "timezone": "America/New_York",
             "type": "video",
             "preferred_time": "Morning (8am-12pm)",
             "notes": "",
         }
-        log_event("pfma.booking.started", {})
+        log_event("pfma.booking.started", {"is_self": is_self, "prefilled": bool(person_name)})
 
     form_data = st.session_state["pfma_v3_form"]
 
     # Form fields
     st.markdown("### Your Information")
+    
+    st.caption("💡 *Pre-filled from earlier answers — you can edit if this isn't right.*")
     
     # Debug: Show current form data and option to clear
     if st.checkbox("🔧 Debug: Show form data", help="Developer option to inspect form state"):
@@ -179,20 +206,56 @@ def _render_booking_form():
             st.session_state["pfma_v3_form"] = {}
             st.rerun()
 
+    # Who will attend the appointment?
     col1, col2 = st.columns(2)
-
+    
     with col1:
-        name = st.text_input(
-            "Care Recipient's Full Name *",
-            value=form_data.get("name", ""),
-            placeholder="Terry Ramons",
-            help="Full name of the person who needs care (for advisor preparation and CRM records)",
+        attendee_name = st.text_input(
+            "Who will we be talking to during this appointment? *",
+            value=form_data.get("attendee_name", ""),
+            placeholder="Your name",
+            help="Name of the person who will attend the consultation call",
         )
-        if name != form_data.get("name"):
-            form_data["name"] = name
-            log_event("pfma.booking.field_edited", {"field": "name"})
-
+        if attendee_name != form_data.get("attendee_name"):
+            form_data["attendee_name"] = attendee_name
+            log_event("pfma.booking.field_edited", {"field": "attendee_name"})
+    
     with col2:
+        relation = st.selectbox(
+            "Relation to the person needing care *",
+            options=["Self", "Spouse/Partner", "Daughter/Son", "Other Family", "Friend/Advocate", "Professional"],
+            index=["Self", "Spouse/Partner", "Daughter/Son", "Other Family", "Friend/Advocate", "Professional"].index(
+                form_data.get("relation", "Self")
+            ) if form_data.get("relation") in ["Self", "Spouse/Partner", "Daughter/Son", "Other Family", "Friend/Advocate", "Professional"] else 0,
+            help="Your relationship to the care recipient",
+        )
+        if relation != form_data.get("relation"):
+            form_data["relation"] = relation
+            log_event("pfma.booking.field_edited", {"field": "relation"})
+    
+    # Conditional: Show care recipient name if relation != Self
+    if relation != "Self":
+        care_recipient_name = st.text_input(
+            "Name of the person needing care *",
+            value=form_data.get("care_recipient_name", ""),
+            placeholder="Care recipient's name",
+            help="Full name of the person who needs care",
+        )
+        if care_recipient_name != form_data.get("care_recipient_name"):
+            form_data["care_recipient_name"] = care_recipient_name
+            log_event("pfma.booking.field_edited", {"field": "care_recipient_name"})
+        
+        st.caption("🔒 *We'll never contact this person without your consent.*")
+    else:
+        # If Self, attendee and care recipient are the same
+        form_data["care_recipient_name"] = attendee_name
+
+    st.markdown("---")
+
+    # Contact Information
+    col3, col4 = st.columns(2)
+
+    with col3:
         email = st.text_input(
             "Email Address",
             value=form_data.get("email", ""),
@@ -202,6 +265,17 @@ def _render_booking_form():
         if email != form_data.get("email"):
             form_data["email"] = email
             log_event("pfma.booking.field_edited", {"field": "email"})
+
+    with col4:
+        phone = st.text_input(
+            "Phone Number",
+            value=form_data.get("phone", ""),
+            placeholder="555-123-4567",
+            help="For appointment reminders (email OR phone required)",
+        )
+        if phone != form_data.get("phone"):
+            form_data["phone"] = phone
+            log_event("pfma.booking.field_edited", {"field": "phone"})
 
     col3, col4 = st.columns(2)
 
@@ -216,25 +290,25 @@ def _render_booking_form():
             form_data["phone"] = phone
             log_event("pfma.booking.field_edited", {"field": "phone"})
 
-    with col4:
-        timezone = st.selectbox(
-            "Timezone *",
-            options=[
-                "America/New_York",
-                "America/Chicago",
-                "America/Denver",
-                "America/Los_Angeles",
-                "America/Phoenix",
-                "America/Anchorage",
-                "Pacific/Honolulu",
-            ],
-            index=0,
-            format_func=_format_timezone,
-            help="Your local timezone for scheduling",
-        )
-        if timezone != form_data.get("timezone"):
-            form_data["timezone"] = timezone
-            log_event("pfma.booking.field_edited", {"field": "timezone"})
+    # Timezone
+    timezone = st.selectbox(
+        "Timezone *",
+        options=[
+            "America/New_York",
+            "America/Chicago",
+            "America/Denver",
+            "America/Los_Angeles",
+            "America/Phoenix",
+            "America/Anchorage",
+            "Pacific/Honolulu",
+        ],
+        index=0,
+        format_func=_format_timezone,
+        help="Your local timezone for scheduling",
+    )
+    if timezone != form_data.get("timezone"):
+        form_data["timezone"] = timezone
+        log_event("pfma.booking.field_edited", {"field": "timezone"})
 
     st.markdown("### Appointment Preferences")
 
@@ -342,14 +416,19 @@ def _handle_booking_submit(form_data: dict):
 
     # Convert to customer in CRM (appointment booking makes them a customer)
     try:
-        care_recipient_name = form_data.get("name", "").strip()
+        care_recipient_name = form_data.get("care_recipient_name", "").strip()
+        attendee_name = form_data.get("attendee_name", "").strip()
+        relation = form_data.get("relation", "Self")
         contact_email = form_data.get("email", "").strip() or None
         contact_phone = form_data.get("phone", "").strip() or None
         
-        print(f"[PFMA] Converting to customer with name: '{care_recipient_name}'")
+        # Use care recipient name for CRM record
+        crm_name = care_recipient_name if care_recipient_name else attendee_name
+        
+        print(f"[PFMA] Converting to customer: '{crm_name}' (attendee: '{attendee_name}', relation: '{relation}')")
         
         customer_id = convert_to_customer(
-            name=care_recipient_name,
+            name=crm_name,
             email=contact_email,
             phone=contact_phone,
             source="appointment_booking"
@@ -394,9 +473,18 @@ def _validate_booking(form_data: dict) -> tuple[bool, list[str]]:
     """
     errors = []
 
-    # Name required
-    if not form_data.get("name", "").strip():
-        errors.append("Full Name is required")
+    # Attendee name required
+    if not form_data.get("attendee_name", "").strip():
+        errors.append("Attendee name is required")
+
+    # Relation required
+    if not form_data.get("relation"):
+        errors.append("Relationship to care recipient is required")
+
+    # Care recipient name required if relation != Self
+    relation = form_data.get("relation", "Self")
+    if relation != "Self" and not form_data.get("care_recipient_name", "").strip():
+        errors.append("Care recipient's name is required")
 
     # Email OR phone required (not both mandatory)
     email = form_data.get("email", "").strip()
@@ -468,13 +556,96 @@ def _render_confirmation(appt: AdvisorAppointment):
             st.markdown("**Notes:**")
             st.info(appt.notes)
 
+    st.markdown("---")
+    
+    # Post-booking branching based on care type
+    care_rec = MCIP.get_care_recommendation()
+    tier = care_rec.tier if care_rec else None
+    flags = st.session_state.get("flags", [])
+    
+    if tier in ("assisted_living", "memory_care", "memory_care_high_acuity"):
+        # Community-based care path
+        st.markdown("### 🏘️ Preparing for Your Consultation")
+        
+        st.write(
+            "Your advisor will help you find communities that match your needs. "
+            "Based on your care assessment, we'll focus on facilities that can provide:"
+        )
+        
+        # Acknowledge care flags conversationally
+        focus_areas = []
+        if any(f in flags for f in ["cog_moderate", "cog_severe", "moderate_cognitive_decline", "memory_care_dx"]):
+            focus_areas.append("**Memory care support** with specialized cognitive programs")
+        if any(f in flags for f in ["medication_management", "med_complexity"]):
+            focus_areas.append("**Professional medication management** with trained nursing staff")
+        if any(f in flags for f in ["mobility_limited", "fall_risk", "falls_multiple"]):
+            focus_areas.append("**Enhanced mobility support** and fall prevention measures")
+        if any(f in flags for f in ["behavioral_concerns", "wandering_risk"]):
+            focus_areas.append("**Secure environments** with behavioral support")
+        if any(f in flags for f in ["adl_support_high", "multiple_adl_limitations"]):
+            focus_areas.append("**Comprehensive personal care** assistance with daily activities")
+        
+        if focus_areas:
+            for area in focus_areas:
+                st.markdown(f"- {area}")
+            st.markdown("")
+            st.success("✓ Your advisor will match you with communities equipped to handle these specific needs.")
+        else:
+            st.markdown("- **Quality care services** tailored to your specific situation")
+            st.markdown("- **Safe, comfortable living** environments")
+        
+        st.markdown("")
+        st.info(
+            "💡 **Come prepared** to discuss location preferences, budget considerations, "
+            "and any questions about community amenities or care levels."
+        )
+        
+    elif tier in ("in_home", "in_home_care"):
+        # In-home care path
+        st.markdown("### 🏡 Preparing for Your Consultation")
+        
+        st.write(
+            "Your advisor will help you set up in-home care that keeps you safe and comfortable. "
+            "Based on your care assessment, be prepared to discuss:"
+        )
+        
+        # Acknowledge care flags conversationally
+        discussion_topics = []
+        if any(f in flags for f in ["medication_management", "med_complexity"]):
+            discussion_topics.append("**Medication management** – Setting up reliable systems for complex medication schedules")
+        if any(f in flags for f in ["cog_moderate", "cognitive_decline"]):
+            discussion_topics.append("**Cognitive support** – Memory aids and routines to maintain independence")
+        if any(f in flags for f in ["mobility_limited", "fall_risk", "falls_multiple"]):
+            discussion_topics.append("**Home safety modifications** – Fall prevention and mobility equipment")
+        if any(f in flags for f in ["no_support", "limited_support", "caregiver_strain"]):
+            discussion_topics.append("**Building your support network** – Professional caregivers and family coordination")
+        if any(f in flags for f in ["adl_support_high", "multiple_adl_limitations"]):
+            discussion_topics.append("**Personal care assistance** – Help with bathing, dressing, and daily activities")
+        if any(f in flags for f in ["nutrition_risk", "meal_prep_difficulty"]):
+            discussion_topics.append("**Meal preparation and nutrition** – Ensuring proper nutrition and hydration")
+        
+        if discussion_topics:
+            for topic in discussion_topics:
+                st.markdown(f"- {topic}")
+            st.markdown("")
+            st.success("✓ Your advisor will help you address each of these areas with practical solutions.")
+        else:
+            st.markdown("- **Home accessibility** and safety considerations")
+            st.markdown("- **Caregiver support** and scheduling")
+            st.markdown("- **Daily living assistance** options")
+        
+        st.markdown("")
+        st.info(
+            "💡 **Think about** your daily routines, who can help regularly, "
+            "and any concerns about staying safe at home. Your advisor will create a personalized plan."
+        )
+
     # Next steps
-    st.markdown("### Next Steps")
+    st.markdown("### What's Next")
 
     st.markdown(
-        "**While you wait for your appointment:**\n\n"
-        "Visit the **Lobby** to prepare for your consultation. "
-        "Complete optional prep sections to help your advisor provide personalized guidance."
+        "**One of our advisors will contact you within the next 24 hours** to confirm your consultation time. "
+        "In the meantime, feel free to explore additional resources in the Lobby."
     )
 
     # Action button - End of planning journey
