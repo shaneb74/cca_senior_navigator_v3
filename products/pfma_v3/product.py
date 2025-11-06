@@ -277,19 +277,6 @@ def _render_booking_form():
             form_data["phone"] = phone
             log_event("pfma.booking.field_edited", {"field": "phone"})
 
-    col3, col4 = st.columns(2)
-
-    with col3:
-        phone = st.text_input(
-            "Phone Number",
-            value=form_data.get("phone", ""),
-            placeholder="555-123-4567",
-            help="For appointment reminders (email OR phone required)",
-        )
-        if phone != form_data.get("phone"):
-            form_data["phone"] = phone
-            log_event("pfma.booking.field_edited", {"field": "phone"})
-
     # Timezone
     timezone = st.selectbox(
         "Timezone *",
