@@ -8,65 +8,81 @@ from shared.data_access.navigator_reader import NavigatorDataReader
 from shared.data_access.crm_repository import CrmRepository
 from core.adapters.streamlit_crm import get_crm_customer_by_id
 
+# Set page config first - constrain layout
+st.set_page_config(layout="centered", initial_sidebar_state="expanded")
+
 def inject_customer_360_css():
     """Inject Customer 360 specific styling"""
     css = """
     <style>
+    /* Enable proper scrolling */
     .stApp {
-        background-color: #f8fafc;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
     }
     
-    /* Constrain main container */
-    .block-container {
-        max-width: 1400px;
-        padding-left: 2rem;
-        padding-right: 2rem;
+    .main {
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        height: 100vh !important;
     }
     
+    /* Nuclear option - constrain EVERYTHING */
+    .stMainBlockContainer {
+        max-width: 800px !important;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+    }
+    
+    .st-emotion-cache-1v0mbdj, 
+    .st-emotion-cache-z5fcl4,
+    .st-emotion-cache-18kf3ut,
+    .st-emotion-cache-1f0nklw,
+    [class*="st-emotion-cache"] {
+        max-width: 100% !important;
+        overflow: visible !important;
+    }
+    
+    /* Let Streamlit handle the centering, we just add styling */
     .customer-360-header {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
-        padding: 2rem;
+        padding: 1.5rem;
         border-radius: 16px;
-        margin-bottom: 2rem;
+        margin-bottom: 1.5rem;
         box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
-        max-width: 100%;
-        overflow: hidden;
     }
     
     .customer-name {
-        font-size: 2.5rem;
+        font-size: 2rem;
         font-weight: 700;
         margin: 0 0 0.5rem 0;
         word-wrap: break-word;
-        overflow-wrap: break-word;
     }
     
     .customer-id {
-        font-size: 1rem;
+        font-size: 0.9rem;
         opacity: 0.9;
         margin: 0;
-        word-wrap: break-word;
     }
     
     .info-card {
         background: white;
         border-radius: 12px;
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         border-left: 4px solid #667eea;
-        max-width: 100%;
-        overflow: hidden;
     }
     
     .info-card h3 {
         margin-top: 0;
         color: #1f2937;
-        font-size: 1.25rem;
+        font-size: 1.1rem;
         font-weight: 700;
-        margin-bottom: 1rem;
-        word-wrap: break-word;
+        margin-bottom: 0.75rem;
     }
     
     .info-row {
@@ -176,44 +192,49 @@ def render_customer_header(customer_data):
     name = customer_data.get('name') or customer_data.get('person_name', 'Unknown Customer')
     customer_id = customer_data.get('id') or customer_data.get('user_id', 'N/A')
     
-    st.markdown(f"""
+    # Use a container to ensure proper boundary constraints
+    header_html = f"""
     <div class="customer-360-header">
         <h1 class="customer-name">{name}</h1>
         <p class="customer-id">Customer ID: {customer_id}</p>
     </div>
-    """, unsafe_allow_html=True)
+    """
+    
+    # Render within Streamlit's container
+    st.markdown(header_html, unsafe_allow_html=True)
 
 
 def render_contact_info(customer_data):
     """Render contact information card"""
-    st.markdown('<div class="info-card">', unsafe_allow_html=True)
-    st.markdown("### 📞 Contact Information")
-    
     email = customer_data.get('email') or customer_data.get('contact_email', 'Not provided')
     phone = customer_data.get('phone') or customer_data.get('contact_phone', 'Not provided')
     source = customer_data.get('source', 'Unknown')
     created = customer_data.get('created_at', 'Unknown')
+    joined = created[:10] if created != 'Unknown' else 'Unknown'
     
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown(f"**Email:**")
-        st.code(email, language=None) if email != 'Not provided' else st.text(email)
-        st.markdown(f"**Phone:** {phone}")
-    with col2:
-        st.markdown(f"**Source:** {source}")
-        st.markdown(f"**Joined:** {created[:10] if created != 'Unknown' else 'Unknown'}")
-    
-    st.markdown('</div>', unsafe_allow_html=True)
+    # Pure HTML - no Streamlit components that create extra containers
+    html = f"""
+    <div class="info-card">
+        <h3>📞 Contact Information</h3>
+        <p><strong>Email:</strong> {email}</p>
+        <p><strong>Phone:</strong> {phone}</p>
+        <p><strong>Source:</strong> {source}</p>
+        <p><strong>Joined:</strong> {joined}</p>
+    </div>
+    """
+    st.markdown(html, unsafe_allow_html=True)
 
 
 def render_navigator_status(navigator_data):
     """Render Navigator assessment status"""
-    st.markdown('<div class="info-card">', unsafe_allow_html=True)
-    st.markdown("### 🧭 Senior Navigator Status")
     
     if not navigator_data:
-        st.info("No Navigator assessment data available")
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown("""
+        <div class="info-card">
+            <h3>🧭 Senior Navigator Status</h3>
+            <p style="color: #64748b;">No Navigator assessment data available</p>
+        </div>
+        """, unsafe_allow_html=True)
         return
     
     # GCP Assessment Status
@@ -229,51 +250,62 @@ def render_navigator_status(navigator_data):
     # Journey Stage
     journey_stage = navigator_data.get('journey_stage', 'Initial Contact')
     
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.markdown(f"""
-        <div style="text-align: center;">
-            <p style="margin: 0; color: #64748b; font-size: 0.875rem;">GCP Assessment</p>
-            <span class="status-badge {gcp_badge_class}">{gcp_status}</span>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col2:
-        st.markdown(f"""
-        <div style="text-align: center;">
-            <p style="margin: 0; color: #64748b; font-size: 0.875rem;">Cost Planning</p>
-            <span class="status-badge {cost_badge_class}">{cost_status}</span>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col3:
-        st.markdown(f"""
-        <div style="text-align: center;">
-            <p style="margin: 0; color: #64748b; font-size: 0.875rem;">Journey Stage</p>
-            <p style="margin: 0.5rem 0 0 0; font-weight: 600; color: #1f2937;">{journey_stage}</p>
-        </div>
-        """, unsafe_allow_html=True)
+    # Build additional details HTML
+    additional_html = ""
     
     # Care Recommendation if available
     if has_gcp:
-        st.markdown("---")
         care_rec = navigator_data.get('care_recommendation', 'Assessment complete')
-        st.markdown(f"**Care Recommendation:** {care_rec}")
+        additional_html += f"""
+        <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 1rem 0;">
+        <p><strong>Care Recommendation:</strong> {care_rec}</p>
+        """
         
         # Assessment summary if available
         assessment_summary = navigator_data.get('assessment_summary')
         if assessment_summary:
-            with st.expander("📋 Assessment Details"):
-                st.write(assessment_summary)
+            additional_html += f"""
+            <details style="margin-top: 0.5rem;">
+                <summary style="cursor: pointer; color: #3b82f6; font-weight: 500;">📋 Assessment Details</summary>
+                <div style="margin-top: 0.5rem; padding: 0.5rem; background: #f8fafc; border-radius: 4px;">
+                    {assessment_summary}
+                </div>
+            </details>
+            """
     
     # Cost Summary if available
     if has_cost:
         cost_summary = navigator_data.get('cost_summary')
         if cost_summary:
-            with st.expander("💰 Cost Planning Details"):
-                st.write(cost_summary)
+            additional_html += f"""
+            <details style="margin-top: 0.5rem;">
+                <summary style="cursor: pointer; color: #3b82f6; font-weight: 500;">💰 Cost Planning Details</summary>
+                <div style="margin-top: 0.5rem; padding: 0.5rem; background: #f8fafc; border-radius: 4px;">
+                    {cost_summary}
+                </div>
+            </details>
+            """
     
-    st.markdown('</div>', unsafe_allow_html=True)
+    # Pure HTML - single markdown call
+    html = f"""
+    <div class="info-card">
+        <h3>🧭 Senior Navigator Status</h3>
+        <div style="margin-bottom: 1rem;">
+            <p style="margin: 0; color: #64748b; font-size: 0.875rem;">GCP Assessment</p>
+            <span class="status-badge {gcp_badge_class}">{gcp_status}</span>
+        </div>
+        <div style="margin-bottom: 1rem;">
+            <p style="margin: 0; color: #64748b; font-size: 0.875rem;">Cost Planning</p>
+            <span class="status-badge {cost_badge_class}">{cost_status}</span>
+        </div>
+        <div>
+            <p style="margin: 0; color: #64748b; font-size: 0.875rem;">Journey Stage</p>
+            <p style="margin: 0.5rem 0 0 0; font-weight: 600; color: #1f2937;">{journey_stage}</p>
+        </div>
+        {additional_html}
+    </div>
+    """
+    st.markdown(html, unsafe_allow_html=True)
 
 
 def render_relationship_info(navigator_data):
@@ -283,24 +315,21 @@ def render_relationship_info(navigator_data):
     
     relationship = navigator_data.get('relationship_type')
     if relationship:
-        st.markdown('<div class="info-card">', unsafe_allow_html=True)
-        st.markdown("### 👥 Relationship Information")
+        person_name = navigator_data.get('person_name', '')
+        person_html = f"<p><strong>Care Recipient:</strong> {person_name}</p>" if person_name else ""
         
-        st.markdown(f"**Relationship:** {relationship}")
-        
-        # Additional info if available
-        person_name = navigator_data.get('person_name')
-        if person_name:
-            st.markdown(f"**Care Recipient:** {person_name}")
-        
-        st.markdown('</div>', unsafe_allow_html=True)
+        html = f"""
+        <div class="info-card">
+            <h3>👥 Relationship Information</h3>
+            <p><strong>Relationship:</strong> {relationship}</p>
+            {person_html}
+        </div>
+        """
+        st.markdown(html, unsafe_allow_html=True)
 
 
 def render_appointments(customer_id):
     """Render customer appointments"""
-    st.markdown('<div class="info-card">', unsafe_allow_html=True)
-    st.markdown("### 📅 Appointments")
-    
     crm_repo = CrmRepository()
     appointments = crm_repo.list_records("appointments")
     
@@ -310,7 +339,9 @@ def render_appointments(customer_id):
         if customer_id in [a.get('customer_id'), a.get('user_id')]
     ]
     
+    # Build appointments HTML
     if customer_appointments:
+        appointments_html = ""
         for appt in customer_appointments:
             status = appt.get('status', 'Unknown')
             appt_type = appt.get('appointment_type', 'Consultation')
@@ -319,7 +350,7 @@ def render_appointments(customer_id):
             
             status_class = "status-complete" if status.lower() == "scheduled" else "status-in-progress"
             
-            st.markdown(f"""
+            appointments_html += f"""
             <div style="padding: 0.75rem; background: #f8fafc; border-radius: 8px; margin-bottom: 0.5rem;">
                 <p style="margin: 0; font-weight: 600; color: #1f2937;">{appt_type}</p>
                 <p style="margin: 0.25rem 0 0 0; font-size: 0.875rem; color: #64748b;">
@@ -329,23 +360,26 @@ def render_appointments(customer_id):
                     Confirmation: {confirmation}
                 </p>
             </div>
-            """, unsafe_allow_html=True)
+            """
     else:
-        st.info("No appointments scheduled")
+        appointments_html = '<p style="color: #64748b;">No appointments scheduled</p>'
     
-    # Quick action to schedule
-    if st.button("➕ Schedule New Appointment", type="primary"):
+    html = f"""
+    <div class="info-card">
+        <h3>📅 Appointments</h3>
+        {appointments_html}
+    </div>
+    """
+    st.markdown(html, unsafe_allow_html=True)
+    
+    # Keep button as Streamlit component (outside the HTML card)
+    if st.button("➕ Schedule New Appointment", type="primary", key=f"sched_appt_{customer_id}"):
         st.session_state['schedule_for_customer'] = customer_id
         st.info("📞 Please navigate to **Appointments** page using the sidebar to schedule")
-    
-    st.markdown('</div>', unsafe_allow_html=True)
 
 
 def render_notes(customer_id):
     """Render customer notes and interactions"""
-    st.markdown('<div class="info-card">', unsafe_allow_html=True)
-    st.markdown("### 📝 Notes & Interactions")
-    
     crm_repo = CrmRepository()
     notes = crm_repo.list_records("notes")
     
@@ -355,90 +389,100 @@ def render_notes(customer_id):
         if customer_id in [n.get('customer_id'), n.get('user_id')]
     ]
     
+    # Build notes HTML
     if customer_notes:
+        notes_html = ""
         for note in customer_notes[-5:]:  # Show last 5 notes
             created = note.get('created_at', 'Unknown')
             content = note.get('note', 'No content')
             note_type = note.get('note_type', 'General')
+            created_date = created[:10] if created != 'Unknown' else 'Unknown'
             
-            st.markdown(f"""
+            notes_html += f"""
             <div class="timeline-item">
-                <p class="timeline-date">{created[:10] if created != 'Unknown' else 'Unknown'} • {note_type}</p>
+                <p class="timeline-date">{created_date} • {note_type}</p>
                 <div class="timeline-content">{content}</div>
             </div>
-            """, unsafe_allow_html=True)
+            """
         
         if len(customer_notes) > 5:
-            st.caption(f"+ {len(customer_notes) - 5} more notes")
+            notes_html += f'<p style="color: #64748b; font-size: 0.875rem;">+ {len(customer_notes) - 5} more notes</p>'
     else:
-        st.info("No notes recorded")
+        notes_html = '<p style="color: #64748b;">No notes recorded</p>'
     
-    # Quick action to add note
-    if st.button("➕ Add Note", type="primary"):
+    html = f"""
+    <div class="info-card">
+        <h3>📝 Notes & Interactions</h3>
+        {notes_html}
+    </div>
+    """
+    st.markdown(html, unsafe_allow_html=True)
+    
+    # Quick action button (outside HTML card)
+    if st.button("➕ Add Note", type="primary", key=f"add_note_{customer_id}"):
         st.session_state['add_note_customer'] = customer_id
         st.info("📝 Please navigate to **Notes & Interactions** page using the sidebar to add a note")
-    
-    st.markdown('</div>', unsafe_allow_html=True)
 
 
 def render_activity_timeline(navigator_data):
     """Render customer activity timeline"""
-    st.markdown('<div class="info-card">', unsafe_allow_html=True)
-    st.markdown("### 🕒 Activity Timeline")
     
     if not navigator_data:
-        st.info("No activity data available")
-        st.markdown('</div>', unsafe_allow_html=True)
-        return
-    
-    # Last activity
-    last_activity = navigator_data.get('last_activity', 'Never')
-    last_activity_days = navigator_data.get('last_activity_days', 999)
-    
-    if last_activity != 'Never':
-        if last_activity_days <= 7:
-            activity_status = "🟢 Active (within last week)"
-        elif last_activity_days <= 30:
-            activity_status = "🟡 Recent (within last month)"
-        else:
-            activity_status = "🔴 Inactive (over 30 days)"
-        
-        st.markdown(f"**Status:** {activity_status}")
-        st.markdown(f"**Last Seen:** {last_activity}")
+        content_html = '<p style="color: #64748b;">No activity data available</p>'
     else:
-        st.info("No activity recorded")
+        # Last activity
+        last_activity = navigator_data.get('last_activity', 'Never')
+        last_activity_days = navigator_data.get('last_activity_days', 999)
+        
+        if last_activity != 'Never':
+            if last_activity_days <= 7:
+                activity_status = "🟢 Active (within last week)"
+            elif last_activity_days <= 30:
+                activity_status = "🟡 Recent (within last month)"
+            else:
+                activity_status = "🔴 Inactive (over 30 days)"
+            
+            content_html = f"""
+            <p><strong>Status:</strong> {activity_status}</p>
+            <p><strong>Last Seen:</strong> {last_activity}</p>
+            """
+        else:
+            content_html = '<p style="color: #64748b;">No activity recorded</p>'
     
-    st.markdown('</div>', unsafe_allow_html=True)
+    html = f"""
+    <div class="info-card">
+        <h3>🕒 Activity Timeline</h3>
+        {content_html}
+    </div>
+    """
+    st.markdown(html, unsafe_allow_html=True)
 
 
 def render_quick_actions(customer_id, customer_data):
     """Render quick action buttons"""
-    st.markdown("### ⚡ Quick Actions")
+    # Title as HTML for consistency
+    html = '<div class="info-card"><h3>⚡ Quick Actions</h3></div>'
+    st.markdown(html, unsafe_allow_html=True)
     
-    col1, col2, col3, col4 = st.columns(4)
+    # Stack buttons vertically instead of using columns
+    if st.button("📞 Schedule Call", use_container_width=True, key=f"schedule_call_{customer_id}"):
+        st.session_state['schedule_for_customer'] = customer_id
+        st.toast("📞 Customer marked for scheduling - use Appointments page")
     
-    with col1:
-        if st.button("📞 Schedule Call", use_container_width=True):
-            st.session_state['schedule_for_customer'] = customer_id
-            st.toast("📞 Customer marked for scheduling - use Appointments page")
+    if st.button("📝 Add Note", use_container_width=True, key=f"quick_note_{customer_id}"):
+        st.session_state['add_note_customer'] = customer_id
+        st.toast("📝 Customer marked for note - use Notes page")
     
-    with col2:
-        if st.button("📝 Add Note", use_container_width=True):
-            st.session_state['add_note_customer'] = customer_id
-            st.toast("📝 Customer marked for note - use Notes page")
+    if st.button("📧 Send Email", use_container_width=True, key=f"send_email_{customer_id}"):
+        email = customer_data.get('email') or customer_data.get('contact_email')
+        if email:
+            st.info(f"📧 Email: {email}")
+        else:
+            st.warning("No email on file")
     
-    with col3:
-        if st.button("📧 Send Email", use_container_width=True):
-            email = customer_data.get('email') or customer_data.get('contact_email')
-            if email:
-                st.info(f"📧 Email: {email}")
-            else:
-                st.warning("No email on file")
-    
-    with col4:
-        if st.button("🏘️ Match Communities", use_container_width=True):
-            st.session_state['match_for_customer'] = customer_id
-            st.toast("🏘️ Customer marked for matching - use Smart Matching page")
+    if st.button("🏘️ Match Communities", use_container_width=True, key=f"match_comm_{customer_id}"):
+        st.session_state['match_for_customer'] = customer_id
+        st.toast("🏘️ Customer marked for matching - use Smart Matching page")
 
 
 def render():
@@ -506,44 +550,38 @@ def render():
     except Exception as e:
         st.error(f"Error rendering header: {e}")
     
-    # Main content in columns
-    col1, col2 = st.columns([2, 1])
+    # Use single column layout to avoid width issues
+    # Primary information
+    try:
+        render_contact_info(customer_data)
+    except Exception as e:
+        st.error(f"Error rendering contact info: {e}")
     
-    with col1:
-        # Primary information
-        try:
-            render_contact_info(customer_data)
-        except Exception as e:
-            st.error(f"Error rendering contact info: {e}")
-        
-        try:
-            render_navigator_status(navigator_data)
-        except Exception as e:
-            st.error(f"Error rendering Navigator status: {e}")
-        
-        try:
-            render_relationship_info(navigator_data)
-        except Exception as e:
-            st.error(f"Error rendering relationship info: {e}")
-        
-        try:
-            render_activity_timeline(navigator_data)
-        except Exception as e:
-            st.error(f"Error rendering activity timeline: {e}")
+    try:
+        render_navigator_status(navigator_data)
+    except Exception as e:
+        st.error(f"Error rendering Navigator status: {e}")
     
-    with col2:
-        # Secondary information
-        try:
-            render_appointments(customer_id)
-        except Exception as e:
-            st.error(f"Error rendering appointments: {e}")
-        
-        try:
-            render_notes(customer_id)
-        except Exception as e:
-            st.error(f"Error rendering notes: {e}")
+    try:
+        render_relationship_info(navigator_data)
+    except Exception as e:
+        st.error(f"Error rendering relationship info: {e}")
     
-    # Quick actions at bottom
+    # Secondary information
+    try:
+        render_appointments(customer_id)
+    except Exception as e:
+        st.error(f"Error rendering appointments: {e}")
+    
+    try:
+        render_notes(customer_id)
+    except Exception as e:
+        st.error(f"Error rendering notes: {e}")
+    
+    try:
+        render_activity_timeline(navigator_data)
+    except Exception as e:
+        st.error(f"Error rendering activity timeline: {e}")    # Quick actions at bottom
     st.markdown("---")
     try:
         render_quick_actions(customer_id, customer_data)

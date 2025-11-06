@@ -18,8 +18,9 @@ def render_pipeline_stage(stage_name: str, customers: List[Dict[str, Any]], stag
         st.caption("_No customers_")
         return
     
-    for customer in customers:
+    for idx, customer in enumerate(customers):
         name = customer.get('name', 'Unknown')
+        customer_id = customer.get('id') or customer.get('customer_id') or customer.get('user_id', idx)
         days_in_stage = customer.get('days_since', 0)
         
         # Build card content based on stage
@@ -53,7 +54,8 @@ def render_pipeline_stage(stage_name: str, customers: List[Dict[str, Any]], stag
         </div>
         """, unsafe_allow_html=True)
         
-        if st.button("View", key=f"pipeline_{name}", use_container_width=True):
+        # Use customer_id + stage to ensure uniqueness
+        if st.button("View", key=f"pipeline_{stage_name}_{customer_id}", use_container_width=True):
             st.session_state['selected_customer'] = name
             st.rerun()
 

@@ -16,6 +16,10 @@ def render():
     # Initialize CRM storage adapter
     crm_adapter = StreamlitCRMStorage()
     
+    # Add cleanup section at the top
+    with st.expander("🗑️ Data Cleanup", expanded=False):
+        render_cleanup_section()
+    
     # Create tabs for different lead views
     tab1, tab2, tab3 = st.tabs(["Active Sessions", "Recent Activity", "Lead Conversion"])
     
@@ -27,6 +31,50 @@ def render():
     
     with tab3:
         render_conversion_opportunities()
+
+def render_cleanup_section():
+    """Render data cleanup controls"""
+    st.subheader("Delete Anonymous Leads")
+    st.write("Remove anonymous leads that have no contact information.")
+    
+    # Get all leads and analyze them
+    all_leads = get_all_leads()
+    
+    anonymous_count = 0
+    synthetic_count = 0
+    named_count = 0
+    
+    for lead in all_leads:
+        if is_anonymous_lead(lead):
+            anonymous_count += 1
+        elif is_synthetic_lead(lead):
+            synthetic_count += 1
+        elif has_contact_name(lead):
+            named_count += 1
+    
+    # Display counts
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Anonymous Leads", anonymous_count, help="Leads with no name or contact info")
+    with col2:
+        st.metric("Synthetic Leads", synthetic_count, help="Test/demo leads (will be preserved)")
+    with col3:
+        st.metric("Named Leads", named_count, help="Leads with contact information (will be preserved)")
+    
+    # Delete button with confirmation
+    if anonymous_count > 0:
+        st.warning(f"⚠️ This will permanently delete {anonymous_count} anonymous lead(s)")
+        
+        col_btn1, col_btn2 = st.columns([1, 4])
+        with col_btn1:
+            if st.button("🗑️ Delete Anonymous Leads", type="primary", use_container_width=True):
+                deleted_count = delete_anonymous_leads()
+                st.success(f"✅ Deleted {deleted_count} anonymous leads")
+                st.rerun()
+        with col_btn2:
+            st.info("Synthetic leads and leads with names will be preserved")
+    else:
+        st.success("✅ No anonymous leads to delete")
 
 def render_active_sessions():
     """Render active user sessions"""
@@ -349,3 +397,169 @@ def convert_lead_to_customer(session):
         
     except Exception as e:
         st.error(f"Error converting lead: {str(e)}")
+
+def get_all_leads():
+    """Get all leads from both CRM JSONL and Navigator session files"""
+    all_leads = []
+    
+    # Load from CRM leads.jsonl
+    from pathlib import Path
+    leads_file = Path("/Users/shane/Desktop/cca_senior_navigator_v3/data/crm/leads.jsonl")
+    if leads_file.exists():
+        try:
+            with open(leads_file, 'r') as f:
+                for line in f:
+                    if line.strip():
+                        lead = json.loads(line)
+                        lead['_source'] = 'crm_jsonl'
+                        lead['_file_path'] = str(leads_file)
+                        all_leads.append(lead)
+        except (json.JSONDecodeError, Exception) as e:
+            st.warning(f"Error loading CRM leads: {e}")
+    
+    # Load from Navigator session files
+    users_dir = Path("/Users/shane/Desktop/cca_senior_navigator_v3/data/users")
+    if users_dir.exists():
+        for file_path in users_dir.glob("anon_*.json"):
+            try:
+                with open(file_path, 'r') as f:
+                    session_data = json.load(f)
+                    lead = {
+                        'lead_id': file_path.stem,
+                        '_source': 'navigator_session',
+                        '_file_path': str(file_path),
+                        'session_data': session_data,
+                        'contact_info': session_data.get('profile', {}),
+                        'metadata': {
+                            'session_id': file_path.stem,
+                            'uid': session_data.get('uid', session_data.get('anonymous_uid', ''))
+                        }
+                    }
+                    all_leads.append(lead)
+            except (json.JSONDecodeError, PermissionError):
+                continue
+    
+    return all_leads
+
+def is_anonymous_lead(lead):
+    """Check if a lead is anonymous (no name or contact info)"""
+    # Check for synthetic/test markers first
+    if is_synthetic_lead(lead):
+        return False
+    
+    # Check contact info
+    contact_info = lead.get('contact_info', {})
+    
+    # Has a name?
+    if contact_info.get('name') and contact_info['name'].strip():
+        return False
+    
+    # Has email?
+    if contact_info.get('email') and contact_info['email'].strip():
+        return False
+    
+    # Check session data profile
+    session_data = lead.get('session_data', {})
+    profile = session_data.get('profile', {})
+    
+    if profile.get('name') and profile['name'].strip():
+        return False
+    
+    if profile.get('email') and profile['email'].strip():
+        return False
+    
+    # Check lead_id for synthetic patterns
+    lead_id = lead.get('lead_id', '')
+    if 'sample' in lead_id.lower() or 'test' in lead_id.lower() or 'demo' in lead_id.lower():
+        return False
+    
+    # If no identifying info found, it's anonymous
+    return True
+
+def is_synthetic_lead(lead):
+    """Check if a lead is synthetic (test/demo data)"""
+    # Check lead_id for synthetic markers
+    lead_id = lead.get('lead_id', '')
+    if any(marker in lead_id.lower() for marker in ['sample', 'synthetic', 'test', 'demo']):
+        return True
+    
+    # Check metadata
+    metadata = lead.get('metadata', {})
+    if metadata.get('is_synthetic') or metadata.get('is_test'):
+        return True
+    
+    # Check source
+    contact_info = lead.get('contact_info', {})
+    source = contact_info.get('source', '')
+    if source in ['synthetic', 'test', 'demo']:
+        return True
+    
+    return False
+
+def has_contact_name(lead):
+    """Check if lead has a contact name"""
+    # Check contact_info
+    contact_info = lead.get('contact_info', {})
+    if contact_info.get('name') and contact_info['name'].strip():
+        return True
+    
+    # Check session profile
+    session_data = lead.get('session_data', {})
+    profile = session_data.get('profile', {})
+    if profile.get('name') and profile['name'].strip():
+        return True
+    
+    return False
+
+def delete_anonymous_leads():
+    """Delete all anonymous leads, preserving synthetic and named leads"""
+    deleted_count = 0
+    all_leads = get_all_leads()
+    
+    # Separate leads by source
+    session_files_to_delete = []
+    jsonl_lead_ids_to_delete = set()
+    
+    # Identify which leads to delete
+    for lead in all_leads:
+        if is_anonymous_lead(lead):
+            source = lead['_source']
+            
+            if source == 'navigator_session':
+                session_files_to_delete.append(Path(lead['_file_path']))
+            elif source == 'crm_jsonl':
+                jsonl_lead_ids_to_delete.add(lead.get('lead_id'))
+    
+    # Delete session files
+    for file_path in session_files_to_delete:
+        try:
+            if file_path.exists():
+                file_path.unlink()
+                deleted_count += 1
+        except Exception as e:
+            st.error(f"Error deleting session file {file_path.name}: {e}")
+    
+    # Delete from JSONL file (one bulk operation)
+    if jsonl_lead_ids_to_delete:
+        leads_file = Path("/Users/shane/Desktop/cca_senior_navigator_v3/data/crm/leads.jsonl")
+        if leads_file.exists():
+            try:
+                # Read all leads and keep only non-anonymous ones
+                remaining_leads = []
+                with open(leads_file, 'r') as f:
+                    for line in f:
+                        if line.strip():
+                            existing_lead = json.loads(line)
+                            if existing_lead.get('lead_id') not in jsonl_lead_ids_to_delete:
+                                remaining_leads.append(existing_lead)
+                
+                # Rewrite file with remaining leads (single operation)
+                with open(leads_file, 'w') as f:
+                    for remaining_lead in remaining_leads:
+                        f.write(json.dumps(remaining_lead) + '\n')
+                
+                deleted_count += len(jsonl_lead_ids_to_delete)
+            except Exception as e:
+                st.error(f"Error updating leads JSONL file: {e}")
+    
+    return deleted_count

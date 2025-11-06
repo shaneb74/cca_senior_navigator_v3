@@ -161,29 +161,63 @@ def get_all_leads():
     return leads
 
 
+def get_converted_lead_session_ids():
+    """Get set of session IDs that have been converted to customers"""
+    converted_ids = set()
+    customers_file = Path("/Users/shane/Desktop/cca_senior_navigator_v3/data/crm/customers.jsonl")
+    
+    if customers_file.exists():
+        try:
+            with open(customers_file, 'r') as f:
+                for line in f:
+                    if line.strip():
+                        customer = json.loads(line)
+                        session_id = customer.get('session_id')
+                        if session_id and session_id != 'unknown':
+                            converted_ids.add(session_id)
+        except Exception as e:
+            st.warning(f"Could not load customer data: {e}")
+    
+    return converted_ids
+
+
 def show_lead_management():
     """Main lead management interface"""
     st.title("🧹 Lead Management & Quality Control")
     
     leads = get_all_leads()
     
+    # Load customer data to identify converted leads
+    converted_session_ids = get_converted_lead_session_ids()
+    
+    # Add conversion status to each lead
+    for lead in leads:
+        # Extract session ID from filename (e.g., "anon_909375ded6d6.json" -> "anon_909375ded6d6")
+        session_id = lead['file'].replace('.json', '')
+        lead['is_converted'] = session_id in converted_session_ids
+    
     # Summary stats
     col1, col2, col3, col4, col5 = st.columns(5)
     
     total_leads = len(leads)
+    converted_leads = len([l for l in leads if l.get('is_converted', False)])
     low_quality = len([l for l in leads if l['quality']['score'] < 35])
     very_old = len([l for l in leads if any('Very old' in issue for issue in l['quality']['issues'])])
     missing_contact = len([l for l in leads if 'Missing email' in l['quality']['issues']])
     high_engagement = len([l for l in leads if len(l['quality']['engagement_activities']) >= 4])
     
     col1.metric("Total Leads", total_leads)
-    col2.metric("Low Quality (F grade)", low_quality)
-    col3.metric("Very Old (6+ months)", very_old)
-    col4.metric("Missing Contact Info", missing_contact)
+    col2.metric("Converted to Customers", converted_leads, delta_color="off")
+    col3.metric("Low Quality (F grade)", low_quality)
+    col4.metric("Very Old (6+ months)", very_old)
     col5.metric("High Engagement (4+ activities)", high_engagement)
     
     # Filters
     st.subheader("🔍 Filter & Sort")
+    
+    # Add checkbox to hide converted leads
+    hide_converted = st.checkbox("Hide Converted Leads (now customers)", value=True, 
+                                  help="Hide leads that have been converted to customers via appointment booking")
     
     col1, col2, col3, col4 = st.columns(4)
     
@@ -217,6 +251,10 @@ def show_lead_management():
     
     # Apply filters
     filtered_leads = leads.copy()
+    
+    # Filter out converted leads if checkbox is checked
+    if hide_converted:
+        filtered_leads = [l for l in filtered_leads if not l.get('is_converted', False)]
     
     if min_quality != "All":
         grade_scores = {"A": 80, "B": 65, "C": 50, "D": 35, "F": 0}
@@ -252,26 +290,57 @@ def show_lead_management():
     
     st.write(f"Showing {len(filtered_leads)} of {total_leads} leads")
     
-    # Bulk actions
+    # Bulk actions (always work on ALL leads, not filtered subset)
     st.subheader("🗑️ Bulk Actions")
+    st.caption("⚠️ Bulk actions apply to ALL leads, not just filtered results")
     
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        if st.button("🗑️ Purge All F-Grade Leads", type="secondary"):
-            purge_leads_by_quality("F", filtered_leads)
+        # Count F-grade leads from ALL leads
+        f_grade_leads = [l for l in leads if l['quality']['grade'] == 'F']
+        if st.button(f"🗑️ Purge All F-Grade Leads ({len(f_grade_leads)})", type="secondary", disabled=len(f_grade_leads)==0):
+            deleted = purge_leads_by_quality("F", leads)
+            if deleted > 0:
+                st.success(f"✅ Deleted {deleted} F-grade leads")
+                st.rerun()
     
     with col2:
-        if st.button("🗑️ Purge Very Old Leads (6+ months)", type="secondary"):
-            purge_old_leads(180, filtered_leads)
+        # Count very old leads from ALL leads
+        cutoff_time = datetime.now() - timedelta(days=180)
+        old_leads = [l for l in leads if l['modified'] < cutoff_time]
+        if st.button(f"🗑️ Purge Very Old Leads ({len(old_leads)})", type="secondary", disabled=len(old_leads)==0):
+            deleted = purge_old_leads(180, leads)
+            if deleted > 0:
+                st.success(f"✅ Deleted {deleted} old leads")
+                st.rerun()
     
     with col3:
-        if st.button("🗑️ Purge Empty/Minimal Leads", type="secondary"):
-            purge_minimal_leads(filtered_leads)
+        # Count minimal leads from ALL leads
+        minimal_leads = []
+        for lead in leads:
+            profile = lead['data'].get('profile', {})
+            mcip = lead['data'].get('mcip_contracts', {})
+            progress = lead['data'].get('progress', {})
+            has_name = bool(profile.get('name'))
+            has_engagement = bool(mcip or progress or lead['data'].get('cost'))
+            if not has_name and not has_engagement:
+                minimal_leads.append(lead)
+        
+        if st.button(f"🗑️ Purge Empty/Minimal Leads ({len(minimal_leads)})", type="secondary", disabled=len(minimal_leads)==0):
+            deleted = purge_minimal_leads(leads)
+            if deleted > 0:
+                st.success(f"✅ Deleted {deleted} minimal leads")
+                st.rerun()
     
     with col4:
-        if st.button("🗑️ Purge No-Engagement Leads", type="secondary"):
-            purge_no_engagement_leads(filtered_leads)
+        # Count no-engagement leads from ALL leads
+        no_engagement_leads = [l for l in leads if len(l['quality']['engagement_activities']) == 0]
+        if st.button(f"🗑️ Purge No-Engagement Leads ({len(no_engagement_leads)})", type="secondary", disabled=len(no_engagement_leads)==0):
+            deleted = purge_no_engagement_leads(leads)
+            if deleted > 0:
+                st.success(f"✅ Deleted {deleted} no-engagement leads")
+                st.rerun()
     
     # Lead list with individual actions
     st.subheader("📋 Lead Details & Engagement Analytics")
@@ -281,10 +350,18 @@ def show_lead_management():
             engagement_count = len(lead['quality']['engagement_activities'])
             engagement_indicator = "🔥" if engagement_count >= 4 else "⚡" if engagement_count >= 2 else "💤"
             
-            with st.expander(f"{engagement_indicator} {lead['uid']} - Grade {lead['quality']['grade']} ({lead['quality']['score']}pts) - {engagement_count} activities"):
+            # Add customer conversion indicator
+            is_converted = lead.get('is_converted', False)
+            conversion_badge = " 👤 CUSTOMER" if is_converted else ""
+            
+            with st.expander(f"{engagement_indicator} {lead['uid']} - Grade {lead['quality']['grade']} ({lead['quality']['score']}pts) - {engagement_count} activities{conversion_badge}"):
                 col1, col2 = st.columns([3, 1])
                 
                 with col1:
+                    # Show conversion status
+                    if is_converted:
+                        st.success("✅ **Converted to Customer** - This lead has booked an appointment")
+                    
                     st.write(f"**File:** {lead['file']}")
                     st.write(f"**Size:** {lead['size_kb']} KB")
                     st.write(f"**Modified:** {lead['modified'].strftime('%Y-%m-%d %H:%M')}")
@@ -346,25 +423,19 @@ def show_lead_management():
 
 
 def purge_leads_by_quality(min_grade, leads):
-    """Purge leads below a certain quality grade"""
-    grade_scores = {"A": 80, "B": 65, "C": 50, "D": 35, "F": 0}
-    max_score = grade_scores[min_grade]
+    """Purge leads with a specific quality grade"""
+    # Delete leads that match the specified grade
+    to_delete = [l for l in leads if l['quality']['grade'] == min_grade]
     
-    to_delete = [l for l in leads if l['quality']['score'] <= max_score]
+    deleted_count = 0
+    for lead in to_delete:
+        try:
+            os.remove(lead['path'])
+            deleted_count += 1
+        except Exception as e:
+            st.error(f"Failed to delete {lead['file']}: {e}")
     
-    if to_delete:
-        st.warning(f"This will delete {len(to_delete)} leads with grade {min_grade} or lower!")
-        if st.button("Confirm Deletion", key="confirm_quality_purge"):
-            deleted_count = 0
-            for lead in to_delete:
-                try:
-                    os.remove(lead['path'])
-                    deleted_count += 1
-                except Exception as e:
-                    st.error(f"Failed to delete {lead['file']}: {e}")
-            
-            st.success(f"Deleted {deleted_count} low-quality leads")
-            st.rerun()
+    return deleted_count
 
 
 def purge_old_leads(max_age_days, leads):
@@ -372,19 +443,15 @@ def purge_old_leads(max_age_days, leads):
     cutoff_time = datetime.now() - timedelta(days=max_age_days)
     to_delete = [l for l in leads if l['modified'] < cutoff_time]
     
-    if to_delete:
-        st.warning(f"This will delete {len(to_delete)} leads older than {max_age_days} days!")
-        if st.button("Confirm Deletion", key="confirm_age_purge"):
-            deleted_count = 0
-            for lead in to_delete:
-                try:
-                    os.remove(lead['path'])
-                    deleted_count += 1
-                except Exception as e:
-                    st.error(f"Failed to delete {lead['file']}: {e}")
-            
-            st.success(f"Deleted {deleted_count} old leads")
-            st.rerun()
+    deleted_count = 0
+    for lead in to_delete:
+        try:
+            os.remove(lead['path'])
+            deleted_count += 1
+        except Exception as e:
+            st.error(f"Failed to delete {lead['file']}: {e}")
+    
+    return deleted_count
 
 
 def purge_minimal_leads(leads):
@@ -401,38 +468,30 @@ def purge_minimal_leads(leads):
         if not has_name and not has_engagement:
             to_delete.append(lead)
     
-    if to_delete:
-        st.warning(f"This will delete {len(to_delete)} leads with no name and no engagement!")
-        if st.button("Confirm Deletion", key="confirm_minimal_purge"):
-            deleted_count = 0
-            for lead in to_delete:
-                try:
-                    os.remove(lead['path'])
-                    deleted_count += 1
-                except Exception as e:
-                    st.error(f"Failed to delete {lead['file']}: {e}")
-            
-            st.success(f"Deleted {deleted_count} minimal leads")
-            st.rerun()
+    deleted_count = 0
+    for lead in to_delete:
+        try:
+            os.remove(lead['path'])
+            deleted_count += 1
+        except Exception as e:
+            st.error(f"Failed to delete {lead['file']}: {e}")
+    
+    return deleted_count
 
 
 def purge_no_engagement_leads(leads):
     """Purge leads with no engagement activities"""
     to_delete = [l for l in leads if len(l['quality']['engagement_activities']) == 0]
     
-    if to_delete:
-        st.warning(f"This will delete {len(to_delete)} leads with no engagement activities!")
-        if st.button("Confirm Deletion", key="confirm_no_engagement_purge"):
-            deleted_count = 0
-            for lead in to_delete:
-                try:
-                    os.remove(lead['path'])
-                    deleted_count += 1
-                except Exception as e:
-                    st.error(f"Failed to delete {lead['file']}: {e}")
-            
-            st.success(f"Deleted {deleted_count} no-engagement leads")
-            st.rerun()
+    deleted_count = 0
+    for lead in to_delete:
+        try:
+            os.remove(lead['path'])
+            deleted_count += 1
+        except Exception as e:
+            st.error(f"Failed to delete {lead['file']}: {e}")
+    
+    return deleted_count
 
 
 def delete_single_lead(file_path):
