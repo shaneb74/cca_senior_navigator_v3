@@ -100,20 +100,75 @@ def render():
     with tab1:
         st.subheader("Upcoming Appointments")
         
-        # Get all appointments (simplified for demo)
+        # Get all appointments
         appointments = crm_repo.list_records("appointments")
         
-        if appointments:
-            for appointment in appointments:
+        # Filter upcoming appointments (status = scheduled)
+        upcoming_appointments = [a for a in appointments if a.get('status', '').lower() == 'scheduled']
+        
+        # Sort by scheduled_at (most recent first)
+        upcoming_appointments.sort(key=lambda x: x.get('created_at', ''), reverse=True)
+        
+        if upcoming_appointments:
+            for appointment in upcoming_appointments:
+                customer_name = appointment.get('customer_name', 'Unknown Customer')
+                attendee_name = appointment.get('attendee_name', customer_name)
+                relation = appointment.get('relation_to_recipient', 'Self')
+                appt_type = appointment.get('appointment_type', 'Consultation')
+                scheduled_at = appointment.get('scheduled_at', 'No time set')
+                timezone = appointment.get('timezone', 'America/New_York')
+                confirmation = appointment.get('confirmation_id', 'N/A')
+                email = appointment.get('contact_email', '')
+                phone = appointment.get('contact_phone', '')
+                notes = appointment.get('notes', '')
+                
+                # Format care prep preferences if available
+                care_prep = appointment.get('care_prep_preferences', {})
+                care_type = care_prep.get('care_type', 'Not specified')
+                location = care_prep.get('location', 'Not specified')
+                budget_range = ''
+                if care_prep.get('budget_min') and care_prep.get('budget_max'):
+                    budget_range = f"${care_prep['budget_min']:,} - ${care_prep['budget_max']:,}/month"
+                
                 with st.container():
                     st.markdown(f"""
                     <div class="appointment-card">
-                        <div class="appointment-time">{appointment.get('scheduled_at', 'No time set')}</div>
-                        <div class="appointment-customer">Customer: {appointment.get('customer_name', 'Unknown')}</div>
-                        <span class="appointment-type status-{appointment.get('status', 'scheduled')}">{appointment.get('appointment_type', 'Consultation')}</span>
-                        <p style="margin-top: 1rem; color: #64748b;">{appointment.get('notes', 'No notes')}</p>
+                        <div class="appointment-time">📅 {scheduled_at}</div>
+                        <div class="appointment-customer">
+                            <strong>Care Recipient:</strong> {customer_name}
+                            {f'<br><strong>Attendee:</strong> {attendee_name} ({relation})' if attendee_name != customer_name else ''}
+                        </div>
+                        <span class="appointment-type status-scheduled">{appt_type}</span>
+                        <p style="margin-top: 1rem; color: #64748b;">
+                            <strong>Confirmation:</strong> {confirmation}<br>
+                            <strong>Timezone:</strong> {timezone.split('/')[-1]}<br>
+                            {f'<strong>Email:</strong> {email}<br>' if email else ''}
+                            {f'<strong>Phone:</strong> {phone}<br>' if phone else ''}
+                        </p>
                     </div>
                     """, unsafe_allow_html=True)
+                    
+                    # Show care prep details in expander
+                    if care_prep or notes:
+                        with st.expander("View Preparation Details"):
+                            if care_prep:
+                                st.markdown("**Care Preparation:**")
+                                col1, col2 = st.columns(2)
+                                with col1:
+                                    st.write(f"**Care Type:** {care_type.title()}")
+                                    st.write(f"**Location:** {location}")
+                                    if budget_range:
+                                        st.write(f"**Budget:** {budget_range}")
+                                with col2:
+                                    if care_prep.get('priorities'):
+                                        st.write(f"**Priorities:** {', '.join(care_prep['priorities'])}")
+                                    if care_prep.get('amenities'):
+                                        st.write(f"**Amenities:** {', '.join(care_prep['amenities'][:5])}")
+                                        if len(care_prep['amenities']) > 5:
+                                            st.caption(f"+ {len(care_prep['amenities']) - 5} more")
+                            if notes:
+                                st.markdown("**Additional Notes:**")
+                                st.info(notes)
         else:
             st.info("📅 No upcoming appointments scheduled")
     

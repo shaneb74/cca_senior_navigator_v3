@@ -441,6 +441,7 @@ def _handle_booking_submit(form_data: dict):
     MCIP.set_advisor_appointment(appointment)
 
     # Convert to customer in CRM (appointment booking makes them a customer)
+    customer_id = None
     try:
         # Get name components
         care_recipient_first = form_data.get("care_recipient_first", "").strip()
@@ -475,6 +476,38 @@ def _handle_booking_submit(form_data: dict):
         )
         crm_status = get_crm_status()
         print(f"[PFMA] Appointment booked - CRM Status: {crm_status}")
+        
+        # Save appointment to CRM for advisor view
+        try:
+            from shared.data_access.crm_repository import CrmRepository
+            crm_repo = CrmRepository()
+            
+            # Prepare appointment data for CRM
+            appointment_data = {
+                "customer_id": customer_id,
+                "customer_name": crm_name,
+                "attendee_name": f"{attendee_first} {attendee_last}".strip() if attendee_first or attendee_last else crm_name,
+                "relation_to_recipient": relation,
+                "appointment_type": appointment.type.title(),
+                "scheduled_at": f"{appointment.date} at {appointment.time}",
+                "timezone": appointment.timezone,
+                "status": appointment.status,
+                "confirmation_id": confirmation_id,
+                "contact_email": contact_email or "",
+                "contact_phone": contact_phone or "",
+                "notes": form_data.get("notes", ""),
+                "preferred_time": appointment.time,
+                "care_prep_preferences": st.session_state.get("care_prep_preferences", {}),
+                "created_at": appointment.generated_at
+            }
+            
+            crm_repo.add_record("appointments", appointment_data)
+            print(f"[PFMA] Appointment saved to CRM: {confirmation_id}")
+            
+        except Exception as crm_err:
+            print(f"[PFMA] Failed to save appointment to CRM: {crm_err}")
+            # Don't fail the booking if CRM storage has issues
+            
     except Exception as e:
         print(f"[PFMA] CRM conversion failed: {e}")
         # Don't fail the booking if CRM has issues
