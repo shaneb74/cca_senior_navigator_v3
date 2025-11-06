@@ -170,10 +170,10 @@ try:
     elif page == "👥 Customers":
         from apps.crm.pages.customers import render
         render()
-    elif page == "� Customer 360°":
+    elif page == "👤 Customer 360°":
         from apps.crm.pages.customer_360 import render
         render()
-    elif page == "�🔥 Leads":
+    elif page == "🔥 Leads":
         from apps.crm.pages.leads import render
         render()
     elif page == "🧹 Lead Management":
