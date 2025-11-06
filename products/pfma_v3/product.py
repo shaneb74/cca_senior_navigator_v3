@@ -24,6 +24,7 @@ from core.events import log_event
 from core.mcip import MCIP, AdvisorAppointment
 from core.nav import route_to
 from core.navi import render_navi_panel
+from core.crm_ids import convert_to_customer, get_crm_status
 
 
 def render():
@@ -175,10 +176,10 @@ def _render_booking_form():
 
     with col1:
         name = st.text_input(
-            "Full Name *",
+            "Care Recipient's Full Name *",
             value=form_data.get("name", ""),
-            placeholder="Sarah Johnson",
-            help="Your name as you'd like the advisor to address you",
+            placeholder="Terry Ramons",
+            help="Full name of the person who needs care (for advisor preparation and CRM records)",
         )
         if name != form_data.get("name"):
             form_data["name"] = name
@@ -331,6 +332,20 @@ def _handle_booking_submit(form_data: dict):
 
     # Save to MCIP
     MCIP.set_advisor_appointment(appointment)
+
+    # Convert to customer in CRM (appointment booking makes them a customer)
+    try:
+        customer_id = convert_to_customer(
+            name=form_data.get("name", "").strip(),
+            email=form_data.get("email", "").strip() or None,
+            phone=form_data.get("phone", "").strip() or None,
+            source="appointment_booking"
+        )
+        crm_status = get_crm_status()
+        print(f"[PFMA] Appointment booked - CRM Status: {crm_status}")
+    except Exception as e:
+        print(f"[PFMA] CRM conversion failed: {e}")
+        # Don't fail the booking if CRM has issues
 
     # Mark PFMA complete (using canonical key)
     MCIP.mark_product_complete("pfma")
