@@ -496,11 +496,6 @@ def render():
     # Check if we have a selected customer
     customer_id = st.session_state.get('selected_customer')
     
-    # Debug info (can be removed later)
-    with st.expander("🔍 Debug Info", expanded=False):
-        st.write("Session State Keys:", list(st.session_state.keys()))
-        st.write("Selected Customer ID:", customer_id)
-    
     if not customer_id:
         st.warning("⚠️ No customer selected")
         st.info("👉 Please select a customer from the Customers page to view their 360° profile.")
