@@ -111,7 +111,7 @@ def render():
         upcoming_appointments.sort(key=lambda x: x.get('created_at', ''), reverse=True)
         
         if upcoming_appointments:
-            for appointment in upcoming_appointments:
+            for idx, appointment in enumerate(upcoming_appointments):
                 customer_name = appointment.get('customer_name', 'Unknown Customer')
                 attendee_name = appointment.get('attendee_name', customer_name)
                 relation = appointment.get('relation_to_recipient', 'Self')
@@ -122,6 +122,7 @@ def render():
                 email = appointment.get('contact_email', '')
                 phone = appointment.get('contact_phone', '')
                 notes = appointment.get('notes', '')
+                created_at = appointment.get('created_at', '')
                 
                 # Format care prep preferences if available
                 care_prep = appointment.get('care_prep_preferences', {})
@@ -130,6 +131,9 @@ def render():
                 budget_range = ''
                 if care_prep.get('budget_min') and care_prep.get('budget_max'):
                     budget_range = f"${care_prep['budget_min']:,} - ${care_prep['budget_max']:,}/month"
+                
+                # Create unique key for this appointment using created_at timestamp
+                appt_key = f"appt_{created_at}_{idx}"
                 
                 with st.container():
                     # Display appointment details
@@ -186,6 +190,115 @@ def render():
                             if notes:
                                 st.markdown("**Additional Notes:**")
                                 st.info(notes)
+                    
+                    # Action buttons (Edit and Delete)
+                    col1, col2, col3 = st.columns([1, 1, 3])
+                    with col1:
+                        if st.button("✏️ Edit", key=f"edit_{appt_key}", use_container_width=True):
+                            st.session_state[f'editing_{appt_key}'] = True
+                            st.rerun()
+                    with col2:
+                        if st.button("🗑️ Delete", key=f"delete_{appt_key}", type="secondary", use_container_width=True):
+                            st.session_state[f'confirm_delete_{appt_key}'] = True
+                            st.rerun()
+                    
+                    # Confirm delete dialog
+                    if st.session_state.get(f'confirm_delete_{appt_key}'):
+                        st.warning(f"⚠️ Delete appointment for {customer_name} on {scheduled_at}?")
+                        col_yes, col_no, col_spacer = st.columns([1, 1, 3])
+                        with col_yes:
+                            if st.button("Yes, Delete", key=f"confirm_yes_{appt_key}", type="primary"):
+                                # Delete the appointment using created_at as unique identifier
+                                all_appointments = crm_repo.list_records("appointments")
+                                filtered = [a for a in all_appointments if a.get('created_at') != created_at]
+                                crm_repo.data["appointments"] = filtered
+                                crm_repo.save()
+                                st.success(f"✅ Appointment deleted")
+                                del st.session_state[f'confirm_delete_{appt_key}']
+                                st.rerun()
+                        with col_no:
+                            if st.button("Cancel", key=f"confirm_no_{appt_key}"):
+                                del st.session_state[f'confirm_delete_{appt_key}']
+                                st.rerun()
+                    
+                    # Edit dialog
+                    if st.session_state.get(f'editing_{appt_key}'):
+                        st.markdown("---")
+                        st.subheader("Edit Appointment")
+                        
+                        with st.form(f"edit_form_{appt_key}"):
+                            col1, col2 = st.columns(2)
+                            
+                            with col1:
+                                edit_customer = st.text_input("Customer Name *", value=customer_name, key=f"e_cust_{appt_key}")
+                                edit_type = st.selectbox("Appointment Type *", [
+                                    "Video", "Phone", "Initial Consultation", "Follow-up Meeting", 
+                                    "Assessment Review", "Care Planning Session", "Family Meeting"
+                                ], index=["Video", "Phone", "Initial Consultation", "Follow-up Meeting", 
+                                         "Assessment Review", "Care Planning Session", "Family Meeting"].index(appt_type) if appt_type in [
+                                    "Video", "Phone", "Initial Consultation", "Follow-up Meeting", 
+                                    "Assessment Review", "Care Planning Session", "Family Meeting"
+                                ] else 0, key=f"e_type_{appt_key}")
+                                edit_email = st.text_input("Email", value=email, key=f"e_email_{appt_key}")
+                            
+                            with col2:
+                                # Parse date/time from scheduled_at
+                                try:
+                                    if " at " in scheduled_at:
+                                        date_str, time_str = scheduled_at.split(" at ")
+                                        edit_date = st.date_input("Date *", value=datetime.strptime(date_str.strip(), "%Y-%m-%d").date(), key=f"e_date_{appt_key}")
+                                        time_obj = datetime.strptime(time_str.strip(), "%I:%M %p").time()
+                                        edit_time = st.time_input("Time *", value=time_obj, key=f"e_time_{appt_key}")
+                                    else:
+                                        edit_date = st.date_input("Date *", key=f"e_date_{appt_key}")
+                                        edit_time = st.time_input("Time *", key=f"e_time_{appt_key}")
+                                except:
+                                    edit_date = st.date_input("Date *", key=f"e_date_{appt_key}")
+                                    edit_time = st.time_input("Time *", key=f"e_time_{appt_key}")
+                                
+                                edit_phone = st.text_input("Phone", value=phone, key=f"e_phone_{appt_key}")
+                            
+                            edit_tz = st.selectbox("Timezone *", [
+                                "America/New_York", "America/Chicago", "America/Denver", 
+                                "America/Los_Angeles", "America/Phoenix"
+                            ], index=[
+                                "America/New_York", "America/Chicago", "America/Denver", 
+                                "America/Los_Angeles", "America/Phoenix"
+                            ].index(timezone) if timezone in [
+                                "America/New_York", "America/Chicago", "America/Denver", 
+                                "America/Los_Angeles", "America/Phoenix"
+                            ] else 0, key=f"e_tz_{appt_key}")
+                            
+                            edit_notes = st.text_area("Notes", value=notes, key=f"e_notes_{appt_key}")
+                            
+                            col_save, col_cancel = st.columns(2)
+                            with col_save:
+                                if st.form_submit_button("💾 Save Changes", type="primary"):
+                                    # Update the appointment
+                                    all_appointments = crm_repo.list_records("appointments")
+                                    for a in all_appointments:
+                                        if a.get('created_at') == created_at:
+                                            a['customer_name'] = edit_customer
+                                            a['appointment_type'] = edit_type
+                                            a['scheduled_at'] = f"{edit_date} at {edit_time.strftime('%I:%M %p')}"
+                                            a['timezone'] = edit_tz
+                                            a['contact_email'] = edit_email
+                                            a['contact_phone'] = edit_phone
+                                            a['notes'] = edit_notes
+                                            a['preferred_time'] = edit_time.strftime('%I:%M %p')
+                                            break
+                                    crm_repo.save()
+                                    st.success("✅ Appointment updated")
+                                    del st.session_state[f'editing_{appt_key}']
+                                    st.rerun()
+                            with col_cancel:
+                                if st.form_submit_button("Cancel"):
+                                    del st.session_state[f'editing_{appt_key}']
+                                    st.rerun()
+                        
+                        st.markdown("---")
+                    
+                    st.markdown("<br>", unsafe_allow_html=True)
         else:
             st.info("📅 No upcoming appointments scheduled")
     
