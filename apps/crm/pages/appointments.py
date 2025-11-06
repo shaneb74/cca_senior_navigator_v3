@@ -3,6 +3,7 @@ CRM Appointments page - manage customer appointments and scheduling
 Clean, professional styling following the lobby design pattern
 """
 import streamlit as st
+import uuid
 from shared.data_access.crm_repository import CrmRepository
 from datetime import datetime, timedelta
 
@@ -131,22 +132,38 @@ def render():
                     budget_range = f"${care_prep['budget_min']:,} - ${care_prep['budget_max']:,}/month"
                 
                 with st.container():
+                    # Display appointment details
                     st.markdown(f"""
                     <div class="appointment-card">
                         <div class="appointment-time">📅 {scheduled_at}</div>
                         <div class="appointment-customer">
                             <strong>Care Recipient:</strong> {customer_name}
-                            {f'<br><strong>Attendee:</strong> {attendee_name} ({relation})' if attendee_name != customer_name else ''}
                         </div>
-                        <span class="appointment-type status-scheduled">{appt_type}</span>
-                        <p style="margin-top: 1rem; color: #64748b;">
-                            <strong>Confirmation:</strong> {confirmation}<br>
-                            <strong>Timezone:</strong> {timezone.split('/')[-1]}<br>
-                            {f'<strong>Email:</strong> {email}<br>' if email else ''}
-                            {f'<strong>Phone:</strong> {phone}<br>' if phone else ''}
-                        </p>
-                    </div>
                     """, unsafe_allow_html=True)
+                    
+                    # Show attendee if different
+                    if attendee_name != customer_name:
+                        st.markdown(f"""
+                        <div class="appointment-customer">
+                            <strong>Attendee:</strong> {attendee_name} ({relation})
+                        </div>
+                        """, unsafe_allow_html=True)
+                    
+                    st.markdown(f"""
+                        <span class="appointment-type status-scheduled">{appt_type}</span>
+                    """, unsafe_allow_html=True)
+                    
+                    # Contact info and details
+                    details_html = '<p style="margin-top: 1rem; color: #64748b;">'
+                    details_html += f'<strong>Confirmation:</strong> {confirmation}<br>'
+                    details_html += f'<strong>Timezone:</strong> {timezone.split("/")[-1]}<br>'
+                    if email:
+                        details_html += f'<strong>Email:</strong> {email}<br>'
+                    if phone:
+                        details_html += f'<strong>Phone:</strong> {phone}<br>'
+                    details_html += '</p></div>'
+                    
+                    st.markdown(details_html, unsafe_allow_html=True)
                     
                     # Show care prep details in expander
                     if care_prep or notes:
@@ -179,38 +196,70 @@ def render():
             col1, col2 = st.columns(2)
             
             with col1:
-                customer_name = st.text_input("Customer Name")
-                appointment_type = st.selectbox("Appointment Type", [
+                customer_name = st.text_input("Customer Name *", placeholder="Care recipient's full name")
+                appointment_type = st.selectbox("Appointment Type *", [
+                    "Video",
+                    "Phone",
                     "Initial Consultation",
                     "Follow-up Meeting", 
                     "Assessment Review",
                     "Care Planning Session",
                     "Family Meeting"
                 ])
-                duration = st.selectbox("Duration", ["30 minutes", "60 minutes", "90 minutes"])
+                email = st.text_input("Email", placeholder="customer@example.com")
             
             with col2:
-                appointment_date = st.date_input("Date", min_value=datetime.now().date())
-                appointment_time = st.time_input("Time", value=datetime.now().time())
-                advisor = st.text_input("Advisor", value="Current Advisor")
+                appointment_date = st.date_input("Date *", min_value=datetime.now().date())
+                appointment_time = st.time_input("Time *", value=datetime.now().time())
+                phone = st.text_input("Phone", placeholder="555-123-4567")
+            
+            col3, col4 = st.columns(2)
+            with col3:
+                timezone = st.selectbox("Timezone *", [
+                    "America/New_York",
+                    "America/Chicago",
+                    "America/Denver",
+                    "America/Los_Angeles",
+                    "America/Phoenix"
+                ], index=0)
+            
+            with col4:
+                advisor = st.text_input("Advisor", value="CRM Scheduling")
             
             notes = st.text_area("Notes", placeholder="Any specific topics or preparation notes...")
             
             if st.form_submit_button("Schedule Appointment", type="primary"):
-                # Create appointment record
-                appointment_data = {
-                    "customer_name": customer_name,
-                    "appointment_type": appointment_type,
-                    "scheduled_at": f"{appointment_date} {appointment_time}",
-                    "duration": duration,
-                    "advisor": advisor,
-                    "notes": notes,
-                    "status": "scheduled"
-                }
-                
-                crm_repo.add_record("appointments", appointment_data)
-                st.success(f"✅ Appointment scheduled for {customer_name} on {appointment_date}")
-                st.rerun()
+                if not customer_name:
+                    st.error("Customer name is required")
+                else:
+                    # Generate confirmation ID for consistency with app appointments
+                    import uuid
+                    confirmation_id = str(uuid.uuid4())[:8].upper()
+                    
+                    # Create appointment record matching app format
+                    appointment_data = {
+                        "customer_id": None,  # CRM appointments may not have customer_id yet
+                        "customer_name": customer_name,
+                        "attendee_name": customer_name,  # Same as customer for CRM-created
+                        "relation_to_recipient": "Self",  # Default for CRM-created
+                        "appointment_type": appointment_type,
+                        "scheduled_at": f"{appointment_date} at {appointment_time.strftime('%I:%M %p')}",
+                        "timezone": timezone,
+                        "status": "scheduled",
+                        "confirmation_id": confirmation_id,
+                        "contact_email": email or "",
+                        "contact_phone": phone or "",
+                        "notes": notes,
+                        "preferred_time": appointment_time.strftime('%I:%M %p'),
+                        "care_prep_preferences": {},
+                        "created_at": datetime.now().isoformat(),
+                        "source": "crm_manual"  # Track that this was manually created
+                    }
+                    
+                    crm_repo.add_record("appointments", appointment_data)
+                    st.success(f"✅ Appointment scheduled for {customer_name} on {appointment_date}")
+                    st.info(f"Confirmation ID: **{confirmation_id}**")
+                    st.rerun()
     
     with tab3:
         st.subheader("Appointment History")
