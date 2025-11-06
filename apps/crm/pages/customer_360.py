@@ -16,6 +16,13 @@ def inject_customer_360_css():
         background-color: #f8fafc;
     }
     
+    /* Constrain main container */
+    .block-container {
+        max-width: 1400px;
+        padding-left: 2rem;
+        padding-right: 2rem;
+    }
+    
     .customer-360-header {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
@@ -23,18 +30,23 @@ def inject_customer_360_css():
         border-radius: 16px;
         margin-bottom: 2rem;
         box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+        max-width: 100%;
+        overflow: hidden;
     }
     
     .customer-name {
         font-size: 2.5rem;
         font-weight: 700;
         margin: 0 0 0.5rem 0;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
     }
     
     .customer-id {
         font-size: 1rem;
         opacity: 0.9;
         margin: 0;
+        word-wrap: break-word;
     }
     
     .info-card {
@@ -44,6 +56,8 @@ def inject_customer_360_css():
         margin-bottom: 1.5rem;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         border-left: 4px solid #667eea;
+        max-width: 100%;
+        overflow: hidden;
     }
     
     .info-card h3 {
@@ -52,6 +66,7 @@ def inject_customer_360_css():
         font-size: 1.25rem;
         font-weight: 700;
         margin-bottom: 1rem;
+        word-wrap: break-word;
     }
     
     .info-row {
@@ -59,6 +74,8 @@ def inject_customer_360_css():
         justify-content: space-between;
         padding: 0.5rem 0;
         border-bottom: 1px solid #f1f5f9;
+        gap: 1rem;
+        flex-wrap: wrap;
     }
     
     .info-row:last-child {
@@ -68,11 +85,15 @@ def inject_customer_360_css():
     .info-label {
         font-weight: 600;
         color: #64748b;
+        word-wrap: break-word;
     }
     
     .info-value {
         color: #1f2937;
         text-align: right;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        max-width: 60%;
     }
     
     .status-badge {
@@ -105,6 +126,8 @@ def inject_customer_360_css():
         margin-left: 1rem;
         margin-bottom: 1rem;
         position: relative;
+        max-width: 100%;
+        overflow: hidden;
     }
     
     .timeline-item::before {
@@ -122,10 +145,26 @@ def inject_customer_360_css():
         font-size: 0.875rem;
         color: #64748b;
         margin-bottom: 0.25rem;
+        word-wrap: break-word;
     }
     
     .timeline-content {
         color: #1f2937;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+    
+    /* Ensure Streamlit columns don't overflow */
+    [data-testid="column"] {
+        overflow: hidden;
+    }
+    
+    /* Fix button overflow */
+    .stButton button {
+        white-space: normal;
+        word-wrap: break-word;
+        height: auto;
+        min-height: 2.5rem;
     }
     </style>
     """
@@ -157,7 +196,8 @@ def render_contact_info(customer_data):
     
     col1, col2 = st.columns(2)
     with col1:
-        st.markdown(f"**Email:** {email}")
+        st.markdown(f"**Email:**")
+        st.code(email, language=None) if email != 'Not provided' else st.text(email)
         st.markdown(f"**Phone:** {phone}")
     with col2:
         st.markdown(f"**Source:** {source}")
