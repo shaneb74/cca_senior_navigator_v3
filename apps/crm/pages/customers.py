@@ -5,6 +5,7 @@ Clean, professional styling following the lobby design pattern
 import streamlit as st
 from shared.data_access.navigator_reader import NavigatorDataReader
 from shared.data_access.crm_repository import CrmRepository
+from core.adapters.streamlit_crm import get_all_crm_customers, get_crm_customer_by_id
 
 def inject_crm_css():
     """Inject clean CRM styling consistent with Navigator lobby"""
@@ -244,22 +245,34 @@ def render_customer_cards_streamlit(customers):
                 with col:
                     # Customer card container
                     with st.container():
-                        name = customer.get('person_name', 'Unknown Customer')
-                        user_id = customer.get('user_id', 'N/A')
-                        last_activity = customer.get('last_activity', 'Never')
-                        days_since = customer.get('last_activity_days', 999)
-                        status = 'Active' if days_since <= 30 else 'Inactive'
-                        
-                        # Determine progress
-                        has_gcp = customer.get('has_gcp_assessment', False)
-                        has_cost_plan = customer.get('has_cost_plan', False)
-                        
-                        progress_items = []
-                        if has_gcp:
-                            progress_items.append("GCP Assessment")
-                        if has_cost_plan:
-                            progress_items.append("Cost Plan")
-                        progress_text = ", ".join(progress_items) if progress_items else "Getting started"
+                        # Handle different customer data formats
+                        if customer.get('source') == 'crm':
+                            # CRM customer (appointment booking)
+                            name = customer.get('name', 'Unknown Customer')
+                            user_id = customer.get('customer_id', 'N/A')
+                            last_activity = f"Appointment booked"
+                            status = 'Customer'
+                            progress_text = "Appointment scheduled"
+                            status_color = '#28a745'  # Green for customers
+                        else:
+                            # Navigator user
+                            name = customer.get('person_name', 'Unknown Customer')
+                            user_id = customer.get('user_id', 'N/A')
+                            last_activity = customer.get('last_activity', 'Never')
+                            days_since = customer.get('last_activity_days', 999)
+                            status = 'Lead' if days_since <= 30 else 'Inactive'
+                            status_color = '#007bff' if days_since <= 30 else '#6c757d'
+                            
+                            # Determine progress
+                            has_gcp = customer.get('has_gcp_assessment', False)
+                            has_cost_plan = customer.get('has_cost_plan', False)
+                            
+                            progress_items = []
+                            if has_gcp:
+                                progress_items.append("GCP Assessment")
+                            if has_cost_plan:
+                                progress_items.append("Cost Plan")
+                            progress_text = ", ".join(progress_items) if progress_items else "Getting started"
                         
                         # Card styling with container
                         st.markdown(f"""
@@ -282,8 +295,8 @@ def render_customer_cards_streamlit(customers):
                                 font-size: 0.875rem;
                                 font-weight: 600;
                                 margin-bottom: 1rem;
-                                background: {'#dcfce7' if status == 'Active' else '#fef3c7'};
-                                color: {'#16a34a' if status == 'Active' else '#d97706'};
+                                background: {f'{status_color}20'};
+                                color: {status_color};
                             ">{status}</span>
                             <p style="margin: 0; color: #64748b; font-size: 0.95rem;">
                                 Progress: {progress_text}
@@ -316,11 +329,34 @@ def render():
     
     # Load customer data
     try:
+        # Get CRM customers (appointment bookings)
+        crm_customers = get_all_crm_customers()
+        
+        # Get Navigator users (for additional context)
         reader = NavigatorDataReader()
-        customers = reader.get_all_customers()
+        navigator_customers = reader.get_all_customers()
+        
+        # Combine and prioritize CRM customers
+        all_customers = []
+        
+        # Add CRM customers first (these are confirmed customers)
+        for customer in crm_customers:
+            customer['source'] = 'crm'
+            customer['priority'] = 1
+            all_customers.append(customer)
+        
+        # Add Navigator users who aren't already in CRM
+        crm_customer_sessions = {c.get('session_id') for c in crm_customers if c.get('session_id')}
+        for customer in navigator_customers:
+            if customer.get('uid') not in crm_customer_sessions:
+                customer['source'] = 'navigator'
+                customer['priority'] = 2
+                all_customers.append(customer)
+        
+        customers = all_customers
         
         if not customers:
-            st.info("No customer data found. Customers will appear here after they use the Senior Navigator.")
+            st.info("No customer data found. Customers will appear here after they use the Senior Navigator or book appointments.")
             return
             
         # Statistics overview

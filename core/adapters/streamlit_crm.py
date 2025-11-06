@@ -1,10 +1,13 @@
 """
 Streamlit-Specific CRM Implementation
 
-Implements the CRM SDK interfaces using Streamlit session state and logging.
-This is the app-specific adapter that can be easily swapped out.
+Implements the CRM SDK interfaces using proper CRM repository and session state.
+This adapter separates anonymous session data from customer records.
 
-When extracting to SDK, this file stays with the app, not the SDK.
+Key Changes:
+- Lead data tied to anonymous sessions (session files)
+- Customer data stored in CRM repository (separate from sessions)
+- Proper attribution between leads and customers
 """
 
 from typing import Optional, Dict, Any
@@ -20,14 +23,18 @@ from core.sdk.crm_interface import (
 )
 from core.session_store import save_user
 from core.events import log_event
+from shared.data_access.crm_repository import CrmRepository
 
 
 class StreamlitCRMStorage(CRMStorageProvider):
-    """Streamlit session-based CRM storage implementation."""
+    """Streamlit CRM storage with proper lead/customer separation."""
+    
+    def __init__(self):
+        self.crm_repo = CrmRepository()
     
     def save_lead(self, lead_data: LeadData) -> None:
-        """Save lead to Streamlit session state and user persistence."""
-        # Store in session state
+        """Save lead to session state (tied to anonymous session)."""
+        # Store in session state for quick access
         st.session_state["_crm_lead_data"] = {
             "lead_id": lead_data.lead_id,
             "contact_info": lead_data.contact_info.__dict__,
@@ -37,27 +44,42 @@ class StreamlitCRMStorage(CRMStorageProvider):
             "metadata": lead_data.metadata or {}
         }
         
-        # Persist to user file
+        # Persist lead data to session file (for anonymous users)
         self._persist_session_data()
     
     def save_customer(self, customer_data: CustomerData) -> None:
-        """Save customer to Streamlit session state and user persistence."""
-        # Store in session state
-        st.session_state["_crm_customer_data"] = {
+        """Save customer to CRM repository (separate from session)."""
+        # Save to CRM repository using customer name as identifier
+        customer_record = {
             "customer_id": customer_data.customer_id,
             "lead_id": customer_data.lead_id,
-            "contact_info": customer_data.contact_info.__dict__,
+            "name": customer_data.contact_info.name,
+            "email": customer_data.contact_info.email,
+            "phone": customer_data.contact_info.phone,
+            "source": customer_data.contact_info.source,
             "conversion_source": customer_data.conversion_source,
             "converted_at": customer_data.converted_at,
             "status": customer_data.status,
+            "session_id": customer_data.metadata.get("session_id") if customer_data.metadata else None,
             "metadata": customer_data.metadata or {}
         }
         
-        # Persist to user file
+        # Save to CRM repository file
+        self.crm_repo._append_to_jsonl("customers.jsonl", customer_record)
+        
+        # Also store customer reference in session state
+        st.session_state["_crm_customer_data"] = {
+            "customer_id": customer_data.customer_id,
+            "lead_id": customer_data.lead_id,
+            "converted_at": customer_data.converted_at,
+            "status": customer_data.status
+        }
+        
+        # Persist session data (now includes customer reference)
         self._persist_session_data()
     
     def get_crm_status(self, session_id: str) -> Optional[CRMStatus]:
-        """Get CRM status from Streamlit session state."""
+        """Get CRM status from session state."""
         lead_data = st.session_state.get("_crm_lead_data")
         customer_data = st.session_state.get("_crm_customer_data")
         
@@ -88,8 +110,23 @@ class StreamlitCRMStorage(CRMStorageProvider):
             "converted_at": status.converted_at
         }
         
-        # Persist to user file
+        # Persist to session file
         self._persist_session_data()
+    
+    def get_all_customers(self):
+        """Get all customers from CRM repository."""
+        try:
+            return self.crm_repo._load_from_jsonl("customers.jsonl")
+        except Exception:
+            return []
+    
+    def get_customer_by_id(self, customer_id: str):
+        """Get specific customer by ID."""
+        customers = self.get_all_customers()
+        for customer in customers:
+            if customer.get("customer_id") == customer_id:
+                return customer
+        return None
     
     def _persist_session_data(self) -> None:
         """Persist session data to user file."""
@@ -138,7 +175,7 @@ _storage_provider = StreamlitCRMStorage()
 _logger_provider = StreamlitCRMLogger()
 
 
-def get_crm_storage() -> CRMStorageProvider:
+def get_crm_storage() -> StreamlitCRMStorage:
     """Get the app's CRM storage provider."""
     return _storage_provider
 
@@ -146,3 +183,13 @@ def get_crm_storage() -> CRMStorageProvider:
 def get_crm_logger() -> CRMEventLogger:
     """Get the app's CRM event logger."""
     return _logger_provider
+
+
+def get_all_crm_customers():
+    """Helper function to get all customers for CRM app."""
+    return _storage_provider.get_all_customers()
+
+
+def get_crm_customer_by_id(customer_id: str):
+    """Helper function to get specific customer for CRM app."""
+    return _storage_provider.get_customer_by_id(customer_id)
