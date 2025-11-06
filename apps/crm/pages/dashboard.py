@@ -5,6 +5,7 @@ Professional hub with task queues, pipeline, and team collaboration
 import streamlit as st
 from shared.data_access.navigator_reader import NavigatorDataReader
 from shared.data_access.crm_repository import CrmRepository
+from core.adapters.streamlit_crm import get_all_crm_customers
 
 # Import CRM components
 from apps.crm.components.metrics_panel import render_advisor_metrics, render_team_metrics
@@ -18,13 +19,9 @@ from apps.crm.components.customer_pipeline import (
     render_pipeline_summary
 )
 
-# Import mock data service
+# Import mock data service (only for tasks/appointments that don't exist yet)
 from apps.crm.services.mock_data import (
-    get_mock_advisor_metrics,
-    get_mock_action_required,
     get_mock_todays_tasks,
-    get_mock_customer_pipeline,
-    get_mock_upcoming_appointments,
     get_mock_team_metrics
 )
 
@@ -39,8 +36,11 @@ def render():
     advisor_name = st.session_state.get('advisor_name', 'Sarah Chen')
     st.caption(f"Welcome back, **{advisor_name}** • {st.session_state.get('advisor_role', 'Senior Care Advisor')}")
     
-    # Top-level metrics
-    metrics = get_mock_advisor_metrics()
+    # Get real CRM customers
+    all_customers = get_all_crm_customers()
+    
+    # Calculate real metrics from actual customers
+    metrics = calculate_advisor_metrics(all_customers)
     render_advisor_metrics(metrics)
     
     st.markdown("---")
@@ -54,10 +54,10 @@ def render():
     ])
     
     with tab1:
-        render_tasks_tab()
+        render_tasks_tab(all_customers)
     
     with tab2:
-        render_customers_tab()
+        render_customers_tab(all_customers)
     
     with tab3:
         render_team_tab()
@@ -66,19 +66,89 @@ def render():
         render_appointments_tab()
 
 
-def render_tasks_tab():
+def calculate_advisor_metrics(customers):
+    """Calculate real metrics from actual CRM customers"""
+    
+    # Count customers by source/type
+    total_customers = len(customers)
+    
+    # Get Navigator-specific data
+    reader = NavigatorDataReader()
+    nav_customers = reader.get_all_customers()
+    
+    completed_gcp = sum(1 for c in nav_customers if c.get("has_gcp_assessment"))
+    completed_cost = sum(1 for c in nav_customers if c.get("has_cost_plan"))
+    ready_for_consultation = sum(1 for c in nav_customers if c.get("has_gcp_assessment") and c.get("has_cost_plan"))
+    
+    # New leads (customers created in last 7 days)
+    from datetime import datetime, timedelta
+    week_ago = datetime.now() - timedelta(days=7)
+    new_leads = 0
+    for customer in customers:
+        created_str = customer.get('created_at', '')
+        if created_str:
+            try:
+                created_date = datetime.fromisoformat(created_str.replace('Z', '+00:00'))
+                if created_date > week_ago:
+                    new_leads += 1
+            except:
+                pass
+    
+    return {
+        'active_clients': total_customers,
+        'active_delta': None,  # Would need historical data
+        'new_leads': new_leads,
+        'new_delta': None,
+        'ready_for_tour': ready_for_consultation,
+        'ready_delta': None,
+        'monthly_revenue': 0,  # Would come from closed deals
+        'revenue_delta': None
+    }
+
+
+def generate_action_items(customers):
+    """Generate action items from real customer data"""
+    action_items = []
+    
+    # Get Navigator data for assessment completion
+    reader = NavigatorDataReader()
+    nav_customers = reader.get_all_customers()
+    
+    # Check for customers who completed assessments (need follow-up)
+    for customer in nav_customers:
+        if customer.get("has_gcp_assessment") and customer.get("has_cost_plan"):
+            action_items.append({
+                'id': f'action_{customer.get("user_id", "unknown")}',
+                'priority': 'high',
+                'customer': customer.get('name', customer.get('person_name', 'Unknown')),
+                'task': 'Ready for consultation',
+                'action': 'Schedule consultation to discuss care options and community matches',
+                'type': 'appointment'
+            })
+    
+    # If no real action items, return empty list
+    if not action_items:
+        return []
+    
+    return action_items[:5]  # Limit to top 5
+
+
+def render_tasks_tab(customers):
     """Render My Tasks tab with action items and daily schedule"""
     
     st.subheader("Your Action Center")
     st.caption("Prioritized tasks and follow-ups based on customer activity")
     
-    # Action Required section (urgent items)
-    action_items = get_mock_action_required()
+    # Generate action items from real customer data
+    action_items = generate_action_items(customers)
     if action_items:
         render_action_required_queue(action_items)
         st.markdown("---")
+    else:
+        st.info("✅ No urgent action items right now")
+        st.markdown("---")
     
-    # Today's Schedule
+    # Today's Schedule (using mock for now - would come from calendar/appointments)
     todays_tasks = get_mock_todays_tasks()
     render_todays_tasks(todays_tasks)
     
@@ -101,14 +171,78 @@ def render_tasks_tab():
             st.info("Task completion analytics (coming soon)")
 
 
-def render_customers_tab():
+def build_customer_pipeline(customers):
+    """Build pipeline stages from real customer data"""
+    
+    from datetime import datetime, timedelta
+    
+    pipeline = {
+        'new_leads': [],
+        'assessing': [],
+        'touring': [],
+        'closing': []
+    }
+    
+    # Get Navigator data for assessment status
+    reader = NavigatorDataReader()
+    nav_customers = reader.get_all_customers()
+    nav_by_id = {c.get('user_id'): c for c in nav_customers}
+    
+    for customer in customers:
+        name = customer.get('name', customer.get('person_name', 'Unknown'))
+        customer_id = customer.get('id', customer.get('user_id', ''))
+        created_str = customer.get('created_at', '')
+        
+        # Calculate days since creation
+        days_since = 0
+        if created_str:
+            try:
+                created_date = datetime.fromisoformat(created_str.replace('Z', '+00:00'))
+                days_since = (datetime.now() - created_date.replace(tzinfo=None)).days
+            except:
+                pass
+        
+        # Check Navigator status
+        nav_data = nav_by_id.get(customer_id, {})
+        has_gcp = nav_data.get('has_gcp_assessment', False)
+        has_cost = nav_data.get('has_cost_plan', False)
+        
+        # Stage classification logic
+        if days_since <= 3 and not has_gcp:
+            # New leads - recent signups, no assessments yet
+            pipeline['new_leads'].append({
+                'name': name,
+                'days_since': days_since,
+                'source': customer.get('source', 'Unknown')
+            })
+        elif has_gcp or has_cost:
+            # Assessing - working through Navigator
+            pipeline['assessing'].append({
+                'name': name,
+                'gcp': 'done' if has_gcp else 'not_started',
+                'cost': 'done' if has_cost else 'not_started',
+                'days_since': days_since
+            })
+        else:
+            # Default to assessing for existing customers
+            pipeline['assessing'].append({
+                'name': name,
+                'gcp': 'not_started',
+                'cost': 'not_started',
+                'days_since': days_since
+            })
+    
+    return pipeline
+
+
+def render_customers_tab(customers):
     """Render My Customers tab with pipeline visualization"""
     
     st.subheader("Customer Pipeline")
     st.caption("Visual workflow from lead to closing")
     
-    # Get pipeline data
-    pipeline = get_mock_customer_pipeline()
+    # Build real pipeline from actual customers
+    pipeline = build_customer_pipeline(customers)
     
     # Pipeline summary metrics
     render_pipeline_summary(pipeline)
@@ -120,7 +254,25 @@ def render_customers_tab():
     
     st.markdown("---")
     
+    # Real customer data summary
+    st.subheader("📊 Customer Overview")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        total = len(customers)
+        st.metric("Total Customers", total, help="All customers in CRM")
+    
+    with col2:
+        nav_count = sum(1 for c in customers if c.get('source') == 'navigator_app')
+        st.metric("Navigator Users", nav_count, help="Customers from Navigator app")
+    
+    with col3:
+        qb_count = sum(1 for c in customers if c.get('source') == 'quickbase')
+        st.metric("QuickBase Import", qb_count, help="Imported from QuickBase")
+    
     # Navigator integration insights
+    st.markdown("---")
     st.subheader("🔗 Navigator Integration")
     
     # Get real Navigator data
@@ -134,13 +286,13 @@ def render_customers_tab():
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        st.metric("Navigator Users", len(nav_customers), help="Total customers using Navigator app")
+        st.metric("GCP Assessments", completed_gcp, help="Completed care assessments")
     
     with col2:
-        st.metric("Assessments Complete", completed_gcp, help="GCP assessments completed")
+        st.metric("Cost Plans", completed_cost, help="Completed cost planning")
     
     with col3:
-        st.metric("Ready for Consult", ready_consultation, help="Completed GCP + Cost Planner")
+        st.metric("Ready for Consult", ready_consultation, help="Completed both assessments")
     
     if ready_consultation > 0:
         st.success(f"✨ {ready_consultation} customers ready for consultation - check Action Required!")
@@ -177,7 +329,7 @@ def render_team_tab():
             st.markdown(f"{medal} **{advisor}** - ${revenue/1000:.1f}K")
     
     with col2:
-        st.subheader("� Team Pipeline Health")
+        st.subheader("📊 Team Pipeline Health")
         
         total_active = sum(m['active_clients'] for m in team_metrics.values())
         total_closing = sum(m['closing'] for m in team_metrics.values())
@@ -268,4 +420,3 @@ def render_appointments_tab():
     with col2:
         if st.button("📅 View Full Calendar", use_container_width=True):
             st.switch_page("apps/crm/pages/appointments.py")
-
