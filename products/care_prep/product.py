@@ -212,10 +212,15 @@ def _render_community_path(tier: str, flags: list, person_name: str):
             st.markdown("---")
             st.markdown("### What's Next?")
             st.info("Your advisor will use these preferences to prepare a personalized list of recommended communities.")
-            
-            if st.button("← Back to Hub", type="primary", use_container_width=True):
-                st.session_state.page = "hub"
-                st.rerun()
+    
+    # Navigation button (outside form to avoid API exception)
+    if st.session_state.get("care_prep_complete", False):
+        st.markdown("")
+        col1, col2, col3 = st.columns([1, 1, 1])
+        with col2:
+            if st.button("← Back to Hub", use_container_width=True):
+                from core.nav import route_to
+                route_to("hub_lobby")
 
 
 def _render_inhome_path(tier: str, flags: list, person_name: str):
@@ -362,10 +367,15 @@ def _render_inhome_path(tier: str, flags: list, person_name: str):
             st.markdown("---")
             st.markdown("### What's Next?")
             st.info("Your advisor will prepare a customized care plan and caregiver options for your consultation.")
-            
-            if st.button("← Back to Hub", type="primary", use_container_width=True):
-                st.session_state.page = "hub"
-                st.rerun()
+    
+    # Navigation button (outside form to avoid API exception)
+    if st.session_state.get("care_prep_complete", False):
+        st.markdown("")
+        col1, col2, col3 = st.columns([1, 1, 1])
+        with col2:
+            if st.button("← Back to Hub", use_container_width=True):
+                from core.nav import route_to
+                route_to("hub_lobby")
 
 
 def _render_general_path(tier: Optional[str], person_name: str):
@@ -421,10 +431,15 @@ def _render_general_path(tier: Optional[str], person_name: str):
             
             st.success("✅ Details saved!")
             MCIP.mark_product_complete("care_prep")
-            
-            if st.button("← Back to Hub", type="primary", use_container_width=True):
-                st.session_state.page = "hub"
-                st.rerun()
+    
+    # Navigation button (outside form to avoid API exception)
+    if st.session_state.get("care_prep_complete", False):
+        st.markdown("")
+        col1, col2, col3 = st.columns([1, 1, 1])
+        with col2:
+            if st.button("← Back to Hub", use_container_width=True):
+                from core.nav import route_to
+                route_to("hub_lobby")
 
 
 def _get_community_focus_areas(flags: list) -> list:
