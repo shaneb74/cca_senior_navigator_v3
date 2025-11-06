@@ -498,7 +498,8 @@ def _handle_booking_submit(form_data: dict):
                 "notes": form_data.get("notes", ""),
                 "preferred_time": appointment.time,
                 "care_prep_preferences": st.session_state.get("care_prep_preferences", {}),
-                "created_at": appointment.generated_at
+                "source": "appointment_booking"  # Track source
+                # Note: id and created_at will be added by CrmRepository.add_record()
             }
             
             crm_repo.add_record("appointments", appointment_data)

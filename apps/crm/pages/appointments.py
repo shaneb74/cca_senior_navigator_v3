@@ -385,8 +385,8 @@ def render():
                         "notes": notes,
                         "preferred_time": appointment_time.strftime('%I:%M %p'),
                         "care_prep_preferences": {},
-                        "created_at": datetime.now().isoformat(),
                         "source": "crm_manual"  # Track that this was manually created
+                        # Note: id and created_at will be added by CrmRepository.add_record()
                     }
                     
                     crm_repo.add_record("appointments", appointment_data)
