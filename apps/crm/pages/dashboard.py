@@ -3,6 +3,7 @@ CRM Dashboard - Advisor Command Center
 Professional hub with task queues, pipeline, and team collaboration
 """
 import streamlit as st
+from datetime import datetime
 from shared.data_access.navigator_reader import NavigatorDataReader
 from shared.data_access.crm_repository import CrmRepository
 from core.adapters.streamlit_crm import get_all_crm_customers
@@ -17,12 +18,6 @@ from apps.crm.components.task_queue import (
 from apps.crm.components.customer_pipeline import (
     render_customer_pipeline,
     render_pipeline_summary
-)
-
-# Import mock data service (only for tasks/appointments that don't exist yet)
-from apps.crm.services.mock_data import (
-    get_mock_todays_tasks,
-    get_mock_team_metrics
 )
 
 
@@ -148,9 +143,32 @@ def render_tasks_tab(customers):
         st.info("✅ No urgent action items right now")
         st.markdown("---")
     
-    # Today's Schedule (using mock for now - would come from calendar/appointments)
-    todays_tasks = get_mock_todays_tasks()
-    render_todays_tasks(todays_tasks)
+    # Today's Schedule - Use real appointments from CRM
+    st.subheader("📅 Today's Schedule")
+    crm_repo = CrmRepository()
+    appointments = crm_repo.list_records("appointments")
+    
+    # Filter for today's appointments
+    today = datetime.now().strftime('%Y-%m-%d')
+    todays_appointments = [
+        a for a in appointments 
+        if a.get('scheduled_at', '').startswith(today)
+    ]
+    
+    if todays_appointments:
+        for appt in todays_appointments:
+            customer_name = appt.get('customer_name', 'Unknown')
+            appt_type = appt.get('appointment_type', 'Consultation')
+            time_str = appt.get('scheduled_at', 'Not scheduled')
+            
+            st.markdown(f"""
+            **{time_str}** - {appt_type}  
+            👤 {customer_name}  
+            📋 Confirmation: {appt.get('confirmation_id', 'N/A')}
+            """)
+            st.markdown("---")
+    else:
+        st.info("No appointments scheduled for today")
     
     st.markdown("---")
     
@@ -159,16 +177,16 @@ def render_tasks_tab(customers):
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        if st.button("➕ Add Manual Task", use_container_width=True):
-            st.session_state['show_add_task'] = True
+        if st.button("➕ Schedule Appointment", use_container_width=True):
+            st.info("Navigate to Appointments page to schedule")
     
     with col2:
-        if st.button("📋 View All Tasks", use_container_width=True):
-            st.info("Navigate to full task management (coming soon)")
+        if st.button("📋 View All Customers", use_container_width=True):
+            st.info("Navigate to Customers page")
     
     with col3:
-        if st.button("📊 Task Analytics", use_container_width=True):
-            st.info("Task completion analytics (coming soon)")
+        if st.button("📊 View Analytics", use_container_width=True):
+            st.info("Navigate to Analytics page")
 
 
 def build_customer_pipeline(customers):
@@ -302,47 +320,46 @@ def render_team_tab():
     """Render Team View tab with team metrics and collaboration"""
     
     st.subheader("Team Performance Dashboard")
-    st.caption("Compare metrics and workload across advisors")
+    st.caption("Single advisor mode - Team features coming soon")
     
-    # Team metrics table
-    team_metrics = get_mock_team_metrics()
-    render_team_metrics(team_metrics)
+    # Current advisor info
+    advisor_name = st.session_state.get('advisor_name', 'Sarah Chen')
     
-    st.markdown("---")
+    st.info(f"""
+    **Current Advisor:** {advisor_name}  
+    **Role:** Senior Care Advisor  
     
-    # Team insights
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.subheader("🏆 Top Performers This Month")
-        
-        # Sort by revenue
-        sorted_advisors = sorted(
-            team_metrics.items(),
-            key=lambda x: x[1]['monthly_revenue'],
-            reverse=True
-        )
-        
-        for idx, (advisor, metrics) in enumerate(sorted_advisors[:3], 1):
-            medal = ["🥇", "🥈", "🥉"][idx-1]
-            revenue = metrics['monthly_revenue']
-            st.markdown(f"{medal} **{advisor}** - ${revenue/1000:.1f}K")
-    
-    with col2:
-        st.subheader("📊 Team Pipeline Health")
-        
-        total_active = sum(m['active_clients'] for m in team_metrics.values())
-        total_closing = sum(m['closing'] for m in team_metrics.values())
-        total_revenue = sum(m['monthly_revenue'] for m in team_metrics.values())
-        
-        st.metric("Team Active Clients", total_active)
-        st.metric("Team Closing This Month", total_closing)
-        st.metric("Team Revenue", f"${total_revenue/1000:.1f}K")
+    Multi-advisor team features will be added when team collaboration is enabled.
+    """)
     
     st.markdown("---")
     
     # QuickBase integration status
-    st.subheader("🔗 QuickBase Integration")
+    st.subheader("🔗 Data Integration Status")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.metric("Navigator Data", "✅ Active", help="Real-time customer data from Navigator app")
+    
+    with col2:
+        st.metric("QuickBase Data", "✅ Synced", help="Imported customer and community data")
+    
+    with col3:
+        st.metric("CRM Database", f"✅ {len(get_all_crm_customers())} customers", help="Total customers in CRM")
+    
+    st.markdown("---")
+    
+    st.subheader("📊 Data Sources")
+    st.markdown("""
+    **Active Customer Data Sources:**
+    - 🧭 **Navigator App**: Real-time user sessions, assessments, and plans
+    - 📊 **QuickBase Import**: Synthetic customer data and community database
+    - 🎯 **CRM Appointments**: Direct bookings and consultations
+    - 👥 **Demo Users**: Sample data for testing and training
+    
+    All data is unified through the CRM adapter layer for consistent access.
+    """)
     
     col1, col2, col3 = st.columns(3)
     
