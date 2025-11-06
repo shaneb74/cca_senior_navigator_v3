@@ -640,21 +640,47 @@ def _render_confirmation(appt: AdvisorAppointment):
             "and any concerns about staying safe at home. Your advisor will create a personalized plan."
         )
 
-    # Next steps
+    # Next steps - Route to care prep or back to hub
     st.markdown("### What's Next")
 
-    st.markdown(
-        "**One of our advisors will contact you within the next 24 hours** to confirm your consultation time. "
-        "In the meantime, feel free to explore additional resources in the Lobby."
-    )
+    # Check if care_prep is appropriate
+    if tier in ("assisted_living", "memory_care", "memory_care_high_acuity", "in_home", "in_home_care"):
+        st.markdown(
+            "**Let's gather a few preferences** to make your consultation more productive. "
+            "This will only take a few minutes and will help your advisor prepare personalized recommendations."
+        )
+        
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            if st.button("Continue to Preferences →", type="primary", use_container_width=True):
+                log_event("pfma.route_to_care_prep", {"tier": tier})
+                route_to("care_prep")
+        
+        st.markdown("")
+        st.caption("Or skip this step and return to the Lobby – your advisor will still contact you within 24 hours.")
+        
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            if st.button("Skip & Return to Lobby", use_container_width=True):
+                log_event("lobby.return", {"from_product": "pfma_v3", "skipped_care_prep": True})
+                # Mark Planning journey complete
+                from core.journeys import mark_journey_complete
+                mark_journey_complete("planning")
+                route_to("hub_lobby")
+    else:
+        # No care prep needed for general/unknown tier
+        st.markdown(
+            "**One of our advisors will contact you within the next 24 hours** to confirm your consultation time. "
+            "In the meantime, feel free to explore additional resources in the Lobby."
+        )
 
-    # Action button - End of planning journey
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col2:
-        if st.button("Return to Lobby", type="primary", use_container_width=True):
-            log_event("lobby.return", {"from_product": "pfma_v3"})
-            # Mark Planning journey complete
-            from core.journeys import mark_journey_complete
-            mark_journey_complete("planning")
-            route_to("hub_lobby")
+        # Action button - End of planning journey
+        col1, col2, col3 = st.columns([1, 1, 1])
+        with col2:
+            if st.button("Return to Lobby", type="primary", use_container_width=True):
+                log_event("lobby.return", {"from_product": "pfma_v3"})
+                # Mark Planning journey complete
+                from core.journeys import mark_journey_complete
+                mark_journey_complete("planning")
+                route_to("hub_lobby")
 
