@@ -5,7 +5,7 @@ Replaces QuickBase's 132-field community spreadsheet with intelligent matching
 import streamlit as st
 import json
 from pathlib import Path
-from shared.data_access.navigator_reader import NavigatorDataReader
+from core.adapters.streamlit_crm import get_all_crm_customers, get_crm_customer_by_id
 from shared.data_access.quickbase_client import quickbase_client
 
 def inject_matching_css():
@@ -309,11 +309,14 @@ def render_customer_context(customer_data):
     journey_progress = "90%" if customer_data.get('has_gcp_assessment') and customer_data.get('has_cost_plan') else "In progress"
     readiness = "High" if customer_data.get('has_gcp_assessment') and customer_data.get('has_cost_plan') else "Medium"
     
+    # Handle different name fields from different sources
+    customer_name = customer_data.get('name') or customer_data.get('person_name', 'Customer')
+    
     context_html = f"""
     <div class="context-panel">
         <div class="context-header">
             <div class="context-icon">👤</div>
-            <h2 class="context-title">{customer_data.get('person_name', 'Customer')} - Matching Context</h2>
+            <h2 class="context-title">{customer_name} - Matching Context</h2>
         </div>
         <div class="context-grid">
             <div class="context-item">
@@ -422,15 +425,17 @@ def render(customer_id=None):
         </div>
         """, unsafe_allow_html=True)
         
-        reader = NavigatorDataReader()
-        customers = reader.get_all_customers()
+        # Use CRM customer data (includes Navigator, QuickBase, and demo users)
+        customers = get_all_crm_customers()
         
         if customers:
             st.subheader("Select Customer for Community Matching")
             for customer in customers:
                 col1, col2, col3, col4 = st.columns([3, 2, 2, 1])
                 with col1:
-                    st.write(f"**{customer.get('person_name', 'Unknown')}**")
+                    # Handle different name fields from different sources
+                    name = customer.get('name') or customer.get('person_name', 'Unknown')
+                    st.write(f"**{name}**")
                 with col2:
                     care_rec = customer.get('care_recommendation', 'Not assessed')
                     st.write(f"Care: {care_rec}")
@@ -439,8 +444,10 @@ def render(customer_id=None):
                     status = "✅ Ready" if has_assessments else "⏳ In progress"
                     st.write(status)
                 with col4:
-                    if st.button("Match", key=f"match_{customer['user_id']}"):
-                        st.session_state['matching_customer'] = customer['user_id']
+                    # Use the appropriate ID field
+                    cust_id = customer.get('customer_id') or customer.get('user_id') or customer.get('id')
+                    if st.button("Match", key=f"match_{cust_id}"):
+                        st.session_state['matching_customer'] = cust_id
                         st.rerun()
         else:
             st.info("No customers found. Customers will appear here after they use the Navigator.")
@@ -476,15 +483,14 @@ def render(customer_id=None):
         return
     
     # Community matching for specific customer
-    reader = NavigatorDataReader()
-    customer_data = reader.get_customer_by_id(customer_id)
+    customer_data = get_crm_customer_by_id(customer_id)
     
     if not customer_data:
         st.error(f"Customer not found: {customer_id}")
         return
     
     # Matching header
-    customer_name = customer_data.get('person_name', 'Unknown Customer')
+    customer_name = customer_data.get('name') or customer_data.get('person_name', 'Unknown Customer')
     st.markdown(f"""
     <div class="matching-header">
         <h1 class="matching-title">
