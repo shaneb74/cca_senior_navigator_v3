@@ -403,10 +403,19 @@ def render_quick_actions(customer_id, customer_data):
 
 def render():
     """Main render function for Customer 360 view"""
-    inject_customer_360_css()
+    
+    try:
+        inject_customer_360_css()
+    except Exception as e:
+        st.error(f"Error loading CSS: {e}")
     
     # Check if we have a selected customer
     customer_id = st.session_state.get('selected_customer')
+    
+    # Debug info (can be removed later)
+    with st.expander("🔍 Debug Info", expanded=False):
+        st.write("Session State Keys:", list(st.session_state.keys()))
+        st.write("Selected Customer ID:", customer_id)
     
     if not customer_id:
         st.warning("⚠️ No customer selected")
@@ -418,7 +427,14 @@ def render():
         return
     
     # Load customer data from CRM
-    customer_data = get_crm_customer_by_id(customer_id)
+    try:
+        customer_data = get_crm_customer_by_id(customer_id)
+    except Exception as e:
+        st.error(f"Error loading customer data: {e}")
+        import traceback
+        with st.expander("Error Details"):
+            st.code(traceback.format_exc())
+        return
     
     if not customer_data:
         st.error(f"❌ Customer not found: {customer_id}")
@@ -429,8 +445,12 @@ def render():
         return
     
     # Load Navigator-specific data
-    reader = NavigatorDataReader()
-    navigator_data = reader.get_customer_by_id(customer_id)
+    try:
+        reader = NavigatorDataReader()
+        navigator_data = reader.get_customer_by_id(customer_id)
+    except Exception as e:
+        st.warning(f"Could not load Navigator data: {e}")
+        navigator_data = None
     
     # Back button
     if st.button("← Back to Customers"):
@@ -441,23 +461,51 @@ def render():
         st.rerun()
     
     # Render customer profile
-    render_customer_header(customer_data)
+    try:
+        render_customer_header(customer_data)
+    except Exception as e:
+        st.error(f"Error rendering header: {e}")
     
     # Main content in columns
     col1, col2 = st.columns([2, 1])
     
     with col1:
         # Primary information
-        render_contact_info(customer_data)
-        render_navigator_status(navigator_data)
-        render_relationship_info(navigator_data)
-        render_activity_timeline(navigator_data)
+        try:
+            render_contact_info(customer_data)
+        except Exception as e:
+            st.error(f"Error rendering contact info: {e}")
+        
+        try:
+            render_navigator_status(navigator_data)
+        except Exception as e:
+            st.error(f"Error rendering Navigator status: {e}")
+        
+        try:
+            render_relationship_info(navigator_data)
+        except Exception as e:
+            st.error(f"Error rendering relationship info: {e}")
+        
+        try:
+            render_activity_timeline(navigator_data)
+        except Exception as e:
+            st.error(f"Error rendering activity timeline: {e}")
     
     with col2:
         # Secondary information
-        render_appointments(customer_id)
-        render_notes(customer_id)
+        try:
+            render_appointments(customer_id)
+        except Exception as e:
+            st.error(f"Error rendering appointments: {e}")
+        
+        try:
+            render_notes(customer_id)
+        except Exception as e:
+            st.error(f"Error rendering notes: {e}")
     
     # Quick actions at bottom
     st.markdown("---")
-    render_quick_actions(customer_id, customer_data)
+    try:
+        render_quick_actions(customer_id, customer_data)
+    except Exception as e:
+        st.error(f"Error rendering quick actions: {e}")
