@@ -1,0 +1,1 @@
+{"lead_id": "lead_sample_001", "contact_info": {"name": "Sample Lead", "email": "sample@example.com", "phone": "", "source": "website"}, "engagement_source": "gcp_started", "created_at": "2025-11-05T10:30:00", "status": "active", "metadata": {"session_id": "anon_sample123", "last_page": "gcp_assessment"}}

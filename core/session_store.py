@@ -57,6 +57,10 @@ CACHE_DIR = Path(".cache")
 # Data directory for user profiles (persistent, cross-device)
 DATA_DIR = Path("data/users")
 
+# Organized subdirectories
+LEADS_DIR = Path("data/users/leads")
+CUSTOMERS_DIR = Path("data/users/customers")
+
 # Demo profiles directory (read-only, protected from overwrite)
 DEMO_DIR = Path("data/users/demo")
 
@@ -383,7 +387,17 @@ def get_user_path(uid: str) -> Path:
         Path to user JSON file
     """
     filename = USER_FILE_PATTERN.format(uid=uid)
-    return DATA_DIR / filename
+    
+    # Determine directory based on user type
+    if uid.startswith('anon_'):
+        # Anonymous users are leads
+        return LEADS_DIR / filename
+    elif uid.startswith('customer_'):
+        # Verified customers
+        return CUSTOMERS_DIR / filename
+    else:
+        # Default to leads directory for new anonymous sessions
+        return LEADS_DIR / filename
 
 
 def load_user(uid: str) -> dict[str, Any]:
@@ -471,6 +485,14 @@ def load_user(uid: str) -> dict[str, Any]:
         # Regular user - load from working directory
         with _file_lock(path):
             data = _safe_read(path)
+        
+        # If not found in expected location, search all directories
+        if data is None:
+            fallback_path = find_user_in_all_directories(uid)
+            if fallback_path:
+                print(f"[INFO] Found user {uid} in fallback location: {fallback_path}")
+                with _file_lock(fallback_path):
+                    data = _safe_read(fallback_path)
 
     if data is None:
         # Return default empty user
@@ -501,6 +523,9 @@ def save_user(uid: str, data: dict[str, Any]) -> bool:
         True if successful, False otherwise
     """
     path = get_user_path(uid)
+    
+    # Ensure directory exists
+    path.parent.mkdir(parents=True, exist_ok=True)
 
     # Update metadata
     data["uid"] = uid
@@ -839,6 +864,75 @@ def ensure_runtime_from_seed(seed_uid: str, runtime_uid: str, *, force_reset: bo
         print(f"[DEMO_SEED] Copied {seed_uid} -> {runtime_uid} (force_reset={force_reset})")
 
 
+def convert_lead_to_customer(uid: str) -> bool:
+    """Convert a lead to a customer by moving their file to customers directory.
+    
+    Args:
+        uid: User identifier (should start with anon_)
+        
+    Returns:
+        True if conversion successful, False otherwise
+    """
+    # Generate new customer ID
+    customer_uid = uid.replace('anon_', 'customer_', 1)
+    
+    # Get current lead path and new customer path
+    lead_path = LEADS_DIR / USER_FILE_PATTERN.format(uid=uid)
+    customer_path = CUSTOMERS_DIR / USER_FILE_PATTERN.format(uid=customer_uid)
+    
+    if not lead_path.exists():
+        print(f"[ERROR] Lead file not found: {lead_path}")
+        return False
+    
+    try:
+        # Ensure customer directory exists
+        customer_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Load lead data
+        with _file_lock(lead_path):
+            data = _safe_read(lead_path)
+            
+        if data:
+            # Update UID in data
+            data["uid"] = customer_uid
+            data["last_updated"] = time.time()
+            data["converted_from_lead"] = uid
+            data["conversion_date"] = time.time()
+            
+            # Save to customer location
+            with _file_lock(customer_path):
+                if _atomic_write(customer_path, data):
+                    # Remove from leads directory
+                    lead_path.unlink()
+                    print(f"[INFO] Converted lead {uid} to customer {customer_uid}")
+                    return True
+                    
+    except Exception as e:
+        print(f"[ERROR] Failed to convert lead to customer: {e}")
+        
+    return False
+
+
+def find_user_in_all_directories(uid: str) -> Path | None:
+    """Find user file in any of the user directories.
+    
+    Searches in order: leads, customers, demo, root
+    Returns the first match found, or None if not found.
+    """
+    filename = USER_FILE_PATTERN.format(uid=uid)
+    
+    # Search order: leads, customers, demo, root
+    search_dirs = [LEADS_DIR, CUSTOMERS_DIR, DEMO_DIR, DATA_DIR]
+    
+    for directory in search_dirs:
+        potential_path = directory / filename
+        if potential_path.exists():
+            return potential_path
+    
+    return None
+
+
+# All exports from this module
 __all__ = [
     # Session operations
     "generate_session_id",
@@ -847,10 +941,13 @@ __all__ = [
     "clear_session",
     "cleanup_old_sessions",
     # User operations
+        # Core user management
     "load_user",
     "save_user",
     "delete_user",
     "user_exists",
+    "convert_lead_to_customer",
+    "find_user_in_all_directories",
     # State mapping
     "extract_session_state",
     "extract_user_state",

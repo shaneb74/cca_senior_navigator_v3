@@ -122,6 +122,12 @@ st.sidebar.markdown("""
 # Initialize navigation default
 default_page = "📊 Dashboard"
 
+# Check if we need to automatically navigate to Customer 360
+if st.session_state.get('selected_customer') and st.session_state.get('auto_navigate_to_360'):
+    default_page = "👤 Customer 360°"
+    # Clear the auto-navigation flag
+    del st.session_state['auto_navigate_to_360']
+
 # Clear any problematic session state keys that might cause conflicts
 problematic_keys = ['_FormSubmitter', '_auto_rerun', '_reruns']
 for key in problematic_keys:
@@ -133,8 +139,10 @@ page = st.sidebar.radio(
     "Select a page:",
     [
         "📊 Dashboard", 
+        "🔥 Leads",
+        "🧹 Lead Management",
         "👥 Customers", 
-        "🎯 Customer 360°",
+        "👤 Customer 360°",
         "🕒 Smart Timeline",
         "🤖 AI Next Steps",
         "🏘️ Smart Matching",
@@ -142,7 +150,7 @@ page = st.sidebar.radio(
         "📝 Notes & Interactions",
         "📈 Analytics"
     ],
-    index=0
+    index=["📊 Dashboard", "🔥 Leads", "🧹 Lead Management", "👥 Customers", "👤 Customer 360°", "🕒 Smart Timeline", "🤖 AI Next Steps", "🏘️ Smart Matching", "📞 Appointments", "📝 Notes & Interactions", "📈 Analytics"].index(default_page)
 )
 
 # Environment indicator
@@ -162,9 +170,15 @@ try:
     elif page == "👥 Customers":
         from apps.crm.pages.customers import render
         render()
-    elif page == "🎯 Customer 360°":
+    elif page == "� Customer 360°":
         from apps.crm.pages.customer_360 import render
         render()
+    elif page == "�🔥 Leads":
+        from apps.crm.pages.leads import render
+        render()
+    elif page == "🧹 Lead Management":
+        from apps.crm.pages.lead_management import show_lead_management
+        show_lead_management()
     elif page == "🕒 Smart Timeline":
         from apps.crm.pages.smart_timeline import render
         render()

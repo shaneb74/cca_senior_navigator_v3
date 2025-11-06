@@ -246,33 +246,40 @@ def render_customer_cards_streamlit(customers):
                     # Customer card container
                     with st.container():
                         # Handle different customer data formats
-                        if customer.get('source') == 'crm':
-                            # CRM customer (appointment booking)
+                        customer_source = customer.get('source', 'unknown')
+                        
+                        if customer_source == 'quickbase':
+                            # QuickBase customer
+                            name = customer.get('person_name', customer.get('name', 'Unknown Customer'))
+                            user_id = customer.get('user_id', customer.get('id', 'N/A'))
+                            last_activity = customer.get('last_activity', 'N/A')
+                            status = 'QuickBase Customer'
+                            progress_text = customer.get('journey_stage', 'Customer')
+                            status_color = '#17a2b8'  # Blue for QuickBase customers
+                        elif customer_source == 'navigator_app':
+                            # Navigator app customer (appointment booking)
                             name = customer.get('name', 'Unknown Customer')
-                            user_id = customer.get('customer_id', 'N/A')
-                            last_activity = f"Appointment booked"
-                            status = 'Customer'
-                            progress_text = "Appointment scheduled"
-                            status_color = '#28a745'  # Green for customers
+                            user_id = customer.get('customer_id', customer.get('id', 'N/A'))
+                            status = 'Navigator Customer'
+                            progress_text = "Appointment booked"
+                            status_color = '#28a745'  # Green for Navigator app customers
+                            last_activity = customer.get('created_at', 'Recently')
+                        elif customer_source == 'demo':
+                            # Demo user
+                            name = customer.get('person_name', customer.get('name', 'Unknown Customer'))
+                            user_id = customer.get('user_id', customer.get('id', 'N/A'))
+                            last_activity = customer.get('last_activity', 'Demo')
+                            status = 'Demo User'
+                            progress_text = customer.get('journey_stage', 'Demo Customer')
+                            status_color = '#9c27b0'  # Purple for demo users
                         else:
-                            # Navigator user
-                            name = customer.get('person_name', 'Unknown Customer')
-                            user_id = customer.get('user_id', 'N/A')
-                            last_activity = customer.get('last_activity', 'Never')
-                            days_since = customer.get('last_activity_days', 999)
-                            status = 'Lead' if days_since <= 30 else 'Inactive'
-                            status_color = '#007bff' if days_since <= 30 else '#6c757d'
-                            
-                            # Determine progress
-                            has_gcp = customer.get('has_gcp_assessment', False)
-                            has_cost_plan = customer.get('has_cost_plan', False)
-                            
-                            progress_items = []
-                            if has_gcp:
-                                progress_items.append("GCP Assessment")
-                            if has_cost_plan:
-                                progress_items.append("Cost Plan")
-                            progress_text = ", ".join(progress_items) if progress_items else "Getting started"
+                            # Fallback for unknown customer types
+                            name = customer.get('name', customer.get('person_name', 'Unknown Customer'))
+                            user_id = customer.get('id', customer.get('user_id', 'N/A'))
+                            status = 'Customer'
+                            progress_text = "Customer"
+                            status_color = '#6c757d'  # Gray for unknown
+                            last_activity = customer.get('last_activity', 'N/A')
                         
                         # Card styling with container
                         st.markdown(f"""
@@ -309,7 +316,8 @@ def render_customer_cards_streamlit(customers):
                         with col1:
                             if st.button("View Details", key=f"view_{user_id}"):
                                 st.session_state['selected_customer'] = user_id
-                                # Could redirect to customer 360 page here
+                                st.session_state['auto_navigate_to_360'] = True
+                                st.rerun()
                         with col2:
                             if st.button("Add Note", key=f"note_{user_id}"):
                                 st.session_state['add_note_customer'] = user_id
@@ -329,34 +337,11 @@ def render():
     
     # Load customer data
     try:
-        # Get CRM customers (appointment bookings)
-        crm_customers = get_all_crm_customers()
-        
-        # Get Navigator users (for additional context)
-        reader = NavigatorDataReader()
-        navigator_customers = reader.get_all_customers()
-        
-        # Combine and prioritize CRM customers
-        all_customers = []
-        
-        # Add CRM customers first (these are confirmed customers)
-        for customer in crm_customers:
-            customer['source'] = 'crm'
-            customer['priority'] = 1
-            all_customers.append(customer)
-        
-        # Add Navigator users who aren't already in CRM
-        crm_customer_sessions = {c.get('session_id') for c in crm_customers if c.get('session_id')}
-        for customer in navigator_customers:
-            if customer.get('uid') not in crm_customer_sessions:
-                customer['source'] = 'navigator'
-                customer['priority'] = 2
-                all_customers.append(customer)
-        
-        customers = all_customers
+        # Get all CRM customers (QuickBase, Navigator app, and demo customers)
+        customers = get_all_crm_customers()
         
         if not customers:
-            st.info("No customer data found. Customers will appear here after they use the Senior Navigator or book appointments.")
+            st.info("No customers found. Customers include:\n- QuickBase imported customers\n- Navigator users who book appointments\n- Demo users for testing")
             return
             
         # Statistics overview

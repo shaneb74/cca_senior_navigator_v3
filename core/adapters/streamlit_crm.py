@@ -114,17 +114,79 @@ class StreamlitCRMStorage(CRMStorageProvider):
         self._persist_session_data()
     
     def get_all_customers(self):
-        """Get all customers from CRM repository."""
+        """Get all customers from Navigator app, QuickBase, and demo sources."""
+        all_customers = []
+        
+        # Get Navigator app customers (appointment bookings)
         try:
-            return self.crm_repo._load_from_jsonl("customers.jsonl")
+            nav_customers = self.crm_repo._load_from_jsonl("customers.jsonl")
+            for customer in nav_customers:
+                customer['source'] = 'navigator_app'
+                customer['customer_type'] = 'appointment_booking'
+                all_customers.append(customer)
         except Exception:
-            return []
+            pass  # No Navigator app customers yet
+        
+        # Get QuickBase customers (imported from QuickBase)
+        try:
+            import json
+            import os
+            qb_file = os.path.join(
+                self.crm_repo.data_root,
+                "crm",
+                "synthetic_august2025_summary.json"
+            )
+            if os.path.exists(qb_file):
+                with open(qb_file, 'r') as f:
+                    qb_data = json.load(f)
+                    qb_customers = qb_data.get('customers', [])
+                    for customer in qb_customers:
+                        customer['source'] = 'quickbase'
+                        customer['customer_type'] = 'quickbase_import'
+                        # Standardize field names
+                        if 'person_name' in customer and 'name' not in customer:
+                            customer['name'] = customer['person_name']
+                        if 'user_id' in customer and 'id' not in customer:
+                            customer['id'] = customer['user_id']
+                        all_customers.append(customer)
+        except Exception as e:
+            pass  # QuickBase file not found or invalid
+        
+        # Get demo users (stored separately)
+        try:
+            import json
+            import os
+            demo_file = os.path.join(
+                self.crm_repo.data_root,
+                "crm",
+                "demo_users.jsonl"
+            )
+            if os.path.exists(demo_file):
+                with open(demo_file, 'r') as f:
+                    for line in f:
+                        if line.strip():
+                            demo_user = json.loads(line)
+                            demo_user['source'] = 'demo'
+                            demo_user['customer_type'] = 'demo_user'
+                            # Standardize field names
+                            if 'person_name' in demo_user and 'name' not in demo_user:
+                                demo_user['name'] = demo_user['person_name']
+                            if 'user_id' in demo_user and 'id' not in demo_user:
+                                demo_user['id'] = demo_user['user_id']
+                            all_customers.append(demo_user)
+        except Exception as e:
+            pass  # Demo users file not found or invalid
+        
+        return all_customers
     
     def get_customer_by_id(self, customer_id: str):
         """Get specific customer by ID."""
         customers = self.get_all_customers()
         for customer in customers:
-            if customer.get("customer_id") == customer_id:
+            # Check multiple possible ID fields
+            if (customer.get("customer_id") == customer_id or 
+                customer.get("user_id") == customer_id or
+                customer.get("id") == customer_id):
                 return customer
         return None
     
