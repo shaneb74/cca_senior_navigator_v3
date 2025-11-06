@@ -20,6 +20,9 @@ from core.navi import render_navi_panel
 def render():
     """Main render function for care preparation product."""
     
+    # Navi panel at top for guidance
+    render_navi_panel()
+    
     # Get care recommendation and determine path
     care_rec = MCIP.get_care_recommendation()
     tier = care_rec.tier if care_rec else None
@@ -40,9 +43,6 @@ def render():
     else:
         # Fallback for unknown tier
         _render_general_path(tier, care_recipient_name)
-    
-    # Navi panel for guidance
-    render_navi_panel()
 
 
 def _render_community_path(tier: str, flags: list, person_name: str):
@@ -134,6 +134,30 @@ def _render_community_path(tier: str, flags: list, person_name: str):
             default=st.session_state.get("housing_priorities", [])
         )
         
+        # Amenities/Features preferences
+        st.markdown("**Preferred amenities or features** (optional)")
+        amenities = st.multiselect(
+            "Select any amenities that are important",
+            [
+                "Full Kitchen",
+                "Pool",
+                "Patio/Balcony",
+                "Covered Parking",
+                "Garage Parking",
+                "Extra Storage",
+                "Washer & Dryer",
+                "Woodworking Shop",
+                "Water View",
+                "Generator",
+                "Air Conditioning",
+                "Pets in Home",
+                "Hoyer Lift (mobility)",
+                "Gardens/Outdoor Space"
+            ],
+            default=st.session_state.get("community_amenities", []),
+            help="These help your advisor find communities that match your lifestyle preferences"
+        )
+        
         # Room type preference
         room_preference = st.selectbox(
             "Room preference",
@@ -180,6 +204,7 @@ def _render_community_path(tier: str, flags: list, person_name: str):
                 "budget_min": budget_min,
                 "budget_max": budget_max,
                 "priorities": priorities,
+                "amenities": amenities,
                 "room_preference": room_preference,
                 "has_pet": has_pet,
                 "pet_details": pet_details if has_pet else "",
@@ -193,6 +218,7 @@ def _render_community_path(tier: str, flags: list, person_name: str):
             st.session_state["budget_min"] = budget_min
             st.session_state["budget_max"] = budget_max
             st.session_state["housing_priorities"] = priorities
+            st.session_state["community_amenities"] = amenities
             st.session_state["has_pet"] = has_pet
             st.session_state["pet_details"] = pet_details
             st.session_state["community_notes"] = notes
@@ -204,7 +230,6 @@ def _render_community_path(tier: str, flags: list, person_name: str):
             log_event("care_prep.community_preferences_saved", preferences)
             
             st.success("✅ Preferences saved! Your advisor will review these before your consultation.")
-            st.balloons()
             
             # Mark product complete
             MCIP.mark_product_complete("care_prep")
@@ -359,7 +384,6 @@ def _render_inhome_path(tier: str, flags: list, person_name: str):
             log_event("care_prep.inhome_preferences_saved", preferences)
             
             st.success("✅ Details saved! Your advisor will review these before your consultation.")
-            st.balloons()
             
             # Mark product complete
             MCIP.mark_product_complete("care_prep")
@@ -529,6 +553,9 @@ def _save_to_mcip(preferences: dict):
         
         if preferences.get('priorities'):
             pref_summary += f"Priorities: {', '.join(preferences['priorities'])}\n"
+        
+        if preferences.get('amenities'):
+            pref_summary += f"Amenities: {', '.join(preferences['amenities'])}\n"
         
         if preferences.get('room_preference'):
             pref_summary += f"Room: {preferences['room_preference']}\n"

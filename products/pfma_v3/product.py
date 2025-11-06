@@ -207,47 +207,86 @@ def _render_booking_form():
             st.rerun()
 
     # Who will attend the appointment?
+    st.markdown("**Who will we be talking to during this appointment?** *")
     col1, col2 = st.columns(2)
     
     with col1:
-        attendee_name = st.text_input(
-            "Who will we be talking to during this appointment? *",
-            value=form_data.get("attendee_name", ""),
-            placeholder="Your name",
-            help="Name of the person who will attend the consultation call",
+        attendee_first = st.text_input(
+            "First Name",
+            value=form_data.get("attendee_first", ""),
+            placeholder="First name",
+            help="Attendee's first name",
+            key="attendee_first"
         )
-        if attendee_name != form_data.get("attendee_name"):
-            form_data["attendee_name"] = attendee_name
-            log_event("pfma.booking.field_edited", {"field": "attendee_name"})
+        if attendee_first != form_data.get("attendee_first"):
+            form_data["attendee_first"] = attendee_first
+            log_event("pfma.booking.field_edited", {"field": "attendee_first"})
     
     with col2:
-        relation = st.selectbox(
-            "Relation to the person needing care *",
-            options=["Self", "Spouse/Partner", "Daughter/Son", "Other Family", "Friend/Advocate", "Professional"],
-            index=["Self", "Spouse/Partner", "Daughter/Son", "Other Family", "Friend/Advocate", "Professional"].index(
-                form_data.get("relation", "Self")
-            ) if form_data.get("relation") in ["Self", "Spouse/Partner", "Daughter/Son", "Other Family", "Friend/Advocate", "Professional"] else 0,
-            help="Your relationship to the care recipient",
+        attendee_last = st.text_input(
+            "Last Name",
+            value=form_data.get("attendee_last", ""),
+            placeholder="Last name",
+            help="Attendee's last name",
+            key="attendee_last"
         )
-        if relation != form_data.get("relation"):
-            form_data["relation"] = relation
-            log_event("pfma.booking.field_edited", {"field": "relation"})
+        if attendee_last != form_data.get("attendee_last"):
+            form_data["attendee_last"] = attendee_last
+            log_event("pfma.booking.field_edited", {"field": "attendee_last"})
+    
+    # Combine for display
+    attendee_name = f"{attendee_first} {attendee_last}".strip()
+    form_data["attendee_name"] = attendee_name
+    
+    relation = st.selectbox(
+        "Relation to the person needing care *",
+        options=["Self", "Spouse/Partner", "Daughter/Son", "Other Family", "Friend/Advocate", "Professional"],
+        index=["Self", "Spouse/Partner", "Daughter/Son", "Other Family", "Friend/Advocate", "Professional"].index(
+            form_data.get("relation", "Self")
+        ) if form_data.get("relation") in ["Self", "Spouse/Partner", "Daughter/Son", "Other Family", "Friend/Advocate", "Professional"] else 0,
+        help="Your relationship to the care recipient",
+    )
+    if relation != form_data.get("relation"):
+        form_data["relation"] = relation
+        log_event("pfma.booking.field_edited", {"field": "relation"})
     
     # Conditional: Show care recipient name if relation != Self
     if relation != "Self":
-        care_recipient_name = st.text_input(
-            "Name of the person needing care *",
-            value=form_data.get("care_recipient_name", ""),
-            placeholder="Care recipient's name",
-            help="Full name of the person who needs care",
-        )
-        if care_recipient_name != form_data.get("care_recipient_name"):
-            form_data["care_recipient_name"] = care_recipient_name
-            log_event("pfma.booking.field_edited", {"field": "care_recipient_name"})
-        
+        st.markdown("**Name of the person needing care** *")
         st.caption("🔒 *We'll never contact this person without your consent.*")
+        
+        col1a, col2a = st.columns(2)
+        with col1a:
+            care_recipient_first = st.text_input(
+                "First Name",
+                value=form_data.get("care_recipient_first", ""),
+                placeholder="First name",
+                help="Care recipient's first name",
+                key="care_recipient_first"
+            )
+            if care_recipient_first != form_data.get("care_recipient_first"):
+                form_data["care_recipient_first"] = care_recipient_first
+                log_event("pfma.booking.field_edited", {"field": "care_recipient_first"})
+        
+        with col2a:
+            care_recipient_last = st.text_input(
+                "Last Name",
+                value=form_data.get("care_recipient_last", ""),
+                placeholder="Last name",
+                help="Care recipient's last name",
+                key="care_recipient_last"
+            )
+            if care_recipient_last != form_data.get("care_recipient_last"):
+                form_data["care_recipient_last"] = care_recipient_last
+                log_event("pfma.booking.field_edited", {"field": "care_recipient_last"})
+        
+        # Combine for display
+        care_recipient_name = f"{care_recipient_first} {care_recipient_last}".strip()
+        form_data["care_recipient_name"] = care_recipient_name
     else:
         # If Self, attendee and care recipient are the same
+        form_data["care_recipient_first"] = attendee_first
+        form_data["care_recipient_last"] = attendee_last
         form_data["care_recipient_name"] = attendee_name
 
     st.markdown("---")
@@ -403,16 +442,30 @@ def _handle_booking_submit(form_data: dict):
 
     # Convert to customer in CRM (appointment booking makes them a customer)
     try:
-        care_recipient_name = form_data.get("care_recipient_name", "").strip()
-        attendee_name = form_data.get("attendee_name", "").strip()
+        # Get name components
+        care_recipient_first = form_data.get("care_recipient_first", "").strip()
+        care_recipient_last = form_data.get("care_recipient_last", "").strip()
+        attendee_first = form_data.get("attendee_first", "").strip()
+        attendee_last = form_data.get("attendee_last", "").strip()
         relation = form_data.get("relation", "Self")
         contact_email = form_data.get("email", "").strip() or None
         contact_phone = form_data.get("phone", "").strip() or None
         
-        # Use care recipient name for CRM record
-        crm_name = care_recipient_name if care_recipient_name else attendee_name
+        # Use care recipient name for CRM record (first + last)
+        if care_recipient_first or care_recipient_last:
+            crm_first = care_recipient_first or "Unknown"
+            crm_last = care_recipient_last or "Unknown"
+        else:
+            crm_first = attendee_first or "Unknown"
+            crm_last = attendee_last or "Unknown"
         
-        print(f"[PFMA] Converting to customer: '{crm_name}' (attendee: '{attendee_name}', relation: '{relation}')")
+        crm_name = f"{crm_first} {crm_last}".strip()
+        
+        # If still no name, use a fallback
+        if crm_name == "Unknown Unknown" or not crm_name:
+            crm_name = f"Appointment-{confirmation_id}"
+        
+        print(f"[PFMA] Converting to customer: '{crm_name}' (relation: '{relation}')")
         
         customer_id = convert_to_customer(
             name=crm_name,
@@ -460,9 +513,13 @@ def _validate_booking(form_data: dict) -> tuple[bool, list[str]]:
     """
     errors = []
 
-    # Attendee name required
-    if not form_data.get("attendee_name", "").strip():
-        errors.append("Attendee name is required")
+    # Attendee first name required
+    if not form_data.get("attendee_first", "").strip():
+        errors.append("Attendee first name is required")
+    
+    # Attendee last name required
+    if not form_data.get("attendee_last", "").strip():
+        errors.append("Attendee last name is required")
 
     # Relation required
     if not form_data.get("relation"):
@@ -470,8 +527,11 @@ def _validate_booking(form_data: dict) -> tuple[bool, list[str]]:
 
     # Care recipient name required if relation != Self
     relation = form_data.get("relation", "Self")
-    if relation != "Self" and not form_data.get("care_recipient_name", "").strip():
-        errors.append("Care recipient's name is required")
+    if relation != "Self":
+        if not form_data.get("care_recipient_first", "").strip():
+            errors.append("Care recipient's first name is required")
+        if not form_data.get("care_recipient_last", "").strip():
+            errors.append("Care recipient's last name is required")
 
     # Email OR phone required (not both mandatory)
     email = form_data.get("email", "").strip()
