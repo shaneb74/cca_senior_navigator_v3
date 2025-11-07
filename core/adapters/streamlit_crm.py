@@ -263,34 +263,18 @@ def delete_crm_customer(customer_id: str) -> bool:
     import os
     from pathlib import Path
     
-    # Debug output
-    print(f"\n{'='*60}")
-    print(f"DELETE_CRM_CUSTOMER CALLED")
-    print(f"Customer ID: {customer_id}")
-    print(f"Current working directory: {os.getcwd()}")
-    print(f"{'='*60}\n")
-    
     deleted = False
-    deletion_sources = []
     
-    # Get data root path - try multiple strategies
+    # Get data root path
     try:
         data_root = Path(_storage_provider.crm_repo.data_root)
-        print(f"Using storage provider data root: {data_root}")
-    except Exception as e:
-        print(f"Storage provider not available: {e}")
+    except Exception:
         # Try relative to current working directory
         data_root = Path("data")
-        print(f"Using relative path: {data_root}")
-        
         # If that doesn't exist, try relative to this file
         if not data_root.exists():
             script_dir = Path(__file__).parent.parent.parent
             data_root = script_dir / "data"
-            print(f"Using script-relative path: {data_root}")
-    
-    print(f"Data root absolute path: {data_root.absolute()}")
-    print(f"Data root exists: {data_root.exists()}")
     
     # Try to delete from Navigator app customers (JSONL)
     try:
@@ -315,10 +299,8 @@ def delete_crm_customer(customer_id: str) -> bool:
                     for customer in customers:
                         f.write(json.dumps(customer) + '\n')
                 deleted = True
-                deletion_sources.append("customers.jsonl")
-                print(f"✅ Deleted from customers.jsonl (was {original_count}, now {len(customers)})")
-    except Exception as e:
-        print(f"⚠️ Error checking customers.jsonl: {e}")
+    except Exception:
+        pass
     
     # Try to delete from QuickBase synthetic data (JSON)
     try:
@@ -342,10 +324,8 @@ def delete_crm_customer(customer_id: str) -> bool:
                 with open(qb_file, 'w') as f:
                     json.dump(qb_data, f, indent=2)
                 deleted = True
-                deletion_sources.append("synthetic_august2025_summary.json")
-                print(f"✅ Deleted from QuickBase data (was {original_count}, now {len(customers)})")
-    except Exception as e:
-        print(f"⚠️ Error checking QuickBase data: {e}")
+    except Exception:
+        pass
     
     # Try to delete from demo users (JSONL)
     try:
@@ -370,14 +350,7 @@ def delete_crm_customer(customer_id: str) -> bool:
                     for user in demo_users:
                         f.write(json.dumps(user) + '\n')
                 deleted = True
-                deletion_sources.append("demo_users.jsonl")
-                print(f"✅ Deleted from demo users (was {original_demo_count}, now {len(demo_users)})")
-    except Exception as e:
-        print(f"⚠️ Error checking demo users: {e}")
-    
-    if deleted:
-        print(f"✅ Successfully deleted customer {customer_id} from: {', '.join(deletion_sources)}")
-    else:
-        print(f"❌ Customer {customer_id} not found in any data source")
+    except Exception:
+        pass
     
     return deleted
