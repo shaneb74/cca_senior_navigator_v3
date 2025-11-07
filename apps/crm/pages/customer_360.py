@@ -210,7 +210,23 @@ def render_contact_info(customer_data):
     phone = customer_data.get('phone') or customer_data.get('contact_phone', 'Not provided')
     source = customer_data.get('source', 'Unknown')
     created = customer_data.get('created_at', 'Unknown')
-    joined = created[:10] if created != 'Unknown' else 'Unknown'
+    
+    # Handle different created_at formats (string, float timestamp, datetime)
+    if created != 'Unknown':
+        try:
+            if isinstance(created, (int, float)):
+                # Unix timestamp
+                from datetime import datetime
+                joined = datetime.fromtimestamp(created).strftime('%Y-%m-%d')
+            elif isinstance(created, str) and len(created) >= 10:
+                # ISO date string
+                joined = created[:10]
+            else:
+                joined = str(created)
+        except:
+            joined = 'Unknown'
+    else:
+        joined = 'Unknown'
     
     # Pure HTML - no Streamlit components that create extra containers
     html = f"""
