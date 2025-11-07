@@ -1453,9 +1453,8 @@ def render():
                             st.markdown(answer_md + sources_md)
                             
                             # Audio playback feature (if enabled)
-                            from core.flags import get_all_flags
-                            flags = get_all_flags()
-                            if flags.get("FEATURE_FAQ_AUDIO") == "on":
+                            from core.flags import get_flag_value
+                            if get_flag_value("FEATURE_FAQ_AUDIO") == "on":
                                 audio_key = f"audio_toggle_{idx}"
                                 if st.toggle("🔊 Listen", key=audio_key):
                                     try:
