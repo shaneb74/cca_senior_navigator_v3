@@ -1372,6 +1372,31 @@ def render():
             # Voice toggle on main screen
             if get_flag_value("FEATURE_FAQ_AUDIO") == "on":
                 st.toggle("🔊 Enable voice responses", key="faq_voice_enabled", value=False, help="When enabled, answers will include audio playback")
+                
+                # Enable autoplay in browser by creating a silent audio element on user interaction
+                # This "unlocks" autoplay for subsequent audio elements
+                st.markdown(
+                    """
+                    <script>
+                    (function() {
+                        // Create a silent audio element to enable autoplay
+                        // Browser security requires user interaction before autoplay works
+                        const toggles = window.parent.document.querySelectorAll('[data-testid="stCheckbox"]');
+                        toggles.forEach(toggle => {
+                            if (!toggle.dataset.audioUnlocked) {
+                                toggle.dataset.audioUnlocked = 'true';
+                                toggle.addEventListener('click', function() {
+                                    // Play a silent audio to unlock autoplay capability
+                                    const silentAudio = new Audio('data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAADhADAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMD/////////////////////////////////////////////////////////////////////////////////////////////////AAAAAExhdmM1OC4xMwAAAAAAAAAAAAAAACQCgAAAAAAAAAOEfxVW8QAAAAAAAAAAAAAAAAAAAAAA//sQZAAP8AAAaQAAAAgAAA0gAAABAAABpAAAACAAADSAAAAETEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV');
+                                    silentAudio.play().catch(() => {});
+                                }, { once: true });
+                            }
+                        });
+                    })();
+                    </script>
+                    """,
+                    unsafe_allow_html=True,
+                )
             
             st.markdown('</div>', unsafe_allow_html=True)
             
