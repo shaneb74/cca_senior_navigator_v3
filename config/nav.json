@@ -161,6 +161,12 @@
           "hidden": true
         },
         {
+          "key": "care_prep",
+          "label": "Care Preparation",
+          "module": "products.care_prep.product:render",
+          "hidden": true
+        },
+        {
           "key": "fa_intro",
           "label": "Financial Assessment",
           "module": "products.pfma_v3.product:render",

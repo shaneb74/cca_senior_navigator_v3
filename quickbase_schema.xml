@@ -1,0 +1,42 @@
+<?xml version="1.0" ?>
+<qdbapi>
+	<action>API_GetSchema</action>
+	<errcode>0</errcode>
+	<errtext>No error</errtext>
+    <time_zone>(UTC-08:00) Pacific Time (US &amp; Canada)</time_zone>
+    <date_format>MM-DD-YYYY</date_format>
+    <table>
+      <name>WA Database</name>
+      <desc>Track contacts, phone calls, emails, and future appointments, and upload important documents in this simple, yet versatile CRM app. <BR/>
+<BR/>
+Not powerful enough?  Try the Contact Management Portal template for a more comprehensive solution.<BR/>
+</desc>
+      <original>
+        <table_id>bkpvi3bsx</table_id>
+		 <app_id>bkpvi3bsx</app_id>
+        <cre_date>1457714398737</cre_date>
+        <mod_date>1761780159660</mod_date>
+        <next_record_id>1</next_record_id>
+        <next_field_id>6</next_field_id>
+        <next_query_id>5</next_query_id>
+        <def_sort_fid>0</def_sort_fid>
+        <def_sort_order>1</def_sort_order>
+      </original>
+<chdbids>
+<chdbid name="_dbid_intake_forms">bkpvi5e32</chdbid>
+<chdbid name="_dbid_communities">bkp5hn255</chdbid>
+<chdbid name="_dbid_needs_name">bksjvvngk</chdbid>
+<chdbid name="_dbid_documents">bkpvi3btq</chdbid>
+<chdbid name="_dbid_business_development">bku7emem5</chdbid>
+<chdbid name="_dbid_activities">bkpvi3btn</chdbid>
+<chdbid name="_dbid_contacts">bkqfsmeuq</chdbid>
+<chdbid name="_dbid_communities_visited">bkq9uykp7</chdbid>
+<chdbid name="_dbid_network_calendar">bpaifsvni</chdbid>
+<chdbid name="_dbid_copy_of_prospects">bpu5ntyzw</chdbid>
+<chdbid name="_dbid_business_development_sheet">br3xbg8fk</chdbid>
+<chdbid name="_dbid_cost_analysis">buiiiysbj</chdbid>
+</chdbids>
+      <fields>
+      </fields>
+    </table>
+</qdbapi>

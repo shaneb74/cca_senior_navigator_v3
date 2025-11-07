@@ -1,12 +1,4 @@
 {
-  "uid": "demo_mary_memory_care",
-  "auth": {
-    "user_id": "demo_mary_memory_care",
-    "is_authenticated": true,
-    "role": "user",
-    "name": "Mary Memory Care",
-    "email": "mary.memorycare@demo.test"
-  },
   "tiles": {
     "gcp_v4": {
       "progress": 100.0,
@@ -107,28 +99,31 @@
       }
     }
   },
-  "profile": {
-    "person_name": "Mary",
-    "qualifiers": {
-      "is_on_medicaid": false,
-      "is_veteran": true,
-      "is_homeowner": false
-    }
-  },
-  "flags": {
-    "is_veteran": true,
-    "medicaid_planning_interest": false
-  },
   "mcip_contracts": {
     "care_recommendation": {
       "tier": "assisted_living",
       "tier_score": 28.0,
       "tier_rankings": [
-        ["memory_care_high_acuity", 70.0],
-        ["memory_care", 32.0],
-        ["assisted_living", 28.0],
-        ["in_home", 12.5],
-        ["no_care_needed", 4.0]
+        [
+          "memory_care_high_acuity",
+          70.0
+        ],
+        [
+          "memory_care",
+          32.0
+        ],
+        [
+          "assisted_living",
+          28.0
+        ],
+        [
+          "in_home",
+          12.5
+        ],
+        [
+          "no_care_needed",
+          4.0
+        ]
       ],
       "confidence": 1.0,
       "flags": [],
@@ -151,7 +146,11 @@
       "status": "complete",
       "last_updated": "2025-11-02T00:00:00.000000Z",
       "needs_refresh": false,
-      "allowed_tiers": ["assisted_living", "in_home", "none"],
+      "allowed_tiers": [
+        "assisted_living",
+        "in_home",
+        "none"
+      ],
       "schema_version": 2
     },
     "financial_profile": {
@@ -166,8 +165,17 @@
     "advisor_appointment": null,
     "journey": {
       "current_hub": "concierge",
-      "completed_products": ["discovery_learning", "gcp", "cost_planner"],
-      "unlocked_products": ["gcp", "learn_recommendation", "cost_planner", "pfma"],
+      "completed_products": [
+        "discovery_learning",
+        "gcp",
+        "cost_planner"
+      ],
+      "unlocked_products": [
+        "gcp",
+        "learn_recommendation",
+        "cost_planner",
+        "pfma"
+      ],
       "recommended_next": "pfma"
     },
     "waiting_room": {
@@ -175,5 +183,27 @@
       "trivia_status": "not_started",
       "current_focus": "advisor_prep"
     }
-  }
+  },
+  "profile": {
+    "person_name": "Mary",
+    "qualifiers": {
+      "is_on_medicaid": false,
+      "is_veteran": true,
+      "is_homeowner": false
+    }
+  },
+  "auth": {
+    "user_id": "demo_mary_memory_care",
+    "is_authenticated": true,
+    "role": "user",
+    "name": "Mary Memory Care",
+    "email": "mary.memorycare@demo.test"
+  },
+  "flags": {
+    "is_veteran": true,
+    "medicaid_planning_interest": false
+  },
+  "uid": "demo_mary_memory_care",
+  "last_updated": 1762394559.457013,
+  "created_at": 1762394559.457013
 }

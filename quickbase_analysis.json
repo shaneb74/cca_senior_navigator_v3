@@ -1,0 +1,2128 @@
+{
+  "quickbase_contacts_schema.xml": {
+    "table_name": "Contacts",
+    "description": "Contact info includes names, phone numbers, emails",
+    "fields": [
+      {
+        "id": "7",
+        "label": "Contact Full Name",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "8",
+        "label": "Title / Job Function",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "14",
+        "label": "Phone",
+        "type": "phone",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "17",
+        "label": "Email",
+        "type": "email",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "47",
+        "label": "Related Community",
+        "type": "float",
+        "base_type": "float",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "48",
+        "label": "Community - Name",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "49",
+        "label": "Related Record",
+        "type": "float",
+        "base_type": "float",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "50",
+        "label": "Prospect - Name",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "51",
+        "label": "Record - Email",
+        "type": "email",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "16",
+        "label": "Mobile",
+        "type": "phone",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "83",
+        "label": "Record - Category",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "9",
+        "label": "Address",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "84",
+        "label": "Community - Address: City",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "74",
+        "label": "Copy of Related Record - Business Name",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "76",
+        "label": "Copy of Related Record - Business Name2",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "77",
+        "label": "Copy of Related Record - Business Name3",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "78",
+        "label": "Copy of Related Record - Business Name4",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "53",
+        "label": "Credentials",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "1",
+        "label": "Date Created",
+        "type": "timestamp",
+        "base_type": "int64",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "2",
+        "label": "Date Modified",
+        "type": "timestamp",
+        "base_type": "int64",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "18",
+        "label": "Different Contact Address?",
+        "type": "checkbox",
+        "base_type": "bool",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "52",
+        "label": "Ext",
+        "type": "float",
+        "base_type": "float",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "15",
+        "label": "Fax",
+        "type": "phone",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "20",
+        "label": "First Name",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "5",
+        "label": "Last Modified By",
+        "type": "userid",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "21",
+        "label": "Last Name",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "55",
+        "label": "Notes",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "79",
+        "label": "Record - Address: City",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "81",
+        "label": "Record - Advisor #1",
+        "type": "userid",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "82",
+        "label": "Record - Description",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "80",
+        "label": "Record - Rating",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "3",
+        "label": "Record ID#",
+        "type": "recordid",
+        "base_type": "int32",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "4",
+        "label": "Record Owner",
+        "type": "userid",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "65",
+        "label": "Related Record2",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "54",
+        "label": "Specialty",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "85",
+        "label": "Community - Type",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "86",
+        "label": "Record - Address: Country",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "87",
+        "label": "Conferences",
+        "type": "multitext",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "88",
+        "label": "Community - Business Name",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "89",
+        "label": "Record - Advisor #2",
+        "type": "userid",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      }
+    ],
+    "queries": [
+      {
+        "id": "12",
+        "name": "\"A\" Prospect Report",
+        "type": "table"
+      },
+      {
+        "id": "1",
+        "name": "All Contacts",
+        "type": "table"
+      },
+      {
+        "id": "9",
+        "name": "Embedded for Communities",
+        "type": "table"
+      },
+      {
+        "id": "10",
+        "name": "Embedded for NEEDS NAME",
+        "type": "table"
+      },
+      {
+        "id": "11",
+        "name": "Embedded for Prospects",
+        "type": "table"
+      },
+      {
+        "id": "2",
+        "name": "List Changes",
+        "type": "table"
+      }
+    ],
+    "total_fields": 40
+  },
+  "quickbase_communities_schema.xml": {
+    "table_name": "WA Communities",
+    "description": "",
+    "fields": [
+      {
+        "id": "21",
+        "label": "Type",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "27",
+        "label": "Business Name",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "55",
+        "label": "Licensee",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "7",
+        "label": "Address",
+        "type": "address",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "10",
+        "label": "City",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "11",
+        "label": "State/Region",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "59",
+        "label": "Vacancy",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "34",
+        "label": "Cell Phone",
+        "type": "phone",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "45",
+        "label": "Contracted with CCA",
+        "type": "checkbox",
+        "base_type": "bool",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "71",
+        "label": "Dedicated Memory Care",
+        "type": "checkbox",
+        "base_type": "bool",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "43",
+        "label": "Do Not Place List",
+        "type": "checkbox",
+        "base_type": "bool",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "96",
+        "label": "Community Closed",
+        "type": "checkbox",
+        "base_type": "bool",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "146",
+        "label": "Accepts Medicaid",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "13",
+        "label": "Country",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "42",
+        "label": "Rating",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "33",
+        "label": "Phone Number",
+        "type": "phone",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "56",
+        "label": "Highest Professional License",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "89",
+        "label": "2 Person Transfers",
+        "type": "checkbox",
+        "base_type": "bool",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "58",
+        "label": "Nationality",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "40",
+        "label": "Number of beds",
+        "type": "float",
+        "base_type": "float",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "129",
+        "label": "Owns Multiple Homes",
+        "type": "checkbox",
+        "base_type": "bool",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "130",
+        "label": "Other Homes",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "37",
+        "label": "Email",
+        "type": "email",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "91",
+        "label": "Hoyer Lift",
+        "type": "checkbox",
+        "base_type": "bool",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "147",
+        "label": "Bariatric",
+        "type": "checkbox",
+        "base_type": "bool",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "118",
+        "label": "Water View",
+        "type": "checkbox",
+        "base_type": "bool",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "148",
+        "label": "Pharmacy",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "149",
+        "label": "Home Doctor",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "104",
+        "label": "Languages Spoken",
+        "type": "multitext",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "160",
+        "label": "Contracted For",
+        "type": "multitext",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "109",
+        "label": "# of Clients Placed",
+        "type": "float",
+        "base_type": "float",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "79",
+        "label": "2 Bedroom Apt",
+        "type": "checkbox",
+        "base_type": "bool",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "82",
+        "label": "2nd Document",
+        "type": "file",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "85",
+        "label": "2nd Photo",
+        "type": "file",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "83",
+        "label": "3rd Document",
+        "type": "file",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "88",
+        "label": "3rd Party IHC",
+        "type": "checkbox",
+        "base_type": "bool",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "86",
+        "label": "3rd Photo",
+        "type": "file",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "84",
+        "label": "4th Document",
+        "type": "file",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "94",
+        "label": "5th Document",
+        "type": "file",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "95",
+        "label": "6th Document",
+        "type": "file",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "46",
+        "label": "Accepts Medicaid1",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "48",
+        "label": "Accepts Smokers",
+        "type": "checkbox",
+        "base_type": "bool",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "22",
+        "label": "Activities",
+        "type": "dblink",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "23",
+        "label": "Add Activity",
+        "type": "url",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "16",
+        "label": "Add Client",
+        "type": "url",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "64",
+        "label": "Add Communities Visited",
+        "type": "url",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "54",
+        "label": "Add Contact",
+        "type": "url",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "12",
+        "label": "Postal Code",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "8",
+        "label": "Street 1",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "9",
+        "label": "Street 2",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "122",
+        "label": "Air Conditioning",
+        "type": "checkbox",
+        "base_type": "bool",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "61",
+        "label": "Allows Pets w/placement",
+        "type": "checkbox",
+        "base_type": "bool",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "49",
+        "label": "Annual Review",
+        "type": "checkbox",
+        "base_type": "bool",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "57",
+        "label": "Awake Night Staff",
+        "type": "checkbox",
+        "base_type": "bool",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "19",
+        "label": "Awake Staff",
+        "type": "checkbox",
+        "base_type": "bool",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "28",
+        "label": "Business Contact Name",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "153",
+        "label": "Catheter",
+        "type": "checkbox",
+        "base_type": "bool",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "62",
+        "label": "Children",
+        "type": "checkbox",
+        "base_type": "bool",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "15",
+        "label": "Clients",
+        "type": "dblink",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "152",
+        "label": "Colostomy",
+        "type": "checkbox",
+        "base_type": "bool",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "63",
+        "label": "Communities visiteds",
+        "type": "dblink",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "53",
+        "label": "Contacts",
+        "type": "dblink",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "123",
+        "label": "Cottages",
+        "type": "checkbox",
+        "base_type": "bool",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "41",
+        "label": "County",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "52",
+        "label": "Covered Parking",
+        "type": "checkbox",
+        "base_type": "bool",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "103",
+        "label": "COVID Restrictions",
+        "type": "multitext",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "110",
+        "label": "COVID Vaccine",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "20",
+        "label": "Current Vacency",
+        "type": "float",
+        "base_type": "float",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "156",
+        "label": "Custom Edit (Vacancies Email)",
+        "type": "url",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "1",
+        "label": "Date Created",
+        "type": "timestamp",
+        "base_type": "int64",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "2",
+        "label": "Date Modified",
+        "type": "timestamp",
+        "base_type": "int64",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "114",
+        "label": "Date of First Contact",
+        "type": "date",
+        "base_type": "int64",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "74",
+        "label": "Date of Review",
+        "type": "date",
+        "base_type": "int64",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "115",
+        "label": "Date of Second Contact",
+        "type": "date",
+        "base_type": "int64",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "25",
+        "label": "Description",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "73",
+        "label": "Documents",
+        "type": "file",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "39",
+        "label": "DSHS License No.",
+        "type": "float",
+        "base_type": "float",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "119",
+        "label": "DSHS Specialities",
+        "type": "multitext",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "70",
+        "label": "Extra Storage",
+        "type": "checkbox",
+        "base_type": "bool",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "26",
+        "label": "Fax",
+        "type": "phone",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "117",
+        "label": "First Outcome",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "47",
+        "label": "Full Kitchen",
+        "type": "checkbox",
+        "base_type": "bool",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "69",
+        "label": "Garage Parking",
+        "type": "checkbox",
+        "base_type": "bool",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "121",
+        "label": "Generator",
+        "type": "checkbox",
+        "base_type": "bool",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "159",
+        "label": "Has Pets In The Home",
+        "type": "checkbox",
+        "base_type": "bool",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "75",
+        "label": "House Doctor",
+        "type": "checkbox",
+        "base_type": "bool",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "90",
+        "label": "Insulin",
+        "type": "checkbox",
+        "base_type": "bool",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "150",
+        "label": "Insulin Sliding Scale",
+        "type": "checkbox",
+        "base_type": "bool",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "36",
+        "label": "Job Title",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "5",
+        "label": "Last Modified By",
+        "type": "userid",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "38",
+        "label": "Licencee",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "65",
+        "label": "Link to DSHS",
+        "type": "url",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "102",
+        "label": "Medicaid",
+        "type": "checkbox",
+        "base_type": "bool",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "6",
+        "label": "Name",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "113",
+        "label": "Outcome",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "158",
+        "label": "Past Tours",
+        "type": "dblink",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "51",
+        "label": "Patio",
+        "type": "checkbox",
+        "base_type": "bool",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "67",
+        "label": "Photo",
+        "type": "file",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "50",
+        "label": "Pool",
+        "type": "checkbox",
+        "base_type": "bool",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "18",
+        "label": "Private Pay Criteria",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "140",
+        "label": "R.A Follow-Up #5",
+        "type": "date",
+        "base_type": "int64",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "124",
+        "label": "R.A. #1 Notes",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "125",
+        "label": "R.A. Follow-Up #2",
+        "type": "date",
+        "base_type": "int64",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "126",
+        "label": "R.A. Follow-Up #2 Notes",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "127",
+        "label": "R.A. Follow-Up #3",
+        "type": "date",
+        "base_type": "int64",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "128",
+        "label": "R.A. Follow-Up #3 Notes",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "139",
+        "label": "R.A. Follow-Up #4",
+        "type": "date",
+        "base_type": "int64",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "133",
+        "label": "R.A. Follow-Up #4 Notes",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "134",
+        "label": "R.A. Follow-Up #5 Notes",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "141",
+        "label": "R.A. Follow-Up #6",
+        "type": "date",
+        "base_type": "int64",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "135",
+        "label": "R.A. Follow-Up #6 Notes",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "142",
+        "label": "R.A. Follow-Up #7",
+        "type": "date",
+        "base_type": "int64",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "136",
+        "label": "R.A. Follow-Up #7 Notes",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "144",
+        "label": "R.A. Follow-Up #8",
+        "type": "date",
+        "base_type": "int64",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "137",
+        "label": "R.A. Follow-Up #8 Notes",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "143",
+        "label": "R.A. Follow-Up #9",
+        "type": "date",
+        "base_type": "int64",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "138",
+        "label": "R.A. Follow-Up #9 Notes",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "77",
+        "label": "R.A. Sent - 1st",
+        "type": "date",
+        "base_type": "int64",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "44",
+        "label": "Reason for DNP",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "3",
+        "label": "Record ID#",
+        "type": "recordid",
+        "base_type": "int32",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "87",
+        "label": "Record ID# - Business Name",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "4",
+        "label": "Record Owner",
+        "type": "userid",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "116",
+        "label": "Second Outcome",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "157",
+        "label": "Send Cell Phone Update Email",
+        "type": "checkbox",
+        "base_type": "bool",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "155",
+        "label": "Send Vacancy Email",
+        "type": "checkbox",
+        "base_type": "bool",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "111",
+        "label": "Tour Call",
+        "type": "multiuserid",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "154",
+        "label": "Tube Feeding",
+        "type": "checkbox",
+        "base_type": "bool",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "106",
+        "label": "Video Tour",
+        "type": "checkbox",
+        "base_type": "bool",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "72",
+        "label": "Washer & Dryer",
+        "type": "checkbox",
+        "base_type": "bool",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "35",
+        "label": "Website",
+        "type": "url",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "93",
+        "label": "Woodworking Shop",
+        "type": "checkbox",
+        "base_type": "bool",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "151",
+        "label": "Wound Care",
+        "type": "checkbox",
+        "base_type": "bool",
+        "required": false,
+        "appears_by_default": false
+      }
+    ],
+    "queries": [
+      {
+        "id": "21",
+        "name": "Accepts Smokers 1",
+        "type": "table"
+      },
+      {
+        "id": "39",
+        "name": "Assisted livings to update contacts",
+        "type": "table"
+      },
+      {
+        "id": "5",
+        "name": "Awake Night Staff",
+        "type": "table"
+      },
+      {
+        "id": "35",
+        "name": "Communities that do not have contracts",
+        "type": "table"
+      },
+      {
+        "id": "37",
+        "name": "Cottages",
+        "type": "table"
+      },
+      {
+        "id": "23",
+        "name": "DFS AFH Search",
+        "type": "table"
+      },
+      {
+        "id": "38",
+        "name": "Language",
+        "type": "table"
+      },
+      {
+        "id": "1",
+        "name": "List All",
+        "type": "table"
+      },
+      {
+        "id": "2",
+        "name": "List Changes",
+        "type": "table"
+      },
+      {
+        "id": "25",
+        "name": "Matterport Video Homes",
+        "type": "table"
+      },
+      {
+        "id": "9",
+        "name": "Medicaid Search",
+        "type": "table"
+      },
+      {
+        "id": "41",
+        "name": "New AFH Report",
+        "type": "table"
+      },
+      {
+        "id": "36",
+        "name": "New Table Report",
+        "type": "table"
+      },
+      {
+        "id": "40",
+        "name": "New Table Report1",
+        "type": "table"
+      },
+      {
+        "id": "17",
+        "name": "Nurse run AFH's",
+        "type": "table"
+      },
+      {
+        "id": "34",
+        "name": "R.A. Metrics",
+        "type": "table"
+      },
+      {
+        "id": "14",
+        "name": "Vacancy Report",
+        "type": "table"
+      },
+      {
+        "id": "33",
+        "name": "Water view AFHs",
+        "type": "table"
+      },
+      {
+        "id": "19",
+        "name": "Woodworking",
+        "type": "table"
+      }
+    ],
+    "total_fields": 132
+  },
+  "quickbase_activities_schema.xml": {
+    "table_name": "Activities",
+    "description": "Calls, emails, and meetings with customers or contacts",
+    "fields": [
+      {
+        "id": "6",
+        "label": "Activity Date",
+        "type": "date",
+        "base_type": "int64",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "15",
+        "label": "Scheduled For",
+        "type": "userid",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "47",
+        "label": "Prospect",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "7",
+        "label": "Activity Type",
+        "type": "text",
+        "base_type": "text",
+        "required": true,
+        "appears_by_default": true
+      },
+      {
+        "id": "16",
+        "label": "Schedule Status",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "14",
+        "label": "Notes",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "33",
+        "label": "Community - Name",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "35",
+        "label": "Client - Name",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "58",
+        "label": "From",
+        "type": "userid",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "59",
+        "label": "Email Body (with HTML)",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "60",
+        "label": "Email Body",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "61",
+        "label": "Subject",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": true
+      },
+      {
+        "id": "30",
+        "label": "Activity",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "62",
+        "label": "Client - Date of Intake",
+        "type": "date",
+        "base_type": "int64",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "55",
+        "label": "Client - Name of Advisor",
+        "type": "userid",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "46",
+        "label": "Client - Related Pro Referral Given - Record ID# - Business Name",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "57",
+        "label": "Client - Representatives Mailing Address: Postal Code",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "54",
+        "label": "Client - Sent to Advisor",
+        "type": "checkbox",
+        "base_type": "bool",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "56",
+        "label": "Client - Stage",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "1",
+        "label": "Date Created",
+        "type": "timestamp",
+        "base_type": "int64",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "2",
+        "label": "Date Modified",
+        "type": "timestamp",
+        "base_type": "int64",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "18",
+        "label": "Duration (Mins)",
+        "type": "duration",
+        "base_type": "int64",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "24",
+        "label": "iCalendar",
+        "type": "ICalendarButton",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "25",
+        "label": "iCalendar Notes",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "5",
+        "label": "Last Modified By",
+        "type": "userid",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "40",
+        "label": "Medicaid Referral Given",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "23",
+        "label": "Meeting Info / Location",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "39",
+        "label": "Private Pay Referral Given",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "48",
+        "label": "Record - # of PP Referrals in 2019",
+        "type": "float",
+        "base_type": "float",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "53",
+        "label": "Record - Category",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "38",
+        "label": "record - Email",
+        "type": "email",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "37",
+        "label": "record - Name",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "50",
+        "label": "Record - Rating",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "49",
+        "label": "Record - Top Prospects",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "3",
+        "label": "Record ID#",
+        "type": "recordid",
+        "base_type": "int32",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "4",
+        "label": "Record Owner",
+        "type": "userid",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "34",
+        "label": "Related Client",
+        "type": "float",
+        "base_type": "float",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "32",
+        "label": "Related Community",
+        "type": "float",
+        "base_type": "float",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "36",
+        "label": "Related record",
+        "type": "float",
+        "base_type": "float",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "22",
+        "label": "Schedule Subject",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "21",
+        "label": "Scheduled End Date/Time",
+        "type": "timestamp",
+        "base_type": "int64",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "19",
+        "label": "Scheduled End Time",
+        "type": "timeofday",
+        "base_type": "int64",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "20",
+        "label": "Scheduled Start Date/Time",
+        "type": "timestamp",
+        "base_type": "int64",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "17",
+        "label": "Scheduled Start Time",
+        "type": "timeofday",
+        "base_type": "int64",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "63",
+        "label": "Client - Residents First Name",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      },
+      {
+        "id": "64",
+        "label": "Client - Referral Source Category",
+        "type": "text",
+        "base_type": "text",
+        "required": false,
+        "appears_by_default": false
+      }
+    ],
+    "queries": [
+      {
+        "id": "8",
+        "name": "Activities by Type and Duration for Each Service Rep",
+        "type": "chart"
+      },
+      {
+        "id": "49",
+        "name": "activity created by",
+        "type": "table"
+      },
+      {
+        "id": "14",
+        "name": "Advisor weekly activities",
+        "type": "table"
+      },
+      {
+        "id": "85",
+        "name": "All Advisor Submitted Emails",
+        "type": "table"
+      },
+      {
+        "id": "83",
+        "name": "ashley 30 day activity report",
+        "type": "table"
+      },
+      {
+        "id": "81",
+        "name": "Ashley's Daily Report",
+        "type": "table"
+      },
+      {
+        "id": "72",
+        "name": "Chanda's Daily Activities",
+        "type": "table"
+      },
+      {
+        "id": "74",
+        "name": "Chanda's Weekly Activities",
+        "type": "table"
+      },
+      {
+        "id": "18",
+        "name": "Daily Activites",
+        "type": "table"
+      },
+      {
+        "id": "10",
+        "name": "Embedded for Clients",
+        "type": "table"
+      },
+      {
+        "id": "9",
+        "name": "Embedded for Communities",
+        "type": "table"
+      },
+      {
+        "id": "11",
+        "name": "Embedded for NEEDS NAME",
+        "type": "table"
+      },
+      {
+        "id": "77",
+        "name": "In Home Care Report",
+        "type": "table"
+      },
+      {
+        "id": "50",
+        "name": "Jennifers 30 days activities",
+        "type": "table"
+      },
+      {
+        "id": "20",
+        "name": "Jenny's 30 day Activities report",
+        "type": "table"
+      },
+      {
+        "id": "90",
+        "name": "Jesiah 30 days activity report",
+        "type": "table"
+      },
+      {
+        "id": "91",
+        "name": "Jesiah Daily Activities",
+        "type": "table"
+      },
+      {
+        "id": "95",
+        "name": "JJ white 30 day activity report",
+        "type": "table"
+      },
+      {
+        "id": "82",
+        "name": "june , july IHC by IHC company",
+        "type": "table"
+      },
+      {
+        "id": "87",
+        "name": "karines 30 day activity report",
+        "type": "table"
+      },
+      {
+        "id": "78",
+        "name": "Kelsey's 30 day activity report",
+        "type": "table"
+      },
+      {
+        "id": "25",
+        "name": "Kelsey's Daily Activities",
+        "type": "table"
+      },
+      {
+        "id": "88",
+        "name": "Linda's 30 day activity report",
+        "type": "table"
+      },
+      {
+        "id": "1",
+        "name": "List All",
+        "type": "table"
+      },
+      {
+        "id": "2",
+        "name": "List Changes",
+        "type": "table"
+      },
+      {
+        "id": "80",
+        "name": "Lois's 30 day activity report",
+        "type": "table"
+      },
+      {
+        "id": "55",
+        "name": "Marta's 30 day future activity report",
+        "type": "table"
+      },
+      {
+        "id": "53",
+        "name": "Marta's Daily Activities",
+        "type": "table"
+      },
+      {
+        "id": "54",
+        "name": "Marta's Weekly Activities",
+        "type": "table"
+      },
+      {
+        "id": "6",
+        "name": "My Scheduled Calls",
+        "type": "table"
+      },
+      {
+        "id": "93",
+        "name": "Notes only",
+        "type": "table"
+      },
+      {
+        "id": "7",
+        "name": "Phone Calls by Duration - Bar",
+        "type": "chart"
+      },
+      {
+        "id": "37",
+        "name": "Rebecca's 30 day activity report",
+        "type": "table"
+      },
+      {
+        "id": "67",
+        "name": "rebecca's activities",
+        "type": "table"
+      },
+      {
+        "id": "66",
+        "name": "Rebecca's Daily Activities",
+        "type": "table"
+      },
+      {
+        "id": "86",
+        "name": "Rebecca's scheduled activities for Nicoles clients",
+        "type": "table"
+      },
+      {
+        "id": "36",
+        "name": "Shelby Daily Activities",
+        "type": "table"
+      },
+      {
+        "id": "84",
+        "name": "Submitted Emails",
+        "type": "table"
+      },
+      {
+        "id": "71",
+        "name": "Sylvana's Weekly Activities",
+        "type": "table"
+      },
+      {
+        "id": "68",
+        "name": "Tabitha's Daily Activities",
+        "type": "table"
+      },
+      {
+        "id": "69",
+        "name": "Tabitha's Weekly Activities",
+        "type": "table"
+      },
+      {
+        "id": "92",
+        "name": "Table For Troubleshooting",
+        "type": "table"
+      },
+      {
+        "id": "94",
+        "name": "Table For Troubleshooting copy 2",
+        "type": "table"
+      },
+      {
+        "id": "89",
+        "name": "tarah's 30 day activity report",
+        "type": "table"
+      },
+      {
+        "id": "19",
+        "name": "Vannah Rose 30 day Activity report",
+        "type": "table"
+      },
+      {
+        "id": "65",
+        "name": "Vannah's Daily Activites",
+        "type": "table"
+      }
+    ],
+    "total_fields": 46
+  }
+}

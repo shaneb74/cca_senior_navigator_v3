@@ -6,7 +6,7 @@ The Conductor: Orchestrates the user journey across all hubs, products, and modu
 
 from dataclasses import asdict, dataclass, field, fields
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import streamlit as st
 
@@ -233,7 +233,7 @@ class MCIP:
     # =========================================================================
 
     @classmethod
-    def get_care_recommendation(cls) -> CareRecommendation | None:
+    def get_care_recommendation(cls) -> Union[CareRecommendation, None]:
         """Get the current care recommendation.
 
         Returns:
