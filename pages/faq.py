@@ -27,7 +27,6 @@ import streamlit as st
 import numpy as np
 
 from core.flags import get_all_flags
-from core.logging import logger
 from core.mcip import MCIP
 from core.nav import route_to
 from core.navi import NaviOrchestrator
@@ -1477,7 +1476,8 @@ def render():
                                             st.warning("⚠️ Audio unavailable, please try again.", icon="🔇")
                                     except Exception as e:
                                         st.warning("⚠️ Audio unavailable, please try again.", icon="🔇")
-                                        logger.error(f"[FAQ_AUDIO] Error in audio playback: {e}")
+                                        # Log error (optional - can be removed if not needed)
+                                        print(f"[FAQ_AUDIO] Error in audio playback: {e}")
 
                         with st.container():
                             st.markdown('<div class="chat-sentinel chat-action-sentinel"></div>', unsafe_allow_html=True)

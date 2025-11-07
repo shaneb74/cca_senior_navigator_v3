@@ -17,7 +17,8 @@ except ImportError:
     REQUESTS_AVAILABLE = False
 
 # Import logging
-from core.logging import logger
+from core.logging import get_logger
+logger = get_logger("audio")
 
 # Configuration
 ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY", "sk_d1c455c20d569fd2fbbb82ca4821f3d8ef5d203d18ec3dd9")
