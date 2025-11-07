@@ -259,19 +259,23 @@ def get_crm_customer_by_id(customer_id: str):
 
 def delete_crm_customer(customer_id: str) -> bool:
     """Delete a customer from all CRM sources."""
+    import json
+    import os
+    
     deleted = False
+    deletion_sources = []
     
     # Try to delete from Navigator app customers (JSONL)
     try:
-        if _storage_provider.crm_repo.delete_record("customers", customer_id):
+        result = _storage_provider.crm_repo.delete_record("customers", customer_id)
+        if result:
             deleted = True
-    except Exception:
-        pass
+            deletion_sources.append("customers.jsonl")
+    except Exception as e:
+        print(f"Error deleting from customers.jsonl: {e}")
     
     # Try to delete from QuickBase synthetic data (JSON)
     try:
-        import json
-        import os
         qb_file = os.path.join(
             _storage_provider.crm_repo.data_root,
             "crm",
@@ -283,7 +287,12 @@ def delete_crm_customer(customer_id: str) -> bool:
             
             customers = qb_data.get('customers', [])
             original_count = len(customers)
-            customers = [c for c in customers if c.get('user_id') != customer_id and c.get('id') != customer_id]
+            # Check multiple ID fields
+            customers = [c for c in customers if not any([
+                c.get('user_id') == customer_id,
+                c.get('id') == customer_id,
+                c.get('customer_id') == customer_id
+            ])]
             
             if len(customers) < original_count:
                 qb_data['customers'] = customers
@@ -291,8 +300,9 @@ def delete_crm_customer(customer_id: str) -> bool:
                 with open(qb_file, 'w') as f:
                     json.dump(qb_data, f, indent=2)
                 deleted = True
-    except Exception:
-        pass
+                deletion_sources.append("synthetic_august2025_summary.json")
+    except Exception as e:
+        print(f"Error deleting from QuickBase data: {e}")
     
     # Try to delete from demo users (JSONL)
     try:
@@ -303,17 +313,31 @@ def delete_crm_customer(customer_id: str) -> bool:
         )
         if os.path.exists(demo_file):
             demo_users = []
+            original_demo_count = 0
             with open(demo_file, 'r') as f:
                 for line in f:
+                    original_demo_count += 1
                     user = json.loads(line)
-                    if user.get('user_id') != customer_id and user.get('id') != customer_id:
+                    # Check multiple ID fields
+                    if not any([
+                        user.get('user_id') == customer_id,
+                        user.get('id') == customer_id,
+                        user.get('customer_id') == customer_id
+                    ]):
                         demo_users.append(user)
             
-            with open(demo_file, 'w') as f:
-                for user in demo_users:
-                    f.write(json.dumps(user) + '\n')
-            deleted = True
-    except Exception:
-        pass
+            if len(demo_users) < original_demo_count:
+                with open(demo_file, 'w') as f:
+                    for user in demo_users:
+                        f.write(json.dumps(user) + '\n')
+                deleted = True
+                deletion_sources.append("demo_users.jsonl")
+    except Exception as e:
+        print(f"Error deleting from demo users: {e}")
+    
+    if deleted:
+        print(f"✅ Successfully deleted customer {customer_id} from: {', '.join(deletion_sources)}")
+    else:
+        print(f"❌ Customer {customer_id} not found in any data source")
     
     return deleted
