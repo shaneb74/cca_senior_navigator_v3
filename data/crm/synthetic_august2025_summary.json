@@ -31,7 +31,74 @@
       "zip_code": "99201",
       "status": "touring",
       "created_at": 1762474982.264063,
-      "data_source": "synthetic_generator_aug2025"
+      "data_source": "synthetic_generator_aug2025",
+      "age": 86,
+      "gender": "Female",
+      "date_of_birth": "1939-11-07",
+      "medical_conditions": [
+        "Hypertension",
+        "COPD",
+        "Depression",
+        "Dementia - Moderate Stage",
+        "Osteoporosis"
+      ],
+      "medication_count": 3,
+      "allergies": "Latex",
+      "diet_restrictions": "Diabetic",
+      "adl_assessment": {
+        "bathing": "Fully Dependent",
+        "dressing": "Needs Reminders",
+        "toileting": "Needs Assistance",
+        "transferring": "Independent",
+        "eating": "Fully Dependent",
+        "medication": "Injectable Meds"
+      },
+      "mobility": {
+        "equipment": "Wheelchair - Manual",
+        "fall_risk": "Low",
+        "requires_assistance": true
+      },
+      "assessment_scores": {
+        "mmse_score": 18,
+        "functional_score": 61,
+        "pain_level": 5,
+        "depression_screen": "Negative"
+      },
+      "social_profile": {
+        "sociability": "Very Social",
+        "activity_preference": "One-on-One",
+        "behavioral_concerns": "Sundowning"
+      },
+      "family_context": {
+        "primary_contact_relationship": "Self",
+        "involvement_level": "Moderately Involved - Visits Monthly",
+        "decision_maker": false,
+        "lives_nearby": false,
+        "financial_poa": false
+      },
+      "community_matching_flags": {
+        "requires_memory_care": true,
+        "requires_insulin_management": false,
+        "requires_wound_care": false,
+        "requires_physical_therapy": false,
+        "requires_hoyer_lift": false,
+        "requires_two_person_transfer": false,
+        "requires_bariatric_care": true,
+        "prefers_pets_allowed": true,
+        "prefers_private_room": true,
+        "prefers_full_kitchen": false,
+        "prefers_outdoor_space": true,
+        "prefers_pool": false,
+        "language_preference": null,
+        "religious_preference": null,
+        "budget_max": 6000,
+        "budget_flexible": true,
+        "medical_services_needed": []
+      },
+      "move_in_urgency": "Immediate (< 2 weeks)",
+      "preferred_move_in_date": "2026-01-17",
+      "intake_notes": "Initial assessment completed. Margaret Smith is a 86-year-old female interested in Memory Care. Family is moderately involved - visits monthly.",
+      "enriched_at": "2025-11-06T18:44:45.500353"
     },
     {
       "user_id": "synthetic_aug2025_019",
@@ -60,7 +127,70 @@
       "zip_code": "98101",
       "status": "touring",
       "created_at": 1762474982.26404,
-      "data_source": "synthetic_generator_aug2025"
+      "data_source": "synthetic_generator_aug2025",
+      "age": 79,
+      "gender": "Female",
+      "date_of_birth": "1946-11-07",
+      "medical_conditions": [
+        "Hearing Loss"
+      ],
+      "medication_count": 3,
+      "allergies": "Penicillin",
+      "diet_restrictions": "Thickened Liquids",
+      "adl_assessment": {
+        "bathing": "Independent",
+        "dressing": "Fully Dependent",
+        "toileting": "Fully Dependent",
+        "transferring": "Two Person Transfer",
+        "eating": "Fully Dependent",
+        "medication": "Injectable Meds"
+      },
+      "mobility": {
+        "equipment": "Cane",
+        "fall_risk": "Moderate",
+        "requires_assistance": false
+      },
+      "assessment_scores": {
+        "mmse_score": 30,
+        "functional_score": 71,
+        "pain_level": 4,
+        "depression_screen": "Moderate"
+      },
+      "social_profile": {
+        "sociability": "Very Social",
+        "activity_preference": "Independent",
+        "behavioral_concerns": "Wandering Risk"
+      },
+      "family_context": {
+        "primary_contact_relationship": "Friend/Neighbor",
+        "involvement_level": "Limited Involvement - Out of State",
+        "decision_maker": false,
+        "lives_nearby": true,
+        "financial_poa": false
+      },
+      "community_matching_flags": {
+        "requires_memory_care": false,
+        "requires_insulin_management": false,
+        "requires_wound_care": false,
+        "requires_physical_therapy": false,
+        "requires_hoyer_lift": false,
+        "requires_two_person_transfer": false,
+        "requires_bariatric_care": false,
+        "prefers_pets_allowed": false,
+        "prefers_private_room": true,
+        "prefers_full_kitchen": false,
+        "prefers_outdoor_space": true,
+        "prefers_pool": false,
+        "language_preference": null,
+        "religious_preference": null,
+        "budget_max": 10000,
+        "budget_flexible": true,
+        "medical_services_needed": []
+      },
+      "move_in_urgency": "Soon (2-4 weeks)",
+      "preferred_move_in_date": "2025-12-06",
+      "intake_notes": "Initial assessment completed. Elizabeth Gonzalez is a 79-year-old female interested in In Home. Family is limited involvement - out of state.",
+      "enriched_at": "2025-11-06T18:44:45.500385"
     },
     {
       "user_id": "synthetic_aug2025_004",
@@ -89,7 +219,75 @@
       "zip_code": "98402",
       "status": "moved_in",
       "created_at": 1762373517.428921,
-      "data_source": "synthetic_generator_aug2025"
+      "data_source": "synthetic_generator_aug2025",
+      "age": 71,
+      "gender": "Female",
+      "date_of_birth": "1954-11-07",
+      "medical_conditions": [
+        "Dementia - Moderate Stage",
+        "Diabetes Type 2",
+        "Hearing Loss",
+        "Hypertension"
+      ],
+      "medication_count": 6,
+      "allergies": "Penicillin",
+      "diet_restrictions": "Thickened Liquids",
+      "adl_assessment": {
+        "bathing": "Needs Reminders",
+        "dressing": "Needs Assistance",
+        "toileting": "Independent",
+        "transferring": "Requires Equipment",
+        "eating": "Needs Feeding Assistance",
+        "medication": "Independent"
+      },
+      "mobility": {
+        "equipment": "Wheelchair - Power",
+        "fall_risk": "Low",
+        "requires_assistance": true
+      },
+      "assessment_scores": {
+        "mmse_score": 27,
+        "functional_score": 80,
+        "pain_level": 5,
+        "depression_screen": "Moderate"
+      },
+      "social_profile": {
+        "sociability": "Withdrawn",
+        "activity_preference": "Independent",
+        "behavioral_concerns": null
+      },
+      "family_context": {
+        "primary_contact_relationship": "Adult Son",
+        "involvement_level": "Moderately Involved - Visits Monthly",
+        "decision_maker": true,
+        "lives_nearby": true,
+        "financial_poa": false
+      },
+      "community_matching_flags": {
+        "requires_memory_care": false,
+        "requires_insulin_management": false,
+        "requires_wound_care": false,
+        "requires_physical_therapy": true,
+        "requires_hoyer_lift": false,
+        "requires_two_person_transfer": false,
+        "requires_bariatric_care": false,
+        "prefers_pets_allowed": false,
+        "prefers_private_room": false,
+        "prefers_full_kitchen": true,
+        "prefers_outdoor_space": true,
+        "prefers_pool": false,
+        "language_preference": "Chinese",
+        "religious_preference": null,
+        "budget_max": 9000,
+        "budget_flexible": false,
+        "medical_services_needed": [
+          "Physical Therapy"
+        ]
+      },
+      "move_in_urgency": "Planning (1-3 months)",
+      "preferred_move_in_date": "2025-11-24",
+      "intake_notes": "Initial assessment completed. Dorothy Thomas is a 71-year-old female interested in Assisted Living. Family is moderately involved - visits monthly.",
+      "enriched_at": "2025-11-06T18:44:45.500409"
     },
     {
       "user_id": "synthetic_aug2025_006",
@@ -118,7 +316,74 @@
       "zip_code": "97201",
       "status": "moved_in",
       "created_at": 1762373517.428947,
-      "data_source": "synthetic_generator_aug2025"
+      "data_source": "synthetic_generator_aug2025",
+      "age": 83,
+      "gender": "Male",
+      "date_of_birth": "1942-11-07",
+      "medical_conditions": [
+        "Anxiety",
+        "Hypertension",
+        "Dementia - Moderate Stage"
+      ],
+      "medication_count": 4,
+      "allergies": "Penicillin",
+      "diet_restrictions": "Thickened Liquids",
+      "adl_assessment": {
+        "bathing": "Needs Reminders",
+        "dressing": "Fully Dependent",
+        "toileting": "Fully Dependent",
+        "transferring": "Needs Assistance",
+        "eating": "Independent",
+        "medication": "Needs Administration"
+      },
+      "mobility": {
+        "equipment": "Walker",
+        "fall_risk": "Low",
+        "requires_assistance": false
+      },
+      "assessment_scores": {
+        "mmse_score": 22,
+        "functional_score": 50,
+        "pain_level": 0,
+        "depression_screen": "Not Assessed"
+      },
+      "social_profile": {
+        "sociability": "Moderately Social",
+        "activity_preference": "Varies",
+        "behavioral_concerns": "Agitation"
+      },
+      "family_context": {
+        "primary_contact_relationship": "Spouse",
+        "involvement_level": "Primary Decision Maker - Local",
+        "decision_maker": true,
+        "lives_nearby": false,
+        "financial_poa": true
+      },
+      "community_matching_flags": {
+        "requires_memory_care": true,
+        "requires_insulin_management": false,
+        "requires_wound_care": false,
+        "requires_physical_therapy": true,
+        "requires_hoyer_lift": false,
+        "requires_two_person_transfer": true,
+        "requires_bariatric_care": false,
+        "prefers_pets_allowed": false,
+        "prefers_private_room": true,
+        "prefers_full_kitchen": false,
+        "prefers_outdoor_space": true,
+        "prefers_pool": false,
+        "language_preference": null,
+        "religious_preference": null,
+        "budget_max": 8000,
+        "budget_flexible": true,
+        "medical_services_needed": [
+          "Physical Therapy"
+        ]
+      },
+      "move_in_urgency": "Immediate (< 2 weeks)",
+      "preferred_move_in_date": "2026-01-07",
+      "intake_notes": "Initial assessment completed. Robert Thomas is a 83-year-old male interested in Memory Care. Family is primary decision maker - local.",
+      "enriched_at": "2025-11-06T18:44:45.500430"
     },
     {
       "user_id": "synthetic_aug2025_014",
@@ -147,7 +412,71 @@
       "zip_code": "99201",
       "status": "moved_in",
       "created_at": 1762474982.263973,
-      "data_source": "synthetic_generator_aug2025"
+      "data_source": "synthetic_generator_aug2025",
+      "age": 74,
+      "gender": "Male",
+      "date_of_birth": "1951-11-07",
+      "medical_conditions": [
+        "Stroke History",
+        "Dementia - Moderate Stage"
+      ],
+      "medication_count": 4,
+      "allergies": "Latex",
+      "diet_restrictions": "Low Sodium",
+      "adl_assessment": {
+        "bathing": "Fully Dependent",
+        "dressing": "Independent",
+        "toileting": "Needs Reminders",
+        "transferring": "Two Person Transfer",
+        "eating": "Fully Dependent",
+        "medication": "Independent"
+      },
+      "mobility": {
+        "equipment": "Hoyer Lift Required",
+        "fall_risk": "Moderate",
+        "requires_assistance": false
+      },
+      "assessment_scores": {
+        "mmse_score": 28,
+        "functional_score": 80,
+        "pain_level": 4,
+        "depression_screen": "Negative"
+      },
+      "social_profile": {
+        "sociability": "Moderately Social",
+        "activity_preference": "One-on-One",
+        "behavioral_concerns": null
+      },
+      "family_context": {
+        "primary_contact_relationship": "Grandchild",
+        "involvement_level": "Moderately Involved - Visits Monthly",
+        "decision_maker": true,
+        "lives_nearby": false,
+        "financial_poa": false
+      },
+      "community_matching_flags": {
+        "requires_memory_care": false,
+        "requires_insulin_management": false,
+        "requires_wound_care": false,
+        "requires_physical_therapy": false,
+        "requires_hoyer_lift": false,
+        "requires_two_person_transfer": true,
+        "requires_bariatric_care": false,
+        "prefers_pets_allowed": true,
+        "prefers_private_room": true,
+        "prefers_full_kitchen": false,
+        "prefers_outdoor_space": false,
+        "prefers_pool": false,
+        "language_preference": null,
+        "religious_preference": null,
+        "budget_max": 6000,
+        "budget_flexible": true,
+        "medical_services_needed": []
+      },
+      "move_in_urgency": "Exploring (3+ months)",
+      "preferred_move_in_date": "2025-12-28",
+      "intake_notes": "Initial assessment completed. David Garcia is a 74-year-old male interested in Assisted Living. Family is moderately involved - visits monthly.",
+      "enriched_at": "2025-11-06T18:44:45.500449"
     },
     {
       "user_id": "synthetic_aug2025_001",
@@ -176,7 +505,73 @@
       "zip_code": "97201",
       "status": "moved_in",
       "created_at": 1762373517.4288619,
-      "data_source": "synthetic_generator_aug2025"
+      "data_source": "synthetic_generator_aug2025",
+      "age": 78,
+      "gender": "Male",
+      "date_of_birth": "1947-11-07",
+      "medical_conditions": [
+        "Hypertension",
+        "Anxiety"
+      ],
+      "medication_count": 4,
+      "allergies": "None Known",
+      "diet_restrictions": "Low Sodium",
+      "adl_assessment": {
+        "bathing": "Fully Dependent",
+        "dressing": "Needs Reminders",
+        "toileting": "Fully Dependent",
+        "transferring": "Independent",
+        "eating": "Fully Dependent",
+        "medication": "Needs Reminders"
+      },
+      "mobility": {
+        "equipment": "Hoyer Lift Required",
+        "fall_risk": "High",
+        "requires_assistance": false
+      },
+      "assessment_scores": {
+        "mmse_score": 25,
+        "functional_score": 62,
+        "pain_level": 4,
+        "depression_screen": "Not Assessed"
+      },
+      "social_profile": {
+        "sociability": "Very Social",
+        "activity_preference": "Varies",
+        "behavioral_concerns": "None"
+      },
+      "family_context": {
+        "primary_contact_relationship": "Spouse",
+        "involvement_level": "Minimal Contact",
+        "decision_maker": false,
+        "lives_nearby": false,
+        "financial_poa": false
+      },
+      "community_matching_flags": {
+        "requires_memory_care": false,
+        "requires_insulin_management": false,
+        "requires_wound_care": false,
+        "requires_physical_therapy": true,
+        "requires_hoyer_lift": false,
+        "requires_two_person_transfer": false,
+        "requires_bariatric_care": false,
+        "prefers_pets_allowed": false,
+        "prefers_private_room": true,
+        "prefers_full_kitchen": true,
+        "prefers_outdoor_space": true,
+        "prefers_pool": false,
+        "language_preference": "Chinese",
+        "religious_preference": null,
+        "budget_max": 5000,
+        "budget_flexible": false,
+        "medical_services_needed": [
+          "Physical Therapy"
+        ]
+      },
+      "move_in_urgency": "Exploring (3+ months)",
+      "preferred_move_in_date": "2025-12-20",
+      "intake_notes": "Initial assessment completed. Richard Jackson is a 78-year-old male interested in Assisted Living. Family is minimal contact.",
+      "enriched_at": "2025-11-06T18:44:45.500467"
     },
     {
       "user_id": "synthetic_aug2025_018",
@@ -205,7 +600,71 @@
       "zip_code": "98004",
       "status": "touring",
       "created_at": 1762474982.264028,
-      "data_source": "synthetic_generator_aug2025"
+      "data_source": "synthetic_generator_aug2025",
+      "age": 70,
+      "gender": "Male",
+      "date_of_birth": "1955-11-07",
+      "medical_conditions": [
+        "Osteoporosis",
+        "Dementia - Moderate Stage"
+      ],
+      "medication_count": 8,
+      "allergies": "Penicillin",
+      "diet_restrictions": "Pureed",
+      "adl_assessment": {
+        "bathing": "Independent",
+        "dressing": "Needs Reminders",
+        "toileting": "Needs Reminders",
+        "transferring": "Independent",
+        "eating": "Needs Feeding Assistance",
+        "medication": "Needs Reminders"
+      },
+      "mobility": {
+        "equipment": "None",
+        "fall_risk": "Low",
+        "requires_assistance": false
+      },
+      "assessment_scores": {
+        "mmse_score": 14,
+        "functional_score": 74,
+        "pain_level": 4,
+        "depression_screen": "Mild"
+      },
+      "social_profile": {
+        "sociability": "Very Social",
+        "activity_preference": "Group Activities",
+        "behavioral_concerns": "Wandering Risk"
+      },
+      "family_context": {
+        "primary_contact_relationship": "Friend/Neighbor",
+        "involvement_level": "Limited Involvement - Out of State",
+        "decision_maker": false,
+        "lives_nearby": true,
+        "financial_poa": true
+      },
+      "community_matching_flags": {
+        "requires_memory_care": true,
+        "requires_insulin_management": false,
+        "requires_wound_care": false,
+        "requires_physical_therapy": false,
+        "requires_hoyer_lift": false,
+        "requires_two_person_transfer": false,
+        "requires_bariatric_care": false,
+        "prefers_pets_allowed": true,
+        "prefers_private_room": true,
+        "prefers_full_kitchen": true,
+        "prefers_outdoor_space": true,
+        "prefers_pool": false,
+        "language_preference": null,
+        "religious_preference": "Jewish Services",
+        "budget_max": 7000,
+        "budget_flexible": true,
+        "medical_services_needed": []
+      },
+      "move_in_urgency": "Soon (2-4 weeks)",
+      "preferred_move_in_date": "2025-12-21",
+      "intake_notes": "Initial assessment completed. Matthew Lopez is a 70-year-old male interested in Memory Care. Family is limited involvement - out of state.",
+      "enriched_at": "2025-11-06T18:44:45.500484"
     },
     {
       "user_id": "synthetic_aug2025_012",
@@ -234,7 +693,72 @@
       "zip_code": "98101",
       "status": "moved_in",
       "created_at": 1762474982.263942,
-      "data_source": "synthetic_generator_aug2025"
+      "data_source": "synthetic_generator_aug2025",
+      "age": 73,
+      "gender": "Male",
+      "date_of_birth": "1952-11-06",
+      "medical_conditions": [
+        "Diabetes Type 2",
+        "Depression",
+        "Dementia - Moderate Stage"
+      ],
+      "medication_count": 3,
+      "allergies": "Latex",
+      "diet_restrictions": "Pureed",
+      "adl_assessment": {
+        "bathing": "Independent",
+        "dressing": "Fully Dependent",
+        "toileting": "Independent",
+        "transferring": "Two Person Transfer",
+        "eating": "Needs Setup",
+        "medication": "Needs Administration"
+      },
+      "mobility": {
+        "equipment": "Cane",
+        "fall_risk": "Low",
+        "requires_assistance": false
+      },
+      "assessment_scores": {
+        "mmse_score": 18,
+        "functional_score": 71,
+        "pain_level": 3,
+        "depression_screen": "Moderate"
+      },
+      "social_profile": {
+        "sociability": "Withdrawn",
+        "activity_preference": "One-on-One",
+        "behavioral_concerns": null
+      },
+      "family_context": {
+        "primary_contact_relationship": "Spouse",
+        "involvement_level": "Moderately Involved - Visits Monthly",
+        "decision_maker": true,
+        "lives_nearby": false,
+        "financial_poa": false
+      },
+      "community_matching_flags": {
+        "requires_memory_care": true,
+        "requires_insulin_management": false,
+        "requires_wound_care": false,
+        "requires_physical_therapy": false,
+        "requires_hoyer_lift": false,
+        "requires_two_person_transfer": false,
+        "requires_bariatric_care": true,
+        "prefers_pets_allowed": true,
+        "prefers_private_room": true,
+        "prefers_full_kitchen": false,
+        "prefers_outdoor_space": true,
+        "prefers_pool": false,
+        "language_preference": null,
+        "religious_preference": "Non-denominational",
+        "budget_max": 8000,
+        "budget_flexible": false,
+        "medical_services_needed": []
+      },
+      "move_in_urgency": "Planning (1-3 months)",
+      "preferred_move_in_date": "2025-12-05",
+      "intake_notes": "Initial assessment completed. Michael Taylor is a 73-year-old male interested in Memory Care. Family is moderately involved - visits monthly.",
+      "enriched_at": "2025-11-06T18:44:45.500504"
     },
     {
       "user_id": "synthetic_aug2025_015",
@@ -263,7 +787,74 @@
       "zip_code": "98402",
       "status": "moved_in",
       "created_at": 1762474982.263986,
-      "data_source": "synthetic_generator_aug2025"
+      "data_source": "synthetic_generator_aug2025",
+      "age": 81,
+      "gender": "Female",
+      "date_of_birth": "1944-11-06",
+      "medical_conditions": [
+        "Dementia - Moderate Stage",
+        "Mild Cognitive Impairment",
+        "Chronic Pain",
+        "Anxiety",
+        "Dementia - Early Stage"
+      ],
+      "medication_count": 3,
+      "allergies": null,
+      "diet_restrictions": "Thickened Liquids",
+      "adl_assessment": {
+        "bathing": "Independent",
+        "dressing": "Needs Reminders",
+        "toileting": "Needs Reminders",
+        "transferring": "Two Person Transfer",
+        "eating": "Independent",
+        "medication": "Independent"
+      },
+      "mobility": {
+        "equipment": "Walker",
+        "fall_risk": "Low",
+        "requires_assistance": true
+      },
+      "assessment_scores": {
+        "mmse_score": 20,
+        "functional_score": 64,
+        "pain_level": 0,
+        "depression_screen": "Not Assessed"
+      },
+      "social_profile": {
+        "sociability": "Moderately Social",
+        "activity_preference": "One-on-One",
+        "behavioral_concerns": null
+      },
+      "family_context": {
+        "primary_contact_relationship": "Self",
+        "involvement_level": "Primary Decision Maker - Local",
+        "decision_maker": false,
+        "lives_nearby": false,
+        "financial_poa": false
+      },
+      "community_matching_flags": {
+        "requires_memory_care": true,
+        "requires_insulin_management": false,
+        "requires_wound_care": false,
+        "requires_physical_therapy": false,
+        "requires_hoyer_lift": false,
+        "requires_two_person_transfer": false,
+        "requires_bariatric_care": false,
+        "prefers_pets_allowed": false,
+        "prefers_private_room": false,
+        "prefers_full_kitchen": false,
+        "prefers_outdoor_space": true,
+        "prefers_pool": false,
+        "language_preference": null,
+        "religious_preference": null,
+        "budget_max": 5000,
+        "budget_flexible": false,
+        "medical_services_needed": []
+      },
+      "move_in_urgency": "Immediate (< 2 weeks)",
+      "preferred_move_in_date": "2025-12-24",
+      "intake_notes": "Initial assessment completed. Barbara Rodriguez is a 81-year-old female interested in Memory Care. Family is primary decision maker - local.",
+      "enriched_at": "2025-11-06T18:44:45.500531"
     },
     {
       "user_id": "synthetic_aug2025_011",
@@ -292,7 +883,75 @@
       "zip_code": "98402",
       "status": "moved_in",
       "created_at": 1762474982.263918,
-      "data_source": "synthetic_generator_aug2025"
+      "data_source": "synthetic_generator_aug2025",
+      "age": 76,
+      "gender": "Female",
+      "date_of_birth": "1949-11-06",
+      "medical_conditions": [
+        "Parkinson's Disease",
+        "Arthritis",
+        "Anxiety",
+        "Dementia - Early Stage"
+      ],
+      "medication_count": 8,
+      "allergies": null,
+      "diet_restrictions": "Thickened Liquids",
+      "adl_assessment": {
+        "bathing": "Independent",
+        "dressing": "Fully Dependent",
+        "toileting": "Needs Assistance",
+        "transferring": "Independent",
+        "eating": "Independent",
+        "medication": "Needs Reminders"
+      },
+      "mobility": {
+        "equipment": "Hoyer Lift Required",
+        "fall_risk": "Moderate",
+        "requires_assistance": false
+      },
+      "assessment_scores": {
+        "mmse_score": 22,
+        "functional_score": 85,
+        "pain_level": 5,
+        "depression_screen": "Moderate"
+      },
+      "social_profile": {
+        "sociability": "Moderately Social",
+        "activity_preference": "Group Activities",
+        "behavioral_concerns": null
+      },
+      "family_context": {
+        "primary_contact_relationship": "Grandchild",
+        "involvement_level": "Limited Involvement - Out of State",
+        "decision_maker": false,
+        "lives_nearby": true,
+        "financial_poa": true
+      },
+      "community_matching_flags": {
+        "requires_memory_care": false,
+        "requires_insulin_management": false,
+        "requires_wound_care": true,
+        "requires_physical_therapy": false,
+        "requires_hoyer_lift": false,
+        "requires_two_person_transfer": false,
+        "requires_bariatric_care": false,
+        "prefers_pets_allowed": true,
+        "prefers_private_room": false,
+        "prefers_full_kitchen": false,
+        "prefers_outdoor_space": false,
+        "prefers_pool": false,
+        "language_preference": null,
+        "religious_preference": null,
+        "budget_max": 9000,
+        "budget_flexible": true,
+        "medical_services_needed": [
+          "Wound Care"
+        ]
+      },
+      "move_in_urgency": "Immediate (< 2 weeks)",
+      "preferred_move_in_date": "2025-11-21",
+      "intake_notes": "Initial assessment completed. Patricia Anderson is a 76-year-old female interested in Assisted Living. Family is limited involvement - out of state.",
+      "enriched_at": "2025-11-06T18:44:45.500548"
     },
     {
       "user_id": "synthetic_aug2025_023",
@@ -321,7 +980,72 @@
       "zip_code": "98101",
       "status": "touring",
       "created_at": 1762474982.264086,
-      "data_source": "synthetic_generator_aug2025"
+      "data_source": "synthetic_generator_aug2025",
+      "age": 68,
+      "gender": "Female",
+      "date_of_birth": "1957-11-06",
+      "medical_conditions": [
+        "Osteoporosis"
+      ],
+      "medication_count": 8,
+      "allergies": "Latex",
+      "diet_restrictions": "Low Sodium",
+      "adl_assessment": {
+        "bathing": "Needs Reminders",
+        "dressing": "Fully Dependent",
+        "toileting": "Fully Dependent",
+        "transferring": "Needs Assistance",
+        "eating": "Independent",
+        "medication": "Needs Reminders"
+      },
+      "mobility": {
+        "equipment": "Hoyer Lift Required",
+        "fall_risk": "High",
+        "requires_assistance": true
+      },
+      "assessment_scores": {
+        "mmse_score": 29,
+        "functional_score": 78,
+        "pain_level": 5,
+        "depression_screen": "Mild"
+      },
+      "social_profile": {
+        "sociability": "Very Social",
+        "activity_preference": "Group Activities",
+        "behavioral_concerns": null
+      },
+      "family_context": {
+        "primary_contact_relationship": "Grandchild",
+        "involvement_level": "Moderately Involved - Visits Monthly",
+        "decision_maker": true,
+        "lives_nearby": false,
+        "financial_poa": false
+      },
+      "community_matching_flags": {
+        "requires_memory_care": false,
+        "requires_insulin_management": false,
+        "requires_wound_care": false,
+        "requires_physical_therapy": true,
+        "requires_hoyer_lift": false,
+        "requires_two_person_transfer": false,
+        "requires_bariatric_care": false,
+        "prefers_pets_allowed": false,
+        "prefers_private_room": true,
+        "prefers_full_kitchen": false,
+        "prefers_outdoor_space": true,
+        "prefers_pool": true,
+        "language_preference": null,
+        "religious_preference": null,
+        "budget_max": 9000,
+        "budget_flexible": false,
+        "medical_services_needed": [
+          "Physical Therapy"
+        ]
+      },
+      "move_in_urgency": "Immediate (< 2 weeks)",
+      "preferred_move_in_date": "2025-12-06",
+      "intake_notes": "Initial assessment completed. Jennifer Lee is a 68-year-old female interested in Assisted Living. Family is moderately involved - visits monthly.",
+      "enriched_at": "2025-11-06T18:44:45.500566"
     },
     {
       "user_id": "synthetic_aug2025_002",
@@ -350,7 +1074,72 @@
       "zip_code": "97201",
       "status": "moved_in",
       "created_at": 1762373517.4288871,
-      "data_source": "synthetic_generator_aug2025"
+      "data_source": "synthetic_generator_aug2025",
+      "age": 82,
+      "gender": "Female",
+      "date_of_birth": "1943-11-07",
+      "medical_conditions": [
+        "Vision Impairment",
+        "Stroke History",
+        "Dementia - Moderate Stage"
+      ],
+      "medication_count": 4,
+      "allergies": "Penicillin",
+      "diet_restrictions": "Diabetic",
+      "adl_assessment": {
+        "bathing": "Needs Reminders",
+        "dressing": "Needs Reminders",
+        "toileting": "Needs Assistance",
+        "transferring": "Independent",
+        "eating": "Fully Dependent",
+        "medication": "Needs Administration"
+      },
+      "mobility": {
+        "equipment": "Hoyer Lift Required",
+        "fall_risk": "High",
+        "requires_assistance": false
+      },
+      "assessment_scores": {
+        "mmse_score": 12,
+        "functional_score": 63,
+        "pain_level": 4,
+        "depression_screen": "Negative"
+      },
+      "social_profile": {
+        "sociability": "Very Social",
+        "activity_preference": "Independent",
+        "behavioral_concerns": null
+      },
+      "family_context": {
+        "primary_contact_relationship": "Adult Son",
+        "involvement_level": "Very Involved - Visits Weekly",
+        "decision_maker": true,
+        "lives_nearby": true,
+        "financial_poa": true
+      },
+      "community_matching_flags": {
+        "requires_memory_care": true,
+        "requires_insulin_management": false,
+        "requires_wound_care": false,
+        "requires_physical_therapy": false,
+        "requires_hoyer_lift": false,
+        "requires_two_person_transfer": false,
+        "requires_bariatric_care": false,
+        "prefers_pets_allowed": true,
+        "prefers_private_room": false,
+        "prefers_full_kitchen": false,
+        "prefers_outdoor_space": false,
+        "prefers_pool": false,
+        "language_preference": null,
+        "religious_preference": null,
+        "budget_max": 4500,
+        "budget_flexible": true,
+        "medical_services_needed": []
+      },
+      "move_in_urgency": "Exploring (3+ months)",
+      "preferred_move_in_date": "2026-01-23",
+      "intake_notes": "Initial assessment completed. Joan Williams is a 82-year-old female interested in Memory Care. Family is very involved - visits weekly.",
+      "enriched_at": "2025-11-06T18:44:45.500586"
     },
     {
       "user_id": "synthetic_aug2025_022",
@@ -379,7 +1168,75 @@
       "zip_code": "98101",
       "status": "touring",
       "created_at": 1762474982.264074,
-      "data_source": "synthetic_generator_aug2025"
+      "data_source": "synthetic_generator_aug2025",
+      "age": 75,
+      "gender": "Male",
+      "date_of_birth": "1950-11-07",
+      "medical_conditions": [
+        "Hearing Loss",
+        "Arthritis",
+        "Dementia - Early Stage",
+        "Stroke History"
+      ],
+      "medication_count": 6,
+      "allergies": "Sulfa Drugs",
+      "diet_restrictions": null,
+      "adl_assessment": {
+        "bathing": "Needs Assistance",
+        "dressing": "Fully Dependent",
+        "toileting": "Needs Reminders",
+        "transferring": "Independent",
+        "eating": "Independent",
+        "medication": "Needs Reminders"
+      },
+      "mobility": {
+        "equipment": "Wheelchair - Power",
+        "fall_risk": "Low",
+        "requires_assistance": true
+      },
+      "assessment_scores": {
+        "mmse_score": 22,
+        "functional_score": 80,
+        "pain_level": 1,
+        "depression_screen": "Negative"
+      },
+      "social_profile": {
+        "sociability": "Moderately Social",
+        "activity_preference": "Independent",
+        "behavioral_concerns": "Sundowning"
+      },
+      "family_context": {
+        "primary_contact_relationship": "Spouse",
+        "involvement_level": "Moderately Involved - Visits Monthly",
+        "decision_maker": false,
+        "lives_nearby": false,
+        "financial_poa": true
+      },
+      "community_matching_flags": {
+        "requires_memory_care": false,
+        "requires_insulin_management": true,
+        "requires_wound_care": false,
+        "requires_physical_therapy": false,
+        "requires_hoyer_lift": false,
+        "requires_two_person_transfer": false,
+        "requires_bariatric_care": false,
+        "prefers_pets_allowed": false,
+        "prefers_private_room": false,
+        "prefers_full_kitchen": false,
+        "prefers_outdoor_space": true,
+        "prefers_pool": false,
+        "language_preference": null,
+        "religious_preference": null,
+        "budget_max": 5000,
+        "budget_flexible": true,
+        "medical_services_needed": [
+          "Insulin Management"
+        ]
+      },
+      "move_in_urgency": "Soon (2-4 weeks)",
+      "preferred_move_in_date": "2026-02-03",
+      "intake_notes": "Initial assessment completed. Joseph Brown is a 75-year-old male interested in In Home. Family is moderately involved - visits monthly.",
+      "enriched_at": "2025-11-06T18:44:45.500604"
     },
     {
       "user_id": "synthetic_aug2025_016",
@@ -408,7 +1265,75 @@
       "zip_code": "98101",
       "status": "touring",
       "created_at": 1762474982.263998,
-      "data_source": "synthetic_generator_aug2025"
+      "data_source": "synthetic_generator_aug2025",
+      "age": 72,
+      "gender": "Male",
+      "date_of_birth": "1953-11-06",
+      "medical_conditions": [
+        "Osteoporosis",
+        "COPD",
+        "Diabetes Type 2",
+        "Anxiety"
+      ],
+      "medication_count": 6,
+      "allergies": "Penicillin",
+      "diet_restrictions": "Pureed",
+      "adl_assessment": {
+        "bathing": "Independent",
+        "dressing": "Fully Dependent",
+        "toileting": "Needs Assistance",
+        "transferring": "Two Person Transfer",
+        "eating": "Needs Feeding Assistance",
+        "medication": "Injectable Meds"
+      },
+      "mobility": {
+        "equipment": "Transfer Equipment",
+        "fall_risk": "High",
+        "requires_assistance": false
+      },
+      "assessment_scores": {
+        "mmse_score": 30,
+        "functional_score": 59,
+        "pain_level": 4,
+        "depression_screen": "Mild"
+      },
+      "social_profile": {
+        "sociability": "Withdrawn",
+        "activity_preference": "Group Activities",
+        "behavioral_concerns": "Wandering Risk"
+      },
+      "family_context": {
+        "primary_contact_relationship": "Professional Guardian",
+        "involvement_level": "Very Involved - Visits Weekly",
+        "decision_maker": false,
+        "lives_nearby": true,
+        "financial_poa": false
+      },
+      "community_matching_flags": {
+        "requires_memory_care": false,
+        "requires_insulin_management": true,
+        "requires_wound_care": false,
+        "requires_physical_therapy": false,
+        "requires_hoyer_lift": false,
+        "requires_two_person_transfer": false,
+        "requires_bariatric_care": false,
+        "prefers_pets_allowed": false,
+        "prefers_private_room": true,
+        "prefers_full_kitchen": false,
+        "prefers_outdoor_space": true,
+        "prefers_pool": false,
+        "language_preference": null,
+        "religious_preference": "Non-denominational",
+        "budget_max": 10000,
+        "budget_flexible": false,
+        "medical_services_needed": [
+          "Insulin Management"
+        ]
+      },
+      "move_in_urgency": "Immediate (< 2 weeks)",
+      "preferred_move_in_date": "2026-01-31",
+      "intake_notes": "Initial assessment completed. Christopher Miller is a 72-year-old male interested in In Home. Family is very involved - visits weekly.",
+      "enriched_at": "2025-11-06T18:44:45.500622"
     },
     {
       "user_id": "synthetic_aug2025_020",
@@ -437,7 +1362,71 @@
       "zip_code": "98402",
       "status": "touring",
       "created_at": 1762474982.264051,
-      "data_source": "synthetic_generator_aug2025"
+      "data_source": "synthetic_generator_aug2025",
+      "age": 82,
+      "gender": "Male",
+      "date_of_birth": "1943-11-07",
+      "medical_conditions": [
+        "Stroke History",
+        "Hypertension"
+      ],
+      "medication_count": 7,
+      "allergies": "Penicillin",
+      "diet_restrictions": "Thickened Liquids",
+      "adl_assessment": {
+        "bathing": "Fully Dependent",
+        "dressing": "Needs Reminders",
+        "toileting": "Needs Assistance",
+        "transferring": "Requires Equipment",
+        "eating": "Independent",
+        "medication": "Needs Administration"
+      },
+      "mobility": {
+        "equipment": "Wheelchair - Manual",
+        "fall_risk": "Low",
+        "requires_assistance": true
+      },
+      "assessment_scores": {
+        "mmse_score": 17,
+        "functional_score": 94,
+        "pain_level": 5,
+        "depression_screen": "Not Assessed"
+      },
+      "social_profile": {
+        "sociability": "Withdrawn",
+        "activity_preference": "Varies",
+        "behavioral_concerns": "Agitation"
+      },
+      "family_context": {
+        "primary_contact_relationship": "Adult Son",
+        "involvement_level": "Moderately Involved - Visits Monthly",
+        "decision_maker": false,
+        "lives_nearby": true,
+        "financial_poa": false
+      },
+      "community_matching_flags": {
+        "requires_memory_care": false,
+        "requires_insulin_management": false,
+        "requires_wound_care": false,
+        "requires_physical_therapy": false,
+        "requires_hoyer_lift": false,
+        "requires_two_person_transfer": false,
+        "requires_bariatric_care": false,
+        "prefers_pets_allowed": false,
+        "prefers_private_room": true,
+        "prefers_full_kitchen": false,
+        "prefers_outdoor_space": true,
+        "prefers_pool": false,
+        "language_preference": null,
+        "religious_preference": null,
+        "budget_max": 5000,
+        "budget_flexible": true,
+        "medical_services_needed": []
+      },
+      "move_in_urgency": "Soon (2-4 weeks)",
+      "preferred_move_in_date": "2026-01-09",
+      "intake_notes": "Initial assessment completed. Daniel Hernandez is a 82-year-old male interested in Assisted Living. Family is moderately involved - visits monthly.",
+      "enriched_at": "2025-11-06T18:44:45.500638"
     },
     {
       "user_id": "synthetic_aug2025_005",
@@ -466,7 +1455,73 @@
       "zip_code": "97201",
       "status": "moved_in",
       "created_at": 1762373517.4289339,
-      "data_source": "synthetic_generator_aug2025"
+      "data_source": "synthetic_generator_aug2025",
+      "age": 81,
+      "gender": "Male",
+      "date_of_birth": "1944-11-06",
+      "medical_conditions": [
+        "Parkinson's Disease",
+        "Stroke History"
+      ],
+      "medication_count": 4,
+      "allergies": "Sulfa Drugs",
+      "diet_restrictions": "Low Sodium",
+      "adl_assessment": {
+        "bathing": "Needs Reminders",
+        "dressing": "Independent",
+        "toileting": "Needs Reminders",
+        "transferring": "Two Person Transfer",
+        "eating": "Fully Dependent",
+        "medication": "Independent"
+      },
+      "mobility": {
+        "equipment": "Wheelchair - Power",
+        "fall_risk": "Moderate",
+        "requires_assistance": true
+      },
+      "assessment_scores": {
+        "mmse_score": 29,
+        "functional_score": 61,
+        "pain_level": 6,
+        "depression_screen": "Negative"
+      },
+      "social_profile": {
+        "sociability": "Very Social",
+        "activity_preference": "Varies",
+        "behavioral_concerns": null
+      },
+      "family_context": {
+        "primary_contact_relationship": "Adult Son",
+        "involvement_level": "Minimal Contact",
+        "decision_maker": true,
+        "lives_nearby": false,
+        "financial_poa": true
+      },
+      "community_matching_flags": {
+        "requires_memory_care": false,
+        "requires_insulin_management": true,
+        "requires_wound_care": false,
+        "requires_physical_therapy": false,
+        "requires_hoyer_lift": true,
+        "requires_two_person_transfer": true,
+        "requires_bariatric_care": false,
+        "prefers_pets_allowed": false,
+        "prefers_private_room": false,
+        "prefers_full_kitchen": true,
+        "prefers_outdoor_space": false,
+        "prefers_pool": false,
+        "language_preference": null,
+        "religious_preference": "Jewish Services",
+        "budget_max": 10000,
+        "budget_flexible": true,
+        "medical_services_needed": [
+          "Insulin Management"
+        ]
+      },
+      "move_in_urgency": "Immediate (< 2 weeks)",
+      "preferred_move_in_date": "2025-11-22",
+      "intake_notes": "Initial assessment completed. Robert Williams is a 81-year-old male interested in Assisted Living. Family is minimal contact.",
+      "enriched_at": "2025-11-06T18:44:45.500653"
     },
     {
       "user_id": "synthetic_aug2025_007",
@@ -495,7 +1550,76 @@
       "zip_code": "98402",
       "status": "moved_in",
       "created_at": 1762373517.42896,
-      "data_source": "synthetic_generator_aug2025"
+      "data_source": "synthetic_generator_aug2025",
+      "age": 88,
+      "gender": "Male",
+      "date_of_birth": "1937-11-06",
+      "medical_conditions": [
+        "Hypertension",
+        "Depression",
+        "Dementia - Moderate Stage",
+        "Dementia - Early Stage",
+        "Parkinson's Disease"
+      ],
+      "medication_count": 4,
+      "allergies": "Sulfa Drugs",
+      "diet_restrictions": "Diabetic",
+      "adl_assessment": {
+        "bathing": "Independent",
+        "dressing": "Independent",
+        "toileting": "Needs Reminders",
+        "transferring": "Independent",
+        "eating": "Independent",
+        "medication": "Independent"
+      },
+      "mobility": {
+        "equipment": "Cane",
+        "fall_risk": "High",
+        "requires_assistance": false
+      },
+      "assessment_scores": {
+        "mmse_score": 17,
+        "functional_score": 61,
+        "pain_level": 2,
+        "depression_screen": "Mild"
+      },
+      "social_profile": {
+        "sociability": "Prefers Quiet",
+        "activity_preference": "Group Activities",
+        "behavioral_concerns": null
+      },
+      "family_context": {
+        "primary_contact_relationship": "Adult Daughter",
+        "involvement_level": "Limited Involvement - Out of State",
+        "decision_maker": true,
+        "lives_nearby": true,
+        "financial_poa": true
+      },
+      "community_matching_flags": {
+        "requires_memory_care": false,
+        "requires_insulin_management": false,
+        "requires_wound_care": false,
+        "requires_physical_therapy": true,
+        "requires_hoyer_lift": false,
+        "requires_two_person_transfer": true,
+        "requires_bariatric_care": false,
+        "prefers_pets_allowed": true,
+        "prefers_private_room": true,
+        "prefers_full_kitchen": false,
+        "prefers_outdoor_space": false,
+        "prefers_pool": false,
+        "language_preference": null,
+        "religious_preference": null,
+        "budget_max": 4500,
+        "budget_flexible": true,
+        "medical_services_needed": [
+          "Physical Therapy"
+        ]
+      },
+      "move_in_urgency": "Planning (1-3 months)",
+      "preferred_move_in_date": "2026-01-07",
+      "intake_notes": "Initial assessment completed. James Moore is a 88-year-old male interested in Assisted Living. Family is limited involvement - out of state.",
+      "enriched_at": "2025-11-06T18:44:45.500670"
     },
     {
       "user_id": "synthetic_aug2025_013",
@@ -524,7 +1648,73 @@
       "zip_code": "98402",
       "status": "moved_in",
       "created_at": 1762474982.263959,
-      "data_source": "synthetic_generator_aug2025"
+      "data_source": "synthetic_generator_aug2025",
+      "age": 77,
+      "gender": "Female",
+      "date_of_birth": "1948-11-06",
+      "medical_conditions": [
+        "Vision Impairment"
+      ],
+      "medication_count": 5,
+      "allergies": "Sulfa Drugs",
+      "diet_restrictions": "Low Sodium",
+      "adl_assessment": {
+        "bathing": "Independent",
+        "dressing": "Needs Reminders",
+        "toileting": "Needs Reminders",
+        "transferring": "Requires Equipment",
+        "eating": "Independent",
+        "medication": "Independent"
+      },
+      "mobility": {
+        "equipment": "Transfer Equipment",
+        "fall_risk": "High",
+        "requires_assistance": false
+      },
+      "assessment_scores": {
+        "mmse_score": 30,
+        "functional_score": 79,
+        "pain_level": 5,
+        "depression_screen": "Not Assessed"
+      },
+      "social_profile": {
+        "sociability": "Prefers Quiet",
+        "activity_preference": "Group Activities",
+        "behavioral_concerns": "Wandering Risk"
+      },
+      "family_context": {
+        "primary_contact_relationship": "Adult Daughter",
+        "involvement_level": "Very Involved - Visits Weekly",
+        "decision_maker": false,
+        "lives_nearby": true,
+        "financial_poa": true
+      },
+      "community_matching_flags": {
+        "requires_memory_care": false,
+        "requires_insulin_management": false,
+        "requires_wound_care": true,
+        "requires_physical_therapy": true,
+        "requires_hoyer_lift": true,
+        "requires_two_person_transfer": false,
+        "requires_bariatric_care": false,
+        "prefers_pets_allowed": false,
+        "prefers_private_room": true,
+        "prefers_full_kitchen": false,
+        "prefers_outdoor_space": true,
+        "prefers_pool": false,
+        "language_preference": null,
+        "religious_preference": "Christian Chapel",
+        "budget_max": 8000,
+        "budget_flexible": false,
+        "medical_services_needed": [
+          "Wound Care",
+          "Physical Therapy"
+        ]
+      },
+      "move_in_urgency": "Immediate (< 2 weeks)",
+      "preferred_move_in_date": "2025-12-24",
+      "intake_notes": "Initial assessment completed. Susan Martinez is a 77-year-old female interested in In Home. Family is very involved - visits weekly.",
+      "enriched_at": "2025-11-06T18:44:45.500686"
     },
     {
       "user_id": "synthetic_aug2025_010",
@@ -553,7 +1743,75 @@
       "zip_code": "97201",
       "status": "moved_in",
       "created_at": 1762373517.428999,
-      "data_source": "synthetic_generator_aug2025"
+      "data_source": "synthetic_generator_aug2025",
+      "age": 79,
+      "gender": "Male",
+      "date_of_birth": "1946-11-07",
+      "medical_conditions": [
+        "Osteoporosis",
+        "Arthritis",
+        "Dementia - Early Stage",
+        "Parkinson's Disease"
+      ],
+      "medication_count": 8,
+      "allergies": "Penicillin",
+      "diet_restrictions": "Pureed",
+      "adl_assessment": {
+        "bathing": "Needs Reminders",
+        "dressing": "Fully Dependent",
+        "toileting": "Independent",
+        "transferring": "Requires Equipment",
+        "eating": "Fully Dependent",
+        "medication": "Needs Reminders"
+      },
+      "mobility": {
+        "equipment": "Cane",
+        "fall_risk": "Low",
+        "requires_assistance": false
+      },
+      "assessment_scores": {
+        "mmse_score": 17,
+        "functional_score": 76,
+        "pain_level": 2,
+        "depression_screen": "Negative"
+      },
+      "social_profile": {
+        "sociability": "Withdrawn",
+        "activity_preference": "Independent",
+        "behavioral_concerns": "Wandering Risk"
+      },
+      "family_context": {
+        "primary_contact_relationship": "Adult Son",
+        "involvement_level": "Primary Decision Maker - Local",
+        "decision_maker": true,
+        "lives_nearby": true,
+        "financial_poa": false
+      },
+      "community_matching_flags": {
+        "requires_memory_care": false,
+        "requires_insulin_management": false,
+        "requires_wound_care": false,
+        "requires_physical_therapy": true,
+        "requires_hoyer_lift": true,
+        "requires_two_person_transfer": false,
+        "requires_bariatric_care": false,
+        "prefers_pets_allowed": true,
+        "prefers_private_room": true,
+        "prefers_full_kitchen": false,
+        "prefers_outdoor_space": true,
+        "prefers_pool": false,
+        "language_preference": null,
+        "religious_preference": "Non-denominational",
+        "budget_max": 4500,
+        "budget_flexible": false,
+        "medical_services_needed": [
+          "Physical Therapy"
+        ]
+      },
+      "move_in_urgency": "Exploring (3+ months)",
+      "preferred_move_in_date": "2025-12-28",
+      "intake_notes": "Initial assessment completed. Robert Wilson is a 79-year-old male interested in Assisted Living. Family is primary decision maker - local.",
+      "enriched_at": "2025-11-06T18:44:45.500703"
     },
     {
       "user_id": "synthetic_aug2025_017",
@@ -582,7 +1840,77 @@
       "zip_code": "99201",
       "status": "touring",
       "created_at": 1762474982.264013,
-      "data_source": "synthetic_generator_aug2025"
+      "data_source": "synthetic_generator_aug2025",
+      "age": 85,
+      "gender": "Female",
+      "date_of_birth": "1940-11-06",
+      "medical_conditions": [
+        "Dementia - Moderate Stage",
+        "Heart Disease",
+        "Hypertension",
+        "Mild Cognitive Impairment",
+        "Parkinson's Disease"
+      ],
+      "medication_count": 7,
+      "allergies": "Latex",
+      "diet_restrictions": null,
+      "adl_assessment": {
+        "bathing": "Needs Reminders",
+        "dressing": "Needs Reminders",
+        "toileting": "Independent",
+        "transferring": "Requires Equipment",
+        "eating": "Needs Setup",
+        "medication": "Injectable Meds"
+      },
+      "mobility": {
+        "equipment": "Walker",
+        "fall_risk": "Low",
+        "requires_assistance": false
+      },
+      "assessment_scores": {
+        "mmse_score": 24,
+        "functional_score": 62,
+        "pain_level": 5,
+        "depression_screen": "Not Assessed"
+      },
+      "social_profile": {
+        "sociability": "Prefers Quiet",
+        "activity_preference": "One-on-One",
+        "behavioral_concerns": "Wandering Risk"
+      },
+      "family_context": {
+        "primary_contact_relationship": "Self",
+        "involvement_level": "Very Involved - Visits Weekly",
+        "decision_maker": true,
+        "lives_nearby": false,
+        "financial_poa": false
+      },
+      "community_matching_flags": {
+        "requires_memory_care": false,
+        "requires_insulin_management": false,
+        "requires_wound_care": true,
+        "requires_physical_therapy": true,
+        "requires_hoyer_lift": true,
+        "requires_two_person_transfer": false,
+        "requires_bariatric_care": false,
+        "prefers_pets_allowed": true,
+        "prefers_private_room": true,
+        "prefers_full_kitchen": true,
+        "prefers_outdoor_space": false,
+        "prefers_pool": false,
+        "language_preference": "Chinese",
+        "religious_preference": null,
+        "budget_max": 7000,
+        "budget_flexible": true,
+        "medical_services_needed": [
+          "Wound Care",
+          "Physical Therapy"
+        ]
+      },
+      "move_in_urgency": "Exploring (3+ months)",
+      "preferred_move_in_date": "2026-01-28",
+      "intake_notes": "Initial assessment completed. Linda Davis is a 85-year-old female interested in Assisted Living. Family is very involved - visits weekly.",
+      "enriched_at": "2025-11-06T18:44:45.500719"
     },
     {
       "user_id": "synthetic_aug2025_008",
@@ -611,7 +1939,74 @@
       "zip_code": "99201",
       "status": "moved_in",
       "created_at": 1762373517.428973,
-      "data_source": "synthetic_generator_aug2025"
+      "data_source": "synthetic_generator_aug2025",
+      "age": 69,
+      "gender": "Male",
+      "date_of_birth": "1956-11-06",
+      "medical_conditions": [
+        "Hearing Loss",
+        "Mild Cognitive Impairment",
+        "Depression"
+      ],
+      "medication_count": 3,
+      "allergies": "Latex",
+      "diet_restrictions": "Pureed",
+      "adl_assessment": {
+        "bathing": "Needs Assistance",
+        "dressing": "Needs Assistance",
+        "toileting": "Needs Assistance",
+        "transferring": "Requires Equipment",
+        "eating": "Independent",
+        "medication": "Independent"
+      },
+      "mobility": {
+        "equipment": "Wheelchair - Power",
+        "fall_risk": "Low",
+        "requires_assistance": true
+      },
+      "assessment_scores": {
+        "mmse_score": 28,
+        "functional_score": 95,
+        "pain_level": 1,
+        "depression_screen": "Not Assessed"
+      },
+      "social_profile": {
+        "sociability": "Prefers Quiet",
+        "activity_preference": "Group Activities",
+        "behavioral_concerns": "Sundowning"
+      },
+      "family_context": {
+        "primary_contact_relationship": "Friend/Neighbor",
+        "involvement_level": "Primary Decision Maker - Local",
+        "decision_maker": true,
+        "lives_nearby": false,
+        "financial_poa": false
+      },
+      "community_matching_flags": {
+        "requires_memory_care": false,
+        "requires_insulin_management": false,
+        "requires_wound_care": false,
+        "requires_physical_therapy": true,
+        "requires_hoyer_lift": false,
+        "requires_two_person_transfer": false,
+        "requires_bariatric_care": false,
+        "prefers_pets_allowed": false,
+        "prefers_private_room": true,
+        "prefers_full_kitchen": false,
+        "prefers_outdoor_space": false,
+        "prefers_pool": false,
+        "language_preference": "Vietnamese",
+        "religious_preference": null,
+        "budget_max": 10000,
+        "budget_flexible": true,
+        "medical_services_needed": [
+          "Physical Therapy"
+        ]
+      },
+      "move_in_urgency": "Planning (1-3 months)",
+      "preferred_move_in_date": "2025-12-10",
+      "intake_notes": "Initial assessment completed. Robert Johnson is a 69-year-old male interested in In Home. Family is primary decision maker - local.",
+      "enriched_at": "2025-11-06T18:44:45.500738"
     },
     {
       "user_id": "synthetic_aug2025_003",
@@ -640,7 +2035,73 @@
       "zip_code": "99201",
       "status": "moved_in",
       "created_at": 1762373517.428906,
-      "data_source": "synthetic_generator_aug2025"
+      "data_source": "synthetic_generator_aug2025",
+      "age": 80,
+      "gender": "Female",
+      "date_of_birth": "1945-11-06",
+      "medical_conditions": [
+        "Diabetes Type 2",
+        "Anxiety"
+      ],
+      "medication_count": 4,
+      "allergies": "None Known",
+      "diet_restrictions": null,
+      "adl_assessment": {
+        "bathing": "Needs Assistance",
+        "dressing": "Fully Dependent",
+        "toileting": "Needs Assistance",
+        "transferring": "Independent",
+        "eating": "Independent",
+        "medication": "Needs Administration"
+      },
+      "mobility": {
+        "equipment": "Transfer Equipment",
+        "fall_risk": "Low",
+        "requires_assistance": true
+      },
+      "assessment_scores": {
+        "mmse_score": 28,
+        "functional_score": 52,
+        "pain_level": 4,
+        "depression_screen": "Moderate"
+      },
+      "social_profile": {
+        "sociability": "Very Social",
+        "activity_preference": "One-on-One",
+        "behavioral_concerns": "Sundowning"
+      },
+      "family_context": {
+        "primary_contact_relationship": "Adult Son",
+        "involvement_level": "Limited Involvement - Out of State",
+        "decision_maker": false,
+        "lives_nearby": false,
+        "financial_poa": true
+      },
+      "community_matching_flags": {
+        "requires_memory_care": false,
+        "requires_insulin_management": true,
+        "requires_wound_care": false,
+        "requires_physical_therapy": false,
+        "requires_hoyer_lift": false,
+        "requires_two_person_transfer": false,
+        "requires_bariatric_care": false,
+        "prefers_pets_allowed": false,
+        "prefers_private_room": true,
+        "prefers_full_kitchen": false,
+        "prefers_outdoor_space": true,
+        "prefers_pool": false,
+        "language_preference": null,
+        "religious_preference": null,
+        "budget_max": 8000,
+        "budget_flexible": true,
+        "medical_services_needed": [
+          "Insulin Management"
+        ]
+      },
+      "move_in_urgency": "Immediate (< 2 weeks)",
+      "preferred_move_in_date": "2025-11-20",
+      "intake_notes": "Initial assessment completed. Nancy Wilson is a 80-year-old female interested in In Home. Family is limited involvement - out of state.",
+      "enriched_at": "2025-11-06T18:44:45.500754"
     },
     {
       "user_id": "synthetic_aug2025_009",
@@ -669,7 +2130,75 @@
       "zip_code": "97201",
       "status": "moved_in",
       "created_at": 1762373517.4289868,
-      "data_source": "synthetic_generator_aug2025"
+      "data_source": "synthetic_generator_aug2025",
+      "age": 89,
+      "gender": "Female",
+      "date_of_birth": "1936-11-06",
+      "medical_conditions": [
+        "Chronic Pain",
+        "Vision Impairment"
+      ],
+      "medication_count": 4,
+      "allergies": "Penicillin",
+      "diet_restrictions": "Thickened Liquids",
+      "adl_assessment": {
+        "bathing": "Needs Reminders",
+        "dressing": "Needs Reminders",
+        "toileting": "Needs Reminders",
+        "transferring": "Needs Assistance",
+        "eating": "Independent",
+        "medication": "Needs Reminders"
+      },
+      "mobility": {
+        "equipment": "None",
+        "fall_risk": "High",
+        "requires_assistance": true
+      },
+      "assessment_scores": {
+        "mmse_score": 21,
+        "functional_score": 64,
+        "pain_level": 4,
+        "depression_screen": "Negative"
+      },
+      "social_profile": {
+        "sociability": "Very Social",
+        "activity_preference": "One-on-One",
+        "behavioral_concerns": "Wandering Risk"
+      },
+      "family_context": {
+        "primary_contact_relationship": "Niece/Nephew",
+        "involvement_level": "Primary Decision Maker - Local",
+        "decision_maker": true,
+        "lives_nearby": false,
+        "financial_poa": false
+      },
+      "community_matching_flags": {
+        "requires_memory_care": false,
+        "requires_insulin_management": true,
+        "requires_wound_care": false,
+        "requires_physical_therapy": false,
+        "requires_hoyer_lift": false,
+        "requires_two_person_transfer": false,
+        "requires_bariatric_care": false,
+        "prefers_pets_allowed": true,
+        "prefers_private_room": true,
+        "prefers_full_kitchen": false,
+        "prefers_outdoor_space": true,
+        "prefers_pool": true,
+        "language_preference": null,
+        "religious_preference": null,
+        "budget_max": 10000,
+        "budget_flexible": true,
+        "medical_services_needed": [
+          "Insulin Management"
+        ]
+      },
+      "move_in_urgency": "Planning (1-3 months)",
+      "preferred_move_in_date": "2025-12-20",
+      "intake_notes": "Initial assessment completed. Joan Moore is a 89-year-old female interested in Assisted Living. Family is primary decision maker - local.",
+      "enriched_at": "2025-11-06T18:44:45.500770"
     }
-  ]
+  ],
+  "enriched_at": "2025-11-06T18:44:45.500772",
+  "enrichment_version": "v1.0"
 }
