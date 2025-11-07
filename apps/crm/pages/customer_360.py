@@ -331,9 +331,6 @@ def render_medical_profile(customer_data):
     if 'medical_conditions' not in customer_data and 'medication_count' not in customer_data:
         return
     
-    # Debug: confirm function is called
-    # st.write("🔍 DEBUG: render_medical_profile called")
-    
     # Medical conditions
     conditions = customer_data.get('medical_conditions', [])
     conditions_html = ""
@@ -359,28 +356,26 @@ def render_medical_profile(customer_data):
         pain = scores.get('pain_level', 'N/A')
         depression = scores.get('depression_screen', 'N/A')
         
-        scores_html = f"""
-        <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 1rem 0;">
-        <p style="margin-bottom: 0.5rem;"><strong>Assessment Scores:</strong></p>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
-            <div style="background: #f8fafc; padding: 0.5rem; border-radius: 4px;">
-                <div style="font-size: 0.8rem; color: #64748b;">MMSE Score</div>
-                <div style="font-weight: 600; color: #1f2937;">{mmse}/30</div>
-            </div>
-            <div style="background: #f8fafc; padding: 0.5rem; border-radius: 4px;">
-                <div style="font-size: 0.8rem; color: #64748b;">Functional</div>
-                <div style="font-weight: 600; color: #1f2937;">{functional}/100</div>
-            </div>
-            <div style="background: #f8fafc; padding: 0.5rem; border-radius: 4px;">
-                <div style="font-size: 0.8rem; color: #64748b;">Pain Level</div>
-                <div style="font-weight: 600; color: #1f2937;">{pain}/10</div>
-            </div>
-            <div style="background: #f8fafc; padding: 0.5rem; border-radius: 4px;">
-                <div style="font-size: 0.8rem; color: #64748b;">Depression</div>
-                <div style="font-weight: 600; color: #1f2937;">{depression}</div>
-            </div>
-        </div>
-        """
+        scores_html = f"""<hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 1rem 0;">
+<p style="margin-bottom: 0.5rem;"><strong>Assessment Scores:</strong></p>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+    <div style="background: #f8fafc; padding: 0.5rem; border-radius: 4px;">
+        <div style="font-size: 0.8rem; color: #64748b;">MMSE Score</div>
+        <div style="font-weight: 600; color: #1f2937;">{mmse}/30</div>
+    </div>
+    <div style="background: #f8fafc; padding: 0.5rem; border-radius: 4px;">
+        <div style="font-size: 0.8rem; color: #64748b;">Functional</div>
+        <div style="font-weight: 600; color: #1f2937;">{functional}/100</div>
+    </div>
+    <div style="background: #f8fafc; padding: 0.5rem; border-radius: 4px;">
+        <div style="font-size: 0.8rem; color: #64748b;">Pain Level</div>
+        <div style="font-weight: 600; color: #1f2937;">{pain}/10</div>
+    </div>
+    <div style="background: #f8fafc; padding: 0.5rem; border-radius: 4px;">
+        <div style="font-size: 0.8rem; color: #64748b;">Depression</div>
+        <div style="font-weight: 600; color: #1f2937;">{depression}</div>
+    </div>
+</div>"""
     
     html = f"""
     <div class="info-card">
@@ -434,15 +429,14 @@ def render_adl_assessment(customer_data):
         color = status_colors.get(status, '#64748b')
         category_display = category.replace('_', ' ').title()
         
-        adl_html += f"""
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: #f8fafc; border-radius: 4px; margin-bottom: 0.5rem;">
-            <div>
-                <span style="font-size: 1.2rem; margin-right: 0.5rem;">{icon}</span>
-                <strong>{category_display}</strong>
-            </div>
-            <span style="color: {color}; font-weight: 600; font-size: 0.9rem;">{status}</span>
-        </div>
-        """
+        adl_html += f"""<div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: #f8fafc; border-radius: 4px; margin-bottom: 0.5rem;">
+    <div>
+        <span style="font-size: 1.2rem; margin-right: 0.5rem;">{icon}</span>
+        <strong>{category_display}</strong>
+    </div>
+    <span style="color: {color}; font-weight: 600; font-size: 0.9rem;">{status}</span>
+</div>
+"""
     
     # Mobility info
     mobility = customer_data.get('mobility', {})
@@ -457,12 +451,10 @@ def render_adl_assessment(customer_data):
             'High': '#ef4444'
         }.get(fall_risk, '#64748b')
         
-        mobility_html = f"""
-        <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 1rem 0;">
-        <p style="margin-bottom: 0.5rem;"><strong>Mobility Assessment:</strong></p>
-        <p>🦽 <strong>Equipment:</strong> {equipment}</p>
-        <p>⚠️ <strong>Fall Risk:</strong> <span style="color: {risk_color}; font-weight: 600;">{fall_risk}</span></p>
-        """
+        mobility_html = f"""<hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 1rem 0;">
+<p style="margin-bottom: 0.5rem;"><strong>Mobility Assessment:</strong></p>
+<p>🦽 <strong>Equipment:</strong> {equipment}</p>
+<p>⚠️ <strong>Fall Risk:</strong> <span style="color: {risk_color}; font-weight: 600;">{fall_risk}</span></p>"""
     
     html = f"""
     <div class="info-card">
@@ -766,8 +758,6 @@ def render():
     
     # Enriched data sections (medical, ADL, family)
     if 'medical_conditions' in customer_data or 'medication_count' in customer_data:
-        # Simple test first
-        st.markdown("<div style='background: red; padding: 1rem;'><h3>TEST: If you see a red box, HTML works</h3></div>", unsafe_allow_html=True)
         try:
             render_medical_profile(customer_data)
         except Exception as e:
