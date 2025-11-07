@@ -1378,8 +1378,8 @@ def render():
                 if is_valid:
                     st.toggle("🔊 Enable voice responses", key="faq_voice_enabled", value=False, help="When enabled, answers will include audio playback")
                 else:
-                    # Show warning if config is invalid
-                    with st.expander("⚠️ Audio Configuration Issue", expanded=False):
+                    # Show warning if config is invalid (expanded by default)
+                    with st.expander("⚠️ Audio Configuration Issue", expanded=True):
                         st.warning(msg)
                         st.caption("Audio playback requires ElevenLabs API credentials. Contact your administrator.")
             
