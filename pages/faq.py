@@ -26,7 +26,7 @@ import re
 import streamlit as st
 import numpy as np
 
-from core.flags import get_all_flags
+from core.flags import get_all_flags, get_flag_value
 from core.mcip import MCIP
 from core.nav import route_to
 from core.navi import NaviOrchestrator
@@ -1457,7 +1457,6 @@ def render():
                             st.markdown(answer_md + sources_md)
                             
                             # Audio playback feature (if enabled and toggle is on)
-                            from core.flags import get_flag_value
                             if get_flag_value("FEATURE_FAQ_AUDIO") == "on" and st.session_state.get("faq_voice_enabled", False):
                                 try:
                                     from shared.audio.tts_client import synthesize
