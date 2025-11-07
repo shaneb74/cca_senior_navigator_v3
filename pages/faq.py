@@ -1259,6 +1259,21 @@ def render():
     if "faq_send_now" not in st.session_state:
         st.session_state["faq_send_now"] = False
     
+    # Clear audio config validation cache when returning to page from elsewhere
+    # Track current page to detect navigation
+    current_page = "faq"
+    last_page = st.session_state.get("_last_visited_page")
+    
+    if last_page != current_page:
+        # User navigated to this page from elsewhere - clear validation cache
+        if "elevenlabs_config_valid" in st.session_state:
+            del st.session_state["elevenlabs_config_valid"]
+        if "elevenlabs_config_msg" in st.session_state:
+            del st.session_state["elevenlabs_config_msg"]
+    
+    # Update last visited page
+    st.session_state["_last_visited_page"] = current_page
+    
     # Get processing state early so it can be used in UI
     is_processing = st.session_state.get("faq_processing", False)
     
