@@ -475,6 +475,17 @@ def render(customer_id=None):
         st.error(f"Customer not found: {customer_id}")
         return
     
+    # Back button
+    if st.button("← Back to Dashboard", type="secondary"):
+        # Clear matching session state
+        if 'matching_customer' in st.session_state:
+            del st.session_state['matching_customer']
+        if 'match_for_customer' in st.session_state:
+            del st.session_state['match_for_customer']
+        st.rerun()
+    
+    st.markdown("---")
+    
     # Customer context (this shows the customer name prominently)
     st.markdown(render_customer_context(customer_data), unsafe_allow_html=True)
     
