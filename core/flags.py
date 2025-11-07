@@ -55,12 +55,12 @@ FEATURE_FLAGS = {
         }
     },
     "FEATURE_FAQ_AUDIO": {
-        "default": "off",
+        "default": "on",
         "values": ["off", "on"],
         "description": "Enable text-to-speech playback for FAQ answers using ElevenLabs",
         "details": {
-            "off": "Text-only FAQ responses (default)",
-            "on": "Optional 🔊 Listen toggle for FAQ audio playback"
+            "off": "Text-only FAQ responses",
+            "on": "Optional 🔊 Listen toggle for FAQ audio playback (default)"
         }
     }
 }
