@@ -26,7 +26,7 @@ import re
 import streamlit as st
 import numpy as np
 
-from core.flags import get_all_flags
+from core.flags import get_all_flags, get_flag_value
 from core.mcip import MCIP
 from core.nav import route_to
 from core.navi import NaviOrchestrator
@@ -1332,6 +1332,12 @@ def render():
             advisor_href = add_uid_to_href("?page=hub_lobby")
             st.markdown('<div class="ai-input-wrap">', unsafe_allow_html=True)
             st.markdown('<div class="chat-sentinel composer-sentinel"></div>', unsafe_allow_html=True)
+            
+            # Callback to handle Enter key in text input
+            def on_input_change():
+                if st.session_state.get("faq_composer_input"):
+                    st.session_state["faq_send_now"] = True
+            
             col1, col2 = st.columns([5, 1], gap="medium")
 
             with col1:
@@ -1341,6 +1347,7 @@ def render():
                     placeholder="e.g., What is assisted living? Who is CCA?",
                     label_visibility="collapsed",
                     disabled=is_processing,
+                    on_change=on_input_change,
                 )
 
             with col2:
@@ -1351,39 +1358,21 @@ def render():
                     disabled=is_processing,
                 )
             
-            # Enable Enter key to trigger Send button (without on_change callback)
-            st.markdown(
-                """
-                <script>
-                (function() {
-                    // Find the text input and send button
-                    const input = window.parent.document.querySelector('input[aria-label="Ask about planning, costs, eligibility, or our company…"]');
-                    const sendBtn = window.parent.document.querySelector('button[kind="primaryFormSubmit"]');
-                    
-                    if (input && sendBtn && !input.dataset.enterListenerAdded) {
-                        input.dataset.enterListenerAdded = 'true';
-                        input.addEventListener('keydown', function(e) {
-                            if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault();
-                                sendBtn.click();
-                            }
-                        });
-                    }
-                })();
-                </script>
-                """,
-                unsafe_allow_html=True,
-            )
+            # Remove the JavaScript - using on_change callback instead
 
             st.markdown(
                 f"""
                 <div class=\"composer-meta\">
-                  <span>Tip: Ask about care costs, benefits, or what happens next.</span>
                   <a href=\"{advisor_href}\">Need a human advisor?</a>
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
+            
+            # Voice toggle on main screen
+            if get_flag_value("FEATURE_FAQ_AUDIO") == "on":
+                st.toggle("🔊 Enable voice responses", key="faq_voice_enabled", value=False, help="When enabled, answers will include audio playback")
+            
             st.markdown('</div>', unsafe_allow_html=True)
             
             send_now = st.session_state.pop("faq_send_now", False)
@@ -1406,6 +1395,9 @@ def render():
             else:
                 st.markdown('<section class="chat-thread">', unsafe_allow_html=True)
 
+                # Track if we've seen the first assistant message (for autoplay)
+                first_assistant_seen = False
+                
                 for idx, msg in enumerate(chat):
                     role = msg["role"]
                     text = msg["text"]
@@ -1451,6 +1443,35 @@ def render():
                         # Simple container for answer
                         with st.container():
                             st.markdown(answer_md + sources_md)
+                            
+                            # Audio playback feature (if enabled and toggle is on)
+                            # Only autoplay for the FIRST assistant message (newest)
+                            if get_flag_value("FEATURE_FAQ_AUDIO") == "on" and st.session_state.get("faq_voice_enabled", False):
+                                try:
+                                    from shared.audio.tts_client import synthesize
+                                    # Use clean text without sources for audio
+                                    audio_text = _sanitize_to_md(text) if not is_html else text
+                                    audio_bytes = synthesize(audio_text)
+                                    
+                                    if audio_bytes:
+                                        # Only autoplay the first (newest) message
+                                        should_autoplay = not first_assistant_seen
+                                        st.audio(audio_bytes, format="audio/mp3", autoplay=should_autoplay)
+                                        first_assistant_seen = True
+                                        
+                                        # Log audio playback
+                                        from core.events import log_event
+                                        log_event("faq_audio_played", {
+                                            "query": msg.get("user_query", ""),
+                                            "text_length": len(audio_text),
+                                            "autoplay": should_autoplay
+                                        })
+                                    else:
+                                        st.caption("⚠️ Audio unavailable")
+                                except Exception as e:
+                                    st.caption("⚠️ Audio unavailable")
+                                    # Log error (optional - can be removed if not needed)
+                                    print(f"[FAQ_AUDIO] Error in audio playback: {e}")
 
                         with st.container():
                             st.markdown('<div class="chat-sentinel chat-action-sentinel"></div>', unsafe_allow_html=True)

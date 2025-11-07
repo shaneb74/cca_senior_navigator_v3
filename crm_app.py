@@ -119,27 +119,56 @@ st.sidebar.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# Initialize navigation if not set
-if 'navigation_page' not in st.session_state:
-    st.session_state.navigation_page = "📊 Dashboard"
+# Define page list
+PAGE_LIST = [
+    "📊 Dashboard", 
+    "🔥 Leads",
+    "🧹 Lead Management",
+    "👥 Customers", 
+    "👤 Customer 360°",
+    "🕒 Smart Timeline",
+    "🤖 AI Next Steps",
+    "🏘️ Smart Matching",
+    "📞 Appointments", 
+    "📝 Notes & Interactions",
+    "📈 Analytics"
+]
+
+# Initialize navigation default
+default_page = "📊 Dashboard"
+
+# Check if we need to automatically navigate to Customer 360
+if st.session_state.get('selected_customer') and st.session_state.get('auto_navigate_to_360'):
+    default_page = "👤 Customer 360°"
+    # Clear the auto-navigation flag
+    if 'auto_navigate_to_360' in st.session_state:
+        del st.session_state['auto_navigate_to_360']
+
+# Clear any problematic session state keys that might cause conflicts
+problematic_keys = ['_FormSubmitter', '_auto_rerun', '_reruns']
+for key in problematic_keys:
+    if key in st.session_state:
+        del st.session_state[key]
 
 # Main CRM navigation - clean and focused
-page = st.sidebar.radio(
-    "Select a page:",
-    [
-        "📊 Dashboard", 
-        "👥 Customers", 
-        "🎯 Customer 360°",
-        "🕒 Smart Timeline",
-        "🤖 AI Next Steps",
-        "🏘️ Smart Matching",
-        "📞 Appointments", 
-        "📝 Notes & Interactions",
-        "📈 Analytics"
-    ],
-    index=0,
-    key="navigation_page"
-)
+try:
+    default_index = PAGE_LIST.index(default_page)
+except ValueError:
+    default_index = 0
+
+# Override navigation if we're in the middle of a deletion flow or navigating to a specific page
+if st.session_state.get('navigate_to_page'):
+    page = st.session_state['navigate_to_page']
+    del st.session_state['navigate_to_page']  # Clear after using
+elif st.session_state.get('confirm_delete') or st.session_state.get('perform_delete'):
+    # Force Customer 360 during deletion flow
+    page = "👤 Customer 360°"
+else:
+    page = st.sidebar.radio(
+        "Select a page:",
+        PAGE_LIST,
+        index=default_index
+    )
 
 # Environment indicator
 st.sidebar.markdown("---")
@@ -158,9 +187,15 @@ try:
     elif page == "👥 Customers":
         from apps.crm.pages.customers import render
         render()
-    elif page == "🎯 Customer 360°":
+    elif page == "👤 Customer 360°":
         from apps.crm.pages.customer_360 import render
         render()
+    elif page == "🔥 Leads":
+        from apps.crm.pages.leads import render
+        render()
+    elif page == "🧹 Lead Management":
+        from apps.crm.pages.lead_management import show_lead_management
+        show_lead_management()
     elif page == "🕒 Smart Timeline":
         from apps.crm.pages.smart_timeline import render
         render()

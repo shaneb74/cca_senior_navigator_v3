@@ -1,692 +1,854 @@
 """
-Customer 360° View - Professional advisor dashboard for Navigator customers
-Clean, lobby-style design with comprehensive customer insights
+CRM Customer 360° View - Complete customer profile and interaction history
+Displays all available information about a customer from Navigator and CRM data
 """
 import streamlit as st
-from datetime import datetime, timedelta
+from datetime import datetime
 from shared.data_access.navigator_reader import NavigatorDataReader
+from shared.data_access.crm_repository import CrmRepository
+from core.adapters.streamlit_crm import get_crm_customer_by_id, delete_crm_customer
 
-def inject_clean_crm_css():
-    """Professional CRM styling - zero Streamlit clutter"""
-    if st.session_state.get("_customer_360_css"):
-        return
-        
+# Set page config first - constrain layout
+st.set_page_config(layout="centered", initial_sidebar_state="expanded")
+
+def inject_customer_360_css():
+    """Inject Customer 360 specific styling"""
     css = """
     <style>
-    /* Base clean styling */
-    .stApp { background: #ffffff; }
-    .block-container { padding: 2rem; max-width: 1400px; }
-    .stDeployButton, .stDecoration, .stToolbar { display: none !important; }
+    /* Enable proper scrolling */
+    .stApp {
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+    }
     
-    /* Customer 360 Header */
-    .customer-header {
-        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    .main {
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        height: 100vh !important;
+    }
+    
+    /* Nuclear option - constrain EVERYTHING */
+    .stMainBlockContainer {
+        max-width: 800px !important;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+    }
+    
+    .st-emotion-cache-1v0mbdj, 
+    .st-emotion-cache-z5fcl4,
+    .st-emotion-cache-18kf3ut,
+    .st-emotion-cache-1f0nklw,
+    [class*="st-emotion-cache"] {
+        max-width: 100% !important;
+        overflow: visible !important;
+    }
+    
+    /* Let Streamlit handle the centering, we just add styling */
+    .customer-360-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
-        padding: 2rem;
+        padding: 1.5rem;
         border-radius: 16px;
-        margin-bottom: 2rem;
-        box-shadow: 0 8px 32px rgba(37, 99, 235, 0.15);
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
     }
     
     .customer-name {
-        font-size: 2.25rem;
-        font-weight: 700;
-        margin: 0 0 0.5rem 0;
-    }
-    
-    .customer-context {
-        font-size: 1.1rem;
-        opacity: 0.9;
-        margin: 0 0 1.5rem 0;
-    }
-    
-    .progress-bar-container {
-        background: rgba(255, 255, 255, 0.2);
-        border-radius: 999px;
-        height: 8px;
-        overflow: hidden;
-        margin-bottom: 1rem;
-    }
-    
-    .progress-bar {
-        background: #ffffff;
-        height: 100%;
-        border-radius: 999px;
-        transition: width 0.3s ease;
-    }
-    
-    .progress-text {
-        font-size: 0.9rem;
-        opacity: 0.9;
-    }
-    
-    /* Metrics Grid */
-    .metrics-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        gap: 1.5rem;
-        margin: 2rem 0;
-    }
-    
-    .metric-card {
-        background: #ffffff;
-        border: 1px solid #e5e7eb;
-        border-radius: 12px;
-        padding: 1.5rem;
-        text-align: center;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-    }
-    
-    .metric-value {
         font-size: 2rem;
         font-weight: 700;
-        color: #1f2937;
+        margin: 0 0 0.5rem 0;
+        word-wrap: break-word;
+    }
+    
+    .customer-id {
+        font-size: 0.9rem;
+        opacity: 0.9;
         margin: 0;
     }
     
-    .metric-label {
-        font-size: 0.875rem;
-        color: #6b7280;
-        margin: 0.5rem 0 0 0;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-    }
-    
-    .metric-change {
-        font-size: 0.8rem;
-        margin: 0.25rem 0 0 0;
-    }
-    
-    .metric-positive { color: #059669; }
-    .metric-neutral { color: #6b7280; }
-    
-    /* Assessment Cards */
-    .assessment-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-        gap: 2rem;
-        margin: 2rem 0;
-    }
-    
-    .assessment-card {
-        background: #ffffff;
-        border: 1px solid #e5e7eb;
-        border-radius: 16px;
-        padding: 2rem;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
-    }
-    
-    .assessment-header {
-        display: flex;
-        align-items: center;
-        margin-bottom: 1.5rem;
-    }
-    
-    .assessment-icon {
-        width: 48px;
-        height: 48px;
+    .info-card {
+        background: white;
         border-radius: 12px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        border-left: 4px solid #667eea;
+    }
+    
+    .info-card h3 {
+        margin-top: 0;
+        color: #1f2937;
+        font-size: 1.1rem;
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+    }
+    
+    .info-row {
         display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-right: 1rem;
-        font-size: 1.5rem;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #f1f5f9;
+        gap: 1rem;
+        flex-wrap: wrap;
     }
     
-    .icon-gcp {
-        background: #dbeafe;
-        color: #2563eb;
+    .info-row:last-child {
+        border-bottom: none;
     }
     
-    .icon-cost {
-        background: #ecfdf5;
-        color: #059669;
+    .info-label {
+        font-weight: 600;
+        color: #64748b;
+        word-wrap: break-word;
     }
     
-    .icon-family {
+    .info-value {
+        color: #1f2937;
+        text-align: right;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        max-width: 60%;
+    }
+    
+    .status-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 999px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+    
+    .status-complete {
+        background: #dcfce7;
+        color: #16a34a;
+    }
+    
+    .status-in-progress {
         background: #fef3c7;
         color: #d97706;
     }
     
-    .assessment-title {
-        font-size: 1.25rem;
-        font-weight: 700;
-        color: #1f2937;
-        margin: 0;
+    .status-not-started {
+        background: #f1f5f9;
+        color: #64748b;
     }
     
-    .assessment-subtitle {
-        font-size: 0.9rem;
-        color: #6b7280;
-        margin: 0.25rem 0 0 0;
-    }
-    
-    .assessment-content {
-        color: #374151;
-        line-height: 1.6;
-    }
-    
-    .recommendation-badge {
-        display: inline-block;
-        background: #f3f4f6;
-        color: #1f2937;
-        padding: 0.5rem 1rem;
-        border-radius: 999px;
-        font-size: 0.875rem;
-        font-weight: 600;
-        margin: 1rem 0;
-    }
-    
-    .badge-memory-care {
-        background: #fef2f2;
-        color: #dc2626;
-    }
-    
-    .badge-assisted-living {
-        background: #fffbeb;
-        color: #d97706;
-    }
-    
-    .badge-independent {
-        background: #f0fdf4;
-        color: #16a34a;
-    }
-    
-    /* Next Steps Section */
-    .next-steps {
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 16px;
-        padding: 2rem;
-        margin: 2rem 0;
-    }
-    
-    .next-steps-title {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: #1e293b;
-        margin: 0 0 1rem 0;
-        display: flex;
-        align-items: center;
-    }
-    
-    .ai-badge {
-        background: linear-gradient(135deg, #8b5cf6, #a855f7);
-        color: white;
-        padding: 0.25rem 0.75rem;
-        border-radius: 999px;
-        font-size: 0.75rem;
-        font-weight: 600;
+    .timeline-item {
+        padding: 1rem;
+        border-left: 3px solid #e5e7eb;
         margin-left: 1rem;
+        margin-bottom: 1rem;
+        position: relative;
+        max-width: 100%;
+        overflow: hidden;
     }
     
-    .step-list {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-    }
-    
-    .step-item {
-        display: flex;
-        align-items: flex-start;
-        padding: 1rem 0;
-        border-bottom: 1px solid #e2e8f0;
-    }
-    
-    .step-item:last-child {
-        border-bottom: none;
-    }
-    
-    .step-number {
-        background: #2563eb;
-        color: white;
-        width: 28px;
-        height: 28px;
+    .timeline-item::before {
+        content: '';
+        width: 12px;
+        height: 12px;
+        background: #667eea;
         border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        position: absolute;
+        left: -7.5px;
+        top: 1.2rem;
+    }
+    
+    .timeline-date {
         font-size: 0.875rem;
-        font-weight: 700;
-        margin-right: 1rem;
-        flex-shrink: 0;
+        color: #64748b;
+        margin-bottom: 0.25rem;
+        word-wrap: break-word;
     }
     
-    .step-content {
-        flex: 1;
-    }
-    
-    .step-title {
-        font-weight: 600;
+    .timeline-content {
         color: #1f2937;
-        margin: 0 0 0.25rem 0;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
     }
     
-    .step-description {
-        font-size: 0.9rem;
-        color: #6b7280;
-        margin: 0;
+    /* Ensure Streamlit columns don't overflow */
+    [data-testid="column"] {
+        overflow: hidden;
     }
     
-    /* Action Buttons */
-    .action-bar {
-        display: flex;
-        gap: 1rem;
-        margin: 2rem 0;
-        padding: 1.5rem;
-        background: #ffffff;
-        border: 1px solid #e5e7eb;
-        border-radius: 12px;
-    }
-    
-    .btn-action {
-        background: #2563eb;
-        color: white;
-        border: none;
-        padding: 0.75rem 1.5rem;
-        border-radius: 8px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-    
-    .btn-action:hover {
-        background: #1d4ed8;
-        transform: translateY(-1px);
-    }
-    
-    .btn-secondary {
-        background: #ffffff;
-        color: #374151;
-        border: 1px solid #d1d5db;
-    }
-    
-    .btn-secondary:hover {
-        background: #f9fafb;
-        border-color: #9ca3af;
+    /* Fix button overflow */
+    .stButton button {
+        white-space: normal;
+        word-wrap: break-word;
+        height: auto;
+        min-height: 2.5rem;
     }
     </style>
     """
-    
     st.markdown(css, unsafe_allow_html=True)
-    st.session_state["_customer_360_css"] = True
 
-def calculate_completion_percentage(customer_data):
-    """Calculate customer journey completion percentage"""
-    total_steps = 4
-    completed = 0
-    
-    if customer_data.get('person_name'):
-        completed += 1
-    if customer_data.get('has_gcp_assessment'):
-        completed += 1
-    if customer_data.get('has_cost_plan'):
-        completed += 1
-    if customer_data.get('relationship_type'):
-        completed += 1
-    
-    return int((completed / total_steps) * 100)
 
 def render_customer_header(customer_data):
-    """Render clean customer header with progress"""
-    name = customer_data.get('person_name', 'Customer')
-    relationship = customer_data.get('relationship_type', 'Unknown')
-    last_activity = customer_data.get('last_activity', 'Never')
-    completion = calculate_completion_percentage(customer_data)
+    """Render the customer header with name and key info"""
+    name = customer_data.get('name') or customer_data.get('person_name', 'Unknown Customer')
+    customer_id = customer_data.get('id') or customer_data.get('user_id', 'N/A')
     
-    context_text = f"Planning for {relationship} • Last activity: {last_activity}"
-    
+    # Use a container to ensure proper boundary constraints
     header_html = f"""
-    <div class="customer-header">
+    <div class="customer-360-header">
         <h1 class="customer-name">{name}</h1>
-        <p class="customer-context">{context_text}</p>
-        <div class="progress-bar-container">
-            <div class="progress-bar" style="width: {completion}%"></div>
-        </div>
-        <p class="progress-text">Navigator Journey: {completion}% Complete</p>
+        <p class="customer-id">Customer ID: {customer_id}</p>
     </div>
     """
     
+    # Render within Streamlit's container
     st.markdown(header_html, unsafe_allow_html=True)
 
-def render_key_metrics(customer_data):
-    """Render key customer metrics"""
-    days_since_activity = customer_data.get('last_activity_days', 0)
-    has_gcp = customer_data.get('has_gcp_assessment', False)
-    has_cost = customer_data.get('has_cost_plan', False)
-    
-    engagement_score = 85 if days_since_activity <= 7 else 65 if days_since_activity <= 30 else 35
-    readiness_score = 90 if (has_gcp and has_cost) else 60 if (has_gcp or has_cost) else 30
-    
-    metrics_html = f"""
-    <div class="metrics-grid">
-        <div class="metric-card">
-            <div class="metric-value">{days_since_activity}</div>
-            <div class="metric-label">Days Since Activity</div>
-            <div class="metric-change metric-neutral">Last Navigator use</div>
-        </div>
-        <div class="metric-card">
-            <div class="metric-value">{engagement_score}%</div>
-            <div class="metric-label">Engagement Score</div>
-            <div class="metric-change metric-positive">Active user</div>
-        </div>
-        <div class="metric-card">
-            <div class="metric-value">{readiness_score}%</div>
-            <div class="metric-label">Readiness Score</div>
-            <div class="metric-change metric-positive">Ready for outreach</div>
-        </div>
-        <div class="metric-card">
-            <div class="metric-value">A</div>
-            <div class="metric-label">Priority Level</div>
-            <div class="metric-change metric-positive">High-value prospect</div>
-        </div>
-    </div>
-    """
-    
-    st.markdown(metrics_html, unsafe_allow_html=True)
 
-def render_assessments(customer_data):
-    """Render assessment cards with clean styling using Streamlit components"""
+def render_contact_info(customer_data):
+    """Render contact information card"""
+    email = customer_data.get('email') or customer_data.get('contact_email', 'Not provided')
+    phone = customer_data.get('phone') or customer_data.get('contact_phone', 'Not provided')
+    source = customer_data.get('source', 'Unknown')
+    created = customer_data.get('created_at', 'Unknown')
     
-    st.subheader("Assessment Overview")
-    
-    # Create 3-column layout for assessment cards
-    col1, col2, col3 = st.columns(3)
-    
-    # GCP Assessment Card
-    with col1:
-        if customer_data.get('has_gcp_assessment'):
-            gcp_recommendation = customer_data.get('care_recommendation', 'Assessment completed')
-            
-            st.markdown(f"""
-            <div style="
-                background: #ffffff;
-                border: 1px solid #e6edf5;
-                border-radius: 12px;
-                padding: 1.25rem;
-                box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
-                margin-bottom: 1rem;
-            ">
-                <div style="display: flex; align-items: center; margin-bottom: 1rem;">
-                    <div style="font-size: 1.5rem; margin-right: 0.75rem;">🧠</div>
-                    <div>
-                        <h4 style="margin: 0; color: #1f2937;">Guided Care Plan</h4>
-                        <p style="margin: 0; color: #16a34a; font-size: 0.875rem;">Completed assessment</p>
-                    </div>
-                </div>
-                <div style="
-                    background: #dcfce7;
-                    color: #16a34a;
-                    padding: 0.5rem 1rem;
-                    border-radius: 999px;
-                    font-size: 0.875rem;
-                    font-weight: 600;
-                    text-align: center;
-                    margin-bottom: 0.75rem;
-                ">{gcp_recommendation}</div>
-                <p style="margin: 0; color: #64748b; font-size: 0.875rem;">
-                    Care recommendation based on comprehensive assessment of needs, mobility, and preferences.
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
-        else:
-            st.markdown(f"""
-            <div style="
-                background: #ffffff;
-                border: 1px solid #e6edf5;
-                border-radius: 12px;
-                padding: 1.25rem;
-                box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
-                margin-bottom: 1rem;
-            ">
-                <div style="display: flex; align-items: center; margin-bottom: 1rem;">
-                    <div style="font-size: 1.5rem; margin-right: 0.75rem;">🧠</div>
-                    <div>
-                        <h4 style="margin: 0; color: #1f2937;">Guided Care Plan</h4>
-                        <p style="margin: 0; color: #f59e0b; font-size: 0.875rem;">Not started</p>
-                    </div>
-                </div>
-                <p style="margin: 0; color: #64748b; font-size: 0.875rem;">
-                    Customer has not completed the care assessment. This is a key next step for understanding their needs.
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
-    
-    # Cost Planner Card
-    with col2:
-        if customer_data.get('has_cost_plan'):
-            st.markdown(f"""
-            <div style="
-                background: #ffffff;
-                border: 1px solid #e6edf5;
-                border-radius: 12px;
-                padding: 1.25rem;
-                box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
-                margin-bottom: 1rem;
-            ">
-                <div style="display: flex; align-items: center; margin-bottom: 1rem;">
-                    <div style="font-size: 1.5rem; margin-right: 0.75rem;">💰</div>
-                    <div>
-                        <h4 style="margin: 0; color: #1f2937;">Cost Planner</h4>
-                        <p style="margin: 0; color: #16a34a; font-size: 0.875rem;">Completed analysis</p>
-                    </div>
-                </div>
-                <div style="
-                    background: #dbeafe;
-                    color: #2563eb;
-                    padding: 0.5rem 1rem;
-                    border-radius: 999px;
-                    font-size: 0.875rem;
-                    font-weight: 600;
-                    text-align: center;
-                    margin-bottom: 0.75rem;
-                ">Budget established</div>
-                <p style="margin: 0; color: #64748b; font-size: 0.875rem;">
-                    Financial capacity and budget range determined. Ready for community recommendations.
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
-        else:
-            st.markdown(f"""
-            <div style="
-                background: #ffffff;
-                border: 1px solid #e6edf5;
-                border-radius: 12px;
-                padding: 1.25rem;
-                box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
-                margin-bottom: 1rem;
-            ">
-                <div style="display: flex; align-items: center; margin-bottom: 1rem;">
-                    <div style="font-size: 1.5rem; margin-right: 0.75rem;">💰</div>
-                    <div>
-                        <h4 style="margin: 0; color: #1f2937;">Cost Planner</h4>
-                        <p style="margin: 0; color: #f59e0b; font-size: 0.875rem;">Not started</p>
-                    </div>
-                </div>
-                <p style="margin: 0; color: #64748b; font-size: 0.875rem;">
-                    Customer has not completed cost planning. Understanding budget is crucial for community matching.
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
-    
-    # Family Context Card
-    with col3:
-        relationship = customer_data.get('relationship_type', 'Unknown')
-        st.markdown(f"""
-        <div style="
-            background: #ffffff;
-            border: 1px solid #e6edf5;
-            border-radius: 12px;
-            padding: 1.25rem;
-            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
-            margin-bottom: 1rem;
-        ">
-            <div style="display: flex; align-items: center; margin-bottom: 1rem;">
-                <div style="font-size: 1.5rem; margin-right: 0.75rem;">👨‍👩‍👧‍👦</div>
-                <div>
-                    <h4 style="margin: 0; color: #1f2937;">Family Context</h4>
-                    <p style="margin: 0; color: #16a34a; font-size: 0.875rem;">Relationship established</p>
-                </div>
-            </div>
-            <div style="
-                background: #f3f4f6;
-                color: #374151;
-                padding: 0.5rem 1rem;
-                border-radius: 999px;
-                font-size: 0.875rem;
-                font-weight: 600;
-                text-align: center;
-                margin-bottom: 0.75rem;
-            ">{relationship}</div>
-            <p style="margin: 0; color: #64748b; font-size: 0.875rem;">
-                Understanding family dynamics and decision-making structure for effective communication.
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
-
-def render_ai_next_steps(customer_data):
-    """Render AI-powered next steps using Streamlit components"""
-    has_gcp = customer_data.get('has_gcp_assessment', False)
-    has_cost = customer_data.get('has_cost_plan', False)
-    days_since = customer_data.get('last_activity_days', 0)
-    
-    # AI logic for next steps
-    if has_gcp and has_cost:
-        steps = [
-            ("Schedule consultation call", "Customer is ready for personalized guidance"),
-            ("Prepare community recommendations", "Match facilities to their care plan and budget"),
-            ("Send welcome packet", "Introduce CCA services and next steps")
-        ]
-    elif has_gcp and not has_cost:
-        steps = [
-            ("Follow up on cost planning", "Help complete their financial assessment"),
-            ("Provide budget guidance", "Share cost planning resources"),
-            ("Schedule cost consultation", "Walk through their financial options")
-        ]
-    elif not has_gcp and has_cost:
-        steps = [
-            ("Follow up on care assessment", "Complete their care planning process"),
-            ("Explain GCP benefits", "Show how assessment improves recommendations"),
-            ("Offer assessment assistance", "Provide guidance through the process")
-        ]
+    # Handle different created_at formats (string, float timestamp, datetime)
+    if created != 'Unknown':
+        try:
+            if isinstance(created, (int, float)):
+                # Unix timestamp
+                from datetime import datetime
+                joined = datetime.fromtimestamp(created).strftime('%Y-%m-%d')
+            elif isinstance(created, str) and len(created) >= 10:
+                # ISO date string
+                joined = created[:10]
+            else:
+                joined = str(created)
+        except:
+            joined = 'Unknown'
     else:
-        steps = [
-            ("Welcome outreach call", "Introduce CCA services and support"),
-            ("Guide through Navigator", "Help complete assessments"),
-            ("Send getting started resources", "Provide helpful materials")
-        ]
-
-    # Header with AI badge
-    st.markdown("""
-    <div style="display: flex; align-items: center; margin-bottom: 1.5rem;">
-        <h3 style="margin: 0; color: #1f2937;">Recommended Next Steps</h3>
-        <span style="
-            background: #8b5cf6;
-            color: #ffffff;
-            padding: 0.25rem 0.75rem;
-            border-radius: 999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            margin-left: 1rem;
-        ">AI Powered</span>
-    </div>
-    """, unsafe_allow_html=True)
+        joined = 'Unknown'
     
-    # Render steps using Streamlit components
-    for i, (title, description) in enumerate(steps, 1):
-        st.markdown(f"""
-        <div style="
-            display: flex;
-            align-items: flex-start;
-            background: #ffffff;
-            border: 1px solid #e6edf5;
-            border-radius: 12px;
-            padding: 1rem;
-            margin-bottom: 0.75rem;
-            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
-        ">
-            <div style="
-                background: #2563eb;
-                color: #ffffff;
-                width: 2rem;
-                height: 2rem;
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-weight: 600;
-                font-size: 0.875rem;
-                margin-right: 1rem;
-                flex-shrink: 0;
-            ">{i}</div>
-            <div>
-                <h4 style="margin: 0 0 0.25rem 0; color: #1f2937; font-size: 1rem;">{title}</h4>
-                <p style="margin: 0; color: #64748b; font-size: 0.875rem;">{description}</p>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-def render_action_bar():
-    """Render clean action buttons"""
-    action_html = """
-    <div class="action-bar">
-        <button class="btn-action">📞 Call Customer</button>
-        <button class="btn-action btn-secondary">✉️ Send Email</button>
-        <button class="btn-action btn-secondary">📅 Schedule Meeting</button>
-        <button class="btn-action btn-secondary">📝 Add Note</button>
+    # Pure HTML - no Streamlit components that create extra containers
+    html = f"""
+    <div class="info-card">
+        <h3>📞 Contact Information</h3>
+        <p><strong>Email:</strong> {email}</p>
+        <p><strong>Phone:</strong> {phone}</p>
+        <p><strong>Source:</strong> {source}</p>
+        <p><strong>Joined:</strong> {joined}</p>
     </div>
     """
-    
-    st.markdown(action_html, unsafe_allow_html=True)
+    st.markdown(html, unsafe_allow_html=True)
 
-def render(customer_id=None):
-    """Main render function for Customer 360° view"""
-    inject_clean_crm_css()
+
+def render_navigator_status(navigator_data):
+    """Render Navigator assessment status"""
     
-    # Check for selected customer in session state if no customer_id provided
-    if not customer_id and 'selected_customer' in st.session_state:
-        customer_id = st.session_state['selected_customer']
+    if not navigator_data:
+        st.markdown("""
+        <div class="info-card">
+            <h3>🧭 Senior Navigator Status</h3>
+            <p style="color: #64748b;">No Navigator assessment data available</p>
+        </div>
+        """, unsafe_allow_html=True)
+        return
+    
+    # GCP Assessment Status
+    has_gcp = navigator_data.get('has_gcp_assessment', False)
+    gcp_status = "Complete ✓" if has_gcp else "Not Started"
+    gcp_badge_class = "status-complete" if has_gcp else "status-not-started"
+    
+    # Cost Plan Status
+    has_cost = navigator_data.get('has_cost_plan', False)
+    cost_status = "Complete ✓" if has_cost else "Not Started"
+    cost_badge_class = "status-complete" if has_cost else "status-not-started"
+    
+    # Journey Stage
+    journey_stage = navigator_data.get('journey_stage', 'Initial Contact')
+    
+    # Build additional details HTML
+    additional_html = ""
+    
+    # Care Recommendation if available
+    if has_gcp:
+        care_rec = navigator_data.get('care_recommendation', 'Assessment complete')
+        additional_html += f"""
+        <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 1rem 0;">
+        <p><strong>Care Recommendation:</strong> {care_rec}</p>
+        """
+        
+        # Assessment summary if available
+        assessment_summary = navigator_data.get('assessment_summary')
+        if assessment_summary:
+            additional_html += f"""
+            <details style="margin-top: 0.5rem;">
+                <summary style="cursor: pointer; color: #3b82f6; font-weight: 500;">📋 Assessment Details</summary>
+                <div style="margin-top: 0.5rem; padding: 0.5rem; background: #f8fafc; border-radius: 4px;">
+                    {assessment_summary}
+                </div>
+            </details>
+            """
+    
+    # Cost Summary if available
+    if has_cost:
+        cost_summary = navigator_data.get('cost_summary')
+        if cost_summary:
+            additional_html += f"""
+            <details style="margin-top: 0.5rem;">
+                <summary style="cursor: pointer; color: #3b82f6; font-weight: 500;">💰 Cost Planning Details</summary>
+                <div style="margin-top: 0.5rem; padding: 0.5rem; background: #f8fafc; border-radius: 4px;">
+                    {cost_summary}
+                </div>
+            </details>
+            """
+    
+    # Pure HTML - single markdown call
+    html = f"""
+    <div class="info-card">
+        <h3>🧭 Senior Navigator Status</h3>
+        <div style="margin-bottom: 1rem;">
+            <p style="margin: 0; color: #64748b; font-size: 0.875rem;">GCP Assessment</p>
+            <span class="status-badge {gcp_badge_class}">{gcp_status}</span>
+        </div>
+        <div style="margin-bottom: 1rem;">
+            <p style="margin: 0; color: #64748b; font-size: 0.875rem;">Cost Planning</p>
+            <span class="status-badge {cost_badge_class}">{cost_status}</span>
+        </div>
+        <div>
+            <p style="margin: 0; color: #64748b; font-size: 0.875rem;">Journey Stage</p>
+            <p style="margin: 0.5rem 0 0 0; font-weight: 600; color: #1f2937;">{journey_stage}</p>
+        </div>
+        {additional_html}
+    </div>
+    """
+    st.markdown(html, unsafe_allow_html=True)
+
+
+def render_medical_profile(customer_data):
+    """Render medical profile with conditions, medications, and assessments"""
+    
+    # Check if customer has enriched medical data
+    if 'medical_conditions' not in customer_data and 'medication_count' not in customer_data:
+        return
+    
+    # Medical conditions
+    conditions = customer_data.get('medical_conditions', [])
+    conditions_html = ""
+    if conditions:
+        conditions_list = "</li><li>".join(conditions[:5])  # Limit to top 5
+        conditions_html = f"<ul style='margin: 0.5rem 0;'><li>{conditions_list}</li></ul>"
+        if len(conditions) > 5:
+            conditions_html += f"<p style='color: #64748b; font-size: 0.9rem;'>+ {len(conditions) - 5} more conditions</p>"
+    else:
+        conditions_html = "<p style='color: #64748b;'>No conditions recorded</p>"
+    
+    # Medications
+    med_count = customer_data.get('medication_count', 0)
+    allergies = customer_data.get('allergies') or 'None known'
+    diet = customer_data.get('diet_restrictions') or 'None'
+    
+    # Assessment scores
+    scores = customer_data.get('assessment_scores', {})
+    scores_html = ""
+    if scores:
+        mmse = scores.get('mmse_score', 'N/A')
+        functional = scores.get('functional_score', 'N/A')
+        pain = scores.get('pain_level', 'N/A')
+        depression = scores.get('depression_screen', 'N/A')
+        
+        scores_html = f"""<hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 1rem 0;">
+<p style="margin-bottom: 0.5rem;"><strong>Assessment Scores:</strong></p>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+    <div style="background: #f8fafc; padding: 0.5rem; border-radius: 4px;">
+        <div style="font-size: 0.8rem; color: #64748b;">MMSE Score</div>
+        <div style="font-weight: 600; color: #1f2937;">{mmse}/30</div>
+    </div>
+    <div style="background: #f8fafc; padding: 0.5rem; border-radius: 4px;">
+        <div style="font-size: 0.8rem; color: #64748b;">Functional</div>
+        <div style="font-weight: 600; color: #1f2937;">{functional}/100</div>
+    </div>
+    <div style="background: #f8fafc; padding: 0.5rem; border-radius: 4px;">
+        <div style="font-size: 0.8rem; color: #64748b;">Pain Level</div>
+        <div style="font-weight: 600; color: #1f2937;">{pain}/10</div>
+    </div>
+    <div style="background: #f8fafc; padding: 0.5rem; border-radius: 4px;">
+        <div style="font-size: 0.8rem; color: #64748b;">Depression</div>
+        <div style="font-weight: 600; color: #1f2937;">{depression}</div>
+    </div>
+</div>"""
+    
+    html = f"""<div class="info-card">
+<h3>🏥 Medical Profile</h3>
+<p><strong>Medical Conditions:</strong></p>
+{conditions_html}
+<p style="margin-top: 0.5rem;"><strong>Medications:</strong> {med_count} current medications</p>
+<p><strong>Allergies:</strong> {allergies}</p>
+<p><strong>Diet Restrictions:</strong> {diet}</p>
+{scores_html}
+</div>"""
+    st.markdown(html, unsafe_allow_html=True)
+
+
+def render_adl_assessment(customer_data):
+    """Render ADL (Activities of Daily Living) assessment"""
+    
+    adl = customer_data.get('adl_assessment')
+    if not adl:
+        return
+    
+    # ADL categories with icons
+    adl_icons = {
+        'bathing': '🚿',
+        'dressing': '👔',
+        'toileting': '🚽',
+        'transferring': '🚶',
+        'eating': '🍽️',
+        'medication': '💊'
+    }
+    
+    # Status colors
+    status_colors = {
+        'Independent': '#10b981',
+        'Needs Reminders': '#3b82f6',
+        'Needs Assistance': '#f59e0b',
+        'Fully Dependent': '#ef4444',
+        'Needs Setup': '#3b82f6',
+        'Needs Feeding Assistance': '#f59e0b',
+        'Injectable Meds': '#f59e0b',
+        'Needs Administration': '#f59e0b',
+        'Requires Equipment': '#f59e0b',
+        'Two Person Transfer': '#ef4444'
+    }
+    
+    # Build ADL items
+    adl_html = ""
+    for category, status in adl.items():
+        icon = adl_icons.get(category, '📋')
+        color = status_colors.get(status, '#64748b')
+        category_display = category.replace('_', ' ').title()
+        
+        adl_html += f"""<div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: #f8fafc; border-radius: 4px; margin-bottom: 0.5rem;">
+    <div>
+        <span style="font-size: 1.2rem; margin-right: 0.5rem;">{icon}</span>
+        <strong>{category_display}</strong>
+    </div>
+    <span style="color: {color}; font-weight: 600; font-size: 0.9rem;">{status}</span>
+</div>
+"""
+    
+    # Mobility info
+    mobility = customer_data.get('mobility', {})
+    mobility_html = ""
+    if mobility:
+        equipment = mobility.get('equipment', 'None')
+        fall_risk = mobility.get('fall_risk', 'Unknown')
+        
+        risk_color = {
+            'Low': '#10b981',
+            'Moderate': '#f59e0b',
+            'High': '#ef4444'
+        }.get(fall_risk, '#64748b')
+        
+        mobility_html = f"""<hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 1rem 0;">
+<p style="margin-bottom: 0.5rem;"><strong>Mobility Assessment:</strong></p>
+<p>🦽 <strong>Equipment:</strong> {equipment}</p>
+<p>⚠️ <strong>Fall Risk:</strong> <span style="color: {risk_color}; font-weight: 600;">{fall_risk}</span></p>"""
+    
+    html = f"""<div class="info-card">
+<h3>📊 ADL Assessment</h3>
+<p style="color: #64748b; font-size: 0.9rem; margin-bottom: 0.75rem;">Activities of Daily Living independence levels</p>
+{adl_html}
+{mobility_html}
+</div>"""
+    st.markdown(html, unsafe_allow_html=True)
+
+
+def render_family_involvement(customer_data):
+    """Render family context and involvement"""
+    
+    family = customer_data.get('family_context')
+    if not family:
+        return
+    
+    relationship = family.get('primary_contact_relationship', 'Unknown')
+    involvement = family.get('involvement_level', 'Unknown')
+    decision_maker = family.get('decision_maker', False)
+    lives_nearby = family.get('lives_nearby', False)
+    financial_poa = family.get('financial_poa', False)
+    
+    # Build badges
+    badges = []
+    if decision_maker:
+        badges.append('<span style="background: #dbeafe; color: #1e40af; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">Decision Maker</span>')
+    if lives_nearby:
+        badges.append('<span style="background: #dcfce7; color: #15803d; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">Lives Nearby</span>')
+    if financial_poa:
+        badges.append('<span style="background: #fef3c7; color: #92400e; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">Financial POA</span>')
+    
+    badges_html = " ".join(badges) if badges else ""
+    
+    html = f"""<div class="info-card">
+<h3>👨‍👩‍👧‍👦 Family Involvement</h3>
+<p><strong>Primary Contact:</strong> {relationship}</p>
+<p><strong>Involvement Level:</strong> {involvement}</p>
+{f'<div style="margin-top: 0.5rem;">{badges_html}</div>' if badges_html else ''}
+</div>"""
+    st.markdown(html, unsafe_allow_html=True)
+
+
+def render_relationship_info(navigator_data):
+    """Render relationship and care recipient information"""
+    if not navigator_data:
+        return
+    
+    relationship = navigator_data.get('relationship_type')
+    if relationship:
+        person_name = navigator_data.get('person_name', '')
+        person_html = f"<p><strong>Care Recipient:</strong> {person_name}</p>" if person_name else ""
+        
+        html = f"""
+        <div class="info-card">
+            <h3>👥 Relationship Information</h3>
+            <p><strong>Relationship:</strong> {relationship}</p>
+            {person_html}
+        </div>
+        """
+        st.markdown(html, unsafe_allow_html=True)
+
+
+def render_appointments(customer_id):
+    """Render customer appointments"""
+    crm_repo = CrmRepository()
+    appointments = crm_repo.list_records("appointments")
+    
+    # Filter appointments for this customer
+    customer_appointments = [
+        a for a in appointments 
+        if customer_id in [a.get('customer_id'), a.get('user_id')]
+    ]
+    
+    # Build appointments HTML
+    if customer_appointments:
+        appointments_html = ""
+        for appt in customer_appointments:
+            status = appt.get('status', 'Unknown')
+            appt_type = appt.get('appointment_type', 'Consultation')
+            scheduled = appt.get('scheduled_at', 'Not scheduled')
+            confirmation = appt.get('confirmation_id', 'N/A')
+            
+            status_class = "status-complete" if status.lower() == "scheduled" else "status-in-progress"
+            
+            appointments_html += f"""
+            <div style="padding: 0.75rem; background: #f8fafc; border-radius: 8px; margin-bottom: 0.5rem;">
+                <p style="margin: 0; font-weight: 600; color: #1f2937;">{appt_type}</p>
+                <p style="margin: 0.25rem 0 0 0; font-size: 0.875rem; color: #64748b;">
+                    {scheduled} • <span class="status-badge {status_class}">{status}</span>
+                </p>
+                <p style="margin: 0.25rem 0 0 0; font-size: 0.875rem; color: #64748b;">
+                    Confirmation: {confirmation}
+                </p>
+            </div>
+            """
+    else:
+        appointments_html = '<p style="color: #64748b;">No appointments scheduled</p>'
+    
+    html = f"""
+    <div class="info-card">
+        <h3>📅 Appointments</h3>
+        {appointments_html}
+    </div>
+    """
+    st.markdown(html, unsafe_allow_html=True)
+    
+    # Keep button as Streamlit component (outside the HTML card)
+    if st.button("➕ Schedule New Appointment", type="primary", key=f"sched_appt_{customer_id}"):
+        st.session_state['schedule_for_customer'] = customer_id
+        st.info("📞 Please navigate to **Appointments** page using the sidebar to schedule")
+
+
+def render_notes(customer_id):
+    """Render customer notes and interactions"""
+    crm_repo = CrmRepository()
+    notes = crm_repo.list_records("notes")
+    
+    # Filter notes for this customer
+    customer_notes = [
+        n for n in notes 
+        if customer_id in [n.get('customer_id'), n.get('user_id')]
+    ]
+    
+    # Build notes HTML
+    if customer_notes:
+        notes_html = ""
+        for note in customer_notes[-5:]:  # Show last 5 notes
+            created = note.get('created_at', 'Unknown')
+            content = note.get('note', 'No content')
+            note_type = note.get('note_type', 'General')
+            created_date = created[:10] if created != 'Unknown' else 'Unknown'
+            
+            notes_html += f"""
+            <div class="timeline-item">
+                <p class="timeline-date">{created_date} • {note_type}</p>
+                <div class="timeline-content">{content}</div>
+            </div>
+            """
+        
+        if len(customer_notes) > 5:
+            notes_html += f'<p style="color: #64748b; font-size: 0.875rem;">+ {len(customer_notes) - 5} more notes</p>'
+    else:
+        notes_html = '<p style="color: #64748b;">No notes recorded</p>'
+    
+    html = f"""
+    <div class="info-card">
+        <h3>📝 Notes & Interactions</h3>
+        {notes_html}
+    </div>
+    """
+    st.markdown(html, unsafe_allow_html=True)
+    
+    # Quick action button (outside HTML card)
+    if st.button("➕ Add Note", type="primary", key=f"add_note_{customer_id}"):
+        st.session_state['add_note_customer'] = customer_id
+        st.info("📝 Please navigate to **Notes & Interactions** page using the sidebar to add a note")
+
+
+def render_activity_timeline(navigator_data):
+    """Render customer activity timeline"""
+    
+    if not navigator_data:
+        content_html = '<p style="color: #64748b;">No activity data available</p>'
+    else:
+        # Last activity
+        last_activity = navigator_data.get('last_activity', 'Never')
+        last_activity_days = navigator_data.get('last_activity_days', 999)
+        
+        if last_activity != 'Never':
+            if last_activity_days <= 7:
+                activity_status = "🟢 Active (within last week)"
+            elif last_activity_days <= 30:
+                activity_status = "🟡 Recent (within last month)"
+            else:
+                activity_status = "🔴 Inactive (over 30 days)"
+            
+            content_html = f"""
+            <p><strong>Status:</strong> {activity_status}</p>
+            <p><strong>Last Seen:</strong> {last_activity}</p>
+            """
+        else:
+            content_html = '<p style="color: #64748b;">No activity recorded</p>'
+    
+    html = f"""
+    <div class="info-card">
+        <h3>🕒 Activity Timeline</h3>
+        {content_html}
+    </div>
+    """
+    st.markdown(html, unsafe_allow_html=True)
+
+
+def render_quick_actions(customer_id, customer_data):
+    """Render quick action buttons"""
+    # Title as HTML for consistency
+    html = '<div class="info-card"><h3>⚡ Quick Actions</h3></div>'
+    st.markdown(html, unsafe_allow_html=True)
+    
+    # Stack buttons vertically instead of using columns
+    if st.button("📞 Schedule Call", use_container_width=True, key=f"schedule_call_{customer_id}"):
+        st.session_state['schedule_for_customer'] = customer_id
+        st.toast("📞 Customer marked for scheduling - use Appointments page")
+    
+    if st.button("📝 Add Note", use_container_width=True, key=f"quick_note_{customer_id}"):
+        st.session_state['add_note_customer'] = customer_id
+        st.toast("📝 Customer marked for note - use Notes page")
+    
+    if st.button("📧 Send Email", use_container_width=True, key=f"send_email_{customer_id}"):
+        email = customer_data.get('email') or customer_data.get('contact_email')
+        if email:
+            st.info(f"📧 Email: {email}")
+        else:
+            st.warning("No email on file")
+    
+    def navigate_to_matching():
+        st.session_state['match_for_customer'] = customer_id
+        st.session_state['navigate_to_page'] = "🏘️ Smart Matching"
+    
+    st.button("🏘️ Match Communities", use_container_width=True, 
+             key=f"match_comm_{customer_id}", on_click=navigate_to_matching)
+    
+    # Danger zone - delete button
+    st.markdown("---")
+    st.markdown("**⚠️ Danger Zone**")
+    
+    # Use a confirmation pattern
+    if 'confirm_delete' not in st.session_state:
+        st.session_state['confirm_delete'] = None
+    
+    if st.session_state['confirm_delete'] == customer_id:
+        # Show confirmation buttons
+        st.warning(f"⚠️ Are you sure you want to delete **{customer_data.get('name', customer_id)}**?")
+        st.write(f"**Customer ID:** `{customer_id}`")
+        st.write("This action cannot be undone.")
+        
+        def set_perform_delete():
+            st.session_state['perform_delete'] = customer_id
+            
+        def clear_confirm():
+            st.session_state['confirm_delete'] = None
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            st.button("✅ Yes, Delete", use_container_width=True, type="primary", 
+                     key=f"btn_confirm_yes_{customer_id}", on_click=set_perform_delete)
+        with col2:
+            st.button("❌ Cancel", use_container_width=True, 
+                     key=f"btn_confirm_no_{customer_id}", on_click=clear_confirm)
+    else:
+        # Show initial delete button
+        def set_confirm_delete():
+            st.session_state['confirm_delete'] = customer_id
+            
+        st.button("🗑️ Delete Customer", use_container_width=True, type="secondary", 
+                 key=f"btn_initial_delete_{customer_id}", on_click=set_confirm_delete)
+
+
+def render():
+    """Main render function for Customer 360 view"""
+    
+    # CRITICAL: Check for pending deletion BEFORE any UI rendering
+    # This must happen at the top because Streamlit button clicks trigger
+    # an immediate rerun BEFORE the button's code block executes
+    if st.session_state.get('perform_delete'):
+        customer_id_to_delete = st.session_state['perform_delete']
+        result = delete_crm_customer(customer_id_to_delete)
+        
+        if result:
+            st.success(f"✅ Customer deleted successfully!")
+            # Clear all related session state
+            if 'selected_customer' in st.session_state:
+                del st.session_state['selected_customer']
+            st.session_state['perform_delete'] = None
+            st.session_state['confirm_delete'] = None
+            st.balloons()
+            # Force full page refresh
+            import time
+            time.sleep(1)
+            st.rerun()
+        else:
+            st.error(f"❌ Failed to delete customer - not found in database")
+            st.session_state['perform_delete'] = None
+            st.session_state['confirm_delete'] = None
+            st.rerun()
+    
+    try:
+        inject_customer_360_css()
+    except Exception as e:
+        st.error(f"Error loading CSS: {e}")
+    
+    # Check if we have a selected customer
+    customer_id = st.session_state.get('selected_customer')
     
     if not customer_id:
-        # Customer selection interface
-        st.markdown("""
-        <div class="customer-header">
-            <h1 class="customer-name">Customer 360° View</h1>
-            <p class="customer-context">Select a customer to view their comprehensive profile</p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        reader = NavigatorDataReader()
-        customers = reader.get_all_customers()
-        
-        if customers:
-            st.subheader("Select Customer")
-            for customer in customers:
-                col1, col2, col3 = st.columns([3, 2, 1])
-                with col1:
-                    st.write(f"**{customer.get('person_name', 'Unknown')}**")
-                with col2:
-                    st.write(f"Last activity: {customer.get('last_activity', 'Never')}")
-                with col3:
-                    if st.button("View", key=f"view_{customer['user_id']}"):
-                        st.session_state['selected_customer'] = customer['user_id']
-                        st.rerun()
-        else:
-            st.info("No customers found. Customers will appear here after they use the Navigator.")
-        
+        st.warning("⚠️ No customer selected")
+        st.info("👉 Please select a customer from the Customers page to view their 360° profile.")
+        st.markdown("---")
+        st.markdown("**How to view a customer:**")
+        st.markdown("1. Go to **👥 Customers** page (use sidebar)")
+        st.markdown("2. Click **View Details** on any customer card")
         return
     
-    # Customer details view
-    reader = NavigatorDataReader()
-    customer_data = reader.get_customer_by_id(customer_id)
+    # Load customer data from CRM
+    try:
+        customer_data = get_crm_customer_by_id(customer_id)
+    except Exception as e:
+        st.error(f"Error loading customer data: {e}")
+        import traceback
+        with st.expander("Error Details"):
+            st.code(traceback.format_exc())
+        return
     
     if not customer_data:
-        st.error(f"Customer not found: {customer_id}")
+        st.error(f"❌ Customer not found: {customer_id}")
+        st.info("The customer may have been deleted or the ID is invalid.")
+        if st.button("Clear Selection"):
+            del st.session_state['selected_customer']
+            st.rerun()
         return
     
-    # Render customer 360° view
-    render_customer_header(customer_data)
-    render_key_metrics(customer_data)
-    render_assessments(customer_data)
-    render_ai_next_steps(customer_data)
-    render_action_bar()
+    # Load Navigator-specific data
+    try:
+        reader = NavigatorDataReader()
+        navigator_data = reader.get_customer_by_id(customer_id)
+    except Exception as e:
+        st.warning(f"Could not load Navigator data: {e}")
+        navigator_data = None
+    
+    # Back button
+    if st.button("← Back to Customers"):
+        # Clear the selected customer and return to customers page
+        if 'selected_customer' in st.session_state:
+            del st.session_state['selected_customer']
+        st.info("👈 Use sidebar to navigate back to Customers page")
+        st.rerun()
+    
+    # Render customer profile
+    try:
+        render_customer_header(customer_data)
+    except Exception as e:
+        st.error(f"Error rendering header: {e}")
+    
+    # Use single column layout to avoid width issues
+    # Primary information
+    try:
+        render_contact_info(customer_data)
+    except Exception as e:
+        st.error(f"Error rendering contact info: {e}")
+    
+    try:
+        render_navigator_status(navigator_data)
+    except Exception as e:
+        st.error(f"Error rendering Navigator status: {e}")
+    
+    try:
+        render_relationship_info(navigator_data)
+    except Exception as e:
+        st.error(f"Error rendering relationship info: {e}")
+    
+    # Enriched data sections (medical, ADL, family)
+    if 'medical_conditions' in customer_data or 'medication_count' in customer_data:
+        try:
+            render_medical_profile(customer_data)
+        except Exception as e:
+            st.error(f"❌ Medical profile error: {type(e).__name__}")
+    
+    if 'adl_assessment' in customer_data:
+        try:
+            render_adl_assessment(customer_data)
+        except Exception as e:
+            st.error(f"❌ ADL assessment error: {type(e).__name__}")
+    
+    if 'family_context' in customer_data:
+        try:
+            render_family_involvement(customer_data)
+        except Exception as e:
+            st.error(f"❌ Family involvement error: {type(e).__name__}")
+    
+    # Secondary information
+    try:
+        render_appointments(customer_id)
+    except Exception as e:
+        st.error(f"Error rendering appointments: {e}")
+    
+    try:
+        render_notes(customer_id)
+    except Exception as e:
+        st.error(f"Error rendering notes: {e}")
+    
+    try:
+        render_activity_timeline(navigator_data)
+    except Exception as e:
+        st.error(f"Error rendering activity timeline: {e}")    # Quick actions at bottom
+    st.markdown("---")
+    try:
+        render_quick_actions(customer_id, customer_data)
+    except Exception as e:
+        st.error(f"Error rendering quick actions: {e}")

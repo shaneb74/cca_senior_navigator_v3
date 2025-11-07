@@ -39,6 +39,8 @@ class QuickBaseClient:
         # Table IDs from your production environment
         self.communities_table_id = "bkp5hn255"  # WA Communities
         self.contacts_table_id = "bkqfsmeuq"     # WA Clients (fallback)
+        self.wa_clients_table_id = "bkqfsmeuq"   # WA Clients
+        self.intake_forms_table_id = "bkpvi5e32" # Intake Forms
         
     def _make_request(self, method: str, endpoint: str, data: Dict = None) -> Dict:
         """Make authenticated request to QuickBase API"""
@@ -75,21 +77,43 @@ class QuickBaseClient:
         
         # Note: Using production tokens by default, can override with env vars
         
-        # QuickBase query for communities - start broad, then filter in code
+        # QuickBase query for communities - focused high-impact matching criteria
         query_data = {
             "from": self.communities_table_id,
             "select": [
+                # Core identification (existing)
                 3,   # Record ID
                 27,  # Business Name (Community Name)
                 6,   # Name (Contact Person Name)
+                55,  # Licensee
+                21,  # Type/Care Level
                 7,   # Address 
                 33,  # Phone Number
                 34,  # Cell Phone
                 37,  # Email
-                55,  # Licensee
-                21,  # Type/Care Level
                 59,  # Vacancy (current availability info)
                 40,  # Number of beds (total capacity)
+                
+                # Critical safety/medical (4 fields)
+                91,  # Hoyer Lift - Critical for mobility assistance
+                71,  # Dedicated Memory Care - Alzheimer's/dementia safety
+                89,  # 2 Person Transfers - Heavy care needs
+                147, # Bariatric - Weight management capabilities
+                
+                # Common medical needs (3 fields)
+                90,  # Insulin management - Very common (diabetes)
+                151, # Wound care - Common post-hospital need
+                19,  # Awake night staff - Safety for high-risk residents
+                
+                # High-impact lifestyle (3 fields)
+                61,  # Pet policies - Major emotional/psychological impact
+                104, # Languages spoken - Cultural/communication needs
+                47,  # Full kitchen - Independence preference
+                
+                # Filters
+                43,  # Do Not Place List
+                96,  # Community Closed
+                45,  # Contracted with CCA
             ],
             # Remove WHERE clause to see all data first, then filter in validation
             "options": {
@@ -171,14 +195,13 @@ class QuickBaseClient:
             # QuickBase returns fields at the top level, not nested under "fields"
             # Structure: {"21": {"value": "Adult Family Home"}, "27": {"value": "Business Name"}}
             
-            # Debug: Log available fields
-            # logger.info(f"Available fields in record: {available_fields}")
-            
-            # Extract field values from top-level structure
+            # Extract basic field values
             name = record.get("27", {}).get("value", "Unknown Community")  # Business Name
             contact_person = record.get("6", {}).get("value", "")  # Name (Contact Person)
             
             address = record.get("7", {}).get("value", "")
+            city = record.get("10", {}).get("value", "")
+            state = record.get("11", {}).get("value", "")
             phone = record.get("33", {}).get("value", "")
             cell_phone = record.get("34", {}).get("value", "")
             email = record.get("37", {}).get("value", "")
@@ -186,9 +209,7 @@ class QuickBaseClient:
             care_type = record.get("21", {}).get("value", "")
             vacancy_info = record.get("59", {}).get("value", "")  # Current vacancy status
             num_beds = record.get("40", {}).get("value", 0)  # Total capacity
-            
-            # Log care type for debugging (can be removed in production)
-            # logger.info(f"Community {name}: care_type = '{care_type}'")
+            rating = record.get("42", {}).get("value", "")
             
             # Use contact person name if licensee is empty
             if not licensee and contact_person:
@@ -222,17 +243,8 @@ class QuickBaseClient:
             if not care_levels:
                 care_levels = ["assisted_living"]
             
-            # logger.info(f"Community {name}: mapped care_levels = {care_levels}")
-            
             # Parse location from address - specifically for Bellevue
-            location = "Washington, WA"  # Default for WA state
-            if address:
-                # Extract city, state from address if more specific
-                address_parts = address.split(",")
-                if len(address_parts) >= 2:
-                    city = address_parts[-2].strip()
-                    if 'bellevue' in city.lower():
-                        location = f"{city}, WA"
+            location = f"{city}, {state}" if city and state else "Washington, WA"
             
             # Parse vacancy information more intelligently
             vacancy_status = "Contact for availability"  # Default
@@ -271,28 +283,115 @@ class QuickBaseClient:
                 else:
                     availability = "contact"
             
+            # Extract amenities from QuickBase checkbox fields (focused set)
+            amenities = []
+            
+            # Helper function to check checkbox value
+            def is_checked(field_id):
+                return record.get(str(field_id), {}).get("value") == "1"
+            
+            # High-impact amenities only
+            if is_checked(47):  # Full Kitchen
+                amenities.append("full_kitchen")
+            
+            # Always include basic amenities
+            amenities.extend(["dining", "activities", "transportation"])
+            
+            # Extract critical specializations and medical services
+            specializations = list(care_levels)  # Start with care levels
+            
+            # Critical safety/medical capabilities
+            if is_checked(71):  # Dedicated Memory Care
+                specializations.append("memory_care_dedicated")
+            if is_checked(91):  # Hoyer Lift
+                specializations.append("hoyer_lift")
+            if is_checked(147): # Bariatric
+                specializations.append("bariatric_care")
+            if is_checked(89):  # 2 Person Transfers
+                specializations.append("two_person_transfers")
+            
+            # Common medical services
+            if is_checked(90):  # Insulin
+                specializations.append("insulin_management")
+            if is_checked(151): # Wound Care
+                specializations.append("wound_care")
+            if is_checked(19):  # Awake Staff
+                specializations.append("awake_staff")
+            
+            # Extract lifestyle preferences (high-impact only)
+            lifestyle_features = []
+            if is_checked(61):  # Allows Pets w/placement
+                lifestyle_features.append("pet_friendly")
+            
+            # Extract languages spoken
+            languages_spoken = record.get("104", {}).get("value", "")
+            if languages_spoken:
+                lifestyle_features.append(f"languages: {languages_spoken}")
+            
+            # Parse rating (if available)
+            rating_value = 4.5  # Default
+            if rating:
+                try:
+                    rating_value = float(rating)
+                except:
+                    pass
+            
+            # Fetch real cost data from actual placements
+            record_id = record.get('recordId')
+            cost_data = None
+            if record_id:
+                try:
+                    cost_data = self.get_community_cost_data(record_id)
+                except Exception as e:
+                    logger.warning(f"Could not fetch cost data for community {record_id}: {e}")
+                    cost_data = None
+            
             community = {
-                "id": f"qb_{record.get('recordId', 'unknown')}",
+                "id": f"qb_{record_id if record_id else 'unknown'}",
                 "name": name,
                 "location": location,
                 "care_levels": care_levels,
-                "monthly_cost": {"min": 4000, "max": 8000},  # Default range - could be enhanced
-                "amenities": ["dining", "activities", "transportation"],  # Default amenities
-                "specializations": care_levels,
-                "rating": 4.5,  # Default rating - could be enhanced with QB field
-                "availability": availability,  # Real-time availability from QuickBase
-                "vacancy_info": vacancy_info,  # Raw vacancy text from QuickBase
-                "vacancy_status": vacancy_status,  # Parsed status
-                "available_beds": available_beds,  # Parsed bed count
-                "total_beds": num_beds if num_beds else "Not specified",  # Total capacity
+                "monthly_cost": cost_data if cost_data else None,  # Real data or None
+                "amenities": amenities,
+                "specializations": specializations,
+                "lifestyle_features": lifestyle_features,
+                "rating": rating_value,
+                "availability": availability,
+                "vacancy_info": vacancy_info,
+                "vacancy_status": vacancy_status,
+                "available_beds": available_beds,
+                "total_beds": num_beds if num_beds else "Not specified",
                 "contact": contact_info,
                 "licensee": licensee,
                 "phone": phone,
                 "cell_phone": cell_phone,
                 "email": email,
                 "address": address,
+                "city": city,
+                "state": state,
                 "care_type": care_type,
-                "record_id": record.get('recordId', 'unknown')  # Add record ID for unique keys
+                "rating_text": rating,
+                "languages_spoken": languages_spoken,
+                "record_id": record.get('recordId', 'unknown'),
+                
+                # QuickBase-specific data for advanced matching (focused set)
+                "qb_data": {
+                    # Critical safety/medical
+                    "hoyer_lift": is_checked(91),
+                    "memory_care_dedicated": is_checked(71),
+                    "bariatric": is_checked(147),
+                    "two_person_transfers": is_checked(89),
+                    
+                    # Common medical services
+                    "insulin_management": is_checked(90),
+                    "wound_care": is_checked(151),
+                    "awake_staff": is_checked(19),
+                    
+                    # High-impact lifestyle
+                    "pet_friendly": is_checked(61),
+                    "full_kitchen": is_checked(47),
+                    "languages_spoken": languages_spoken,
+                }
             }
             
             return community
@@ -341,6 +440,163 @@ class QuickBaseClient:
                 "address": "456 Bellevue Way, Bellevue, WA 98004",
                 "care_type": "Assisted Living",
                 "record_id": "mock_002"
+            }
+        ]
+    
+    def get_community_cost_data(self, community_record_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get cost data for a community based on actual placements from WA Clients table
+        
+        Args:
+            community_record_id: The QuickBase record ID of the community
+            
+        Returns:
+            Dictionary with min, max, avg move-in amounts from actual placements
+            or None if no placement data available
+        """
+        if not REQUESTS_AVAILABLE:
+            logger.warning("requests library not available")
+            return None
+        
+        # Query WA Clients for placements to this community
+        # Field 47: Placed In (Related Community)
+        # Field 69: Move In Amount  
+        query_data = {
+            "from": self.wa_clients_table_id,
+            "select": [47, 69],  # Placed In, Move In Amount
+            "where": f"{{47.EX.{community_record_id}}}",  # Filter by community
+            "options": {
+                "skip": 0,
+                "top": 100
+            }
+        }
+        
+        try:
+            result = self._make_request("POST", "records/query", query_data)
+            
+            if "data" not in result or not result["data"]:
+                return None
+            
+            # Collect move-in amounts
+            amounts = []
+            for record in result["data"]:
+                field_data = record.get("69")
+                if field_data and isinstance(field_data, dict):
+                    move_in = field_data.get("value")
+                    if move_in and isinstance(move_in, (int, float)) and move_in > 0:
+                        amounts.append(float(move_in))
+            
+            if not amounts:
+                return None
+            
+            return {
+                "min": min(amounts),
+                "max": max(amounts),
+                "avg": sum(amounts) / len(amounts),
+                "count": len(amounts)
+            }
+            
+        except Exception as e:
+            logger.error(f"Error fetching cost data for community {community_record_id}: {e}")
+            return None
+    
+    def get_active_advisors(self) -> List[Dict[str, Any]]:
+        """
+        Fetch active advisors from WA Clients table
+        
+        Returns list of currently assigned advisors with:
+        - name: Full advisor name
+        - email: Email address
+        - qb_user_id: QuickBase user ID
+        """
+        if not REQUESTS_AVAILABLE:
+            logger.warning("requests library not available, returning mock advisors")
+            return self._get_mock_advisors()
+        
+        # Query WA Clients for advisor assignments
+        query_data = {
+            "from": self.wa_clients_table_id,  # WA Clients (bkqfsmeuq)
+            "select": [81, 89],  # Advisor #1 and Advisor #2 fields
+            "options": {
+                "skip": 0,
+                "top": 1000  # Get all clients to find all advisors
+            }
+        }
+        
+        try:
+            result = self._make_request("POST", "records/query", query_data)
+            
+            if "data" not in result:
+                logger.warning("No advisor data returned from QuickBase")
+                return self._get_mock_advisors()
+            
+            # Collect unique advisors from both advisor fields
+            advisors = {}
+            for record in result["data"]:
+                # Check both Advisor #1 (field 81) and Advisor #2 (field 89)
+                for field_id in ["81", "89"]:
+                    advisor_data = record.get(field_id, {}).get("value")
+                    if advisor_data and isinstance(advisor_data, dict):
+                        advisor_id = advisor_data.get("id")
+                        if advisor_id:  # Use QB user ID as unique key
+                            advisors[advisor_id] = {
+                                "name": advisor_data.get("name", "Unknown Advisor"),
+                                "email": advisor_data.get("email", ""),
+                                "qb_user_id": advisor_id
+                            }
+            
+            # Convert to sorted list by name
+            advisor_list = sorted(advisors.values(), key=lambda x: x["name"])
+            
+            logger.info(f"Retrieved {len(advisor_list)} active advisors from QuickBase")
+            return advisor_list
+            
+        except Exception as e:
+            logger.error(f"Error fetching advisors: {e}")
+            return self._get_mock_advisors()
+    
+    def _get_mock_advisors(self) -> List[Dict[str, Any]]:
+        """Fallback mock advisor data when QuickBase is unavailable"""
+        return [
+            {
+                "name": "Jenny- Pierce Co. Austin-Krzemien",
+                "email": "jenny@conciergecareadvisors.com",
+                "qb_user_id": "mock_jenny"
+            },
+            {
+                "name": "Kelsey - Pierce Co Jochum",
+                "email": "kelsey@conciergecareadvisors.com",
+                "qb_user_id": "mock_kelsey"
+            },
+            {
+                "name": "Jennifer-North King James",
+                "email": "jenniferj@conciergecareadvisors.com",
+                "qb_user_id": "mock_jennifer"
+            },
+            {
+                "name": "Marta - S Snoho Street",
+                "email": "marta@conciergecareadvisors.com",
+                "qb_user_id": "mock_marta"
+            },
+            {
+                "name": "Chanda - Thurston Co. Hickman",
+                "email": "chanda@conciergecareadvisors.com",
+                "qb_user_id": "mock_chanda"
+            },
+            {
+                "name": "Karine Stebbins",
+                "email": "karine@conciergecareadvisors.com",
+                "qb_user_id": "mock_karine"
+            },
+            {
+                "name": "JJ White",
+                "email": "jj@conciergecareadvisors.com",
+                "qb_user_id": "mock_jj"
+            },
+            {
+                "name": "Ashley - Eastside Angst",
+                "email": "ashley@conciergecareadvisors.com",
+                "qb_user_id": "mock_ashley"
             }
         ]
 

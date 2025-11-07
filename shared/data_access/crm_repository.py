@@ -263,10 +263,17 @@ class CrmRepository:
         return False
     
     def delete_record(self, record_type: str, record_id: str) -> bool:
-        """Delete a record by ID."""
+        """Delete a record by ID. Handles multiple ID field names."""
         records = self.list_records(record_type)
         original_count = len(records)
-        records = [r for r in records if r.get("id") != record_id]
+        
+        # Check multiple possible ID fields
+        records = [r for r in records if not any([
+            r.get("id") == record_id,
+            r.get("customer_id") == record_id,
+            r.get("user_id") == record_id,
+            r.get("lead_id") == record_id
+        ])]
         
         if len(records) < original_count:
             filename = f"{record_type}.jsonl"
