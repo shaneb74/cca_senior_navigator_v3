@@ -156,10 +156,12 @@ try:
 except ValueError:
     default_index = 0
 
-# Override navigation if we're in the middle of a deletion flow or marking for matching
-if (st.session_state.get('confirm_delete') or 
-    st.session_state.get('perform_delete') or
-    st.session_state.get('selected_customer')):
+# Override navigation if we're in the middle of a deletion flow or navigating to a specific page
+if st.session_state.get('navigate_to_page'):
+    page = st.session_state['navigate_to_page']
+    del st.session_state['navigate_to_page']  # Clear after using
+elif st.session_state.get('confirm_delete') or st.session_state.get('perform_delete'):
+    # Force Customer 360 during deletion flow
     page = "👤 Customer 360°"
 else:
     page = st.sidebar.radio(

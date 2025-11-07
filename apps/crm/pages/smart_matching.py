@@ -305,37 +305,18 @@ def load_community_database():
 def render_customer_context(customer_data):
     """Render customer context for matching"""
     care_rec = customer_data.get('care_recommendation', 'Not assessed')
-    budget_status = "Established" if customer_data.get('has_cost_plan') else "Needs planning"
-    journey_progress = "90%" if customer_data.get('has_gcp_assessment') and customer_data.get('has_cost_plan') else "In progress"
-    readiness = "High" if customer_data.get('has_gcp_assessment') and customer_data.get('has_cost_plan') else "Medium"
     
     # Handle different name fields from different sources
     customer_name = customer_data.get('name') or customer_data.get('person_name', 'Customer')
     
     context_html = f"""
-    <div class="context-panel">
-        <div class="context-header">
-            <div class="context-icon">👤</div>
-            <h2 class="context-title">{customer_name} - Matching Context</h2>
-        </div>
-        <div class="context-grid">
-            <div class="context-item">
-                <div class="context-value">{care_rec}</div>
-                <div class="context-label">Care Recommendation</div>
-            </div>
-            <div class="context-item">
-                <div class="context-value">{budget_status}</div>
-                <div class="context-label">Budget Status</div>
-            </div>
-            <div class="context-item">
-                <div class="context-value">{journey_progress}</div>
-                <div class="context-label">Journey Progress</div>
-            </div>
-            <div class="context-item">
-                <div class="context-value">{readiness}</div>
-                <div class="context-label">Readiness Level</div>
-            </div>
-        </div>
+    <div style="margin-bottom: 1.5rem;">
+        <h2 style="margin: 0 0 0.5rem 0; font-size: 1.5rem; color: #1e293b;">
+            👤 {customer_name} - Community Matches
+        </h2>
+        <p style="margin: 0; color: #64748b;">
+            <strong>Care Need:</strong> {care_rec}
+        </p>
     </div>
     """
     
@@ -406,6 +387,11 @@ def render_community_match(community, score, reasons):
 def render(customer_id=None):
     """Main render function for Smart Community Matching"""
     inject_matching_css()
+    
+    # Check for customer to match (from Customer 360 "Match Communities" button)
+    if not customer_id and 'match_for_customer' in st.session_state:
+        customer_id = st.session_state['match_for_customer']
+        del st.session_state['match_for_customer']  # Clear after using
     
     # Check for selected customer in session state if no customer_id provided
     if not customer_id and 'matching_customer' in st.session_state:
@@ -489,21 +475,7 @@ def render(customer_id=None):
         st.error(f"Customer not found: {customer_id}")
         return
     
-    # Matching header
-    customer_name = customer_data.get('name') or customer_data.get('person_name', 'Unknown Customer')
-    st.markdown(f"""
-    <div class="matching-header">
-        <h1 class="matching-title">
-            🎯 Community Matches for {customer_name}
-            <span class="smart-badge">AI Powered</span>
-        </h1>
-        <p class="matching-subtitle">
-            Intelligent recommendations based on Navigator assessments
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Customer context
+    # Customer context (this shows the customer name prominently)
     st.markdown(render_customer_context(customer_data), unsafe_allow_html=True)
     
     # Load communities and calculate matches
@@ -536,8 +508,7 @@ def render(customer_id=None):
                 for reason in reasons[:3]:
                     st.markdown(f"• ✅ {reason}")
                 
-                # Show details
-                cost_range = f"${community['monthly_cost']['min']:,} - ${community['monthly_cost']['max']:,}"
+                # Show availability details
                 avail_map = {
                     'immediate': '✅ Immediate',
                     '2_weeks': '⏰ 2 weeks', 
@@ -547,15 +518,11 @@ def render(customer_id=None):
                 }
                 availability = avail_map.get(community['availability'], 'Contact for details')
                 
-                # Create columns for metrics including vacancy info
-                col1, col2, col3, col4 = st.columns(4)
+                # Create columns for metrics including vacancy info (removed fake cost and rating)
+                col1, col2 = st.columns(2)
                 with col1:
-                    st.metric("Monthly Cost", cost_range)
-                with col2:
                     st.metric("Availability", availability)
-                with col3:
-                    st.metric("Rating", f"{community['rating']}/5 ⭐")
-                with col4:
+                with col2:
                     # Show real-time vacancy data from QuickBase
                     if community.get('available_beds', 0) > 0:
                         st.metric("Open Beds", f"{community['available_beds']} available")
@@ -597,8 +564,6 @@ def render(customer_id=None):
                         details = f"**{community['name']} Details:**\n\n"
                         details += f"**Care Type:** {community.get('care_type', 'Not specified')}\n\n"
                         details += f"**Care Levels:** {', '.join(community.get('care_levels', []))}\n\n"
-                        details += f"**Monthly Cost:** ${community['monthly_cost']['min']:,} - ${community['monthly_cost']['max']:,}\n\n"
-                        details += f"**Rating:** {community['rating']}/5 ⭐\n\n"
                         details += f"**Availability:** {availability}\n\n"
                         
                         # Add real-time vacancy information from QuickBase
