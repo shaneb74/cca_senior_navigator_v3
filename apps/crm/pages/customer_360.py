@@ -695,20 +695,20 @@ def render_quick_actions(customer_id, customer_data):
         col1, col2 = st.columns(2)
         with col1:
             st.button("✅ Yes, Delete", use_container_width=True, type="primary", 
-                     key=f"confirm_delete_{customer_id}", on_click=set_perform_delete)
+                     key=f"btn_confirm_yes_{customer_id}", on_click=set_perform_delete)
         with col2:
             st.button("❌ Cancel", use_container_width=True, 
-                     key=f"cancel_delete_{customer_id}", on_click=clear_confirm)
+                     key=f"btn_confirm_no_{customer_id}", on_click=clear_confirm)
     else:
+        # Show initial delete button
+        def set_confirm_delete():
+            print(f"\n🔵 SET_CONFIRM_DELETE CALLBACK FIRED for {customer_id}")
         # Show initial delete button
         def set_confirm_delete():
             st.session_state['confirm_delete'] = customer_id
             
         st.button("🗑️ Delete Customer", use_container_width=True, type="secondary", 
-                 key=f"delete_customer_{customer_id}", on_click=set_confirm_delete)
-
-
-def render():
+                 key=f"btn_initial_delete_{customer_id}", on_click=set_confirm_delete)
     """Main render function for Customer 360 view"""
     
     # CRITICAL: Check for pending deletion BEFORE any UI rendering

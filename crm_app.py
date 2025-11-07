@@ -156,11 +156,15 @@ try:
 except ValueError:
     default_index = 0
 
-page = st.sidebar.radio(
-    "Select a page:",
-    PAGE_LIST,
-    index=default_index
-)
+# Override navigation if we're in the middle of a deletion flow
+if st.session_state.get('confirm_delete') or st.session_state.get('perform_delete'):
+    page = "👤 Customer 360°"
+else:
+    page = st.sidebar.radio(
+        "Select a page:",
+        PAGE_LIST,
+        index=default_index
+    )
 
 # Environment indicator
 st.sidebar.markdown("---")
