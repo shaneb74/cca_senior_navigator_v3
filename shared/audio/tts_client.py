@@ -8,6 +8,7 @@ persist across Streamlit reruns and page navigations.
 
 import time
 import hashlib
+import re
 from typing import Optional
 import streamlit as st
 
@@ -39,6 +40,61 @@ def _get_cache_key(text: str, voice_id: str) -> str:
     """Generate cache key from text and voice ID"""
     combined = f"{text}|{voice_id}"
     return hashlib.md5(combined.encode()).hexdigest()
+
+
+def _strip_markdown(text: str) -> str:
+    """
+    Remove Markdown formatting from text before TTS synthesis
+    
+    Handles:
+    - Bold: **text** or __text__
+    - Italic: *text* or _text_
+    - Links: [text](url)
+    - Code: `code` or ```code```
+    - Headers: # Header
+    - Lists: - item or * item or 1. item
+    - Blockquotes: > quote
+    - Strikethrough: ~~text~~
+    - HTML tags: <tag>
+    """
+    # Remove code blocks first (multi-line)
+    text = re.sub(r'```.*?```', '', text, flags=re.DOTALL)
+    
+    # Remove inline code
+    text = re.sub(r'`[^`]+`', '', text)
+    
+    # Convert links to just text (keep link text, discard URL)
+    text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', text)
+    
+    # Remove bold/italic (keep text content)
+    text = re.sub(r'\*\*\*([^\*]+)\*\*\*', r'\1', text)  # Bold+italic
+    text = re.sub(r'\*\*([^\*]+)\*\*', r'\1', text)      # Bold
+    text = re.sub(r'\*([^\*]+)\*', r'\1', text)          # Italic
+    text = re.sub(r'___([^_]+)___', r'\1', text)         # Bold+italic
+    text = re.sub(r'__([^_]+)__', r'\1', text)           # Bold
+    text = re.sub(r'_([^_]+)_', r'\1', text)             # Italic
+    
+    # Remove strikethrough
+    text = re.sub(r'~~([^~]+)~~', r'\1', text)
+    
+    # Remove headers (keep text)
+    text = re.sub(r'^#+\s+', '', text, flags=re.MULTILINE)
+    
+    # Remove list markers
+    text = re.sub(r'^\s*[-*+]\s+', '', text, flags=re.MULTILINE)
+    text = re.sub(r'^\s*\d+\.\s+', '', text, flags=re.MULTILINE)
+    
+    # Remove blockquote markers
+    text = re.sub(r'^>\s+', '', text, flags=re.MULTILINE)
+    
+    # Remove HTML tags
+    text = re.sub(r'<[^>]+>', '', text)
+    
+    # Clean up extra whitespace
+    text = re.sub(r'\s+', ' ', text)
+    text = text.strip()
+    
+    return text
 
 
 def synthesize(text: str, voice_id: Optional[str] = None, format: str = "mp3_44100_128") -> Optional[bytes]:
@@ -80,15 +136,19 @@ def synthesize(text: str, voice_id: Optional[str] = None, format: str = "mp3_441
     if not voice_id:
         voice_id = config.get("voice_id") or "h8fE15wgH3MZaYwKHXyg"
     
-    # Truncate if too long
-    if len(text) > MAX_TEXT_LENGTH:
-        logger.warning(f"Text truncated from {len(text)} to {MAX_TEXT_LENGTH} chars")
-        text = text[:MAX_TEXT_LENGTH] + "..."
+    # Strip Markdown formatting before synthesis
+    clean_text = _strip_markdown(text)
+    logger.info(f"[FAQ_AUDIO] Stripped Markdown: {len(text)} -> {len(clean_text)} chars")
     
-    # Check cache first
-    cache_key = _get_cache_key(text, voice_id)
+    # Truncate if too long
+    if len(clean_text) > MAX_TEXT_LENGTH:
+        logger.warning(f"Text truncated from {len(clean_text)} to {MAX_TEXT_LENGTH} chars")
+        clean_text = clean_text[:MAX_TEXT_LENGTH] + "..."
+    
+    # Check cache first (using cleaned text)
+    cache_key = _get_cache_key(clean_text, voice_id)
     if cache_key in st.session_state["audio_cache"]:
-        logger.info(f"[FAQ_AUDIO] Cache hit for {len(text)} chars")
+        logger.info(f"[FAQ_AUDIO] Cache hit for {len(clean_text)} chars")
         return st.session_state["audio_cache"][cache_key]
     
     # Prepare API request
@@ -101,7 +161,7 @@ def synthesize(text: str, voice_id: Optional[str] = None, format: str = "mp3_441
     
     # Get voice settings from config
     payload = {
-        "text": text,
+        "text": clean_text,
         "model_id": "eleven_monolingual_v1",
         "voice_settings": {
             "stability": float(config.get("stability", 0.5)),
@@ -116,7 +176,7 @@ def synthesize(text: str, voice_id: Optional[str] = None, format: str = "mp3_441
     
     for attempt in range(MAX_RETRIES + 1):
         try:
-            logger.info(f"[FAQ_AUDIO] Synthesizing {len(text)} chars (attempt {attempt + 1}/{MAX_RETRIES + 1})")
+            logger.info(f"[FAQ_AUDIO] Synthesizing {len(clean_text)} chars (attempt {attempt + 1}/{MAX_RETRIES + 1})")
             
             response = requests.post(
                 url,
@@ -130,7 +190,7 @@ def synthesize(text: str, voice_id: Optional[str] = None, format: str = "mp3_441
                 duration = time.time() - start_time
                 
                 # Log success
-                word_count = len(text.split())
+                word_count = len(clean_text.split())
                 logger.info(
                     f"[FAQ_AUDIO] faq_audio_synth | "
                     f"len={word_count} words | "
