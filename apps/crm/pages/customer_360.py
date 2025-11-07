@@ -686,21 +686,26 @@ def render_quick_actions(customer_id, customer_data):
         st.write(f"**Customer ID:** `{customer_id}`")
         st.write("This action cannot be undone.")
         
+        def set_perform_delete():
+            st.session_state['perform_delete'] = customer_id
+            
+        def clear_confirm():
+            st.session_state['confirm_delete'] = None
+        
         col1, col2 = st.columns(2)
         with col1:
-            if st.button("✅ Yes, Delete", use_container_width=True, type="primary", key=f"confirm_delete_{customer_id}"):
-                # Button just sets the flag - deletion happens at top of next render
-                st.session_state['perform_delete'] = customer_id
-                st.rerun()
+            st.button("✅ Yes, Delete", use_container_width=True, type="primary", 
+                     key=f"confirm_delete_{customer_id}", on_click=set_perform_delete)
         with col2:
-            if st.button("❌ Cancel", use_container_width=True, key=f"cancel_delete_{customer_id}"):
-                st.session_state['confirm_delete'] = None
-                st.rerun()
+            st.button("❌ Cancel", use_container_width=True, 
+                     key=f"cancel_delete_{customer_id}", on_click=clear_confirm)
     else:
         # Show initial delete button
-        if st.button("🗑️ Delete Customer", use_container_width=True, type="secondary", key=f"delete_customer_{customer_id}"):
+        def set_confirm_delete():
             st.session_state['confirm_delete'] = customer_id
-            st.rerun()
+            
+        st.button("🗑️ Delete Customer", use_container_width=True, type="secondary", 
+                 key=f"delete_customer_{customer_id}", on_click=set_confirm_delete)
 
 
 def render():

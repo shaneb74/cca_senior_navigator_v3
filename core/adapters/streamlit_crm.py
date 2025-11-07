@@ -279,6 +279,7 @@ def delete_crm_customer(customer_id: str) -> bool:
     # Try to delete from Navigator app customers (JSONL)
     try:
         customers_file = data_root / "crm" / "customers.jsonl"
+        
         if customers_file.exists():
             customers = []
             original_count = 0
