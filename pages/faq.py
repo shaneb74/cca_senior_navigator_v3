@@ -1259,6 +1259,10 @@ def render():
     if "faq_send_now" not in st.session_state:
         st.session_state["faq_send_now"] = False
     
+    # Initialize audio cache early to prevent KeyError
+    if "audio_cache" not in st.session_state:
+        st.session_state["audio_cache"] = {}
+    
     # Clear audio config validation cache when returning to page from elsewhere
     # Track current page to detect navigation
     current_page = "faq"

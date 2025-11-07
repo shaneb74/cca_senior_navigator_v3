@@ -153,6 +153,10 @@ def synthesize(text: str, voice_id: Optional[str] = None, format: str = "mp3_441
         clean_text = clean_text[:MAX_TEXT_LENGTH] + "..."
     
     # Check cache first (using cleaned text)
+    # Ensure cache exists (defensive programming)
+    if "audio_cache" not in st.session_state:
+        st.session_state["audio_cache"] = {}
+    
     cache_key = _get_cache_key(clean_text, voice_id)
     if cache_key in st.session_state["audio_cache"]:
         logger.info(f"[FAQ_AUDIO] Cache hit for {len(clean_text)} chars")
@@ -205,7 +209,9 @@ def synthesize(text: str, voice_id: Optional[str] = None, format: str = "mp3_441
                     f"duration={duration:.2f}s"
                 )
                 
-                # Cache result
+                # Cache result (ensure cache exists)
+                if "audio_cache" not in st.session_state:
+                    st.session_state["audio_cache"] = {}
                 st.session_state["audio_cache"][cache_key] = audio_bytes
                 
                 return audio_bytes
