@@ -113,16 +113,23 @@ def synthesize(text: str, voice_id: Optional[str] = None, format: str = "mp3_441
         logger.warning("requests library not available for audio synthesis")
         return None
     
-    # Get configuration from centralized config
-    config = get_elevenlabs_config()
-    api_key = config.get("api_key")
+    # Get configuration from centralized config with retry
+    try:
+        config = get_elevenlabs_config()
+        api_key = config.get("api_key")
+    except Exception as e:
+        logger.error(f"[FAQ_AUDIO] ❌ Failed to load configuration: {e}")
+        return None
     
     # Validate configuration
     if not api_key:
         logger.error("[FAQ_AUDIO] ❌ ElevenLabs API key not loaded from configuration")
-        is_valid, msg = validate_elevenlabs_config()
-        if not is_valid:
-            logger.error(f"[FAQ_AUDIO] Config validation failed: {msg}")
+        try:
+            is_valid, msg = validate_elevenlabs_config()
+            if not is_valid:
+                logger.error(f"[FAQ_AUDIO] Config validation failed: {msg}")
+        except Exception as e:
+            logger.error(f"[FAQ_AUDIO] Config validation error: {e}")
         return None
     
     if api_key.startswith("your_"):

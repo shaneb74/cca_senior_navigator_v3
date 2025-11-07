@@ -1372,16 +1372,38 @@ def render():
             # Voice toggle on main screen with config validation
             if get_flag_value("FEATURE_FAQ_AUDIO") == "on":
                 # Validate configuration before showing toggle
-                from core.config import validate_elevenlabs_config
-                is_valid, msg = validate_elevenlabs_config()
+                from core.config import validate_elevenlabs_config, get_config
+                
+                # Cache validation result in session state to avoid repeated checks
+                if "elevenlabs_config_valid" not in st.session_state:
+                    is_valid, msg = validate_elevenlabs_config()
+                    st.session_state["elevenlabs_config_valid"] = is_valid
+                    st.session_state["elevenlabs_config_msg"] = msg
+                    
+                    # Debug logging
+                    api_key = get_config("ELEVENLABS_API_KEY")
+                    if api_key:
+                        print(f"[FAQ_AUDIO] ✓ Config validation: API key present (length: {len(api_key)})")
+                    else:
+                        print("[FAQ_AUDIO] ❌ Config validation: API key missing")
+                else:
+                    is_valid = st.session_state["elevenlabs_config_valid"]
+                    msg = st.session_state["elevenlabs_config_msg"]
                 
                 if is_valid:
                     st.toggle("🔊 Enable voice responses", key="faq_voice_enabled", value=False, help="When enabled, answers will include audio playback")
                 else:
-                    # Show warning if config is invalid (expanded by default)
-                    with st.expander("⚠️ Audio Configuration Issue", expanded=True):
+                    # Show warning if config is invalid (collapsed by default to be less intrusive)
+                    with st.expander("⚠️ Audio Configuration Issue", expanded=False):
                         st.warning(msg)
                         st.caption("Audio playback requires ElevenLabs API credentials. Contact your administrator.")
+                        if st.button("🔄 Retry Configuration", key="retry_audio_config"):
+                            # Clear cache and retry
+                            if "elevenlabs_config_valid" in st.session_state:
+                                del st.session_state["elevenlabs_config_valid"]
+                            if "elevenlabs_config_msg" in st.session_state:
+                                del st.session_state["elevenlabs_config_msg"]
+                            st.rerun()
             
             st.markdown('</div>', unsafe_allow_html=True)
             
