@@ -156,8 +156,10 @@ try:
 except ValueError:
     default_index = 0
 
-# Override navigation if we're in the middle of a deletion flow
-if st.session_state.get('confirm_delete') or st.session_state.get('perform_delete'):
+# Override navigation if we're in the middle of a deletion flow or marking for matching
+if (st.session_state.get('confirm_delete') or 
+    st.session_state.get('perform_delete') or
+    st.session_state.get('selected_customer')):
     page = "👤 Customer 360°"
 else:
     page = st.sidebar.radio(

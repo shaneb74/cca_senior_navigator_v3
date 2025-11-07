@@ -668,8 +668,11 @@ def render_quick_actions(customer_id, customer_data):
         else:
             st.warning("No email on file")
     
-    if st.button("🏘️ Match Communities", use_container_width=True, key=f"match_comm_{customer_id}"):
+    def mark_for_matching():
         st.session_state['match_for_customer'] = customer_id
+    
+    if st.button("🏘️ Match Communities", use_container_width=True, 
+                key=f"match_comm_{customer_id}", on_click=mark_for_matching):
         st.toast("🏘️ Customer marked for matching - use Smart Matching page")
     
     # Danger zone - delete button
