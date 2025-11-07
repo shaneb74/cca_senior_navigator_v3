@@ -377,17 +377,15 @@ def render_medical_profile(customer_data):
     </div>
 </div>"""
     
-    html = f"""
-    <div class="info-card">
-        <h3>🏥 Medical Profile</h3>
-        <p><strong>Medical Conditions:</strong></p>
-        {conditions_html}
-        <p style="margin-top: 0.5rem;"><strong>Medications:</strong> {med_count} current medications</p>
-        <p><strong>Allergies:</strong> {allergies}</p>
-        <p><strong>Diet Restrictions:</strong> {diet}</p>
-        {scores_html}
-    </div>
-    """
+    html = f"""<div class="info-card">
+<h3>🏥 Medical Profile</h3>
+<p><strong>Medical Conditions:</strong></p>
+{conditions_html}
+<p style="margin-top: 0.5rem;"><strong>Medications:</strong> {med_count} current medications</p>
+<p><strong>Allergies:</strong> {allergies}</p>
+<p><strong>Diet Restrictions:</strong> {diet}</p>
+{scores_html}
+</div>"""
     st.markdown(html, unsafe_allow_html=True)
 
 
@@ -456,14 +454,12 @@ def render_adl_assessment(customer_data):
 <p>🦽 <strong>Equipment:</strong> {equipment}</p>
 <p>⚠️ <strong>Fall Risk:</strong> <span style="color: {risk_color}; font-weight: 600;">{fall_risk}</span></p>"""
     
-    html = f"""
-    <div class="info-card">
-        <h3>📊 ADL Assessment</h3>
-        <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 0.75rem;">Activities of Daily Living independence levels</p>
-        {adl_html}
-        {mobility_html}
-    </div>
-    """
+    html = f"""<div class="info-card">
+<h3>📊 ADL Assessment</h3>
+<p style="color: #64748b; font-size: 0.9rem; margin-bottom: 0.75rem;">Activities of Daily Living independence levels</p>
+{adl_html}
+{mobility_html}
+</div>"""
     st.markdown(html, unsafe_allow_html=True)
 
 
@@ -491,14 +487,12 @@ def render_family_involvement(customer_data):
     
     badges_html = " ".join(badges) if badges else ""
     
-    html = f"""
-    <div class="info-card">
-        <h3>👨‍👩‍👧‍👦 Family Involvement</h3>
-        <p><strong>Primary Contact:</strong> {relationship}</p>
-        <p><strong>Involvement Level:</strong> {involvement}</p>
-        {f'<div style="margin-top: 0.5rem;">{badges_html}</div>' if badges_html else ''}
-    </div>
-    """
+    html = f"""<div class="info-card">
+<h3>👨‍👩‍👧‍👦 Family Involvement</h3>
+<p><strong>Primary Contact:</strong> {relationship}</p>
+<p><strong>Involvement Level:</strong> {involvement}</p>
+{f'<div style="margin-top: 0.5rem;">{badges_html}</div>' if badges_html else ''}
+</div>"""
     st.markdown(html, unsafe_allow_html=True)
 
 
