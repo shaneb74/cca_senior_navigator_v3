@@ -39,6 +39,8 @@ class QuickBaseClient:
         # Table IDs from your production environment
         self.communities_table_id = "bkp5hn255"  # WA Communities
         self.contacts_table_id = "bkqfsmeuq"     # WA Clients (fallback)
+        self.wa_clients_table_id = "bkqfsmeuq"   # WA Clients
+        self.intake_forms_table_id = "bkpvi5e32" # Intake Forms
         
     def _make_request(self, method: str, endpoint: str, data: Dict = None) -> Dict:
         """Make authenticated request to QuickBase API"""
@@ -428,6 +430,106 @@ class QuickBaseClient:
                 "address": "456 Bellevue Way, Bellevue, WA 98004",
                 "care_type": "Assisted Living",
                 "record_id": "mock_002"
+            }
+        ]
+    
+    def get_active_advisors(self) -> List[Dict[str, Any]]:
+        """
+        Fetch active advisors from WA Clients table
+        
+        Returns list of currently assigned advisors with:
+        - name: Full advisor name
+        - email: Email address
+        - qb_user_id: QuickBase user ID
+        """
+        if not REQUESTS_AVAILABLE:
+            logger.warning("requests library not available, returning mock advisors")
+            return self._get_mock_advisors()
+        
+        # Query WA Clients for advisor assignments
+        query_data = {
+            "from": self.wa_clients_table_id,  # WA Clients (bkqfsmeuq)
+            "select": [81, 89],  # Advisor #1 and Advisor #2 fields
+            "options": {
+                "skip": 0,
+                "top": 1000  # Get all clients to find all advisors
+            }
+        }
+        
+        try:
+            result = self._make_request("POST", "records/query", query_data)
+            
+            if "data" not in result:
+                logger.warning("No advisor data returned from QuickBase")
+                return self._get_mock_advisors()
+            
+            # Collect unique advisors from both advisor fields
+            advisors = {}
+            for record in result["data"]:
+                # Check both Advisor #1 (field 81) and Advisor #2 (field 89)
+                for field_id in ["81", "89"]:
+                    advisor_data = record.get(field_id, {}).get("value")
+                    if advisor_data and isinstance(advisor_data, dict):
+                        advisor_id = advisor_data.get("id")
+                        if advisor_id:  # Use QB user ID as unique key
+                            advisors[advisor_id] = {
+                                "name": advisor_data.get("name", "Unknown Advisor"),
+                                "email": advisor_data.get("email", ""),
+                                "qb_user_id": advisor_id
+                            }
+            
+            # Convert to sorted list by name
+            advisor_list = sorted(advisors.values(), key=lambda x: x["name"])
+            
+            logger.info(f"Retrieved {len(advisor_list)} active advisors from QuickBase")
+            return advisor_list
+            
+        except Exception as e:
+            logger.error(f"Error fetching advisors: {e}")
+            return self._get_mock_advisors()
+    
+    def _get_mock_advisors(self) -> List[Dict[str, Any]]:
+        """Fallback mock advisor data when QuickBase is unavailable"""
+        return [
+            {
+                "name": "Jenny- Pierce Co. Austin-Krzemien",
+                "email": "jenny@conciergecareadvisors.com",
+                "qb_user_id": "mock_jenny"
+            },
+            {
+                "name": "Kelsey - Pierce Co Jochum",
+                "email": "kelsey@conciergecareadvisors.com",
+                "qb_user_id": "mock_kelsey"
+            },
+            {
+                "name": "Jennifer-North King James",
+                "email": "jenniferj@conciergecareadvisors.com",
+                "qb_user_id": "mock_jennifer"
+            },
+            {
+                "name": "Marta - S Snoho Street",
+                "email": "marta@conciergecareadvisors.com",
+                "qb_user_id": "mock_marta"
+            },
+            {
+                "name": "Chanda - Thurston Co. Hickman",
+                "email": "chanda@conciergecareadvisors.com",
+                "qb_user_id": "mock_chanda"
+            },
+            {
+                "name": "Karine Stebbins",
+                "email": "karine@conciergecareadvisors.com",
+                "qb_user_id": "mock_karine"
+            },
+            {
+                "name": "JJ White",
+                "email": "jj@conciergecareadvisors.com",
+                "qb_user_id": "mock_jj"
+            },
+            {
+                "name": "Ashley - Eastside Angst",
+                "email": "ashley@conciergecareadvisors.com",
+                "qb_user_id": "mock_ashley"
             }
         ]
 
