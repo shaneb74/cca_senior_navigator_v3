@@ -1369,9 +1369,19 @@ def render():
                 unsafe_allow_html=True,
             )
             
-            # Voice toggle on main screen
+            # Voice toggle on main screen with config validation
             if get_flag_value("FEATURE_FAQ_AUDIO") == "on":
-                st.toggle("🔊 Enable voice responses", key="faq_voice_enabled", value=False, help="When enabled, answers will include audio playback")
+                # Validate configuration before showing toggle
+                from core.config import validate_elevenlabs_config
+                is_valid, msg = validate_elevenlabs_config()
+                
+                if is_valid:
+                    st.toggle("🔊 Enable voice responses", key="faq_voice_enabled", value=False, help="When enabled, answers will include audio playback")
+                else:
+                    # Show warning if config is invalid
+                    with st.expander("⚠️ Audio Configuration Issue", expanded=False):
+                        st.warning(msg)
+                        st.caption("Audio playback requires ElevenLabs API credentials. Contact your administrator.")
             
             st.markdown('</div>', unsafe_allow_html=True)
             

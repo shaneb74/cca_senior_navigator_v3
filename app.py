@@ -11,6 +11,11 @@ except ImportError:
 
 import streamlit as st
 
+# Load centralized configuration (this caches API keys and config)
+# Must happen early to ensure keys persist across page navigation
+from core.config import load_configuration
+_app_config = load_configuration()
+
 # Configure root logger
 logging.basicConfig(
     level=logging.INFO,

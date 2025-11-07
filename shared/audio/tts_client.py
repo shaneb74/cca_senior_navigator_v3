@@ -1,9 +1,11 @@
 """
 ElevenLabs Text-to-Speech Client for FAQ Audio
 Provides simple wrapper for synthesizing FAQ answers to speech.
+
+Uses centralized configuration from core.config to ensure API keys
+persist across Streamlit reruns and page navigations.
 """
 
-import os
 import time
 import hashlib
 from typing import Optional
@@ -20,13 +22,10 @@ except ImportError:
 from core.logging import get_logger
 logger = get_logger("audio")
 
-# Configuration
-ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY", "sk_d1c455c20d569fd2fbbb82ca4821f3d8ef5d203d18ec3dd9")
-ELEVENLABS_VOICE_ID = os.getenv("ELEVENLABS_VOICE_ID", "h8fE15wgH3MZaYwKHXyg")
-AUDIO_PLAYBACK_SPEED = float(os.getenv("AUDIO_PLAYBACK_SPEED", "0.95"))
-AUDIO_STABILITY = float(os.getenv("AUDIO_STABILITY", "0.5"))  # 0.0-1.0: consistency vs expressiveness
-AUDIO_SIMILARITY = float(os.getenv("AUDIO_SIMILARITY", "0.93"))  # 0.0-1.0: similarity to cloned voice
-AUDIO_STYLE = float(os.getenv("AUDIO_STYLE", "0.15"))  # 0.0-1.0: style exaggeration
+# Import centralized configuration
+from core.config import get_elevenlabs_config, validate_elevenlabs_config
+
+# Constants
 MAX_TEXT_LENGTH = 2000  # Character limit for synthesis
 TIMEOUT_SECONDS = 15
 MAX_RETRIES = 1
@@ -42,11 +41,7 @@ def _get_cache_key(text: str, voice_id: str) -> str:
     return hashlib.md5(combined.encode()).hexdigest()
 
 
-def synthesize(
-    text: str, 
-    voice_id: Optional[str] = None, 
-    format: str = "mp3_44100_128"
-) -> Optional[bytes]:
+def synthesize(text: str, voice_id: Optional[str] = None, format: str = "mp3_44100_128") -> Optional[bytes]:
     """
     Synthesize text to speech using ElevenLabs API
     
@@ -62,13 +57,28 @@ def synthesize(
         logger.warning("requests library not available for audio synthesis")
         return None
     
-    if not ELEVENLABS_API_KEY or ELEVENLABS_API_KEY.startswith("your_"):
-        logger.warning("ElevenLabs API key not configured")
+    # Get configuration from centralized config
+    config = get_elevenlabs_config()
+    api_key = config.get("api_key")
+    
+    # Validate configuration
+    if not api_key:
+        logger.error("[FAQ_AUDIO] ❌ ElevenLabs API key not loaded from configuration")
+        is_valid, msg = validate_elevenlabs_config()
+        if not is_valid:
+            logger.error(f"[FAQ_AUDIO] Config validation failed: {msg}")
         return None
+    
+    if api_key.startswith("your_"):
+        logger.warning("[FAQ_AUDIO] ElevenLabs API key not configured (placeholder detected)")
+        return None
+    
+    # Log successful key load for debugging
+    logger.info(f"[FAQ_AUDIO] ✓ API key loaded (length: {len(api_key)})")
     
     # Use configured voice if not specified
     if not voice_id:
-        voice_id = ELEVENLABS_VOICE_ID
+        voice_id = config.get("voice_id") or "h8fE15wgH3MZaYwKHXyg"
     
     # Truncate if too long
     if len(text) > MAX_TEXT_LENGTH:
@@ -86,16 +96,17 @@ def synthesize(
     headers = {
         "Accept": "audio/mpeg",
         "Content-Type": "application/json",
-        "xi-api-key": ELEVENLABS_API_KEY
+        "xi-api-key": api_key
     }
     
+    # Get voice settings from config
     payload = {
         "text": text,
         "model_id": "eleven_monolingual_v1",
         "voice_settings": {
-            "stability": AUDIO_STABILITY,
-            "similarity_boost": AUDIO_SIMILARITY,
-            "style": AUDIO_STYLE,
+            "stability": float(config.get("stability", 0.5)),
+            "similarity_boost": float(config.get("similarity", 0.93)),
+            "style": float(config.get("style", 0.15)),
             "use_speaker_boost": True
         }
     }
