@@ -27,6 +27,7 @@ import streamlit as st
 import numpy as np
 
 from core.flags import get_all_flags
+from core.logging import logger
 from core.mcip import MCIP
 from core.nav import route_to
 from core.navi import NaviOrchestrator
