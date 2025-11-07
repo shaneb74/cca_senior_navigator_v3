@@ -1410,6 +1410,9 @@ def render():
             else:
                 st.markdown('<section class="chat-thread">', unsafe_allow_html=True)
 
+                # Track if we've seen the first assistant message (for autoplay)
+                first_assistant_seen = False
+                
                 for idx, msg in enumerate(chat):
                     role = msg["role"]
                     text = msg["text"]
@@ -1457,6 +1460,7 @@ def render():
                             st.markdown(answer_md + sources_md)
                             
                             # Audio playback feature (if enabled and toggle is on)
+                            # Only autoplay for the FIRST assistant message (newest)
                             if get_flag_value("FEATURE_FAQ_AUDIO") == "on" and st.session_state.get("faq_voice_enabled", False):
                                 try:
                                     from shared.audio.tts_client import synthesize
@@ -1465,12 +1469,17 @@ def render():
                                     audio_bytes = synthesize(audio_text)
                                     
                                     if audio_bytes:
-                                        st.audio(audio_bytes, format="audio/mp3", autoplay=True)
+                                        # Only autoplay the first (newest) message
+                                        should_autoplay = not first_assistant_seen
+                                        st.audio(audio_bytes, format="audio/mp3", autoplay=should_autoplay)
+                                        first_assistant_seen = True
+                                        
                                         # Log audio playback
                                         from core.events import log_event
                                         log_event("faq_audio_played", {
                                             "query": msg.get("user_query", ""),
-                                            "text_length": len(audio_text)
+                                            "text_length": len(audio_text),
+                                            "autoplay": should_autoplay
                                         })
                                     else:
                                         st.caption("⚠️ Audio unavailable")
