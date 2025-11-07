@@ -1378,12 +1378,16 @@ def render():
             st.markdown(
                 f"""
                 <div class=\"composer-meta\">
-                  <span>Tip: Ask about care costs, benefits, or what happens next.</span>
                   <a href=\"{advisor_href}\">Need a human advisor?</a>
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
+            
+            # Voice toggle on main screen
+            if get_flag_value("FEATURE_FAQ_AUDIO") == "on":
+                st.toggle("🔊 Enable voice responses", key="faq_voice_enabled", value=False, help="When enabled, answers will include audio playback")
+            
             st.markdown('</div>', unsafe_allow_html=True)
             
             send_now = st.session_state.pop("faq_send_now", False)
@@ -1452,31 +1456,29 @@ def render():
                         with st.container():
                             st.markdown(answer_md + sources_md)
                             
-                            # Audio playback feature (if enabled)
+                            # Audio playback feature (if enabled and toggle is on)
                             from core.flags import get_flag_value
-                            if get_flag_value("FEATURE_FAQ_AUDIO") == "on":
-                                audio_key = f"audio_toggle_{idx}"
-                                if st.toggle("🔊 Listen", key=audio_key):
-                                    try:
-                                        from shared.audio.tts_client import synthesize
-                                        # Use clean text without sources for audio
-                                        audio_text = _sanitize_to_md(text) if not is_html else text
-                                        audio_bytes = synthesize(audio_text)
-                                        
-                                        if audio_bytes:
-                                            st.audio(audio_bytes, format="audio/mp3")
-                                            # Log audio playback
-                                            from core.events import log_event
-                                            log_event("faq_audio_played", {
-                                                "query": msg.get("user_query", ""),
-                                                "text_length": len(audio_text)
-                                            })
-                                        else:
-                                            st.warning("⚠️ Audio unavailable, please try again.", icon="🔇")
-                                    except Exception as e:
-                                        st.warning("⚠️ Audio unavailable, please try again.", icon="🔇")
-                                        # Log error (optional - can be removed if not needed)
-                                        print(f"[FAQ_AUDIO] Error in audio playback: {e}")
+                            if get_flag_value("FEATURE_FAQ_AUDIO") == "on" and st.session_state.get("faq_voice_enabled", False):
+                                try:
+                                    from shared.audio.tts_client import synthesize
+                                    # Use clean text without sources for audio
+                                    audio_text = _sanitize_to_md(text) if not is_html else text
+                                    audio_bytes = synthesize(audio_text)
+                                    
+                                    if audio_bytes:
+                                        st.audio(audio_bytes, format="audio/mp3", autoplay=True)
+                                        # Log audio playback
+                                        from core.events import log_event
+                                        log_event("faq_audio_played", {
+                                            "query": msg.get("user_query", ""),
+                                            "text_length": len(audio_text)
+                                        })
+                                    else:
+                                        st.caption("⚠️ Audio unavailable")
+                                except Exception as e:
+                                    st.caption("⚠️ Audio unavailable")
+                                    # Log error (optional - can be removed if not needed)
+                                    print(f"[FAQ_AUDIO] Error in audio playback: {e}")
 
                         with st.container():
                             st.markdown('<div class="chat-sentinel chat-action-sentinel"></div>', unsafe_allow_html=True)

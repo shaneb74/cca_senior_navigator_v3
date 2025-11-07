@@ -23,7 +23,10 @@ logger = get_logger("audio")
 # Configuration
 ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY", "sk_d1c455c20d569fd2fbbb82ca4821f3d8ef5d203d18ec3dd9")
 ELEVENLABS_VOICE_ID = os.getenv("ELEVENLABS_VOICE_ID", "h8fE15wgH3MZaYwKHXyg")
-AUDIO_PLAYBACK_SPEED = float(os.getenv("AUDIO_PLAYBACK_SPEED", "1.0"))
+AUDIO_PLAYBACK_SPEED = float(os.getenv("AUDIO_PLAYBACK_SPEED", "0.95"))
+AUDIO_STABILITY = float(os.getenv("AUDIO_STABILITY", "0.5"))  # 0.0-1.0: consistency vs expressiveness
+AUDIO_SIMILARITY = float(os.getenv("AUDIO_SIMILARITY", "0.93"))  # 0.0-1.0: similarity to cloned voice
+AUDIO_STYLE = float(os.getenv("AUDIO_STYLE", "0.15"))  # 0.0-1.0: style exaggeration
 MAX_TEXT_LENGTH = 2000  # Character limit for synthesis
 TIMEOUT_SECONDS = 15
 MAX_RETRIES = 1
@@ -90,9 +93,9 @@ def synthesize(
         "text": text,
         "model_id": "eleven_monolingual_v1",
         "voice_settings": {
-            "stability": 0.5,
-            "similarity_boost": 0.75,
-            "style": 0.0,
+            "stability": AUDIO_STABILITY,
+            "similarity_boost": AUDIO_SIMILARITY,
+            "style": AUDIO_STYLE,
             "use_speaker_boost": True
         }
     }
