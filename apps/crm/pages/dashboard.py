@@ -254,6 +254,7 @@ def build_customer_pipeline(customers):
             # New leads - recent signups, no assessments yet
             pipeline['new_leads'].append({
                 'name': name,
+                'customer_id': customer_id,
                 'days_since': days_since,
                 'source': customer.get('source', 'Unknown')
             })
@@ -261,6 +262,7 @@ def build_customer_pipeline(customers):
             # Assessing - working through Navigator
             pipeline['assessing'].append({
                 'name': name,
+                'customer_id': customer_id,
                 'gcp': 'done' if has_gcp else 'not_started',
                 'cost': 'done' if has_cost else 'not_started',
                 'days_since': days_since
@@ -269,6 +271,7 @@ def build_customer_pipeline(customers):
             # Default to assessing for existing customers
             pipeline['assessing'].append({
                 'name': name,
+                'customer_id': customer_id,
                 'gcp': 'not_started',
                 'cost': 'not_started',
                 'days_since': days_since

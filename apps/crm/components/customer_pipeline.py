@@ -20,7 +20,7 @@ def render_pipeline_stage(stage_name: str, customers: List[Dict[str, Any]], stag
     
     for idx, customer in enumerate(customers):
         name = customer.get('name', 'Unknown')
-        customer_id = customer.get('id') or customer.get('customer_id') or customer.get('user_id', idx)
+        customer_id = customer.get('customer_id') or customer.get('id') or customer.get('user_id', idx)
         days_in_stage = customer.get('days_since', 0)
         
         # Build card content based on stage
@@ -56,7 +56,10 @@ def render_pipeline_stage(stage_name: str, customers: List[Dict[str, Any]], stag
         
         # Use customer_id + stage to ensure uniqueness
         if st.button("View", key=f"pipeline_{stage_name}_{customer_id}", use_container_width=True):
-            st.session_state['selected_customer'] = name
+            # Set customer ID (not name) for Customer 360 page
+            st.session_state['selected_customer'] = customer_id
+            # Set flag to trigger auto-navigation
+            st.session_state['auto_navigate_to_360'] = True
             st.rerun()
 
 
