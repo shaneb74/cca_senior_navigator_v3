@@ -331,6 +331,9 @@ def render_medical_profile(customer_data):
     if 'medical_conditions' not in customer_data and 'medication_count' not in customer_data:
         return
     
+    # Debug: confirm function is called
+    # st.write("🔍 DEBUG: render_medical_profile called")
+    
     # Medical conditions
     conditions = customer_data.get('medical_conditions', [])
     conditions_html = ""
@@ -763,6 +766,8 @@ def render():
     
     # Enriched data sections (medical, ADL, family)
     if 'medical_conditions' in customer_data or 'medication_count' in customer_data:
+        # Simple test first
+        st.markdown("<div style='background: red; padding: 1rem;'><h3>TEST: If you see a red box, HTML works</h3></div>", unsafe_allow_html=True)
         try:
             render_medical_profile(customer_data)
         except Exception as e:
