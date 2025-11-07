@@ -7,6 +7,7 @@ from datetime import datetime
 from shared.data_access.navigator_reader import NavigatorDataReader
 from shared.data_access.crm_repository import CrmRepository
 from core.adapters.streamlit_crm import get_all_crm_customers
+from shared.data_access.quickbase_client import quickbase_client
 
 # Import CRM components
 from apps.crm.components.metrics_panel import render_advisor_metrics, render_team_metrics
@@ -27,15 +28,38 @@ def render():
     # Header with advisor info
     st.title("🏢 Advisor CRM Dashboard")
     
-    # Simulated advisor (in production, would come from auth)
-    advisor_name = st.session_state.get('advisor_name', 'Sarah Chen')
-    st.caption(f"Welcome back, **{advisor_name}** • {st.session_state.get('advisor_role', 'Senior Care Advisor')}")
+    # Get active advisors from QuickBase
+    advisors = quickbase_client.get_active_advisors()
+    advisor_names = [a['name'] for a in advisors]
     
-    # Get real CRM customers
-    all_customers = get_all_crm_customers()
+    # Advisor selector
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        # Initialize session state for selected advisor
+        if 'selected_advisor' not in st.session_state:
+            st.session_state.selected_advisor = advisor_names[0] if advisor_names else None
+        
+        selected_advisor = st.selectbox(
+            "👤 View Dashboard For:",
+            options=advisor_names,
+            index=advisor_names.index(st.session_state.selected_advisor) if st.session_state.selected_advisor in advisor_names else 0,
+            key='advisor_selector'
+        )
+        st.session_state.selected_advisor = selected_advisor
     
-    # Calculate real metrics from actual customers
-    metrics = calculate_advisor_metrics(all_customers)
+    with col2:
+        # Show advisor's customer count
+        all_customers = get_all_crm_customers()
+        advisor_customers = [c for c in all_customers if c.get('assigned_advisor') == selected_advisor]
+        st.metric("My Customers", len(advisor_customers))
+    
+    st.caption(f"Showing dashboard for **{selected_advisor}**")
+    
+    # Filter customers for selected advisor
+    filtered_customers = [c for c in all_customers if c.get('assigned_advisor') == selected_advisor]
+    
+    # Calculate metrics for this advisor only
+    metrics = calculate_advisor_metrics(filtered_customers)
     render_advisor_metrics(metrics)
     
     st.markdown("---")
@@ -49,13 +73,13 @@ def render():
     ])
     
     with tab1:
-        render_tasks_tab(all_customers)
+        render_tasks_tab(filtered_customers)
     
     with tab2:
-        render_customers_tab(all_customers)
+        render_customers_tab(filtered_customers, selected_advisor)
     
     with tab3:
-        render_team_tab()
+        render_team_tab(all_customers, advisors)
     
     with tab4:
         render_appointments_tab()
@@ -253,11 +277,15 @@ def build_customer_pipeline(customers):
     return pipeline
 
 
-def render_customers_tab(customers):
+def render_customers_tab(customers, selected_advisor):
     """Render My Customers tab with pipeline visualization"""
     
-    st.subheader("Customer Pipeline")
-    st.caption("Visual workflow from lead to closing")
+    st.subheader(f"Customer Pipeline - {selected_advisor}")
+    st.caption(f"Showing {len(customers)} customers assigned to you")
+    
+    if not customers:
+        st.info(f"No customers currently assigned to {selected_advisor}")
+        return
     
     # Build real pipeline from actual customers
     pipeline = build_customer_pipeline(customers)
@@ -316,21 +344,42 @@ def render_customers_tab(customers):
         st.success(f"✨ {ready_consultation} customers ready for consultation - check Action Required!")
 
 
-def render_team_tab():
-    """Render Team View tab with team metrics and collaboration"""
+def render_team_tab(all_customers, advisors):
+    """Render Team View tab with advisor workload distribution"""
     
     st.subheader("Team Performance Dashboard")
-    st.caption("Single advisor mode - Team features coming soon")
+    st.caption(f"Showing workload distribution across {len(advisors)} active advisors")
     
-    # Current advisor info
-    advisor_name = st.session_state.get('advisor_name', 'Sarah Chen')
+    # Calculate metrics per advisor
+    advisor_metrics = {}
+    for advisor in advisors:
+        advisor_name = advisor['name']
+        advisor_customers = [c for c in all_customers if c.get('assigned_advisor') == advisor_name]
+        
+        advisor_metrics[advisor_name] = {
+            'total_customers': len(advisor_customers),
+            'email': advisor['email'],
+            'qb_user_id': advisor['qb_user_id']
+        }
     
-    st.info(f"""
-    **Current Advisor:** {advisor_name}  
-    **Role:** Senior Care Advisor  
+    # Display advisor workload
+    st.markdown("### 👥 Advisor Workload")
     
-    Multi-advisor team features will be added when team collaboration is enabled.
-    """)
+    # Create columns for advisor cards
+    cols = st.columns(2)
+    for i, (advisor_name, metrics) in enumerate(sorted(advisor_metrics.items())):
+        with cols[i % 2]:
+            with st.container():
+                st.markdown(f"""
+                <div style="padding: 1rem; border: 1px solid #e0e0e0; border-radius: 8px; margin-bottom: 1rem;">
+                    <h4 style="margin: 0 0 0.5rem 0; color: #1f77b4;">{advisor_name}</h4>
+                    <p style="margin: 0; color: #666; font-size: 0.875rem;">{metrics['email']}</p>
+                    <hr style="margin: 0.5rem 0;">
+                    <p style="margin: 0; font-size: 1.5rem; font-weight: bold; color: #333;">
+                        {metrics['total_customers']} customers
+                    </p>
+                </div>
+                """, unsafe_allow_html=True)
     
     st.markdown("---")
     
