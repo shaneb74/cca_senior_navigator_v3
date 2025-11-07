@@ -324,6 +324,189 @@ def render_navigator_status(navigator_data):
     st.markdown(html, unsafe_allow_html=True)
 
 
+def render_medical_profile(customer_data):
+    """Render medical profile with conditions, medications, and assessments"""
+    
+    # Check if customer has enriched medical data
+    if 'medical_conditions' not in customer_data and 'medication_count' not in customer_data:
+        return
+    
+    # Medical conditions
+    conditions = customer_data.get('medical_conditions', [])
+    conditions_html = ""
+    if conditions:
+        conditions_list = "</li><li>".join(conditions[:5])  # Limit to top 5
+        conditions_html = f"<ul style='margin: 0.5rem 0;'><li>{conditions_list}</li></ul>"
+        if len(conditions) > 5:
+            conditions_html += f"<p style='color: #64748b; font-size: 0.9rem;'>+ {len(conditions) - 5} more conditions</p>"
+    else:
+        conditions_html = "<p style='color: #64748b;'>No conditions recorded</p>"
+    
+    # Medications
+    med_count = customer_data.get('medication_count', 0)
+    allergies = customer_data.get('allergies') or 'None known'
+    diet = customer_data.get('diet_restrictions') or 'None'
+    
+    # Assessment scores
+    scores = customer_data.get('assessment_scores', {})
+    scores_html = ""
+    if scores:
+        mmse = scores.get('mmse_score', 'N/A')
+        functional = scores.get('functional_score', 'N/A')
+        pain = scores.get('pain_level', 'N/A')
+        depression = scores.get('depression_screen', 'N/A')
+        
+        scores_html = f"""
+        <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 1rem 0;">
+        <p style="margin-bottom: 0.5rem;"><strong>Assessment Scores:</strong></p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+            <div style="background: #f8fafc; padding: 0.5rem; border-radius: 4px;">
+                <div style="font-size: 0.8rem; color: #64748b;">MMSE Score</div>
+                <div style="font-weight: 600; color: #1f2937;">{mmse}/30</div>
+            </div>
+            <div style="background: #f8fafc; padding: 0.5rem; border-radius: 4px;">
+                <div style="font-size: 0.8rem; color: #64748b;">Functional</div>
+                <div style="font-weight: 600; color: #1f2937;">{functional}/100</div>
+            </div>
+            <div style="background: #f8fafc; padding: 0.5rem; border-radius: 4px;">
+                <div style="font-size: 0.8rem; color: #64748b;">Pain Level</div>
+                <div style="font-weight: 600; color: #1f2937;">{pain}/10</div>
+            </div>
+            <div style="background: #f8fafc; padding: 0.5rem; border-radius: 4px;">
+                <div style="font-size: 0.8rem; color: #64748b;">Depression</div>
+                <div style="font-weight: 600; color: #1f2937;">{depression}</div>
+            </div>
+        </div>
+        """
+    
+    html = f"""
+    <div class="info-card">
+        <h3>🏥 Medical Profile</h3>
+        <p><strong>Medical Conditions:</strong></p>
+        {conditions_html}
+        <p style="margin-top: 0.5rem;"><strong>Medications:</strong> {med_count} current medications</p>
+        <p><strong>Allergies:</strong> {allergies}</p>
+        <p><strong>Diet Restrictions:</strong> {diet}</p>
+        {scores_html}
+    </div>
+    """
+    st.markdown(html, unsafe_allow_html=True)
+
+
+def render_adl_assessment(customer_data):
+    """Render ADL (Activities of Daily Living) assessment"""
+    
+    adl = customer_data.get('adl_assessment')
+    if not adl:
+        return
+    
+    # ADL categories with icons
+    adl_icons = {
+        'bathing': '🚿',
+        'dressing': '👔',
+        'toileting': '🚽',
+        'transferring': '🚶',
+        'eating': '🍽️',
+        'medication': '💊'
+    }
+    
+    # Status colors
+    status_colors = {
+        'Independent': '#10b981',
+        'Needs Reminders': '#3b82f6',
+        'Needs Assistance': '#f59e0b',
+        'Fully Dependent': '#ef4444',
+        'Needs Setup': '#3b82f6',
+        'Needs Feeding Assistance': '#f59e0b',
+        'Injectable Meds': '#f59e0b',
+        'Needs Administration': '#f59e0b',
+        'Requires Equipment': '#f59e0b',
+        'Two Person Transfer': '#ef4444'
+    }
+    
+    # Build ADL items
+    adl_html = ""
+    for category, status in adl.items():
+        icon = adl_icons.get(category, '📋')
+        color = status_colors.get(status, '#64748b')
+        category_display = category.replace('_', ' ').title()
+        
+        adl_html += f"""
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: #f8fafc; border-radius: 4px; margin-bottom: 0.5rem;">
+            <div>
+                <span style="font-size: 1.2rem; margin-right: 0.5rem;">{icon}</span>
+                <strong>{category_display}</strong>
+            </div>
+            <span style="color: {color}; font-weight: 600; font-size: 0.9rem;">{status}</span>
+        </div>
+        """
+    
+    # Mobility info
+    mobility = customer_data.get('mobility', {})
+    mobility_html = ""
+    if mobility:
+        equipment = mobility.get('equipment', 'None')
+        fall_risk = mobility.get('fall_risk', 'Unknown')
+        
+        risk_color = {
+            'Low': '#10b981',
+            'Moderate': '#f59e0b',
+            'High': '#ef4444'
+        }.get(fall_risk, '#64748b')
+        
+        mobility_html = f"""
+        <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 1rem 0;">
+        <p style="margin-bottom: 0.5rem;"><strong>Mobility Assessment:</strong></p>
+        <p>🦽 <strong>Equipment:</strong> {equipment}</p>
+        <p>⚠️ <strong>Fall Risk:</strong> <span style="color: {risk_color}; font-weight: 600;">{fall_risk}</span></p>
+        """
+    
+    html = f"""
+    <div class="info-card">
+        <h3>📊 ADL Assessment</h3>
+        <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 0.75rem;">Activities of Daily Living independence levels</p>
+        {adl_html}
+        {mobility_html}
+    </div>
+    """
+    st.markdown(html, unsafe_allow_html=True)
+
+
+def render_family_involvement(customer_data):
+    """Render family context and involvement"""
+    
+    family = customer_data.get('family_context')
+    if not family:
+        return
+    
+    relationship = family.get('primary_contact_relationship', 'Unknown')
+    involvement = family.get('involvement_level', 'Unknown')
+    decision_maker = family.get('decision_maker', False)
+    lives_nearby = family.get('lives_nearby', False)
+    financial_poa = family.get('financial_poa', False)
+    
+    # Build badges
+    badges = []
+    if decision_maker:
+        badges.append('<span style="background: #dbeafe; color: #1e40af; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">Decision Maker</span>')
+    if lives_nearby:
+        badges.append('<span style="background: #dcfce7; color: #15803d; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">Lives Nearby</span>')
+    if financial_poa:
+        badges.append('<span style="background: #fef3c7; color: #92400e; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">Financial POA</span>')
+    
+    badges_html = " ".join(badges) if badges else ""
+    
+    html = f"""
+    <div class="info-card">
+        <h3>👨‍👩‍👧‍👦 Family Involvement</h3>
+        <p><strong>Primary Contact:</strong> {relationship}</p>
+        <p><strong>Involvement Level:</strong> {involvement}</p>
+        {f'<div style="margin-top: 0.5rem;">{badges_html}</div>' if badges_html else ''}
+    </div>
+    """
+    st.markdown(html, unsafe_allow_html=True)
+
+
 def render_relationship_info(navigator_data):
     """Render relationship and care recipient information"""
     if not navigator_data:
@@ -577,6 +760,22 @@ def render():
         render_relationship_info(navigator_data)
     except Exception as e:
         st.error(f"Error rendering relationship info: {e}")
+    
+    # Enriched data sections (medical, ADL, family)
+    try:
+        render_medical_profile(customer_data)
+    except Exception as e:
+        st.error(f"Error rendering medical profile: {e}")
+    
+    try:
+        render_adl_assessment(customer_data)
+    except Exception as e:
+        st.error(f"Error rendering ADL assessment: {e}")
+    
+    try:
+        render_family_involvement(customer_data)
+    except Exception as e:
+        st.error(f"Error rendering family involvement: {e}")
     
     # Secondary information
     try:
