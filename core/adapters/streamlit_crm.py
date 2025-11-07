@@ -255,3 +255,65 @@ def get_all_crm_customers():
 def get_crm_customer_by_id(customer_id: str):
     """Helper function to get specific customer for CRM app."""
     return _storage_provider.get_customer_by_id(customer_id)
+
+
+def delete_crm_customer(customer_id: str) -> bool:
+    """Delete a customer from all CRM sources."""
+    deleted = False
+    
+    # Try to delete from Navigator app customers (JSONL)
+    try:
+        if _storage_provider.crm_repo.delete_record("customers", customer_id):
+            deleted = True
+    except Exception:
+        pass
+    
+    # Try to delete from QuickBase synthetic data (JSON)
+    try:
+        import json
+        import os
+        qb_file = os.path.join(
+            _storage_provider.crm_repo.data_root,
+            "crm",
+            "synthetic_august2025_summary.json"
+        )
+        if os.path.exists(qb_file):
+            with open(qb_file, 'r') as f:
+                qb_data = json.load(f)
+            
+            customers = qb_data.get('customers', [])
+            original_count = len(customers)
+            customers = [c for c in customers if c.get('user_id') != customer_id and c.get('id') != customer_id]
+            
+            if len(customers) < original_count:
+                qb_data['customers'] = customers
+                qb_data['record_count'] = len(customers)
+                with open(qb_file, 'w') as f:
+                    json.dump(qb_data, f, indent=2)
+                deleted = True
+    except Exception:
+        pass
+    
+    # Try to delete from demo users (JSONL)
+    try:
+        demo_file = os.path.join(
+            _storage_provider.crm_repo.data_root,
+            "crm",
+            "demo_users.jsonl"
+        )
+        if os.path.exists(demo_file):
+            demo_users = []
+            with open(demo_file, 'r') as f:
+                for line in f:
+                    user = json.loads(line)
+                    if user.get('user_id') != customer_id and user.get('id') != customer_id:
+                        demo_users.append(user)
+            
+            with open(demo_file, 'w') as f:
+                for user in demo_users:
+                    f.write(json.dumps(user) + '\n')
+            deleted = True
+    except Exception:
+        pass
+    
+    return deleted

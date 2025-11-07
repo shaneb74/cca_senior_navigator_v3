@@ -6,7 +6,7 @@ import streamlit as st
 from datetime import datetime
 from shared.data_access.navigator_reader import NavigatorDataReader
 from shared.data_access.crm_repository import CrmRepository
-from core.adapters.streamlit_crm import get_crm_customer_by_id
+from core.adapters.streamlit_crm import get_crm_customer_by_id, delete_crm_customer
 
 # Set page config first - constrain layout
 st.set_page_config(layout="centered", initial_sidebar_state="expanded")
@@ -671,6 +671,41 @@ def render_quick_actions(customer_id, customer_data):
     if st.button("🏘️ Match Communities", use_container_width=True, key=f"match_comm_{customer_id}"):
         st.session_state['match_for_customer'] = customer_id
         st.toast("🏘️ Customer marked for matching - use Smart Matching page")
+    
+    # Danger zone - delete button
+    st.markdown("---")
+    st.markdown("**⚠️ Danger Zone**")
+    
+    # Use a confirmation pattern
+    if 'confirm_delete' not in st.session_state:
+        st.session_state['confirm_delete'] = None
+    
+    if st.session_state['confirm_delete'] == customer_id:
+        # Show confirmation buttons
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("✅ Yes, Delete", use_container_width=True, type="primary", key=f"confirm_delete_{customer_id}"):
+                # Perform the deletion
+                if delete_crm_customer(customer_id):
+                    st.success(f"✅ Customer {customer_data.get('name', customer_id)} deleted successfully")
+                    # Clear selected customer and confirmation state
+                    if 'selected_customer' in st.session_state:
+                        del st.session_state['selected_customer']
+                    st.session_state['confirm_delete'] = None
+                    st.toast("Customer deleted - returning to customers list")
+                    st.rerun()
+                else:
+                    st.error("❌ Failed to delete customer")
+                    st.session_state['confirm_delete'] = None
+        with col2:
+            if st.button("❌ Cancel", use_container_width=True, key=f"cancel_delete_{customer_id}"):
+                st.session_state['confirm_delete'] = None
+                st.rerun()
+    else:
+        # Show initial delete button
+        if st.button("🗑️ Delete Customer", use_container_width=True, type="secondary", key=f"delete_customer_{customer_id}"):
+            st.session_state['confirm_delete'] = customer_id
+            st.rerun()
 
 
 def render():
