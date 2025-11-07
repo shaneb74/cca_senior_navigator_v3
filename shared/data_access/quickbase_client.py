@@ -336,12 +336,22 @@ class QuickBaseClient:
                 except:
                     pass
             
+            # Fetch real cost data from actual placements
+            record_id = record.get('recordId')
+            cost_data = None
+            if record_id:
+                try:
+                    cost_data = self.get_community_cost_data(record_id)
+                except Exception as e:
+                    logger.warning(f"Could not fetch cost data for community {record_id}: {e}")
+                    cost_data = None
+            
             community = {
-                "id": f"qb_{record.get('recordId', 'unknown')}",
+                "id": f"qb_{record_id if record_id else 'unknown'}",
                 "name": name,
                 "location": location,
                 "care_levels": care_levels,
-                "monthly_cost": {"min": 4000, "max": 8000},  # Default range - could be enhanced
+                "monthly_cost": cost_data if cost_data else None,  # Real data or None
                 "amenities": amenities,
                 "specializations": specializations,
                 "lifestyle_features": lifestyle_features,
@@ -432,6 +442,63 @@ class QuickBaseClient:
                 "record_id": "mock_002"
             }
         ]
+    
+    def get_community_cost_data(self, community_record_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get cost data for a community based on actual placements from WA Clients table
+        
+        Args:
+            community_record_id: The QuickBase record ID of the community
+            
+        Returns:
+            Dictionary with min, max, avg move-in amounts from actual placements
+            or None if no placement data available
+        """
+        if not REQUESTS_AVAILABLE:
+            logger.warning("requests library not available")
+            return None
+        
+        # Query WA Clients for placements to this community
+        # Field 47: Placed In (Related Community)
+        # Field 69: Move In Amount  
+        query_data = {
+            "from": self.wa_clients_table_id,
+            "select": [47, 69],  # Placed In, Move In Amount
+            "where": f"{{47.EX.{community_record_id}}}",  # Filter by community
+            "options": {
+                "skip": 0,
+                "top": 100
+            }
+        }
+        
+        try:
+            result = self._make_request("POST", "records/query", query_data)
+            
+            if "data" not in result or not result["data"]:
+                return None
+            
+            # Collect move-in amounts
+            amounts = []
+            for record in result["data"]:
+                field_data = record.get("69")
+                if field_data and isinstance(field_data, dict):
+                    move_in = field_data.get("value")
+                    if move_in and isinstance(move_in, (int, float)) and move_in > 0:
+                        amounts.append(float(move_in))
+            
+            if not amounts:
+                return None
+            
+            return {
+                "min": min(amounts),
+                "max": max(amounts),
+                "avg": sum(amounts) / len(amounts),
+                "count": len(amounts)
+            }
+            
+        except Exception as e:
+            logger.error(f"Error fetching cost data for community {community_record_id}: {e}")
+            return None
     
     def get_active_advisors(self) -> List[Dict[str, Any]]:
         """

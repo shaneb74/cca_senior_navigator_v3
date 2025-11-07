@@ -494,19 +494,39 @@ def render(customer_id=None):
         st.markdown('<div class="matches-grid">', unsafe_allow_html=True)
         
         for idx, (community, score, reasons) in enumerate(matches):
-            # Render match card with clean Streamlit components instead of complex HTML
+            # Render match card with clean, professional design
             with st.container():
+                # Header with match score badge
                 col1, col2 = st.columns([3, 1])
                 with col1:
-                    st.markdown(f"**{community['name']}** - {score}% Match")
+                    st.markdown(f"### {community['name']}")
                     st.markdown(f"📍 {community['location']}")
                 with col2:
-                    st.markdown(f"**{score}%** Match", help="AI-powered compatibility score")
+                    st.markdown(f"""
+                        <div style="text-align: right; padding: 10px;">
+                            <div style="background-color: #1f77b4; color: white; padding: 8px 16px; 
+                                        border-radius: 20px; display: inline-block; font-weight: bold;">
+                                {score}% Match
+                            </div>
+                        </div>
+                    """, unsafe_allow_html=True)
                 
-                # Show highlights as clean bullet points
-                st.markdown("**Match Highlights:**")
-                for reason in reasons[:3]:
-                    st.markdown(f"• ✅ {reason}")
+                # Separate matches from gaps
+                matches_list = [r for r in reasons if not r.startswith('⚠️')]
+                gaps_list = [r for r in reasons if r.startswith('⚠️')]
+                
+                # Show match strengths and considerations in clean text format
+                if matches_list:
+                    st.markdown("**✅ Match Strengths:**")
+                    for reason in matches_list:
+                        clean_reason = reason.replace('✅ ', '').replace('💰 ', '').replace('⏰ ', '').replace('📞 ', '').replace('⏳ ', '').replace('📍 ', '')
+                        st.markdown(f"- {clean_reason}")
+                
+                if gaps_list:
+                    st.markdown("**⚠️ Considerations:**")
+                    for gap in gaps_list:
+                        clean_gap = gap.replace('⚠️ ', '')
+                        st.markdown(f"- {clean_gap}")
                 
                 # Show availability details
                 avail_map = {
@@ -518,18 +538,43 @@ def render(customer_id=None):
                 }
                 availability = avail_map.get(community['availability'], 'Contact for details')
                 
-                # Create columns for metrics including vacancy info (removed fake cost and rating)
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.metric("Availability", availability)
-                with col2:
-                    # Show real-time vacancy data from QuickBase
-                    if community.get('available_beds', 0) > 0:
-                        st.metric("Open Beds", f"{community['available_beds']} available")
-                    elif community.get('vacancy_status'):
-                        st.metric("Vacancy Status", community['vacancy_status'])
-                    else:
-                        st.metric("Capacity", f"{community.get('total_beds', 'N/A')} beds")
+                # Clean, compact availability and vacancy info
+                st.markdown("---")
+                
+                # Determine number of columns based on cost data availability
+                cost_data = community.get('monthly_cost')
+                if cost_data:
+                    # Show cost if we have real placement data
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        cost_range = f"${cost_data['min']:,.0f} - ${cost_data['max']:,.0f}"
+                        st.markdown(f"**Move-In Cost:** {cost_range}")
+                        st.caption(f"Based on {cost_data['count']} placements (Avg: ${cost_data['avg']:,.0f})")
+                    with col2:
+                        st.markdown(f"**Availability:** {availability}")
+                    with col3:
+                        # Show real-time vacancy data from QuickBase
+                        if community.get('available_beds', 0) > 0:
+                            st.markdown(f"**Vacancy:** {community['available_beds']} beds available")
+                        elif community.get('vacancy_status'):
+                            st.markdown(f"**Vacancy:** {community['vacancy_status']}")
+                        else:
+                            st.markdown(f"**Capacity:** {community.get('total_beds', 'N/A')} beds")
+                else:
+                    # No cost data - just show availability info
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.markdown(f"**Availability:** {availability}")
+                    with col2:
+                        # Show real-time vacancy data from QuickBase
+                        if community.get('available_beds', 0) > 0:
+                            st.markdown(f"**Vacancy:** {community['available_beds']} beds available")
+                        elif community.get('vacancy_status'):
+                            st.markdown(f"**Vacancy:** {community['vacancy_status']}")
+                        else:
+                            st.markdown(f"**Capacity:** {community.get('total_beds', 'N/A')} beds")
+                
+                st.markdown("")  # Small spacing
                 
                 # Action buttons with guaranteed unique keys using index
                 col1, col2 = st.columns(2)
@@ -610,52 +655,107 @@ def calculate_match_score(customer_data, community):
     
     # Care level matching (40% weight) - Most important factor
     care_recommendation = customer_data.get('care_recommendation', '').lower()
+    # Normalize: convert spaces to underscores for comparison
+    care_recommendation_normalized = care_recommendation.replace(' ', '_')
     
-    if care_recommendation in community['care_levels']:
+    # Special case: "in_home" customers are exploring community options
+    # Don't penalize them - they're open to any care level
+    if care_recommendation_normalized == 'in_home':
+        # Give full score - exploring communities is valid
         score += 40
-        reasons.append(f"✅ Perfect care level match: {care_recommendation}")
-    elif any(level in care_recommendation for level in community['care_levels']):
-        score += 25
-        reasons.append(f"✅ Compatible care levels available")
+        reasons.append(f"Exploring community care options")
     else:
-        reasons.append(f"⚠️ Care level mismatch: needs {care_recommendation}")
+        # Also normalize community care levels for comparison
+        community_care_levels_normalized = [level.lower().replace(' ', '_') for level in community['care_levels']]
+        
+        if care_recommendation_normalized in community_care_levels_normalized:
+            score += 40
+            reasons.append(f"Perfect care level match: {care_recommendation}")
+        elif any(care_recommendation_normalized in level or level in care_recommendation_normalized for level in community_care_levels_normalized):
+            score += 25
+            reasons.append(f"Compatible care levels available")
+        else:
+            reasons.append(f"⚠️ Care level mismatch: needs {care_recommendation}")
     
     # Budget compatibility (30% weight)
     budget_min = customer_data.get('budget_min', 3000)
     budget_max = customer_data.get('budget_max', 6000)
     
-    if (budget_min <= community['monthly_cost']['max'] and 
-        budget_max >= community['monthly_cost']['min']):
-        score += 30
-        reasons.append(f"💰 Budget compatible: ${community['monthly_cost']['min']:,}-${community['monthly_cost']['max']:,}")
-    elif budget_max >= community['monthly_cost']['min']:
-        score += 15
-        reasons.append(f"💰 Partial budget overlap available")
+    # Check if we have real cost data
+    monthly_cost = community.get('monthly_cost')
+    if monthly_cost:
+        # We have real placement cost data
+        if (budget_min <= monthly_cost['max'] and 
+            budget_max >= monthly_cost['min']):
+            score += 30
+            reasons.append(f"💰 Budget compatible: ${monthly_cost['min']:,}-${monthly_cost['max']:,}")
+        elif budget_max >= monthly_cost['min']:
+            score += 15
+            reasons.append(f"💰 Partial budget overlap available")
+        else:
+            reasons.append(f"⚠️ Budget mismatch: needs ${budget_min:,}-${budget_max:,}")
     else:
-        reasons.append(f"⚠️ Budget mismatch: needs ${budget_min:,}-${budget_max:,}")
+        # No cost data available - don't penalize, give full score
+        score += 30
+        reasons.append(f"Budget: ${budget_min:,}-${budget_max:,} (no cost data available)")
     
     # Availability (20% weight)
     if community['availability'] == 'immediate':
         score += 20
-        reasons.append("✅ Immediate availability")
+        reasons.append("Immediate availability")
     elif community['availability'] == '2_weeks':
         score += 15
-        reasons.append("⏰ Available within 2 weeks")
+        reasons.append("Available within 2 weeks")
     elif community['availability'] == 'waitlist':
         score += 5
-        reasons.append("⏳ Waitlist available")
+        reasons.append("Waitlist available")
     else:
         score += 10
-        reasons.append("📞 Contact for availability")
+        reasons.append("Contact for availability")
     
     # Location proximity (10% weight)
     customer_location = customer_data.get('location', '')
     if customer_location and customer_location.lower() in community['location'].lower():
         score += 10
-        reasons.append(f"📍 Same area: {community['location']}")
+        reasons.append(f"Located in {community['location']}")
     else:
         score += 5
-        reasons.append(f"📍 Located in {community['location']}")
+        reasons.append(f"Located in {community['location']}")
+    
+    # Amenity matching - Check customer preferences against community amenities
+    matching_flags = customer_data.get('community_matching_flags', {})
+    if matching_flags:
+        community_amenities = [a.lower().replace('_', ' ') for a in community.get('amenities', [])]
+        
+        # Check for pool preference
+        if matching_flags.get('prefers_pool'):
+            if any('pool' in amenity or 'swim' in amenity for amenity in community_amenities):
+                score += 5
+                reasons.append("Has pool (requested)")
+            else:
+                reasons.append("⚠️ Does not have pool (requested)")
+        
+        # Check for kitchen preference
+        if matching_flags.get('prefers_full_kitchen'):
+            if any('kitchen' in amenity for amenity in community_amenities):
+                score += 5
+                reasons.append("Has full kitchen (requested)")
+            else:
+                reasons.append("⚠️ Does not have full kitchen (requested)")
+        
+        # Check for pet-friendly preference
+        if matching_flags.get('prefers_pets_allowed'):
+            # Check if pets are mentioned in amenities or specializations
+            has_pets = any('pet' in amenity for amenity in community_amenities)
+            if not has_pets:
+                specializations = [s.lower() for s in community.get('specializations', [])]
+                has_pets = any('pet' in spec for spec in specializations)
+            
+            if has_pets:
+                score += 5
+                reasons.append("Pet-friendly (requested)")
+            else:
+                reasons.append("⚠️ Not pet-friendly (requested)")
     
     return min(score, 100), reasons
 
