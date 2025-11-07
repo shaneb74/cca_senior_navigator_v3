@@ -1335,8 +1335,13 @@ def render():
             
             # Callback to handle Enter key in text input
             def on_input_change():
-                if st.session_state.get("faq_composer_input"):
+                # Only trigger send if there's actual text content
+                input_text = st.session_state.get("faq_composer_input", "").strip()
+                if input_text:
                     st.session_state["faq_send_now"] = True
+                else:
+                    # Clear the flag if input is empty
+                    st.session_state["faq_send_now"] = False
             
             col1, col2 = st.columns([5, 1], gap="medium")
 
@@ -1412,6 +1417,12 @@ def render():
             
             # Capture the CURRENT question IMMEDIATELY before any processing
             current_question = user_q.strip() if user_q else ""
+            
+            # Additional validation: Don't send if question is empty
+            if should_send and not current_question:
+                should_send = False
+                # Clear any stale flags
+                st.session_state["faq_send_now"] = False
 
             if send_now and st.session_state.get("faq_composer"):
                 user_q = st.session_state["faq_composer"]
