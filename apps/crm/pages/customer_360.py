@@ -702,13 +702,13 @@ def render_quick_actions(customer_id, customer_data):
     else:
         # Show initial delete button
         def set_confirm_delete():
-            print(f"\n🔵 SET_CONFIRM_DELETE CALLBACK FIRED for {customer_id}")
-        # Show initial delete button
-        def set_confirm_delete():
             st.session_state['confirm_delete'] = customer_id
             
         st.button("🗑️ Delete Customer", use_container_width=True, type="secondary", 
                  key=f"btn_initial_delete_{customer_id}", on_click=set_confirm_delete)
+
+
+def render():
     """Main render function for Customer 360 view"""
     
     # CRITICAL: Check for pending deletion BEFORE any UI rendering
