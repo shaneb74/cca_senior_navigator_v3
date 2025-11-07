@@ -1451,6 +1451,32 @@ def render():
                         # Simple container for answer
                         with st.container():
                             st.markdown(answer_md + sources_md)
+                            
+                            # Audio playback feature (if enabled)
+                            from core.flags import get_all_flags
+                            flags = get_all_flags()
+                            if flags.get("FEATURE_FAQ_AUDIO") == "on":
+                                audio_key = f"audio_toggle_{idx}"
+                                if st.toggle("🔊 Listen", key=audio_key):
+                                    try:
+                                        from shared.audio.tts_client import synthesize
+                                        # Use clean text without sources for audio
+                                        audio_text = _sanitize_to_md(text) if not is_html else text
+                                        audio_bytes = synthesize(audio_text)
+                                        
+                                        if audio_bytes:
+                                            st.audio(audio_bytes, format="audio/mp3")
+                                            # Log audio playback
+                                            from core.events import log_event
+                                            log_event("faq_audio_played", {
+                                                "query": msg.get("user_query", ""),
+                                                "text_length": len(audio_text)
+                                            })
+                                        else:
+                                            st.warning("⚠️ Audio unavailable, please try again.", icon="🔇")
+                                    except Exception as e:
+                                        st.warning("⚠️ Audio unavailable, please try again.", icon="🔇")
+                                        logger.error(f"[FAQ_AUDIO] Error in audio playback: {e}")
 
                         with st.container():
                             st.markdown('<div class="chat-sentinel chat-action-sentinel"></div>', unsafe_allow_html=True)
