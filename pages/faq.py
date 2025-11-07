@@ -1332,6 +1332,12 @@ def render():
             advisor_href = add_uid_to_href("?page=hub_lobby")
             st.markdown('<div class="ai-input-wrap">', unsafe_allow_html=True)
             st.markdown('<div class="chat-sentinel composer-sentinel"></div>', unsafe_allow_html=True)
+            
+            # Callback to handle Enter key in text input
+            def on_input_change():
+                if st.session_state.get("faq_composer_input"):
+                    st.session_state["faq_send_now"] = True
+            
             col1, col2 = st.columns([5, 1], gap="medium")
 
             with col1:
@@ -1341,6 +1347,7 @@ def render():
                     placeholder="e.g., What is assisted living? Who is CCA?",
                     label_visibility="collapsed",
                     disabled=is_processing,
+                    on_change=on_input_change,
                 )
 
             with col2:
@@ -1351,33 +1358,7 @@ def render():
                     disabled=is_processing,
                 )
             
-            # Enable Enter key to trigger Send button
-            st.markdown(
-                """
-                <script>
-                (function() {
-                    // Wait for DOM to be ready
-                    const input = window.parent.document.querySelector('input[aria-label="Ask about planning, costs, eligibility, or our company…"]');
-                    
-                    if (input && !input.dataset.enterListenerAdded) {
-                        input.dataset.enterListenerAdded = 'true';
-                        input.addEventListener('keydown', function(e) {
-                            if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault();
-                                // Find the Send button (look for button with text "Send")
-                                const buttons = window.parent.document.querySelectorAll('button');
-                                const sendBtn = Array.from(buttons).find(btn => btn.textContent.trim() === 'Send');
-                                if (sendBtn) {
-                                    sendBtn.click();
-                                }
-                            }
-                        });
-                    }
-                })();
-                </script>
-                """,
-                unsafe_allow_html=True,
-            )
+            # Remove the JavaScript - using on_change callback instead
 
             st.markdown(
                 f"""
