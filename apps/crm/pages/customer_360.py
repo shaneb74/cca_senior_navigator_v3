@@ -762,20 +762,23 @@ def render():
         st.error(f"Error rendering relationship info: {e}")
     
     # Enriched data sections (medical, ADL, family)
-    try:
-        render_medical_profile(customer_data)
-    except Exception as e:
-        st.error(f"Error rendering medical profile: {e}")
+    if 'medical_conditions' in customer_data or 'medication_count' in customer_data:
+        try:
+            render_medical_profile(customer_data)
+        except Exception as e:
+            st.error(f"❌ Medical profile error: {type(e).__name__}")
     
-    try:
-        render_adl_assessment(customer_data)
-    except Exception as e:
-        st.error(f"Error rendering ADL assessment: {e}")
+    if 'adl_assessment' in customer_data:
+        try:
+            render_adl_assessment(customer_data)
+        except Exception as e:
+            st.error(f"❌ ADL assessment error: {type(e).__name__}")
     
-    try:
-        render_family_involvement(customer_data)
-    except Exception as e:
-        st.error(f"Error rendering family involvement: {e}")
+    if 'family_context' in customer_data:
+        try:
+            render_family_involvement(customer_data)
+        except Exception as e:
+            st.error(f"❌ Family involvement error: {type(e).__name__}")
     
     # Secondary information
     try:
