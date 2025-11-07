@@ -689,33 +689,43 @@ def render_quick_actions(customer_id, customer_data):
         col1, col2 = st.columns(2)
         with col1:
             if st.button("✅ Yes, Delete", use_container_width=True, type="primary", key=f"confirm_delete_{customer_id}"):
-                # Add immediate feedback
-                with st.spinner("Deleting customer..."):
-                    # Perform the deletion
-                    try:
-                        st.write(f"🔄 Calling delete_crm_customer('{customer_id}')...")
-                        result = delete_crm_customer(customer_id)
-                        st.write(f"🔄 Delete function returned: {result}")
-                        
-                        if result:
-                            st.success(f"✅ Customer deleted successfully!")
-                            # Clear selected customer and confirmation state
-                            if 'selected_customer' in st.session_state:
-                                del st.session_state['selected_customer']
-                            st.session_state['confirm_delete'] = None
-                            st.balloons()
-                            st.info("Refreshing page...")
-                            # Force a full rerun to refresh customer list
-                            import time
-                            time.sleep(1)
-                            st.rerun()
-                        else:
-                            st.error(f"❌ Failed to delete customer - not found in database")
-                            st.session_state['confirm_delete'] = None
-                    except Exception as e:
-                        st.error(f"❌ Error during deletion: {str(e)}")
-                        st.exception(e)
+                # Show debug info FIRST before anything else
+                st.write("🔵 DELETE BUTTON CLICKED!")
+                st.write(f"🔵 Customer ID to delete: `{customer_id}`")
+                st.write(f"🔵 Customer name: {customer_data.get('name', 'Unknown')}")
+                
+                # Perform the deletion
+                try:
+                    st.write(f"� About to call delete_crm_customer...")
+                    
+                    # Call the delete function
+                    result = delete_crm_customer(customer_id)
+                    
+                    st.write(f"� Delete function returned: **{result}**")
+                    
+                    if result:
+                        st.success(f"✅ Customer deleted successfully!")
+                        st.write("🔵 Clearing session state...")
+                        # Clear selected customer and confirmation state
+                        if 'selected_customer' in st.session_state:
+                            del st.session_state['selected_customer']
                         st.session_state['confirm_delete'] = None
+                        st.balloons()
+                        st.write("🔵 About to refresh page in 2 seconds...")
+                        # Force a full rerun to refresh customer list
+                        import time
+                        time.sleep(2)
+                        st.write("🔵 Calling st.rerun()...")
+                        st.rerun()
+                    else:
+                        st.error(f"❌ Failed to delete customer - not found in database")
+                        st.write("🔵 Customer was not found in any data source")
+                        st.session_state['confirm_delete'] = None
+                except Exception as e:
+                    st.error(f"❌ Error during deletion: {str(e)}")
+                    st.write(f"🔵 Exception type: {type(e).__name__}")
+                    st.exception(e)
+                    st.session_state['confirm_delete'] = None
         with col2:
             if st.button("❌ Cancel", use_container_width=True, key=f"cancel_delete_{customer_id}"):
                 st.session_state['confirm_delete'] = None
