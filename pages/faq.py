@@ -1351,21 +1351,25 @@ def render():
                     disabled=is_processing,
                 )
             
-            # Enable Enter key to trigger Send button (without on_change callback)
+            # Enable Enter key to trigger Send button
             st.markdown(
                 """
                 <script>
                 (function() {
-                    // Find the text input and send button
+                    // Wait for DOM to be ready
                     const input = window.parent.document.querySelector('input[aria-label="Ask about planning, costs, eligibility, or our company…"]');
-                    const sendBtn = window.parent.document.querySelector('button[kind="primaryFormSubmit"]');
                     
-                    if (input && sendBtn && !input.dataset.enterListenerAdded) {
+                    if (input && !input.dataset.enterListenerAdded) {
                         input.dataset.enterListenerAdded = 'true';
                         input.addEventListener('keydown', function(e) {
                             if (e.key === 'Enter' && !e.shiftKey) {
                                 e.preventDefault();
-                                sendBtn.click();
+                                // Find the Send button (look for button with text "Send")
+                                const buttons = window.parent.document.querySelectorAll('button');
+                                const sendBtn = Array.from(buttons).find(btn => btn.textContent.trim() === 'Send');
+                                if (sendBtn) {
+                                    sendBtn.click();
+                                }
                             }
                         });
                     }
